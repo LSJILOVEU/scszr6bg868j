@@ -1,0 +1,70 @@
+using System;
+using WarCore.Sim;
+using Simulation=WarCore.Sim.Sim;
+namespace WarCore.Tests
+{
+    public static class M0c2S4Fixture
+    {
+        public static readonly StableEntityKey Actor=StableEntityKey.Placed(97,1),Other=StableEntityKey.Placed(97,2);
+        public static GameplaySchema Schema(bool packageB=false,int duration=4,ulong rescue=0,ulong terminate=8,ulong prevent=4,bool downed=true)
+        {
+            return new GameplaySchema(new[]{new GameplayResourceDef(1,"health",-100,100,100,isLife:true)},
+                new[]{new GameplayDamageTypeDef(1,"direct",1,1)},new[]{new GameplayPipelineDef(1,new GameplayDamageSpec(0,GameplayDamageStages.None))},
+                new[]{new GameplayArchetypeDef(1,new[]{1UL})},new GameplayCapacities(4,4,32,64,16,8,4,8,2),"s4.critical",
+                new[]{new GameplayStatusDef(1,packageB?"poison":"wound",GameplayStatusDuration.Timed,12,1,1,periodicActions:new[]{GameplayPeriodicAction.Damage(1,1,3)}),
+                    new GameplayStatusDef(2,"rescue-one",GameplayStatusDuration.Timed,12,tags:1),
+                    new GameplayStatusDef(3,"rescue-two",GameplayStatusDuration.Timed,12,tags:2),
+                    new GameplayStatusDef(4,packageB?"seal":"terminate",GameplayStatusDuration.Timed,12,tags:8),
+                    new GameplayStatusDef(5,"prevent-downed",GameplayStatusDuration.Timed,12,tags:4)},
+                new[]{new GameplayAbilityDef(1,"channel",1,1,new GameplayTargetSpec(GameplayTargetMode.Self),
+                    new[]{new GameplayAbilityAction(1,GameplayActionTrigger.ActivePulse,GameplayPrimitive.ChangeResource,1,0)},
+                    cooldownKey:1,cooldownTicks:20,activeTicks:10,pulsePeriodTicks:2),
+                    new GameplayAbilityDef(2,"permitted",2,1,new GameplayTargetSpec(GameplayTargetMode.Self),new GameplayAbilityAction[0],allowWhileDowned:true)},
+                new GameplayInputAuthority(1,new[]{Actor.Id,Other.Id}),new[]{new GameplayLifeRuleDef(1,1,!packageB && downed,!packageB && downed?duration:0,rescue,terminate,prevent)});
+        }
+        public static Simulation Create(bool packageB=false,bool reverse=false,GameplaySchema schema=null,int eventLimit=256,int timers=64)
+        {
+            var catalog=new PlacedCatalog(new StableContentManifest(0),new PlacedCatalogEntry(97,1,1),new PlacedCatalogEntry(97,2,1));
+            var sim=Simulation.CreateRetainedWorld(97,catalog,new SimConfig(entityCapacity:8,timerCapacity:timers,eventInitialCapacity:1,eventHardLimit:eventLimit),gameplaySchema:schema??Schema(packageB));
+            sim.BindGameplay(sim.Entities.Create(reverse?Other:Actor),1);sim.BindGameplay(sim.Entities.Create(reverse?Actor:Other),1);
+            sim.RegisterGameplay("s4.script",new S4Script(),SimSystemPhase.Queries);return sim;
+        }
+        public static void Step(Simulation sim,int flags=0,params GameplayInputCommand[] commands)
+            =>sim.Step(new InputFrame(default,default,skillSlot:flags,gameplayTick:sim.Clock.Tick+1,skillCommands:commands));
+        public static GameplayInputCommand Cast(ulong slot=1,StableEntityKey? actor=null,uint ordinal=1)
+            =>new GameplayInputCommand(new GameplayStamp((actor??Actor).Id),ordinal,GameplayInputKind.Activate,slot);
+        private static readonly GameplayInputCommand[] ReplayCast={Cast(actor:Other)};
+        public static ulong Replay(Simulation sim)
+        {
+            int step=(int)((sim.Clock.Tick+1)%24);int flags=step==1?1|8:step==2?256:step==6?1:step==10?64:0;
+            var input=step==12?ReplayCast:null;
+            sim.Step(new InputFrame(default,default,skillSlot:flags,gameplayTick:sim.Clock.Tick+1,skillCommands:input));
+            return sim.StateHashRetained();
+        }
+        public static GameplayLifeView Life(Simulation sim)=>sim.GameplayLife(Actor.Id);
+        public static long Health(Simulation sim)=>sim.GameplayResource(Actor.Id,1);
+        public static int Statuses(Simulation sim,StableId owner)
+        {int n=0;for(int i=0;i<sim.GameplayStatusCount;i++)if(sim.GameplayStatusAt(i).Target.Id.Equals(owner))n++;return n;}
+    }
+    public sealed class S4Script : IRetainedGameplaySystem
+    {
+        public int Order=>10;public string StateTypeId=>"test.s4.script";public int StateVersion=>1;
+        public void Step(SimContext c)
+        {
+            int f=c.Input.SkillSlot;var actor=c.Owner.GameplayTarget(M0c2S4Fixture.Actor.Id);var other=c.Owner.GameplayTarget(M0c2S4Fixture.Other.Id);
+            ulong token=(ulong)c.Clock.Tick;
+            var key=new GameplayApplyKey(other.Id,token,0,other.Id,token,1);
+            // Independent source stays alive. Ordinals remain canonical for status admission.
+            if((f&1)!=0)c.Damage(actor,key,1,110);
+            if((f&2)!=0)c.ChangeResource(actor,new GameplayApplyKey(other.Id,token,0,other.Id,token,2),1,30);
+            if((f&4)!=0)c.Damage(actor,new GameplayApplyKey(other.Id,token,0,other.Id,token,3),1,1);
+            uint ordinal=0;
+            for(int i=0;i<5;i++)if((f&(8<<i))!=0)c.ApplyStatus(actor,new GameplayApplyKey(other.Id,token,0,other.Id,token,(uint)(10+i)),(ulong)(i+1),commandOrdinal:ordinal++);
+            if((f&512)!=0)c.ApplyStatus(other,new GameplayApplyKey(actor.Id,token,0,actor.Id,token,20),1);
+            if((f&2048)!=0)c.ChangeResource(actor,new GameplayApplyKey(other.Id,token,0,other.Id,token,32),1,10);
+            if((f&1024)!=0)c.ChangeResource(actor,new GameplayApplyKey(other.Id,token,0,other.Id,token,31),1,20);
+            if((f&256)!=0)c.ChangeResource(actor,new GameplayApplyKey(other.Id,token,0,other.Id,token,30),1,200);
+        }
+        public void SaveState(SimStateWriter w){} public void LoadState(SimStateReader r){} public void WriteState(StateHash h){}
+    }
+}

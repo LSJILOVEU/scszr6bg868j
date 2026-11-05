@@ -1,0 +1,6 @@
+<linker>
+  <!-- Private table checks and boundary reflection must inspect the actual Sim assembly. -->
+  <assembly fullname="WarCore.Sim" preserve="all" />
+  <assembly fullname="WarCore.Verification" preserve="all" />
+  <assembly fullname="WarCore.Verification.Unity" preserve="all" />
+</linker>

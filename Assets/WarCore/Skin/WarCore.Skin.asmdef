@@ -1,0 +1,8 @@
+{
+  "name": "WarCore.Skin",
+  "rootNamespace": "WarCore.Skin",
+  "references": [
+    "WarCore.Content"
+  ],
+  "noEngineReferences": false
+}

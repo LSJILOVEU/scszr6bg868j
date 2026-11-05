@@ -1,0 +1,120 @@
+using System.IO;
+using WarCore.Sim;
+
+namespace WarCore.Tests.Diagnostics
+{
+    internal static class SemanticBenchArtifacts
+    {
+        internal static ulong InputHash(SemanticBenchScene scene)
+        {
+            var hash = new StateHash(ignoreColliderLayers: false);
+            hash.Add(SemanticBenchScene.Generator);
+            hash.Add(RealBenchWorkload.Seed);
+            hash.Add(scene.Dense);
+            hash.Add(scene.Peak);
+            hash.Add(scene.Overflow);
+            hash.Add(3 * SimFix.Scale);
+            scene.Content.WriteState(hash);
+            hash.Add(scene.Bodies.Length);
+            for (int i = 0; i < scene.Bodies.Length; i++)
+            {
+                scene.Bodies[i].Entity.WriteState(hash);
+                scene.Bodies[i].Position.WriteState(hash);
+                Collider collider = scene.Bodies[i].Collider;
+                if (collider.ShapeKind == ShapeKind.VerticalCapsule)
+                    collider.WriteState(hash);
+                else
+                {
+                    hash.Add((int)collider.ShapeKind);
+                    hash.Add(collider.Radius.Raw);
+                    hash.Add(collider.Height.Raw);
+                    hash.Add((ulong)collider.Layer);
+                    hash.Add(collider.HalfDepth.Raw);
+                    hash.Add(collider.Yaw.M);
+                    hash.Add(collider.Yaw.N);
+                }
+                hash.Add(scene.IsStatic[i]);
+            }
+            hash.Add(scene.Queries.Length);
+            foreach (SemanticQuery q in scene.Queries)
+            {
+                hash.Add((int)q.Role);
+                hash.Add((int)q.Mode);
+                hash.Add(q.Cap);
+                hash.Add((int)q.Request.Kind);
+                hash.Add(q.Request.LayerMask);
+                q.Request.Origin.WriteState(hash);
+                q.Request.Direction.WriteState(hash);
+                hash.Add(q.Request.Radius.Raw);
+                hash.Add(q.Request.Range.Raw);
+                hash.Add(q.Request.Cosine);
+                hash.Add(q.Request.HalfHeight.Raw);
+                q.Request.Origin.WriteState(hash);
+            }
+            return hash.Value;
+        }
+
+        internal static void Write(SemanticBenchScene scene, string prefix)
+        {
+            using (var writer = new StreamWriter(prefix + "-bodies.csv"))
+            {
+                writer.WriteLine("id,generation,x_raw,y_raw,z_raw,shape,radius_raw,height_raw,layer,content_static,half_depth_raw,yaw_m,yaw_n");
+                for (int i = 0; i < scene.Bodies.Length; i++)
+                {
+                    SpatialBody b = scene.Bodies[i];
+                    writer.WriteLine("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12}", b.Entity.Id, b.Entity.Generation,
+                        b.Position.X.Raw, b.Position.Y.Raw, b.Position.Z.Raw, (int)b.Collider.ShapeKind, b.Collider.Radius.Raw,
+                        b.Collider.Height.Raw, b.Collider.Layer, scene.IsStatic[i], b.Collider.HalfDepth.Raw, b.Collider.Yaw.M, b.Collider.Yaw.N);
+                }
+            }
+            using (var writer = new StreamWriter(prefix + "-inputs.csv"))
+            {
+                writer.WriteLine("id,role,mode,cap,kind,mask,origin_x_raw,origin_y_raw,origin_z_raw,direction_x_raw,direction_y_raw,direction_z_raw,radius_raw,range_raw,cosine,half_height_raw,reference_x_raw,reference_y_raw,reference_z_raw");
+                for (int i = 0; i < scene.Queries.Length; i++)
+                {
+                    SemanticQuery q = scene.Queries[i];
+                    SpatialRequest r = q.Request;
+                    writer.WriteLine("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14},{15},{6},{7},{8}",
+                        i, q.Role, q.Mode, q.Cap, r.Kind, r.LayerMask, r.Origin.X.Raw, r.Origin.Y.Raw, r.Origin.Z.Raw,
+                        r.Direction.X.Raw, r.Direction.Y.Raw, r.Direction.Z.Raw, r.Radius.Raw, r.Range.Raw, r.Cosine, r.HalfHeight.Raw);
+                }
+            }
+            using (var writer = new StreamWriter(prefix + "-expected.csv"))
+            {
+                writer.WriteLine("query_id,hit,total_hits,written,truncated,oracle_true_hits,blocker_hits,static_hits,unit_hits,signature");
+                for (int i = 0; i < scene.Expected.Length; i++)
+                {
+                    SemanticExpected e = scene.Expected[i];
+                    writer.WriteLine("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9:X16}", i, e.Result.Hit, e.Result.TotalHits,
+                        e.Result.Written, e.Result.Truncated, e.TrueHits, e.BlockerHits, e.StaticHits, e.UnitHits, e.Signature);
+                }
+            }
+            using (var writer = new StreamWriter(prefix + "-outputs.csv"))
+            {
+                writer.WriteLine("query_id,rank,entity_id,generation,distance_raw");
+                for (int i = 0; i < scene.Expected.Length; i++)
+                    for (int h = 0; h < scene.Expected[i].Selected.Length; h++)
+                    {
+                        SpatialHit hit = scene.Expected[i].Selected[h];
+                        writer.WriteLine("{0},{1},{2},{3},{4}", i, h, hit.Entity.Id, hit.Entity.Generation, hit.Distance.Raw);
+                    }
+            }
+            using (var writer = new StreamWriter(prefix + "-signatures.txt"))
+                Describe(scene, writer);
+        }
+
+        internal static void Describe(SemanticBenchScene scene, TextWriter output)
+        {
+            SemanticPartitionWork.Compare(scene, output);
+            output.WriteLine("Semantic {0}: generator={1}; seed=0x{2:X}; input={3:X16}; selected={4:X16}; oracleFull={5:X16}; oracle=itemwise-all-queries plus all-three-blocker-modes; mismatch=0.",
+                scene.Label, SemanticBenchScene.Generator, RealBenchWorkload.Seed, scene.InputSignature, scene.OutputSignature, scene.OracleSignature);
+            output.WriteLine("Content={0}; soldier=1; structure=2; terrain-cover=4; large-unit=8; sightMask={1}; soldierMask={2}; unitMask={3}; walls=40; covers=24; static=64; soldiers=2000; largeUnits=16; units=2016; live=2080 throughout; grid=3m; spacing={4}m.",
+                RwrBenchContent.Version, scene.Content.SightMask, scene.Content.SoldierMask, scene.Content.UnitMask, scene.Dense ? "0.75" : "3");
+            output.WriteLine("Wall/cover geometry uses vertical capsules; Collider static flags select the shared-body static/unit indexes. Units include large dynamic blockers; all bodies remain alive. No faction/source/target exclusions; ordinary soldiers are absent only from sight/cover masks. Any/Nearest total_hits=-1 means unknown, oracle_true_hits is exhaustive and outside timing.");
+            output.WriteLine("AI rays alternate Any/Nearest (330 each); single-shot and shotgun=Nearest; volley=AllCapped(4); sphere/sector/melee=AllCapped(512); explosion=unitMask AllCapped(512); cover=sightMask Any. 165 AI spheres + 165 AI sectors; all range references are their origin; cosine=600; halfHeight=2m.");
+            output.WriteLine("Rays and non-explosion areas reuse legacy raw inputs; sphere radius={0}m; sector radius={1}m; melee radius=3m; ray range={2}m; explosion radius={3}m; originRaw=({4},{5},{6}); TotalHits={7}; Written={8}; Truncated={9}; actualCoverRays/tick={8}; totalRays/tick={10}.",
+                scene.Dense ? 2 : 6, scene.Dense ? 3 : 6, scene.Dense ? 48 : 12, scene.Overflow ? 12 : 8,
+                scene.ExplosionOrigin.X.Raw, scene.ExplosionOrigin.Y.Raw, scene.ExplosionOrigin.Z.Raw, scene.ExplosionTotal, scene.Affected, scene.ExplosionTotal > scene.Affected, scene.RayCount);
+        }
+    }
+}

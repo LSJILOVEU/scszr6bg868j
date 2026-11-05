@@ -1,0 +1,268 @@
+// Frozen from 9ddad58395d40f5e53097d4d98c7ba0c1bcb647e before A1/A2.
+// Keep this arithmetic unchanged so later product optimizations have an independent oracle.
+using System;
+
+namespace WarCore.Tests.Oracle
+{
+    // Fixed 384-bit storage keeps nested geometric determinants exact without heap-backed integers.
+    internal struct WideInt : IComparable<WideInt>
+    {
+        private const int WordCount = 12;
+        private uint a, b, c, d, e, f, g, h, i0, j0, k0, l0;
+        private bool negative;
+        public bool IsZero => (a | b | c | d | e | f | g | h | i0 | j0 | k0 | l0) == 0;
+        public int Sign => IsZero ? 0 : negative ? -1 : 1;
+        public uint Word(int i)
+        {
+            switch (i)
+            {
+                case 0:
+                    return a;
+                case 1:
+                    return b;
+                case 2:
+                    return c;
+                case 3:
+                    return d;
+                case 4:
+                    return e;
+                case 5:
+                    return f;
+                case 6:
+                    return g;
+                case 7:
+                    return h;
+                case 8:
+                    return i0;
+                case 9:
+                    return j0;
+                case 10:
+                    return k0;
+                case 11:
+                    return l0;
+                default:
+                    return 0;
+            }
+        }
+
+        private void Set(int i, uint value)
+        {
+            switch (i)
+            {
+                case 0:
+                    a = value;
+                    break;
+                case 1:
+                    b = value;
+                    break;
+                case 2:
+                    c = value;
+                    break;
+                case 3:
+                    d = value;
+                    break;
+                case 4:
+                    e = value;
+                    break;
+                case 5:
+                    f = value;
+                    break;
+                case 6:
+                    g = value;
+                    break;
+                case 7:
+                    h = value;
+                    break;
+                case 8:
+                    i0 = value;
+                    break;
+                case 9:
+                    j0 = value;
+                    break;
+                case 10:
+                    k0 = value;
+                    break;
+                case 11:
+                    l0 = value;
+                    break;
+                default:
+                    throw new OverflowException();
+            }
+        }
+
+        public static WideInt From(long value)
+        {
+            ulong magnitude = value < 0 ? unchecked((ulong)(-(value + 1)) + 1) : (ulong)value;
+            return new WideInt{a = unchecked((uint)magnitude), b = (uint)(magnitude >> 32), negative = value < 0};
+        }
+
+        private int Bits
+        {
+            get
+            {
+                for (int i = WordCount - 1; i >= 0; i--)
+                {
+                    uint word = Word(i);
+                    if (word == 0)
+                        continue;
+                    int bits = i * 32;
+                    while (word != 0)
+                    {
+                        bits++;
+                        word >>= 1;
+                    }
+
+                    return bits;
+                }
+
+                return 0;
+            }
+        }
+
+        private static int MagnitudeCompare(WideInt x, WideInt y)
+        {
+            for (int i = WordCount - 1; i >= 0; i--)
+                if (x.Word(i) != y.Word(i))
+                    return x.Word(i) < y.Word(i) ? -1 : 1;
+            return 0;
+        }
+
+        public int CompareTo(WideInt other)
+        {
+            if (Sign != other.Sign)
+                return Sign.CompareTo(other.Sign);
+            return Sign * MagnitudeCompare(this, other);
+        }
+
+        public static WideInt operator -(WideInt x)
+        {
+            x.negative = !x.negative && !x.IsZero;
+            return x;
+        }
+
+        public static WideInt operator +(WideInt x, WideInt y)
+        {
+            var result = new WideInt();
+            ulong carry = 0;
+            if (x.Sign * y.Sign < 0)
+            {
+                if (MagnitudeCompare(x, y) < 0)
+                {
+                    WideInt swap = x;
+                    x = y;
+                    y = swap;
+                }
+
+                for (int i = 0; i < WordCount; i++)
+                {
+                    ulong sub = (ulong)y.Word(i) + carry;
+                    result.Set(i, unchecked((uint)((ulong)x.Word(i) - sub)));
+                    carry = x.Word(i) < sub ? 1UL : 0UL;
+                }
+            }
+            else
+            {
+                for (int i = 0; i < WordCount; i++)
+                {
+                    ulong sum = (ulong)x.Word(i) + y.Word(i) + carry;
+                    result.Set(i, unchecked((uint)sum));
+                    carry = sum >> 32;
+                }
+
+                if (carry != 0)
+                    throw new OverflowException();
+            }
+
+            result.negative = (x.Sign == 0 ? y.negative : x.negative) && !result.IsZero;
+            return result;
+        }
+
+        public static WideInt operator -(WideInt x, WideInt y) => x + -y;
+        public static WideInt operator *(WideInt x, WideInt y)
+        {
+            var result = new WideInt();
+            int nx = (x.Bits + 31) / 32;
+            int ny = (y.Bits + 31) / 32;
+            for (int i = 0; i < nx; i++)
+            {
+                ulong carry = 0;
+                for (int j = 0; j < ny || carry != 0; j++)
+                {
+                    ulong product = (ulong)x.Word(i) * y.Word(j) + result.Word(i + j) + carry;
+                    result.Set(i + j, unchecked((uint)product));
+                    carry = product >> 32;
+                }
+            }
+
+            result.negative = (x.negative != y.negative) && !result.IsZero;
+            return result;
+        }
+
+        private WideInt ShiftOne()
+        {
+            if ((l0 & 0x80000000U) != 0)
+                throw new OverflowException();
+            var result = new WideInt();
+            uint carry = 0;
+            for (int i = 0; i < WordCount; i++)
+            {
+                uint word = Word(i);
+                result.Set(i, (word << 1) | carry);
+                carry = word >> 31;
+            }
+
+            return result;
+        }
+
+        public static WideInt operator /(WideInt x, WideInt y)
+        {
+            if (y.IsZero)
+                throw new DivideByZeroException();
+            bool sign = x.negative != y.negative;
+            x.negative = false;
+            y.negative = false;
+            var quotient = new WideInt();
+            var remainder = new WideInt();
+            for (int i = x.Bits - 1; i >= 0; i--)
+            {
+                remainder = remainder.ShiftOne();
+                remainder.a |= (x.Word(i / 32) >> (i % 32)) & 1U;
+                if (MagnitudeCompare(remainder, y) < 0)
+                    continue;
+                remainder -= y;
+                quotient.Set(i / 32, quotient.Word(i / 32) | (1U << (i % 32)));
+            }
+
+            quotient.negative = sign && !quotient.IsZero;
+            return quotient;
+        }
+
+        public WideInt Sqrt()
+        {
+            if (Sign < 0)
+                throw new ArgumentOutOfRangeException(nameof(WideInt));
+            var root = new WideInt();
+            for (int bit = (Bits + 1) / 2 - 1; bit >= 0; bit--)
+            {
+                WideInt candidate = root;
+                candidate.Set(bit / 32, candidate.Word(bit / 32) | (1U << (bit % 32)));
+                if ((candidate * candidate).CompareTo(this) <= 0)
+                    root = candidate;
+            }
+
+            return root;
+        }
+
+        public long ToLong()
+        {
+            if ((c | d | e | f | g | h | i0 | j0 | k0 | l0) != 0)
+                throw new OverflowException();
+            ulong magnitude = ((ulong)b << 32) | a;
+            if (negative && magnitude == 0x8000000000000000UL)
+                return long.MinValue;
+            if (magnitude > long.MaxValue)
+                throw new OverflowException();
+            return negative ? -(long)magnitude : (long)magnitude;
+        }
+    }
+}

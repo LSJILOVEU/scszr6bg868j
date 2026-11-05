@@ -1,0 +1,119 @@
+using System;
+using System.Collections.Generic;
+using WarCore.Sim;
+using WarCore.Tests.Oracle;
+
+namespace WarCore.Tests.Diagnostics
+{
+    internal sealed class SemanticExpected
+    {
+        internal SemanticResult Result;
+        internal SpatialHit[] Selected;
+        internal ulong Signature;
+        internal int TrueHits;
+        internal int BlockerHits;
+        internal int StaticHits;
+        internal int UnitHits;
+    }
+
+    internal static class SemanticBenchOracle
+    {
+        internal static List<SpatialHit> Hits(SemanticBenchScene scene, SpatialRequest request)
+        {
+            var hits = new List<SpatialHit>();
+            foreach (SpatialBody body in scene.Bodies)
+            {
+                if ((body.Collider.Layer & request.LayerMask) == 0)
+                    continue;
+                // Frozen geometry and BigInteger distance do not use product traversal or top-K.
+                if (!OracleSpatialGeometry.Intersects(body, request, out SimFix distance))
+                    continue;
+                if (request.Kind != SpatialQueryKind.Ray)
+                    distance = SimFix.FromRaw(QueryModeOracle.Distance(in body, request.Origin));
+                hits.Add(new SpatialHit(body.Entity, distance));
+            }
+            hits.Sort(Compare);
+            return hits;
+        }
+
+        private static int Compare(SpatialHit a, SpatialHit b) => a.Distance.Raw != b.Distance.Raw
+            ? a.Distance.Raw.CompareTo(b.Distance.Raw) : a.Entity.Id.CompareTo(b.Entity.Id);
+
+        internal static SemanticExpected[] Verify(SemanticBenchScene scene, out ulong selected, out ulong exhaustive)
+        {
+            var expected = new SemanticExpected[scene.Queries.Length];
+            var outputHash = new StateHash();
+            var fullHash = new StateHash();
+            outputHash.Add("semantic-selected-v1");
+            fullHash.Add("semantic-oracle-full-v1");
+            outputHash.Add(expected.Length);
+            fullHash.Add(expected.Length);
+            var buffer = new SpatialHit[512];
+            for (int i = 0; i < expected.Length; i++)
+            {
+                SemanticQuery query = scene.Queries[i];
+                List<SpatialHit> all = Hits(scene, query.Request);
+                fullHash.Add(all.Count);
+                foreach (SpatialHit hit in all)
+                    WriteHit(fullHash, hit);
+                SemanticExpected value = Select(query, all);
+                foreach (SpatialHit hit in all)
+                {
+                    if (scene.IsStatic[hit.Entity.Id])
+                        value.StaticHits++;
+                    else
+                        value.UnitHits++;
+                    if ((scene.Bodies[hit.Entity.Id].Collider.Layer & scene.Content.SightMask) != 0)
+                        value.BlockerHits++;
+                }
+                // Every result is compared item by item before timing; ticks repeat its full signature.
+                AssertResult(query, scene.Grid, buffer, value);
+                if (query.Role == QueryRole.AiRay || query.Role == QueryRole.Cover)
+                {
+                    foreach (SemanticMode mode in new[] { SemanticMode.Any, SemanticMode.Nearest, SemanticMode.AllCapped })
+                    {
+                        var alternate = new SemanticQuery(query.Role, query.Request, mode, 4);
+                        AssertResult(alternate, scene.Grid, buffer, Select(alternate, all));
+                    }
+                }
+                outputHash.Add(value.Result.Hit);
+                outputHash.Add(value.Result.TotalHits);
+                outputHash.Add(value.Result.Written);
+                foreach (SpatialHit hit in value.Selected)
+                    WriteHit(outputHash, hit);
+                expected[i] = value;
+            }
+            selected = outputHash.Value;
+            exhaustive = fullHash.Value;
+            return expected;
+        }
+
+        private static SemanticExpected Select(SemanticQuery query, List<SpatialHit> all)
+        {
+            int written = query.Mode == SemanticMode.Any ? 0 : Math.Min(all.Count, query.Mode == SemanticMode.Nearest ? 1 : query.Cap);
+            var selected = new SpatialHit[written];
+            all.CopyTo(0, selected, 0, written);
+            var result = new SemanticResult(all.Count > 0, written, query.Mode == SemanticMode.AllCapped ? all.Count : -1);
+            return new SemanticExpected { Result = result, Selected = selected, TrueHits = all.Count, Signature = result.Signature(selected) };
+        }
+
+        private static void AssertResult(SemanticQuery query, GridSpatialQuery grid, SpatialHit[] buffer, SemanticExpected expected)
+        {
+            SemanticResult actual = query.Run(grid, buffer);
+            SemanticBenchScene.Require(actual.Hit == expected.Result.Hit && actual.TotalHits == expected.Result.TotalHits
+                && actual.Written == expected.Result.Written && actual.Truncated == expected.Result.Truncated, "Semantic oracle result mismatch.");
+            for (int h = 0; h < actual.Written; h++)
+                SemanticBenchScene.Require(buffer[h].Entity.Equals(expected.Selected[h].Entity)
+                    && buffer[h].Distance.Raw == expected.Selected[h].Distance.Raw, "Semantic oracle ordered hit mismatch.");
+            if (query.Mode == SemanticMode.Nearest && !actual.Hit)
+                SemanticBenchScene.Require(buffer[0].Entity.Equals(default(EntityId)) && buffer[0].Distance.Raw == 0, "Missing nearest must be default.");
+            SemanticBenchScene.Require(actual.Signature(buffer) == expected.Signature, "Semantic oracle signature mismatch.");
+        }
+
+        private static void WriteHit(StateHash hash, SpatialHit hit)
+        {
+            hit.Entity.WriteState(hash);
+            hash.Add(hit.Distance.Raw);
+        }
+    }
+}

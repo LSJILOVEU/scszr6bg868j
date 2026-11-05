@@ -1,0 +1,12 @@
+{
+  "id": "rwr-melee",
+  "extends": "rwr-m6",
+  "melee": [
+    { "id": "rwr.sword-1", "windupTicks": 6, "activeTicks": 2, "recoveryTicks": 9, "radius": 2, "cosHalfAnglePermille": 500,
+      "halfHeight": 1, "damage": 34, "maxTargets": 3, "engageRange": 1.8 }
+  ],
+  "unitTypes": [
+    { "id": "rwr.swordsman", "weapon": "", "melee": "rwr.sword-1" },
+    { "id": "rwr.rifle-sword", "weapon": "rwr.weapon-1", "melee": "rwr.sword-1" }
+  ]
+}

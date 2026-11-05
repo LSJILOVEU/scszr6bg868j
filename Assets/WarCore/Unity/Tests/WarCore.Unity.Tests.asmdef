@@ -1,0 +1,16 @@
+{
+  "name": "WarCore.Unity.Tests",
+  "references": [
+    "WarCore.Unity",
+    "WarCore.Presentation",
+    "WarCore.Content",
+    "WarCore.Sim"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "autoReferenced": false
+}

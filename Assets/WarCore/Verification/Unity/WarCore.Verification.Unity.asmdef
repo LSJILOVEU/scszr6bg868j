@@ -1,0 +1,5 @@
+{
+  "name": "WarCore.Verification.Unity",
+  "references": ["WarCore.Verification"],
+  "autoReferenced": true
+}

@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Headless (no Unity) build of the EditMode tests on .NET 8 CoreCLR, with the same assembly split as the asmdefs.
+       A fast pre-check only: Mono/IL2CPP gates (G23/G24/zero-GC) still run in Unity. -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <IsPackable>false</IsPackable>
+    <AssemblyName>WarCore.Sim.Tests</AssemblyName>
+    <!-- Tiered JIT allocates a few bytes during tier-up, which trips the zero-allocation tests. -->
+    <TieredCompilation>false</TieredCompilation>
+    <!-- Background (concurrent) GC suspends the EE mid-cycle (SuspendForGCPrep) and retires every thread's allocation
+         context; GC.GetAllocatedBytesForCurrentThread then jumps by the unused remainder of the retired context although
+         the thread allocated nothing. That is the S4-ALLOC flake (docs/m0c/review-evidence/s4-allocation-flake.md).
+         Blocking GCs account precisely, so the zero-allocation tests need a non-concurrent GC. -->
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+    <NoWarn>$(NoWarn);CS0618;CS0162;CS0219;CS0168</NoWarn>
+    <WarCoreAssets>$(MSBuildThisFileDirectory)../../Assets</WarCoreAssets>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- AllocationMeterTests needs the Unity profiler/GC hooks. -->
+    <Compile Include="$(WarCoreAssets)/WarCore/Tests/EditMode/**/*.cs" Exclude="$(WarCoreAssets)/WarCore/Tests/EditMode/AllocationMeterTests.cs" />
+    <Compile Include="$(WarCoreAssets)/WarCore/Tests/MapContent/**/*.cs" />
+    <Compile Include="HeadlessSetup.cs" />
+    <!-- Headless only: binds the sources with Roslyn to back the Unity-side shape-read name lock (block 3a). -->
+    <Compile Include="ShapeReadSymbolTests.cs" />
+    <ProjectReference Include="Control/WarCore.Control.csproj" />
+    <ProjectReference Include="Sim/WarCore.Sim.csproj" />
+    <ProjectReference Include="Combat/WarCore.Combat.csproj" />
+    <ProjectReference Include="Content/WarCore.Content.csproj" />
+    <ProjectReference Include="Interim/WarCore.Interim.csproj" />
+    <ProjectReference Include="Presentation/WarCore.Presentation.csproj" />
+    <ProjectReference Include="Battle/WarCore.Battle.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="NUnit" Version="3.14.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" />
+  </ItemGroup>
+</Project>

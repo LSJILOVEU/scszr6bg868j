@@ -1,0 +1,40 @@
+using WarCore.Sim;
+using Simulation=WarCore.Sim.Sim;
+namespace WarCore.Tests
+{
+    public static class M0c2TaskBReverseRefreshFixture
+    {
+        public const string Registration="task-b.reverse-refresh";
+        public static readonly StableEntityKey Actor=StableEntityKey.Placed(127,1);
+        public static GameplaySchema Schema()=>new GameplaySchema(
+            new[]{new GameplayResourceDef(1,"life",0,100,100,isLife:true)},
+            new GameplayDamageTypeDef[0],new GameplayPipelineDef[0],
+            new[]{new GameplayArchetypeDef(1,new[]{1UL})},new GameplayCapacities(1,1,4,8,2),Registration,
+            new[]{new GameplayStatusDef(1,"first",GameplayStatusDuration.Infinite,strengthRaw:7),
+                new GameplayStatusDef(2,"second",GameplayStatusDuration.Infinite,strengthRaw:9)},
+            lifeRules:new[]{new GameplayLifeRuleDef(1,1,false,0)});
+        public static Simulation Create()
+        {
+            var catalog=new PlacedCatalog(new StableContentManifest(0),new PlacedCatalogEntry(127,1,1));
+            var sim=Simulation.CreateRetainedWorld(127,catalog,
+                new SimConfig(entityCapacity:2,timerCapacity:8,eventInitialCapacity:1,eventHardLimit:16),gameplaySchema:Schema());
+            sim.BindGameplay(sim.Entities.Create(Actor),1);
+            sim.RegisterGameplay(Registration,new ReverseScript(),SimSystemPhase.Queries);return sim;
+        }
+        public sealed class ReverseScript:IRetainedGameplaySystem
+        {
+            public int Order=>0;public string StateTypeId=>"test.task-b.reverse-refresh";public int StateVersion=>1;
+            public void Step(SimContext c)
+            {
+                if(c.Clock.Tick>2)return;
+                var target=c.Owner.GameplayTarget(Actor.Id);
+                for(uint ordinal=1;ordinal<=2;ordinal++)
+                {
+                    ulong definition=c.Clock.Tick==1?ordinal:3UL-ordinal;
+                    c.ApplyStatus(target,new GameplayApplyKey(Actor.Id,(ulong)c.Clock.Tick,0,Actor.Id,0,ordinal),definition,commandOrdinal:ordinal);
+                }
+            }
+            public void SaveState(SimStateWriter w){}public void LoadState(SimStateReader r){}public void WriteState(StateHash h){}
+        }
+    }
+}

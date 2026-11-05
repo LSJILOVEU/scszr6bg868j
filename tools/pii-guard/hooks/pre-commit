@@ -1,0 +1,4 @@
+#!/bin/sh
+# Scan the staged change. Installed by tools/pii-guard/install.sh
+root="$(git rev-parse --show-toplevel)"
+exec python3 -I "$root/tools/pii-guard/pii_guard.py" --staged

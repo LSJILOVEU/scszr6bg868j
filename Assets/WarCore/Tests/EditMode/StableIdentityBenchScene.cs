@@ -1,0 +1,146 @@
+using System;
+using System.Collections.Generic;
+using WarCore.Sim;
+using WarCore.Tests.Oracle;
+using Simulation = WarCore.Sim.Sim;
+
+namespace WarCore.Tests
+{
+    // The same file compiles against the frozen pre-migration Sim for the query cost comparison.
+    internal sealed class StableIdentityBenchScene
+    {
+        internal const int Count = 10000;
+        internal readonly Simulation Sim;
+        internal readonly ISpatialQueryModes Query;
+        internal readonly SpatialBody[] Bodies = new SpatialBody[Count];
+        internal readonly ulong[] Keys = new ulong[Count];
+        internal readonly ComponentType<Position> Positions;
+        internal readonly ComponentType<Collider> Colliders;
+        internal readonly SpatialHit[] Hits = new SpatialHit[Count];
+        internal readonly EntityId[] Entities = new EntityId[Count];
+        internal readonly RayHit[] Rays = new RayHit[Count];
+        internal readonly SpatialRequest[] Requests;
+        internal StableIdentityBenchScene(bool dense, bool legacy = false)
+        {
+            var config = new SimConfig(entityCapacity:Count, timerCapacity:32, eventRetainedTicks:2,
+                eventInitialCapacity:8, eventHardLimit:8, spatialMembershipCapacity:200000,
+                staticSpatialMembershipCapacity:200000, spatialMaxCellsPerBody:4);
+#if STABLE_BASELINE
+            Sim = new Simulation(913,config:config);
+#else
+            Sim = new Simulation(913,config:config,identityMode:legacy ? IdentityMode.Legacy : IdentityMode.StableWorld,identityCapacity:Count);
+#endif
+            Positions = Sim.Entities.Register<Position>("position",new PositionSerializer());
+            Colliders = Sim.Entities.Register<Collider>("collider",new ColliderSerializer());
+            for (int i = 0; i < Count; i++)
+            {
+                int logical = (i * 7919 + 913) % Count;
+#if STABLE_BASELINE
+                EntityId entity = Sim.Entities.Create();
+                Keys[entity.Id] = (ulong)entity.Id;
+#else
+                StableEntityKey key = StableEntityKey.Placed((ulong)(logical % 7),(ulong)logical);
+                EntityId entity = legacy ? Sim.Entities.Create() : (EntityId)Sim.Entities.Create(key);
+                Keys[entity.Id] = legacy ? (ulong)entity.Id : key.Id.Value;
+#endif
+                SimVec3 position = dense ? default : SimVec3.Metres(logical % 100 - 50,0,logical / 100 - 50);
+                int radius = logical % 997 == 0 ? 16 : 1;
+                var collider = new Collider(SimFix.FromInt(radius),SimFix.FromInt(2 * radius),
+                    logical % 13 == 0 ? 2u : 1u,isStatic:logical % 2 == 0);
+                Sim.Entities.Set(Positions,entity,new Position(position));
+                Sim.Entities.Set(Colliders,entity,collider);
+                Bodies[i] = new SpatialBody(entity,position,collider);
+            }
+            Query = Sim.ConfigureSpatial(Positions,Colliders,SimFix.FromInt(4));
+            Sim.CompleteWarmup();
+            SimVec3 origin = SimVec3.Metres(-2,0,0);
+            Requests = new[] {
+                SpatialQueries.Sphere(origin,SimFix.FromInt(12),1),
+                SpatialQueries.Cylinder(origin,SimFix.FromInt(12),SimFix.FromInt(4),1),
+                SpatialQueries.Sector(origin,SimFix.FromInt(12),SimVec3.Metres(1,0,0),500,SimFix.FromInt(4),1),
+                SpatialQueries.Capsule(origin,SimVec3.Metres(22,0,0),SimFix.FromInt(2),1),
+                SpatialQueries.Ray(origin,SimVec3.Metres(1,0,0),SimFix.FromInt(24),1) };
+        }
+        internal SpatialHit[] Expected(SpatialRequest request, bool full)
+        {
+            var expected = new List<SpatialHit>();
+            foreach (SpatialBody body in Bodies)
+            {
+                if ((body.Collider.Layer & request.LayerMask) == 0
+                    || !OracleSpatialGeometry.Intersects(body,request,out SimFix distance))
+                    continue;
+                if (!full && request.Kind != SpatialQueryKind.Ray)
+                    distance = SimFix.FromRaw(QueryModeOracle.Distance(body.Position,body.Collider.Radius.Raw,
+                        body.Collider.Height.Raw,request.Origin));
+                expected.Add(new SpatialHit(body.Entity,distance));
+            }
+            // Independent exhaustive geometry and a library sort cannot share the product's tie-break bug.
+            expected.Sort((a,b) => ((!full || request.Kind == SpatialQueryKind.Ray) && a.Distance.Raw != b.Distance.Raw)
+                ? a.Distance.Raw.CompareTo(b.Distance.Raw) : Keys[a.Entity.Id].CompareTo(Keys[b.Entity.Id]));
+            return expected.ToArray();
+        }
+        internal int Full(SpatialRequest request)
+        {
+            switch (request.Kind)
+            {
+                case SpatialQueryKind.Sphere:
+                    return Query.Sphere(request.Origin,request.Radius,request.LayerMask,Entities);
+                case SpatialQueryKind.Cylinder:
+                    return Query.Cylinder(request.Origin,request.Radius,request.HalfHeight,request.LayerMask,Entities);
+                case SpatialQueryKind.Sector:
+                    return Query.Sector(request.Origin,request.Radius,request.Direction,request.Cosine,request.HalfHeight,request.LayerMask,Entities);
+                case SpatialQueryKind.Capsule:
+                    return Query.Capsule(request.Origin,request.Origin+request.Direction,request.Radius,request.LayerMask,Entities);
+                default:
+                    return Query.Ray(request.Origin,request.Direction,request.Range,request.LayerMask,Rays);
+            }
+        }
+        internal void Check(SpatialRequest request, int mode, SpatialHit[] expected)
+        {
+            if (mode == 0)
+            {
+                StableIdentityBench.CheckKey(expected.Length == 0 ? 0UL : 1UL,Query.Any(request) ? 1UL : 0UL);
+                return;
+            }
+            int written;
+            if (mode == 1)
+            {
+                bool found = Query.Nearest(request,out SpatialHit hit);
+                StableIdentityBench.CheckKey(expected.Length == 0 ? 0UL : 1UL,found ? 1UL : 0UL);
+                Hits[0] = hit;
+                written = found ? 1 : 0;
+            }
+            else if (mode == 2)
+            {
+                SpatialQueryResult result = Query.AllCapped(request,512,Hits);
+                StableIdentityBench.CheckKey((ulong)expected.Length,(ulong)result.TotalHits);
+                StableIdentityBench.CheckKey((ulong)Math.Min(512,expected.Length),(ulong)result.Written);
+                StableIdentityBench.CheckKey(expected.Length > 512 ? 1UL : 0UL,result.Truncated ? 1UL : 0UL);
+                written = result.Written;
+            }
+            else
+            {
+                written = Full(request);
+                StableIdentityBench.CheckKey((ulong)expected.Length,(ulong)written);
+            }
+            for (int i = 0; i < written; i++)
+            {
+                EntityId entity = mode != 3 ? Hits[i].Entity : request.Kind == SpatialQueryKind.Ray ? Rays[i].Entity : Entities[i];
+                StableIdentityBench.CheckKey(Keys[expected[i].Entity.Id],Keys[entity.Id]);
+                if (mode != 3 || request.Kind == SpatialQueryKind.Ray)
+                    StableIdentityBench.CheckKey((ulong)expected[i].Distance.Raw,(ulong)(mode == 3 ? Rays[i].Distance.Raw : Hits[i].Distance.Raw));
+            }
+        }
+        internal void Execute(SpatialRequest request, int mode)
+        {
+            if (mode == 0)
+                Query.Any(request);
+            else if (mode == 1)
+                Query.Nearest(request,out _);
+            else if (mode == 2)
+                Query.AllCapped(request,512,Hits);
+            else
+                Full(request);
+        }
+    }
+}

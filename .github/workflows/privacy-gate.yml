@@ -1,0 +1,37 @@
+name: privacy-gate
+
+# A pull request may merge only with the `reviewed` label and a review line "Privacy: PASS <sha7>" naming the current head commit.
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, labeled, unlabeled, edited]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      PR: ${{ github.event.pull_request.number }}
+      SHA: ${{ github.event.pull_request.head.sha }}
+      ACTION: ${{ github.event.action }}
+    steps:
+      - name: Drop the label when new commits arrive
+        if: github.event.action == 'synchronize'
+        run: gh api -X DELETE "repos/$REPO/issues/$PR/labels/reviewed" || true
+      - name: Require label and current privacy verdict
+        run: |
+          set -eu
+          sha7="${SHA:0:7}"
+          if [ "$ACTION" = "synchronize" ]; then echo "new commits: review needed again"; exit 1; fi
+          labels="$(gh api "repos/$REPO/issues/$PR/labels" --jq '.[].name')"
+          echo "$labels" | grep -qx reviewed || { echo "missing label: reviewed"; exit 1; }
+          bodies="$( { gh api --paginate "repos/$REPO/issues/$PR/comments" --jq '.[] | .body'; gh api --paginate "repos/$REPO/pulls/$PR/reviews" --jq '.[] | .body'; } )"
+          printf '%s\n' "$bodies" | grep -q "Privacy: PASS $sha7" || { echo "no 'Privacy: PASS $sha7' line found"; exit 1; }
+          if printf '%s\n' "$bodies" | grep -q "Privacy: FAIL $sha7"; then echo "a FAIL line exists for this commit"; exit 1; fi
+          echo "privacy gate satisfied"

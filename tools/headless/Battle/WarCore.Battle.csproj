@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <AssemblyName>WarCore.Battle</AssemblyName>
+    <RootNamespace>WarCore.Battle</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)../../../Assets/WarCore/Battle/**/*.cs" />
+    <ProjectReference Include="../Sim/WarCore.Sim.csproj" />
+    <ProjectReference Include="../Combat/WarCore.Combat.csproj" />
+  </ItemGroup>
+</Project>

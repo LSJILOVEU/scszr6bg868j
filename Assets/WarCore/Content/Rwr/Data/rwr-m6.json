@@ -1,0 +1,5 @@
+{
+  "id": "rwr-m6",
+  "extends": "rwr",
+  "combat": { "selector": "sight-limited" }
+}

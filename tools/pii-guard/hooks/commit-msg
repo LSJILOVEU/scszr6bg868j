@@ -1,0 +1,4 @@
+#!/bin/sh
+# Scan the commit message and the identity and date git will use. Commit with TZ=UTC.
+root="$(git rev-parse --show-toplevel)"
+exec python3 -I "$root/tools/pii-guard/pii_guard.py" --commit-msg "$1"

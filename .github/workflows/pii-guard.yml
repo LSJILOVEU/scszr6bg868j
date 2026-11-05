@@ -1,0 +1,56 @@
+name: pii-guard
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    types: [opened, reopened, synchronize, edited]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Self-test
+        run: python3 -I tools/pii-guard/pii_guard.py --self-test
+      - name: Check term list is available
+        id: terms
+        env:
+          PII_TERMS: ${{ secrets.PII_TERMS }}
+          FORK: ${{ github.event.pull_request.head.repo.fork }}
+        run: |
+          if [ -n "$PII_TERMS" ]; then echo "have=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          echo "have=false" >> "$GITHUB_OUTPUT"
+          if [ "$FORK" = "true" ]; then echo "fork pull request: secrets unavailable, generic rules only"; exit 0; fi
+          echo "PII_TERMS secret is missing"; exit 1
+      - name: Whole tree
+        env:
+          PII_TERMS: ${{ secrets.PII_TERMS }}
+        run: python3 -I tools/pii-guard/pii_guard.py --tree .
+      - name: Commits in this push or pull request
+        env:
+          PII_TERMS: ${{ secrets.PII_TERMS }}
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          zero=0000000000000000000000000000000000000000
+          if [ -z "$BASE" ] || [ "$BASE" = "$zero" ]; then range="$HEAD_SHA"; else range="$BASE..$HEAD_SHA"; fi
+          python3 -I tools/pii-guard/pii_guard.py --range "$range"
+      - name: Pull request title and description
+        if: github.event_name == 'pull_request'
+        env:
+          PII_TERMS: ${{ secrets.PII_TERMS }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          printf '%s\n%s\n' "$PR_TITLE" "$PR_BODY" > "$RUNNER_TEMP/pr.txt"
+          python3 -I tools/pii-guard/pii_guard.py --text "$RUNNER_TEMP/pr.txt" --label pull-request

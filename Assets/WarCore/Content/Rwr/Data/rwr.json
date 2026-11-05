@@ -1,0 +1,20 @@
+{
+  "id": "rwr",
+  "weapons": [
+    { "id": "rwr.weapon-1", "fireIntervalMilli": 3390, "magazine": 30, "reloadMilli": 60000, "falloffStart": 34, "falloffEnd": 67, "effectRaw": 32768, "spreadBase": 1000, "spreadGrowth": 340, "spreadRecoverPerSec": 1400, "spreadMax": 3000 },
+    { "id": "rwr.weapon-2", "fireIntervalMilli": 3690, "magazine": 30, "reloadMilli": 60000, "falloffStart": 33, "falloffEnd": 68, "effectRaw": 36045, "spreadBase": 1000, "spreadGrowth": 340, "spreadRecoverPerSec": 1400, "spreadMax": 3000 },
+    { "id": "rwr.weapon-3", "fireIntervalMilli": 45000, "magazine": 10, "reloadMilli": 60000, "falloffStart": 99, "falloffEnd": 144, "effectRaw": 65536, "spreadBase": 1000, "spreadGrowth": 340, "spreadRecoverPerSec": 1400, "spreadMax": 3000 }
+  ],
+  "unitTypes": [
+    { "id": "rwr.soldier-1", "weapon": "rwr.weapon-1" },
+    { "id": "rwr.soldier-2", "weapon": "rwr.weapon-2" }
+  ],
+  "combat": { "maxHealth": 100, "resolver": "rwr.hit", "selector": "nearest-visible",
+    "friendlyFire": false, "friendlyFireLocked": false, "allyCheckMissRate": 0.25, "allyHoldMilli": 30000 },
+  "match": {
+    "captureAdvantageNum": 2, "captureAdvantageDen": 1, "captureStrict": false,
+    "captureTicks": 300, "interrupt": "reset", "decayPerTick": 1,
+    "intervalTicks": 90, "thinkInterval": 30, "maxTicks": 9000, "sight": 35,
+    "gridColumns": 4, "gridRows": 4, "gridSpacing": 1.5
+  }
+}

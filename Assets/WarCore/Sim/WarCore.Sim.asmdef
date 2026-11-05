@@ -1,0 +1,6 @@
+{
+  "name": "WarCore.Sim",
+  "rootNamespace": "WarCore.Sim",
+  "references": [],
+  "noEngineReferences": true
+}

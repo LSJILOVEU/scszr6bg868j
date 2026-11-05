@@ -1,0 +1,129 @@
+using System;
+using System.Diagnostics;
+using System.Globalization;
+using System.IO;
+using WarCore.Sim;
+
+namespace WarCore.Tests
+{
+    internal static class ReferenceChurnBench
+    {
+        private static readonly double Scale = 1000.0/Stopwatch.Frequency;
+        internal static void Run(int samples, TextWriter output, bool placed = false)
+        {
+            output.WriteLine("MF5-reference-churn|references=64x3; stores=attachment,seat,occupant; every-tick-deaths=104; batches=3; paired-order=AB-BA; warmup=40; baseline=old-full-scan-adapter; product-switch=none; allocation-probe=positive-controlled");
+            for (int layout = 0; layout < 2; layout++)
+                for (int batch = 0; batch < 3; batch++)
+                {
+                    var sparse = new Round4ChurnScene(layout != 0,true,placed:placed);
+                    var naive = new Round4ChurnScene(layout != 0,true,true,placed);
+                    if (batch == 0) PositiveControl(sparse,naive,layout,output);
+                    for (int i = 0; i < 40; i++)
+                    {
+                        sparse.Sim.Step(default);
+                        naive.Sim.Step(default);
+                    }
+                    var meter = new AllocationMeter();
+                    output.WriteLine(meter.DescribeProbe());
+                    var newTimes = new long[samples];
+                    var oldTimes = new long[samples];
+                    var newBytes = new AllocationSample[samples];
+                    var oldBytes = new AllocationSample[samples];
+                    long created = sparse.Created, notices = sparse.References.Notices;
+                    for (int i = 0; i < samples; i++)
+                    {
+                        if ((i+batch)%2 == 0)
+                        {
+                            Measure(sparse,meter,newTimes,newBytes,i);
+                            Measure(naive,meter,oldTimes,oldBytes,i);
+                        }
+                        else
+                        {
+                            Measure(naive,meter,oldTimes,oldBytes,i);
+                            Measure(sparse,meter,newTimes,newBytes,i);
+                        }
+                        Round4LongRun.Require(sparse.References.Notices-notices == (i+1)*192L
+                            && sparse.References.Notices == naive.References.Notices,"Reference churn cleanup work disappeared.");
+                        Round4LongRun.Require(sparse.ReferenceStateHash() == naive.ReferenceStateHash(),"Reference A/B state differs.");
+                        sparse.VerifyOracle(i*37); naive.VerifyOracle(i*37);
+                    }
+                    Round4LongRun.Require(sparse.Created-created == samples*104L && naive.Created == sparse.Created,
+                        "Reference churn must preserve 5% work.");
+                    Round4LongRun.Require(sparse.Sim.Events.EventsDroppedTotal == 0 && naive.Sim.Events.EventsDroppedTotal == 0,
+                        "Reference churn dropped diagnostic events.");
+                    Metric("sparse",layout,batch,sparse,newTimes,newBytes,output);
+                    Metric("naive",layout,batch,naive,oldTimes,oldBytes,output);
+                    // Metric sorts each array. Compare the same batch's distributions, never pooled tails.
+                    double meanDelta = Mean(newTimes)-Mean(oldTimes);
+                    double p99Delta = Percentile(newTimes,99)-Percentile(oldTimes,99);
+                    output.WriteLine(string.Format(CultureInfo.InvariantCulture,
+                        "reference-pair|layout={0}; batch={1}; n={2}; new_minus_old_mean_ms={3:F6}; new_minus_old_p99_ms={4:F6}; within_point1={5}; acceptance=external-IL2CPP-arm64-only",
+                        Layout(layout),batch,samples,meanDelta,p99Delta,meanDelta <= 0.1 && p99Delta <= 0.1));
+                }
+            output.WriteLine("MF5-reference-churn=complete; acceptance=requires-idle-IL2CPP-arm64-full-and-G24-dense-retest");
+        }
+        private static void Measure(Round4ChurnScene scene, AllocationMeter meter, long[] times, AllocationSample[] bytes, int index)
+        {
+            AllocationSample before = meter.Read();
+            long start = Stopwatch.GetTimestamp();
+            scene.Sim.Step(default);
+            times[index] = Stopwatch.GetTimestamp()-start;
+            bytes[index] = meter.Difference(before);
+            if (bytes[index].IsDirect)
+                Round4LongRun.Require(bytes[index].Bytes == 0,"Reference churn direct allocation must be zero.");
+        }
+        private static string Layout(int layout) => layout == 0 ? "scatter" : "dense";
+        private static double Mean(long[] values)
+        {
+            double sum = 0;
+            foreach (long value in values) sum += value;
+            return sum/values.Length*Scale;
+        }
+        private static double Percentile(long[] values, int percentile)
+            => values[(values.Length*percentile+99)/100-1]*Scale;
+        private static void Metric(string algorithm, int layout, int batch, Round4ChurnScene scene,
+            long[] times, AllocationSample[] bytes, TextWriter output)
+        {
+            Array.Sort(times);
+            output.WriteLine(string.Format(CultureInfo.InvariantCulture,
+                "reference-metric|layout={0}; batch={1}; algorithm={2}; n={3}; mean_ms={4:F6}; median_ms={5:F6}; p95_ms={6:F6}; p99_ms={7:F6}; max_ms={8:F6}; created={9}; references=64x3; notices={10}; E={11}; rays={12}; queries={13}; {14}",
+                Layout(layout),batch,algorithm,times.Length,Mean(times),Percentile(times,50),Percentile(times,95),Percentile(times,99),times[times.Length-1]*Scale,
+                times.Length*104,times.Length*192,scene.LastAffected,scene.LastRays,scene.LastQueries,AllocationSample.Summary(bytes)));
+        }
+        // The real adapters, capacity and 64x3 fixtures, without query noise. No injected delay.
+        // A/A establishes a noise floor. Old-minus-new must exceed both it and timer resolution.
+        internal static void PositiveControl(Round4ChurnScene sparse, Round4ChurnScene naive, int layout, TextWriter output)
+        {
+            const int samples = 31, repeats = 16;
+            var newTimes = new long[samples]; var oldTimes = new long[samples]; var noise = new long[samples];
+            sparse.References.VerifyPrepared(); naive.References.VerifyPrepared();
+            Sweep(sparse,repeats); Sweep(naive,repeats);
+            for (int i = 0; i < samples; i++)
+            {
+                long first = Sweep(sparse,repeats), second = Sweep(sparse,repeats);
+                noise[i] = Math.Abs(first-second);
+                if (i%2 == 0) { newTimes[i] = Sweep(sparse,repeats); oldTimes[i] = Sweep(naive,repeats); }
+                else { oldTimes[i] = Sweep(naive,repeats); newTimes[i] = Sweep(sparse,repeats); }
+            }
+            Array.Sort(newTimes); Array.Sort(oldTimes); Array.Sort(noise);
+            double divisor = repeats; // report one tick's 104 retirements across all three stores
+            double extra = (Percentile(oldTimes,50)-Percentile(newTimes,50))/divisor;
+            double floor = Math.Max(Percentile(noise,95)/divisor,5*Scale/divisor);
+            bool detected = extra > floor && Percentile(newTimes,50) < Percentile(oldTimes,50)*0.75;
+            output.WriteLine(string.Format(CultureInfo.InvariantCulture,
+                "reference-positive-control|layout={0}; n=31; repeats=16; calls_per_repeat=104; references=64x3; capacity=2184; minimum_effect_fraction=0.25; sparse_ms={1:F6}; naive_ms={2:F6}; old_extra_ms={3:F6}; aa_noise_p95_ms={4:F6}; detected={5}",
+                Layout(layout),Percentile(newTimes,50)/divisor,Percentile(oldTimes,50)/divisor,extra,floor,detected));
+            Round4LongRun.Require(detected,"Old full-scan overhead must exceed the measured A/A noise floor; otherwise evidence is inconclusive.");
+        }
+        internal static long Sweep(Round4ChurnScene scene, int repeats)
+        {
+            EntityLink absent = new EntityLink(new StableId(ulong.MaxValue));
+            long start = Stopwatch.GetTimestamp();
+            for (int repeat = 0; repeat < repeats; repeat++)
+                for (int death = 0; death < Round4ChurnScene.ChurnPerTick; death++)
+                    foreach (IComponents storage in scene.References.Cleanup)
+                        storage.ClearRetiredReferences(scene.Sim.Entities,absent,-1);
+            return Stopwatch.GetTimestamp()-start;
+        }
+    }
+}

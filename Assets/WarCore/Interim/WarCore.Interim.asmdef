@@ -1,0 +1,8 @@
+{
+  "name": "WarCore.Interim",
+  "rootNamespace": "WarCore.Interim",
+  "references": [
+    "WarCore.Sim"
+  ],
+  "noEngineReferences": true
+}

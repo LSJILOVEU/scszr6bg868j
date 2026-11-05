@@ -1,0 +1,6 @@
+{
+  "name": "WarCore.Verification.Editor",
+  "references": ["WarCore.Verification", "WarCore.Verification.Unity"],
+  "includePlatforms": ["Editor"],
+  "autoReferenced": true
+}

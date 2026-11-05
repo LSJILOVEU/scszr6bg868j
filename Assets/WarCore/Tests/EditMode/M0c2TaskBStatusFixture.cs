@@ -1,0 +1,35 @@
+using WarCore.Sim;
+using Simulation=WarCore.Sim.Sim;
+namespace WarCore.Tests
+{
+    public static class M0c2TaskBStatusFixture
+    {
+        public static readonly StableEntityKey Actor=StableEntityKey.Placed(117,1);
+        public static GameplaySchema Schema(GameplayStackPolicy policy=GameplayStackPolicy.Stack)
+            =>new GameplaySchema(new[]{new GameplayResourceDef(1,"life",0,100,100,isLife:true)},
+                new GameplayDamageTypeDef[0],new GameplayPipelineDef[0],new[]{new GameplayArchetypeDef(1,new[]{1UL})},
+                new GameplayCapacities(1,1,16,32,8),"task-b.status",
+                new[]{new GameplayStatusDef(1,"subject",GameplayStatusDuration.Infinite,stackPolicy:policy,maxStacks:policy==GameplayStackPolicy.Stack?4:1,strengthRaw:7,dispelTags:1,absorbResourceKey:1),
+                    new GameplayStatusDef(2,"unrelated",GameplayStatusDuration.Infinite,stackPolicy:GameplayStackPolicy.Independent,maxInstances:4,strengthRaw:9)},
+                lifeRules:new[]{new GameplayLifeRuleDef(1,1,false,0)});
+        public static Simulation Create(IRetainedGameplaySystem script,GameplayStackPolicy policy=GameplayStackPolicy.Stack)
+        {
+            var catalog=new PlacedCatalog(new StableContentManifest(0),new PlacedCatalogEntry(117,1,1));
+            var sim=Simulation.CreateRetainedWorld(117,catalog,new SimConfig(entityCapacity:2,timerCapacity:16,eventInitialCapacity:1,eventHardLimit:64),gameplaySchema:Schema(policy));
+            sim.BindGameplay(sim.Entities.Create(Actor),1);sim.RegisterGameplay("task-b.status",script,SimSystemPhase.Queries);return sim;
+        }
+        public sealed class NoticeScript:IRetainedGameplaySystem
+        {
+            private readonly int unrelated;public NoticeScript(int unrelated){this.unrelated=unrelated;}
+            public int Order=>0;public string StateTypeId=>"test.task-b.status-notices";public int StateVersion=>1;
+            public void Step(SimContext c)
+            {
+                var target=c.Owner.GameplayTarget(Actor.Id);
+                if(c.Clock.Tick==1)for(uint ordinal=1;ordinal<=3+unrelated;ordinal++)
+                    c.ApplyStatus(target,new GameplayApplyKey(Actor.Id,1,0,Actor.Id,1,ordinal),ordinal<=3?1UL:2UL,commandOrdinal:ordinal);
+                if(c.Clock.Tick==2)c.Dispel(target,new GameplayApplyKey(Actor.Id,2,0,Actor.Id,2,1),1);
+            }
+            public void SaveState(SimStateWriter w){}public void LoadState(SimStateReader r){}public void WriteState(StateHash h){}
+        }
+    }
+}

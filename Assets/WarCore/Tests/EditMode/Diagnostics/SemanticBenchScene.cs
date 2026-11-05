@@ -1,0 +1,212 @@
+using System;
+using System.Collections.Generic;
+using WarCore.Sim;
+using Simulation = WarCore.Sim.Sim;
+
+namespace WarCore.Tests.Diagnostics
+{
+    internal interface ISemanticObserver
+    {
+        void Begin();
+        void End(int index, SemanticResult result, GridSpatialQuery grid);
+    }
+
+    internal sealed class SemanticBenchScene : ISimSystem
+    {
+        internal const string Generator = "real-bench-semantic-v1";
+        internal const int Soldiers = 2000;
+        internal const int Walls = 40;
+        internal const int Covers = 24;
+        internal const int LargeUnits = 16;
+        internal const int StaticCount = Walls + Covers;
+        internal const int UnitCount = Soldiers + LargeUnits;
+        internal const int BodyCount = StaticCount + UnitCount;
+        internal readonly RwrBenchContent Content = new RwrBenchContent();
+        internal readonly Simulation Sim;
+        internal readonly GridSpatialQuery Grid;
+        internal readonly SpatialBody[] Bodies = new SpatialBody[BodyCount];
+        internal readonly bool[] IsStatic = new bool[BodyCount];
+        internal readonly SemanticQuery[] Queries;
+        internal readonly SpatialHit[] Hits = new SpatialHit[512];
+        internal readonly EntityId[] Retained = new EntityId[512];
+        internal readonly SemanticExpected[] Expected;
+        internal readonly SimVec3 ExplosionOrigin;
+        internal readonly bool Dense;
+        internal readonly bool Peak;
+        internal readonly bool Overflow;
+        internal readonly int Affected;
+        internal readonly int ExplosionTotal;
+        internal readonly int RayCount;
+        internal readonly ulong InputSignature;
+        internal readonly ulong OutputSignature;
+        internal readonly ulong OracleSignature;
+        internal ISemanticObserver Observer;
+        internal long Calls;
+        internal ulong Checksum;
+        internal int LastCoverRays;
+        internal int LastTruncatedQueries;
+        internal int LastTruncatedHits;
+        public int Order => 1;
+        internal string Label => Overflow ? "DenseOverflow" : (Dense ? "Dense" : "Scattered") + (Peak ? "Peak" : "Regular");
+
+        internal SemanticBenchScene(bool dense, bool peak, bool overflow = false)
+        {
+            if (overflow && (!dense || !peak))
+                throw new ArgumentException("Overflow is a separate dense peak profile.");
+            Dense = dense;
+            Peak = peak;
+            Overflow = overflow;
+            // Reuse the frozen legacy inputs without modifying their generator or signatures.
+            var legacy = new RealBenchWorkload(dense, peak);
+            ExplosionOrigin = legacy.ExplosionOrigin;
+            Sim = new Simulation(RealBenchWorkload.Seed, config: new SimConfig(4, 16, 16, BodyCount, 16));
+            var positions = Sim.Entities.Register<Position>("position", new PositionSerializer());
+            var colliders = Sim.Entities.Register<Collider>("collider", new ColliderSerializer());
+            long spacing = dense ? SimFix.Scale * 3 / 4 : SimFix.Scale * 3;
+            for (int i = 0; i < BodyCount; i++)
+            {
+                SimVec3 position;
+                Collider collider;
+                if (i < Soldiers)
+                {
+                    position = legacy.Bodies[i].Position;
+                    collider = legacy.Bodies[i].Collider.WithLayer(Content.SoldierMask);
+                }
+                else
+                {
+                    int n = i - Soldiers;
+                    bool wall = n < Walls;
+                    bool cover = n >= Walls && n < StaticCount;
+                    int local = wall ? n : cover ? n - Walls : n - StaticCount;
+                    int columns = wall ? 8 : cover ? 6 : 4;
+                    int rows = wall ? 5 : 4;
+                    long x = (2 * (local % columns) + 1) * 49 * spacing / (2 * columns);
+                    long z = (2 * (local / columns) + 1) * 39 * spacing / (2 * rows);
+                    // Local cover must exercise occlusion even in the sparse explosion footprint.
+                    if (!wall && local < 4)
+                    {
+                        x = ExplosionOrigin.X.Raw + ((local & 1) == 0 ? -1 : 1) * (cover ? 3 : 5) * SimFix.Scale;
+                        z = ExplosionOrigin.Z.Raw + ((local & 2) == 0 ? -1 : 1) * (cover ? 1 : 4) * SimFix.Scale;
+                    }
+                    SimFix height = SimFix.FromInt(wall ? 4 : cover ? 2 : 5);
+                    position = new SimVec3(SimFix.FromRaw(x), SimFix.FromRaw(height.Raw / 2), SimFix.FromRaw(z));
+                    collider = new Collider(SimFix.Ratio(wall ? 5 : cover ? 3 : 6, 4), height,
+                        Content.LayerBits[wall ? 1 : cover ? 2 : 3]);
+                    IsStatic[i] = wall || cover;
+                }
+                collider = collider.WithStatic(IsStatic[i]);
+                EntityId entity = Sim.Entities.Create();
+                Sim.Entities.Set(positions, entity, new Position(position));
+                Sim.Entities.Set(colliders, entity, collider);
+                Bodies[i] = new SpatialBody(entity, position, collider);
+            }
+            var view = (SpatialQueryView)Sim.ConfigureSpatial(positions, colliders, SimFix.FromInt(3), BodyCount * 32);
+            Grid = new GridSpatialQuery(Sim.SpatialIndex, view.QueryContext);
+            Sim.CompleteSpatialBoundary();
+            var queries = new List<SemanticQuery>();
+            foreach (RealQuery query in legacy.Queries)
+                if (query.Role != QueryRole.Explosion && query.Role != QueryRole.Cover)
+                    queries.Add(SemanticQuery.FromLegacy(query, Content, queries.Count));
+            if (peak)
+            {
+                var explosion = new SemanticQuery(QueryRole.Explosion,
+                    SpatialQueries.Sphere(ExplosionOrigin, SimFix.FromInt(overflow ? 12 : 8), Content.UnitMask), SemanticMode.AllCapped);
+                queries.Add(explosion);
+                List<SpatialHit> affected = SemanticBenchOracle.Hits(this, explosion.Request);
+                ExplosionTotal = affected.Count;
+                Affected = Math.Min(512, affected.Count);
+                for (int i = 0; i < Affected; i++)
+                    queries.Add(Cover(affected[i].Entity));
+            }
+            RayCount = 660 + (peak ? 172 + Affected : 0);
+            Queries = queries.ToArray();
+            Expected = SemanticBenchOracle.Verify(this, out ulong selected, out ulong exhaustive);
+            OutputSignature = selected;
+            OracleSignature = exhaustive;
+            InputSignature = SemanticBenchArtifacts.InputHash(this);
+            ValidateComposition();
+            SemanticBenchContract.Verify(this);
+            Sim.Register("semantic-bench-queries", this, SimSystemPhase.Queries);
+        }
+
+        internal SemanticQuery Cover(EntityId target)
+        {
+            SimVec3 delta = Bodies[target.Id].Position - ExplosionOrigin;
+            SimFix range = SimMath.Sqrt(delta.X * delta.X + delta.Y * delta.Y + delta.Z * delta.Z);
+            return new SemanticQuery(QueryRole.Cover, SpatialQueries.Ray(ExplosionOrigin, delta, range, Content.SightMask), SemanticMode.Any);
+        }
+
+        private void ValidateComposition()
+        {
+            var roles = new int[9];
+            int blockedAi = 0;
+            int blockedCover = 0;
+            for (int i = 0; i < Queries.Length; i++)
+            {
+                roles[(int)Queries[i].Role]++;
+                if (Queries[i].Role == QueryRole.AiRay && Expected[i].BlockerHits > 0)
+                    blockedAi++;
+                if (Queries[i].Role == QueryRole.Cover && Expected[i].BlockerHits > 0)
+                    blockedCover++;
+            }
+            int[] counts = { 660, 165, 165, Peak ? 40 : 0, Peak ? 32 : 0, Peak ? 100 : 0, Peak ? 60 : 0, Peak ? 1 : 0, Affected };
+            for (int i = 0; i < counts.Length; i++)
+                Require(roles[i] == counts[i], "Semantic composition changed.");
+            Require(blockedAi > 0 && (!Peak || blockedCover > 0), "Blocking rays must hit real blockers.");
+            Require(!Overflow || (ExplosionTotal > 512 && Affected == 512), "Overflow profile must really truncate.");
+        }
+
+        public void Step(SimContext context)
+        {
+            LastCoverRays = 0;
+            LastTruncatedQueries = 0;
+            LastTruncatedHits = 0;
+            int retained = 0;
+            int rays = 0;
+            for (int i = 0; i < Queries.Length; i++)
+            {
+                // Cover rays follow actual retained results, so capped-out units cannot add work.
+                SemanticQuery query = Queries[i].Role == QueryRole.Cover ? Cover(Retained[LastCoverRays++]) : Queries[i];
+                Observer?.Begin();
+                SemanticResult result = query.Run(Grid, Hits);
+                Observer?.End(i, result, Grid);
+                ulong signature = result.Signature(Hits);
+                Require(signature == Expected[i].Signature, "Semantic output changed.");
+                Require(Grid.LastTruncatedHits == (result.Truncated ? result.TotalHits - result.Written : 0), "Truncation alarm differs from omitted hits.");
+                if (result.Truncated)
+                {
+                    LastTruncatedQueries++;
+                    LastTruncatedHits += Grid.LastTruncatedHits;
+                }
+                if (query.Role == QueryRole.Explosion)
+                {
+                    retained = result.Written;
+                    for (int h = 0; h < retained; h++)
+                        Retained[h] = Hits[h].Entity;
+                }
+                if (query.Request.Kind == SpatialQueryKind.Ray)
+                    rays++;
+                Calls++;
+                Checksum = SemanticResult.Mix(Checksum, signature);
+            }
+            Require(retained == Affected && LastCoverRays == Affected && rays == RayCount, "Peak work disappeared.");
+            int live = 0;
+            foreach (EntityId entity in Sim.Entities)
+                live++;
+            Require(live == BodyCount, "Semantic benchmark lost living bodies.");
+            context.Emit(new SimEvent(new EventTypeId(903), tag: Queries.Length));
+        }
+
+        public void WriteState(StateHash hash)
+        {
+            hash.Add(Calls);
+            hash.Add(Checksum);
+        }
+
+        internal static void Require(bool condition, string message)
+        {
+            if (!condition)
+                throw new InvalidOperationException(message);
+        }
+    }
+}

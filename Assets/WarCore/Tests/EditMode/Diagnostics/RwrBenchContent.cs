@@ -1,0 +1,28 @@
+using WarCore.Sim;
+
+namespace WarCore.Tests.Diagnostics
+{
+    // Names and mobility belong to content; Collider publishes mobility to the engine indexes.
+    internal sealed class RwrBenchContent
+    {
+        internal const string Version = "rwr-bench-content-v1";
+        internal readonly string[] LayerNames = { "soldier", "structure", "terrain-cover", "large-unit" };
+        internal readonly uint[] LayerBits = { 1u, 2u, 4u, 8u };
+        internal uint SoldierMask => LayerBits[0];
+        internal uint UnitMask => LayerBits[0] | LayerBits[3];
+        internal uint SightMask => LayerBits[1] | LayerBits[2] | LayerBits[3];
+
+        internal void WriteState(StateHash hash)
+        {
+            hash.Add(Version);
+            for (int i = 0; i < LayerNames.Length; i++)
+            {
+                hash.Add(LayerNames[i]);
+                hash.Add(LayerBits[i]);
+            }
+            hash.Add(SoldierMask);
+            hash.Add(UnitMask);
+            hash.Add(SightMask);
+        }
+    }
+}

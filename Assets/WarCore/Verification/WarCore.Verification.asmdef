@@ -1,0 +1,7 @@
+{
+  "name": "WarCore.Verification",
+  "rootNamespace": "WarCore.Verification",
+  "references": ["WarCore.Sim"],
+  "noEngineReferences": true,
+  "autoReferenced": false
+}

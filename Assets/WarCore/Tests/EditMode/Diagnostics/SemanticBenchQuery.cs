@@ -1,0 +1,83 @@
+using System;
+using WarCore.Sim;
+
+namespace WarCore.Tests.Diagnostics
+{
+    internal enum SemanticMode { Any, Nearest, AllCapped }
+
+    internal readonly struct SemanticResult
+    {
+        internal readonly bool Hit;
+        internal readonly int Written;
+        // -1 means unavailable: Any and Nearest never claim an exact total.
+        internal readonly int TotalHits;
+        internal bool Truncated => TotalHits > Written;
+
+        internal SemanticResult(bool hit, int written, int total)
+        {
+            Hit = hit;
+            Written = written;
+            TotalHits = total;
+        }
+
+        internal ulong Signature(SpatialHit[] hits)
+        {
+            ulong value = Hit ? 1UL : 0UL;
+            value = Mix(value, unchecked((ulong)TotalHits));
+            value = Mix(value, (ulong)Written);
+            for (int i = 0; i < Written; i++)
+            {
+                value = Mix(value, (ulong)hits[i].Entity.Id);
+                value = Mix(value, hits[i].Entity.Generation);
+                value = Mix(value, (ulong)hits[i].Distance.Raw);
+            }
+            return value;
+        }
+
+        internal static ulong Mix(ulong value, ulong next) => unchecked((value ^ next) * 1099511628211UL);
+    }
+
+    internal readonly struct SemanticQuery
+    {
+        internal readonly QueryRole Role;
+        internal readonly SpatialRequest Request;
+        internal readonly SemanticMode Mode;
+        internal readonly int Cap;
+
+        internal SemanticQuery(QueryRole role, SpatialRequest request, SemanticMode mode, int cap = 512)
+        {
+            Role = role;
+            Request = request;
+            Mode = mode;
+            Cap = cap;
+        }
+
+        internal SemanticResult Run(GridSpatialQuery grid, SpatialHit[] hits)
+        {
+            if (Mode == SemanticMode.Any)
+                return new SemanticResult(grid.Any(in Request), 0, -1);
+            if (Mode == SemanticMode.Nearest)
+            {
+                bool found = grid.Nearest(in Request, out SpatialHit hit);
+                hits[0] = hit;
+                return new SemanticResult(found, found ? 1 : 0, -1);
+            }
+            SpatialQueryResult result = grid.AllCapped(in Request, Cap, hits);
+            return new SemanticResult(result.TotalHits != 0, result.Written, result.TotalHits);
+        }
+
+        internal static SemanticQuery FromLegacy(RealQuery source, RwrBenchContent content, int ordinal)
+        {
+            BenchQuery q = source.Query;
+            bool sight = source.Role == QueryRole.AiRay;
+            uint mask = sight ? content.SightMask : content.SoldierMask;
+            SpatialRequest request = q.Kind == 0 ? SpatialQueries.Ray(q.Origin, q.Direction, q.Radius, mask)
+                : q.Kind == 1 ? SpatialQueries.Sphere(q.Origin, q.Radius, content.UnitMask)
+                : SpatialQueries.Sector(q.Origin, q.Radius, q.Direction, 600, SimFix.FromInt(2), mask);
+            SemanticMode mode = q.Kind != 0 ? SemanticMode.AllCapped
+                : sight ? (ordinal % 2 == 0 ? SemanticMode.Any : SemanticMode.Nearest)
+                : source.Role == QueryRole.Volley ? SemanticMode.AllCapped : SemanticMode.Nearest;
+            return new SemanticQuery(source.Role, request, mode, source.Role == QueryRole.Volley ? 4 : 512);
+        }
+    }
+}

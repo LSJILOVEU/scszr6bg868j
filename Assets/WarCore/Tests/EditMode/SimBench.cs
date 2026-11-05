@@ -1,0 +1,181 @@
+using System;
+using System.Diagnostics;
+using System.Globalization;
+using System.IO;
+using WarCore.Sim;
+using Simulation = WarCore.Sim.Sim;
+
+namespace WarCore.Tests
+{
+    // Timing lives in the test assembly so no clock or profiler enters the Sim dependency graph.
+    public static class SimBench
+    {
+        public const int WarmupTicks = 8;
+        internal static void Validate(int entities, int ticks)
+        {
+            if (entities < 1 || entities > 8000 || ticks < 1 || ticks > 100000)
+                throw new ArgumentOutOfRangeException(nameof(entities), "Benchmark supports 1..8000 entities and 1..100000 measured ticks.");
+        }
+
+        public static void Run(int entities, int ticks, TextWriter output)
+        {
+            Validate(entities, ticks);
+            output.WriteLine("SimBench headless; runtime={0}; Stopwatch.Frequency={1}; warmup={2}; measured ticks={3}; individual whole-tick samples; no timing assertions.",
+                Type.GetType("Mono.Runtime") == null ? "non-Mono (record backend/build externally)" : "mono", Stopwatch.Frequency, WarmupTicks, ticks);
+            foreach (SimBenchWorkload workload in Enum.GetValues(typeof(SimBenchWorkload)))
+                RunProfile(workload, entities, ticks, output);
+            RunSingleQueries(entities, output);
+        }
+
+        public static void RunProfile(SimBenchWorkload workload, int entities, int ticks, TextWriter output)
+        {
+            var windows = new AllocationWindow();
+            do
+            {
+                Validate(entities, ticks);
+                if (workload < SimBenchWorkload.Light || workload > SimBenchWorkload.SphereOnly)
+                    throw new ArgumentOutOfRangeException(nameof(workload));
+                Simulation sim;
+                SimBenchScene scene = null;
+                LoadSystem light = null;
+                if (workload == SimBenchWorkload.Light)
+                {
+                    sim = Fixtures.Empty(0xB20002);
+                    light = new LoadSystem(sim, entities);
+                    sim.Register("example-load", light);
+                }
+                else
+                {
+                    scene = new SimBenchScene(entities, workload);
+                    sim = scene.Sim;
+                }
+
+                for (int i = 0; i < WarmupTicks; i++)
+                    sim.Step(default);
+                scene?.ResetCounters();
+                var samples = new long[ticks];
+                var meter = new AllocationMeter();
+                windows.Begin(meter);
+                for (int i = 0; i < ticks; i++)
+                {
+                    long start = Stopwatch.GetTimestamp();
+                    sim.Step(default);
+                    samples[i] = Stopwatch.GetTimestamp() - start;
+                }
+
+                AllocationSample allocated = windows.End();
+                if (!windows.NeedsRetry)
+                    AllocationAssertions.Check(allocated);
+                if (sim.Events.EventsDroppedTotal != 0)
+                    throw new InvalidOperationException("Benchmark Step must have no dropped events.");
+                if (scene != null && (scene.Calls != (long)scene.Queries.Length * ticks || scene.TotalHits == 0))
+                    throw new InvalidOperationException("Benchmark query work was not executed.");
+                if (light != null && light.AppliedTasks != (WarmupTicks + ticks - 2L) * 4)
+                    throw new InvalidOperationException("Example benchmark did not consume its scheduled work.");
+                output.WriteLine("SimBench {0}: entities={1}; warmup={2}; measured ticks={3}; {4}; EventsDropped=0.",
+                    workload, entities, WarmupTicks, ticks, allocated.Describe());
+                Report(output, "SimBench " + workload + " whole tick", samples, "ms", 1000.0);
+                if (scene == null)
+                {
+                    if (windows.NeedsRetry)
+                        continue;
+                    return;
+                }
+                int rays = workload == SimBenchWorkload.SphereOnly ? 0 : entities;
+                int spheres = workload == SimBenchWorkload.SphereOnly ? entities : entities / 2;
+                int sectors = workload == SimBenchWorkload.SphereOnly ? 0 : entities - spheres;
+                output.WriteLine("SimBench {0} work/tick: rays={1}, spheres={2}, sectors={3}, total={4}; calls={5}; hits={6}; checksum=0x{7:X16}; all calls checked against precomputed full-output signatures, up to 32/group also checked against independent oracle.",
+                    workload, rays, spheres, sectors, scene.Queries.Length, scene.Calls, scene.TotalHits, scene.Checksum);
+                if (rays != 0)
+                    output.WriteLine("SimBench {0} ray candidates: broad-phase mean={1}; entered precise phase mean={2} per ray (after slab prefilter, includes precise misses).",
+                        workload, Number((double)scene.BroadCandidates / scene.RayCalls), Number((double)scene.NarrowCandidates / scene.RayCalls));
+                if (workload == SimBenchWorkload.DenseAimedRays)
+                    output.WriteLine("Dense layout: 0.75m spacing, radius=0.25m, height=3m; every ray starts outside the crowd at x=-4m and aims at its central five rows; range=48m. Heavy layout: 3m spacing, same capsules; 12m rays with zero/positive hits and vertical misses. Static colliders; no AI.");
+                output.WriteLine("Budget reference: foundation heavy whole tick <=5 ms; these measurements are this runtime/build only, not an IL2CPP/Release verdict.");
+            }
+            while (windows.NeedsRetry);
+        }
+
+        internal static string Number(double value) => value.ToString("F3", CultureInfo.InvariantCulture);
+        internal static void Report(TextWriter output, string label, long[] samples, string unit, double unitsPerSecond)
+        {
+            Array.Sort(samples);
+            int middle = samples.Length / 2;
+            double median = samples.Length % 2 == 0 ? ((double)samples[middle - 1] + samples[middle]) / 2 : samples[middle];
+            int rank = (int)(((long)samples.Length * 95 + 99) / 100) - 1;
+            output.WriteLine("{0}: samples={1}, median={2} {4}, p95={3} {4} (nearest rank).", label, samples.Length,
+                Number(median * unitsPerSecond / Stopwatch.Frequency), Number(samples[rank] * unitsPerSecond / Stopwatch.Frequency), unit);
+        }
+
+        public static void RunSingleQueries(int entities, TextWriter output)
+        {
+            var windows = new AllocationWindow();
+            do
+            {
+                Validate(entities, 1);
+                var scene = new SimBenchScene(entities, SimBenchWorkload.Heavy);
+                // At least four bodies ensure all three ray categories exist for the configurable entry point.
+                if (entities < 4)
+                {
+                    output.WriteLine("Single-query distributions require at least four entities; this requested scene has {0}.", entities);
+                    return;
+                }
+
+                for (int i = 0; i < 4; i++)
+                    scene.Sim.Step(default);
+                var hit = new long[entities];
+                var miss = new long[entities];
+                var positive = new long[entities];
+                var sphere = new long[entities / 2];
+                var sector = new long[entities - sphere.Length];
+                int hitCount = 0;
+                int missCount = 0;
+                int positiveCount = 0;
+                int sphereCount = 0;
+                int sectorCount = 0;
+                var meter = new AllocationMeter();
+                windows.Begin(meter);
+                for (int i = 0; i < scene.Queries.Length; i++)
+                {
+                    BenchQuery query = scene.Queries[i];
+                    long start = Stopwatch.GetTimestamp();
+                    int found = query.Run(scene.Grid, scene.Entities, scene.Rays);
+                    long elapsed = Stopwatch.GetTimestamp() - start;
+                    if (found != scene.Counts[i] || scene.Signature(query.Kind, found) != scene.Signatures[i])
+                        throw new InvalidOperationException("Single-query output validation failed.");
+                    if (query.Kind == 0)
+                    {
+                        if (found == 0)
+                            miss[missCount++] = elapsed;
+                        else
+                        {
+                            hit[hitCount++] = elapsed;
+                            if (scene.Rays[0].Distance.Raw > 0)
+                                positive[positiveCount++] = elapsed;
+                        }
+                    }
+                    else if (query.Kind == 1)
+                        sphere[sphereCount++] = elapsed;
+                    else
+                        sector[sectorCount++] = elapsed;
+                }
+
+                AllocationSample allocated = windows.End();
+                if (!windows.NeedsRetry)
+                    AllocationAssertions.Check(allocated);
+                if (hitCount == 0 || missCount == 0 || positiveCount == 0 || sphereCount == 0 || sectorCount == 0)
+                    throw new InvalidOperationException("Single-query measurement lacks a category.");
+                Array.Resize(ref hit, hitCount);
+                Array.Resize(ref miss, missCount);
+                Array.Resize(ref positive, positiveCount);
+                output.WriteLine("SimBench single full PUBLIC query calls: validation, grid walk, precise geometry, sorting and writes INCLUDED; per-call Stopwatch brackets, no batch means or overhead subtraction. Result validation after timing; {0}.", allocated.Describe());
+                Report(output, "Public Ray hit (includes zero distance)", hit, "us", 1000000.0);
+                Report(output, "Public Ray miss", miss, "us", 1000000.0);
+                Report(output, "Public Ray nearest positive distance", positive, "us", 1000000.0);
+                Report(output, "Public Sphere", sphere, "us", 1000000.0);
+                Report(output, "Public Sector", sector, "us", 1000000.0);
+            }
+            while (windows.NeedsRetry);
+        }
+    }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "WarCore.Unity",
+  "rootNamespace": "WarCore.Unity",
+  "references": ["WarCore.Presentation"],
+  "noEngineReferences": false
+}

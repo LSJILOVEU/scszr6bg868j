@@ -1,0 +1,10 @@
+{
+  "name": "WarCore.Control",
+  "rootNamespace": "WarCore.Control",
+  "references": [
+    "WarCore.Sim",
+    "WarCore.Combat",
+    "WarCore.Interim"
+  ],
+  "noEngineReferences": true
+}

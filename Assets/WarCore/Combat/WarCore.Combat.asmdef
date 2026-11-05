@@ -1,0 +1,8 @@
+{
+  "name": "WarCore.Combat",
+  "rootNamespace": "WarCore.Combat",
+  "references": [
+    "WarCore.Sim"
+  ],
+  "noEngineReferences": true
+}

@@ -1,0 +1,6 @@
+{
+  "name": "WarCore.Unity.Editor",
+  "rootNamespace": "WarCore.Unity.Editor",
+  "references": ["WarCore.Unity"],
+  "includePlatforms": ["Editor"]
+}
