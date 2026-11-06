@@ -43,8 +43,20 @@ namespace WarCore.Presentation
             if (recipe.PlayerKey.HasValue && (!crowd || recipe.Combat == null || recipe.Match == null))
                 throw new ArgumentException("Player control requires InterimCrowd, Combat and Match.", nameof(recipe));
             WcMap map = mapBytes == null ? null : WcMapReader.Read(mapBytes);
+            TerrainTables terrain = null;
             if (map != null && map.HasTerrain)
-                throw new NotSupportedException("Terrain maps (height field or surface table) need T1a-2: this builder only runs flat maps.");
+            {
+                // Order matters (the tests pin it): mover kind, then player/battle, then a missing pack, then the derivation.
+                if (!path)
+                    throw new NotSupportedException("Terrain maps (height field or surface table) need a path or crowd mover.");
+                if (recipe.PlayerKey.HasValue)
+                    throw new NotSupportedException("Player control on terrain maps is not supported before T1c.");
+                if (recipe.Combat != null || recipe.Match != null)
+                    throw new NotSupportedException("Combat and match on terrain maps are not supported before T1a-2b.");
+                if (recipe.TerrainPack == null)
+                    throw new ArgumentException("A terrain map needs a content pack with terrain rules (WorldRecipe.WithTerrainRules).", nameof(recipe));
+                terrain = TerrainDerivation.Derive(map, recipe.TerrainPack);
+            }
             long groundRaw = map == null ? 0 : map.FlatHeight.Raw;
             uint wallMask = 0;
             if (map != null)
@@ -52,7 +64,9 @@ namespace WarCore.Presentation
                     wallMask |= map.LayerMask(wall.LayerName);
             if ((wallMask & MoverLayer) != 0)
                 throw new InvalidOperationException("Wall layers must not share the mover layer.");
-            var content = new StableContentManifest(1);
+            // The terrain digest names the exact (map, rules) pair, so a snapshot cannot be restored under other heights or rules.
+            var content = terrain == null ? new StableContentManifest(1)
+                : new StableContentManifest(1, new StableContentKey("terrain.tables", terrain.Digest));
             var placed = new List<PlacedCatalogEntry>();
             if (map != null)
                 foreach (WcMapWall wall in map.Walls)
@@ -78,6 +92,8 @@ namespace WarCore.Presentation
             ComponentType<MoveWaypoint> waypoints = default;
             if (path)
                 waypoints = sim.Entities.Register<MoveWaypoint>(MoveWaypoint.ComponentId, new MoveWaypointSerializer());
+            if (terrain != null)
+                sim.Entities.Register<MoveProgress>(MoveProgress.ComponentId, new MoveProgressSerializer());
             ComponentType<Combatant> combatants = default;
             if (recipe.Combat != null)
                 combatants = sim.Entities.Register<Combatant>(Combatant.ComponentId, new CombatantSerializer());
@@ -100,6 +116,8 @@ namespace WarCore.Presentation
                 int i = reverseAllocation ? units.Length - 1 - n : n;
                 UnitSpawn spawn = recipe.Units[i];
                 SimVec3 point = SimSession.Target(spawn.XMm, spawn.ZMm, groundRaw);
+                if (terrain?.Ground != null && terrain.Ground.TryHeightAt(point.X, point.Z, out SimFix groundY))
+                    point = new SimVec3(point.X, groundY, point.Z);
                 SimFix speed = SimFix.Ratio(spawn.SpeedMmPerSec, 1000 * SimClock.TickRate);
                 EntityId unit = sim.Entities.Create(placements[firstUnit + i].Key);
                 units[i] = unit;
@@ -145,8 +163,9 @@ namespace WarCore.Presentation
             if (recipe.CrowdPass != CrowdPassKind.None && (!crowd || recipe.Combat == null))
                 throw new ArgumentException("A crowd pass rule requires crowd movement and combat.", nameof(recipe));
             ICrowdPass crowdPass = recipe.CrowdPass == CrowdPassKind.TeamIdle ? new TeamIdleCrowdPass(sim, combat, recipe.Combat, controlled) : null;
-            var locomotion = new InterimLocomotion(sim.Entities, wallMask, path ? WcMapNavigation.Create(map) : null, crowd,
-                controlled == null ? null : new PlayerStep(sim, controlled), crowdPass);
+            var locomotion = new InterimLocomotion(sim.Entities, wallMask,
+                path ? (terrain != null ? terrain.Nav : WcMapNavigation.Create(map)) : null, crowd,
+                controlled == null ? null : new PlayerStep(sim, controlled), crowdPass, terrain);
             if (controlled != null) locomotion.Stop(controlled.Current);
             sim.RegisterGameplay("interim.orders", new InterimOrders(sim.Entities, locomotion, crowd ? CrowdSlotSpacing : default, controlled), SimSystemPhase.Requests);
             sim.RegisterGameplay("interim.locomotion", locomotion, SimSystemPhase.Movement);

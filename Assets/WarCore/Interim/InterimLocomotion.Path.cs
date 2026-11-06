@@ -14,16 +14,17 @@ namespace WarCore.Interim
             waypoint = default;
             if (pathfinder.Find(point, target) != GridPathStatus.Found) return false;
             ReadOnlySpan<int> route = pathfinder.Path;
-            SimVec3 center = grid.Center(route[0], point.Y);
-            if (!point.Equals(center)) { waypoint = center; return true; }
-            if (route.Length == 1) { waypoint = target; return true; }
+            SimVec3 center = Centre(route[0], point.Y);
+            if (!point.Equals(center)) { waypoint = center; if (terrain != null) NoteTail(route, 0); return true; }
+            if (route.Length == 1) { waypoint = target; if (terrain != null) NoteTail(route, 0); return true; }
             int vertex = 1;
             int dx = route[1] % grid.Width - route[0] % grid.Width;
             int dz = route[1] / grid.Width - route[0] / grid.Width;
             while (vertex + 1 < route.Length
                 && route[vertex + 1] % grid.Width - route[vertex] % grid.Width == dx
                 && route[vertex + 1] / grid.Width - route[vertex] / grid.Width == dz) vertex++;
-            waypoint = grid.Center(route[vertex], point.Y);
+            waypoint = Centre(route[vertex], point.Y);
+            if (terrain != null) NoteTail(route, vertex);
             return true;
         }
 

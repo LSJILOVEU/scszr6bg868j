@@ -35,20 +35,24 @@ namespace WarCore.Interim
 
         int ISimSystem.Order => 20;
         public string StateTypeId => "interim.locomotion";
-        public int StateVersion => crowd ? (pass != null ? 5 : 4) : grid != null ? 3 : wallMask == 0 ? 1 : 2;
+        // A terrain world adds 100 to the version of the same movement kind and appends the terrain digest to its payload.
+        public int StateVersion => (crowd ? (pass != null ? 5 : 4) : grid != null ? 3 : wallMask == 0 ? 1 : 2) + (terrain != null ? 100 : 0);
 
         public void Order(EntityId unit, SimVec3 target)
         {
             MoveIntent intent = RequireIntent(unit);
+            target = Grounded(target);
             if (grid != null)
             {
                 SimVec3 point = entities.Get(positions, unit).Value;
                 if (!(crowd ? TryCrowdWaypoint(point, target, out SimVec3 waypoint) : TryWaypoint(point, target, out waypoint)))
                 {
                     Stop(unit);
+                    if (terrain != null) BeginProgress(unit, point, default, target, false);
                     return;
                 }
                 entities.Set(waypoints, unit, new MoveWaypoint(waypoint, true));
+                if (terrain != null) BeginProgress(unit, point, waypoint, target, true);
             }
             entities.Set(intents, unit, new MoveIntent(target, intent.SpeedPerTick, intent.Squad, true));
         }
@@ -58,6 +62,8 @@ namespace WarCore.Interim
             MoveIntent intent = RequireIntent(unit);
             entities.Set(intents, unit, new MoveIntent(intent.Target, intent.SpeedPerTick, intent.Squad, false));
             if (grid != null) entities.Set(waypoints, unit, default);
+            // An explicit stop is not a failure; the internal give-ups set Failed after calling it.
+            if (terrain != null && entities.TryGet(progress, unit, out _)) entities.Set(progress, unit, default);
         }
 
         public bool IsArrived(EntityId unit)
@@ -84,7 +90,8 @@ namespace WarCore.Interim
                     continue;
                 if (grid != null)
                 {
-                    StepPath(context, unit, intent, position.Value);
+                    if (terrain != null) StepPathTerrain(context, unit, intent, position.Value);
+                    else StepPath(context, unit, intent, position.Value);
                     continue;
                 }
                 SimVec3 delta = intent.Target - position.Value;
@@ -112,6 +119,7 @@ namespace WarCore.Interim
                 writer.Int64(wallMask);
             if (grid != null) writer.UInt64(grid.Digest);
             if (pass != null) writer.UInt64(pass.Digest);
+            if (terrain != null) writer.UInt64(terrain.Digest);
         }
 
         public void LoadState(SimStateReader reader)
@@ -122,6 +130,8 @@ namespace WarCore.Interim
                 throw new InvalidOperationException("Navigation digest differs from the saved configuration.");
             if (pass != null && reader.UInt64() != pass.Digest)
                 throw new InvalidOperationException("Crowd pass rule differs from the saved configuration.");
+            if (terrain != null && reader.UInt64() != terrain.Digest)
+                throw new InvalidOperationException("Terrain tables differ from the saved configuration.");
         }
 
         public void WriteState(StateHash hash)
@@ -132,6 +142,7 @@ namespace WarCore.Interim
                 hash.Add((ulong)wallMask);
             if (grid != null) hash.Add(grid.Digest);
             if (pass != null) hash.Add(pass.Digest);
+            if (terrain != null) hash.Add(terrain.Digest);
         }
     }
 }
