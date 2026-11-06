@@ -46,9 +46,10 @@ namespace WarCore.Tests
         public void FireOffBattle_RunsDeterministically_AndNobodyFiresOrDies()
         {
             UnitSpawn[] units = { M6World.U(1, 1, 30, 20, speed: 4000), M6World.U(2, 2, 34, 20, speed: 4000), M6World.U(3, 2, 20, 30, speed: 4000) };
-            var a = World(units); var b = World(units, reverse: true);
+            // The default match pack thinks about once in a million ticks, so the units would never move; think every 10 ticks.
+            var a = World(units, M6World.Pack(think: 10)); var b = World(units, M6World.Pack(think: 10), reverse: true);
             Combatant before = a.Read<Combatant>(1);
-            SimVec3 start = a.Read<Position>(1).Value;
+            SimVec3[] start = { a.Read<Position>(1).Value, a.Read<Position>(2).Value, a.Read<Position>(3).Value };
             for (int tick = 0; tick < 600; tick++)
             {
                 a.Step(); b.Step();
@@ -61,9 +62,12 @@ namespace WarCore.Tests
                 Assert.That(a.Read<Combatant>(key).DueMilli, Is.EqualTo(0), "unit " + key + " never fired");
             }
             Assert.That(a.Read<Combatant>(1).Ammo, Is.EqualTo(before.Ammo));
-            SimVec3 end = a.Read<Position>(1).Value;
-            Assert.That((end.X.Raw, end.Z.Raw), Is.Not.EqualTo((start.X.Raw, start.Z.Raw)), "the unit moved on the slope");
-            Assert.That(end.Y.Raw, Is.EqualTo(end.X.Raw / 16).Within(1), "the unit still follows the height field");
+            for (int i = 0; i < 3; i++)
+            {
+                SimVec3 end = a.Read<Position>((ulong)(i + 1)).Value;
+                Assert.That((end.X.Raw, end.Z.Raw), Is.Not.EqualTo((start[i].X.Raw, start[i].Z.Raw)), "unit " + (i + 1) + " moved on the slope");
+                Assert.That(end.Y.Raw, Is.EqualTo(end.X.Raw / 16).Within(1), "unit " + (i + 1) + " still follows the height field");
+            }
         }
     }
 }
