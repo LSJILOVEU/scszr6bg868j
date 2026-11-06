@@ -16,7 +16,7 @@ namespace WarCore.Tests
             // Same horizontal point, but the enemy stands 5 m higher, so a ray along +X from the shooter passes under it.
             var above = w.Point(1) + SimVec3.Metres(0, 5, 0);
             w.Sim.Entities.Set(w.Positions, w.Unit(1), new Position(above));
-            w.Step();
+            Assert.DoesNotThrow(() => w.Step(), "a zero heading must be replaced by +X before any ray is cast");
             Assert.That(w.Combat.Fires.Length, Is.EqualTo(1));
             var fire = w.Combat.Fires[0];
             Assert.That(fire.End.Z, Is.EqualTo(fire.Origin.Z));
