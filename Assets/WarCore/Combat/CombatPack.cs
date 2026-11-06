@@ -7,10 +7,14 @@ namespace WarCore.Combat
     {
         private readonly WeaponDef[] weapons;
         private readonly MeleeSpec[] melee;
+        private readonly BlockSpec[] block;
         public ReadOnlySpan<WeaponDef> Weapons => weapons;
         // Melee swings (WP-20). Empty for every pack that has none; such a pack hashes, sizes and registers exactly as before.
         public ReadOnlySpan<MeleeSpec> Melee => melee;
         public bool HasMelee => melee.Length > 0;
+        // Block data (C3). Empty for every pack that has none; such a pack hashes, sizes and registers exactly as before.
+        public ReadOnlySpan<BlockSpec> Block => block;
+        public bool HasBlock => block.Length > 0;
         // Most damage commands one unit can issue in a tick: one shot, or one swing landing on up to this many targets.
         public int MaxHitsPerAction { get; }
         public IHitResolver Resolver { get; }
@@ -26,12 +30,13 @@ namespace WarCore.Combat
         public long AllyHoldMilli { get; }
 
         public CombatPack(WeaponDef[] weapons, IHitResolver resolver, ITargetSelector selector, long maxHealthRaw,
-            bool friendlyFire = false, bool friendlyFireLocked = false, int allyCheckMissRaw = 0, long allyHoldMilli = 30000, MeleeSpec[] melee = null)
+            bool friendlyFire = false, bool friendlyFireLocked = false, int allyCheckMissRaw = 0, long allyHoldMilli = 30000, MeleeSpec[] melee = null, BlockSpec[] block = null)
         {
             if (allyCheckMissRaw < 0 || allyCheckMissRaw > SimFix.Scale) throw new ArgumentOutOfRangeException(nameof(allyCheckMissRaw));
             if (allyHoldMilli < 1000 || allyHoldMilli > 1_000_000_000_000L) throw new ArgumentOutOfRangeException(nameof(allyHoldMilli));
             this.weapons = (WeaponDef[])weapons.Clone();
             this.melee = melee == null ? Array.Empty<MeleeSpec>() : (MeleeSpec[])melee.Clone();
+            this.block = block == null ? Array.Empty<BlockSpec>() : (BlockSpec[])block.Clone();
             int most = 1;
             foreach (var spec in this.melee) most = Math.Max(most, spec.MaxTargets);
             MaxHitsPerAction = most;
@@ -46,6 +51,8 @@ namespace WarCore.Combat
             // Appended only when present, so a pack without melee keeps the digest it had before WP-20.
             if (this.melee.Length > 0)
             { hash.Add("combat.pack.melee.v1"); hash.Add(this.melee.Length); foreach (var spec in this.melee) spec.WriteState(hash); }
+            if (this.block.Length > 0)
+            { hash.Add("combat.pack.block.v1"); hash.Add(this.block.Length); foreach (var spec in this.block) spec.WriteState(hash); }
             PolicyDigest = hash.Value;
         }
 
