@@ -20,7 +20,8 @@ namespace WarCore.Combat
         // It runs before the melee step and the cooldown guard, so units that are swinging, cooling down or unarmed receive it too.
         void Sense(CombatSystem combat, EntityId shooter, in Combatant unit, in Position position, long tick);
 
-        // Called only when the unit has a ready weapon and is not on a melee swing. direction is only read when the result is Fire.
+        // Called only for a unit that has a ready weapon, is not on a melee swing, has no fire intent and is not the player.
+        // direction is only read when the result is Fire.
         AutoFireAction TryAim(CombatSystem combat, EntityId shooter, in Combatant unit, in Position position,
             in WeaponDef weapon, long tick, out SimVec3 direction);
     }

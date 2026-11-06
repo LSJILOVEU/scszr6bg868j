@@ -45,5 +45,27 @@ namespace WarCore.Tests
             Assert.That(shots, Is.EqualTo(60));
             Assert.That(recorder.Aims, Is.GreaterThanOrEqualTo(60), "at least every shot began with a ready unit");
         }
+
+        [TestCase(AutoFireAction.Fire)]
+        [TestCase(AutoFireAction.HoldFire)]
+        public void AnIdlePlayer_IsNeverOfferedToTheReplacement_WhateverItReturns(AutoFireAction action)
+        {
+            var w = AutoFireFixtures.Pair(controlled: true);
+            var replacement = new ConstantAutoFire(action);
+            w.Combat.UseAutoFire(replacement);
+            var before = w.State(0);
+            int playerShots = 0, otherShots = 0;
+            for (int tick = 1; tick <= 20; tick++)
+            {
+                w.Step();
+                foreach (var fire in w.Combat.Fires) { if (fire.Shooter.Equals(w.Id(0))) playerShots++; else otherShots++; }
+                Assert.That(w.State(0), Is.EqualTo(before), "an idle player keeps its weapon state, tick " + tick);
+            }
+            Assert.That(playerShots, Is.Zero);
+            Assert.That(replacement.Offered.Count, Is.GreaterThanOrEqualTo(1), "the other unit is offered");
+            Assert.That(replacement.Offered, Has.None.EqualTo(w.Id(0)), "the player is never offered");
+            if (action == AutoFireAction.Fire) Assert.That(otherShots, Is.GreaterThanOrEqualTo(1), "the replacement does decide for the other unit");
+            else Assert.That(otherShots, Is.Zero);
+        }
     }
 }

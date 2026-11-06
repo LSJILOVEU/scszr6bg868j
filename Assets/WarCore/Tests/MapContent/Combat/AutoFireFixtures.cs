@@ -108,4 +108,16 @@ namespace WarCore.Tests
             in WeaponDef weapon, long tick, out SimVec3 direction)
         { Aims++; direction = default; return AutoFireAction.Pass; }
     }
+
+    // Fires every time it is asked, toward +X, or holds fire every time. For checking who may be asked at all.
+    internal sealed class ConstantAutoFire : IAutoFire
+    {
+        private readonly AutoFireAction action;
+        internal readonly List<StableId> Offered = new List<StableId>();
+        internal ConstantAutoFire(AutoFireAction action) { this.action = action; }
+        public void Sense(CombatSystem combat, EntityId shooter, in Combatant unit, in Position position, long tick) { }
+        public AutoFireAction TryAim(CombatSystem combat, EntityId shooter, in Combatant unit, in Position position,
+            in WeaponDef weapon, long tick, out SimVec3 direction)
+        { Offered.Add(combat.Entities.StableOf(shooter)); direction = new SimVec3(SimFix.FromInt(1), default, default); return action; }
+    }
 }

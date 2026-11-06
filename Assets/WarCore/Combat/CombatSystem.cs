@@ -62,7 +62,7 @@ namespace WarCore.Combat
         public IAutoFire BuiltInAutoFire => builtInAutoFire;
         public void UseAutoFire(IAutoFire autoFire) => this.autoFire = autoFire ?? builtInAutoFire;
         internal CombatPack Pack => pack;
-        internal bool IsPlayer(EntityId entity) => controlled != null && controlled.Current.Equals(entity);
+        private bool IsPlayer(EntityId entity) => controlled != null && controlled.Current.Equals(entity);
 
         public void Submit(SimContext c, in FireIntent intent)
         {
@@ -128,7 +128,8 @@ namespace WarCore.Combat
                     }
                     bool hasIntent = intentCount != 0 && (uint)shooter.Id < (uint)intents.Length && intents[shooter.Id].Kind != 0
                         && intentTicks[shooter.Id] == tick && intents[shooter.Id].Shooter.Equals(Entities.StableOf(shooter));
-                    if (!hasIntent && !IsPlayer(shooter)) autoFire.Sense(this, shooter, in unit, in position, tick);
+                    bool autoUnit = !hasIntent && !IsPlayer(shooter);
+                    if (autoUnit) autoFire.Sense(this, shooter, in unit, in position, tick);
                     // A unit that carries melee may spend this tick on a swing; nothing below runs for it then.
                     if (pack.HasMelee && MeleeStep(c, shooter, in unit, in position, tick, hasIntent)) continue;
                     if (unit.Weapon < 0 || unit.DueMilli > tick * 1000) continue;
@@ -146,6 +147,7 @@ namespace WarCore.Combat
                     }
                     else
                     {
+                        if (!autoUnit) continue;
                         AutoFireAction action = autoFire.TryAim(this, shooter, in unit, in position, in weapon, tick, out direction);
                         if (action == AutoFireAction.HoldFire)
                         {

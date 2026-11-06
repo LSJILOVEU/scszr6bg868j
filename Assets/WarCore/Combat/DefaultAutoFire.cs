@@ -18,7 +18,6 @@ namespace WarCore.Combat
             in WeaponDef weapon, long tick, out SimVec3 direction)
         {
             direction = default;
-            if (combat.IsPlayer(shooter)) return AutoFireAction.Pass;
             if (!combat.Pack.Selector.TrySelect(combat, shooter, weapon.FalloffEnd, out EntityId target)) return AutoFireAction.Pass;
             SimVec3 origin = position.Value;
             direction = CombatSystem.Horizontal(combat.Point(target) - origin);
