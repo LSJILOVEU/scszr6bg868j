@@ -12,19 +12,25 @@ namespace WarCore.Interim
         private readonly SimFix slotSpacing;
         private readonly ComponentType<Position> positions;
         private readonly IControlTarget controlled;
+        private readonly ComponentType<SquadStanding>? standing;
+        // Follow keeps this far (horizontal) from the followed unit, and re-aims when the followed unit has moved this far from the order.
+        private readonly SimWide followStopSquared = new SimVec3(SimFix.FromInt(3), default, default).LengthSquared;
+        private readonly SimWide followRetargetSquared = new SimVec3(SimFix.FromInt(1), default, default).LengthSquared;
         private EntityId[] members = Array.Empty<EntityId>();
         private SimVec3[] spots = Array.Empty<SimVec3>();
 
-        public InterimOrders(EntityStore entities, ILocomotion locomotion, SimFix slotSpacing = default, IControlTarget controlled = null)
+        public InterimOrders(EntityStore entities, ILocomotion locomotion, SimFix slotSpacing = default, IControlTarget controlled = null,
+            ComponentType<SquadStanding>? standing = null)
         {
             this.entities = entities ?? throw new ArgumentNullException(nameof(entities));
             this.locomotion = locomotion ?? throw new ArgumentNullException(nameof(locomotion));
             if (slotSpacing.Raw < 0) throw new ArgumentOutOfRangeException(nameof(slotSpacing));
             this.slotSpacing = slotSpacing;
             this.controlled = controlled;
+            this.standing = standing;
             stage = new EntityStage(entities);
             intents = entities.Resolve<MoveIntent>();
-            if (slotSpacing.Raw != 0) positions = entities.Resolve<Position>();
+            if (slotSpacing.Raw != 0 || standing.HasValue) positions = entities.Resolve<Position>();
         }
 
         public int Order => 10;
@@ -33,9 +39,39 @@ namespace WarCore.Interim
 
         public void Step(SimContext context)
         {
-            if (!context.Input.Squad.HasValue)
+            if (context.Input.Squad.HasValue) Command(context.Input.Squad.Value);
+            if (standing.HasValue) Maintain();
+        }
+
+        private void Mark(EntityId unit, SquadStanding value)
+        {
+            if (standing.HasValue) entities.Set(standing.Value, unit, value);
+        }
+
+        private void Command(SquadCommand command)
+        {
+            if (command.Kind == SquadCommandKind.Hold && standing.HasValue)
+            {
+                foreach (EntityId unit in stage.Capture())
+                    if ((controlled == null || !unit.Equals(controlled.Current))
+                        && entities.TryGet(intents, unit, out MoveIntent intent) && intent.Squad == command.Squad)
+                    {
+                        locomotion.Stop(unit);
+                        Mark(unit, new SquadStanding(StandingKind.Hold));
+                    }
                 return;
-            SquadCommand command = context.Input.Squad.Value;
+            }
+            if (command.Kind == SquadCommandKind.Follow && standing.HasValue)
+            {
+                // A target that is gone or has no movement intent (dead units lose it) is ignored.
+                if (!entities.IsAlive(command.TargetEntity) || !entities.TryGet(intents, command.TargetEntity, out _)) return;
+                ulong target = entities.StableOf(command.TargetEntity).Value;
+                foreach (EntityId unit in stage.Capture())
+                    if ((controlled == null || !unit.Equals(controlled.Current)) && !unit.Equals(command.TargetEntity)
+                        && entities.TryGet(intents, unit, out MoveIntent intent) && intent.Squad == command.Squad)
+                        Mark(unit, new SquadStanding(StandingKind.Follow, target));
+                return;
+            }
             if (command.Kind != SquadCommandKind.MoveTo)
                 return;
             if (slotSpacing.Raw == 0)
@@ -43,7 +79,10 @@ namespace WarCore.Interim
                 foreach (EntityId unit in stage.Capture())
                     if ((controlled == null || !unit.Equals(controlled.Current))
                         && entities.TryGet(intents, unit, out MoveIntent intent) && intent.Squad == command.Squad)
+                    {
                         locomotion.Order(unit, command.TargetPoint);
+                        Mark(unit, new SquadStanding(StandingKind.Move));
+                    }
                 return;
             }
             // Slots go to units in row-major order of where they stand (Z, then X, then capture order), so a
@@ -70,7 +109,40 @@ namespace WarCore.Interim
                 spots[slot] = at;
             }
             for (int rank = 0; rank < n; rank++)
+            {
                 locomotion.Order(members[rank], command.TargetPoint + SlotOffset(rank, n, slotSpacing));
+                Mark(members[rank], new SquadStanding(StandingKind.Move));
+            }
+        }
+
+        // Standing orders run every tick: a move ends on arrival, a hold stays, a follow keeps up with the followed unit.
+        private void Maintain()
+        {
+            ComponentType<SquadStanding> type = standing.Value;
+            foreach (EntityId unit in stage.Capture())
+            {
+                if (!entities.TryGet(type, unit, out SquadStanding value)) continue;
+                if (!entities.TryGet(intents, unit, out MoveIntent intent)) { entities.Remove(type, unit); continue; }
+                if (value.Kind == StandingKind.Move) { if (!intent.Active) entities.Remove(type, unit); continue; }
+                if (value.Kind != StandingKind.Follow) continue;
+                if (!entities.TryResolve(new StableId(value.Target), out EntityRef found)
+                    || !entities.TryGet(intents, (EntityId)found, out _) || !entities.TryGet(positions, (EntityId)found, out Position there))
+                {
+                    // The followed unit is gone: the follower stops and is free again.
+                    if (intent.Active) locomotion.Stop(unit);
+                    entities.Remove(type, unit);
+                    continue;
+                }
+                SimVec3 gap = there.Value - entities.Get(positions, unit).Value;
+                if (new SimVec3(gap.X, default, gap.Z).LengthSquared <= followStopSquared)
+                {
+                    if (intent.Active) locomotion.Stop(unit);
+                    continue;
+                }
+                SimVec3 moved = there.Value - intent.Target;
+                if (intent.Active && new SimVec3(moved.X, default, moved.Z).LengthSquared <= followRetargetSquared) continue;
+                locomotion.Order(unit, there.Value);
+            }
         }
 
         private static bool Before(SimVec3 a, SimVec3 b) => a.Z.Raw != b.Z.Raw ? a.Z.Raw < b.Z.Raw : a.X.Raw < b.X.Raw;

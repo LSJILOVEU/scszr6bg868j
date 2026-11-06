@@ -98,6 +98,9 @@ namespace WarCore.Presentation
             ComponentType<MotionLimits> motionLimits = default;
             if (recipe.Motion)
                 motionLimits = sim.Entities.Register<MotionLimits>(MotionLimits.ComponentId, new MotionLimitsSerializer());
+            ComponentType<SquadStanding>? standing = null;
+            if (recipe.Standing)
+                standing = sim.Entities.Register<SquadStanding>(SquadStanding.ComponentId, new SquadStandingSerializer());
             ComponentType<Combatant> combatants = default;
             if (recipe.Combat != null)
                 combatants = sim.Entities.Register<Combatant>(Combatant.ComponentId, new CombatantSerializer());
@@ -181,13 +184,13 @@ namespace WarCore.Presentation
                 controlled == null ? null : new PlayerStep(sim, controlled), crowdPass, terrain);
             if (controlled != null) locomotion.Stop(controlled.Current);
             if (recipe.Facing) locomotion.BindFacing(facings);
-            sim.RegisterGameplay("interim.orders", new InterimOrders(sim.Entities, locomotion, crowd ? CrowdSlotSpacing : default, controlled), SimSystemPhase.Requests);
+            sim.RegisterGameplay("interim.orders", new InterimOrders(sim.Entities, locomotion, crowd ? CrowdSlotSpacing : default, controlled, standing), SimSystemPhase.Requests);
             sim.RegisterGameplay("interim.locomotion", locomotion, SimSystemPhase.Movement);
             CaptureSystem capture = null; ReinforceSystem reinforce = null; MatchSystem match = null;
             if (recipe.Match != null)
             {
                 capture = new CaptureSystem(combat, recipe.Match);
-                var adapter = new BattleAdapter(sim, locomotion, recipe, new DeployGround(terrain != null ? terrain.Nav : WcMapNavigation.Create(map), terrain, groundRaw), groundRaw);
+                var adapter = new BattleAdapter(sim, locomotion, recipe, new DeployGround(terrain != null ? terrain.Nav : WcMapNavigation.Create(map), terrain, groundRaw), groundRaw, standing);
                 reinforce = new ReinforceSystem(combat, recipe.Match, capture, adapter);
                 match = new MatchSystem(combat, recipe.Match, capture, mode);
                 mode.Bind(match);
@@ -227,10 +230,12 @@ namespace WarCore.Presentation
         private readonly ComponentType<MoveIntent> intents;
         private readonly ComponentType<MoveWaypoint> waypoints;
         private readonly ComponentType<Combatant> combatants;
+        private readonly ComponentType<SquadStanding>? standing;
         private static readonly SimFix Radius = SimFix.Ratio(1, 4);
         public ulong PolicyKey { get; }
-        internal BattleAdapter(Simulation sim, InterimLocomotion locomotion, WorldRecipe recipe, DeployGround ground, long groundRaw)
+        internal BattleAdapter(Simulation sim, InterimLocomotion locomotion, WorldRecipe recipe, DeployGround ground, long groundRaw, ComponentType<SquadStanding>? standing = null)
         {
+            this.standing = standing;
             this.sim = sim; this.locomotion = locomotion; this.ground = ground; this.groundRaw = groundRaw;
             stage = new EntityStage(sim.Entities); spawns = recipe.Units.ToArray(); ids = new StableId[spawns.Length];
             positions = sim.Entities.Resolve<Position>(); colliders = sim.Entities.Resolve<Collider>();
@@ -253,6 +258,7 @@ namespace WarCore.Presentation
             target = intent.Target; return found;
         }
         public bool CanStandAt(SimVec3 at) => ground.CanStand(at);
+        public bool IsCommanded(StableId unit) => standing.HasValue && sim.Entities.TryGet(standing.Value, Resolve(unit), out _);
         public bool TryDeploy(EntityId unit, SimVec3 at)
         {
             StableId stable = sim.Entities.StableOf(unit); unit = Resolve(stable);
