@@ -100,6 +100,7 @@ namespace WarCore.Interim
                 }
             submit:
                 context.SubmitMovement(unit, next);
+                Face(unit, point, next);
                 provisional[i].Point = next;
                 if (next.Equals(waypoint) && waypoint.Equals(intent.Target)) { Stop(unit); continue; }
                 // Progress is entering the next cell, not standing on its centre: a crowd cannot all hit one point.
@@ -127,6 +128,7 @@ namespace WarCore.Interim
                 }
             }
             context.SubmitMovement(provisional[i].Unit, next);
+            Face(provisional[i].Unit, point, next);
             provisional[i].Point = next;
         }
 

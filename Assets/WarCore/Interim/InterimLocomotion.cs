@@ -11,6 +11,8 @@ namespace WarCore.Interim
         private readonly ComponentType<MoveIntent> intents;
         private readonly ComponentType<Collider> colliders;
         private readonly uint wallMask;
+        private ComponentType<UnitFacing> facing;
+        private bool faceMovement;
 
         // The caller reserves wallMask for static boxes, separate from mover layers.
         public InterimLocomotion(EntityStore entities, uint wallMask = 0, NavGrid navGrid = null, bool crowd = false)
@@ -31,6 +33,19 @@ namespace WarCore.Interim
             }
             if (wallMask != 0 || crowd)
                 colliders = entities.Resolve<Collider>();
+        }
+
+        // Opens the facing write: a unit that moves faces the horizontal direction of the step; a step with no horizontal
+        // part, or a unit that does not move, keeps its facing. Without this call no facing is touched.
+        public void BindFacing(ComponentType<UnitFacing> component) { facing = component; faceMovement = true; }
+
+        private void Face(EntityId unit, SimVec3 from, SimVec3 to)
+        {
+            if (!faceMovement) return;
+            var step = new SimVec3(to.X - from.X, default, to.Z - from.Z);
+            if (step.LengthSquared.Sign == 0) return;
+            SimVec3 direction = step.Normalized;
+            entities.Set(facing, unit, new UnitFacing(direction.X, direction.Z));
         }
 
         int ISimSystem.Order => 20;
@@ -107,6 +122,7 @@ namespace WarCore.Interim
                         continue;
                 }
                 context.SubmitMovement(unit, next);
+                Face(unit, position.Value, next);
                 if (arrived)
                     Stop(unit);
             }

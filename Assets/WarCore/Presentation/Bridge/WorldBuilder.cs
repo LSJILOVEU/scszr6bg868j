@@ -173,6 +173,7 @@ namespace WarCore.Presentation
                 path ? (terrain != null ? terrain.Nav : WcMapNavigation.Create(map)) : null, crowd,
                 controlled == null ? null : new PlayerStep(sim, controlled), crowdPass, terrain);
             if (controlled != null) locomotion.Stop(controlled.Current);
+            if (recipe.Facing) locomotion.BindFacing(facings);
             sim.RegisterGameplay("interim.orders", new InterimOrders(sim.Entities, locomotion, crowd ? CrowdSlotSpacing : default, controlled), SimSystemPhase.Requests);
             sim.RegisterGameplay("interim.locomotion", locomotion, SimSystemPhase.Movement);
             CaptureSystem capture = null; ReinforceSystem reinforce = null; MatchSystem match = null;
@@ -191,7 +192,7 @@ namespace WarCore.Presentation
             if (controlled != null)
             {
                 sim.RegisterGameplay("control.player", controlled, SimSystemPhase.Requests);
-                sim.RegisterGameplay("control.player-fire", new PlayerFire(sim, combat, controlled), SimSystemPhase.Queries);
+                sim.RegisterGameplay("control.player-fire", new PlayerFire(sim, combat, controlled, recipe.Facing ? facings : (ComponentType<UnitFacing>?)null), SimSystemPhase.Queries);
                 sim.RegisterGameplay("control.fallback", new PlayerFallback(combat, controlled, locomotion,
                     () => mode.IsFinished), SimSystemPhase.Requests);
             }
