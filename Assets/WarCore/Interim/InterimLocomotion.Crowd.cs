@@ -140,9 +140,32 @@ namespace WarCore.Interim
             SimFix radius = SimFix.FromRaw(MaxRaw(0, provisional[i].Radius.Raw - 1));
             if (wallMask != 0 && context.SpatialQuery.Any(SpatialQueries.Sphere(next, radius, wallMask))) return false;
             if (!ControlledGridAllows(next, radius)) return false;
+            if (!ControlledPathAllows(context, i, next, radius)) return false;
             // Initial overlap uses the AI rule: permit each step that strictly increases distance
             // until separated; do not permit equal/closer steps while still overlapping.
             return UnitsAllow(i, next, out _);
+        }
+
+        // A step shorter than the radius is judged by its end alone: the circle at the end overlaps the circle at the start, so no
+        // wall can sit between them unseen. A longer step could jump a thin wall, so its whole path must be clear of walls and
+        // blocked cells (same radius as the end test, so touching a wall along the way stays allowed).
+        private bool ControlledPathAllows(SimContext context, int i, SimVec3 next, SimFix radius)
+        {
+            SimVec3 from = provisional[i].Point;
+            SimVec3 flat = new SimVec3(next.X - from.X, default, next.Z - from.Z);
+            if (flat.LengthSquared < new SimVec3(provisional[i].Radius, default, default).LengthSquared) return true;
+            if (wallMask != 0 && context.SpatialQuery.Any(SpatialQueries.Capsule(from, next, radius, wallMask))) return false;
+            // The grid test takes at most half a metre per axis at a time; the pieces chain along the same line.
+            long dx = next.X.Raw - from.X.Raw, dz = next.Z.Raw - from.Z.Raw;
+            long pieces = (MaxRaw(dx < 0 ? -dx : dx, dz < 0 ? -dz : dz) + NavGrid.MaxClearStepRaw - 1) / NavGrid.MaxClearStepRaw;
+            SimVec3 start = from;
+            for (long k = 1; k <= pieces; k++)
+            {
+                var end = k == pieces ? next : new SimVec3(SimFix.FromRaw(from.X.Raw + dx * k / pieces), from.Y, SimFix.FromRaw(from.Z.Raw + dz * k / pieces));
+                if (!grid.SegmentClear(start, end, radius)) return false;
+                start = end;
+            }
+            return true;
         }
 
         private static long MaxRaw(long a, long b) => a > b ? a : b;
