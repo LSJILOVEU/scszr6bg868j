@@ -216,9 +216,9 @@ namespace WarCore.Presentation
         {
             if (command.AtTick <= Tick)
                 throw new ArgumentOutOfRangeException(nameof(command), "Command must target a future tick.");
-            if (command.Kind == SquadCommandKind.MoveTo)
+            if (command.Kind == BridgeCommandKind.MoveTo)
                 Target(command.XMm, command.ZMm, groundRaw);
-            else if (command.Kind == SquadCommandKind.Follow && !HasUnit(command.TargetKey))
+            else if (command.Kind == BridgeCommandKind.Follow && !HasUnit(command.TargetKey))
                 throw new ArgumentException("Follow target is not a unit of this session.", nameof(command));
             int index = 0;
             while (index < pending.Count && pending[index].AtTick < command.AtTick)
@@ -278,11 +278,11 @@ namespace WarCore.Presentation
                 BridgeCommand command = pending[0];
                 squad = command.Kind switch
                 {
-                    SquadCommandKind.MoveTo => new SquadCommand(SquadCommandKind.MoveTo, command.Squad, Target(command.XMm, command.ZMm, groundRaw), default),
-                    SquadCommandKind.Hold => new SquadCommand(SquadCommandKind.Hold, command.Squad, default, default),
+                    BridgeCommandKind.MoveTo => new SquadCommand(SquadCommandKind.MoveTo, command.Squad, Target(command.XMm, command.ZMm, groundRaw), default),
+                    BridgeCommandKind.Hold => new SquadCommand(SquadCommandKind.Hold, command.Squad, default, default),
                     _ => new SquadCommand(SquadCommandKind.Follow, command.Squad, default, default)
                 };
-                if (command.Kind == SquadCommandKind.Follow) followTarget = UnitLink(command.TargetKey);
+                if (command.Kind == BridgeCommandKind.Follow) followTarget = UnitLink(command.TargetKey);
             }
             var input = new InputFrame(default, default, squad: squad);
             PlayerInput nextPlayerInput = heldPlayerInput;

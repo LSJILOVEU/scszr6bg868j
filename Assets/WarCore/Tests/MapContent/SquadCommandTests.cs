@@ -72,7 +72,7 @@ namespace WarCore.Tests
             var log = first.Session.CommandLog;
             Assert.That(log.Count, Is.EqualTo(4));
             Assert.That(new[] { log[0].Kind, log[1].Kind, log[2].Kind, log[3].Kind },
-                Is.EqualTo(new[] { SquadCommandKind.Hold, SquadCommandKind.Follow, SquadCommandKind.MoveTo, SquadCommandKind.Hold }));
+                Is.EqualTo(new[] { BridgeCommandKind.Hold, BridgeCommandKind.Follow, BridgeCommandKind.MoveTo, BridgeCommandKind.Hold }));
             Assert.That(log[1].TargetKey, Is.EqualTo(4UL));
 
             var replay = World();
