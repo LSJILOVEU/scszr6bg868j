@@ -10,11 +10,12 @@ using WarCore.Sim;
 namespace WarCore.Tests
 {
     // The per-unit facing component: absent unless the recipe opens it, default until something writes it, and part of
-    // the snapshot and the state hash when present. Nothing reads it for gameplay yet.
+    // the snapshot and the state hash when present. Nothing reads it for gameplay yet. Movement writes it (see
+    // FacingWriteTests), so a unit that is never ordered is the one that keeps the default.
     public sealed class FacingTests
     {
         private static readonly byte[] Map = WcMapWriter.Write(Wp23.Make(40, 24, 0, 6 * Wp23.S, null, 4 * Wp23.S));
-        private static readonly UnitSpawn[] Units = { Wp23.Unit(1, 1, 3500, 3500), Wp23.Unit(2, 1, 3500, 6500), Wp23.Unit(3, 2, 30500, 3500) };
+        private static readonly UnitSpawn[] Units = { Wp23.Unit(1, 1, 3500, 3500), Wp23.Unit(2, 1, 3500, 6500), Wp23.Unit(3, 2, 30500, 3500), Wp23.Unit(4, 3, 20500, 20500) };
         private static readonly BridgeCommand[] Script = { BridgeCommand.MoveTo(1, 1, 20500, 3500), BridgeCommand.MoveTo(2, 2, 3500, 15500) };
 
         private static SimSession World(bool facing, MoverKind mover = MoverKind.InterimCrowd)
@@ -40,18 +41,19 @@ namespace WarCore.Tests
         }
 
         [Test]
-        public void WithTheFlag_EveryUnitReadsTheDefault_AndNothingMovesIt()
+        public void WithTheFlag_EveryUnitReadsTheDefault_UntilItMoves()
         {
             SimSession s = World(true);
             for (int tick = 0; tick <= 120; tick++)
             {
                 if (tick != 0) s.StepOnce();
-                foreach (var spawn in Units)
-                {
-                    Assert.That(s.TryFacing(spawn.Key, out long x, out long z), Is.True);
-                    Assert.That((x, z), Is.EqualTo((0L, Wp23.S)), "unit " + spawn.Key + " at tick " + tick);
-                }
+                Assert.That(s.TryFacing(4, out long x, out long z), Is.True);
+                Assert.That((x, z), Is.EqualTo((0L, Wp23.S)), "the unit that is never ordered, at tick " + tick);
             }
+            Assert.That(s.TryFacing(1, out long fx, out long fz), Is.True);
+            Assert.That((fx, fz), Is.EqualTo((Wp23.S, 0L)), "unit 1 walked along +X");
+            Assert.That(s.TryFacing(3, out fx, out fz), Is.True);
+            Assert.That(fx, Is.LessThan(0), "unit 3 walked toward -X, +Z"); Assert.That(fz, Is.GreaterThan(0));
             Assert.That(s.TryFacing(99, out _, out _), Is.False, "an unknown unit");
             Assert.That(Encoding.ASCII.GetString(M3TestWorld.Sim(s).SaveRetainedSnapshot()), Does.Contain(UnitFacing.ComponentId));
         }
@@ -74,13 +76,13 @@ namespace WarCore.Tests
         public void SnapshotsRoundTrip_AndResumeToTheSameHashes()
         {
             SimSession whole = World(true), a = World(true);
-            Face(whole, 1, -23170, 45000); Face(a, 1, -23170, 45000);
+            Face(whole, 4, -23170, 45000); Face(a, 4, -23170, 45000);
             for (int i = 0; i < 60; i++) { whole.StepOnce(); a.StepOnce(); }
             byte[] snapshot = M3TestWorld.Sim(a).SaveRetainedSnapshot();
             SimSession b = World(true);
             M3TestWorld.Sim(b).RestoreRetainedSnapshot(snapshot);
             Assert.That(b.StateHash, Is.EqualTo(whole.StateHash));
-            Assert.That(b.TryFacing(1, out long x, out long z), Is.True);
+            Assert.That(b.TryFacing(4, out long x, out long z), Is.True);
             Assert.That((x, z), Is.EqualTo((-23170L, 45000L)));
             for (int i = 0; i < 90; i++)
             {

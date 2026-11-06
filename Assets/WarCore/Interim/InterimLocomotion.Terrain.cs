@@ -136,6 +136,7 @@ namespace WarCore.Interim
             if (grid.SegmentClear(point, next, UnitFootprint) && !WallHit(context, unit, point, next))
             {
                 context.SubmitMovement(unit, next);
+                Face(unit, point, next);
                 now = next;
                 if (arrived)
                 {
@@ -212,6 +213,7 @@ namespace WarCore.Interim
             if (moved)
             {
                 context.SubmitMovement(unit, next);
+                Face(unit, point, next);
                 provisional[i].Point = next;
                 now = next;
                 if (next.Equals(waypoint) && waypoint.Equals(intent.Target)) Stop(unit);

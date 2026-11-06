@@ -43,6 +43,7 @@ namespace WarCore.Interim
                 if (context.SpatialQuery.Any(SpatialQueries.Capsule(point, next, collider.Radius, wallMask))) return;
             }
             context.SubmitMovement(unit, next);
+            Face(unit, point, next);
             if (!arrived) return;
             if (waypoint.Equals(intent.Target)) { Stop(unit); return; }
             // Movement commits later; compute from the submitted point, not the old Position component.
