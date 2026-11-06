@@ -39,6 +39,7 @@ namespace WarCore.Content
         private readonly string[] meleeIds;
         private readonly MeleeSpec[] melee;
         private readonly int[] unitTypeMelee;
+        private readonly object[] sections;
 
         public string Id { get; }
         // Optional terrain rules (WP-22); null when the pack has none. Not part of any PolicyDigest.
@@ -47,9 +48,10 @@ namespace WarCore.Content
         internal ContentPack(string id, string[] weaponIds, WeaponDef[] weapons, string[] unitTypeIds, int[] unitTypeWeapons,
             long maxHealthRaw, string resolverId, string selectorId, MatchRules? match,
             bool friendlyFire, bool friendlyFireLocked, int allyCheckMissRaw, long allyHoldMilli,
-            string[] meleeIds = null, MeleeSpec[] melee = null, int[] unitTypeMelee = null, TerrainRules terrain = null)
+            string[] meleeIds = null, MeleeSpec[] melee = null, int[] unitTypeMelee = null, TerrainRules terrain = null, object[] sections = null)
         {
             Terrain = terrain;
+            this.sections = sections ?? Array.Empty<object>();
             this.meleeIds = meleeIds ?? Array.Empty<string>(); this.melee = melee ?? Array.Empty<MeleeSpec>();
             this.unitTypeMelee = unitTypeMelee ?? NoMelee(unitTypeIds.Length);
             Id = id; this.weaponIds = weaponIds; this.weapons = weapons; this.unitTypeIds = unitTypeIds;
@@ -69,6 +71,14 @@ namespace WarCore.Content
         public string UnitTypeId(int index) => unitTypeIds[index];
         public string WeaponId(int index) => weaponIds[index];
         public MatchRules Match => match ?? throw new ContentException("content pack '" + Id + "' has no match section");
+
+        // The value a data section added after the first seven built, by its type. The shipped sections keep their own accessors above.
+        public T Section<T>() where T : class
+        {
+            foreach (object value in sections)
+                if (value is T typed) return typed;
+            throw new ContentException("content pack '" + Id + "' has no section of type " + typeof(T).Name);
+        }
 
         public int WeaponIndex(string weaponId)
         {
