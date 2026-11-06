@@ -15,6 +15,17 @@ namespace WarCore.Tests
 {
     public sealed class M1BoundaryTests
     {
+        // The one place that decides which Presentation sources may name the simulation: the session, the world builder, and the
+        // world features under Bridge/Features. The path is judged together with the source, never the source alone.
+        internal static bool MayReferenceSimulation(string relativePath, string source)
+        {
+            if (!UsesSimulationNamespace(source))
+                return true;
+            string path = relativePath.Replace('\\', '/');
+            return path == "Bridge/SimSession.cs" || path == "Bridge/WorldBuilder.cs"
+                || path.StartsWith("Bridge/Features/", StringComparison.Ordinal);
+        }
+
         [Test]
         public void M1_PresentationSource_ConfinesSimReferencesToTwoBridgeFiles()
         {
@@ -26,11 +37,25 @@ namespace WarCore.Tests
             foreach (string file in files)
             {
                 string source = SourceRules.StripComments(File.ReadAllText(file));
+                string relative = Path.GetRelativePath(root, file).Replace('\\', '/');
                 Assert.That(source, Does.Not.Match(@"\bUnityEngine\b"), file);
+                Assert.That(MayReferenceSimulation(relative, source), Is.True, relative);
                 if (UsesSimulationNamespace(source))
-                    simFiles.Add(Path.GetRelativePath(root, file).Replace('\\', '/'));
+                    simFiles.Add(relative);
             }
-            Assert.That(simFiles, Is.EquivalentTo(new[] { "Bridge/SimSession.cs", "Bridge/WorldBuilder.cs" }));
+            Assert.That(simFiles.Where(f => !f.StartsWith("Bridge/Features/", StringComparison.Ordinal)),
+                Is.EquivalentTo(new[] { "Bridge/SimSession.cs", "Bridge/WorldBuilder.cs" }));
+        }
+
+        [TestCase("Camera/Foo.cs", "using WarCore.Sim;", false)]
+        [TestCase("Bridge/Features/X.cs", "using WarCore.Sim;", true)]
+        [TestCase("Bridge/Other.cs", "using WarCore.Sim;", false)]
+        [TestCase("Bridge\\Features\\X.cs", "using WarCore.Sim;", true)]
+        [TestCase("Bridge/FeaturesX.cs", "using WarCore.Sim;", false)]
+        [TestCase("Camera/Foo.cs", "class Foo { }", true)]
+        public void M1_SimulationAdmission_JudgesThePathTogetherWithTheSource(string path, string source, bool admitted)
+        {
+            Assert.That(MayReferenceSimulation(path, source), Is.EqualTo(admitted));
         }
 
         [TestCase("using WarCore.Sim;")]
