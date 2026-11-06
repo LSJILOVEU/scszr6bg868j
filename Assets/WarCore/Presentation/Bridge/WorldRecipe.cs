@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using WarCore.Content;
 using WarCore.Combat;
 using WarCore.Battle;
@@ -56,17 +57,18 @@ namespace WarCore.Presentation
     {
         private readonly UnitSpawn[] units;
         private readonly BridgeCommand[] script;
+        private readonly List<IWorldOption> options = new List<IWorldOption>();
 
         public CombatPack Combat { get; private set; }
         public MatchPack Match { get; private set; }
         public ulong? PlayerKey { get; private set; }
         public CrowdPassKind CrowdPass { get; private set; }
         // Opens the per-unit facing component. Off by default: a world without it is byte-identical to one built before it existed.
-        public bool Facing { get; private set; }
+        public bool Facing => HasOption(WorldOptions.Facing.OptionId);
         // Opens the per-unit motion-limits component, same rule: off by default, and a world without it is unchanged.
-        public bool Motion { get; private set; }
+        public bool Motion => HasOption(WorldOptions.Motion.OptionId);
         // Opens the per-unit standing-order component (hold, follow, move in progress), same rule: off by default, and a world without it is unchanged.
-        public bool Standing { get; private set; }
+        public bool Standing => HasOption(WorldOptions.Standing.OptionId);
         // Adds the block AI (units raise a block against incoming swings, by their block spec's chance). Needs block specs and facing.
         public bool BlockAi { get; private set; }
         // The rules a map with terrain is derived under; null for flat maps. Not part of the recipe's seed or rule-set id.
@@ -77,6 +79,8 @@ namespace WarCore.Presentation
         public MoverKind Mover { get; }
         public ReadOnlySpan<UnitSpawn> Units => units;
         public ReadOnlySpan<BridgeCommand> Script => script;
+        // The switches this recipe carries, in the order they were added. Features read them when the world is assembled.
+        internal IReadOnlyList<IWorldOption> Options => options;
 
         public WorldRecipe(ulong seed, MoverKind mover, UnitSpawn[] units, BridgeCommand[] script)
         {
@@ -97,7 +101,7 @@ namespace WarCore.Presentation
         private WorldRecipe Copy()
         {
             var copy = new WorldRecipe(Seed, Mover, units, script);
-            copy.Combat = Combat; copy.Match = Match; copy.PlayerKey = PlayerKey; copy.RuleSetId = RuleSetId; copy.CrowdPass = CrowdPass; copy.TerrainPack = TerrainPack; copy.Facing = Facing; copy.Motion = Motion; copy.Standing = Standing; copy.BlockAi = BlockAi;
+            copy.Combat = Combat; copy.Match = Match; copy.PlayerKey = PlayerKey; copy.RuleSetId = RuleSetId; copy.CrowdPass = CrowdPass; copy.TerrainPack = TerrainPack; copy.BlockAi = BlockAi; copy.options.AddRange(options);
             return copy;
         }
 
@@ -136,17 +140,26 @@ namespace WarCore.Presentation
             return copy;
         }
 
-        public WorldRecipe WithFacing()
+        // Turns one world feature on. A switch is identified by its id, so adding it again changes nothing.
+        public WorldRecipe With(IWorldOption option)
         {
-            var copy = Copy(); copy.Facing = true;
+            if (option == null) throw new ArgumentNullException(nameof(option));
+            if (string.IsNullOrEmpty(option.OptionId)) throw new ArgumentException("An option id is required.", nameof(option));
+            var copy = Copy();
+            if (!HasOption(option.OptionId)) copy.options.Add(option);
             return copy;
         }
 
-        public WorldRecipe WithMotion()
+        private bool HasOption(string id)
         {
-            var copy = Copy(); copy.Motion = true;
-            return copy;
+            foreach (IWorldOption option in options)
+                if (option.OptionId == id) return true;
+            return false;
         }
+
+        public WorldRecipe WithFacing() => With(WorldOptions.Facing);
+
+        public WorldRecipe WithMotion() => With(WorldOptions.Motion);
 
         public WorldRecipe WithBlockAi()
         {
@@ -154,11 +167,7 @@ namespace WarCore.Presentation
             return copy;
         }
 
-        public WorldRecipe WithStandingOrders()
-        {
-            var copy = Copy(); copy.Standing = true;
-            return copy;
-        }
+        public WorldRecipe WithStandingOrders() => With(WorldOptions.Standing);
 
         public WorldRecipe WithCrowdPass(CrowdPassKind kind)
         {
