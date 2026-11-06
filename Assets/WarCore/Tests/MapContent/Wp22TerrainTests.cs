@@ -260,14 +260,12 @@ namespace WarCore.Tests
                 Does.StartWith("TERRAIN_UNREACHABLE"));
         }
 
-        // ---- the runtime refuses terrain maps until T1a-2 ----
+        // ---- flat maps keep running (the terrain guard matrix moved to Wp23GuardTests with T1a-2a) ----
 
         [Test]
-        public void WorldBuilder_RefusesTerrainMaps_AndKeepsFlatMapsRunning()
+        public void WorldBuilder_KeepsFlatMapsRunning()
         {
             var recipe = new WorldRecipe(1, MoverKind.InterimPath, new UnitSpawn[0], new BridgeCommand[0]);
-            string message = Assert.Throws<NotSupportedException>(() => WorldBuilder.Create(recipe, WcMapWriter.Write(TerrainDemoMap.Build()))).Message;
-            Assert.That(message, Does.Contain("T1a-2"));
             Assert.DoesNotThrow(() => WorldBuilder.Create(recipe, M2MapFixture.GoldenBytes));
         }
     }

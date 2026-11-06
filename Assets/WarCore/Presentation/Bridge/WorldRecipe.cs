@@ -1,4 +1,5 @@
 using System;
+using WarCore.Content;
 using WarCore.Combat;
 using WarCore.Battle;
 
@@ -50,6 +51,8 @@ namespace WarCore.Presentation
         public MatchPack Match { get; private set; }
         public ulong? PlayerKey { get; private set; }
         public CrowdPassKind CrowdPass { get; private set; }
+        // The rules a map with terrain is derived under; null for flat maps. Not part of the recipe's seed or rule-set id.
+        public ContentPack TerrainPack { get; private set; }
         // Opaque rule-set identity: hashed from tick 0 and checked on restore. Never derived from the rule contents.
         public string RuleSetId { get; private set; } = MatchMode.RwrRuleSetId;
         public ulong Seed { get; }
@@ -76,7 +79,7 @@ namespace WarCore.Presentation
         private WorldRecipe Copy()
         {
             var copy = new WorldRecipe(Seed, Mover, units, script);
-            copy.Combat = Combat; copy.Match = Match; copy.PlayerKey = PlayerKey; copy.RuleSetId = RuleSetId; copy.CrowdPass = CrowdPass;
+            copy.Combat = Combat; copy.Match = Match; copy.PlayerKey = PlayerKey; copy.RuleSetId = RuleSetId; copy.CrowdPass = CrowdPass; copy.TerrainPack = TerrainPack;
             return copy;
         }
 
@@ -104,6 +107,14 @@ namespace WarCore.Presentation
         {
             if (string.IsNullOrEmpty(ruleSetId)) throw new ArgumentException("A rule set id is required.", nameof(ruleSetId));
             var copy = Copy(); copy.RuleSetId = ruleSetId;
+            return copy;
+        }
+
+        // A map with a height field or surface table needs the pack whose terrain rules it is run under.
+        public WorldRecipe WithTerrainRules(ContentPack pack)
+        {
+            if (pack == null) throw new ArgumentNullException(nameof(pack));
+            var copy = Copy(); copy.TerrainPack = pack;
             return copy;
         }
 

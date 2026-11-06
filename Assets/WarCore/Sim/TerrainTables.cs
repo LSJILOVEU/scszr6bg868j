@@ -19,6 +19,9 @@ namespace WarCore.Sim
         public NavGrid Nav { get; }
         public ulong Digest { get; }
         public int SurfaceCount => surfaceNames.Length;
+        // The largest surface speed multiplier (thousandths). Content's SurfaceDef.MaxSpeedMilli is the same number;
+        // Sim cannot reference Content, so a test pins them equal. Locomotion's step bound relies on it.
+        public const int MaxSpeedMilli = 2000;
 
         // cost / speedMilli are 0 exactly on cells the NavGrid blocks and at least 1 elsewhere (1000 = unchanged speed).
         // surfaceNames / surfaceCells are the map's own table (empty when the map has none); rulesCanonical is the
@@ -41,6 +44,8 @@ namespace WarCore.Sim
                 bool walkable = nav.IsPassable(i % nav.Width, i / nav.Width);
                 if (walkable != (cost[i] != 0) || walkable != (speedMilli[i] != 0))
                     throw new ArgumentException("Cost and speed must be zero exactly on blocked cells.");
+                if (speedMilli[i] > MaxSpeedMilli)
+                    throw new ArgumentException("Speed multiplier exceeds " + MaxSpeedMilli + " thousandths.");
             }
             Ground = ground;
             this.cost = (byte[])cost.Clone();

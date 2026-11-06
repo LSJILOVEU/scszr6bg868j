@@ -63,6 +63,7 @@ namespace WarCore.Interim
             for (int i = 0; i < memberCount; i++)
             {
                 if (i == controlledIndex) continue;
+                if (terrain != null) { StepCrowdUnitTerrain(context, i); continue; }
                 EntityId unit = provisional[i].Unit;
                 MoveIntent intent = entities.Get(intents, unit);
                 if (!intent.Active) continue;
@@ -170,13 +171,15 @@ namespace WarCore.Interim
             waypoint = default;
             if (pathfinder.Find(point, target) != GridPathStatus.Found) return false;
             ReadOnlySpan<int> route = pathfinder.Path;
-            waypoint = route.Length == 1 ? target : grid.Center(route[1], point.Y);
+            waypoint = route.Length == 1 ? target : Centre(route[1], point.Y);
+            if (terrain != null) NoteTail(route, route.Length == 1 ? 0 : 1);
             return true;
         }
 
         private bool TerrainAllows(SimContext context, int i, SimVec3 next)
         {
             if (!grid.TryCell(next, out int cell) || !grid.IsPassable(cell % grid.Width, cell / grid.Width)) return false;
+            if (terrain != null && !grid.SegmentClear(provisional[i].Point, next, UnitFootprint)) return false;
             return wallMask == 0 || !context.SpatialQuery.Any(SpatialQueries.Capsule(
                 provisional[i].Point, next, provisional[i].Radius, wallMask));
         }
@@ -199,8 +202,8 @@ namespace WarCore.Interim
                     if (dx >= r || dz >= r) continue;
                 }
                 if (pass != null && !provisional[j].Active && pass.MayPass(provisional[i].Unit, provisional[j].Unit)) continue;
-                SimWide oldDistance = (provisional[i].Point - provisional[j].Point).LengthSquared;
-                SimWide newDistance = (next - provisional[j].Point).LengthSquared;
+                SimWide oldDistance = Planar(provisional[i].Point - provisional[j].Point).LengthSquared;
+                SimWide newDistance = Planar(next - provisional[j].Point).LengthSquared;
                 SimFix radius = provisional[i].Radius + provisional[j].Radius;
                 SimWide threshold = new SimVec3(radius, default, default).LengthSquared;
                 if (newDistance >= threshold || (oldDistance < threshold && newDistance > oldDistance)) continue;

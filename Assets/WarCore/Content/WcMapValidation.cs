@@ -79,7 +79,28 @@ namespace WarCore.Content
                 Require(i < cells ? passable == !blocked[i] : !passable, "NAV_WALL_MISMATCH");
             }
             ValidateHeightField(map);
+            ValidateWallsOnTerrain(map);
             ValidateSurfaceTable(map, cells);
+        }
+
+        // A wall's bottom is always Min.Y (BOUNDS: centre Y = Height/2) and every height point is >= Min.Y, so the wall is
+        // never buried below the ground. It must also stand at least 1 m above the highest point under its footprint:
+        // the extremes of the piecewise-linear surface are at grid points, inclusive of both far edges of the footprint.
+        internal const long WallClearanceRaw = SimFix.Scale;
+        private static void ValidateWallsOnTerrain(WcMap map)
+        {
+            if (!map.HasHeightField) return;
+            foreach (WcMapWall wall in map.Walls)
+            {
+                long x = wall.LocalCenter.X.Raw, z = wall.LocalCenter.Z.Raw, hx = wall.HalfX.Raw, hz = wall.HalfZ.Raw;
+                int x0 = (int)((x - hx) / SimFix.Scale), x1 = (int)((x + hx) / SimFix.Scale);
+                int z0 = (int)((z - hz) / SimFix.Scale), z1 = (int)((z + hz) / SimFix.Scale);
+                long highest = long.MinValue;
+                for (int iz = z0; iz <= z1; iz++)
+                    for (int ix = x0; ix <= x1; ix++)
+                        highest = Math.Max(highest, map.VertexRaw(ix, iz));
+                Require(map.FlatHeight.Raw + wall.Height.Raw >= highest + WallClearanceRaw, "WALL_TERRAIN");
+            }
         }
 
         internal const int MaxSurfaceNames = 64;
