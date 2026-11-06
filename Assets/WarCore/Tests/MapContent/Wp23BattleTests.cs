@@ -62,7 +62,7 @@ namespace WarCore.Tests
             }
             Assert.That(a.Read<Combatant>(1).Ammo, Is.EqualTo(before.Ammo));
             SimVec3 end = a.Read<Position>(1).Value;
-            Assert.That(end.X.Raw, Is.Not.EqualTo(start.X.Raw).Or.Not.EqualTo(start.Z.Raw), "the unit moved on the slope");
+            Assert.That((end.X.Raw, end.Z.Raw), Is.Not.EqualTo((start.X.Raw, start.Z.Raw)), "the unit moved on the slope");
             Assert.That(end.Y.Raw, Is.EqualTo(end.X.Raw / 16).Within(1), "the unit still follows the height field");
         }
     }
