@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using WarCore.Content;
+using WarCore.Interim;
 using WarCore.Combat;
 using WarCore.Battle;
 using WarCore.Sim;
@@ -42,6 +43,7 @@ namespace WarCore.Presentation
         private readonly MatchSystem match;
         private readonly UnitSpawn[] spawns;
         private readonly ComponentType<Position> positions;
+        private readonly ComponentType<UnitFacing>? facings;
         private readonly List<BridgeCommand> pending = new List<BridgeCommand>();
         private readonly List<BridgeCommand> commandLog = new List<BridgeCommand>();
         private readonly List<PlayerInputRecord> pendingPlayer = new List<PlayerInputRecord>();
@@ -83,8 +85,10 @@ namespace WarCore.Presentation
 
         internal SimSession(Simulation sim, EntityId[] units, UnitSpawn[] spawns, ComponentType<Position> positions,
             long groundRaw = 0, WcMap map = null, uint wallMask = 0, ViewMap view = null, CombatSystem combat = null, MatchPack matchPack = null,
-            CaptureSystem capture = null, ReinforceSystem reinforce = null, MatchSystem match = null, long maxHealthRaw = 0, IControlTarget controlled = null, CombatPack combatPack = null)
+            CaptureSystem capture = null, ReinforceSystem reinforce = null, MatchSystem match = null, long maxHealthRaw = 0, IControlTarget controlled = null, CombatPack combatPack = null,
+            ComponentType<UnitFacing>? facings = null)
         {
+            this.facings = facings;
             this.combatPack = combatPack;
             this.controlled = controlled;
             this.maxHealthRaw = maxHealthRaw;
@@ -147,6 +151,23 @@ namespace WarCore.Presentation
         // Samples the current committed Tick (after StepOnce/Advance when called by the host).
         // WaitTicksLeft = max(0, ceil(DueMilli/1000) - Tick), for both shot and reload waits.
         // Zero wait does not imply a living, armed unit. Resource 1 is CombatPack's health.
+        // Facing of a unit as raw fixed-point (X, Z) of a direction vector; false when the recipe did not open facing or the key is unknown.
+        public bool TryFacing(ulong viewKey, out long xRaw, out long zRaw)
+        {
+            xRaw = zRaw = 0;
+            if (facings == null)
+                return false;
+            for (int i = 0; i < units.Length; i++)
+            {
+                if (spawns[i].Key != viewKey)
+                    continue;
+                UnitFacing value = sim.Entities.Read(facings.Value, sim.Entities.Resolve(new EntityLink(units[i])));
+                xRaw = value.X.Raw; zRaw = value.Z.Raw;
+                return true;
+            }
+            return false;
+        }
+
         public bool TryUnitStatus(ulong viewKey, out UnitStatus status)
         {
             status = default;

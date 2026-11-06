@@ -51,6 +51,8 @@ namespace WarCore.Presentation
         public MatchPack Match { get; private set; }
         public ulong? PlayerKey { get; private set; }
         public CrowdPassKind CrowdPass { get; private set; }
+        // Opens the per-unit facing component. Off by default: a world without it is byte-identical to one built before it existed.
+        public bool Facing { get; private set; }
         // The rules a map with terrain is derived under; null for flat maps. Not part of the recipe's seed or rule-set id.
         public ContentPack TerrainPack { get; private set; }
         // Opaque rule-set identity: hashed from tick 0 and checked on restore. Never derived from the rule contents.
@@ -79,7 +81,7 @@ namespace WarCore.Presentation
         private WorldRecipe Copy()
         {
             var copy = new WorldRecipe(Seed, Mover, units, script);
-            copy.Combat = Combat; copy.Match = Match; copy.PlayerKey = PlayerKey; copy.RuleSetId = RuleSetId; copy.CrowdPass = CrowdPass; copy.TerrainPack = TerrainPack;
+            copy.Combat = Combat; copy.Match = Match; copy.PlayerKey = PlayerKey; copy.RuleSetId = RuleSetId; copy.CrowdPass = CrowdPass; copy.TerrainPack = TerrainPack; copy.Facing = Facing;
             return copy;
         }
 
@@ -115,6 +117,12 @@ namespace WarCore.Presentation
         {
             if (pack == null) throw new ArgumentNullException(nameof(pack));
             var copy = Copy(); copy.TerrainPack = pack;
+            return copy;
+        }
+
+        public WorldRecipe WithFacing()
+        {
+            var copy = Copy(); copy.Facing = true;
             return copy;
         }
 

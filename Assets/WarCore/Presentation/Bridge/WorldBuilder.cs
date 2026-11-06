@@ -92,6 +92,9 @@ namespace WarCore.Presentation
                 waypoints = sim.Entities.Register<MoveWaypoint>(MoveWaypoint.ComponentId, new MoveWaypointSerializer());
             if (terrain != null)
                 sim.Entities.Register<MoveProgress>(MoveProgress.ComponentId, new MoveProgressSerializer());
+            ComponentType<UnitFacing> facings = default;
+            if (recipe.Facing)
+                facings = sim.Entities.Register<UnitFacing>(UnitFacing.ComponentId, new UnitFacingSerializer());
             ComponentType<Combatant> combatants = default;
             if (recipe.Combat != null)
                 combatants = sim.Entities.Register<Combatant>(Combatant.ComponentId, new CombatantSerializer());
@@ -119,6 +122,8 @@ namespace WarCore.Presentation
                 SimFix speed = SimFix.Ratio(spawn.SpeedMmPerSec, 1000 * SimClock.TickRate);
                 EntityId unit = sim.Entities.Create(placements[firstUnit + i].Key);
                 units[i] = unit;
+                if (recipe.Facing)
+                    sim.Entities.Set(facings, unit, UnitFacing.Default);
                 if (recipe.Match == null || !spawn.Reserve)
                 {
                     // A terrain world never places a unit where its footprint touches blocked ground or leaves the map.
@@ -192,7 +197,7 @@ namespace WarCore.Presentation
             }
             sim.CompleteSpatialBoundary();
             var session = new SimSession(sim, units, recipe.Units.ToArray(), positions, groundRaw, map, wallMask,
-                mapBytes == null ? null : ViewMap.Parse(mapBytes), combat, recipe.Match, capture, reinforce, match, recipe.Combat?.MaxHealthRaw ?? 0, controlled, recipe.Combat);
+                mapBytes == null ? null : ViewMap.Parse(mapBytes), combat, recipe.Match, capture, reinforce, match, recipe.Combat?.MaxHealthRaw ?? 0, controlled, recipe.Combat, recipe.Facing ? facings : (ComponentType<UnitFacing>?)null);
             foreach (BridgeCommand command in recipe.Script)
                 session.Enqueue(command);
             return session;
