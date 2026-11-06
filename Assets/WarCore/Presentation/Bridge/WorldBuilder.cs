@@ -123,6 +123,9 @@ namespace WarCore.Presentation
                 units[i] = unit;
                 if (recipe.Match == null || !spawn.Reserve)
                 {
+                    // A terrain world never places a unit where its footprint touches blocked ground or leaves the map.
+                    if (terrain != null && !terrain.Nav.SegmentClear(point, point, InterimLocomotion.UnitFootprint))
+                        throw new ArgumentException("Unit spawn " + spawn.Key + " is not on standable ground in a terrain world.", nameof(recipe));
                     sim.Entities.Set(positions, unit, new Position(point));
                     sim.Entities.Set(colliders, unit, new Collider(SimFix.Ratio(1, 4), SimFix.FromInt(1)));
                     sim.Entities.Set(intents, unit, new MoveIntent(point, speed, spawn.Squad, false));
