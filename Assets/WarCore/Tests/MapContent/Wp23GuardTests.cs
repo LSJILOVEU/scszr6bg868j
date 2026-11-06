@@ -45,15 +45,15 @@ namespace WarCore.Tests
             }
         }
 
-        // Terrain + Combat / Match / PlayerKey: refused for T1a-2b / T1c, before any derivation (so no pack is needed).
+        // Terrain + PlayerKey stays refused for T1c, before any derivation (so no pack is needed). Combat and match are allowed.
         [TestCase("height"), TestCase("surface"), TestCase("both")]
-        public void CombatMatchAndPlayerOnTerrain_AreRefused(string profile)
+        public void PlayerOnTerrain_IsRefused_CombatAndMatchAreNot(string profile)
         {
             byte[] bytes = WcMapWriter.Write(Profile(profile));
             var units = new[] { M6World.U(1, 1, 3, 4, weapon: -1, speed: 4000), M6World.U(2, 2, 12, 4, weapon: -1, speed: 4000) };
             WorldRecipe battle = M6World.RecipeOf(units);
-            Assert.That(Assert.Throws<NotSupportedException>(() => WorldBuilder.Create(battle, bytes)).Message, Does.Contain("T1a-2b"), "combat + match");
-            Assert.That(Assert.Throws<NotSupportedException>(() => WorldBuilder.Create(battle.WithTerrainRules(Wp23.Pack()), bytes)).Message, Does.Contain("T1a-2b"));
+            Assert.Throws<ArgumentException>(() => WorldBuilder.Create(battle, bytes), "combat + match still needs the pack");
+            Assert.DoesNotThrow(() => WorldBuilder.Create(battle.WithTerrainRules(Wp23.Pack()), bytes));
             Assert.That(Assert.Throws<NotSupportedException>(() => WorldBuilder.Create(battle.WithPlayer(1).WithTerrainRules(Wp23.Pack()), bytes)).Message, Does.Contain("T1c"));
             // Interim / Path with a player stay the older ArgumentException (checked before the map is read).
             var path = new WorldRecipe(41, MoverKind.InterimPath, Units, Array.Empty<BridgeCommand>());

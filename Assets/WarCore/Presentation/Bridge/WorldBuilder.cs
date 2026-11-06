@@ -46,13 +46,11 @@ namespace WarCore.Presentation
             TerrainTables terrain = null;
             if (map != null && map.HasTerrain)
             {
-                // Order matters (the tests pin it): mover kind, then player/battle, then a missing pack, then the derivation.
+                // Order matters (the tests pin it): mover kind, then the player, then a missing pack, then the derivation.
                 if (!path)
                     throw new NotSupportedException("Terrain maps (height field or surface table) need a path or crowd mover.");
                 if (recipe.PlayerKey.HasValue)
                     throw new NotSupportedException("Player control on terrain maps is not supported before T1c.");
-                if (recipe.Combat != null || recipe.Match != null)
-                    throw new NotSupportedException("Combat and match on terrain maps are not supported before T1a-2b.");
                 if (recipe.TerrainPack == null)
                     throw new ArgumentException("A terrain map needs a content pack with terrain rules (WorldRecipe.WithTerrainRules).", nameof(recipe));
                 terrain = TerrainDerivation.Derive(map, recipe.TerrainPack);
