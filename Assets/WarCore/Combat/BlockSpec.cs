@@ -7,12 +7,16 @@ namespace WarCore.Combat
     // centred on the held direction; CosHalfAnglePermille is the cosine of its half angle in thousandths (500 = 60 degrees, 0 = the
     // whole front half-plane). ReductionPermille is the share of the damage that is stopped (1000 = all of it, 0 = none).
     // Only melee is affected; shots never read this.
+    // AiRaisePermille is the chance, in thousandths, that an AI-driven unit with this spec raises it against one incoming swing
+    // (placeholder, to be tuned; 0 = the AI never blocks, which is also what a world without the block AI does).
     public readonly struct BlockSpec : IStateHash
     {
-        public readonly int CosHalfAnglePermille, ReductionPermille;
+        public readonly int CosHalfAnglePermille, ReductionPermille, AiRaisePermille;
 
-        public BlockSpec(int cosHalfAnglePermille, int reductionPermille)
+        public BlockSpec(int cosHalfAnglePermille, int reductionPermille, int aiRaisePermille = 0)
         {
+            if (aiRaisePermille < 0 || aiRaisePermille > 1000) throw new ArgumentOutOfRangeException(nameof(aiRaisePermille));
+            AiRaisePermille = aiRaisePermille;
             if (cosHalfAnglePermille < 0 || cosHalfAnglePermille > 1000) throw new ArgumentOutOfRangeException(nameof(cosHalfAnglePermille));
             if (reductionPermille < 0 || reductionPermille > 1000) throw new ArgumentOutOfRangeException(nameof(reductionPermille));
             CosHalfAnglePermille = cosHalfAnglePermille; ReductionPermille = reductionPermille;
@@ -21,7 +25,11 @@ namespace WarCore.Combat
         // Damage that gets through, in raw fixed-point; the stopped share rounds down.
         public long Through(long damageRaw) => damageRaw - damageRaw * ReductionPermille / 1000;
 
-        public void WriteState(StateHash hash) { hash.Add(CosHalfAnglePermille); hash.Add(ReductionPermille); }
+        public void WriteState(StateHash hash)
+        {
+            hash.Add(CosHalfAnglePermille); hash.Add(ReductionPermille);
+            if (AiRaisePermille != 0) hash.Add(AiRaisePermille);
+        }
     }
 
     // Per-unit block state. The component exists only in worlds whose CombatPack has block specs. Spec is -1 for a unit that cannot

@@ -11,11 +11,12 @@ namespace WarCore.Tests
         internal readonly M6World W;
         internal Action<SimContext> Intent;
 
-        internal MeleeWorld(CombatPack pack, UnitSpawn[] units, byte[] map = null, bool reverse = false, ulong? player = null, WarCore.Battle.MatchPack match = null)
+        internal MeleeWorld(CombatPack pack, UnitSpawn[] units, byte[] map = null, bool reverse = false, ulong? player = null, WarCore.Battle.MatchPack match = null, bool blockAi = false)
         {
             var recipe = new WorldRecipe(41, MoverKind.InterimCrowd, units, Array.Empty<BridgeCommand>()).WithCombat(pack);
             // Player control needs match rules; the never-ending rule set keeps the world running while the units stand on a point.
             if (match != null) recipe = recipe.WithMatch(match).WithRuleSet(WarCore.Battle.MatchMode.TestNeverEndsId);
+            if (blockAi) recipe = recipe.WithFacing().WithBlockAi();
             if (player.HasValue) recipe = recipe.WithPlayer(player.Value);
             W = new M6World(recipe, map, reverse);
             W.Sim.RegisterGameplay("test.melee-intent", new IntentScript(this), SimSystemPhase.Queries);
