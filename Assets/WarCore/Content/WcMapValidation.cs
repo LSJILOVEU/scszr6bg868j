@@ -10,7 +10,7 @@ namespace WarCore.Content
     {
         internal const int MaxFileBytes = 2 * 1024 * 1024;
         internal const int MaxWalls = 4096;
-        internal const int MaxSide = 256;
+        internal const int MaxSide = HeightField.MaxSide;
         internal static void Require(bool condition, string code)
         {
             if (!condition) throw new InvalidDataException("WCMAP_" + code);

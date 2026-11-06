@@ -15,7 +15,7 @@ namespace WarCore.Sim
         public const int MaxSlopeNumerator = 2, MaxSlopeDenominator = 1;
         // Bounds for the walkable-slope ratio num/den: den in [1, MaxWalkableDenominator], num in [0, MaxSlopeNumerator * den].
         public const int MaxWalkableDenominator = 4096;
-        public const int MaxSide = 256;
+        public const int MaxSide = 512;
 
         private readonly int[] points;
         public int Width { get; }
