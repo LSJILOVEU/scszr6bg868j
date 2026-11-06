@@ -23,10 +23,14 @@ namespace WarCore.Presentation
         public long XMm { get; }
         public long ZMm { get; }
         public long SpeedMmPerSec { get; }
+        // Index into CombatPack.Block, or -1 for a unit that cannot block.
+        public int Block { get; }
 
-        public UnitSpawn(ulong key, int archetype, int squad, long xMm, long zMm, long speedMmPerSec, int team = 0, int weapon = -1, bool reserve = false, int melee = -1)
+        public UnitSpawn(ulong key, int archetype, int squad, long xMm, long zMm, long speedMmPerSec, int team = 0, int weapon = -1, bool reserve = false, int melee = -1, int block = -1)
         {
             if (melee < -1) throw new ArgumentOutOfRangeException(nameof(melee));
+            if (block < -1) throw new ArgumentOutOfRangeException(nameof(block));
+            Block = block;
             Melee = melee;
             if (speedMmPerSec <= 0)
                 throw new ArgumentOutOfRangeException(nameof(speedMmPerSec));

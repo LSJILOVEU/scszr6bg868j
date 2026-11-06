@@ -164,6 +164,8 @@ namespace WarCore.Presentation
                 // The combat system registers the melee component, so the units get their specs only now.
                 for (int i = 0; i < recipe.Units.Length; i++)
                     if (recipe.Units[i].Melee >= 0) combat.SetMelee(units[i], recipe.Units[i].Melee);
+                for (int i = 0; i < recipe.Units.Length; i++)
+                    if (recipe.Units[i].Block >= 0) combat.SetBlock(units[i], recipe.Units[i].Block);
                 sim.RegisterGameplay("bridge.dead-cleanup", new DeadCleanup(sim, combatants, intents), SimSystemPhase.Requests);
             }
             if (recipe.CrowdPass != CrowdPassKind.None && (!crowd || recipe.Combat == null))

@@ -34,8 +34,20 @@ namespace WarCore.Control
             StableId stable = sim.Entities.StableOf(unit);
             if (sim.GameplayLife(stable).State == GameplayLifeState.Dead
                 || !sim.Entities.TryGet(positions, unit, out Position position)
-                || !sim.Entities.TryGet(combatants, unit, out Combatant state)
-                || (state.Weapon < 0 && !combat.CanMelee(unit)) || !context.Input.PrimaryAttack) return;
+                || !sim.Entities.TryGet(combatants, unit, out Combatant state)) return;
+            // Holding the block input keeps a hold toward the aim point (the facing when the aim is on the unit); letting go releases it.
+            if (combat.CanBlock(unit))
+            {
+                var aimed = new SimVec3(context.Input.Aim.X - position.Value.X, default, context.Input.Aim.Z - position.Value.Z);
+                if (!context.Input.Block) combat.Release(unit);
+                else if (aimed.LengthSquared.Sign != 0) combat.Hold(unit, aimed);
+                else if (facings != null)
+                {
+                    UnitFacing facing = sim.Entities.Get(facings.Value, unit);
+                    combat.Hold(unit, new SimVec3(facing.X, default, facing.Z));
+                }
+            }
+            if ((state.Weapon < 0 && !combat.CanMelee(unit)) || !context.Input.PrimaryAttack) return;
             // The aimed shot also turns the unit toward the aim point; an aim on top of the unit keeps its facing.
             if (facings != null)
             {

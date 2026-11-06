@@ -67,6 +67,7 @@ namespace WarCore.Combat
             intentTicks = new long[Entities.Capacity];
             intentSlots = new int[candidates.Length];
             InitMelee();
+            InitBlock();
         }
 
         public EntityStore Entities => sim.Entities;

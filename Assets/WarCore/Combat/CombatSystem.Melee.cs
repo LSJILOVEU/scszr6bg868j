@@ -3,9 +3,9 @@ using WarCore.Sim;
 
 namespace WarCore.Combat
 {
-    public enum StrikeKind : byte { Started = 1, Landed = 2, Whiffed = 3 }
+    public enum StrikeKind : byte { Started = 1, Landed = 2, Whiffed = 3, Blocked = 4 }
 
-    // What the melee code did this tick: a swing started, a swing landed on one target (one record per target), or landed on nobody.
+    // What the melee code did this tick: a swing started, a swing landed on one target (one record per target), landed on nobody, or was stopped whole by a block (one record per target).
     public readonly struct StrikeRecord
     {
         public readonly StrikeKind Kind;
@@ -156,19 +156,30 @@ namespace WarCore.Combat
                 meleeTargets[at] = item;
             }
             StableId source = Entities.StableOf(shooter);
-            int landed = 0;
+            int landed = 0, blocked = 0;
             // The first MaxTargets by distance are fixed before any damage is tried; a target that is gone is skipped, never replaced.
             int take = count < spec.MaxTargets ? count : spec.MaxTargets;
             for (int i = 0; i < take; i++)
             {
                 StableId victim = meleeTargets[i].Id;
+                long damage = spec.Damage.Raw;
+                if (pack.HasBlock && TryBlock(meleeTargets[i].Entity, origin, out BlockSpec shield))
+                {
+                    damage = shield.Through(damage);
+                    if (damage == 0)
+                    {
+                        blocked++;
+                        Record(new StrikeRecord(StrikeKind.Blocked, source, victim, tick, 0, origin));
+                        continue;
+                    }
+                }
                 var key = new GameplayApplyKey(source, (ulong)state.StartTick, 0, source, (ulong)state.StartTick, 1, (uint)i);
-                GameplayFailure failure = c.Damage(sim.GameplayTarget(victim), key, 1, spec.Damage.Raw);
+                GameplayFailure failure = c.Damage(sim.GameplayTarget(victim), key, 1, damage);
                 switch (failure)
                 {
                     case GameplayFailure.None:
                         landed++;
-                        Record(new StrikeRecord(StrikeKind.Landed, source, victim, tick, spec.Damage.Raw, origin));
+                        Record(new StrikeRecord(StrikeKind.Landed, source, victim, tick, damage, origin));
                         break;
                     case GameplayFailure.TargetGone:
                     case GameplayFailure.TargetLifeMismatch:
@@ -178,7 +189,7 @@ namespace WarCore.Combat
                         throw new InvalidOperationException("Melee damage was refused: " + failure + ".");
                 }
             }
-            if (landed == 0) Record(new StrikeRecord(StrikeKind.Whiffed, source, default, tick, 0, origin));
+            if (landed == 0 && blocked == 0) Record(new StrikeRecord(StrikeKind.Whiffed, source, default, tick, 0, origin));
         }
 
         private void Record(in StrikeRecord record)
