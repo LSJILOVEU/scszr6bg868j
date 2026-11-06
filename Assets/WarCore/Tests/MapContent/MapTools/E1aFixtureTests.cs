@@ -64,6 +64,22 @@ namespace WarCore.Tests
             Assert.That(setup.CrowdPass, Is.EqualTo("none"));
         }
 
+        // A base standing on raised ground takes its Y from the height field, not from floorRaw.
+        [Test]
+        public void BaseAnchorStandsOnTheHeightField()
+        {
+            int[][] heights = { new[] { 65536, 65536, 65536 }, new[] { 65536, 65536, 65536 }, new[] { 65536, 65536, 65536 } };
+            var desc = new MapDesc("raised", "rwr", "rwr", new MapXZ(2, 2), new MapXZ(0, 0), 0, 262144,
+                new[] { new MapLayer("walls", 1) }, heights, null, new MapWall[0],
+                new[] { new MapPoint(1, new MapMm(500, 500), 400, 0) },
+                new[] { new MapBase(1, 1, new MapMm(1500, 1500)) }, new MapUnit[0], new MapRun(1, "none"), new[] { "hand" }, null, null,
+                new MapStamp[0], new MapSrc[0], new MapNext(1, 2, 2, 1));
+            SpawnAnchor anchor = Bake(MapDescJson.Write(desc)).Setup.Bases[0];
+            Assert.That(anchor.Point.Y.Raw, Is.EqualTo(65536L));
+            Assert.That(anchor.Point.X.Raw, Is.EqualTo(98304L));
+            Assert.That(anchor.Point.Z.Raw, Is.EqualTo(98304L));
+        }
+
         [Test]
         public void M6SetupBuildsTheRecordedMatchPolicy()
         {
