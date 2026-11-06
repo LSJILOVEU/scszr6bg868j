@@ -26,6 +26,9 @@ namespace WarCore.Presentation
         // Index into CombatPack.Block, or -1 for a unit that cannot block.
         public int Block { get; }
 
+        // Placeholder bound: ten metres per tick at 30 ticks per second. A step this long is still swept in full by the movers.
+        public const long MaxSpeedMmPerSec = 300000;
+
         public UnitSpawn(ulong key, int archetype, int squad, long xMm, long zMm, long speedMmPerSec, int team = 0, int weapon = -1, bool reserve = false, int melee = -1, int block = -1)
         {
             if (melee < -1) throw new ArgumentOutOfRangeException(nameof(melee));
@@ -34,6 +37,9 @@ namespace WarCore.Presentation
             Melee = melee;
             if (speedMmPerSec <= 0)
                 throw new ArgumentOutOfRangeException(nameof(speedMmPerSec));
+            if (speedMmPerSec > MaxSpeedMmPerSec)
+                throw new ArgumentOutOfRangeException(nameof(speedMmPerSec), "Unit " + key + " field speedMmPerSec is " + speedMmPerSec
+                    + ", above the " + MaxSpeedMmPerSec + " that the movers sweep.");
             Key = key;
             Team = team;
             Weapon = weapon;
