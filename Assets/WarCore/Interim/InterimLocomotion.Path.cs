@@ -32,9 +32,10 @@ namespace WarCore.Interim
         {
             SimVec3 waypoint = entities.Get(waypoints, unit).Point;
             SimVec3 delta = waypoint - point;
-            SimWide stepSquared = new SimVec3(intent.SpeedPerTick, default, default).LengthSquared;
+            SimFix speed = motion.StepSpeed(unit, intent.SpeedPerTick);
+            SimWide stepSquared = new SimVec3(speed, default, default).LengthSquared;
             bool arrived = delta.LengthSquared <= stepSquared;
-            SimVec3 next = arrived ? waypoint : point + delta.Normalized * intent.SpeedPerTick;
+            SimVec3 next = arrived ? waypoint : point + delta.Normalized * speed;
             if (wallMask != 0)
             {
                 if (!entities.TryGet(colliders, unit, out Collider collider)

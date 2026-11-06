@@ -39,6 +39,10 @@ namespace WarCore.Interim
         // part, or a unit that does not move, keeps its facing. Without this call no facing is touched.
         public void BindFacing(ComponentType<UnitFacing> component) { facing = component; faceMovement = true; }
 
+        // The step length of a moving unit comes from the motion model; the default reproduces the unit's own speed exactly.
+        private IMotionModel motion = new InstantMotion();
+        public void BindMotion(IMotionModel model) { motion = model ?? throw new ArgumentNullException(nameof(model)); }
+
         private void Face(EntityId unit, SimVec3 from, SimVec3 to)
         {
             if (!faceMovement) return;
@@ -110,9 +114,10 @@ namespace WarCore.Interim
                     continue;
                 }
                 SimVec3 delta = intent.Target - position.Value;
-                SimWide stepSquared = new SimVec3(intent.SpeedPerTick, default, default).LengthSquared;
+                SimFix speed = motion.StepSpeed(unit, intent.SpeedPerTick);
+                SimWide stepSquared = new SimVec3(speed, default, default).LengthSquared;
                 bool arrived = delta.LengthSquared <= stepSquared;
-                SimVec3 next = arrived ? intent.Target : position.Value + delta.Normalized * intent.SpeedPerTick;
+                SimVec3 next = arrived ? intent.Target : position.Value + delta.Normalized * speed;
                 if (wallMask != 0)
                 {
                     if (!entities.TryGet(colliders, unit, out Collider collider)
