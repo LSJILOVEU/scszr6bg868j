@@ -214,29 +214,51 @@ namespace WarCore.Interim
         {
             blocker = -1;
             SimWide nearest = default;
+            SimWide stepSquared = Planar(next - provisional[i].Point).LengthSquared;
+            long px = provisional[i].Point.X.Raw, pz = provisional[i].Point.Z.Raw;
+            long lowX = MinRaw(px, next.X.Raw), highX = MaxRaw(px, next.X.Raw);
+            long lowZ = MinRaw(pz, next.Z.Raw), highZ = MaxRaw(pz, next.Z.Raw);
             for (int j = 0; j < memberCount; j++)
             {
                 if (j == i) continue;
                 if (useCrowdBroadPhase)
                 {
-                    long dx = next.X.Raw - provisional[j].Point.X.Raw;
-                    if (dx < 0) dx = -dx;
-                    long dz = next.Z.Raw - provisional[j].Point.Z.Raw;
-                    if (dz < 0) dz = -dz;
+                    long jx = provisional[j].Point.X.Raw, jz = provisional[j].Point.Z.Raw;
                     long r = (provisional[i].Radius + provisional[j].Radius).Raw;
-                    // A sufficient condition for newDistance >= threshold, including any Y separation.
-                    if (dx >= r || dz >= r) continue;
+                    // The whole step lies at least r away from the other unit on one axis, so neither end point
+                    // (and nothing between them) can be closer than the sum of the radii, including any Y separation.
+                    if (jx - r >= highX || jx + r <= lowX || jz - r >= highZ || jz + r <= lowZ) continue;
                 }
                 if (pass != null && !provisional[j].Active && pass.MayPass(provisional[i].Unit, provisional[j].Unit)) continue;
                 SimWide oldDistance = Planar(provisional[i].Point - provisional[j].Point).LengthSquared;
                 SimWide newDistance = Planar(next - provisional[j].Point).LengthSquared;
                 SimFix radius = provisional[i].Radius + provisional[j].Radius;
                 SimWide threshold = new SimVec3(radius, default, default).LengthSquared;
-                if (newDistance >= threshold || (oldDistance < threshold && newDistance > oldDistance)) continue;
+                bool clear = newDistance >= threshold || (oldDistance < threshold && newDistance > oldDistance);
+                // A step shorter than the two radii cannot jump a unit, so only longer steps are checked along their path.
+                if (clear && oldDistance >= threshold && newDistance >= threshold && stepSquared >= threshold
+                    && SweepsThrough(provisional[i].Point, next, provisional[j].Point, threshold))
+                    clear = false;
+                if (clear) continue;
                 // Stable order breaks equal-distance ties.
                 if (blocker < 0 || oldDistance < nearest) { blocker = j; nearest = oldDistance; }
             }
             return blocker < 0;
         }
+
+        // Both end points are outside the other unit's circle; true when the straight step between them passes through it.
+        private bool SweepsThrough(SimVec3 from, SimVec3 to, SimVec3 other, SimWide threshold)
+        {
+            SimVec3 step = Planar(to - from);
+            SimVec3 direction = step.Normalized;
+            SimVec3 offset = Planar(other - from);
+            SimFix along = SimVec3.DotFix(direction, offset);
+            // Behind the start or beyond the end, the end points already decide.
+            if (along.Raw <= 0 || along.Raw >= step.Length.Raw) return false;
+            SimFix across = SimVec3.Cross(direction, offset).Y.ToSimFix();
+            return new SimVec3(across, default, default).LengthSquared < threshold;
+        }
+
+        private static long MinRaw(long a, long b) => a < b ? a : b;
     }
 }
