@@ -32,7 +32,7 @@ namespace WarCore.Tests
         // A unit that cannot move at all: it starts closer than the footprint to the blocked cell (Wp23FailureTests (b)).
         private static SimSession Immobile(MoverKind mover, long speed = Wp23Fx.Speed)
         {
-            SimSession s = Wp23Fx.World(mover, Wp23Fx.Map((x, z) => x == 0 && z == 1), Wp23.Unit(1, 1, 1100, 1500, speed));
+            SimSession s = Wp23Fx.WorldStartingAt(mover, Wp23Fx.Map((x, z) => x == 0 && z == 1), Wp23.Unit(1, 1, 1100, 1500, speed));
             Wp23Fx.Order(s, 1, 2300, 1500);
             return s;
         }

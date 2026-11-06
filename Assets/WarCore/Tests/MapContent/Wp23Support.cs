@@ -227,5 +227,26 @@ namespace WarCore.Tests
         }
 
         internal static NavGrid Nav(WcMap map) => TerrainDerivation.Derive(map, ClosedPack()).Nav;
+
+        // A world whose unit starts where a spawn is refused (its footprint touches blocked ground): it is spawned on the first
+        // clear cell centre and then moved to the wanted start, exactly as a unit pushed there by something else would be.
+        internal static SimSession WorldStartingAt(MoverKind mover, WcMap map, UnitSpawn wanted)
+        {
+            NavGrid nav = Nav(map);
+            for (int z = 0; z < nav.Depth; z++)
+                for (int x = 0; x < nav.Width; x++)
+                {
+                    long xMm = x * 1000L + 500, zMm = z * 1000L + 500;
+                    if (!nav.SegmentClear(Wp23.V(xMm, 0, zMm), Wp23.V(xMm, 0, zMm), InterimLocomotion.UnitFootprint)) continue;
+                    SimSession s = World(mover, map, new UnitSpawn(wanted.Key, wanted.Archetype, wanted.Squad, xMm, zMm, wanted.SpeedMmPerSec));
+                    EntityStore store = M3TestWorld.Sim(s).Entities;
+                    EntityId id = M3TestWorld.Unit(s, wanted.Key);
+                    Position position = store.Get<Position>(id);
+                    position.Value = new SimVec3(Wp23.Mm(wanted.XMm), position.Value.Y, Wp23.Mm(wanted.ZMm));
+                    store.Set(id, position);
+                    return s;
+                }
+            throw new InvalidOperationException("The fixture map has no clear cell.");
+        }
     }
 }

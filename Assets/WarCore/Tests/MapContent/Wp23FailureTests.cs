@@ -20,7 +20,7 @@ namespace WarCore.Tests
 
         private static SimSession SingleWorld(MoverKind mover, long startXmm, long targetXmm)
         {
-            SimSession s = Wp23Fx.World(mover, Single(), Wp23.Unit(1, 1, startXmm, 1500, Speed));
+            SimSession s = Wp23Fx.WorldStartingAt(mover, Single(), Wp23.Unit(1, 1, startXmm, 1500, Speed));
             Wp23Fx.Order(s, 1, targetXmm, 1500);
             return s;
         }
