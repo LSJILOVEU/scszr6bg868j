@@ -176,7 +176,7 @@ namespace WarCore.Presentation
             if (recipe.Match != null)
             {
                 capture = new CaptureSystem(combat, recipe.Match);
-                var adapter = new BattleAdapter(sim, locomotion, recipe, WcMapNavigation.Create(map), groundRaw);
+                var adapter = new BattleAdapter(sim, locomotion, recipe, new DeployGround(terrain != null ? terrain.Nav : WcMapNavigation.Create(map), terrain, groundRaw), groundRaw);
                 reinforce = new ReinforceSystem(combat, recipe.Match, capture, adapter);
                 match = new MatchSystem(combat, recipe.Match, capture, mode);
                 mode.Bind(match);
@@ -207,7 +207,7 @@ namespace WarCore.Presentation
         private readonly Simulation sim;
         private readonly InterimLocomotion locomotion;
         private readonly EntityStage stage;
-        private readonly NavGrid grid;
+        private readonly DeployGround ground;
         private readonly UnitSpawn[] spawns;
         private readonly StableId[] ids;
         private readonly long groundRaw;
@@ -218,13 +218,13 @@ namespace WarCore.Presentation
         private readonly ComponentType<Combatant> combatants;
         private static readonly SimFix Radius = SimFix.Ratio(1, 4);
         public ulong PolicyKey { get; }
-        internal BattleAdapter(Simulation sim, InterimLocomotion locomotion, WorldRecipe recipe, NavGrid grid, long groundRaw)
+        internal BattleAdapter(Simulation sim, InterimLocomotion locomotion, WorldRecipe recipe, DeployGround ground, long groundRaw)
         {
-            this.sim = sim; this.locomotion = locomotion; this.grid = grid; this.groundRaw = groundRaw;
+            this.sim = sim; this.locomotion = locomotion; this.ground = ground; this.groundRaw = groundRaw;
             stage = new EntityStage(sim.Entities); spawns = recipe.Units.ToArray(); ids = new StableId[spawns.Length];
             positions = sim.Entities.Resolve<Position>(); colliders = sim.Entities.Resolve<Collider>();
             intents = sim.Entities.Resolve<MoveIntent>(); waypoints = sim.Entities.Resolve<MoveWaypoint>(); combatants = sim.Entities.Resolve<Combatant>();
-            var hash = new StateHash(); hash.Add("bridge.deployer.v1"); hash.Add(grid.Digest); hash.Add(groundRaw);
+            var hash = new StateHash(); hash.Add("bridge.deployer.v1"); hash.Add(ground.Digest); hash.Add(groundRaw);
             hash.Add(Radius.Raw); hash.Add(2); hash.Add(spawns.Length);
             for (int i = 0; i < spawns.Length; i++)
             {
@@ -241,24 +241,11 @@ namespace WarCore.Presentation
             bool found = sim.Entities.TryGet(intents, Resolve(unit), out MoveIntent intent) && intent.Active;
             target = intent.Target; return found;
         }
-        public bool CanStandAt(SimVec3 at) => TerrainAllowsStanding(at);
-        private bool TerrainAllowsStanding(SimVec3 at)
-        {
-            if (!grid.TryCell(at, out int cell) || !grid.IsPassable(cell % grid.Width, cell / grid.Width)) return false;
-            // Check the full footprint against blocked cells, including the map boundary.
-            for (int z = -1; z <= 1; z++)
-                for (int x = -1; x <= 1; x++)
-                {
-                    var corner = at + new SimVec3(Radius * SimFix.FromInt(x), default, Radius * SimFix.FromInt(z));
-                    if (!grid.TryCell(corner, out int c) || !grid.IsPassable(c % grid.Width, c / grid.Width)) return false;
-                }
-            return true;
-        }
+        public bool CanStandAt(SimVec3 at) => ground.CanStand(at);
         public bool TryDeploy(EntityId unit, SimVec3 at)
         {
             StableId stable = sim.Entities.StableOf(unit); unit = Resolve(stable);
-            at = new SimVec3(at.X, SimFix.FromRaw(groundRaw), at.Z);
-            if (!TerrainAllowsStanding(at)) return false;
+            if (!ground.TryGround(at, out at) || !ground.CanStand(at)) return false;
             foreach (EntityId other in stage.Capture())
             {
                 if (!sim.Entities.TryGet(combatants, other, out _) || !sim.Entities.TryGet(positions, other, out Position position)
