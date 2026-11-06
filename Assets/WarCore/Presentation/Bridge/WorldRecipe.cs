@@ -67,6 +67,8 @@ namespace WarCore.Presentation
         public bool Motion { get; private set; }
         // Opens the per-unit standing-order component (hold, follow, move in progress), same rule: off by default, and a world without it is unchanged.
         public bool Standing { get; private set; }
+        // Adds the block AI (units raise a block against incoming swings, by their block spec's chance). Needs block specs and facing.
+        public bool BlockAi { get; private set; }
         // The rules a map with terrain is derived under; null for flat maps. Not part of the recipe's seed or rule-set id.
         public ContentPack TerrainPack { get; private set; }
         // Opaque rule-set identity: hashed from tick 0 and checked on restore. Never derived from the rule contents.
@@ -95,7 +97,7 @@ namespace WarCore.Presentation
         private WorldRecipe Copy()
         {
             var copy = new WorldRecipe(Seed, Mover, units, script);
-            copy.Combat = Combat; copy.Match = Match; copy.PlayerKey = PlayerKey; copy.RuleSetId = RuleSetId; copy.CrowdPass = CrowdPass; copy.TerrainPack = TerrainPack; copy.Facing = Facing; copy.Motion = Motion; copy.Standing = Standing;
+            copy.Combat = Combat; copy.Match = Match; copy.PlayerKey = PlayerKey; copy.RuleSetId = RuleSetId; copy.CrowdPass = CrowdPass; copy.TerrainPack = TerrainPack; copy.Facing = Facing; copy.Motion = Motion; copy.Standing = Standing; copy.BlockAi = BlockAi;
             return copy;
         }
 
@@ -143,6 +145,12 @@ namespace WarCore.Presentation
         public WorldRecipe WithMotion()
         {
             var copy = Copy(); copy.Motion = true;
+            return copy;
+        }
+
+        public WorldRecipe WithBlockAi()
+        {
+            var copy = Copy(); copy.BlockAi = true;
             return copy;
         }
 

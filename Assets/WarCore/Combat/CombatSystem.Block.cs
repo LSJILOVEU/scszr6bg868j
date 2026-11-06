@@ -18,6 +18,9 @@ namespace WarCore.Combat
         public bool CanBlock(EntityId unit) =>
             pack.HasBlock && Entities.TryGet(blockStates, unit, out BlockState state) && state.Spec >= 0;
 
+        // The block spec a unit carries; only for a unit where CanBlock is true.
+        public BlockSpec BlockSpecOf(EntityId unit) => pack.Block[Entities.Get(blockStates, unit).Spec];
+
         public bool IsHolding(EntityId unit) =>
             pack.HasBlock && Entities.TryGet(blockStates, unit, out BlockState state) && state.Holding;
 
@@ -43,6 +46,29 @@ namespace WarCore.Combat
         {
             if (!CanBlock(unit)) return;
             Entities.Set(blockStates, unit, new BlockState(Entities.Get(blockStates, unit).Spec));
+        }
+
+        // The enemy whose swing is in its windup and will land on this unit: the swing's locked origin is within the swing's radius of
+        // the unit. Of several, the earliest started, ties to the lower identity. Whether the swing really hits (arc, walls) is left to
+        // Land; a unit that raises a block against a swing that misses it loses nothing.
+        public bool TryMeleeThreat(EntityId victim, out StableId attacker, out long startTick)
+        {
+            attacker = default; startTick = 0;
+            if (!pack.HasMelee || !Entities.TryGet(positions, victim, out Position here)) return false;
+            SimFix widest = default;
+            for (int i = 0; i < pack.Melee.Length; i++) if (pack.Melee[i].Radius > widest) widest = pack.Melee[i].Radius;
+            var hits = Candidates(victim, widest + SimFix.FromInt(1));
+            bool found = false;
+            for (int i = 0; i < hits.Length; i++)
+            {
+                EntityId other = hits[i].Entity;
+                if (!IsEnemy(victim, other) || !Entities.TryGet(meleeStates, other, out MeleeState state) || !state.Pending || state.Spec < 0) continue;
+                if (Horizontal(state.Origin - here.Value).LengthSquared > Reach(pack.Melee[state.Spec].Radius)) continue;
+                StableId id = Entities.StableOf(other);
+                if (found && (state.StartTick > startTick || (state.StartTick == startTick && id.CompareTo(attacker) >= 0))) continue;
+                found = true; attacker = id; startTick = state.StartTick;
+            }
+            return found;
         }
 
         // Does a blow that started at `from` run into a block held by `victim`? A blow from the victim's own spot has no side and is not blocked.

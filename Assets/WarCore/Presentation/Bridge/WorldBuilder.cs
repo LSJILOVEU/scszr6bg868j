@@ -199,6 +199,12 @@ namespace WarCore.Presentation
                 sim.RegisterGameplay("battle.capture", capture, SimSystemPhase.Queries);
                 sim.RegisterGameplay("battle.match", match, SimSystemPhase.Queries);
             }
+            if (recipe.BlockAi)
+            {
+                if (combat == null || !recipe.Combat.HasBlock || !recipe.Facing)
+                    throw new ArgumentException("The block AI needs combat with block specs and facing.", nameof(recipe));
+                sim.RegisterGameplay("battle.block-ai", new BlockAiSystem(combat, new FacingSource(sim, facings), controlled), SimSystemPhase.Requests);
+            }
             if (controlled != null)
             {
                 sim.RegisterGameplay("control.player", controlled, SimSystemPhase.Requests);
@@ -276,6 +282,20 @@ namespace WarCore.Presentation
             sim.Entities.Set(colliders, unit, new Collider(Radius, SimFix.FromInt(1)));
             sim.Entities.Set(intents, unit, new MoveIntent(at, SimFix.Ratio(spawn.SpeedMmPerSec, 1000 * SimClock.TickRate), spawn.Squad, false));
             sim.Entities.Set(waypoints, unit, default);
+            return true;
+        }
+    }
+
+    internal sealed class FacingSource : IUnitFacings
+    {
+        private readonly Simulation sim;
+        private readonly ComponentType<UnitFacing> facings;
+        internal FacingSource(Simulation sim, ComponentType<UnitFacing> facings) { this.sim = sim; this.facings = facings; }
+        public bool TryFacing(StableId unit, out SimVec3 direction)
+        {
+            direction = default;
+            if (!sim.Entities.TryResolve(unit, out EntityRef found) || !sim.Entities.TryGet(facings, (EntityId)found, out UnitFacing value)) return false;
+            direction = new SimVec3(value.X, default, value.Z);
             return true;
         }
     }
