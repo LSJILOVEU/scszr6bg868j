@@ -282,8 +282,10 @@ namespace WarCore.Content
                 int windup = r.Int("windupTicks"), active = r.Int("activeTicks"), recovery = r.Int("recoveryTicks");
                 SimFix radius = r.Fix("radius"), halfHeight = r.Fix("halfHeight"), damage = r.Fix("damage"), engage = r.Fix("engageRange");
                 int cosine = r.Int("cosHalfAnglePermille"), targets = r.Int("maxTargets");
+                // Optional: a thrust (a straight narrow hit instead of the sector). Absent = a sector, exactly as before.
+                SimFix lineHalfWidth = r.Has("lineHalfWidth") ? r.Fix("lineHalfWidth") : default;
                 r.Done();
-                try { melee[i] = new MeleeSpec(windup, active, recovery, radius, cosine, halfHeight, damage, targets, engage); }
+                try { melee[i] = new MeleeSpec(windup, active, recovery, radius, cosine, halfHeight, damage, targets, engage, lineHalfWidth); }
                 catch (ArgumentOutOfRangeException ex)
                 {
                     // The constructor parameters are named exactly like the JSON fields.

@@ -136,7 +136,9 @@ namespace WarCore.Combat
             Entities.Set(meleeStates, shooter, new MeleeState(state.Spec, -1, state.NextStartTick));
             SimVec3 origin = state.Origin;
             SimVec3 direction = new SimVec3(SimFix.FromRaw(state.DirX), default, SimFix.FromRaw(state.DirZ));
-            var request = SpatialQueries.Sector(origin, spec.Radius, direction, spec.CosHalfAnglePermille, spec.HalfHeight, unitLayerMask);
+            SpatialRequest request = spec.IsThrust
+                ? SpatialQueries.Capsule(origin, origin + direction.Normalized * spec.Radius, spec.LineHalfWidth, unitLayerMask)
+                : SpatialQueries.Sector(origin, spec.Radius, direction, spec.CosHalfAnglePermille, spec.HalfHeight, unitLayerMask);
             var result = sim.SpatialQuery.AllCapped(in request, candidates.Length, candidates);
             if (result.Truncated) throw new InvalidOperationException("Combat unit capacity exceeded; melee target selection would be incomplete.");
             int count = 0;
