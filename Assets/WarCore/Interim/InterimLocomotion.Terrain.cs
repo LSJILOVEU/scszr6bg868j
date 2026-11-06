@@ -103,7 +103,7 @@ namespace WarCore.Interim
             return dx * dx + dz * dz;
         }
 
-        // Floor of the square root of a non-negative long (distances in a map are < 2^25 raw, squares < 2^50).
+        // Floor of the square root of a non-negative long (distances in a map are < 2^26 raw, squares < 2^51).
         private static long Distance(SimVec3 a, SimVec3 b)
         {
             long square = Dist2(a, b), root = 0;

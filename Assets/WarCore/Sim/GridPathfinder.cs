@@ -65,7 +65,8 @@ namespace WarCore.Sim
                 return GridPathStatus.Rejected;
             if (target < 0 || target >= grid.Count || !grid.IsPassable(target % grid.Width, target / grid.Width))
                 return GridPathStatus.Unreachable;
-            if (++generation == 0)
+            generation = unchecked(generation + 1);
+            if (generation == 0)
             {
                 // Wrapped after 2^32 - 1 searches: old stamps could match again, so forget them all once.
                 Array.Clear(stamps, 0, stamps.Length);
