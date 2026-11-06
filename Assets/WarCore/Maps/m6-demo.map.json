@@ -1,0 +1,741 @@
+{
+  "format": "warcore.map",
+  "version": 1,
+  "id": "m6-demo",
+  "content": "none",
+  "pack": "rwr-m6",
+  "size": [80, 40],
+  "origin": [0, 0],
+  "floorRaw": 0,
+  "ceilingRaw": 262144,
+  "layers": [
+    {
+      "name": "walls",
+      "bit": 1
+    }
+  ],
+  "walls": [
+    {
+      "id": 1,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [28, 0],
+      "size": [1, 16],
+      "heightRaw": 131072
+    },
+    {
+      "id": 2,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [28, 24],
+      "size": [1, 16],
+      "heightRaw": 131072
+    },
+    {
+      "id": 3,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [51, 0],
+      "size": [1, 16],
+      "heightRaw": 131072
+    },
+    {
+      "id": 4,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [51, 24],
+      "size": [1, 16],
+      "heightRaw": 131072
+    }
+  ],
+  "points": [
+    {
+      "id": 1,
+      "at": [16000, 20000],
+      "radiusMm": 6000,
+      "initialOwner": 0,
+      "spawn": [16000, 20000]
+    },
+    {
+      "id": 2,
+      "at": [40000, 20000],
+      "radiusMm": 6000,
+      "initialOwner": 0,
+      "spawn": [40000, 20000]
+    },
+    {
+      "id": 3,
+      "at": [64000, 20000],
+      "radiusMm": 6000,
+      "initialOwner": 0,
+      "spawn": [64000, 20000]
+    }
+  ],
+  "bases": [
+    {
+      "id": 1,
+      "team": 1,
+      "at": [6000, 20000]
+    },
+    {
+      "id": 2,
+      "team": 2,
+      "at": [74000, 20000]
+    }
+  ],
+  "units": [
+    {
+      "key": 1,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [4500, 19000],
+      "reserve": false
+    },
+    {
+      "key": 2,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [5500, 19000],
+      "reserve": false
+    },
+    {
+      "key": 3,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [6500, 19000],
+      "reserve": false
+    },
+    {
+      "key": 4,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [7500, 19000],
+      "reserve": false
+    },
+    {
+      "key": 5,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [4500, 20000],
+      "reserve": false
+    },
+    {
+      "key": 6,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [5500, 20000],
+      "reserve": false
+    },
+    {
+      "key": 7,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [6500, 20000],
+      "reserve": false
+    },
+    {
+      "key": 8,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [7500, 20000],
+      "reserve": false
+    },
+    {
+      "key": 9,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [4500, 21000],
+      "reserve": false
+    },
+    {
+      "key": 10,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [5500, 21000],
+      "reserve": false
+    },
+    {
+      "key": 11,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [4500, 19000],
+      "reserve": true
+    },
+    {
+      "key": 12,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [5500, 19000],
+      "reserve": true
+    },
+    {
+      "key": 13,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [6500, 19000],
+      "reserve": true
+    },
+    {
+      "key": 14,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [7500, 19000],
+      "reserve": true
+    },
+    {
+      "key": 15,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [4500, 20000],
+      "reserve": true
+    },
+    {
+      "key": 16,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [5500, 20000],
+      "reserve": true
+    },
+    {
+      "key": 17,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [6500, 20000],
+      "reserve": true
+    },
+    {
+      "key": 18,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [7500, 20000],
+      "reserve": true
+    },
+    {
+      "key": 19,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [4500, 21000],
+      "reserve": true
+    },
+    {
+      "key": 20,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [5500, 21000],
+      "reserve": true
+    },
+    {
+      "key": 21,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [4500, 19000],
+      "reserve": true
+    },
+    {
+      "key": 22,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [5500, 19000],
+      "reserve": true
+    },
+    {
+      "key": 23,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [6500, 19000],
+      "reserve": true
+    },
+    {
+      "key": 24,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [7500, 19000],
+      "reserve": true
+    },
+    {
+      "key": 25,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [4500, 20000],
+      "reserve": true
+    },
+    {
+      "key": 26,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [5500, 20000],
+      "reserve": true
+    },
+    {
+      "key": 27,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [6500, 20000],
+      "reserve": true
+    },
+    {
+      "key": 28,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [7500, 20000],
+      "reserve": true
+    },
+    {
+      "key": 29,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [4500, 21000],
+      "reserve": true
+    },
+    {
+      "key": 30,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [5500, 21000],
+      "reserve": true
+    },
+    {
+      "key": 31,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [4500, 19000],
+      "reserve": true
+    },
+    {
+      "key": 32,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [5500, 19000],
+      "reserve": true
+    },
+    {
+      "key": 33,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [6500, 19000],
+      "reserve": true
+    },
+    {
+      "key": 34,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [7500, 19000],
+      "reserve": true
+    },
+    {
+      "key": 35,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [4500, 20000],
+      "reserve": true
+    },
+    {
+      "key": 36,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [5500, 20000],
+      "reserve": true
+    },
+    {
+      "key": 37,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [6500, 20000],
+      "reserve": true
+    },
+    {
+      "key": 38,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [7500, 20000],
+      "reserve": true
+    },
+    {
+      "key": 39,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [4500, 21000],
+      "reserve": true
+    },
+    {
+      "key": 40,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [5500, 21000],
+      "reserve": true
+    },
+    {
+      "key": 41,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [72500, 19000],
+      "reserve": false
+    },
+    {
+      "key": 42,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [73500, 19000],
+      "reserve": false
+    },
+    {
+      "key": 43,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [74500, 19000],
+      "reserve": false
+    },
+    {
+      "key": 44,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [75500, 19000],
+      "reserve": false
+    },
+    {
+      "key": 45,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [72500, 20000],
+      "reserve": false
+    },
+    {
+      "key": 46,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [73500, 20000],
+      "reserve": false
+    },
+    {
+      "key": 47,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [74500, 20000],
+      "reserve": false
+    },
+    {
+      "key": 48,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [75500, 20000],
+      "reserve": false
+    },
+    {
+      "key": 49,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [72500, 21000],
+      "reserve": false
+    },
+    {
+      "key": 50,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [73500, 21000],
+      "reserve": false
+    },
+    {
+      "key": 51,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [72500, 19000],
+      "reserve": true
+    },
+    {
+      "key": 52,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [73500, 19000],
+      "reserve": true
+    },
+    {
+      "key": 53,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [74500, 19000],
+      "reserve": true
+    },
+    {
+      "key": 54,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [75500, 19000],
+      "reserve": true
+    },
+    {
+      "key": 55,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [72500, 20000],
+      "reserve": true
+    },
+    {
+      "key": 56,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [73500, 20000],
+      "reserve": true
+    },
+    {
+      "key": 57,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [74500, 20000],
+      "reserve": true
+    },
+    {
+      "key": 58,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [75500, 20000],
+      "reserve": true
+    },
+    {
+      "key": 59,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [72500, 21000],
+      "reserve": true
+    },
+    {
+      "key": 60,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [73500, 21000],
+      "reserve": true
+    },
+    {
+      "key": 61,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [72500, 19000],
+      "reserve": true
+    },
+    {
+      "key": 62,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [73500, 19000],
+      "reserve": true
+    },
+    {
+      "key": 63,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [74500, 19000],
+      "reserve": true
+    },
+    {
+      "key": 64,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [75500, 19000],
+      "reserve": true
+    },
+    {
+      "key": 65,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [72500, 20000],
+      "reserve": true
+    },
+    {
+      "key": 66,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [73500, 20000],
+      "reserve": true
+    },
+    {
+      "key": 67,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [74500, 20000],
+      "reserve": true
+    },
+    {
+      "key": 68,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [75500, 20000],
+      "reserve": true
+    },
+    {
+      "key": 69,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [72500, 21000],
+      "reserve": true
+    },
+    {
+      "key": 70,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [73500, 21000],
+      "reserve": true
+    },
+    {
+      "key": 71,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [72500, 19000],
+      "reserve": true
+    },
+    {
+      "key": 72,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [73500, 19000],
+      "reserve": true
+    },
+    {
+      "key": 73,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [74500, 19000],
+      "reserve": true
+    },
+    {
+      "key": 74,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [75500, 19000],
+      "reserve": true
+    },
+    {
+      "key": 75,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [72500, 20000],
+      "reserve": true
+    },
+    {
+      "key": 76,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [73500, 20000],
+      "reserve": true
+    },
+    {
+      "key": 77,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [74500, 20000],
+      "reserve": true
+    },
+    {
+      "key": 78,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [75500, 20000],
+      "reserve": true
+    },
+    {
+      "key": 79,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [72500, 21000],
+      "reserve": true
+    },
+    {
+      "key": 80,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [73500, 21000],
+      "reserve": true
+    }
+  ],
+  "run": {
+    "seed": 41,
+    "crowdPass": "teamIdle"
+  },
+  "owners": ["hand"],
+  "stamps": [],
+  "removed": [],
+  "next": {
+    "wall": 5,
+    "point": 4,
+    "base": 3,
+    "unit": 81
+  }
+}
