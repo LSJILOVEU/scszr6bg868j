@@ -77,7 +77,7 @@ namespace WarCore.Tests
         [Test]
         public void ByteErrorsAreFormatErrorsWithoutLine()
         {
-            byte[] bytes = Encoding.UTF8.GetBytes("﻿" + Sample);
+            byte[] bytes = Encoding.UTF8.GetBytes("\uFEFF" + Sample);
             Assert.That(bytes[0], Is.EqualTo(0xEF));
             Assert.That(Fails(bytes).Message, Is.EqualTo("MAPDESC_FORMAT"));
             byte[] invalid = Utf8(Sample);
@@ -94,6 +94,30 @@ namespace WarCore.Tests
         public void ErrorPriorityCounterExamples(string oldText, string newText, string message)
         {
             Assert.That(Error(Edit(Sample, oldText, newText)), Is.EqualTo(message));
+        }
+
+        // Order within the frozen sequence: the version value before a lone surrogate (pass 1 string check).
+        [Test]
+        public void VersionValueComesBeforeALoneSurrogate()
+        {
+            Assert.That(Error(Edit(Edit(Sample, "\"version\": 1,", "\"version\": 2,"), "\"id\": \"sample\"", "\"id\": \"s\\uD800\"")),
+                Is.EqualTo("MAPDESC_FORMAT line 3"));
+        }
+
+        // A pair's first element is type- and range-checked before its second element.
+        [Test]
+        public void PairElementsAreCheckedOneAfterTheOther()
+        {
+            Assert.That(Error(Edit(Sample, "\"size\": [2, 1],", "\"size\": [0, \"x\"],")), Is.EqualTo("MAPDESC_SIZE line 7"));
+            Assert.That(Error(Edit(Sample, "\"size\": [2, 1],", "\"size\": [2, \"x\"],")), Is.EqualTo("MAPDESC_KEY line 7"));
+        }
+
+        // Canonical key order, depth first: heightOwner's elements before surfaceOwner's type.
+        [Test]
+        public void HeightOwnerIsCheckedBeforeSurfaceOwner()
+        {
+            Assert.That(Error(Edit(Edit(Sample, "  \"heightOwner\": [\n    \"...\",\n    \".A.\"\n  ],\n", "  \"heightOwner\": [0],\n"),
+                "  \"surfaceOwner\": [\n    \".B\"\n  ],\n", "  \"surfaceOwner\": 0,\n")), Is.EqualTo("MAPDESC_KEY line 75"));
         }
 
         [Test]

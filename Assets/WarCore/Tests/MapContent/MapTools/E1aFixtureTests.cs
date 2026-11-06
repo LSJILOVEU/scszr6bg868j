@@ -36,6 +36,7 @@ namespace WarCore.Tests
             Assert.That(result.Setup.CrowdPass, Is.EqualTo("teamIdle"));
         }
 
+        // The terrain description's run (seed 41, crowdPass none) is a placeholder of this change: the terrain demo has no recipe.
         [Test]
         public void TerrainSetupStandsControlPointsOnTheGround()
         {
@@ -59,6 +60,8 @@ namespace WarCore.Tests
                 Assert.That(bases[i].Point, Is.EqualTo(TerrainDemoMap.Spawns[i]));
             }
             Assert.That(setup.Soldiers.Count, Is.EqualTo(0));
+            Assert.That(setup.Seed, Is.EqualTo(41UL));
+            Assert.That(setup.CrowdPass, Is.EqualTo("none"));
         }
 
         [Test]

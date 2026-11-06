@@ -85,21 +85,13 @@ namespace WarCore.Content.MapTools
             return desc;
         }
 
-        // Whole tree in document order: a number with a fraction or "-0", or a string with a lone surrogate, is a key error.
+        // Whole tree in document order, before the version value: a number with a fraction or "-0" is a key error.
         private void Lexis(JsonNode node)
         {
             switch (node.Kind)
             {
                 case JsonKind.Number:
                     if (node.Text.IndexOf('.') >= 0 || node.Text == "-0") throw Fail(Key, node.Line);
-                    break;
-                case JsonKind.String:
-                    string s = node.Text;
-                    for (int i = 0; i < s.Length; i++)
-                    {
-                        if (char.IsHighSurrogate(s[i]) && i + 1 < s.Length && char.IsLowSurrogate(s[i + 1])) { i++; continue; }
-                        if (char.IsSurrogate(s[i])) throw Fail(Key, node.Line);
-                    }
                     break;
                 case JsonKind.Object:
                     foreach (JsonMember member in node.Members) Lexis(member.Value);
@@ -122,20 +114,28 @@ namespace WarCore.Content.MapTools
         {
             JsonNode value = obj.Find(name);
             if (value == null) throw Fail(Key, obj.Line);
-            if (value.Kind != kind) throw Fail(Key, value.Line);
-            return value;
+            return Item(value, kind);
         }
 
         private JsonNode Opt(JsonNode obj, string name, JsonKind kind)
         {
             JsonNode value = obj.Find(name);
-            if (value != null && value.Kind != kind) throw Fail(Key, value.Line);
-            return value;
+            return value == null ? null : Item(value, kind);
         }
 
+        // Type check; a string value that holds a lone surrogate is a key error too (checked as the string is read).
         private JsonNode Item(JsonNode item, JsonKind kind)
         {
             if (item.Kind != kind) throw Fail(Key, item.Line);
+            if (kind == JsonKind.String)
+            {
+                string s = item.Text;
+                for (int i = 0; i < s.Length; i++)
+                {
+                    if (char.IsHighSurrogate(s[i]) && i + 1 < s.Length && char.IsLowSurrogate(s[i + 1])) { i++; continue; }
+                    if (char.IsSurrogate(s[i])) throw Fail(Key, item.Line);
+                }
+            }
             return item;
         }
 
@@ -162,8 +162,8 @@ namespace WarCore.Content.MapTools
 
         private JsonNode Pair(JsonNode arr)
         {
+            // Element types are checked with their ranges, element by element (Int, Long).
             if (arr.Items.Count != 2) throw Fail(Key, arr.Line);
-            Item(arr.Items[0], JsonKind.Number); Item(arr.Items[1], JsonKind.Number);
             return arr;
         }
 
@@ -378,8 +378,8 @@ namespace WarCore.Content.MapTools
             }
 
             JsonNode heightOwnerNode = Opt(root, "heightOwner", JsonKind.Array);
-            JsonNode surfaceOwnerNode = Opt(root, "surfaceOwner", JsonKind.Array);
             string[] heightOwner = heightOwnerNode == null ? null : Strings(heightOwnerNode);
+            JsonNode surfaceOwnerNode = Opt(root, "surfaceOwner", JsonKind.Array);
             string[] surfaceOwner = surfaceOwnerNode == null ? null : Strings(surfaceOwnerNode);
 
             JsonNode stampsNode = Req(root, "stamps", JsonKind.Array);

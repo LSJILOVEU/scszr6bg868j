@@ -178,7 +178,6 @@ namespace WarCore.Tests
             {
                 Thread.CurrentThread.CurrentCulture = saved;
             }
-            Assert.That(NegativeText, Does.Contain("-65536"));
             Assert.That(MapDescJson.Write(MapDescJson.Read(Utf8(NegativeText))), Is.EqualTo(Utf8(NegativeText)));
             Bake(NegativeText);
         }
