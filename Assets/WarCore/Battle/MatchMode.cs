@@ -13,7 +13,7 @@ namespace WarCore.Battle
 
     // WP-19 A0: the single owner of the match result. Start and Step never judge; battle.match (Queries, Order 50)
     // calls Evaluate after this tick's capture and before damage settles, exactly where the old MatchSystem judged.
-    // The judging below is the old if/else, moved unchanged; A1 replaces it with rule parts.
+    // The judging is done by the rule parts in MatchRules.cs, in the order of the old if/else.
     public sealed class MatchMode : IRetainedGameplayMode
     {
         public const string RwrRuleSetId = "rwr.m6-demo";
@@ -21,6 +21,8 @@ namespace WarCore.Battle
         // then never judges. A1 replaces it with an injected rule whose condition is never true.
         public const string TestNeverEndsId = "test.never-ends";
         private readonly MatchPack pack;
+        // First match decides: all points, then exhaustion, then the time limit.
+        private readonly IMatchRule[] rules;
         private IMatchReader reader;
         public string RuleSetId { get; }
         public int Winner { get; private set; }
@@ -35,6 +37,7 @@ namespace WarCore.Battle
             if (pack == null) throw new ArgumentNullException(nameof(pack));
             if (string.IsNullOrEmpty(ruleSetId)) throw new ArgumentException("A rule set id is required.", nameof(ruleSetId));
             this.pack = pack; RuleSetId = ruleSetId;
+            rules = new IMatchRule[] { new AllPointsRule(), new ExhaustedRule(), new TimeLimitRule(pack.MaxTicks) };
         }
 
         public void Bind(IMatchReader matchReader)
@@ -55,17 +58,9 @@ namespace WarCore.Battle
         {
             RequireBound();
             if (Winner != 0 || RuleSetId == TestNeverEndsId) return;
-            reader.CountAlive(out int one, out int two);
-            int pointsOne = reader.PointsOwnedBy(1), pointsTwo = reader.PointsOwnedBy(2), points = reader.PointCount;
-            if (pointsOne == points || pointsTwo == points)
-            { Winner = pointsOne > pointsTwo ? 1 : 2; EndReason = MatchEndReason.AllPoints; }
-            else if (one == 0 || two == 0)
-            { Winner = one == two ? -1 : one > 0 ? 1 : 2; EndReason = Winner == -1 ? MatchEndReason.Draw : MatchEndReason.Exhausted; }
-            else if (tick >= pack.MaxTicks)
-            {
-                Winner = pointsOne != pointsTwo ? (pointsOne > pointsTwo ? 1 : 2) : one != two ? (one > two ? 1 : 2) : -1;
-                EndReason = Winner == -1 ? MatchEndReason.Draw : MatchEndReason.Time;
-            }
+            foreach (IMatchRule rule in rules)
+                if (rule.TryEnd(reader, tick, out int winner, out MatchEndReason reason))
+                { Winner = winner; EndReason = reason; break; }
             if (Winner != 0) EndTick = tick;
         }
 
