@@ -127,7 +127,7 @@ namespace WarCore.Interim
         private void StepPathTerrain(SimContext context, EntityId unit, MoveIntent intent, SimVec3 point)
         {
             SimVec3 waypoint = entities.Get(waypoints, unit).Point;
-            SimFix step = StepOf(point, intent.SpeedPerTick);
+            SimFix step = StepOf(point, motion.StepSpeed(unit, intent.SpeedPerTick));
             SimVec3 delta = Planar(waypoint - point);
             SimWide stepSquared = new SimVec3(step, default, default).LengthSquared;
             bool arrived = delta.LengthSquared <= stepSquared;
@@ -169,7 +169,7 @@ namespace WarCore.Interim
             if (!intent.Active) return;
             SimVec3 point = provisional[i].Point;
             SimVec3 waypoint = entities.Get(waypoints, unit).Point;
-            SimFix step = StepOf(point, intent.SpeedPerTick);
+            SimFix step = StepOf(point, motion.StepSpeed(unit, intent.SpeedPerTick));
             SimVec3 delta = Planar(waypoint - point);
             SimWide stepSquared = new SimVec3(step, default, default).LengthSquared;
             SimVec3 next = delta.LengthSquared <= stepSquared ? waypoint : Advance(point, delta, step);

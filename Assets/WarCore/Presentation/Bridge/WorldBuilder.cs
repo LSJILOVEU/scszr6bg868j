@@ -95,6 +95,9 @@ namespace WarCore.Presentation
             ComponentType<UnitFacing> facings = default;
             if (recipe.Facing)
                 facings = sim.Entities.Register<UnitFacing>(UnitFacing.ComponentId, new UnitFacingSerializer());
+            ComponentType<MotionLimits> motionLimits = default;
+            if (recipe.Motion)
+                motionLimits = sim.Entities.Register<MotionLimits>(MotionLimits.ComponentId, new MotionLimitsSerializer());
             ComponentType<Combatant> combatants = default;
             if (recipe.Combat != null)
                 combatants = sim.Entities.Register<Combatant>(Combatant.ComponentId, new CombatantSerializer());
@@ -124,6 +127,8 @@ namespace WarCore.Presentation
                 units[i] = unit;
                 if (recipe.Facing)
                     sim.Entities.Set(facings, unit, UnitFacing.Default);
+                if (recipe.Motion)
+                    sim.Entities.Set(motionLimits, unit, new MotionLimits(speed, default, default, default));
                 if (recipe.Match == null || !spawn.Reserve)
                 {
                     // A terrain world never places a unit where its footprint touches blocked ground or leaves the map.

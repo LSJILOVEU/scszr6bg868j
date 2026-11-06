@@ -70,8 +70,9 @@ namespace WarCore.Interim
                 SimVec3 point = provisional[i].Point;
                 SimVec3 waypoint = entities.Get(waypoints, unit).Point;
                 SimVec3 delta = waypoint - point;
-                SimWide stepSquared = new SimVec3(intent.SpeedPerTick, default, default).LengthSquared;
-                SimVec3 next = delta.LengthSquared <= stepSquared ? waypoint : point + delta.Normalized * intent.SpeedPerTick;
+                SimFix speed = motion.StepSpeed(unit, intent.SpeedPerTick);
+                SimWide stepSquared = new SimVec3(speed, default, default).LengthSquared;
+                SimVec3 next = delta.LengthSquared <= stepSquared ? waypoint : point + delta.Normalized * speed;
                 bool clear = UnitsAllow(i, next, out int blocker);
                 if (!clear || !TerrainAllows(context, i, next))
                 {
@@ -82,14 +83,14 @@ namespace WarCore.Interim
                         SimVec3 centre = grid.Center(own, point.Y);
                         SimVec3 back = centre - point;
                         if (back.LengthSquared.Sign == 0) continue;
-                        next = back.LengthSquared <= stepSquared ? centre : point + back.Normalized * intent.SpeedPerTick;
+                        next = back.LengthSquared <= stepSquared ? centre : point + back.Normalized * speed;
                         if (!UnitsAllow(i, next, out _) || !TerrainAllows(context, i, next)) continue;
                         goto submit;
                     }
                     SimVec3 radial = point - provisional[blocker].Point;
                     // Coincident points use +X as the radial axis. Zero dot keeps the first side.
                     if (radial.LengthSquared.Sign == 0) radial = SimVec3.Metres(1, 0, 0);
-                    SimVec3 side = new SimVec3(-radial.Z, default, radial.X).Normalized * intent.SpeedPerTick;
+                    SimVec3 side = new SimVec3(-radial.Z, default, radial.X).Normalized * speed;
                     if (SimVec3.Dot(side, delta).Sign < 0) side = default(SimVec3) - side;
                     next = point + side;
                     if (!UnitsAllow(i, next, out _) || !TerrainAllows(context, i, next))
