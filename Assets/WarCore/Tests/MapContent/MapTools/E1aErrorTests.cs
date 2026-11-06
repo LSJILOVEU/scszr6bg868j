@@ -129,6 +129,14 @@ namespace WarCore.Tests
             new MapStamp[0], new MapSrc[0], new MapNext(1, 1, 1, 1)));
 
         [Test]
+        public void WriterSideLimitIsTheHeightFieldSideLimit()
+        {
+            Type validation = typeof(WcMap).Assembly.GetType("WarCore.Content.WcMapValidation", true);
+            object limit = validation.GetField("MaxSide", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static).GetValue(null);
+            Assert.That(limit, Is.EqualTo(HeightField.MaxSide));
+        }
+
+        [Test]
         public void SizeUpToTheMapSideLimitBakes()
         {
             int side = HeightField.MaxSide;
