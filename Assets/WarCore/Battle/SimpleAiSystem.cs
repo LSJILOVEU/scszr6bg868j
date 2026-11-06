@@ -41,6 +41,7 @@ namespace WarCore.Battle
                 if (!combat.Entities.TryGet(combatants, entity, out Combatant unit) || unit.Team < 1 || unit.Team > 2
                     || !combat.Entities.TryGet(positions, entity, out Position position) || combat.IsDead(entity)) continue;
                 StableId id = combat.Entities.StableOf(entity);
+                if (moves.IsCommanded(id)) continue;
                 SimVec3 here = position.Value;
                 bool moving = moves.TryGetOrder(id, out SimVec3 target);
                 if (moving && Arrived(here, target) && slots.TryFind(target, -1, out _))

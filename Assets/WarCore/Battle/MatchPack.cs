@@ -96,6 +96,8 @@ namespace WarCore.Battle
     public interface IMoveOrders
     {
         bool CanStandAt(SimVec3 at) => true;
+        // True while a squad command (hold, follow, move) is being carried out: the AI leaves such a unit alone.
+        bool IsCommanded(StableId unit) => false;
         void Order(StableId unit, SimVec3 target);
         void Stop(StableId unit);
         bool TryGetOrder(StableId unit, out SimVec3 target);
