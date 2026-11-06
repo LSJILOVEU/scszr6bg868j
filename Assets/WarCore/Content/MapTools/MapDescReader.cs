@@ -247,7 +247,7 @@ namespace WarCore.Content.MapTools
             string content = Req(root, "content", JsonKind.String).Text;
             string pack = Req(root, "pack", JsonKind.String).Text;
             JsonNode sizeNode = Pair(Req(root, "size", JsonKind.Array));
-            var size = new MapXZ(Int(sizeNode.Items[0], 1, 256, SizeCode), Int(sizeNode.Items[1], 1, 256, SizeCode));
+            var size = new MapXZ(Int(sizeNode.Items[0], 1, WcMapValidation.MaxSide, SizeCode), Int(sizeNode.Items[1], 1, WcMapValidation.MaxSide, SizeCode));
             JsonNode originNode = Pair(Req(root, "origin", JsonKind.Array));
             var origin = new MapXZ(Int(originNode.Items[0], int.MinValue, int.MaxValue, SizeCode), Int(originNode.Items[1], int.MinValue, int.MaxValue, SizeCode));
             long floor = Long(Req(root, "floorRaw", JsonKind.Number), long.MinValue, long.MaxValue, SizeCode);

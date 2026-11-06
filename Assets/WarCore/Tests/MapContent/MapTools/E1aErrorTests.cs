@@ -2,7 +2,9 @@ using System;
 using System.IO;
 using System.Text;
 using NUnit.Framework;
+using WarCore.Content;
 using WarCore.Content.MapTools;
+using WarCore.Sim;
 using static WarCore.Tests.E1aSamples;
 
 namespace WarCore.Tests
@@ -118,6 +120,30 @@ namespace WarCore.Tests
         {
             Assert.That(Error(Edit(Edit(Sample, "  \"heightOwner\": [\n    \"...\",\n    \".A.\"\n  ],\n", "  \"heightOwner\": [0],\n"),
                 "  \"surfaceOwner\": [\n    \".B\"\n  ],\n", "  \"surfaceOwner\": 0,\n")), Is.EqualTo("MAPDESC_KEY line 75"));
+        }
+
+        // Size bounds come from the map side limit (HeightField.MaxSide, the same value as the writer's limit), not a literal.
+        private static string Flat(int width, int depth) => MapDescJson.WriteText(new MapDesc("flat", "rwr", "rwr",
+            new MapXZ(width, depth), new MapXZ(0, 0), 0, 262144, new[] { new MapLayer("walls", 1) }, null, null, new MapWall[0],
+            new MapPoint[0], new MapBase[0], new MapUnit[0], new MapRun(1, "none"), new[] { "hand" }, null, null,
+            new MapStamp[0], new MapSrc[0], new MapNext(1, 1, 1, 1)));
+
+        [Test]
+        public void SizeUpToTheMapSideLimitBakes()
+        {
+            int side = HeightField.MaxSide;
+            WcMap wide = WcMapReader.Read(Bake(Flat(side, 1)).WcMapBytes);
+            Assert.That(wide.Width, Is.EqualTo((uint)side));
+            WcMap deep = WcMapReader.Read(Bake(Flat(1, side)).WcMapBytes);
+            Assert.That(deep.Depth, Is.EqualTo((uint)side));
+        }
+
+        [Test]
+        public void SizeAboveTheMapSideLimitIsASizeError()
+        {
+            int over = HeightField.MaxSide + 1;
+            Assert.That(Error(Edit(Sample, "\"size\": [2, 1],", "\"size\": [" + over + ", 1],")), Is.EqualTo("MAPDESC_SIZE line 7"));
+            Assert.That(Error(Edit(Sample, "\"size\": [2, 1],", "\"size\": [2, " + over + "],")), Is.EqualTo("MAPDESC_SIZE line 7"));
         }
 
         [Test]
