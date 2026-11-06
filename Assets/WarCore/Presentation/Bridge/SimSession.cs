@@ -191,11 +191,35 @@ namespace WarCore.Presentation
             return false;
         }
 
+        private bool HasUnit(ulong key)
+        {
+            for (int i = 0; i < spawns.Length; i++)
+                if (spawns[i].Key == key) return true;
+            return false;
+        }
+
+        private EntityLink UnitLink(ulong key)
+        {
+            for (int i = 0; i < spawns.Length; i++)
+                if (spawns[i].Key == key) return new EntityLink(units[i]);
+            throw new ArgumentException("Follow target is not a unit of this session.", nameof(key));
+        }
+
+        // A squad target travels as a link beside the frame; frames without one take the plain path.
+        private void StepSim(InputFrame input, EntityLink followTarget)
+        {
+            if (followTarget.HasValue) sim.StepStable(new StableInputFrame(input, followTarget));
+            else sim.Step(input);
+        }
+
         public void Enqueue(BridgeCommand command)
         {
             if (command.AtTick <= Tick)
                 throw new ArgumentOutOfRangeException(nameof(command), "Command must target a future tick.");
-            Target(command.XMm, command.ZMm, groundRaw);
+            if (command.Kind == SquadCommandKind.MoveTo)
+                Target(command.XMm, command.ZMm, groundRaw);
+            else if (command.Kind == SquadCommandKind.Follow && !HasUnit(command.TargetKey))
+                throw new ArgumentException("Follow target is not a unit of this session.", nameof(command));
             int index = 0;
             while (index < pending.Count && pending[index].AtTick < command.AtTick)
                 index++;
@@ -247,11 +271,18 @@ namespace WarCore.Presentation
             if (IsFinished) return;
             long nextTick = checked(Tick + 1);
             SquadCommand? squad = null;
+            EntityLink followTarget = default;
             bool hasCommand = pending.Count > 0 && pending[0].AtTick == nextTick;
             if (hasCommand)
             {
                 BridgeCommand command = pending[0];
-                squad = new SquadCommand(SquadCommandKind.MoveTo, command.Squad, Target(command.XMm, command.ZMm, groundRaw), default);
+                squad = command.Kind switch
+                {
+                    SquadCommandKind.MoveTo => new SquadCommand(SquadCommandKind.MoveTo, command.Squad, Target(command.XMm, command.ZMm, groundRaw), default),
+                    SquadCommandKind.Hold => new SquadCommand(SquadCommandKind.Hold, command.Squad, default, default),
+                    _ => new SquadCommand(SquadCommandKind.Follow, command.Squad, default, default)
+                };
+                if (command.Kind == SquadCommandKind.Follow) followTarget = UnitLink(command.TargetKey);
             }
             var input = new InputFrame(default, default, squad: squad);
             PlayerInput nextPlayerInput = heldPlayerInput;
@@ -268,11 +299,11 @@ namespace WarCore.Presentation
             if (StepTimingEnabled && stepSampleCount < stepSamples.Length)
             {
                 long start = Stopwatch.GetTimestamp();
-                sim.Step(input);
+                StepSim(input, followTarget);
                 long end = Stopwatch.GetTimestamp();
                 stepSamples[stepSampleCount++] = end - start;
             }
-            else sim.Step(input);
+            else StepSim(input, followTarget);
             // Commit bridge state only after Sim has successfully advanced.
             if (!nextPlayerInput.Equals(heldPlayerInput))
                 playerLog.Add(new PlayerInputRecord(nextTick, nextPlayerInput));
