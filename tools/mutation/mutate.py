@@ -71,8 +71,11 @@ def parse_list(path):
     entries = []
     cur = None
     block = None
-    with open(path, "r", encoding="utf-8") as f:
-        lines = f.read().split("\n")
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            lines = f.read().split("\n")
+    except (OSError, UnicodeDecodeError) as ex:
+        raise Fatal("bad-list", "%s: cannot read the list as UTF-8 text: %s" % (path, ex))
     if lines and lines[-1] == "":
         lines.pop()
 
@@ -189,6 +192,10 @@ def real(p):
     return os.path.realpath(p)
 
 
+def inside(path, root):
+    return path == root or path.startswith(root.rstrip(os.sep) + os.sep)
+
+
 def git(repo, *args, check=True):
     r = subprocess.run(["git", "-C", repo] + list(args), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if check and r.returncode != 0:
@@ -210,7 +217,12 @@ def ps_env():
 def lstart_of(pid):
     r = subprocess.run(["ps", "-o", "lstart=", "-p", str(pid)], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                        env=ps_env())
-    return r.stdout.decode().strip()
+    text = " ".join(r.stdout.decode("utf-8", "replace").split())
+    try:
+        parse_lstart(text)
+    except ValueError:
+        raise Fatal("stale-process", "cannot read the start time of process %d" % pid)
+    return text
 
 
 def parse_lstart(s):
@@ -221,14 +233,20 @@ def processes():
     """(pid, pgid, lstart) of every live (non-zombie) process."""
     r = subprocess.run(["ps", "-A", "-o", "pid=,pgid=,stat=,lstart="], stdout=subprocess.PIPE,
                        stderr=subprocess.DEVNULL, env=ps_env())
+    lines = [l for l in r.stdout.decode("utf-8", "replace").split("\n") if l.strip()]
+    if r.returncode != 0 or not lines:
+        raise Fatal("stale-process", "ps -A failed (exit %d)" % r.returncode)
     out = []
-    for line in r.stdout.decode().split("\n"):
+    for line in lines:
         f = line.split()
-        if len(f) < 8:
-            continue
-        if f[2].startswith("Z"):
-            continue
-        out.append((int(f[0]), int(f[1]), " ".join(f[3:8])))
+        try:
+            if len(f) != 8:
+                raise ValueError(line)
+            if f[2].startswith("Z"):
+                continue
+            out.append((int(f[0]), int(f[1]), " ".join(f[3:8])))
+        except ValueError:
+            raise Fatal("stale-process", "unreadable ps line: " + line)
     return out
 
 
@@ -333,17 +351,21 @@ class Runner(object):
             timed_out = True
             rc = None
         except Interrupted:
-            kill_group_and_wait(p.pid)
-            p.wait()
+            self.stop_group(p)
             raise
-        if timed_out:
-            kill_group_and_wait(p.pid)
-            p.wait()
-        elif group_members(p.pid):
-            kill_group_and_wait(p.pid)
-        if not group_members(p.pid):
-            self.groups.remove(p.pid)
+        if timed_out or group_members(p.pid):
+            self.stop_group(p)
+        self.groups.remove(p.pid)
         return rc, timed_out
+
+    def stop_group(self, p):
+        """Kill the child's whole group; it must be empty and the leader reaped within GROUP_WAIT seconds."""
+        if not kill_group_and_wait(p.pid):
+            raise Fatal("stale-process", "process group %d did not exit" % p.pid)
+        try:
+            p.wait(timeout=GROUP_WAIT)
+        except subprocess.TimeoutExpired:
+            raise Fatal("stale-process", "process %d was not reaped" % p.pid)
 
     # -- lifecycle
 
@@ -354,6 +376,9 @@ class Runner(object):
         if top.returncode != 0:
             raise Fatal("not-a-repo", "not a git repository: " + a.repo)
         self.repo = real(top.stdout.decode().strip())
+        for opt, target in (("--out", a.out), ("--log", a.log)):
+            if target and inside(real(target), self.repo):
+                raise Fatal("bad-args", "%s must be outside the repository" % opt)
         if git(self.repo, "status", "--porcelain").strip():
             raise Fatal("dirty-repo", "the repository has uncommitted changes")
         common = git(self.repo, "rev-parse", "--git-common-dir").strip()
@@ -543,9 +568,9 @@ class Runner(object):
         row = {"id": e["id"], "verdict": None, "failed": [], "executed": None, "note": e["note"], "detail": "",
                "asm": assembly_of(e["file"]), "sha_before": None, "sha_after": None}
         path = os.path.join(self.copy, e["file"])
-        if not os.path.isfile(path):
+        if real(path) != path or os.path.islink(path) or not os.path.isfile(path):
             row["verdict"] = INVALID_SOURCE
-            row["detail"] = "file not found"
+            row["detail"] = "file not found, or reached through a symbolic link"
             row["seconds"] = time.time() - t0
             return row
         with open(path, "rb") as f:
@@ -661,17 +686,23 @@ def read_results(d):
     if len(trx) != 1 or len(xmls) != 1:
         return {"invalid": "%d trx and %d NUnit XML files" % (len(trx), len(xmls))}
     try:
-        t = ET.parse(trx[0]).getroot()
-        x = ET.parse(xmls[0]).getroot()
-    except ET.ParseError as ex:
-        return {"invalid": "unreadable result file: %s" % ex}
+        return parse_results(trx[0], xmls[0])
+    except (ET.ParseError, ValueError, TypeError, AttributeError, KeyError) as ex:
+        return {"invalid": "unreadable result file: %s: %s" % (type(ex).__name__, ex)}
+
+
+def parse_results(trx_path, xml_path):
+    t = ET.parse(trx_path).getroot()
+    x = ET.parse(xml_path).getroot()
     summary = t.find("t:ResultSummary", TRX_NS)
     counters = summary.find("t:Counters", TRX_NS) if summary is not None else None
     if summary is None or counters is None:
         return {"invalid": "trx has no ResultSummary/Counters"}
     if summary.get("outcome") in ("Aborted", "Error"):
         return {"invalid": "trx outcome " + summary.get("outcome")}
-    executed = int(counters.get("executed", "0"))
+    executed = int(counters.get("executed"))
+    if executed < 0:
+        raise ValueError("negative executed count")
     defs = {}
     for ut in t.iterfind(".//t:TestDefinitions/t:UnitTest", TRX_NS):
         m = ut.find("t:TestMethod", TRX_NS)
@@ -693,15 +724,19 @@ def read_results(d):
     failures = {}
     for n in sorted(set(trx_names)):
         tc = cases[n]
-        if tc.get("result") == "Failed":
+        if tc.get("result") != "Passed":
             label, site = tc.get("label"), tc.get("site")
             failed.append(n)
-            failures[n] = {"label": label, "site": site,
-                           "assertion": label is None and site in (None, "Test")}
+            failures[n] = {"result": tc.get("result"), "label": label, "site": site,
+                           "assertion": tc.get("result") == "Failed" and label is None and site in (None, "Test")}
     return {"executed": executed, "failed": failed, "failures": failures, "names": sorted(set(trx_names))}
 
 
 # ---------------------------------------------------------------- output
+
+
+def cell(text):
+    return str(text).replace("\\", "\\\\").replace("|", "\\|").replace("\n", " ")
 
 
 def table(runner, rows):
@@ -711,16 +746,16 @@ def table(runner, rows):
     out.append("| filter | baseline executed |")
     out.append("|---|---|")
     for flt in sorted(runner.base_counts):
-        out.append("| `%s` | %d |" % (flt, runner.base_counts[flt]))
+        out.append("| `%s` | %d |" % (cell(flt), runner.base_counts[flt]))
     out.append("")
     out.append("| id | verdict | failed tests (first 3) | executed | seconds |")
     out.append("|---|---|---|---|---|")
     for r in rows:
         names = r["failed"][:3]
-        cell = "<br>".join("`%s`" % n for n in names) if names else "-"
+        failed = "<br>".join("`%s`" % cell(n) for n in names) if names else "-"
         if len(r["failed"]) > 3:
-            cell += " (+%d)" % (len(r["failed"]) - 3)
-        out.append("| %s | %s | %s | %s | %.0f |" % (r["id"], r["verdict"], cell,
+            failed += " (+%d)" % (len(r["failed"]) - 3)
+        out.append("| %s | %s | %s | %s | %.0f |" % (cell(r["id"]), cell(r["verdict"]), failed,
                                                     "-" if r["executed"] is None else r["executed"], r["seconds"]))
     return "\n".join(out) + "\n"
 
@@ -738,7 +773,7 @@ def details(rows):
         out.append("- failed tests: %d" % len(r["failed"]))
         for n in r["failed"]:
             f = r["failures"][n]
-            out.append("  - `%s` label=%s site=%s" % (n, f["label"] if f["label"] is not None else "(none)",
+            out.append("  - `%s` result=%s label=%s site=%s" % (n, f["result"], f["label"] if f["label"] is not None else "(none)",
                                                     f["site"] if f["site"] is not None else "(none)"))
         out.append("")
     return "\n".join(out)
@@ -773,10 +808,17 @@ def main(argv=None):
         error = (ex.code, ex.text)
     except Interrupted:
         error = ("interrupted", "stopped by a signal")
+    except Exception as ex:  # never a traceback instead of an error id
+        error = ("internal", "%s: %s" % (type(ex).__name__, ex))
     finally:
         signal.signal(signal.SIGINT, signal.SIG_IGN)
         signal.signal(signal.SIGTERM, signal.SIG_IGN)
-        late = runner.finish() if runner.repo and runner.w1 is not None else []
+        try:
+            late = runner.finish() if runner.repo and runner.w1 is not None else []
+        except Fatal as ex:
+            late = [(ex.code, ex.text)]
+        except Exception as ex:
+            late = [("internal", "finish: %s: %s" % (type(ex).__name__, ex))]
     errors = ([error] if error else []) + late
     if errors:
         sys.stderr.write(errors[0][0] + "\n")

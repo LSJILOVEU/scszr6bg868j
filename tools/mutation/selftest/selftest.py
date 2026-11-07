@@ -29,9 +29,13 @@ SEVEN = ["killed", "survived", "invalid (compile failed)", "invalid (build not e
          "invalid (expected tests did not fail on an assertion)"]
 
 failures = []
+checks = [0]
+CASES = {"seven", "killonly", "restore", "zero", "extra", "kill9", "lock", "dirty", "before", "afteradd", "paths",
+         "hygiene"}
 
 
 def check(name, ok, info=""):
+    checks[0] += 1
     sys.stdout.write("%s %s%s\n" % ("ok  " if ok else "FAIL", name, (" -- " + info) if info and not ok else ""))
     sys.stdout.flush()
     if not ok:
@@ -149,11 +153,40 @@ def pid_alive(pid):
 # ------------------------------------------------------------------ cases
 
 
+def details(md):
+    """{id: {"sha": (before, after), "tests": [(name, result, label, site)]}} from an --out file."""
+    out = {}
+    cur = None
+    for line in read(md).split("\n"):
+        if line.startswith("### "):
+            cur = out.setdefault(line[4:].strip(), {"sha": [None, None], "tests": []})
+        elif cur is not None and line.startswith("- sha256 before: "):
+            cur["sha"][0] = line.split(": ", 1)[1]
+        elif cur is not None and line.startswith("- sha256 after: "):
+            cur["sha"][1] = line.split(": ", 1)[1]
+        elif cur is not None and line.startswith("  - `"):
+            name, rest = line[5:].split("` ", 1)
+            kv = dict(x.split("=", 1) for x in rest.split())
+            cur["tests"].append((name, kv.get("result"), kv.get("label"), kv.get("site")))
+    return out
+
+
 def case_seven(c, base_wt):
     rc, out, err, md = c.run(ST, "stale-loaded@selftest-5")
     v = verdicts(out)
-    check("1: seven verdicts in order", [x[1] for x in v] == SEVEN, str(v) + " " + first_line(err))
+    want = [("selftest-%d" % (i + 1), x) for i, x in enumerate(SEVEN)]
+    check("1: seven verdicts in order", v == want, str(v) + " " + first_line(err))
     check("1: exit code 1", rc == 1, str(rc))
+    d = details(md)
+    s1 = d.get("selftest-1", {"sha": [None, None], "tests": []})
+    check("1: must-kill sha256 changed", s1["sha"][0] and s1["sha"][1] and s1["sha"][0] != s1["sha"][1]
+          and len(s1["sha"][0]) == 64, str(s1["sha"]))
+    t6 = [t for t in d.get("selftest-6", {"tests": []})["tests"] if "SoldiersMapFieldByField" in t[0]]
+    check("1: case 6 expected tests failed with label=Error and no site",
+          len(t6) == 2 and all(t[1:] == ("Failed", "Error", "(none)") for t in t6), str(t6))
+    t7 = d.get("selftest-7", {"tests": []})["tests"]
+    check("1: case 7 every E1bLockTests case failed with label=Error",
+          len(t7) == 4 and all("E1bLockTests." in t[0] and t[1:] == ("Failed", "Error", "(none)") for t in t7), str(t7))
     c.clean("1/4a", base_wt)
     return out, md
 
@@ -175,7 +208,8 @@ def case_zero(c, base_wt):
     log = os.path.join(c.work, "zero.log")
     rc, out, err, md = c.run(ZERO, extra=["--log", log])
     check("2: zero-executed", rc == 2 and first_line(err) == "zero-executed", "%d %s" % (rc, first_line(err)))
-    check("2: no mutation started", "mutant" not in read(log), read(log))
+    check("2: no mutation started", os.path.isfile(log) and "copy " in read(log) and "mutant" not in read(log),
+          read(log))
     c.clean("2", base_wt)
 
 
@@ -185,6 +219,11 @@ def case_extra(c, base_wt):
     check("3: crash is invalid", v.get("selftest-crash", "").startswith("invalid ("), str(v))
     check("extra: only unexpected failures is invalid",
           v.get("selftest-unexpected") == "invalid (only tests outside the expected list failed)", str(v))
+    check("extra: executed count change is invalid", v.get("selftest-count") == "invalid (executed count changed)", str(v))
+    check("extra: OneTimeSetUp assertion is not killed",
+          v.get("selftest-parent") == "invalid (expected tests did not fail on an assertion)", str(v))
+    tp = details(md).get("selftest-parent", {"tests": []})["tests"]
+    check("extra: OneTimeSetUp failures carry site=Parent", tp and all(t[3] == "Parent" for t in tp), str(tp))
     check("3: exit code 1", rc == 1, "%d %s" % (rc, first_line(err)))
     c.clean("3", base_wt)
 
@@ -262,7 +301,7 @@ def case_kill_before_register(c, base_wt):
     ran = any(os.path.exists(os.path.join(hb, d)) for d in ("bin", "obj"))
     check("4f1: no dotnet ran in the copy", os.path.isdir(copy) and not ran)
     rc, out2, err2, md2 = c.run(ST, extra=["--only", "selftest-2"])
-    check("4f1: restart runs", rc == 1, "%d %s" % (rc, first_line(err2)))
+    check("4f1: restart runs", rc == 1 and verdicts(out2) == [("selftest-2", "survived")], "%d %s" % (rc, first_line(err2)))
     check("4f1: copy removed", not os.path.exists(copy))
     c.clean("4f1", base_wt)
 
@@ -278,10 +317,48 @@ def case_kill_after_add_release(c, base_wt):
     p.send_signal(signal.SIGKILL)
     p.wait()
     rc, out2, err2, md2 = c.run(ST, extra=["--only", "selftest-2"])
-    check("4f2: restart runs", rc == 1, "%d %s" % (rc, first_line(err2)))
+    check("4f2: restart runs", rc == 1 and verdicts(out2) == [("selftest-2", "survived")], "%d %s" % (rc, first_line(err2)))
     check("4f2: copy directory gone", not os.path.exists(copy))
     check("4f2: copy registration gone", copy not in worktrees(c.repo))
     c.clean("4f2/4c", base_wt)
+
+
+def case_paths(c, base_wt):
+    outside = os.path.join(c.work, "outside.txt")
+    body = "private const long SpeedMmPerSec = 6000;\n"
+    with open(outside, "w") as f:
+        f.write(body)
+    link = "Assets/WarCore/Presentation/SelfTestLink.txt"
+    os.symlink(outside, os.path.join(c.repo, link))
+    git(c.repo, "-c", "user.name=selftest", "-c", "user.email=selftest@invalid", "-c", "core.hooksPath=/dev/null",
+        "add", link)
+    git(c.repo, "-c", "user.name=selftest", "-c", "user.email=selftest@invalid", "-c", "core.hooksPath=/dev/null",
+        "commit", "-q", "-m", "symlink")
+    lst = os.path.join(c.work, "link-list.txt")
+    with open(lst, "w") as f:
+        f.write("[selftest-link]\nfile = %s\nfilter = FullyQualifiedName~E1b\n"
+                "expect = WarCore.Tests.E1bRecipeTests.SoldiersMapFieldByField\nnote = symlink\n"
+                "original:\n| = 6000;\nreplacement:\n| = 6001;\n" % link)
+    rc, out, err, md = c.run(lst)
+    check("paths: symlinked file is invalid", verdicts(out) == [("selftest-link", "invalid (original text not found exactly once)")],
+          "%d %s %s" % (rc, verdicts(out), first_line(err)))
+    check("paths: file behind the link unchanged", read(outside) == body)
+    git(c.repo, "reset", "-q", "--hard", "HEAD~1")
+    for opt in ("--out", "--log"):
+        target = os.path.join(c.repo, "tools", "headless", "README.md")
+        before = read(target)
+        p = subprocess.run([sys.executable, TOOL, "--repo", c.repo, opt, target, ST, "--only", "selftest-1"],
+                           stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        check("paths: %s inside the repository is refused" % opt,
+              p.returncode == 2 and first_line(p.stderr.decode()) == "bad-args" and read(target) == before,
+              "%d %s" % (p.returncode, first_line(p.stderr.decode())))
+    bad = os.path.join(c.work, "bad-list.txt")
+    with open(bad, "wb") as f:
+        f.write(b"[x]\nnote = \xff\n")
+    p = subprocess.run([sys.executable, TOOL, "--repo", c.repo, bad], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    check("paths: non-UTF-8 list is bad-list", p.returncode == 2 and first_line(p.stderr.decode()) == "bad-list",
+          "%d %s" % (p.returncode, first_line(p.stderr.decode())))
+    c.clean("paths", base_wt)
 
 
 def case_hygiene(work, repo):
@@ -325,7 +402,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--repo", default=".")
     ap.add_argument("--only", help="comma-separated case names: seven,killonly,restore,zero,extra,kill9,lock,"
-                                   "dirty,before,afteradd,hygiene")
+                                   "dirty,before,afteradd,paths,hygiene")
     ap.add_argument("--keep", action="store_true", help="keep the work directory")
     a = ap.parse_args()
     src = real(git(a.repo, "rev-parse", "--show-toplevel").strip())
@@ -335,6 +412,10 @@ def main():
     c = Ctx(repo, work)
     sys.stdout.write("work directory %s\n" % work)
     want = set(a.only.split(",")) if a.only else None
+    if want is not None and want - CASES:
+        sys.stderr.write("unknown case: %s\n" % ",".join(sorted(want - CASES)))
+        shutil.rmtree(work, ignore_errors=True)
+        return 2
 
     def on(name):
         return want is None or name in want
@@ -367,8 +448,12 @@ def main():
             case_kill_after_add_release(c, wt)
         wt2 = worktrees(repo)
         check("4c: unrelated registrations kept", ua in wt2 and ub in wt2, str(sorted(wt2)))
+    if on("paths"):
+        case_paths(c, base_wt)
     if on("hygiene"):
         case_hygiene(work, src)
+    if checks[0] == 0:
+        check("at least one check ran", False)
     sys.stdout.write("selftest: %s\n" % ("FAIL " + ", ".join(failures) if failures else "PASS"))
     if not a.keep and not failures:
         shutil.rmtree(work, ignore_errors=True)

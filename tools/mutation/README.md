@@ -17,6 +17,7 @@ mutate.py LIST [--repo DIR] [--out FILE] [--only ID[,ID...]] [--timeout SECONDS]
 ```
 
 - `--repo`: the repository (default: current directory). It must have no uncommitted changes.
+- `--out`, `--log`: must be outside the repository (else exit 2, `bad-args`).
 - `--out`: also write the table plus, per mutation, every failed test with its `label`/`site` and the
   mutated assembly's sha256 before and after (64 hex digits).
 - `--only`: run only these ids of the list.
@@ -83,7 +84,9 @@ Any other file (for example `Unity/**`) has no assembly. A file the project does
 
 ### One mutation
 
-1. The original text must occur exactly once in the file (else invalid). Each expected name must match at least
+1. The file must be a regular file reached without symbolic links inside the copy (its real path equals
+   `<copy>/<file>`), and the original text must occur exactly once in it, byte for byte (else invalid). The
+   list is read with `\n` line ends; a multi-line original does not match a source file with CRLF line ends. Each expected name must match at least
    one test of the filter's baseline (else invalid).
 2. Replace, build. Build failed: invalid (compile failed). No assembly, or its new output has the baseline
    sha256: invalid (build not effective). The loaded copy differs from the new output: invalid (build not
@@ -105,7 +108,9 @@ Any other file (for example `Unity/**`) has no assembly. A file the project does
   `(False)`, and `WarCore.Tests.E1bLockTests.` matches every test of that class.
 - **killed**: executed count equal to the baseline and at least one test matching an expected name failed on an
   assertion.
-- **survived**: every test passed.
+- **survived**: every executed test has `result="Passed"` in the NUnit XML. Any other result (Failed,
+  Inconclusive, Skipped, a missing attribute) counts as a failure, and only `Failed` with the attribute rule above
+  is an assertion failure. The same "all Passed" rule makes a baseline or restore run green.
 - **invalid**: compile failed, build not effective, old assembly loaded, results missing (including a crashed
   test host), executed count changed, timeout, expected tests failed but none on an assertion, only tests outside
   the expected list failed (they are listed), original text not found exactly once, an expected name matches no
@@ -122,7 +127,10 @@ mutation: id, verdict, failed tests (first 3), executed, seconds. `--out` adds t
 - 1: at least one survived or invalid.
 - 2: stopped with an error; the first line of stderr is the error id: `dirty-repo`, `locked`, `stale-process`,
   `worktree-leak`, `zero-executed`, `baseline-result`, `baseline-red`, `baseline-build`, `restore-mismatch`,
-  `baseline-mismatch`, `bad-list`, `bad-args`, `not-a-repo`, `git`, `interrupted`.
+  `baseline-mismatch`, `bad-list`, `bad-args`, `not-a-repo`, `git`, `interrupted`, `internal` (an unexpected
+  Python exception; the cleanup still runs). A failing `ps`, an unreadable start time, or a group that does not
+  exit within 60 s after `killpg` stops the run with `stale-process`. Unreadable result files (bad XML, missing
+  `Counters`, `executed` or `TestMethod`) make that run's results missing, never a traceback.
 
 ## List format
 
@@ -168,15 +176,23 @@ only added (`+`) lines; deleted lines do not offset them. Findings, printed as `
 
 Exit 0 clean, 1 findings, 2 git error.
 
+Limits: the check is textual and per line. It does not see other weak forms (`Assert.That(true)`, a bare
+`.Or.`), a form split over lines or with extra spaces inside `.Or.Not.EqualTo`, and it also reports matches in
+comments and strings and any `GreaterThanOrEqualTo(0)`, count or not. File names with characters git quotes are
+not decoded.
+
 ## Self-test
 
 `selftest/selftest.py [--repo DIR] [--only CASES] [--keep]` clones the repository into a temp directory and runs:
 the seven verdicts of `lists/selftest.txt` (1 must kill, 2 comment only, 3 compile failure, 4 file excluded from
 the project, 5 old assembly loaded, 6 exception with an assertion-like message, 7 TearDown exception), the
 must-kill entry alone (exit 0), restore faults (`restore-mismatch`, `baseline-mismatch`), zero executed, a crashed
-test host and only-unexpected failures (`lists/selftest-extra.txt`), dirty repository, lock, `kill -9` during a hanging
+test host, only-unexpected failures, a changed executed count and an assertion in OneTimeSetUp
+(`lists/selftest-extra.txt`), dirty repository, lock, `kill -9` during a hanging
 mutant test (`lists/selftest-hang.txt`), `kill -9` before a child is registered and after `git worktree add` is released (with two unrelated
-worktrees, one with its directory deleted, that must survive), and the hygiene cases.
+worktrees, one with its directory deleted, that must survive), refused paths (a symlinked list file, `--out`
+and `--log` inside the repository, a non-UTF-8 list), and the hygiene cases. An unknown `--only` case name exits 2;
+a run with no check fails.
 
 Self-test switches (only for the self-test): environment variable `WARCORE_MUTATION_SELFTEST`, comma-separated:
 
