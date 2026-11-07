@@ -59,7 +59,14 @@ namespace WarCore.Unity.Editor
                 throw new InvalidOperationException("Stop Play mode before showing the terrain demo.");
             byte[] bytes = TerrainBake.DemoMapBytes();
             for (GameObject old = GameObject.Find(RootName); old != null; old = GameObject.Find(RootName))
+            {
+                // The terrain mesh is created by MapView, not an asset: release it with the old view.
+                Transform ground = old.transform.Find("Ground");
+                MeshFilter filter = ground == null ? null : ground.GetComponent<MeshFilter>();
+                if (filter != null && filter.sharedMesh != null && !AssetDatabase.Contains(filter.sharedMesh))
+                    UnityEngine.Object.DestroyImmediate(filter.sharedMesh);
                 UnityEngine.Object.DestroyImmediate(old);
+            }
             Material material = EnsureMaterial();
             GameObject root = TerrainBake.Build(bytes, material, material);
             string problems = TerrainBake.VerifyGround(bytes, root.transform);

@@ -110,11 +110,11 @@ namespace WarCore.Tests
         // Cell (2,0), (h00, h10, h01, h11) = (-3, 0, 0, 0): A = -3 + 3 * 5/8 = -1.125, B = -3 + 3 * 5/8 = -1.125;
         //   floor gives -2 (truncation would give -1), and HeightField floors toward negative infinity too; the other cut
         //   gives -3 + 3 * 5/8 + 3 / 8 = -0.75, floor -1, at both points.
-        [TestCase(0, 0, -4096, -12288)]
-        [TestCase(0, 1, -4096, -12288)]
-        [TestCase(2, 0, -2, -1)]
-        [TestCase(2, 1, -2, -1)]
-        public void Fixture_HandWorkedSamples(int cellX, int half, long expectedRaw, long antiDiagonalRaw)
+        [TestCase(0, 0, -4096.0, -4096, -12288)]
+        [TestCase(0, 1, -4096.0, -4096, -12288)]
+        [TestCase(2, 0, -1.125, -2, -1)]
+        [TestCase(2, 1, -1.125, -2, -1)]
+        public void Fixture_HandWorkedSamples(int cellX, int half, double exactRaw, long expectedRaw, long antiDiagonalRaw)
         {
             byte[] bytes = FixtureBytes();
             TerrainMesh mesh = TerrainMesh.Build(ViewMap.Parse(bytes));
@@ -122,6 +122,7 @@ namespace WarCore.Tests
             var field = new HeightField(3, 2, map.Min.X, map.Min.Z, FixtureRaw);
             double u = half == 0 ? 0.625 : 0.125, v = half == 0 ? 0.125 : 0.625;
             double y = MeshY(mesh, 3 * (2 * cellX + half), -2 + cellX + u, 3 + v);
+            Assert.That(y * S, Is.EqualTo(exactRaw));
             Assert.That(Math.Floor(y * S), Is.EqualTo(expectedRaw));
             Assert.That(field.TryHeightAt(SimFix.FromRaw(map.Min.X.Raw + cellX * S + (long)(u * S)),
                 SimFix.FromRaw(map.Min.Z.Raw + (long)(v * S)), out SimFix h), Is.True);
@@ -130,6 +131,46 @@ namespace WarCore.Tests
             IReadOnlyList<float> p = mesh.Positions;
             double h00 = p[3 * cellX + 1], h10 = p[3 * (cellX + 1) + 1], h01 = p[3 * (cellX + 4) + 1];
             Assert.That(Math.Floor((h00 + (h10 - h00) * u + (h01 - h00) * v) * S), Is.EqualTo(antiDiagonalRaw));
+        }
+
+        // The checker map itself, locked independently of TerrainCheckerMap: header values and every point height
+        // (-16384 raw where i + j is even, +16384 where it is odd), so a degenerate map cannot pass the sample test.
+        [Test]
+        public void Checker512_MapContentIsLocked()
+        {
+            WcMap map = WcMapReader.Read(TerrainDemo.CheckerBytes(512));
+            Assert.That(map.MapId, Is.EqualTo("checker-512"));
+            Assert.That(map.Width, Is.EqualTo(512u));
+            Assert.That(map.Depth, Is.EqualTo(512u));
+            Assert.That(map.Min.X.Raw, Is.EqualTo(0));
+            Assert.That(map.Min.Y.Raw, Is.EqualTo(-16384));
+            Assert.That(map.Min.Z.Raw, Is.EqualTo(0));
+            Assert.That(map.Max.X.Raw, Is.EqualTo(512L * 65536));
+            Assert.That(map.Max.Y.Raw, Is.EqualTo(65536));
+            Assert.That(map.Max.Z.Raw, Is.EqualTo(512L * 65536));
+            Assert.That(map.FlatHeight.Raw, Is.EqualTo(-16384));
+            Assert.That(map.ChunkSize.Raw, Is.EqualTo(512L * 65536));
+            Assert.That(map.Layers.Count, Is.EqualTo(1));
+            Assert.That(map.Layers[0].Name, Is.EqualTo("walls"));
+            Assert.That(map.Walls.Count, Is.EqualTo(0));
+            Assert.That(map.HasSurfaceTable, Is.False);
+            Assert.That(map.HeightPoints.Count, Is.EqualTo(513 * 513));
+            int low = 0, high = 0, other = 0, blocked = 0;
+            for (int j = 0; j <= 512; j++)
+                for (int i = 0; i <= 512; i++)
+                {
+                    int raw = map.VertexRaw(i, j);
+                    if ((i + j) % 2 == 0 && raw == -16384) low++;
+                    else if ((i + j) % 2 == 1 && raw == 16384) high++;
+                    else other++;
+                }
+            for (int z = 0; z < 512; z++)
+                for (int x = 0; x < 512; x++)
+                    if (!map.IsPassable(x, z)) blocked++;
+            Assert.That(low, Is.EqualTo(131585));
+            Assert.That(high, Is.EqualTo(131584));
+            Assert.That(other, Is.EqualTo(0));
+            Assert.That(blocked, Is.EqualTo(0));
         }
 
         [Test]

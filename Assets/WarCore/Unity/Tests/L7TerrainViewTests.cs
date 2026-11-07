@@ -43,7 +43,16 @@ namespace WarCore.Unity.Tests
 
         // (d) VerifyGround is not vacuous: each broken view reports something.
         [Test]
-        public void VerifyGround_VertexMoved_Reports()
+        public void VerifyGround_VertexMoved_Reports() => MoveOneVertex(new Vector3(0f, 1f, 0f));
+
+        [Test]
+        public void VerifyGround_VertexMovedInX_Reports() => MoveOneVertex(new Vector3(0.5f, 0f, 0f));
+
+        [Test]
+        public void VerifyGround_VertexMovedInZ_Reports() => MoveOneVertex(new Vector3(0f, 0f, 0.5f));
+
+        // Moves vertex 800 of the demo view by delta (one component at a time, so each component's comparison is tested).
+        private static void MoveOneVertex(Vector3 delta)
         {
             byte[] bytes = TerrainBake.DemoMapBytes();
             GameObject root = TerrainBake.Build(bytes, null, null);
@@ -51,7 +60,7 @@ namespace WarCore.Unity.Tests
             {
                 Mesh mesh = GroundMesh(root);
                 Vector3[] vertices = mesh.vertices;
-                vertices[800].y += 1f;
+                vertices[800] += delta;
                 mesh.vertices = vertices;
                 Assert.That(TerrainBake.VerifyGround(bytes, root.transform), Is.Not.Empty);
             }
@@ -95,7 +104,7 @@ namespace WarCore.Unity.Tests
             GameObject root = MapView.Build(ViewMap.Parse(bytes), null, null);
             try
             {
-                Assert.That(TerrainBake.VerifyGround(bytes, root.transform), Is.Not.Empty);
+                Assert.That(TerrainBake.VerifyGround(bytes, root.transform), Is.EqualTo("no height field"));
             }
             finally { UnityEngine.Object.DestroyImmediate(root); }
         }
