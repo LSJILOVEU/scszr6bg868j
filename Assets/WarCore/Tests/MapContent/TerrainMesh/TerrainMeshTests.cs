@@ -56,6 +56,96 @@ namespace WarCore.Tests
             return l0 * p[a + 1] + l1 * p[b + 1] + l2 * p[c + 1];
         }
 
+        // (1) Hand fixture: 3 x 2 cells, Min = (-2, -1, 3), Max = (1, 1, 5). Point heights raw, row j, columns i = 0..3.
+        // Cell (0,0) is a saddle: h00 + h11 - h10 - h01 = 0 + 32768 + 16384 + 16384 = 65536 raw. Cell (2,0) has h00 = -3.
+        internal static readonly int[] FixtureRaw =
+        {
+            0, -16384, -3, 0,
+            -16384, 32768, 0, 0,
+            -65536, 0, 16384, 32768,
+        };
+
+        internal static byte[] FixtureBytes()
+        {
+            const int w = 3, d = 2;
+            var bits = new byte[(w * d + 7) / 8];
+            for (int key = 0; key < w * d; key++) bits[key >> 3] |= (byte)(1 << (key & 7));
+            SimFix floor = SimFix.FromInt(-1);
+            return WcMapWriter.Write(new WcMap("l7-fixture", "none", new SimVec3(SimFix.FromInt(-2), floor, SimFix.FromInt(3)),
+                new SimVec3(SimFix.FromInt(1), SimFix.FromInt(1), SimFix.FromInt(5)), SimFix.FromInt(3), floor,
+                w, d, new[] { new WcMapLayer("walls", 1) }, new WcMapWall[0], bits, FixtureRaw, null, null));
+        }
+
+        [Test]
+        public void Fixture_TrianglesAndVertices_AreExact()
+        {
+            TerrainMesh mesh = TerrainMesh.Build(ViewMap.Parse(FixtureBytes()));
+            Assert.That(mesh.VertexCount, Is.EqualTo(12));
+            Assert.That(mesh.Triangles.Count, Is.EqualTo(36));
+            int[] expected = { 0, 5, 1, 0, 4, 5, 1, 6, 2, 1, 5, 6, 2, 7, 3, 2, 6, 7, 4, 9, 5, 4, 8, 9, 5, 10, 6, 5, 9, 10, 6, 11, 7, 6, 10, 11 };
+            for (int k = 0; k < expected.Length; k++) Assert.That(mesh.Triangles[k], Is.EqualTo(expected[k]), "index " + k);
+            for (int j = 0; j <= 2; j++)
+                for (int i = 0; i <= 3; i++)
+                {
+                    int p = 3 * (j * 4 + i);
+                    Assert.That(Bits(mesh.Positions[p]), Is.EqualTo(Bits(-2 + i)), $"x ({i},{j})");
+                    Assert.That(Bits(mesh.Positions[p + 1]), Is.EqualTo(Bits((float)FixtureRaw[j * 4 + i] / 65536f)), $"y ({i},{j})");
+                    Assert.That(Bits(mesh.Positions[p + 2]), Is.EqualTo(Bits(3 + j)), $"z ({i},{j})");
+                }
+        }
+
+        [Test]
+        public void Fixture_EveryTriangleSample_MatchesHeightField()
+        {
+            (int samples, int diffs) = SampleAgainstHeightField(FixtureBytes());
+            Assert.That(samples, Is.EqualTo(12));
+            Assert.That(diffs, Is.EqualTo(0));
+        }
+
+        // Four hand-worked samples. Cell (0,0), (h00, h10, h01, h11) = (0, -16384, -16384, 32768):
+        //   A at (5/8, 1/8): h00 + (h10 - h00) * 5/8 + (h11 - h10) / 8 = -10240 + 6144 = -4096
+        //   B at (1/8, 5/8): h00 + (h11 - h01) / 8 + (h01 - h00) * 5/8 = 6144 - 10240 = -4096
+        //   the anti-diagonal cut puts both points in triangle (v00, v10, v01): h00 + (h10 - h00) u + (h01 - h00) v
+        //   = -10240 - 2048 = -12288 at A and -2048 - 10240 = -12288 at B; the difference is 65536 / 8 = 8192 raw.
+        // Cell (2,0), (h00, h10, h01, h11) = (-3, 0, 0, 0): A = -3 + 3 * 5/8 = -1.125, B = -3 + 3 * 5/8 = -1.125;
+        //   floor gives -2 (truncation would give -1), and HeightField floors toward negative infinity too; the other cut
+        //   gives -3 + 3 * 5/8 + 3 / 8 = -0.75, floor -1, at both points.
+        [TestCase(0, 0, -4096, -12288)]
+        [TestCase(0, 1, -4096, -12288)]
+        [TestCase(2, 0, -2, -1)]
+        [TestCase(2, 1, -2, -1)]
+        public void Fixture_HandWorkedSamples(int cellX, int half, long expectedRaw, long antiDiagonalRaw)
+        {
+            byte[] bytes = FixtureBytes();
+            TerrainMesh mesh = TerrainMesh.Build(ViewMap.Parse(bytes));
+            WcMap map = WcMapReader.Read(bytes);
+            var field = new HeightField(3, 2, map.Min.X, map.Min.Z, FixtureRaw);
+            double u = half == 0 ? 0.625 : 0.125, v = half == 0 ? 0.125 : 0.625;
+            double y = MeshY(mesh, 3 * (2 * cellX + half), -2 + cellX + u, 3 + v);
+            Assert.That(Math.Floor(y * S), Is.EqualTo(expectedRaw));
+            Assert.That(field.TryHeightAt(SimFix.FromRaw(map.Min.X.Raw + cellX * S + (long)(u * S)),
+                SimFix.FromRaw(map.Min.Z.Raw + (long)(v * S)), out SimFix h), Is.True);
+            Assert.That(h.Raw, Is.EqualTo(expectedRaw));
+            // The same point on the other cut, from the mesh's own corner heights: (v00, v10, v01) since u + v < 1.
+            IReadOnlyList<float> p = mesh.Positions;
+            double h00 = p[3 * cellX + 1], h10 = p[3 * (cellX + 1) + 1], h01 = p[3 * (cellX + 4) + 1];
+            Assert.That(Math.Floor((h00 + (h10 - h00) * u + (h01 - h00) * v) * S), Is.EqualTo(antiDiagonalRaw));
+        }
+
+        [Test]
+        public void Checker512_EveryTriangleSample_MatchesHeightField()
+        {
+            (int samples, int diffs) = SampleAgainstHeightField(TerrainDemo.CheckerBytes(512));
+            Assert.That(samples, Is.EqualTo(524288));
+            Assert.That(diffs, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void Fixture_VertexCoordinates_AreBitExact() => AssertVertexBits(FixtureBytes());
+
+        [Test]
+        public void Fixture_EveryTriangleFacesUp() => AssertFacesUp(FixtureBytes());
+
         [Test]
         public void DemoTerrain_EveryTriangleSample_MatchesHeightField()
         {

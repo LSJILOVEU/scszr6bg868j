@@ -25,6 +25,22 @@ namespace WarCore.Unity.Tests
             finally { DestroyView(root); }
         }
 
+        // (b) A 512 x 512 height field: 513 * 513 = 263169 vertices need 32-bit indices.
+        [Test]
+        public void Checker512_GroundMatchesHeightField_UInt32()
+        {
+            byte[] bytes = TerrainBake.CheckerBytes(512);
+            GameObject root = TerrainBake.Build(bytes, null, null);
+            try
+            {
+                Mesh mesh = GroundMesh(root);
+                Assert.That(mesh.vertexCount, Is.EqualTo(263169));
+                Assert.That(mesh.indexFormat, Is.EqualTo(IndexFormat.UInt32));
+                Assert.That(TerrainBake.VerifyGround(bytes, root.transform), Is.Empty);
+            }
+            finally { DestroyView(root); }
+        }
+
         // (d) VerifyGround is not vacuous: each broken view reports something.
         [Test]
         public void VerifyGround_VertexMoved_Reports()

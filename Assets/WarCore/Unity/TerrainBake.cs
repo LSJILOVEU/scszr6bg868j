@@ -9,6 +9,8 @@ namespace WarCore.Unity
     {
         public static byte[] DemoMapBytes() => TerrainDemo.MapBytes();
 
+        public static byte[] CheckerBytes(int side) => TerrainDemo.CheckerBytes(side);
+
         public static GameObject Build(byte[] mapBytes, Material ground, Material wall)
             => MapView.Build(ViewMap.Parse(mapBytes), ground, wall);
 
