@@ -449,7 +449,7 @@ def main():
         wt2 = worktrees(repo)
         check("4c: unrelated registrations kept", ua in wt2 and ub in wt2, str(sorted(wt2)))
     if on("paths"):
-        case_paths(c, base_wt)
+        case_paths(c, worktrees(repo))
     if on("hygiene"):
         case_hygiene(work, src)
     if checks[0] == 0:
