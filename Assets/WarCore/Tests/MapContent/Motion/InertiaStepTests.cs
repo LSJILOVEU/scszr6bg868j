@@ -96,35 +96,49 @@ namespace WarCore.Tests.Motion
             Assert.That(X(s) - held, Is.EqualTo(655L));
         }
 
-        // A unit that lacks its motion state or its motion limits moves at the speed it wanted, and nothing is written.
-        [Test]
-        public void AUnitWithoutState_MovesAtItsOwnSpeed()
+        // A unit that lacks its motion state or its motion limits moves at the speed it wanted, and nothing is written. Its
+        // MaxSpeed is set to half its speed first, so an answer of MaxSpeed instead of the wanted speed shows.
+        private static SimSession Missing(bool state)
         {
             SimSession s = World(9000, 18000, 25000);
             EntityStore entities = M3TestWorld.Sim(s).Entities;
-            entities.Remove(entities.Resolve<MotionState>(), M3TestWorld.Unit(s));
-            for (int k = 1; k <= 3; k++)
-            {
-                long before = X(s);
-                s.StepOnce();
-                Assert.That(X(s) - before, Is.EqualTo(Cap), "tick " + k);
-            }
-            Assert.That(entities.TryGet(entities.Resolve<MotionState>(), M3TestWorld.Unit(s), out _), Is.False);
+            EntityId unit = M3TestWorld.Unit(s);
+            entities.Set(entities.Resolve<MotionLimits>(), unit, new MotionLimits(SimFix.FromRaw(6553), SimFix.FromRaw(655), SimFix.FromRaw(1310), default));
+            if (state) entities.Remove(entities.Resolve<MotionState>(), unit);
+            else entities.Remove(entities.Resolve<MotionLimits>(), unit);
+            return s;
         }
 
-        [Test]
-        public void AUnitWithoutLimits_MovesAtItsOwnSpeedAndKeepsItsState()
+        [TestCase(true), TestCase(false)]
+        public void AUnitMissingAComponent_WalksLikeAWorldWithoutInertia(bool withoutState)
         {
-            SimSession s = World(9000, 18000, 25000);
+            SimSession s = Missing(withoutState);
+            SimSession off = InertiaWorlds.Build(InertiaWorlds.Line(25000, InertiaWorlds.StartZMm).WithMotion(), InertiaWorlds.FlatMap());
             EntityStore entities = M3TestWorld.Sim(s).Entities;
-            entities.Remove(entities.Resolve<MotionLimits>(), M3TestWorld.Unit(s));
-            for (int k = 1; k <= 3; k++)
+            for (int k = 1; k <= 120; k++)
             {
                 long before = X(s);
-                s.StepOnce();
-                Assert.That(X(s) - before, Is.EqualTo(Cap), "tick " + k);
+                s.StepOnce(); off.StepOnce();
+                Assert.That(M3TestWorld.Position(s), Is.EqualTo(M3TestWorld.Position(off)), "tick " + k);
+                if (k <= 100) Assert.That(X(s) - before, Is.EqualTo(Cap), "tick " + k);
+                if (withoutState) Assert.That(entities.TryGet(entities.Resolve<MotionState>(), M3TestWorld.Unit(s), out _), Is.False, "tick " + k);
+                else Assert.That(InertiaWorlds.State(s), Is.EqualTo(new MotionState(default, -1)), "tick " + k);
             }
-            Assert.That(InertiaWorlds.State(s), Is.EqualTo(new MotionState(default, -1)));
+            Assert.That(Wp23.Intent(s).Active, Is.False, "arrived");
+        }
+
+        [TestCase(true), TestCase(false)]
+        public void TheModelAsked_ForAUnitMissingAComponent_ReturnsTheWantedSpeed(bool withoutState)
+        {
+            SimSession s = Missing(withoutState);
+            WarCore.Sim.Sim sim = M3TestWorld.Sim(s);
+            EntityStore entities = sim.Entities;
+            var model = new InertiaMotion(entities, entities.Resolve<Position>(), entities.Resolve<MoveIntent>(),
+                entities.Resolve<MotionLimits>(), entities.Resolve<MotionState>(), sim.Clock);
+            ulong hash = s.StateHash;
+            foreach (long wanted in new long[] { 1234, 13107, 20000 })
+                Assert.That(model.StepSpeed(M3TestWorld.Unit(s), SimFix.FromRaw(wanted)).Raw, Is.EqualTo(wanted));
+            Assert.That(s.StateHash, Is.EqualTo(hash), "nothing is written");
         }
 
         [Test]

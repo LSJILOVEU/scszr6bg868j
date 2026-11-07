@@ -68,12 +68,18 @@ namespace WarCore.Tests.Motion
         // Acceptance 7, crowd: unit 1 (team 1) on the crowd mover from (3.5, 10.5) toward (60.5, 10.5), along cell centres;
         // unit 3 of team 2 stands at (45.5, 10.5 + offset) in the way. No pass rule is set, and the bystander is on the other
         // team either way.
-        internal static SimSession Crowd(long speedMm, long offsetZMm, long accel, long decel)
+        internal static SimSession Crowd(long speedMm, long offsetZMm, long accel, long decel, long bystanderXMm = 45500)
         {
-            var units = new[] { new UnitSpawn(1, 0, 1, 3500, 10500, speedMm, team: 1), new UnitSpawn(3, 0, 3, 45500, 10500 + offsetZMm, Speed, team: 2) };
+            var units = new[] { new UnitSpawn(1, 0, 1, 3500, 10500, speedMm, team: 1), new UnitSpawn(3, 0, 3, bystanderXMm, 10500 + offsetZMm, Speed, team: 2) };
             var recipe = new WorldRecipe(41, MoverKind.InterimCrowd, units, new[] { BridgeCommand.MoveTo(1, 1, 60500, 10500) });
             return Build(Open(recipe, accel, decel), WcMapWriter.Write(Wp23.Make(80, 24, 0, 6 * S, null, 4 * S)));
         }
+
+        // Acceptance 7, crowd sweep: the same run with the bystander between two cell centres, at (45.0, 10.65). A full-speed
+        // unit steps one cell per tick along z = 10.5 (the waypoint cuts the step), so the step from 44.5 to 45.5 has both end
+        // points 0.522 m from the bystander (clear of the 0.5 m sum of radii) while the segment passes 0.15 m from it: only the
+        // sweep along the step can see the bystander.
+        internal static SimSession CrowdMidStep(long speedMm, long accel) => Crowd(speedMm, 150, accel, 0, 45000);
 
         // A world with a player (key 1, crowd mover with match, walking +X by input) and an AI unit (key 3) ordered along +X.
         internal static SimSession Player(long accel, long decel)
