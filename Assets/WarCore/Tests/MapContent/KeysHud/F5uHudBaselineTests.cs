@@ -47,6 +47,19 @@ namespace WarCore.Tests
             Assert.That(HudLines.Build(session.Current, session.StateHash, 1, status, new GroundPick(12.34f, 56.78f)), Is.EqualTo(FollowedText));
         }
 
+        // (6b) Same frame, the status marked as blocking: the recorded text with one "Blocking" line inserted after the Follow line.
+        [Test]
+        public void F5uHudFullText_BlockingAddsOneLineAfterFollow()
+        {
+            SimSession session = AtTick600();
+            Assert.That(session.TryUnitStatus(1, out UnitStatus s), Is.True);
+            var blocking = new UnitStatus(s.Health, s.MaxHealth, s.Ammo, s.WaitTicksLeft, s.Reloading, s.Alive, s.HasWeapon, true);
+            const string follow = "Follow #1  HP 100/100  Ammo 30\n";
+            int at = FollowedText.IndexOf(follow, System.StringComparison.Ordinal) + follow.Length;
+            Assert.That(HudLines.Build(session.Current, session.StateHash, 1, blocking, new GroundPick(12.34f, 56.78f)),
+                Is.EqualTo(FollowedText.Insert(at, "Blocking\n")));
+        }
+
         [Test]
         public void F5uHudFullText_NothingFollowedAtTick600_IsUnchanged()
         {

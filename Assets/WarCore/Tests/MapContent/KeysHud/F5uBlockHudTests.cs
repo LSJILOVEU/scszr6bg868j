@@ -13,6 +13,17 @@ namespace WarCore.Tests
 
         private static bool HasBlockingLine(string text) => Array.IndexOf(text.Split('\n'), "Blocking") >= 0;
 
+        // Blocking is a line of its own, exactly once, right after the Follow line; no CR anywhere.
+        private static void BlockingLineRightAfterFollow(string text)
+        {
+            Assert.That(text, Does.Not.Contain("\r"));
+            string[] lines = text.Split('\n');
+            int follow = Array.FindIndex(lines, l => l.StartsWith("Follow #", StringComparison.Ordinal));
+            Assert.That(follow, Is.EqualTo(2));
+            Assert.That(lines[follow + 1], Is.EqualTo("Blocking"));
+            Assert.That(Array.FindAll(lines, l => l.Contains("Blocking")).Length, Is.EqualTo(1));
+        }
+
         private static string Hud(SimSession session, ulong key, UnitStatus status) =>
             HudLines.Build(session.Current, session.StateHash, key, status, new GroundPick(1f, 2f));
 
@@ -32,6 +43,7 @@ namespace WarCore.Tests
                 Assert.That(status.Blocking, Is.EqualTo(expected), $"player tick {session.Tick}");
                 Assert.That(HasBlockingLine(Hud(session, Player, status)), Is.EqualTo(expected), $"player HUD tick {session.Tick}");
                 Assert.That(Hud(session, Player, status), expected ? Does.Contain("Blocking") : Does.Not.Contain("Blocking"));
+                if (expected) BlockingLineRightAfterFollow(Hud(session, Player, status));
                 if (status.Blocking) held++;
 
                 Assert.That(session.TryUnitStatus(Mate, out UnitStatus mate), Is.True);

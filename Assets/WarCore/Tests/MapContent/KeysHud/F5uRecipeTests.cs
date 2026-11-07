@@ -89,7 +89,7 @@ namespace WarCore.Tests
             CombatPack old = mp.Combat;
             var melee = new MeleeSpec(3, 2, 4, SimFix.Ratio(1500, 1000), 500, SimFix.Ratio(1000, 1000), SimFix.Ratio(20, 1), 2,
                 SimFix.Ratio(1200, 1000));
-            var custom = new CombatPack(old.Weapons.ToArray(), old.Resolver, old.Selector, old.MaxHealthRaw + 7, true, true, 1234, 45000,
+            var custom = new CombatPack(old.Weapons.ToArray(), old.Resolver, old.Selector, old.MaxHealthRaw + 7, true, true, 123, 45000,
                 new[] { melee }, new[] { new BlockSpec(100, 200, 300) });
             WorldRecipe source = mp.WithCombat(custom);
             WorldRecipe changed = DemoRecipes.WithPlayerBlock(source, new BlockSpec(500, 1000));

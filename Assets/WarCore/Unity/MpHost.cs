@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using UnityEngine;
 using WarCore.Presentation;
@@ -9,14 +10,28 @@ namespace WarCore.Unity
     {
         public const string ModeKey = "WarCore.MP.Mode";
 
+        // The host's input step: WASD, the mouse aim and the bound keys make one PlayerInput. Outside UNITY_EDITOR so that
+        // EditMode tests call the same code with their own key source. Without focus no key counts and the move is zero.
+        public static PlayerInput ReadPlayer(PlayerInputMapper mapper, PlayerKeyPoller poller, IsoCamera camera, bool focused,
+            Func<KeyCode, bool> key, Vector3 mouse, float w, float h, bool primaryHeld)
+        {
+            float ix = focused ? (key(KeyCode.D) ? 1 : 0) - (key(KeyCode.A) ? 1 : 0) : 0;
+            float iy = focused ? (key(KeyCode.W) ? 1 : 0) - (key(KeyCode.S) ? 1 : 0) : 0;
+            bool mouseInWindow = focused && w > 0 && h > 0 && mouse.x >= 0 && mouse.y >= 0 && mouse.x < w && mouse.y < h;
+            return mapper.Map(camera, ix, iy, mouse.x, mouse.y, w, h, mouseInWindow, focused && primaryHeld, poller.KeyDown(focused));
+        }
+
 #if UNITY_EDITOR
+        // Built once: a method group converted every frame would allocate a new delegate.
+        private static readonly Func<KeyCode, bool> GetKey = Input.GetKey;
         private SimSession session;
         private EntityViews views;
         private PointViews points;
         private ShotLines shots;
         private IsoCamera isoCamera;
         private readonly IsoCameraInput cameraInput = new IsoCameraInput();
-        private readonly PlayerInputMapper mapper = new PlayerInputMapper();
+        private readonly PlayerInputMapper mapper = new PlayerInputMapper(PlayerKeys.Default);
+        private PlayerKeyPoller keys;
         private readonly LivePlayerInput liveInput = new LivePlayerInput();
         private ulong? lastControlledKey;
         private bool lostPlayer;
@@ -27,7 +42,14 @@ namespace WarCore.Unity
         {
             UnityEditor.SessionState.EraseBool(ModeKey);
             byte[] bytes = File.ReadAllBytes(Path.Combine(Application.streamingAssetsPath, M2Host.M7MapPath));
-            session = SimSession.Create(DemoRecipes.MpDemo(), bytes);
+            session = SimSession.Create(DemoRecipes.MpBlockDemo(), bytes);
+            try { keys = new PlayerKeyPoller(PlayerKeys.Default, GetKey); }
+            catch (ArgumentException e)
+            {
+                Debug.LogError("MP key table: " + e.Message);
+                session = null;
+                return;
+            }
             MapBake baked = FindAnyObjectByType<MapBake>();
             if (baked == null || baked.fileHash != session.Map.FileHash)
             {
@@ -61,11 +83,8 @@ namespace WarCore.Unity
             bool focused = Application.isFocused;
             if (focused)
                 cameraInput.Update(isoCamera, Time.unscaledDeltaTime);
-            float ix = focused ? (Input.GetKey(KeyCode.D) ? 1 : 0) - (Input.GetKey(KeyCode.A) ? 1 : 0) : 0;
-            float iy = focused ? (Input.GetKey(KeyCode.W) ? 1 : 0) - (Input.GetKey(KeyCode.S) ? 1 : 0) : 0;
-            Vector3 mouse = Input.mousePosition;
-            PlayerInput player = mapper.Map(isoCamera, ix, iy, mouse.x, mouse.y,
-                Screen.width, Screen.height, MouseInWindow(mouse), focused && Input.GetMouseButton(0));
+            PlayerInput player = ReadPlayer(mapper, keys, isoCamera, focused, GetKey, Input.mousePosition,
+                Screen.width, Screen.height, Input.GetMouseButton(0));
             liveInput.Apply(session, player, focused && Input.GetMouseButtonDown(0));
             int advanced = session.Advance((long)(Time.unscaledDeltaTime * 1e6));
             // A zero-tick frame still displays the same fire records. Do not draw them twice.
