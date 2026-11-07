@@ -1,0 +1,10 @@
+{
+  "id": "rwr-terrain-demo",
+  "extends": "rwr",
+  "surfaces": [
+    { "id": "grass" },
+    { "id": "mud", "speedMilli": 500, "cost": 3 },
+    { "id": "road", "speedMilli": 1250 }
+  ],
+  "slopeRule": { "maxWalkableNum": 3, "maxWalkableDen": 4 }
+}
