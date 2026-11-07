@@ -1,0 +1,47 @@
+# Self-test list: crash, only unexpected failures, executed count change, OneTimeSetUp assertion (README "Self-test").
+
+[selftest-crash]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~E1b
+expect = WarCore.Tests.E1bRecipeTests.SoldiersMapFieldByField
+note = the test host crashes: must be invalid, not killed
+original:
+|             if (result == null) throw new ArgumentNullException(nameof(result));
+replacement:
+|             if (result != null) System.Environment.FailFast("selftest");
+|             if (result == null) throw new ArgumentNullException(nameof(result));
+
+[selftest-unexpected]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~E1b
+expect = WarCore.Tests.E1bDocumentTests.MapDocumentIsDeclaredPartial
+note = only tests outside the expected list fail
+original:
+| private const long SpeedMmPerSec = 6000;
+replacement:
+| private const long SpeedMmPerSec = 6001;
+
+[selftest-count]
+file = Assets/WarCore/Tests/MapContent/MapTools/E1bLockTests.cs
+filter = FullyQualifiedName~E1b
+expect = WarCore.Tests.E1bLockTests.MeleePackIndicesOfTheMappedUnitTypes
+note = adds a test case that fails on an assertion: the executed count changes, so not killed
+original:
+|         [TestCase("rwr.soldier-2", 1, -1)]
+replacement:
+|         [TestCase("rwr.soldier-2", 1, -1)]
+|         [TestCase("rwr.soldier-2", 7, 7)]
+
+[selftest-parent]
+file = Assets/WarCore/Tests/MapContent/MapTools/E1bLockTests.cs
+filter = FullyQualifiedName~E1b
+expect = WarCore.Tests.E1bLockTests.
+note = assertion failure in OneTimeSetUp: reported on every test of the class with site Parent, not killed
+original:
+|     public sealed class E1bLockTests
+|     {
+replacement:
+|     public sealed class E1bLockTests
+|     {
+|         [OneTimeSetUp]
+|         public void SelfTestOneTimeSetUp() { Assert.Fail("self-test one-time setup"); }
