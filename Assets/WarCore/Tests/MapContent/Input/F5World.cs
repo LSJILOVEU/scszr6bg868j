@@ -7,7 +7,8 @@ using WarCore.Sim;
 
 namespace WarCore.Tests
 {
-    // F5 fixture: every behaviour-relevant value is a literal here (seed, units, match, combat, think interval).
+    // F5 fixture: seed, units, control points, think interval, sight and every CombatPack argument are literals here.
+    // Remaining MatchPack arguments come from the test helper M6World.Pack (test code, not production defaults).
     // Squad 1 = player (key 1) + ally (key 2); squad 2 = leader (key 4); team 2 = one far enemy (key 3).
     internal static class F5World
     {
@@ -32,7 +33,8 @@ namespace WarCore.Tests
                     new ControlPointDef(1, M6World.P(30, 30), SimFix.FromInt(2)),
                     new ControlPointDef(2, M6World.P(60, 30), SimFix.FromInt(2))
                 }, ticks: 8000, think: 1000000, interval: 9000, max: 9000, sight: SimFix.FromInt(40));
-            var combat = new CombatPack(Array.Empty<WeaponDef>(), new FixedHit(), new NearestVisibleEnemy(), 100 * SimFix.Scale);
+            var combat = new CombatPack(Array.Empty<WeaponDef>(), new FixedHit(), new NearestVisibleEnemy(), 100 * SimFix.Scale,
+                friendlyFire: false, friendlyFireLocked: false, allyCheckMissRaw: 0, allyHoldMilli: 30000, melee: null, block: null);
             WorldRecipe recipe = M6World.RecipeOf(units, match, combat, Seed).WithPlayer(1);
             return standing ? recipe.WithStandingOrders() : recipe;
         }

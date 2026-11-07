@@ -8,7 +8,6 @@ namespace WarCore.Tests
     public sealed class F5ReplayTests
     {
         private const int Ticks = 60;
-        private const int SaveAt = 20;
 
         // Block held 10..40, throw on tick 25 only, skill slot 2 on 30..35; movement held throughout.
         private static readonly (long AtTick, PlayerInput Input)[] Script = {
@@ -21,7 +20,7 @@ namespace WarCore.Tests
             (41, new PlayerInput(500, 0, 20000, 15000))
         };
 
-        private static ulong[] Record(out SimSession session, out byte[] saved)
+        private static ulong[] Record(out SimSession session, out byte[] saved, int saveAt = 20)
         {
             var w = F5World.World();
             session = w.Session;
@@ -32,7 +31,7 @@ namespace WarCore.Tests
             {
                 session.StepOnce();
                 hashes[tick - 1] = session.StateHash;
-                if (tick == SaveAt) saved = w.Sim.SaveRetainedSnapshot();
+                if (tick == saveAt) saved = w.Sim.SaveRetainedSnapshot();
             }
             return hashes;
         }
@@ -61,31 +60,42 @@ namespace WarCore.Tests
             }
         }
 
-        [TestCase(false)]
-        [TestCase(true)]
-        public void RestoreWhileBlockHeld_RequeuedFromPlayerLog_MatchesTheOriginalRecording(bool reverse)
+        // 20: block held. 25: throw held. 32: skill slot 2 held.
+        [TestCase(20, false)]
+        [TestCase(20, true)]
+        [TestCase(25, false)]
+        [TestCase(25, true)]
+        [TestCase(32, false)]
+        [TestCase(32, true)]
+        public void RestoreWhileHeld_RequeuedFromPlayerLog_MatchesTheOriginalRecording(int saveAt, bool reverse)
         {
-            ulong[] original = Record(out SimSession source, out byte[] saved);
+            ulong[] original = Record(out SimSession source, out byte[] saved, saveAt);
             var restored = F5World.World(reverse: reverse);
             restored.Sim.RestoreRetainedSnapshot(saved, reverseAllocation: reverse);
             var resumed = restored.Session;
-            Assert.That(resumed.Tick, Is.EqualTo(SaveAt));
-            Assert.That(resumed.StateHash, Is.EqualTo(original[SaveAt - 1]));
+            Assert.That(resumed.Tick, Is.EqualTo(saveAt));
+            Assert.That(resumed.StateHash, Is.EqualTo(original[saveAt - 1]));
             PlayerInput held = default;
             foreach (var record in source.PlayerLog)
-                if (record.AtTick <= SaveAt) held = record.Input;
-            Assert.That(held.Block, Is.True, "tick 20 is inside the held block");
-            resumed.SetPlayerInput(SaveAt + 1, held);
+                if (record.AtTick <= saveAt) held = record.Input;
+            Assert.That(held.Block, Is.True, "save tick is inside the held block");
+            Assert.That(held.Throw, Is.EqualTo(saveAt == 25));
+            Assert.That(held.SkillSlot, Is.EqualTo(saveAt == 32 ? 2 : 0));
+            resumed.SetPlayerInput(saveAt + 1, held);
             var later = new System.Collections.Generic.List<PlayerInputRecord>();
             foreach (var record in source.PlayerLog)
-                if (record.AtTick > SaveAt) later.Add(record);
-            Assert.That(later.Count, Is.EqualTo(5));
+                if (record.AtTick > saveAt) later.Add(record);
+            Assert.That(later.Count, Is.EqualTo(saveAt == 20 ? 5 : saveAt == 25 ? 4 : 2));
             if (reverse) later.Reverse();
             foreach (var record in later) resumed.SetPlayerInput(record.AtTick, record.Input);
-            for (int tick = SaveAt + 1; tick <= Ticks; tick++)
+            for (int tick = saveAt + 1; tick <= Ticks; tick++)
             {
                 resumed.StepOnce();
-                if (tick == SaveAt + 1) Assert.That(restored.Sim.Context.Input.Block, Is.True, "tick 21 block");
+                if (tick == saveAt + 1)
+                {
+                    Assert.That(restored.Sim.Context.Input.Block, Is.True, "first resumed tick block");
+                    Assert.That(restored.Sim.Context.Input.SkillSlot, Is.EqualTo(saveAt == 32 ? 2 : 0), "first resumed tick skill");
+                }
                 Assert.That(resumed.StateHash, Is.EqualTo(original[tick - 1]), "restored tick=" + tick);
             }
         }

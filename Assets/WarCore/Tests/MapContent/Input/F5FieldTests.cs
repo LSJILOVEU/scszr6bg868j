@@ -42,6 +42,10 @@ namespace WarCore.Tests
             Assert.That(new PlayerInput(10, -20, 300, 400, true, block: true), Is.Not.EqualTo(basis));
             Assert.That(new PlayerInput(10, -20, 300, 400, true, @throw: true), Is.Not.EqualTo(basis));
             Assert.That(new PlayerInput(10, -20, 300, 400, true, skillSlot: 1), Is.Not.EqualTo(basis));
+            // Each new field alone changes the hash code (397 is odd, so every step is a bijection).
+            Assert.That(new PlayerInput(10, -20, 300, 400, true, block: true).GetHashCode(), Is.Not.EqualTo(basis.GetHashCode()), "Block hash");
+            Assert.That(new PlayerInput(10, -20, 300, 400, true, @throw: true).GetHashCode(), Is.Not.EqualTo(basis.GetHashCode()), "Throw hash");
+            Assert.That(new PlayerInput(10, -20, 300, 400, true, skillSlot: 1).GetHashCode(), Is.Not.EqualTo(basis.GetHashCode()), "SkillSlot hash");
             Assert.That(new PlayerInput(10, -20, 300, 400, true, true, true, 4), Is.EqualTo(new PlayerInput(10, -20, 300, 400, true, true, true, 4)));
             Assert.That(new PlayerInput(10, -20, 300, 400, true, true, true, 4).GetHashCode(),
                 Is.EqualTo(new PlayerInput(10, -20, 300, 400, true, true, true, 4).GetHashCode()));
@@ -81,6 +85,19 @@ namespace WarCore.Tests
             Assert.That(frame.Squad.HasValue, Is.True, "squad command kept beside player input");
             Assert.That((frame.Squad.Value.Kind, frame.Squad.Value.Squad), Is.EqualTo((SquadCommandKind.MoveTo, 1)));
             Assert.That(w.Read<MoveIntent>(2).Target, Is.EqualTo(SimVec3.Metres(40, 0, 20)));
+        }
+
+        [Test]
+        public void PlayerInputBeforeMoveTo_InEitherQueueOrder_KeepsBoth()
+        {
+            var w = F5World.World(standing: true);
+            w.Session.SetPlayerInput(2, new PlayerInput(0, 0, @throw: true, skillSlot: 5));
+            w.Session.Enqueue(BridgeCommand.MoveTo(2, 1, 40000, 20000));
+            w.Session.StepOnce(); w.Session.StepOnce();
+            InputFrame frame = w.Sim.Context.Input;
+            Assert.That((frame.Block, frame.Throw, frame.SkillSlot), Is.EqualTo((false, true, 5)));
+            Assert.That(frame.Squad.HasValue, Is.True);
+            Assert.That(frame.Squad.Value.Kind, Is.EqualTo(SquadCommandKind.MoveTo));
         }
 
         [Test]

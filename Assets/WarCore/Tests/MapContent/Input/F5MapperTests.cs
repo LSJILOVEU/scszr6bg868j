@@ -65,10 +65,32 @@ namespace WarCore.Tests
             Assert.Throws<ArgumentException>(() => new PlayerKeyBinding("", PlayerKeyAction.Block));
             Assert.Throws<ArgumentException>(() => new PlayerKeyBinding("1", PlayerKeyAction.Skill, 0));
             Assert.Throws<ArgumentException>(() => new PlayerKeyBinding("Q", PlayerKeyAction.Block, 1));
+            Assert.Throws<ArgumentException>(() => new PlayerKeyBinding("1", PlayerKeyAction.Skill, -1));
+            Assert.Throws<ArgumentException>(() => new PlayerKeyBinding("Q", PlayerKeyAction.Throw, -1));
+            Assert.Throws<ArgumentException>(() => new PlayerKeyBinding(null, PlayerKeyAction.Block));
+            Assert.Throws<ArgumentException>(() => new PlayerKeyBinding("Q", (PlayerKeyAction)3));
+            Assert.Throws<ArgumentNullException>(() => new PlayerInputMapper(null));
+            Assert.That(new PlayerKeyBinding("9", PlayerKeyAction.Skill, int.MaxValue).SkillSlot, Is.EqualTo(int.MaxValue));
+        }
+
+        [Test]
+        public void OneKeyBoundToSeveralActions_AndSeveralThrowKeys_AllApply()
+        {
+            var mapper = new PlayerInputMapper(new List<PlayerKeyBinding> {
+                new PlayerKeyBinding("F", PlayerKeyAction.Block),
+                new PlayerKeyBinding("F", PlayerKeyAction.Throw),
+                new PlayerKeyBinding("F", PlayerKeyAction.Skill, 7),
+                new PlayerKeyBinding("T", PlayerKeyAction.Throw),
+                new PlayerKeyBinding("Y", PlayerKeyAction.Throw)
+            });
+            Only(Press(mapper, "F"), true, true, 7);
+            Only(Press(mapper, "Y"), false, true, 0);
+            Only(Press(mapper, "T", "Y"), false, true, 0);
         }
 
         // The same call sequences as Wp18MapperTests: the 9-arg Map, the new overload with a null
         // key reader, and a non-empty table with a null key reader all agree on every field.
+        // This only proves the entry points agree; old behaviour itself stays locked by Wp18MapperTests' literals.
         private static IEnumerable<Func<PlayerInputMapper, bool, PlayerInput[]>> Sequences()
         {
             foreach (var c in new[] { (0f, 0f), (90f, 0f), (180f, 0f), (270f, 0f) })
