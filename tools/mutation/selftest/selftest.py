@@ -21,6 +21,7 @@ LISTS = os.path.join(os.path.dirname(HERE), "lists")
 ST = os.path.join(LISTS, "selftest.txt")
 EXTRA = os.path.join(LISTS, "selftest-extra.txt")
 ZERO = os.path.join(LISTS, "selftest-zero.txt")
+HANG = os.path.join(LISTS, "selftest-hang.txt")
 
 SEVEN = ["killed", "survived", "invalid (compile failed)", "invalid (build not effective)",
          "invalid (build not effective: old assembly loaded)",
@@ -198,16 +199,17 @@ def add_unrelated(c):
 
 
 def case_kill9_during_test(c, base_wt):
-    p, out, err, md = c.start(ST, "pause-after-release=mutant-test", ["--only", "selftest-1"])
+    p, out, err, md = c.start(HANG, "pause-after-release=mutant-test")
     paused = wait_paused(err)
     check("4b: reached the mutant test", paused is not None, read(err))
     if paused is None:
         p.kill()
         return
     groups = [g["pgid"] for m in markers(c.repo) for g in m[1:]]
-    check("4b: mutant test group alive at the kill", group_alive(int(paused[3])))
     p.send_signal(signal.SIGKILL)
     p.wait()
+    time.sleep(5)
+    check("4b: mutant test group alive after the kill", group_alive(int(paused[3])))
     rc, out2, err2, md2 = c.run(ST, extra=["--only", "selftest-2"])
     check("4b: restart runs", rc == 1 and verdicts(out2) == [("selftest-2", "survived")], "%d %s" % (rc, first_line(err2)))
     check("4b: recorded groups gone", groups and not any(group_alive(g) for g in groups), str(groups))

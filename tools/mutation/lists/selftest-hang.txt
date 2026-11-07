@@ -1,0 +1,12 @@
+# Self-test list: the mutant test hangs, so a kill -9 of the runner leaves a live test process group behind.
+
+[selftest-hang]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~E1b
+expect = WarCore.Tests.E1bRecipeTests.SoldiersMapFieldByField
+note = the mutant test sleeps for ten minutes
+original:
+|             if (result == null) throw new ArgumentNullException(nameof(result));
+replacement:
+|             if (result != null) System.Threading.Thread.Sleep(600000);
+|             if (result == null) throw new ArgumentNullException(nameof(result));

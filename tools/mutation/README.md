@@ -174,8 +174,8 @@ Exit 0 clean, 1 findings, 2 git error.
 the seven verdicts of `lists/selftest.txt` (1 must kill, 2 comment only, 3 compile failure, 4 file excluded from
 the project, 5 old assembly loaded, 6 exception with an assertion-like message, 7 TearDown exception), the
 must-kill entry alone (exit 0), restore faults (`restore-mismatch`, `baseline-mismatch`), zero executed, a crashed
-test host and only-unexpected failures (`lists/selftest-extra.txt`), dirty repository, lock, `kill -9` during a
-mutant test, `kill -9` before a child is registered and after `git worktree add` is released (with two unrelated
+test host and only-unexpected failures (`lists/selftest-extra.txt`), dirty repository, lock, `kill -9` during a hanging
+mutant test (`lists/selftest-hang.txt`), `kill -9` before a child is registered and after `git worktree add` is released (with two unrelated
 worktrees, one with its directory deleted, that must survive), and the hygiene cases.
 
 Self-test switches (only for the self-test): environment variable `WARCORE_MUTATION_SELFTEST`, comma-separated:
