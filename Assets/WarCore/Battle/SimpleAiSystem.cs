@@ -15,15 +15,16 @@ namespace WarCore.Battle
         private readonly ComponentType<Position> positions;
         private readonly ComponentType<Combatant> combatants;
         private readonly IControlTarget controlled;
+        private readonly FailedSlotMemory memory;
         private readonly GuardSlots slots;
         // Rebuilt every Step, never persisted: who reserves a slot (active order to it) and who stands at it.
         private readonly bool[] reservedHas, standingHas;
         private readonly ulong[] reservedBy, standingBy;
         public SimpleAiSystem(CombatSystem combat, CombatPack weapons, MatchPack pack, CaptureSystem capture, IMoveOrders moves,
-            IControlTarget controlled = null)
+            IControlTarget controlled = null, FailedSlotMemory memory = null)
         {
             this.combat = combat; this.weapons = weapons; this.pack = pack; this.capture = capture; this.moves = moves;
-            this.controlled = controlled;
+            this.controlled = controlled; this.memory = memory;
             slots = new GuardSlots(pack.Points);
             reservedHas = new bool[slots.Total]; standingHas = new bool[slots.Total];
             reservedBy = new ulong[slots.Total]; standingBy = new ulong[slots.Total];
@@ -37,11 +38,12 @@ namespace WarCore.Battle
             Rebuild();
             foreach (EntityId entity in stage.Capture())
             {
-                if (controlled != null && entity.Equals(controlled.Current)) continue;
+                if (controlled != null && entity.Equals(controlled.Current)) { Forget(entity); continue; }
                 if (!combat.Entities.TryGet(combatants, entity, out Combatant unit) || unit.Team < 1 || unit.Team > 2
-                    || !combat.Entities.TryGet(positions, entity, out Position position) || combat.IsDead(entity)) continue;
+                    || !combat.Entities.TryGet(positions, entity, out Position position) || combat.IsDead(entity)) { Forget(entity); continue; }
                 StableId id = combat.Entities.StableOf(entity);
-                if (moves.IsCommanded(id)) continue;
+                if (moves.IsCommanded(id)) { memory?.Forget(id); continue; }
+                memory?.Observe(id, c.Input);
                 SimVec3 here = position.Value;
                 bool moving = moves.TryGetOrder(id, out SimVec3 target);
                 if (moving && Arrived(here, target) && slots.TryFind(target, -1, out _))
@@ -59,15 +61,17 @@ namespace WarCore.Battle
                 if (nearest < 0)
                 { if (moving) StopUnit(id, here, target); continue; }
                 if (moving && KeepsSlot(id, target, nearest)) continue;
-                int slot = Choose(id, here, nearest);
+                int slot = Choose(id, here, nearest, c.Clock.Tick);
                 if (slot < 0)
                 { if (moving) StopUnit(id, here, target); continue; }
                 SimVec3 destination = slots.At(slot);
                 if (Arrived(here, destination))
                 { if (moving) StopUnit(id, here, target); continue; }
-                if (!moving || !target.Equals(destination)) OrderUnit(id, here, moving, target, destination);
+                if (!moving || !target.Equals(destination))
+                { OrderUnit(id, here, moving, target, destination); memory?.Ordered(id, slots.Canonical(slot)); }
             }
         }
+        private void Forget(EntityId entity) { if (memory != null) memory.Forget(combat.Entities.StableOf(entity)); }
         private void Rebuild()
         {
             Array.Clear(reservedHas, 0, reservedHas.Length); Array.Clear(standingHas, 0, standingHas.Length);
@@ -92,13 +96,15 @@ namespace WarCore.Battle
         private bool KeepsSlot(StableId id, SimVec3 target, int point) =>
             slots.TryFind(target, point, out int slot) && Available(slot, id) && moves.CanStandAt(target);
         // Nearest available standable slot, ties to the lower slot number. A full circle returns -1: no order, no stacking.
-        private int Choose(StableId id, SimVec3 here, int point)
+        // A slot the memory says failed for this unit recently is skipped.
+        private int Choose(StableId id, SimVec3 here, int point, long tick)
         {
             int chosen = -1; SimWide best = default;
             int first = slots.Start(point), end = first + slots.Count(point);
             for (int slot = first; slot < end; slot++)
             {
                 if (!Available(slot, id)) continue;
+                if (memory != null && memory.Skips(id, slots.Canonical(slot), tick)) continue;
                 SimWide distance = CombatSystem.Horizontal(here - slots.At(slot)).LengthSquared;
                 if (chosen >= 0 && distance >= best) continue;
                 if (!moves.CanStandAt(slots.At(slot))) continue;
@@ -117,6 +123,7 @@ namespace WarCore.Battle
         {
             if (slots.TryFind(oldTarget, -1, out int old)) Release(reservedHas, reservedBy, old, id);
             moves.Stop(id);
+            memory?.Forget(id);
             int standing = slots.Nearest(here);
             if (standing >= 0) Claim(standingHas, standingBy, standing, id);
         }

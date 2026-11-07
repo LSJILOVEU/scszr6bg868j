@@ -101,5 +101,6 @@ namespace WarCore.Battle
         void Order(StableId unit, SimVec3 target);
         void Stop(StableId unit);
         bool TryGetOrder(StableId unit, out SimVec3 target);
+        bool HasFailed(StableId unit) => false;
     }
 }

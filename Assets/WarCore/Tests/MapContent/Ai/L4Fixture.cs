@@ -49,17 +49,18 @@ namespace WarCore.Tests
         internal static UnitSpawn Soldier(SimVec3 at, int squad = 1) =>
             new UnitSpawn(Unit, 0, squad, at.X.Raw * 1000 / S, at.Z.Raw * 1000 / S, Speed, 1, -1, false);
 
-        internal static MatchPack Match(ControlPointDef point, int think) =>
+        // captureTicks: fixture B raises it so the unit never takes the point (a taken point sends the AI's units home).
+        internal static MatchPack Match(ControlPointDef point, int think, int captureTicks = 3) =>
             new MatchPack(new[] { point }, new[] { new SpawnAnchor(1, Cell(1, 10)), new SpawnAnchor(2, Cell(38, 10)) },
-                2, 1, false, 3, InterruptMode.Reset, 1, 90, think, 9000, SimFix.FromInt(35), 4, 4, SimFix.Ratio(3, 2));
+                2, 1, false, captureTicks, InterruptMode.Reset, 1, 90, think, 9000, SimFix.FromInt(35), 4, 4, SimFix.Ratio(3, 2));
 
-        // ai == null: no ai key. terrain == false drops the surface table (a flat world, no terrain rules).
-        internal static WorldRecipe Recipe(ControlPointDef point, SimVec3 start, int think, string ai, bool terrain = true, bool standing = false)
+        // ai == null: no ai key. The recipe always carries the content layer as its terrain rules; whether the world is a
+        // terrain world is up to the map (Map(terrain: false) drops the surface table).
+        internal static WorldRecipe Recipe(ControlPointDef point, SimVec3 start, int think, string ai, bool standing = false, int captureTicks = 3)
         {
             WorldRecipe r = new WorldRecipe(41, MoverKind.InterimCrowd, new[] { Soldier(start) }, Array.Empty<BridgeCommand>())
-                .WithMatch(Match(point, think)).WithCombat(RwrPack.CreateM6()).WithCrowdPass(CrowdPassKind.TeamIdle)
-                .WithRuleSet(MatchMode.TestNeverEndsId);
-            if (terrain) r = r.WithTerrainRules(Pack(ai));
+                .WithMatch(Match(point, think, captureTicks)).WithCombat(RwrPack.CreateM6()).WithCrowdPass(CrowdPassKind.TeamIdle)
+                .WithRuleSet(MatchMode.TestNeverEndsId).WithTerrainRules(Pack(ai));
             if (standing) r = r.WithStandingOrders();
             return r;
         }
@@ -69,7 +70,7 @@ namespace WarCore.Tests
         internal static readonly ControlPointDef APoint = new ControlPointDef(1, ACenter, SimFix.Ratio(1, 2));
         internal static readonly (int, int, int, int)[] AWalls = Ring(20, 10);
         internal static M6World A(int think, string ai, bool terrain = true, bool reverse = false) =>
-            new M6World(Recipe(APoint, AStart, think, ai, terrain), WcMapWriter.Write(Map(AWalls, terrain)), reverse);
+            new M6World(Recipe(APoint, AStart, think, ai), WcMapWriter.Write(Map(AWalls, terrain)), reverse);
 
         internal static Calls Observe(M6World w)
         {
@@ -96,6 +97,33 @@ namespace WarCore.Tests
 
         internal static string Systems(M6World w) => AssemblyWorlds.Systems(w.Sim);
 
+        // Fixture B: radius 2000 mm (19 slots) around cell (20, 10); walls ring cell (18, 10), which holds the slot nearest to the
+        // unit at cell (10, 10). The ring also covers or crowds some neighbouring slots; those are not standable.
+        internal static readonly SimVec3 BCenter = Cell(20, 10), BStart = Cell(10, 10);
+        internal static readonly ControlPointDef BPoint = new ControlPointDef(1, BCenter, SimFix.FromInt(2));
+        internal static readonly (int, int, int, int)[] BWalls = Ring(18, 10);
+        internal static M6World B(int think, string ai) => new M6World(Recipe(BPoint, BStart, think, ai, captureTicks: 100000), WcMapWriter.Write(Map(BWalls)));
+
+        // Fixture C: one open slot (radius 500 mm) on cell (20, 10), the unit 10 m west at cell (10, 10), and cell X = (10, 16)
+        // walled in: standable, unreachable. A squad command there fails on the spot.
+        internal static readonly SimVec3 CCenter = Cell(20, 10), CStart = Cell(10, 10), CX = Cell(10, 16);
+        internal static readonly ControlPointDef CPoint = new ControlPointDef(1, CCenter, SimFix.Ratio(1, 2));
+        internal static readonly (int, int, int, int)[] CWalls = Ring(10, 16);
+        internal static M6World C(int think, string ai, bool standing) =>
+            new M6World(Recipe(CPoint, CStart, think, ai, standing), WcMapWriter.Write(Map(CWalls)));
+
+        // The memory's internal query (O, F, T) of the unit; the memory must be registered.
+        internal static (int ordered, int failed, long at) Memory(M6World w)
+        {
+            FailedSlotMemory memory = w.System<FailedSlotMemory>();
+            Assert.That(memory, Is.Not.Null, "battle.ai-memory is registered");
+            MethodInfo query = typeof(FailedSlotMemory).GetMethod("Query", BindingFlags.NonPublic | BindingFlags.Instance);
+            return ((int, int, long))query.Invoke(memory, new object[] { Id(w) });
+        }
+
+        internal static InputFrame Squad(SquadCommandKind kind, int squad, SimVec3 target) =>
+            new InputFrame(default, default, squad: new SquadCommand(kind, squad, target, default));
+
         // Every Order the AI gives, with the tick it was given at; Stops counted. IsCommanded is forwarded (squad standing).
         internal sealed class Calls : IMoveOrders
         {
@@ -104,6 +132,8 @@ namespace WarCore.Tests
             internal readonly List<(long tick, SimVec3 target)> Orders = new List<(long, SimVec3)>();
             internal int Stops;
             internal Calls(IMoveOrders inner, WarCore.Sim.Sim sim) { this.inner = inner; this.sim = sim; }
+            // The bridge itself. HasFailed is deliberately not forwarded: the memory must ask the bridge, not the AI's field.
+            internal IMoveOrders Inner => inner;
             public void Order(StableId id, SimVec3 target) { Orders.Add((sim.Clock.Tick, target)); inner.Order(id, target); }
             public void Stop(StableId id) { Stops++; inner.Stop(id); }
             public bool TryGetOrder(StableId id, out SimVec3 target) => inner.TryGetOrder(id, out target);

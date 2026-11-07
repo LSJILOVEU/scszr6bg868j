@@ -32,7 +32,18 @@ namespace WarCore.Presentation
             var match = new MatchSystem(combat, recipe.Match, capture, a.Mode);
             a.Mode.Bind(match);
             sim.RegisterGameplay("battle.reinforce", reinforce, SimSystemPhase.Requests);
-            sim.RegisterGameplay("battle.ai", new SimpleAiSystem(combat, recipe.Combat, recipe.Match, capture, adapter, a.Controlled), SimSystemPhase.Requests);
+            // Terrain worlds only: a positive failedSlotTicks adds the failed-slot memory; 0 (the default) adds nothing.
+            FailedSlotMemory memory = null;
+            int failedTicks = terrain != null ? recipe.TerrainPack.Section<AiRules>().FailedSlotTicks : 0;
+            if (failedTicks > 0)
+            {
+                ComponentType<MoveIntent> intents = sim.Entities.Resolve<MoveIntent>();
+                // The audience of a squad move command, as the orders system picks it (the controlled unit the AI skips anyway).
+                memory = new FailedSlotMemory(combat.Entities, adapter, failedTicks, (unit, squad) =>
+                    sim.Entities.TryGet(intents, sim.Entities.Resolve(new EntityLink(unit)), out MoveIntent intent) && intent.Squad == squad);
+                sim.RegisterGameplay("battle.ai-memory", memory, SimSystemPhase.Requests);
+            }
+            sim.RegisterGameplay("battle.ai", new SimpleAiSystem(combat, recipe.Combat, recipe.Match, capture, adapter, a.Controlled, memory), SimSystemPhase.Requests);
             sim.RegisterGameplay("battle.capture", capture, SimSystemPhase.Queries);
             sim.RegisterGameplay("battle.match", match, SimSystemPhase.Queries);
             a.Capture = capture; a.Reinforce = reinforce; a.Match = match;
@@ -82,6 +93,7 @@ namespace WarCore.Presentation
             target = intent.Target; return found;
         }
         public bool CanStandAt(SimVec3 at) => ground.CanStand(at);
+        public bool HasFailed(StableId unit) => locomotion.HasFailed(Resolve(unit));
         public bool IsCommanded(StableId unit) => standing.HasValue && sim.Entities.TryGet(standing.Value, Resolve(unit), out _);
         public bool TryDeploy(EntityId unit, SimVec3 at)
         {
