@@ -97,6 +97,16 @@ namespace WarCore.Tests
             Assert.That(L4.Memory(w).ordered, Is.EqualTo(-1));
         }
 
+        // A squad hold without standing orders changes nothing for the unit, so O stays: only MoveTo clears it.
+        [Test]
+        public void G_NoStanding_Hold_KeepsO()
+        {
+            var (w, _, _) = Start(false);
+            w.Sim.Step(L4.Squad(SquadCommandKind.Hold, 1, default));
+            Assert.That(L4.Moves(w).IsCommanded(L4.Id(w)), Is.False);
+            Assert.That(L4.Memory(w).ordered, Is.EqualTo(0));
+        }
+
         // (f) A squad move for another squad number does not reach the unit: O stays.
         [Test]
         public void F_NoStanding_OtherSquad_KeepsO()
