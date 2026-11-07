@@ -95,25 +95,6 @@ namespace WarCore.Tests
         }
     }
 
-    // An extension that clears, in its system hook, every assembly fact the builder had already used; the builder keeps the
-    // values it read at the time, so the world is the one built without the extension.
-    internal sealed class F2bClearingExtension : IWorldFeature
-    {
-        string IWorldOption.OptionId => "test.f2b-clear";
-        bool IWorldFeature.IsActive(WorldAssembly a) => true;
-        void IWorldFeature.Validate(WorldAssembly a) { }
-        void IWorldFeature.Prepare(WorldAssembly a) { }
-        void IWorldFeature.RegisterComponents(WorldAssembly a) { }
-        void IWorldFeature.PlaceWall(WorldAssembly a, WcMapWall wall, EntityId entity) { }
-        void IWorldFeature.PlaceUnit(WorldAssembly a, int index, EntityId unit) { }
-        void IWorldFeature.RegisterSystems(WorldAssembly a)
-        {
-            a.Controlled = null; a.Combat = null; a.CrowdPass = null; a.Map = null; a.Terrain = null;
-            a.GroundRaw = 77; a.WallMask = 0; a.Positions = default; a.Colliders = default; a.Intents = default;
-            a.Facings = default; a.Standing = null;
-        }
-    }
-
     // Throws from one hook; the recipe carries a second error the builder finds later in the same build.
     internal sealed class F2bThrowingExtension : IWorldFeature
     {
@@ -165,21 +146,6 @@ namespace WarCore.Tests
             Assert.That(golden.Length, Is.EqualTo(MotionTicks + 1));
             for (int t = 0; t <= MotionTicks; t++)
                 Assert.That(hashes[t].ToString("X16"), Is.EqualTo(golden[t]), "tick " + t);
-        }
-
-        [Test]
-        public void ClearingTheAssemblyInTheSystemHook_ChangesNothingTheBuilderAlreadyRead()
-        {
-            ulong[] golden = F2bWorlds.Golden()["PlayerMatch|forward"];
-            SimSession session = F2bWorlds.Build(F2bWorlds.PlayerMatch().With(new F2bClearingExtension()));
-            F2bWorlds.Script(session, "PlayerMatch");
-            Assert.That(session.StateHash, Is.EqualTo(golden[0]));
-            for (int t = 1; t <= F2bWorlds.LastTick; t++)
-            {
-                session.StepOnce();
-                Assert.That(session.StateHash, Is.EqualTo(golden[t]), "tick " + t);
-            }
-            Assert.That(session.ControlledKey, Is.EqualTo(F2bWorlds.PlayerKey));
         }
 
         // The extension's unit hook runs before the builder's combat state is written, so its error comes first.

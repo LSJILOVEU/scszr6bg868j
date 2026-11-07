@@ -45,7 +45,8 @@ namespace WarCore.Presentation
                     wallMask |= map.LayerMask(wall.LayerName);
             if ((wallMask & WorldAssembly.MoverLayer) != 0)
                 throw new InvalidOperationException("Wall layers must not share the mover layer.");
-            assembly.PinMap(map, groundRaw, wallMask);
+            assembly.GroundRaw = groundRaw;
+            assembly.WallMask = wallMask;
             var content = new StableContentManifest(1, assembly.ContentKeys.ToArray());
             var placed = new List<PlacedCatalogEntry>();
             if (map != null)
@@ -60,7 +61,7 @@ namespace WarCore.Presentation
             SimConfig config = map == null ? null : new SimConfig(entityCapacity: placements.Length);
             if (recipe.Combat != null) config = recipe.Combat.BuildConfig(placements.Length, recipe.Units.Length);
             // The match installer made the mode in Prepare, one fresh instance per world; it is bound once the match systems exist.
-            MatchMode mode = assembly.Pinned.Mode;
+            MatchMode mode = assembly.Mode;
             var sim = recipe.Match == null
                 ? Simulation.CreateRetainedWorld(recipe.Seed, catalog, config, content: content,
                     gameplaySchema: recipe.Combat?.BuildSchema(recipe.Units.Length))
@@ -68,9 +69,7 @@ namespace WarCore.Presentation
                     gameplaySchema: recipe.Combat?.BuildSchema(recipe.Units.Length));
             assembly.Sim = sim;
             FeatureTable.RunComponents(assembly);
-            assembly.PinComponents();
-            AssemblyPins pins = assembly.Pinned;
-            sim.ConfigureSpatial(pins.Positions, pins.Colliders, SimFix.FromInt(2));
+            sim.ConfigureSpatial(assembly.Positions, assembly.Colliders, SimFix.FromInt(2));
             if (map != null)
             {
                 for (int n = 0; n < map.Walls.Count; n++)
@@ -90,18 +89,16 @@ namespace WarCore.Presentation
             }
             // Player control, combat and the crowd pass rule, then the movement systems, then the systems built on movement.
             FeatureTable.RunConnect(assembly);
-            assembly.PinConnected();
             FeatureTable.RunSystems(assembly);
-            assembly.PinLocomotion();
             FeatureTable.RunRules(assembly);
             sim.CompleteSpatialBoundary();
-            ComponentType<UnitFacing>? facings = recipe.Facing ? pins.Facings : (ComponentType<UnitFacing>?)null;
+            ComponentType<UnitFacing>? facings = recipe.Facing ? assembly.Facings : (ComponentType<UnitFacing>?)null;
             var session = new SimSession(new SessionParts
             {
-                Sim = sim, Units = units, Spawns = recipe.Units.ToArray(), Positions = pins.Positions, GroundRaw = groundRaw, Map = map,
-                WallMask = wallMask, View = mapBytes == null ? null : ViewMap.Parse(mapBytes), Combat = pins.Combat,
+                Sim = sim, Units = units, Spawns = recipe.Units.ToArray(), Positions = assembly.Positions, GroundRaw = groundRaw, Map = map,
+                WallMask = wallMask, View = mapBytes == null ? null : ViewMap.Parse(mapBytes), Combat = assembly.Combat,
                 MatchPack = recipe.Match, Capture = assembly.Capture, Reinforce = assembly.Reinforce, Match = assembly.Match,
-                MaxHealthRaw = recipe.Combat?.MaxHealthRaw ?? 0, Controlled = pins.Controlled, CombatPack = recipe.Combat,
+                MaxHealthRaw = recipe.Combat?.MaxHealthRaw ?? 0, Controlled = assembly.Controlled, CombatPack = recipe.Combat,
                 Facings = facings,
             });
             foreach (BridgeCommand command in recipe.Script)

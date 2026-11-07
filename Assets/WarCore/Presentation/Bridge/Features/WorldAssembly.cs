@@ -10,7 +10,8 @@ using Simulation = WarCore.Sim.Sim;
 namespace WarCore.Presentation
 {
     // What the hooks of one build share: the recipe and map, the simulation once it exists, the component types the installers
-    // registered, and the objects the systems are made from. Every field is written by the part of the builder that owns it.
+    // registered, and the objects the systems are made from. Every field is written once, by the builder or the installer that
+    // owns it (named next to it); every other installer and every extension only reads it.
     internal sealed class WorldAssembly
     {
         internal WorldAssembly(WorldRecipe recipe, byte[] mapBytes, bool reverseAllocation)
@@ -35,7 +36,8 @@ namespace WarCore.Presentation
         internal bool Crowd => Recipe.Mover == MoverKind.InterimCrowd;
         internal bool Path => Recipe.Mover == MoverKind.InterimPath || Crowd;
 
-        // Facts of the map; the map is null on the plain path.
+        // Facts of the map, written by the builder (the terrain tables by the terrain installer). The map is null on the
+        // plain path.
         internal WcMap Map { get; set; }
         internal TerrainTables Terrain { get; set; }
         internal long GroundRaw { get; set; }
@@ -43,6 +45,7 @@ namespace WarCore.Presentation
         // Entries of the stable content manifest that features contribute (the terrain digest, for one).
         internal List<StableContentKey> ContentKeys { get; } = new List<StableContentKey>();
 
+        // Written by the builder.
         internal Simulation Sim { get; set; }
         internal EntityId[] Units { get; set; }
 
@@ -71,30 +74,6 @@ namespace WarCore.Presentation
         internal ReinforceSystem Reinforce { get; set; }
         internal MatchSystem Match { get; set; }
 
-        // The values the builder has already read, kept as they were at the time (see AssemblyPins): later installers and the
-        // session read these, so an extension that rewrites the assembly in a later hook does not change what was built from it.
-        internal AssemblyPins Pinned { get; } = new AssemblyPins();
-
-        // After Prepare, once the builder knows the floor and the wall layers: the map as read, terrain, floor, walls, the mode.
-        internal void PinMap(WcMap map, long groundRaw, uint wallMask)
-        {
-            GroundRaw = groundRaw; WallMask = wallMask;
-            Pinned.Map = map; Pinned.Terrain = Terrain; Pinned.GroundRaw = groundRaw; Pinned.WallMask = wallMask; Pinned.Mode = Mode;
-        }
-
-        // After RegisterComponents: the component types.
-        internal void PinComponents()
-        {
-            Pinned.Positions = Positions; Pinned.Colliders = Colliders; Pinned.Intents = Intents; Pinned.Facings = Facings;
-            Pinned.Standing = Standing; Pinned.Combatants = Combatants;
-        }
-
-        // After Connect: the objects the systems are made from.
-        internal void PinConnected() { Pinned.Controlled = Controlled; Pinned.Combat = Combat; Pinned.CrowdPass = CrowdPass; }
-
-        // After RegisterSystems: the locomotion.
-        internal void PinLocomotion() => Pinned.Locomotion = Locomotion;
-
         // Where a unit stands when it is placed: the map's flat floor, or the terrain surface where the map has a height field.
         internal SimVec3 SpawnPoint(in UnitSpawn spawn)
         {
@@ -108,25 +87,5 @@ namespace WarCore.Presentation
 
         // A reserve unit of a battle has no body until it is deployed.
         internal bool IsDeployedAtStart(in UnitSpawn spawn) => Recipe.Match == null || !spawn.Reserve;
-    }
-
-    // The builder's own copies of assembly facts, written once each by the WorldAssembly.Pin* calls the builder makes.
-    internal sealed class AssemblyPins
-    {
-        internal WcMap Map;
-        internal TerrainTables Terrain;
-        internal long GroundRaw;
-        internal uint WallMask;
-        internal MatchMode Mode;
-        internal ComponentType<Position> Positions;
-        internal ComponentType<Collider> Colliders;
-        internal ComponentType<MoveIntent> Intents;
-        internal ComponentType<UnitFacing> Facings;
-        internal ComponentType<SquadStanding>? Standing;
-        internal ComponentType<Combatant> Combatants;
-        internal PlayerControl Controlled;
-        internal CombatSystem Combat;
-        internal ICrowdPass CrowdPass;
-        internal InterimLocomotion Locomotion;
     }
 }

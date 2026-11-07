@@ -24,16 +24,15 @@ namespace WarCore.Presentation
         {
             Simulation sim = a.Sim;
             WorldRecipe recipe = a.Recipe;
-            AssemblyPins pins = a.Pinned;
-            CombatSystem combat = pins.Combat;
-            TerrainTables terrain = pins.Terrain;
+            CombatSystem combat = a.Combat;
+            TerrainTables terrain = a.Terrain;
             var capture = new CaptureSystem(combat, recipe.Match);
-            var adapter = new BattleAdapter(sim, pins.Locomotion, recipe, new DeployGround(terrain != null ? terrain.Nav : WcMapNavigation.Create(pins.Map), terrain, pins.GroundRaw), pins.GroundRaw, pins.Standing);
+            var adapter = new BattleAdapter(sim, a.Locomotion, recipe, new DeployGround(terrain != null ? terrain.Nav : WcMapNavigation.Create(a.Map), terrain, a.GroundRaw), a.GroundRaw, a.Standing);
             var reinforce = new ReinforceSystem(combat, recipe.Match, capture, adapter);
-            var match = new MatchSystem(combat, recipe.Match, capture, pins.Mode);
-            pins.Mode.Bind(match);
+            var match = new MatchSystem(combat, recipe.Match, capture, a.Mode);
+            a.Mode.Bind(match);
             sim.RegisterGameplay("battle.reinforce", reinforce, SimSystemPhase.Requests);
-            sim.RegisterGameplay("battle.ai", new SimpleAiSystem(combat, recipe.Combat, recipe.Match, capture, adapter, pins.Controlled), SimSystemPhase.Requests);
+            sim.RegisterGameplay("battle.ai", new SimpleAiSystem(combat, recipe.Combat, recipe.Match, capture, adapter, a.Controlled), SimSystemPhase.Requests);
             sim.RegisterGameplay("battle.capture", capture, SimSystemPhase.Queries);
             sim.RegisterGameplay("battle.match", match, SimSystemPhase.Queries);
             a.Capture = capture; a.Reinforce = reinforce; a.Match = match;
