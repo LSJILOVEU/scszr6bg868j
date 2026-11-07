@@ -4,7 +4,7 @@ using WarCore.Interim;
 using WarCore.Presentation;
 using WarCore.Sim;
 
-namespace WarCore.Tests
+namespace WarCore.Tests.Motion
 {
     // M6 acceptance 2, 3, 4, 8 and 10 on the flat Interim world of InertiaWorlds: one AI unit at 6000 mm/s (cap 13107 raw),
     // ordered along +X at tick 1. In this world the k-th moving tick is tick k, and on a straight line along X the step a unit

@@ -6,7 +6,7 @@ using WarCore.Interim;
 using WarCore.Presentation;
 using WarCore.Sim;
 
-namespace WarCore.Tests
+namespace WarCore.Tests.Motion
 {
     // Fixtures of the M6 inertia tests. Every parameter that changes behaviour is written here: seed 41, a flat 40 x 24 m map
     // without walls, one AI unit (key 1, squad 1) at (5 m, 12 m) with 6000 mm/s (13107 raw per tick), ordered at tick 1.

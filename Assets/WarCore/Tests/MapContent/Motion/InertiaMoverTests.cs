@@ -3,7 +3,7 @@ using WarCore.Interim;
 using WarCore.Presentation;
 using WarCore.Sim;
 
-namespace WarCore.Tests
+namespace WarCore.Tests.Motion
 {
     // M6 acceptance 5 and 6: braking looks at the final target, not the next waypoint, and every mover starts from rest and arrives.
     public sealed class InertiaMoverTests

@@ -5,7 +5,7 @@ using WarCore.Interim;
 using WarCore.Presentation;
 using WarCore.Sim;
 
-namespace WarCore.Tests
+namespace WarCore.Tests.Motion
 {
     // M6 acceptance 6: in the fixtures of acceptance 6 and 7 the seam is asked exactly once per tick for every active AI unit,
     // never for the player or for a standing unit, including on ticks where a unit is blocked, sidesteps or arrives. The

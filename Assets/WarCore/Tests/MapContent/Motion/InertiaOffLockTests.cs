@@ -6,7 +6,7 @@ using WarCore.Interim;
 using WarCore.Presentation;
 using WarCore.Sim;
 
-namespace WarCore.Tests
+namespace WarCore.Tests.Motion
 {
     // M6 acceptance 1, recorded before the inertia option existed: the snapshot bytes of a world that only opens WithMotion(),
     // at tick 0 and tick 60. A world that adds the inertia option with both rates at zero must keep these exact bytes.

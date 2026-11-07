@@ -5,7 +5,7 @@ using WarCore.Interim;
 using WarCore.Presentation;
 using WarCore.Sim;
 
-namespace WarCore.Tests
+namespace WarCore.Tests.Motion
 {
     // M6 acceptance 7: an AI unit that accelerates to a high speed (1 000 000 mm/s^2, 72817 raw per tick squared) still does
     // not pass a thin wall or a unit of the other team; the sweep stops it after it has reached its full speed.
