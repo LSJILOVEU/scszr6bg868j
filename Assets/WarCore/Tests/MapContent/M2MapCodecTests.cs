@@ -144,7 +144,7 @@ namespace WarCore.Tests
                 case "stringLength": Put(payloads[1], 0, w => w.Write((ushort)256)); break;
                 case "utf8": payloads[2][4] = 255; break;
                 case "cellSize": Put(payloads[1], 62, w => w.Write(2 * SimFix.Scale)); break;
-                case "capacity": Put(payloads[7], 1, w => w.Write(257U)); break;
+                case "capacity": Put(payloads[7], 1, w => w.Write(513U)); break;
                 case "yaw": Put(payloads[4], 82, w => w.Write(1L)); break;
                 case "shape": payloads[4][33] = 99; break;
                 case "cost": payloads[7][9] = 0; break;

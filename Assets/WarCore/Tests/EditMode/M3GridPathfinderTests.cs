@@ -104,7 +104,7 @@ namespace WarCore.Tests
             Assert.That(new NavGrid(8, 2, SimFix.FromInt(-4), SimFix.FromInt(-4), new byte[] { 255, 255 }).Digest, Is.Not.EqualTo(digest));
         }
 
-        [TestCase(0, 1)] [TestCase(1, 0)] [TestCase(257, 1)] [TestCase(1, 257)]
+        [TestCase(0, 1)] [TestCase(1, 0)] [TestCase(513, 1)] [TestCase(1, 513)]
         public void GridDimensions_AreBounded(int width, int depth) =>
             Assert.Throws<ArgumentOutOfRangeException>(() => new NavGrid(width, depth, default, default, Array.Empty<byte>()));
 

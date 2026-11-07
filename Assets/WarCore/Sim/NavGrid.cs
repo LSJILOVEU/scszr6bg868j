@@ -15,7 +15,7 @@ namespace WarCore.Sim
 
         public NavGrid(int width, int depth, SimFix originX, SimFix originZ, ReadOnlySpan<byte> passability)
         {
-            if (width < 1 || width > 256 || depth < 1 || depth > 256)
+            if (width < 1 || width > HeightField.MaxSide || depth < 1 || depth > HeightField.MaxSide)
                 throw new ArgumentOutOfRangeException(nameof(width));
             long limit = SimVec3.WorldLimitMetres * SimFix.Scale;
             if (originX.Raw % SimFix.Scale != 0 || originZ.Raw % SimFix.Scale != 0

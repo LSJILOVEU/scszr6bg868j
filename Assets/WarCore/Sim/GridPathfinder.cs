@@ -12,14 +12,17 @@ namespace WarCore.Sim
         // Smallest cell cost over walkable cells: keeps the octile heuristic admissible with weighted cells.
         private readonly long minCellCost = 1;
         private readonly long[] costs;
+        // costs[key] belongs to the current search only when stamps[key] == generation; no per-search clear.
+        private readonly uint[] stamps;
+        private uint generation;
         private readonly int[] parents;
         private readonly int[] path;
         private Entry[] heap;
         private int heapCount;
         private int pathCount;
         public ReadOnlySpan<int> Path => new ReadOnlySpan<int>(path, 0, pathCount);
-        // Without terrain every cell costs one, so the total is at most 65535 edges x 1414 and fits an int.
-        // With cell costs it can exceed an int (up to 65535 x 1414 x 255 < 2^35): read TotalCostWide there.
+        // Without terrain every cell costs one, so the total is at most (512 x 512 - 1) edges x 1414 < 2^29 and fits an int.
+        // With cell costs it can exceed an int (up to (512 x 512 - 1) x 1414 x 255 < 2^37): read TotalCostWide there.
         public int TotalCost => TotalCostWide <= int.MaxValue ? (int)TotalCostWide : throw new SimOverflowException("Total path cost exceeds an int; read TotalCostWide.");
         public long TotalCostWide { get; private set; }
 
@@ -33,7 +36,7 @@ namespace WarCore.Sim
         public GridPathfinder(NavGrid grid)
         {
             this.grid = grid ?? throw new ArgumentNullException(nameof(grid));
-            costs = new long[grid.Count]; parents = new int[grid.Count]; path = new int[grid.Count];
+            costs = new long[grid.Count]; stamps = new uint[grid.Count]; parents = new int[grid.Count]; path = new int[grid.Count];
             heap = new Entry[16];
         }
 
@@ -62,8 +65,14 @@ namespace WarCore.Sim
                 return GridPathStatus.Rejected;
             if (target < 0 || target >= grid.Count || !grid.IsPassable(target % grid.Width, target / grid.Width))
                 return GridPathStatus.Unreachable;
-            for (int i = 0; i < costs.Length; i++) costs[i] = long.MaxValue;
-            costs[start] = 0; parents[start] = -1;
+            generation = unchecked(generation + 1);
+            if (generation == 0)
+            {
+                // Wrapped after 2^32 - 1 searches: old stamps could match again, so forget them all once.
+                Array.Clear(stamps, 0, stamps.Length);
+                generation = 1;
+            }
+            stamps[start] = generation; costs[start] = 0; parents[start] = -1;
             Push(new Entry(start, 0, Heuristic(start, target)));
             while (heapCount != 0)
             {
@@ -87,8 +96,8 @@ namespace WarCore.Sim
                     if (diagonal && (!grid.IsPassable(x + dx, z) || !grid.IsPassable(x, z + dz))) continue;
                     int next = (z + dz) * grid.Width + x + dx;
                     long g = current.G + (diagonal ? 1414 : 1000) * (terrain == null ? 1 : terrain.CostAt(next));
-                    if (g >= costs[next]) continue;
-                    costs[next] = g; parents[next] = current.Key;
+                    if (stamps[next] == generation && g >= costs[next]) continue;
+                    stamps[next] = generation; costs[next] = g; parents[next] = current.Key;
                     Push(new Entry(next, g, Heuristic(next, target)));
                 }
             }
