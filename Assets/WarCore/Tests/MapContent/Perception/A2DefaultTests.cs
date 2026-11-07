@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using NUnit.Framework;
 using WarCore.Battle;
 using WarCore.Combat;
@@ -32,14 +33,46 @@ namespace WarCore.Tests.Perception
             Assert.That(fires, Is.EqualTo(A2BaselineTests.DFires600));
         }
 
-        // Fixture D is sensitive to cover: with grass 500 the pack is wrapped and the run leaves the recording.
+        // 1b tick by tick: the default and explicit-1000 worlds agree on every one of the 601 hashes, and both fold to the recording.
         [Test]
-        public void FixtureD_WithCover_IsWrappedAndDiffers()
+        public void FixtureD_DefaultAndExplicit_EqualEveryTick()
         {
-            M6World w = A2.D(A2.Pack("", ", \"concealMilli\": 500"));
-            Assert.That(w.Combat.Pack, Is.Not.SameAs(w.Recipe.Combat));
-            Assert.That(w.Combat.Pack.Selector, Is.InstanceOf<ConcealedSight>());
-            Assert.That(A2.HashRun(w, 600, null, out _), Is.Not.EqualTo(A2BaselineTests.DRun600));
+            var plain = new List<ulong>(); var explicitAll = new List<ulong>();
+            Assert.That(A2.HashRun(A2.D(A2.Pack()), 600, plain, out _), Is.EqualTo(A2BaselineTests.DRun600));
+            Assert.That(A2.HashRun(A2.D(A2.Pack(Explicit, Explicit)), 600, explicitAll, out _), Is.EqualTo(A2BaselineTests.DRun600));
+            Assert.That(plain.Count, Is.EqualTo(601));
+            Assert.That(explicitAll, Is.EqualTo(plain));
+        }
+
+        // What the recorded run does with the grass unit (key 3): unit 2 shoots it on ticks 1, 31, 61, 121, 151, 181 and the
+        // last round kills it. With grass 500 the pack is wrapped, nobody targets unit 3, and unit 3 kills unit 2 instead.
+        [TestCase(false)]
+        [TestCase(true)]
+        public void FixtureD_GrassUnitFate(bool cover)
+        {
+            M6World w = A2.D(cover ? A2.Pack("", ", \"concealMilli\": 500") : A2.Pack());
+            var log = new List<(int, FireRecord)>();
+            ulong fold = A2.HashRun(w, 600, null, out _, log);
+            StableId two = w.Sim.Entities.StableOf(w.Unit(2)), three = w.Sim.Entities.StableOf(w.Unit(3));
+            var atThree = new List<int>(); var lethal = new List<(int, ulong)>();
+            foreach (var (tick, f) in log)
+            {
+                if (f.Target.Equals(three)) { Assert.That(f.Shooter, Is.EqualTo(two)); atThree.Add(tick); }
+                if (f.DamageRaw > 0) lethal.Add((tick, f.Target.Value));
+            }
+            if (cover)
+            {
+                Assert.That(w.Combat.Pack.Selector, Is.InstanceOf<ConcealedSight>());
+                Assert.That(fold, Is.Not.EqualTo(A2BaselineTests.DRun600));
+                Assert.That(atThree, Is.Empty);
+                Assert.That(lethal, Is.EqualTo(new List<(int, ulong)> { (421, two.Value) }));
+            }
+            else
+            {
+                Assert.That(atThree, Is.EqualTo(new List<int> { 1, 31, 61, 121, 151, 181 }));
+                Assert.That(lethal, Is.EqualTo(new List<(int, ulong)> { (181, three.Value) }));
+            }
+            Assert.That((w.Dead(1), w.Dead(2), w.Dead(3), w.Dead(4)), Is.EqualTo((false, cover, !cover, false)));
         }
 
         // Fixture E: shooter S (key 1, team 1) on cell (10, 10); enemies at the same distance 10 m on cells (20, 10) and

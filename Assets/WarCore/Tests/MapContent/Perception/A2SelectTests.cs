@@ -110,6 +110,23 @@ namespace WarCore.Tests.Perception
             Assert.That(new BigInteger(value), Is.EqualTo(new BigInteger(limitRaw) * k / 1000));
         }
 
+        // The PolicyKey names the grid's size and origin, the inner selector and every factor.
+        [Test]
+        public void PolicyKey_CoversGridInnerAndFactors()
+        {
+            var bits = new byte[2]; bits[0] = 0xFF; bits[1] = 0xFF;
+            var cover = A2.Cover(4, 4, (x, z) => 500);
+            ulong Key(NavGrid g, ITargetSelector inner, short[] k) => new ConcealedSight(inner, g, k).PolicyKey;
+            ulong at0 = Key(new NavGrid(4, 4, default, default, bits), A2.Limited(), cover);
+            Assert.That(Key(new NavGrid(4, 4, default, default, bits), A2.Limited(), cover), Is.EqualTo(at0));
+            Assert.That(Key(new NavGrid(4, 4, SimFix.FromInt(1), default, bits), A2.Limited(), cover), Is.Not.EqualTo(at0));
+            Assert.That(Key(new NavGrid(4, 4, default, SimFix.FromInt(1), bits), A2.Limited(), cover), Is.Not.EqualTo(at0));
+            Assert.That(Key(new NavGrid(2, 8, default, default, bits), A2.Limited(), A2.Cover(2, 8, (x, z) => 500)), Is.Not.EqualTo(at0));
+            Assert.That(Key(new NavGrid(4, 4, default, default, bits), new NearestVisibleEnemy(), cover), Is.Not.EqualTo(at0));
+            var other = (short[])cover.Clone(); other[15] = 499;
+            Assert.That(Key(new NavGrid(4, 4, default, default, bits), A2.Limited(), other), Is.Not.EqualTo(at0));
+        }
+
         // 11: only the two nearest-visible forms are wrapped.
         [Test]
         public void OtherInner_IsRejected()

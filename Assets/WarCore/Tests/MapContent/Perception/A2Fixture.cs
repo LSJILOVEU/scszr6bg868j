@@ -75,13 +75,18 @@ namespace WarCore.Tests
             new M6World(Recipe(DUnits(), Combat(6554), pack), WcMapWriter.Write(Map(DWalls)), reverse);
 
         // Folds the per-tick hashes of ticks 0..last into one value (FNV-1a over the 64-bit hashes); counts the fires.
-        internal static ulong HashRun(M6World w, int last, List<ulong> each, out int fires)
+        // log, when given, receives every fire record with its tick.
+        internal static ulong HashRun(M6World w, int last, List<ulong> each, out int fires, List<(int, FireRecord)> log = null)
         {
             ulong fold = 14695981039346656037UL;
             fires = 0;
             for (int tick = 0; tick <= last; tick++)
             {
-                if (tick > 0) { w.Step(); fires += w.Combat.Fires.Length; }
+                if (tick > 0)
+                {
+                    w.Step(); fires += w.Combat.Fires.Length;
+                    if (log != null) foreach (FireRecord f in w.Combat.Fires) log.Add((tick, f));
+                }
                 ulong h = w.Hash; each?.Add(h);
                 fold = (fold ^ h) * 1099511628211UL;
             }

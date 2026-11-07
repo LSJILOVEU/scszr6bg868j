@@ -25,13 +25,24 @@ namespace WarCore.Tests.Perception
             Assert.That(w.Combat.Pack, Is.SameAs(w.Recipe.Combat));
         }
 
+        // The surface table names grass 500 but no cell is grass: nothing has cover, the pack is not wrapped.
+        [Test]
+        public void CoverOnlyInTheNameTable_NotWrapped()
+        {
+            WcMap map = A2.Map(A2.DWalls, (x, z) => false);
+            var w = new M6World(A2.Recipe(A2.DUnits(), A2.Combat(0), A2.Pack("", Grass500)), WcMapWriter.Write(map));
+            Assert.That(w.Combat.Pack, Is.SameAs(w.Recipe.Combat));
+        }
+
         // Fixture F: AI soldier A (key 1, team 1, weapon effect 0, 1 m/s) on cell (10, 10) walks east to the point on
         // cell (30, 10); B (key 2, team 2, no weapon) stands on cell (20, 25) under a squad hold, alone in squad 2.
         // A's path keeps the horizontal distance to B in [15, 18.03] m: inside (Lc, L] = (10, 20] for grass 500.
+        // Without grass under B the grass lies on cells x 0..3, z 26..29, far from both, so the world is still wrapped.
+        private static bool FarPatch(int x, int z) => x < 4 && z >= 26;
         private static M6World F(bool grassUnderB)
         {
             var units = new[] { A2.Soldier(1, 1, A2.Cell(10, 10), 0, 1000), A2.Soldier(2, 2, A2.Cell(20, 25), -1, 1000) };
-            Func<int, int, bool> patch = grassUnderB ? A2.InPatch : (Func<int, int, bool>)((x, z) => false);
+            Func<int, int, bool> patch = grassUnderB ? A2.InPatch : FarPatch;
             return new M6World(A2.Recipe(units, A2.Combat(0), A2.Pack("", Grass500), standing: true), WcMapWriter.Write(A2.Map(null, patch)));
         }
 
@@ -88,8 +99,14 @@ namespace WarCore.Tests.Perception
             a.Step(150);
             byte[] snapshot = a.Sim.SaveRetainedSnapshot();
             M6World b = A2.D(A2.Pack("", Grass500), reverse);
-            b.Sim.RestoreRetainedSnapshot(snapshot);
+            b.Sim.RestoreRetainedSnapshot(snapshot, reverseAllocation: reverse);
             Assert.That(b.Hash, Is.EqualTo(expected[150]));
+            // The allocation order really differs on the reverse restore: against a forward restore the units sit in other slots.
+            M6World forward = A2.D(A2.Pack("", Grass500));
+            forward.Sim.RestoreRetainedSnapshot(snapshot, reverseAllocation: false);
+            var ids = new List<int>(); var restored = new List<int>();
+            for (ulong key = 1; key <= 4; key++) { ids.Add(forward.Unit(key).Id); restored.Add(b.Unit(key).Id); }
+            if (reverse) Assert.That(restored, Is.Not.EqualTo(ids)); else Assert.That(restored, Is.EqualTo(ids));
             for (int t = 151; t <= 300; t++) { b.Step(); Assert.That(b.Hash, Is.EqualTo(expected[t]), "tick " + t); }
         }
 
