@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using NUnit.Framework;
 using WarCore.Content;
 using WarCore.Content.MapTools;
@@ -51,6 +52,14 @@ namespace WarCore.Tests
                 NotSupportedException e = Assert.Throws<NotSupportedException>(() => SimSession.Create(recipe.WithPlayer(1), result.WcMapBytes));
                 Assert.That(e.Message, Is.EqualTo(TerrainPlayerGuard));
             }
+        }
+
+        // The layer file is PackJson byte for byte plus a final newline, so extends, ids and every value are locked with it.
+        [Test]
+        public void TerrainLayerFileIsTheDemoPackJson()
+        {
+            string file = File.ReadAllText(Path.Combine(ArchitectureTests.AssetRoot(), "WarCore/Content/Rwr/Data/rwr-terrain-demo.json"));
+            Assert.That(file, Is.EqualTo(TerrainDemoMap.PackJson + "\n"));
         }
 
         [Test]
