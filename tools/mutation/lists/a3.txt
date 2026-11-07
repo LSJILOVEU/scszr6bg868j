@@ -1,0 +1,137 @@
+# A3 target memory: the required mutations of the work package. Test classes are named A3Memory* (the shorter
+# prefix A3 also matches the existing A3Scheduler* tests).
+
+[a3-01-recall-live-point]
+file = Assets/WarCore/Battle/Ai/TargetMemory.cs
+filter = FullyQualifiedName~WarCore.Tests.A3Memory
+expect = WarCore.Tests.A3MemoryTests.Grass_LostThenForgotten
+note = the reader returns the target's live point instead of P
+original:
+|             { target = e.Target; lastKnown = e.At; seenTick = e.Seen; return true; }
+replacement:
+|             { target = e.Target; lastKnown = combat.Point(combat.Entities.Resolve(new EntityLink(e.Target))); seenTick = e.Seen; return true; }
+
+[a3-02-window-inclusive]
+file = Assets/WarCore/Battle/Ai/TargetMemory.cs
+filter = FullyQualifiedName~WarCore.Tests.A3Memory
+expect = WarCore.Tests.A3MemoryTests.Grass_LostThenForgotten
+note = the reader's window tick - S < M becomes <=
+original:
+|             if (entries.TryGetValue(observer.Value, out Entry e) && tick - e.Seen >= 0 && tick - e.Seen < ticks && Alive(e.Target))
+replacement:
+|             if (entries.TryGetValue(observer.Value, out Entry e) && tick - e.Seen >= 0 && tick - e.Seen <= ticks && Alive(e.Target))
+
+[a3-03-expiry-late]
+file = Assets/WarCore/Battle/Ai/TargetMemory.cs
+filter = FullyQualifiedName~WarCore.Tests.A3Memory
+expect = WarCore.Tests.A3MemoryTests.Grass_LostThenForgotten
+note = the step deletes on tick - S > M instead of >= M
+original:
+|                 if (!Alive(new StableId(key)) || !Alive(e.Target) || tick - e.Seen >= ticks) drop.Add(key);
+replacement:
+|                 if (!Alive(new StableId(key)) || !Alive(e.Target) || tick - e.Seen > ticks) drop.Add(key);
+
+[a3-04-seen-again-not-updated]
+file = Assets/WarCore/Battle/Ai/TargetMemory.cs
+filter = FullyQualifiedName~WarCore.Tests.A3Memory
+expect = WarCore.Tests.A3MemoryTests.SeenAgain_RestartsTheWindow
+note = seeing the same target again keeps the old entry
+original:
+|         internal void Saw(StableId observer, EntityId target, long tick) =>
+|             entries[observer.Value] = new Entry { Target = combat.Entities.StableOf(target), At = combat.Point(target), Seen = tick };
+replacement:
+|         internal void Saw(StableId observer, EntityId target, long tick)
+|         {
+|             if (entries.TryGetValue(observer.Value, out Entry old) && old.Target.Equals(combat.Entities.StableOf(target))) return;
+|             entries[observer.Value] = new Entry { Target = combat.Entities.StableOf(target), At = combat.Point(target), Seen = tick };
+|         }
+
+[a3-05-new-target-ignored]
+file = Assets/WarCore/Battle/Ai/TargetMemory.cs
+filter = FullyQualifiedName~WarCore.Tests.A3Memory
+expect = WarCore.Tests.A3MemoryTests.NewTarget_ReplacesTheEntry
+note = an entry is written only when the observer has none
+original:
+|         internal void Saw(StableId observer, EntityId target, long tick) =>
+|             entries[observer.Value] = new Entry { Target = combat.Entities.StableOf(target), At = combat.Point(target), Seen = tick };
+replacement:
+|         internal void Saw(StableId observer, EntityId target, long tick)
+|         {
+|             if (entries.ContainsKey(observer.Value)) return;
+|             entries[observer.Value] = new Entry { Target = combat.Entities.StableOf(target), At = combat.Point(target), Seen = tick };
+|         }
+
+[a3-06-recall-ignores-death]
+file = Assets/WarCore/Battle/Ai/TargetMemory.cs
+filter = FullyQualifiedName~WarCore.Tests.A3Memory
+expect = WarCore.Tests.A3MemoryTests.TargetDeath_ReadAndDelete
+note = the reader does not check that the target is alive
+original:
+|             if (entries.TryGetValue(observer.Value, out Entry e) && tick - e.Seen >= 0 && tick - e.Seen < ticks && Alive(e.Target))
+replacement:
+|             if (entries.TryGetValue(observer.Value, out Entry e) && tick - e.Seen >= 0 && tick - e.Seen < ticks && combat.Entities.TryResolve(e.Target, out _))
+
+[a3-07-step-keeps-dead-target]
+file = Assets/WarCore/Battle/Ai/TargetMemory.cs
+filter = FullyQualifiedName~WarCore.Tests.A3Memory
+expect = WarCore.Tests.A3MemoryTests.TargetDeath_ReadAndDelete
+note = the step does not delete entries whose target is dead
+original:
+|                 if (!Alive(new StableId(key)) || !Alive(e.Target) || tick - e.Seen >= ticks) drop.Add(key);
+replacement:
+|                 if (!Alive(new StableId(key)) || !combat.Entities.TryResolve(e.Target, out _) || tick - e.Seen >= ticks) drop.Add(key);
+
+[a3-08-forget-keeps-contacts]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.A3Memory
+expect = WarCore.Tests.A3MemoryTests.ObserverLeavesTheTeams_Forgets
+expect = WarCore.Tests.A3MemoryTests.ObserverLosesItsPosition_Forgets
+note = the AI's Forget does not clear the target memory
+original:
+|             memory?.Forget(id); contacts?.Forget(id);
+replacement:
+|             memory?.Forget(id);
+
+[a3-09-load-drops-seen-tick]
+file = Assets/WarCore/Battle/Ai/TargetMemory.cs
+filter = FullyQualifiedName~WarCore.Tests.A3Memory
+expect = WarCore.Tests.A3MemoryStateTests.Restore_ContinuesTheMemory
+note = LoadState reads S and stores 0
+original:
+|                 entries[key] = new Entry { Target = target, At = at, Seen = seen };
+replacement:
+|                 entries[key] = new Entry { Target = target, At = at, Seen = 0 };
+
+[a3-10-load-skips-key-order]
+file = Assets/WarCore/Battle/Ai/TargetMemory.cs
+filter = FullyQualifiedName~WarCore.Tests.A3Memory
+expect = WarCore.Tests.A3MemoryStateTests.Load_RepeatedObserver_IsRefused
+expect = WarCore.Tests.A3MemoryStateTests.Load_ObserversOutOfOrder_IsRefused
+note = LoadState does not check the observer order (a repeated key overwrites)
+original:
+|                 SimStateReader.Require(i == 0 || key > previous, "AI target memory observers are not in strictly increasing order.");
+replacement:
+
+[a3-11-registered-when-off]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.A3Memory
+expect = WarCore.Tests.A3MemoryBaselineTests.FixtureD_Unchanged
+note = the memory is registered in terrain worlds even when targetMemoryTicks is 0
+original:
+|             if (memoryTicks > 0)
+|             {
+|                 contacts = new TargetMemory(combat, memoryTicks);
+replacement:
+|             if (terrain != null)
+|             {
+|                 contacts = new TargetMemory(combat, Math.Max(memoryTicks, 1));
+
+[a3-12-no-stop-with-memory]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.A3Memory
+expect = WarCore.Tests.A3MemoryBehaviourTests.WalkingObserver_SameRun
+note = with the memory on, a walking AI no longer stops when it selects a target
+original:
+|                 { contacts?.Saw(id, seen, c.Clock.Tick); if (moving) StopUnit(id, here, target); continue; }
+replacement:
+|                 { contacts?.Saw(id, seen, c.Clock.Tick); if (moving && contacts == null) StopUnit(id, here, target); continue; }
