@@ -204,7 +204,8 @@ namespace WarCore.Presentation
                 bool reloading = hasWeapon && state.Ammo == combatPack.Weapons[state.Weapon].Magazine
                     && state.DueMilli > Tick * 1000;
                 status = new UnitStatus((float)sim.GameplayResource(units[i], 1) / SimFix.Scale,
-                    (float)maxHealthRaw / SimFix.Scale, state.Ammo, wait, reloading, !combat.IsDead(unit), hasWeapon);
+                    (float)maxHealthRaw / SimFix.Scale, state.Ammo, wait, reloading, !combat.IsDead(unit), hasWeapon,
+                    combat.IsHolding(unit));
                 return true;
             }
             return false;
