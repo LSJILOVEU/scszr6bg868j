@@ -14,6 +14,9 @@ namespace WarCore.Tests
         internal string Pack = "rwr-m6";
         internal int Width = 20, Depth = 10;
         internal byte LayerBit = 1;
+        internal MapXZ Origin = new MapXZ(0, 0);
+        // Layers after "walls", used by no wall.
+        internal MapLayer[] ExtraLayers = new MapLayer[0];
         internal int[][] Heights;
         internal MapSurfaces Surfaces;
         internal readonly List<MapWall> Walls = new List<MapWall>();
@@ -50,8 +53,8 @@ namespace WarCore.Tests
         {
             ulong nextWall = (ulong)Walls.Count + 1, nextUnit = Units.Count == 0 ? 1 : Units.Max(u => u.Key) + 1;
             int nextPoint = Points.Count == 0 ? 1 : Points.Max(p => p.Id) + 1, nextBase = Bases.Count == 0 ? 1 : Bases.Max(b => b.Id) + 1;
-            return new MapDesc("e2", "none", Pack, new MapXZ(Width, Depth), new MapXZ(0, 0), 0, 262144,
-                new[] { new MapLayer("walls", LayerBit) }, Heights, Surfaces, Walls.ToArray(), Points.ToArray(), Bases.ToArray(),
+            return new MapDesc("e2", "none", Pack, new MapXZ(Width, Depth), Origin, 0, 262144,
+                new[] { new MapLayer("walls", LayerBit) }.Concat(ExtraLayers).ToArray(), Heights, Surfaces, Walls.ToArray(), Points.ToArray(), Bases.ToArray(),
                 Units.ToArray(), new MapRun(41, "none"), new[] { "hand" }, null, null, new MapStamp[0], new MapSrc[0],
                 new MapNext(nextWall, nextPoint, nextBase, nextUnit));
         }

@@ -90,11 +90,9 @@ namespace WarCore.Content.MapTools
         {
             var types = new HashSet<string>(StringComparer.Ordinal);
             for (int i = 0; i < pack.UnitTypeCount; i++) types.Add(pack.UnitTypeId(i));
-            var badUnits = new HashSet<ulong>();
             foreach (MapUnit unit in desc.Units)
             {
                 if (types.Contains(unit.Type)) continue;
-                badUnits.Add(unit.Key);
                 problems.Add(new MapProblem("GATE_REF", "unit " + Text(unit.Key), Cell(desc, At(unit.At)), unit.At));
             }
 
@@ -137,7 +135,7 @@ namespace WarCore.Content.MapTools
             // Without control points there is no match, and the runtime places reserve units at the start too.
             bool reservesPlaced = desc.Points.Count == 0;
             foreach (MapUnit unit in desc.Units)
-                if (!badUnits.Contains(unit.Key) && (reservesPlaced || !unit.Reserve) && !Standable(nav, unit.At))
+                if ((reservesPlaced || !unit.Reserve) && !Standable(nav, unit.At))
                     problems.Add(FootprintProblem(nav, unit.At, "unit " + Text(unit.Key)));
 
             var finder = new GridPathfinder(nav);
