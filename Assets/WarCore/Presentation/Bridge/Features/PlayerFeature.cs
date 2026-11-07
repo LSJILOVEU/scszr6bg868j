@@ -38,6 +38,8 @@ namespace WarCore.Presentation
             var sim = a.Sim;
             sim.RegisterGameplay("control.player", controlled, SimSystemPhase.Requests);
             sim.RegisterGameplay("control.player-fire", new PlayerFire(sim, a.Combat, controlled, a.Recipe.Facing ? a.Facings : (ComponentType<UnitFacing>?)null), SimSystemPhase.Queries);
+            // With match respawn on, the respawn system (MatchFeature) replaces the immediate fallback.
+            if (a.Recipe.Match != null && a.Recipe.Match.RespawnTicks > 0) return;
             WarCore.Battle.MatchMode mode = a.Mode;
             sim.RegisterGameplay("control.fallback", new PlayerFallback(a.Combat, controlled, a.Locomotion,
                 () => mode.IsFinished), SimSystemPhase.Requests);

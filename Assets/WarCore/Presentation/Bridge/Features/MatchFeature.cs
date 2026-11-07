@@ -32,6 +32,9 @@ namespace WarCore.Presentation
             var match = new MatchSystem(combat, recipe.Match, capture, a.Mode);
             a.Mode.Bind(match);
             sim.RegisterGameplay("battle.reinforce", reinforce, SimSystemPhase.Requests);
+            // A positive match.respawnTicks with a player: the player takes over a reserve after the delay (PlayerFeature then adds no fallback).
+            if (recipe.Match.RespawnTicks > 0 && a.Controlled != null)
+                sim.RegisterGameplay("battle.respawn", new RespawnSystem(sim, combat, recipe.Match, capture, adapter, a.Controlled), SimSystemPhase.Requests);
             // Terrain worlds only: a positive failedSlotTicks adds the failed-slot memory; 0 (the default) adds nothing.
             FailedSlotMemory memory = null;
             int failedTicks = terrain != null ? recipe.TerrainPack.Section<AiRules>().FailedSlotTicks : 0;

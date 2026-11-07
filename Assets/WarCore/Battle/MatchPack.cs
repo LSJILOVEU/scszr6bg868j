@@ -52,11 +52,14 @@ namespace WarCore.Battle
         public int GridColumns { get; }
         public int GridRows { get; }
         public SimFix GridSpacing { get; }
+        // Ticks from the player's death to the switch to a reserve; 0 turns respawn off.
+        public int RespawnTicks { get; }
         public ulong PolicyDigest { get; }
+        public const int MaxRespawnTicks = 36000;
 
         public MatchPack(ControlPointDef[] points, SpawnAnchor[] bases, int num, int den, bool strict,
             int captureTicks, InterruptMode interrupt, int decayPerTick, int intervalTicks, int thinkInterval,
-            int maxTicks, SimFix sight, int gridColumns, int gridRows, SimFix gridSpacing)
+            int maxTicks, SimFix sight, int gridColumns, int gridRows, SimFix gridSpacing, int respawnTicks = 0)
         {
             if (den < 1 || num < den) throw new ArgumentOutOfRangeException(nameof(num));
             if (captureTicks < 1 || intervalTicks < 1 || thinkInterval < 1 || maxTicks < 1)
@@ -66,6 +69,7 @@ namespace WarCore.Battle
             if (points.Length < 1 || bases.Length < 1) throw new ArgumentException("Points and base anchors are required.");
             if (sight.Raw <= 0 || gridColumns < 1 || gridRows < 1 || gridSpacing.Raw <= 0)
                 throw new ArgumentOutOfRangeException(nameof(sight));
+            if (respawnTicks < 0 || respawnTicks > MaxRespawnTicks) throw new ArgumentOutOfRangeException(nameof(respawnTicks));
             this.points = (ControlPointDef[])points.Clone(); this.bases = (SpawnAnchor[])bases.Clone();
             for (int i = 0; i < points.Length; i++)
             {
@@ -74,13 +78,16 @@ namespace WarCore.Battle
             }
             Num = num; Den = den; Strict = strict; CaptureTicks = captureTicks; Interrupt = interrupt;
             DecayPerTick = decayPerTick; IntervalTicks = intervalTicks; ThinkInterval = thinkInterval; MaxTicks = maxTicks;
-            Sight = sight; GridColumns = gridColumns; GridRows = gridRows; GridSpacing = gridSpacing;
+            Sight = sight; GridColumns = gridColumns; GridRows = gridRows; GridSpacing = gridSpacing; RespawnTicks = respawnTicks;
             var hash = new StateHash(); hash.Add("battle.pack.v1"); hash.Add(points.Length);
             foreach (var point in this.points) point.WriteState(hash);
             hash.Add(bases.Length); foreach (var anchor in this.bases) { hash.Add(anchor.Team); anchor.Point.WriteState(hash); }
             hash.Add(num); hash.Add(den); hash.Add(strict); hash.Add(captureTicks); hash.Add((int)interrupt); hash.Add(decayPerTick);
             hash.Add(intervalTicks); hash.Add(thinkInterval); hash.Add(maxTicks); hash.Add(sight.Raw);
-            hash.Add(gridColumns); hash.Add(gridRows); hash.Add(gridSpacing.Raw); PolicyDigest = hash.Value;
+            hash.Add(gridColumns); hash.Add(gridRows); hash.Add(gridSpacing.Raw);
+            // Only a positive delay is hashed, so a pack without respawn keeps its digest from before the field existed.
+            if (respawnTicks > 0) { hash.Add("battle.pack.respawn.v1"); hash.Add(respawnTicks); }
+            PolicyDigest = hash.Value;
         }
         internal void Check(SimStateReader reader)
         {
