@@ -4,6 +4,8 @@ using NUnit.Framework;
 using WarCore.Battle;
 using WarCore.Combat;
 using WarCore.Content;
+using WarCore.Interim;
+using WarCore.Presentation;
 using WarCore.Sim;
 
 namespace WarCore.Tests
@@ -27,7 +29,7 @@ namespace WarCore.Tests
             L4.Calls calls = L4.Observe(w);
             long t0 = L4.FirstThink(w, 10);
             w.Step(1200);
-            Assert.That(t0, Is.InRange(1, 10));
+            Assert.That(calls.Orders[0].tick, Is.InRange(1, 10), "the first order falls in the first thinking interval");
             Assert.That(calls.TicksTo(L4.ACenter), Is.EqualTo(new List<long> { t0, t0 + 310, t0 + 620, t0 + 930 }));
             Assert.That(calls.Orders.Count, Is.EqualTo(4));
         }
@@ -48,11 +50,9 @@ namespace WarCore.Tests
         [Test]
         public void FixtureA_N0_HashesAsTheRecordWithoutTheKey()
         {
-            var plain = new List<ulong>(); var zero = new List<ulong>();
-            ulong a = L4.HashRun(L4.A(10, null), 600, plain), b = L4.HashRun(L4.A(10, L4.Ticks(0)), 600, zero);
-            Assert.That(a, Is.EqualTo(L4RecordTests.AHashFold600));
-            Assert.That(b, Is.EqualTo(L4RecordTests.AHashFold600));
-            for (int t = 0; t <= 600; t++) Assert.That(zero[t], Is.EqualTo(plain[t]), "tick " + t);
+            var zero = new List<ulong>();
+            Assert.That(L4.HashRun(L4.A(10, L4.Ticks(0)), 600, zero), Is.EqualTo(L4RecordTests.AHashFold600));
+            for (int t = 0; t <= 600; t++) Assert.That(zero[t], Is.EqualTo(L4RecordHashTests.AHashes[t]), "tick " + t);
         }
 
         // Acceptance 3(b): only a terrain world with N > 0 registers battle.ai-memory, at order 9 in the request phase.
@@ -78,6 +78,82 @@ namespace WarCore.Tests
             Assert.That(calls.TicksTo(L4.ACenter), Is.EqualTo(new List<long> { 1, 7 }), "tick 7 orders");
             w.Step(13);
             Assert.That(calls.TicksTo(L4.ACenter), Is.EqualTo(new List<long> { 1, 7, 13, 19 }));
+        }
+
+        // The entry of a failed slot stays while t - T <= N and is gone at t - T = N + 1 (think 10, N = 5: the next order
+        // comes at t0 + 10, after the entry is gone).
+        [Test]
+        public void FixtureA_N5_EntryKeptAtNAndDroppedAtNPlusOne()
+        {
+            M6World w = L4.A(10, L4.Ticks(5));
+            L4.Calls calls = L4.Observe(w);
+            long t0 = L4.FirstThink(w, 10);
+            w.Step((int)t0 + 6);
+            Assert.That(L4.Memory(w), Is.EqualTo((-1, 0, t0 + 1)), "t - T = 5 = N: kept");
+            w.Step();
+            Assert.That(L4.Memory(w), Is.EqualTo((-1, -1, 0L)), "t - T = 6 = N + 1: dropped");
+            w.Step(3);
+            Assert.That(calls.TicksTo(L4.ACenter), Is.EqualTo(new List<long> { t0, t0 + 10 }));
+        }
+
+        // Two points share a lattice coordinate: point 0 (radius 2 m around cell (24, 10)) has slot 17 at (22.5, 10.5), the
+        // centre of point 1 (radius 500 mm, one slot, global number 19). The unit is nearer to point 1, so the AI orders
+        // slot 19; the memory keeps the canonical number 17, which is also what the skip test compares.
+        [Test]
+        public void SharedLatticePoint_RecordsTheCanonicalSlot()
+        {
+            var big = new ControlPointDef(1, L4.Cell(24, 10), SimFix.FromInt(2));
+            var small = new ControlPointDef(2, L4.Cell(22, 10), SimFix.Ratio(1, 2));
+            var slots = new GuardSlots(new[] { big, small });
+            Assert.That(slots.Count(0), Is.EqualTo(19)); Assert.That(slots.Count(1), Is.EqualTo(1));
+            Assert.That(slots.Start(1), Is.EqualTo(19));
+            Assert.That(slots.At(17), Is.EqualTo(slots.At(19)));
+            Assert.That(slots.Canonical(19), Is.EqualTo(17));
+            WorldRecipe recipe = L4.Recipe(big, L4.AStart, 10, L4.Ticks(300)).WithMatch(new MatchPack(new[] { big, small },
+                new[] { new SpawnAnchor(1, L4.Cell(1, 10)), new SpawnAnchor(2, L4.Cell(38, 10)) },
+                2, 1, false, 3, InterruptMode.Reset, 1, 90, 10, 9000, SimFix.FromInt(35), 4, 4, SimFix.Ratio(3, 2)));
+            var w = new M6World(recipe, WcMapWriter.Write(L4.Map(L4.Ring(22, 10))));
+            Assert.That(L4.Moves(w).CanStandAt(slots.At(19)), Is.True);
+            Assert.That(L4.Reachable(L4.Terrain(L4.Map(L4.Ring(22, 10))), L4.AStart, slots.At(19)), Is.False);
+            L4.Calls calls = L4.Observe(w);
+            long t0 = L4.FirstThink(w, 10);
+            w.Step((int)t0);
+            Assert.That(L4.Memory(w).ordered, Is.EqualTo(17), "O is the canonical slot");
+            w.Step(1200 - (int)t0);
+            Assert.That(calls.TicksTo(slots.At(19)), Is.EqualTo(new List<long> { t0, t0 + 310, t0 + 620, t0 + 930 }));
+            Assert.That(calls.Orders.Count, Is.EqualTo(4));
+        }
+
+        // Two units, each failing at its own walled point: two entries, saved sorted by stable identity and restored into a
+        // world that allocates entities in reverse.
+        [TestCase(false), TestCase(true)]
+        public void TwoUnits_SaveAndRestore_KeepBothEntries(bool reverse)
+        {
+            var north = new ControlPointDef(1, L4.Cell(20, 15), SimFix.Ratio(1, 2));
+            var south = new ControlPointDef(2, L4.Cell(20, 4), SimFix.Ratio(1, 2));
+            var units = new[] {
+                new UnitSpawn(1, 0, 1, 10500, 15500, L4.Speed, 1, -1, false), new UnitSpawn(2, 0, 1, 10500, 4500, L4.Speed, 1, -1, false) };
+            WorldRecipe recipe = new WorldRecipe(41, MoverKind.InterimCrowd, units, Array.Empty<BridgeCommand>())
+                .WithMatch(new MatchPack(new[] { north, south }, new[] { new SpawnAnchor(1, L4.Cell(1, 10)), new SpawnAnchor(2, L4.Cell(38, 10)) },
+                    2, 1, false, 3, InterruptMode.Reset, 1, 90, 10, 9000, SimFix.FromInt(35), 4, 4, SimFix.Ratio(3, 2)))
+                .WithCombat(WarCore.Content.Rwr.RwrPack.CreateM6()).WithCrowdPass(CrowdPassKind.TeamIdle)
+                .WithRuleSet(MatchMode.TestNeverEndsId).WithTerrainRules(L4.Pack(L4.Ticks(300)));
+            byte[] map = WcMapWriter.Write(L4.Map(L4.Join(L4.Ring(20, 15), L4.Ring(20, 4))));
+            var straight = new M6World(recipe, map); var expected = new List<ulong>();
+            L4.HashRun(straight, 1200, expected);
+            var a = new M6World(recipe, map);
+            a.Step(150);
+            FailedSlotMemory memory = a.System<FailedSlotMemory>();
+            var query = typeof(FailedSlotMemory).GetMethod("Query", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            foreach (ulong key in new ulong[] { 1, 2 })
+            {
+                var e = ((int, int, long))query.Invoke(memory, new object[] { a.Sim.Entities.StableOf(a.Unit(key)) });
+                Assert.That(e.Item1, Is.EqualTo(-1), "unit " + key); Assert.That(e.Item2, Is.EqualTo(key == 1 ? 0 : 1), "unit " + key);
+            }
+            var b = new M6World(recipe, map, reverse);
+            b.Sim.RestoreRetainedSnapshot(a.Sim.SaveRetainedSnapshot());
+            Assert.That(b.Hash, Is.EqualTo(expected[150]));
+            for (int t = 151; t <= 1200; t++) { b.Step(); Assert.That(b.Hash, Is.EqualTo(expected[t]), "tick " + t); }
         }
 
         private static ulong[] Uninterrupted(int last)
