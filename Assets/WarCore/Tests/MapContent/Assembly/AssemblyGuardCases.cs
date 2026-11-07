@@ -105,7 +105,7 @@ namespace WarCore.Tests
             }
             catch (Exception e)
             {
-                return e.GetType().FullName + "|" + e.Message.Replace("\r", "").Replace("\n", "\\n");
+                return e.GetType().FullName + "|" + ExceptionText.Of(e).Replace("\r", "").Replace("\n", "\\n");
             }
         }
     }

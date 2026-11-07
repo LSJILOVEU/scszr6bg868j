@@ -108,7 +108,7 @@ namespace WarCore.Tests
             Assert.That(melee.DescHash, Is.Not.EqualTo(m6.DescHash));
             ContentPack m6Pack = RwrPack.Load(RwrPack.M6Layer);
             ArgumentException e = Assert.Throws<ArgumentException>(() => MapRecipe.From(melee, m6Pack));
-            Assert.That(e.Message, Is.EqualTo(MismatchMessage));
+            Assert.That(ExceptionText.Of(e), Is.EqualTo(MismatchMessage));
             Assert.DoesNotThrow(() => MapRecipe.From(melee, RwrPack.Load("rwr-melee")));
         }
     }
