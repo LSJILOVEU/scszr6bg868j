@@ -138,7 +138,8 @@ namespace WarCore.Unity
                 return;
             style = style ?? new GUIStyle(GUI.skin.box) { fontSize = 20, alignment = TextAnchor.UpperLeft, wordWrap = true };
             float width = Mathf.Max(1f, Mathf.Min(720f, Screen.width - 24f));
-            float height = style.CalcHeight(new GUIContent(hud), width);
+            // One spare line: CalcHeight came out short once the Blocking line was added and the last line was cut off.
+            float height = style.CalcHeight(new GUIContent(hud), width) + style.lineHeight;
             GUI.Box(new Rect(12, 12, width, height), hud, style);
         }
 #endif
