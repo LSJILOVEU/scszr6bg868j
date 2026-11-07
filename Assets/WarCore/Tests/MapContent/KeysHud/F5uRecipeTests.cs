@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using WarCore.Combat;
+using WarCore.Content.Rwr;
 using WarCore.Presentation;
 using WarCore.Sim;
 
@@ -53,7 +54,8 @@ namespace WarCore.Tests
         {
             Assert.That(b.Seed, Is.EqualTo(a.Seed));
             Assert.That(b.Mover, Is.EqualTo(a.Mover));
-            Assert.That(b.Match.PolicyDigest, Is.EqualTo(a.Match.PolicyDigest));
+            Assert.That(b.Match == null, Is.EqualTo(a.Match == null));
+            Assert.That(b.Match?.PolicyDigest, Is.EqualTo(a.Match?.PolicyDigest));
             Assert.That(b.PlayerKey, Is.EqualTo(a.PlayerKey));
             Assert.That(b.CrowdPass, Is.EqualTo(a.CrowdPass));
             Assert.That(b.RuleSetId, Is.EqualTo(a.RuleSetId));
@@ -81,21 +83,33 @@ namespace WarCore.Tests
         }
 
         // MpDemo's pack leaves FriendlyFire, FriendlyFireLocked and AllyHoldMilli at their defaults, so the copy is also checked
-        // on a pack where every field differs from its default and a block spec already exists.
+        // on a recipe written out here whose pack differs from the defaults in every field and already has a block spec.
         [Test]
         public void F5uWithPlayerBlock_CopiesEveryPackFieldOfANonDefaultPack()
         {
-            WorldRecipe mp = DemoRecipes.MpDemo();
-            CombatPack old = mp.Combat;
+            var weapons = new[]
+            {
+                new WeaponDef(3390, 30, 60000, SimFix.FromInt(34), SimFix.FromInt(67), 32768, new SpreadSpec(1000, 340, 1400, 3000)),
+                new WeaponDef(9000, 5, 90000, SimFix.FromInt(10), SimFix.FromInt(20), 65536),
+            };
             var melee = new MeleeSpec(3, 2, 4, SimFix.Ratio(1500, 1000), 500, SimFix.Ratio(1000, 1000), SimFix.Ratio(20, 1), 2,
                 SimFix.Ratio(1200, 1000));
-            var custom = new CombatPack(old.Weapons.ToArray(), old.Resolver, old.Selector, old.MaxHealthRaw + 7, true, true, 123, 45000,
+            var custom = new CombatPack(weapons, new RwrHitResolver(), new NearestVisibleEnemy(), 75 * SimFix.Scale, true, true, 123, 45000,
                 new[] { melee }, new[] { new BlockSpec(100, 200, 300) });
-            WorldRecipe source = mp.WithCombat(custom);
+            var units = new[]
+            {
+                new UnitSpawn(1, 0, 1, 6000, 41000, 6000, 1, 0),
+                new UnitSpawn(2, 0, 1, 8000, 41000, 6000, 1, 1, false, 0),
+                new UnitSpawn(3, 0, 2, 40000, 41000, 6000, 2, 0, true),
+            };
+            WorldRecipe source = new WorldRecipe(7, MoverKind.InterimCrowd, units, System.Array.Empty<BridgeCommand>())
+                .WithCombat(custom).WithCrowdPass(CrowdPassKind.TeamIdle).WithPlayer(2);
             WorldRecipe changed = DemoRecipes.WithPlayerBlock(source, new BlockSpec(500, 1000));
             SameUnitsButPlayerBlock(source, changed, 1);
             SameRecipeFields(source, changed);
             SamePackPlusBlock(custom, changed.Combat);
+            Assert.That((changed.Combat.FriendlyFire, changed.Combat.FriendlyFireLocked, changed.Combat.AllyCheckMissRaw, changed.Combat.AllyHoldMilli,
+                changed.Combat.MaxHealthRaw), Is.EqualTo((true, true, 123, 45000L, 75L * SimFix.Scale)));
             Assert.That(changed.Combat.Block.Length, Is.EqualTo(2));
             Assert.That((changed.Combat.Block[0].CosHalfAnglePermille, changed.Combat.Block[0].ReductionPermille, changed.Combat.Block[0].AiRaisePermille),
                 Is.EqualTo((100, 200, 300)));

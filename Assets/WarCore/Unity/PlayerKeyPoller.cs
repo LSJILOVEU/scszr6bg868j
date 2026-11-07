@@ -20,8 +20,9 @@ namespace WarCore.Unity
             foreach (PlayerKeyBinding binding in bindings)
             {
                 if (codes.ContainsKey(binding.Key)) continue;
-                // A numeric name parses to any value, so only names of defined KeyCode members are accepted.
-                if (!Enum.TryParse(binding.Key, false, out KeyCode code) || !Enum.IsDefined(typeof(KeyCode), code))
+                // Enum.TryParse also takes numbers ("8") and comma lists ("A, B"); only a single member name is a key name here.
+                if (!char.IsLetter(binding.Key[0]) || binding.Key.IndexOf(',') >= 0
+                    || !Enum.TryParse(binding.Key, false, out KeyCode code) || !Enum.IsDefined(typeof(KeyCode), code))
                     throw new ArgumentException("Unknown key name: " + binding.Key, nameof(bindings));
                 codes.Add(binding.Key, code);
             }

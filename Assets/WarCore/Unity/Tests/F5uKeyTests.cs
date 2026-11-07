@@ -98,8 +98,12 @@ namespace WarCore.Unity.Tests
         [Test]
         public void F5uPoller_RejectsAKeyNameThatIsNotAKeyCode()
         {
-            var table = new List<PlayerKeyBinding>(PlayerKeys.Default) { new PlayerKeyBinding("NoSuchKey", PlayerKeyAction.Throw) };
-            Assert.Throws<ArgumentException>(() => new PlayerKeyPoller(table, k => false));
+            // "8" and "Mouse1, G" would parse with Enum.TryParse (KeyCode 8 is Backspace) but are not key names.
+            foreach (string name in new[] { "NoSuchKey", "8", "Mouse1, G" })
+            {
+                var table = new List<PlayerKeyBinding>(PlayerKeys.Default) { new PlayerKeyBinding(name, PlayerKeyAction.Throw) };
+                Assert.Throws<ArgumentException>(() => new PlayerKeyPoller(table, k => false), name);
+            }
         }
 
         [Test]
