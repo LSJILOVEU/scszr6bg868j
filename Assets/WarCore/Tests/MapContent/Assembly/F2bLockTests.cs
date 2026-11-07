@@ -238,6 +238,17 @@ namespace WarCore.Tests
             Assert.That(F2bFireProbe.PlainFires(), Is.EqualTo(RecordedFires60));
         }
 
+        // The F2a manifests read straight after the build, before any step: a system registered in the wrong phase must fail
+        // here on the manifest, not later on the exception the misplaced system throws when it runs.
+        [TestCaseSource(typeof(AssemblyWorlds), nameof(AssemblyWorlds.Names))]
+        public void BuildTimeManifestsMatchTheF2aRecording(string world)
+        {
+            (WorldRecipe recipe, byte[] map) = AssemblyWorlds.Make(world);
+            Simulation sim = M3TestWorld.Sim(AssemblyWorlds.Build(recipe, map, false));
+            Assert.That(AssemblyWorlds.Systems(sim), Is.EqualTo(AssemblyGolden.Of(world)["systems"]), world + " systems");
+            Assert.That(AssemblyWorlds.Components(sim), Is.EqualTo(AssemblyGolden.Of(world)["components"]), world + " components");
+        }
+
         [Test]
         public void TheAimedPlayerShotTurnsThePlayer() => Assert.That(F2bFireProbe.PlayerFacing(), Is.EqualTo(RecordedFacing));
 
