@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using WarCore.Battle;
 using WarCore.Combat;
 using WarCore.Content;
 using WarCore.Control;
@@ -21,6 +22,9 @@ namespace WarCore.Presentation
                 if (option is IWorldFeature feature)
                     Extensions.Add(feature);
         }
+
+        // The collision layer of every unit's body; walls must stay off it.
+        internal const uint MoverLayer = 1u;
 
         internal WorldRecipe Recipe { get; }
         internal byte[] MapBytes { get; }
@@ -50,13 +54,22 @@ namespace WarCore.Presentation
         internal ComponentType<UnitFacing> Facings { get; set; }
         internal ComponentType<MotionLimits> MotionLimits { get; set; }
         internal ComponentType<SquadStanding>? Standing { get; set; }
+        internal ComponentType<Combatant> Combatants { get; set; }
 
-        // Written by the builder before the systems are registered: the dependencies of the movement systems.
+        // Written by the match installer before the simulation exists; the simulation owns it. Null without match rules.
+        internal MatchMode Mode { get; set; }
+
+        // Written by the Connect hook (player, combat, crowd pass rule, in that order), before the systems are registered:
+        // the dependencies of the movement systems. Null when the feature is off.
         internal PlayerControl Controlled { get; set; }
         internal CombatSystem Combat { get; set; }
         internal ICrowdPass CrowdPass { get; set; }
         // Written by the movement installer when it registers its systems.
         internal InterimLocomotion Locomotion { get; set; }
+        // Written by the match installer in the RegisterRules hook; null without match rules.
+        internal CaptureSystem Capture { get; set; }
+        internal ReinforceSystem Reinforce { get; set; }
+        internal MatchSystem Match { get; set; }
 
         // Where a unit stands when it is placed: the map's flat floor, or the terrain surface where the map has a height field.
         internal SimVec3 SpawnPoint(in UnitSpawn spawn)
