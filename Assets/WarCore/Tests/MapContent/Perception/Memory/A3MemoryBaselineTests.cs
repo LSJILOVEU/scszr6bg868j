@@ -5,7 +5,8 @@ namespace WarCore.Tests
 {
     // Acceptance 1(a), recorded on the code before A3: fixture D of A2 (A2Fixture.cs D: damage 6554, walls, grass without
     // cover) with the A2 baseline layer. The system table, the 600-tick run (A2's recorded constants) and the retained
-    // snapshots at ticks 300 and 600 (length and 64-bit FNV-1a digest) must stay byte for byte the same.
+    // snapshots at ticks 300 and 600 (length and 64-bit FNV-1a digest) must stay byte for byte the same, with the ai key
+    // left out and with "targetMemoryTicks": 0.
     public sealed class A3MemoryBaselineTests
     {
         internal const string Systems = "bridge.dead-cleanup|0|5;battle.reinforce|0|8;interim.orders|0|10;battle.ai|0|12;"
@@ -20,6 +21,7 @@ namespace WarCore.Tests
         }
 
         [TestCase(null)]
+        [TestCase(0)]
         public void FixtureD_Unchanged(int? memory)
         {
             M6World w = null;

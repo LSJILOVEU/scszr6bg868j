@@ -46,7 +46,15 @@ namespace WarCore.Presentation
                     sim.Entities.TryGet(intents, sim.Entities.Resolve(new EntityLink(unit)), out MoveIntent intent) && intent.Squad == squad);
                 sim.RegisterGameplay("battle.ai-memory", memory, SimSystemPhase.Requests);
             }
-            sim.RegisterGameplay("battle.ai", new SimpleAiSystem(combat, recipe.Combat, recipe.Match, capture, adapter, a.Controlled, memory), SimSystemPhase.Requests);
+            // Terrain worlds only: a positive targetMemoryTicks adds the target memory; 0 (the default) adds nothing.
+            TargetMemory contacts = null;
+            int memoryTicks = terrain != null ? recipe.TerrainPack.Section<AiRules>().TargetMemoryTicks : 0;
+            if (memoryTicks > 0)
+            {
+                contacts = new TargetMemory(combat, memoryTicks);
+                sim.RegisterGameplay("battle.ai-contacts", contacts, SimSystemPhase.Requests);
+            }
+            sim.RegisterGameplay("battle.ai", new SimpleAiSystem(combat, recipe.Combat, recipe.Match, capture, adapter, a.Controlled, memory, contacts), SimSystemPhase.Requests);
             sim.RegisterGameplay("battle.capture", capture, SimSystemPhase.Queries);
             sim.RegisterGameplay("battle.match", match, SimSystemPhase.Queries);
             a.Capture = capture; a.Reinforce = reinforce; a.Match = match;
