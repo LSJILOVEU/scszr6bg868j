@@ -91,7 +91,9 @@ namespace WarCore.Tests
             }
             Assert.That(Wp23.At(s).X.Raw, Is.EqualTo(targetX));
             Assert.That(Wp23.Intent(s).Active, Is.False);
-            Assert.That(seen, Does.Contain(baseStep * 500 / 1000).And.Contain(baseStep).And.Contain(baseStep * 1250 / 1000), "all three surfaces were crossed");
+            Assert.That(seen, Contains.Item(baseStep * 500 / 1000), "all three surfaces were crossed");
+            Assert.That(seen, Contains.Item(baseStep), "all three surfaces were crossed");
+            Assert.That(seen, Contains.Item(baseStep * 1250 / 1000), "all three surfaces were crossed");
             Assert.That(moved, Is.GreaterThan(100));
         }
 

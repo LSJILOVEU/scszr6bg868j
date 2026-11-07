@@ -13,11 +13,13 @@ namespace WarCore.Tests
     // The MapDocument facade: round trip of the repository descriptions, hash text, errors, and its public surface.
     public sealed class E1bDocumentTests
     {
+        private static string Hex(byte[] bytes) => BitConverter.ToString(bytes).Replace("-", "").ToLowerInvariant();
+
         private static string Sha256Hex(byte[] bytes)
         {
             Func<SHA256> factory = SHA256.Create;
             using SHA256 sha = factory();
-            return Convert.ToHexString(sha.ComputeHash(bytes)).ToLowerInvariant();
+            return Hex(sha.ComputeHash(bytes));
         }
 
         [TestCase(M6Path, "rwr-m6")]
@@ -31,7 +33,7 @@ namespace WarCore.Tests
             string hex = doc.DescHashHex;
             Assert.That(hex.Length, Is.EqualTo(64));
             Assert.That(hex, Is.EqualTo(Sha256Hex(file)));
-            Assert.That(hex, Is.EqualTo(Convert.ToHexString(Bake(file).DescHash).ToLowerInvariant()));
+            Assert.That(hex, Is.EqualTo(Hex(Bake(file).DescHash)));
         }
 
         [Test]
