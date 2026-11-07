@@ -56,6 +56,11 @@ namespace WarCore.Combat
             PolicyDigest = hash.Value;
         }
 
+        // The same pack with another target selector: every other constructor argument is passed on as this pack holds it
+        // (no melee or block stays absent), so only the selector's PolicyKey changes the digest.
+        public CombatPack WithSelector(ITargetSelector selector) => new CombatPack(weapons, Resolver, selector, MaxHealthRaw,
+            FriendlyFire, FriendlyFireLocked, AllyCheckMissRaw, AllyHoldMilli, melee.Length == 0 ? null : melee, block.Length == 0 ? null : block);
+
         public GameplaySchema BuildSchema(int unitCount) => new GameplaySchema(
             new[] { new GameplayResourceDef(1, "health", 0, MaxHealthRaw, MaxHealthRaw, isLife: true) },
             new[] { new GameplayDamageTypeDef(1, "hit", 1, 1) },

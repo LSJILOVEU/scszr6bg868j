@@ -49,7 +49,7 @@ namespace WarCore.Battle
                 if (moving && Arrived(here, target) && slots.TryFind(target, -1, out _))
                 { StopUnit(id, here, target); moving = false; }
                 if ((c.Clock.Tick + (long)(id.Value % (ulong)pack.ThinkInterval)) % pack.ThinkInterval != 0) continue;
-                if (unit.Weapon >= 0 && weapons.Selector.TrySelect(combat, entity, weapons.Weapons[unit.Weapon].FalloffEnd, out _))
+                if (unit.Weapon >= 0 && combat.Pack.Selector.TrySelect(combat, entity, weapons.Weapons[unit.Weapon].FalloffEnd, out _))
                 { if (moving) StopUnit(id, here, target); continue; }
                 int nearest = -1; SimWide best = default;
                 for (int i = 0; i < pack.Points.Length; i++)

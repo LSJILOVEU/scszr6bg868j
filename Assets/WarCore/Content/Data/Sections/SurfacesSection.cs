@@ -26,8 +26,9 @@ namespace WarCore.Content
                 bool passable = !r.Has("passable") || r.Bool("passable");
                 int speed = r.Has("speedMilli") ? r.Int("speedMilli", 1, SurfaceDef.MaxSpeedMilli) : 1000;
                 int cost = r.Has("cost") ? r.Int("cost", 1, SurfaceDef.MaxCost) : 1;
+                int conceal = r.Has("concealMilli") ? r.Int("concealMilli", 1, SurfaceDef.MaxConcealMilli) : SurfaceDef.MaxConcealMilli;
                 r.Done();
-                defs[i] = new SurfaceDef(e.Id, passable, speed, cost);
+                defs[i] = new SurfaceDef(e.Id, passable, speed, cost, conceal);
             }
             try { b.Terrain = new TerrainRules(b.Pack, b.SlopeNumerator, b.SlopeDenominator, defs); }
             catch (ArgumentException ex) { throw new ContentException("content pack '" + b.Pack + "' terrain is invalid: " + ex.Message); }

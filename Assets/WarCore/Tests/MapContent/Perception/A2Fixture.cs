@@ -89,5 +89,48 @@ namespace WarCore.Tests
         }
 
         internal static string Hex(byte[] bytes) => BitConverter.ToString(bytes).Replace("-", "");
+
+        // ---- Direct selection (acceptance 2-7): a combat-only flat world, units moved by hand, a grid built here. ----
+
+        internal static NavGrid Grid(int width, int depth)
+        {
+            var bits = new byte[(width * depth + 7) / 8];
+            for (int i = 0; i < width * depth; i++) bits[i / 8] |= (byte)(1 << (i % 8));
+            return new NavGrid(width, depth, default, default, bits);
+        }
+
+        internal static short[] Cover(int width, int depth, Func<int, int, short> k)
+        {
+            var cells = new short[width * depth];
+            for (int z = 0; z < depth; z++)
+                for (int x = 0; x < width; x++) cells[z * width + x] = k(x, z);
+            return cells;
+        }
+
+        internal static ITargetSelector Limited() => new SightLimited(new NearestVisibleEnemy(), Sight);
+
+        // Unit 0 (team 1) is the shooter; the rest are team 2. No weapon fires: the world is never stepped.
+        internal static M5TestWorld Direct(int enemies)
+        {
+            var units = new UnitSpawn[enemies + 1];
+            units[0] = M5TestWorld.Spawn(1, 1000, 1000);
+            for (int i = 1; i <= enemies; i++) units[i] = M5TestWorld.Spawn(i + 1, 1000 + 2000 * i, 3000, team: 2, weapon: -1, squad: 2);
+            return new M5TestWorld(units, Combat(0));
+        }
+
+        internal static void Place(M5TestWorld w, int unit, long xRaw, long zRaw)
+        {
+            w.Sim.Entities.Set(w.Positions, w.Unit(unit), new Position(new SimVec3(SimFix.FromRaw(xRaw), default, SimFix.FromRaw(zRaw))));
+            w.Sim.CompleteSpatialBoundary();
+        }
+
+        // The selection, as (found, index of the chosen unit or -1).
+        internal static (bool, int) Pick(M5TestWorld w, ITargetSelector selector, SimFix range)
+        {
+            bool found = selector.TrySelect(w.Combat, w.Unit(0), range, out EntityId target);
+            if (!found) return (false, -1);
+            for (int i = 0; i < w.Count; i++) if (w.Unit(i).Equals(target)) return (true, i);
+            return (true, -2);
+        }
     }
 }
