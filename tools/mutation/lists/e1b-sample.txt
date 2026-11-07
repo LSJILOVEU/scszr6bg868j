@@ -1,0 +1,31 @@
+# Items 1, 4 and 7 of the E1b manual mutation record (PR #27), with the same filter.
+
+[e1b-1-reserve-false]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~E1b|FullyQualifiedName~E1a
+expect = WarCore.Tests.E1bRecipeTests.M6DescriptionRunsLikeTheDemoRecipe
+note = reserve always false
+original:
+|                     pack.WeaponOfUnitType(s.Type), s.Reserve, pack.MeleeOfUnitType(s.Type));
+replacement:
+|                     pack.WeaponOfUnitType(s.Type), false, pack.MeleeOfUnitType(s.Type));
+
+[e1b-4-pack-id-check-removed]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~E1b|FullyQualifiedName~E1a
+expect = WarCore.Tests.E1bRecipeTests.SwappingThePackKeepsTheMapAndChangesTheHash
+note = pack id check removed
+original:
+|             if (pack.Id != result.PackId)
+|                 throw new ArgumentException("Map pack '" + result.PackId + "' does not match content pack '" + pack.Id + "'.", nameof(pack));
+replacement:
+
+[e1b-7-hash-hex-upper]
+file = Assets/WarCore/Presentation/Maps/MapDocument.cs
+filter = FullyQualifiedName~E1b|FullyQualifiedName~E1a
+expect = WarCore.Tests.E1bDocumentTests.RepositoryDescriptionRoundTripsByteForByte
+note = hash hex upper case
+original:
+|                 foreach (byte b in hash) hex.Append(b.ToString("x2"));
+replacement:
+|                 foreach (byte b in hash) hex.Append(b.ToString("X2"));

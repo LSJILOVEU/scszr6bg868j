@@ -1,0 +1,79 @@
+# Self-test list, cases 1-7 (README "Self-test"). Run with
+#   WARCORE_MUTATION_SELFTEST=stale-loaded@selftest-5 python3 tools/mutation/mutate.py tools/mutation/lists/selftest.txt
+# Expected verdicts in order: killed, survived, compile failed, build not effective, old assembly loaded,
+# not an assertion (exception), not an assertion (TearDown).
+
+[selftest-1]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~E1b
+expect = WarCore.Tests.E1bRecipeTests.SoldiersMapFieldByField
+note = must kill: speed 6000 to 6001 fails the field-by-field assertion
+original:
+| private const long SpeedMmPerSec = 6000;
+replacement:
+| private const long SpeedMmPerSec = 6001;
+
+[selftest-2]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~E1b
+expect = WarCore.Tests.E1bRecipeTests.SoldiersMapFieldByField
+note = equivalent: comment only
+original:
+| // PLACEHOLDER: one speed for every unit
+replacement:
+| // PLACEHOLDER (self-test comment): one speed for every unit
+
+[selftest-3]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~E1b
+expect = WarCore.Tests.E1bRecipeTests.SoldiersMapFieldByField
+note = compile failure: missing semicolon
+original:
+| return recipe;
+replacement:
+| return recipe
+
+[selftest-4]
+file = Assets/WarCore/Tests/EditMode/AllocationMeterTests.cs
+filter = FullyQualifiedName~E1b
+expect = WarCore.Tests.E1bRecipeTests.SoldiersMapFieldByField
+note = build not effective: the file is excluded from the headless test project
+original:
+| Assert.That(sample.MeetsZeroContract, Is.False);
+replacement:
+| Assert.That(sample.MeetsZeroContract, Is.True);
+
+[selftest-5]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~E1b
+expect = WarCore.Tests.E1bRecipeTests.SoldiersMapFieldByField
+note = old assembly loaded: needs WARCORE_MUTATION_SELFTEST=stale-loaded@selftest-5
+original:
+| private const long SpeedMmPerSec = 6000;
+replacement:
+| private const long SpeedMmPerSec = 6001;
+
+[selftest-6]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~E1b
+expect = WarCore.Tests.E1bRecipeTests.SoldiersMapFieldByField
+note = fails only with an exception whose message looks like an assertion message
+original:
+|             if (result == null) throw new ArgumentNullException(nameof(result));
+replacement:
+|             if (result != null) throw new System.InvalidOperationException("  Expected: 6000\n  But was:  6001");
+|             if (result == null) throw new ArgumentNullException(nameof(result));
+
+[selftest-7]
+file = Assets/WarCore/Tests/MapContent/MapTools/E1bLockTests.cs
+filter = FullyQualifiedName~E1b
+expect = WarCore.Tests.E1bLockTests.
+note = TearDown exception in a green class: every test of the class fails outside the test body
+original:
+|     public sealed class E1bLockTests
+|     {
+replacement:
+|     public sealed class E1bLockTests
+|     {
+|         [TearDown]
+|         public void SelfTestTearDown() { throw new System.InvalidOperationException("self-test teardown"); }

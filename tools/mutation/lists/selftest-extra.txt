@@ -1,0 +1,22 @@
+# Self-test list: crash, only unexpected failures, zero executed (README "Self-test").
+
+[selftest-crash]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~E1b
+expect = WarCore.Tests.E1bRecipeTests.SoldiersMapFieldByField
+note = the test host crashes: must be invalid, not killed
+original:
+|             if (result == null) throw new ArgumentNullException(nameof(result));
+replacement:
+|             if (result != null) System.Environment.FailFast("selftest");
+|             if (result == null) throw new ArgumentNullException(nameof(result));
+
+[selftest-unexpected]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~E1b
+expect = WarCore.Tests.E1bDocumentTests.MapDocumentIsDeclaredPartial
+note = only tests outside the expected list fail
+original:
+| private const long SpeedMmPerSec = 6000;
+replacement:
+| private const long SpeedMmPerSec = 6001;
