@@ -20,6 +20,28 @@ namespace WarCore.Presentation
         { Count = count; MeanMs = meanMs; P95Ms = p95Ms; MaxMs = maxMs; }
     }
 
+    // What the builder hands a new session: one field per former constructor parameter, same names and defaults.
+    internal sealed class SessionParts
+    {
+        internal Simulation Sim;
+        internal EntityId[] Units;
+        internal UnitSpawn[] Spawns;
+        internal ComponentType<Position> Positions;
+        internal long GroundRaw;
+        internal WcMap Map;
+        internal uint WallMask;
+        internal ViewMap View;
+        internal CombatSystem Combat;
+        internal MatchPack MatchPack;
+        internal CaptureSystem Capture;
+        internal ReinforceSystem Reinforce;
+        internal MatchSystem Match;
+        internal long MaxHealthRaw;
+        internal IControlTarget Controlled;
+        internal CombatPack CombatPack;
+        internal ComponentType<UnitFacing>? Facings;
+    }
+
     /// <summary>
     /// Drives Sim with squad commands and held player input. The held value and future
     /// input list are bridge state, excluded from Sim snapshots. There is no bridge restore API.
@@ -83,26 +105,23 @@ namespace WarCore.Presentation
             }
         }
 
-        internal SimSession(Simulation sim, EntityId[] units, UnitSpawn[] spawns, ComponentType<Position> positions,
-            long groundRaw = 0, WcMap map = null, uint wallMask = 0, ViewMap view = null, CombatSystem combat = null, MatchPack matchPack = null,
-            CaptureSystem capture = null, ReinforceSystem reinforce = null, MatchSystem match = null, long maxHealthRaw = 0, IControlTarget controlled = null, CombatPack combatPack = null,
-            ComponentType<UnitFacing>? facings = null)
+        internal SimSession(SessionParts parts)
         {
-            this.facings = facings;
-            this.combatPack = combatPack;
-            this.controlled = controlled;
-            this.maxHealthRaw = maxHealthRaw;
-            this.combat = combat;
-            this.matchPack = matchPack; this.capture = capture; this.reinforce = reinforce; this.match = match;
-            this.groundRaw = groundRaw;
-            this.map = map;
-            this.wallMask = wallMask;
-            Map = view;
-            this.sim = sim;
-            this.units = new StableId[units.Length];
-            for (int i = 0; i < units.Length; i++) this.units[i] = sim.Entities.StableOf(units[i]);
-            this.spawns = spawns;
-            this.positions = positions;
+            facings = parts.Facings;
+            combatPack = parts.CombatPack;
+            controlled = parts.Controlled;
+            maxHealthRaw = parts.MaxHealthRaw;
+            combat = parts.Combat;
+            matchPack = parts.MatchPack; capture = parts.Capture; reinforce = parts.Reinforce; match = parts.Match;
+            groundRaw = parts.GroundRaw;
+            map = parts.Map;
+            wallMask = parts.WallMask;
+            Map = parts.View;
+            sim = parts.Sim;
+            units = new StableId[parts.Units.Length];
+            for (int i = 0; i < parts.Units.Length; i++) units[i] = sim.Entities.StableOf(parts.Units[i]);
+            spawns = parts.Spawns;
+            positions = parts.Positions;
             CommandLog = commandLog.AsReadOnly();
             PlayerLog = playerLog.AsReadOnly();
             Current = Capture();
