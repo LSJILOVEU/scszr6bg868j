@@ -61,7 +61,7 @@ namespace WarCore.Combat
         // The fire decision for units nobody orders to shoot. The built-in default is used until a game layer swaps it; null restores it.
         public IAutoFire BuiltInAutoFire => builtInAutoFire;
         public void UseAutoFire(IAutoFire autoFire) => this.autoFire = autoFire ?? builtInAutoFire;
-        internal CombatPack Pack => pack;
+        public CombatPack Pack => pack;
         private bool IsPlayer(EntityId entity) => controlled != null && controlled.Current.Equals(entity);
 
         public void Submit(SimContext c, in FireIntent intent)

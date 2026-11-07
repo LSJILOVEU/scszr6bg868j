@@ -1,3 +1,4 @@
+using WarCore.Battle;
 using WarCore.Combat;
 using WarCore.Content;
 using WarCore.Interim;
@@ -32,7 +33,7 @@ namespace WarCore.Presentation
         {
             Simulation sim = a.Sim;
             WorldRecipe recipe = a.Recipe;
-            var combat = new CombatSystem(sim, a.Positions, a.Combatants, recipe.Combat, a.WallMask, WorldAssembly.MoverLayer, recipe.Units.Length, a.Controlled);
+            var combat = new CombatSystem(sim, a.Positions, a.Combatants, Covered(a), a.WallMask, WorldAssembly.MoverLayer, recipe.Units.Length, a.Controlled);
             sim.RegisterGameplay("combat.system", combat, SimSystemPhase.Queries);
             // The combat system registers the melee component, so the units get their specs only now.
             for (int i = 0; i < recipe.Units.Length; i++)
@@ -41,6 +42,31 @@ namespace WarCore.Presentation
                 if (recipe.Units[i].Block >= 0) combat.SetBlock(a.Units[i], recipe.Units[i].Block);
             sim.RegisterGameplay("bridge.dead-cleanup", new DeadCleanup(sim, a.Combatants, a.Intents), SimSystemPhase.Requests);
             a.Combat = combat;
+        }
+
+        // The recipe's combat pack, with its selector wrapped in ConcealedSight when some cell of a terrain map stands on a surface
+        // with cover. Otherwise (flat world, no surface table, or every cell at factor 1000) it is the recipe's pack itself.
+        private static CombatPack Covered(WorldAssembly a)
+        {
+            CombatPack pack = a.Recipe.Combat;
+            TerrainTables terrain = a.Terrain;
+            if (terrain == null || terrain.SurfaceCount == 0) return pack;
+            var bySurface = new short[terrain.SurfaceCount];
+            for (int i = 0; i < bySurface.Length; i++)
+            {
+                // TerrainDerivation already refused a map naming a surface the rules lack.
+                a.Recipe.TerrainPack.Terrain.TryFind(terrain.SurfaceName(i), out SurfaceDef def);
+                bySurface[i] = (short)def.ConcealMilli;
+            }
+            var cells = new short[terrain.Nav.Count];
+            bool any = false;
+            for (int key = 0; key < cells.Length; key++)
+            {
+                cells[key] = bySurface[terrain.SurfaceIndexAt(key)];
+                any |= cells[key] != SurfaceDef.MaxConcealMilli;
+            }
+            if (!any) return pack;
+            return pack.WithSelector(new ConcealedSight(pack.Selector, terrain.Nav, cells));
         }
     }
 
