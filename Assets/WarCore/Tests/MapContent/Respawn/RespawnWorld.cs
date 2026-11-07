@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
 using WarCore.Battle;
+using WarCore.Combat;
 using WarCore.Control;
 using WarCore.Presentation;
 using WarCore.Sim;
@@ -50,10 +51,15 @@ namespace WarCore.Tests
             new MatchPack(points, bases, 2, 1, false, 8000, InterruptMode.Reset, 1, interval, 1000000, max, SimFix.FromInt(35),
                 columns, rows, SimFix.FromInt(2), respawn);
 
+        // One literal weapon (index 0): a shot every tick, 30 rounds, no spread; hits deal no damage; 100 health.
+        internal static CombatPack Combat() =>
+            new CombatPack(new[] { new WeaponDef(1000, 30, 60000, SimFix.FromInt(34), SimFix.FromInt(67), 32768) },
+                new ZeroResolver(), new NearestVisibleEnemy(), 100 * SimFix.Scale);
+
         internal static WorldRecipe Recipe(IEnumerable<UnitSpawn> units, MatchPack pack, bool player = true)
         {
             var recipe = new WorldRecipe(Seed, MoverKind.InterimCrowd, new List<UnitSpawn>(units).ToArray(), System.Array.Empty<BridgeCommand>())
-                .WithMatch(pack).WithCombat(M5TestWorld.Pack(new ZeroResolver())).WithCrowdPass(CrowdPassKind.TeamIdle);
+                .WithMatch(pack).WithCombat(Combat()).WithCrowdPass(CrowdPassKind.TeamIdle);
             return player ? recipe.WithPlayer(Player) : recipe;
         }
 

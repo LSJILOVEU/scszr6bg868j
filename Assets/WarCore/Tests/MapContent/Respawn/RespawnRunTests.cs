@@ -24,6 +24,7 @@ namespace WarCore.Tests
             var w = World(units, Pack(Points(Spawn(1, 30, 20)), Bases(new SpawnAnchor(1, P(5, 38))), D), kills: kills);
             var switches = new List<(long tick, ulong key)>();
             var deaths = new Dictionary<ulong, long>();
+            var shots = new Dictionary<ulong, int>();
             for (long tick = 1; tick <= kills[3] + 300; tick++)
             {
                 ulong before = Controlled(w);
@@ -33,11 +34,15 @@ namespace WarCore.Tests
                 if (count == 1) switches.Add((tick, Controlled(w)));
                 foreach (ulong key in new ulong[] { Player, 3, 4, 5 })
                     if (w.Dead(key) && !deaths.ContainsKey(key)) deaths[key] = tick;
+                // Every body keeps the tick it died on, on every later tick.
+                foreach (var death in deaths) Assert.That(Entered(w, death.Key), Is.EqualTo(death.Value), "key " + death.Key + " tick " + tick);
                 if (Array.IndexOf(kills, tick) >= 0) Assert.That(w.Dead(before), Is.True, "tick " + tick);
+                shots[Controlled(w)] = shots.TryGetValue(Controlled(w), out int n) ? n + Wp18TestWorld.Shots(w, Controlled(w)) : Wp18TestWorld.Shots(w, Controlled(w));
             }
+            // The held trigger really fired from every unit taken over.
+            foreach (ulong key in Order) Assert.That(shots[key], Is.GreaterThan(0), "key " + key);
             Assert.That(switches, Is.EqualTo(new List<(long, ulong)> { (K + D, Order[0]), (kills[1] + D, Order[1]), (kills[2] + D, Order[2]) }));
             Assert.That(deaths, Is.EqualTo(new Dictionary<ulong, long> { { Player, kills[0] }, { Order[0], kills[1] }, { Order[1], kills[2] }, { Order[2], kills[3] } }));
-            foreach (var death in deaths) Assert.That(Entered(w, death.Key), Is.EqualTo(death.Value), "key " + death.Key);
             Assert.That(Controlled(w), Is.EqualTo(Order[2]));
             Assert.That(w.Match.Winner, Is.EqualTo(0));
         }
@@ -74,6 +79,24 @@ namespace WarCore.Tests
             w.Step();
             Assert.That(w.Match.EndTick, Is.EqualTo(K + D)); Assert.That(w.Match.Winner, Is.Not.Zero);
             Assert.That(Controlled(w), Is.EqualTo(3UL)); Assert.That(Switches(w), Is.EqualTo(1));
+        }
+
+        // A snapshot taken with one delay does not restore into a world with another: the pack digest differs.
+        [Test]
+        public void SnapshotRestoreIsRefusedWhenTheDelayDiffers()
+        {
+            var units = Units(U(3, 0, 0, reserve: true));
+            var saved = World(units, Pack(Points(Spawn(1, 30, 20)), Bases(new SpawnAnchor(1, P(5, 38))), D));
+            KillAt(saved, K, Player);
+            saved.Step(K + 2);
+            byte[] bytes = saved.Sim.SaveRetainedSnapshot();
+            var other = World(units, Pack(Points(Spawn(1, 30, 20)), Bases(new SpawnAnchor(1, P(5, 38))), D + 1));
+            KillAt(other, K, Player);
+            var e = Assert.Throws<InvalidOperationException>(() => other.Sim.RestoreRetainedSnapshot(bytes));
+            Assert.That(e.Message, Is.EqualTo("Battle configuration differs from snapshot."));
+            var same = World(units, Pack(Points(Spawn(1, 30, 20)), Bases(new SpawnAnchor(1, P(5, 38))), D));
+            KillAt(same, K, Player);
+            Assert.DoesNotThrow(() => same.Sim.RestoreRetainedSnapshot(bytes));
         }
 
         // Saved inside the wait (K + 2) and after the switch (K + 7), restored in forward and reverse allocation, then compared

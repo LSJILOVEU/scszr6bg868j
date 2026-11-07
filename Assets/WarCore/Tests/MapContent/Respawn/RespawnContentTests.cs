@@ -23,6 +23,20 @@ namespace WarCore.Tests
             Assert.That(Load(", \"respawnTicks\": 300").Match.RespawnTicks, Is.EqualTo(300));
         }
 
+        // The digest of the literal pack with a 300-tick delay, recorded on the branch; the delay value itself is hashed.
+        internal const ulong Digest300 = 13662458695858992526UL;
+
+        private static MatchPack Direct(int respawn) => new MatchPack(Points(), Bases(), 2, 1, false, 300, InterruptMode.Reset, 1, 90, 30, 9000,
+            SimFix.FromInt(35), 4, 4, SimFix.Ratio(3, 2), respawn);
+
+        [Test]
+        public void PositiveDelayDigestIsRecorded_AndDependsOnTheValue()
+        {
+            Assert.That(Direct(300).PolicyDigest, Is.EqualTo(Digest300));
+            Assert.That(Load(", \"respawnTicks\": 300").BuildMatch(Points(), Bases()).PolicyDigest, Is.EqualTo(Digest300));
+            Assert.That(Direct(301).PolicyDigest, Is.Not.EqualTo(Digest300));
+        }
+
         [TestCase("-1")]
         [TestCase("36001")]
         public void OutOfRangeDelayIsAContentError(string value)

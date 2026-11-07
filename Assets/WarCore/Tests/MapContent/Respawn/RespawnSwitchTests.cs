@@ -71,6 +71,22 @@ namespace WarCore.Tests
             Assert.That(Point(w, Reserve), Is.EqualTo(P(30, 20)));
         }
 
+        // Cell 0 of the 2 x 2 grid, (29, 19), is taken by a living ally; cell 1, (31, 19), is free and is used on the due tick.
+        [Test]
+        public void CellZeroBlocked_UsesCellOneOnTheDueTick()
+        {
+            const ulong blocker = 4;
+            var w = World(Units(U(Reserve, 0, 0, reserve: true), U(blocker, 29, 19)), Pack(Points(Spawn(1, 30, 20)), Bases(new SpawnAnchor(1, P(5, 38))), D));
+            KillAt(w, K, Player);
+            w.Step(K + D - 1);
+            Assert.That(Controlled(w), Is.EqualTo(Player)); Assert.That(w.Has<Position>(Reserve), Is.False);
+            w.Step();
+            Assert.That(w.Sim.Clock.Tick, Is.EqualTo(K + D));
+            Assert.That(Controlled(w), Is.EqualTo(Reserve)); Assert.That(Switches(w), Is.EqualTo(1));
+            Assert.That(Point(w, Reserve), Is.EqualTo(P(31, 19)));
+            Assert.That(Point(w, blocker), Is.EqualTo(P(29, 19)));
+        }
+
         private static SimVec3 RespawnAt(ControlPointDef[] points, SpawnAnchor[] bases)
         {
             var w = World(Units(U(Reserve, 0, 0, reserve: true)), Pack(points, bases, D));

@@ -42,6 +42,7 @@ namespace WarCore.Battle
                 if (combat.Entities.TryGet(combatants, entity, out Combatant unit) && unit.Team == team
                     && !combat.Entities.TryGet(positions, entity, out _) && !combat.IsDead(entity))
                 { reserve = entity; found = true; break; }
+            // A dead unit keeps its Position (death cleanup removes only the move intent), so the body is the distance origin.
             if (!found || !TryAnchor(team, combat.Point(player), out SimVec3 anchor)) return;
             int cells = pack.GridColumns * pack.GridRows;
             for (int slot = 0; slot < cells; slot++)
