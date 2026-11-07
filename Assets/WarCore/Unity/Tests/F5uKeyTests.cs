@@ -106,29 +106,55 @@ namespace WarCore.Unity.Tests
             }
         }
 
+        // GC.GetAllocatedBytesForCurrentThread reads 0 in the Unity editor, so this uses the heap in use (GC.GetTotalMemory) and the
+        // gen-0 collection count. Calibration first: a kept 1 MiB array must show up. Those counters are process-wide, so the
+        // polling window is tried up to five times and one clean window (no growth, no collection) is required; a reader that
+        // allocates on every call (100000 calls) can never give a clean window.
         [Test]
         public void F5uPolling_AllocatesNothingAfterWarmUp()
         {
             var poller = new PlayerKeyPoller(PlayerKeys.Default, Holding(KeyCode.Space, KeyCode.Alpha4));
-            int held = 0;
-            for (int i = 0; i < 10; i++) held += poller.KeyDown(true)("Space") ? 1 : 0;
-            // Calibration (as AllocationMeter does): a kept array of known size must show up in the counter.
-            long before = GC.GetAllocatedBytesForCurrentThread();
-            var control = new byte[32768];
-            long grown = GC.GetAllocatedBytesForCurrentThread() - before;
+            Func<string, bool> warm = poller.KeyDown(true);
+            warm("Space"); warm("G");
+
+            Settle();
+            long before = GC.GetTotalMemory(false);
+            var control = new byte[1 << 20];
+            control[0] = 17;
+            long grown = GC.GetTotalMemory(false) - before;
             GC.KeepAlive(control);
-            if (grown < 32768) Assert.Fail("The allocation counter did not grow by 32768 bytes: " + grown);
-            held = 0;
-            before = GC.GetAllocatedBytesForCurrentThread();
-            for (int i = 0; i < 1000; i++)
+            if (grown < (1 << 20)) Assert.Fail("The heap counter did not grow by 1048576 bytes for a kept array: " + grown);
+            control = null;
+
+            long allocated = -1;
+            int collections = -1, held = 0;
+            for (int window = 0; window < 5; window++)
             {
-                Func<string, bool> read = poller.KeyDown(true);
-                if (read("Space")) held++;
-                if (read("G")) held += 1000;
+                Settle();
+                int gen0 = GC.CollectionCount(0);
+                before = GC.GetTotalMemory(false);
+                held = 0;
+                for (int i = 0; i < 100000; i++)
+                {
+                    Func<string, bool> read = poller.KeyDown(true);
+                    if (read("Space")) held++;
+                    if (read("G")) held += 1000000;
+                }
+                allocated = GC.GetTotalMemory(false) - before;
+                collections = GC.CollectionCount(0) - gen0;
+                if (allocated == 0 && collections == 0) break;
             }
-            long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
-            Assert.That(allocated, Is.EqualTo(0L));
-            Assert.That(held, Is.EqualTo(1000));
+            Assert.That(held, Is.EqualTo(100000));
+            Assert.That(collections, Is.EqualTo(0), "gen-0 collections during polling");
+            Assert.That(allocated, Is.EqualTo(0L), "heap growth during polling");
+        }
+
+        private static void Settle()
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+            GC.GetTotalMemory(true);
         }
     }
 }
