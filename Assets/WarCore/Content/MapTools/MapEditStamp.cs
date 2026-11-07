@@ -125,6 +125,10 @@ namespace WarCore.Content.MapTools
                     sw++;
                 }
                 int ew = 0, es = 0;
+                CheckAll(MapEditKinds.Wall, plan.Walls);
+                CheckAll(MapEditKinds.Point, plan.Points);
+                CheckAll(MapEditKinds.Base, plan.Bases);
+                CheckAll(MapEditKinds.Unit, plan.Units);
                 Place(draft, MapEditKinds.Wall, plan.Instance, k, plan.Walls, ref ew, ref es);
                 Place(draft, MapEditKinds.Point, plan.Instance, k, plan.Points, ref ew, ref es);
                 Place(draft, MapEditKinds.Base, plan.Instance, k, plan.Bases, ref ew, ref es);
@@ -132,6 +136,11 @@ namespace WarCore.Content.MapTools
                 result = new MapStampResult(hw, hs, sw, ss, ew, es);
             });
             return result;
+        }
+
+        private void CheckAll<T>(MapEditKind<T> kind, IReadOnlyList<MapStampEntry<T>> entries) where T : class
+        {
+            foreach (MapStampEntry<T> entry in entries) CheckInside(kind, entry.Template);
         }
 
         private static int OwnerFor(MapEditDraft draft, string name)

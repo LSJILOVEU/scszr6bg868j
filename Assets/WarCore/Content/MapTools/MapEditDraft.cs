@@ -14,11 +14,14 @@ namespace WarCore.Content.MapTools
         internal readonly Func<T, MapSrc> Src;
         internal readonly Func<T, ulong, int?, MapSrc, T> Make;
         internal readonly Func<T, MapXZ, (long X, long Z)> Cell;
+        // True when the entry's coordinates lie on the map: wall cell and size inside [0, W] x [0, D], millimetre positions
+        // in the half-open range origin <= v < origin + size.
+        internal readonly Func<T, MapDesc, bool> Inside;
 
         internal MapEditKind(string name, int slot, ulong limit, Func<T, ulong> id, Func<T, int?> owner, Func<T, MapSrc> src,
-            Func<T, ulong, int?, MapSrc, T> make, Func<T, MapXZ, (long X, long Z)> cell)
+            Func<T, ulong, int?, MapSrc, T> make, Func<T, MapXZ, (long X, long Z)> cell, Func<T, MapDesc, bool> inside)
         {
-            Name = name; Slot = slot; Limit = limit; Id = id; Owner = owner; Src = src; Make = make; Cell = cell;
+            Name = name; Slot = slot; Limit = limit; Id = id; Owner = owner; Src = src; Make = make; Cell = cell; Inside = inside;
         }
     }
 
@@ -27,22 +30,33 @@ namespace WarCore.Content.MapTools
         internal static readonly MapEditKind<MapWall> Wall = new MapEditKind<MapWall>("wall", 0, ulong.MaxValue,
             w => w.Id, w => w.Owner, w => w.Src,
             (w, id, owner, src) => new MapWall(id, w.Kind, w.Layer, w.Cell, w.Size, w.HeightRaw, owner, src),
-            (w, origin) => (w.Cell.X, w.Cell.Z));
+            (w, origin) => (w.Cell.X, w.Cell.Z),
+            (w, d) => w.Cell.X >= 0 && w.Cell.Z >= 0 && w.Size.X >= 1 && w.Size.Z >= 1
+                && (long)w.Cell.X + w.Size.X <= d.Size.X && (long)w.Cell.Z + w.Size.Z <= d.Size.Z);
 
         internal static readonly MapEditKind<MapPoint> Point = new MapEditKind<MapPoint>("point", 1, int.MaxValue,
             p => (ulong)p.Id, p => p.Owner, p => p.Src,
             (p, id, owner, src) => new MapPoint((int)id, p.At, p.RadiusMm, p.InitialOwner, p.Spawn, owner, src),
-            (p, origin) => MmCell(p.At, origin));
+            (p, origin) => MmCell(p.At, origin),
+            (p, d) => OnMap(p.At, d) && (!p.Spawn.HasValue || OnMap(p.Spawn.Value, d)));
 
         internal static readonly MapEditKind<MapBase> Base = new MapEditKind<MapBase>("base", 2, int.MaxValue,
             b => (ulong)b.Id, b => b.Owner, b => b.Src,
             (b, id, owner, src) => new MapBase((int)id, b.Team, b.At, owner, src),
-            (b, origin) => MmCell(b.At, origin));
+            (b, origin) => MmCell(b.At, origin),
+            (b, d) => OnMap(b.At, d));
 
         internal static readonly MapEditKind<MapUnit> Unit = new MapEditKind<MapUnit>("unit", 3, ulong.MaxValue,
             u => u.Key, u => u.Owner, u => u.Src,
             (u, id, owner, src) => new MapUnit(id, u.Type, u.Team, u.Squad, u.At, u.Reserve, owner, src),
-            (u, origin) => MmCell(u.At, origin));
+            (u, origin) => MmCell(u.At, origin),
+            (u, d) => OnMap(u.At, d));
+
+        private static bool OnMap(MapMm at, MapDesc d)
+        {
+            long x0 = d.Origin.X * 1000L, z0 = d.Origin.Z * 1000L;
+            return at.X >= x0 && at.X < x0 + d.Size.X * 1000L && at.Z >= z0 && at.Z < z0 + d.Size.Z * 1000L;
+        }
 
         // Cell of a millimetre position: floor(at / 1000) - origin, rounding toward negative infinity.
         internal static (long X, long Z) MmCell(MapMm at, MapXZ origin) => (FloorDiv(at.X) - origin.X, FloorDiv(at.Z) - origin.Z);

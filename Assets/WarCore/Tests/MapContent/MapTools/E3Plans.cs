@@ -8,10 +8,10 @@ namespace WarCore.Tests
     internal static class E3Plans
     {
         // Stamp s1 of acceptance 1: cells x, z in [0, 3] get "road", corners i, j in [0, 4] get 1000, walls src 1 at (0, 0)
-        // and src 2 at (2, 2), unit src 1 at cell (1, 1).
+        // and src 2 at (2, 2), point src 1 at cell (2, 0), base src 1 at cell (0, 2), unit src 1 at cell (1, 1).
         internal static MapStampPlan S1() => new MapStampPlan("s1", Corners(0, 4, 0, 4, 1000), Cells(0, 3, 0, 3, "road"),
             new[] { new MapStampEntry<MapWall>(1, WallAt(0, 0)), new MapStampEntry<MapWall>(2, WallAt(2, 2)) },
-            new MapStampEntry<MapPoint>[0], new MapStampEntry<MapBase>[0],
+            new[] { new MapStampEntry<MapPoint>(1, PointAt(2500, 500)) }, new[] { new MapStampEntry<MapBase>(1, BaseAt(500, 2500)) },
             new[] { new MapStampEntry<MapUnit>(1, UnitAt(1500, 1500)) });
 
         // Stamp s2 of acceptance 4: cells x in [2, 5], z in [0, 3] get "mud", corners i in [2, 6], j in [0, 4] get 2000.

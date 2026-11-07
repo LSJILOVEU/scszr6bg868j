@@ -1,5 +1,6 @@
+using System;
 using System.Collections.Generic;
-using System.Globalization;
+using System.Linq;
 using System.Text;
 using WarCore.Content.MapTools;
 
@@ -107,6 +108,10 @@ namespace WarCore.Tests
 
         internal static MapUnit UnitAt(long x, long z) => new MapUnit(0, Soldier, 1, 0, new MapMm(x, z), false);
 
+        internal static MapPoint PointAt(long x, long z) => new MapPoint(0, new MapMm(x, z), 400, 0, new MapMm(x, z));
+
+        internal static MapBase BaseAt(long x, long z) => new MapBase(0, 1, new MapMm(x, z));
+
         // Owner grid character of a height point or surface cell, read from the description itself ('.' when no grid).
         internal static char HeightChar(MapDesc d, int i, int j) => d.HeightOwner == null ? '.' : d.HeightOwner[j][i];
         internal static char SurfaceChar(MapDesc d, int x, int z) => d.SurfaceOwner == null ? '.' : d.SurfaceOwner[z][x];
@@ -133,7 +138,8 @@ namespace WarCore.Tests
         internal static string SurfaceName(MapDesc d, int x, int z) =>
             d.Surfaces.Names["ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".IndexOf(d.Surfaces.Rows[z][x])];
 
-        // "Extract": the owner's height points (i, j, raw), surface cells (x, z, name) and entries, in order, as bytes.
+        // "Extract": the owner's height points (i, j, raw) and surface cells (x, z, name) as lines, then its walls, points,
+        // bases and units as the canonical JSON the description writer gives them, in order, as UTF-8 bytes.
         internal static byte[] Extract(MapDesc d, string owner)
         {
             var sb = new StringBuilder();
@@ -143,19 +149,17 @@ namespace WarCore.Tests
             for (int z = 0; z < D; z++)
                 for (int x = 0; x < W; x++)
                     if (OwnerOf(d, SurfaceChar(d, x, z)) == owner) sb.Append("s " + x + " " + z + " " + SurfaceName(d, x, z) + "\n");
-            foreach (MapWall w in d.Walls)
-                if (EntryOwner(d, w.Owner) == owner)
-                    sb.Append("w " + w.Id + " " + w.Kind + " " + w.Layer + " " + w.Cell.X + " " + w.Cell.Z + " " + w.Size.X + " "
-                        + w.Size.Z + " " + w.HeightRaw + " " + SrcText(w.Src) + "\n");
-            foreach (MapUnit u in d.Units)
-                if (EntryOwner(d, u.Owner) == owner)
-                    sb.Append("u " + u.Key + " " + u.Type + " " + u.Team + " " + u.Squad + " " + u.At.X + " " + u.At.Z + " "
-                        + u.Reserve + " " + SrcText(u.Src) + "\n");
-            return Encoding.ASCII.GetBytes(sb.ToString());
+            var only = new MapDesc(d.Id, d.Content, d.Pack, d.Size, d.Origin, d.FloorRaw, d.CeilingRaw, d.Layers.ToArray(), null, null,
+                d.Walls.Where(w => EntryOwner(d, w.Owner) == owner).ToArray(), d.Points.Where(p => EntryOwner(d, p.Owner) == owner).ToArray(),
+                d.Bases.Where(b => EntryOwner(d, b.Owner) == owner).ToArray(), d.Units.Where(u => EntryOwner(d, u.Owner) == owner).ToArray(),
+                d.Run, d.Owners.ToArray(), null, null, new MapStamp[0], new MapSrc[0], d.Next);
+            string text = MapDescJson.WriteText(only);
+            int from = text.IndexOf("  \"walls\":", StringComparison.Ordinal);
+            int to = text.IndexOf("  \"run\":", StringComparison.Ordinal);
+            sb.Append(text, from, to - from);
+            return new UTF8Encoding(false).GetBytes(sb.ToString());
         }
 
         private static string EntryOwner(MapDesc d, int? owner) => owner.HasValue ? d.Owners[owner.Value] : null;
-
-        private static string SrcText(MapSrc s) => s == null ? "-" : s.Instance + "/" + s.Kind + "/" + s.Src.ToString(CultureInfo.InvariantCulture);
     }
 }

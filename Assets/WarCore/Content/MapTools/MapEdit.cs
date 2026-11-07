@@ -180,6 +180,7 @@ namespace WarCore.Content.MapTools
         private ulong Add<T>(MapEditKind<T> kind, T template) where T : class
         {
             if (template == null) throw new ArgumentNullException(nameof(template));
+            CheckInside(kind, template);
             ulong id = 0;
             Step(draft =>
             {
@@ -192,6 +193,7 @@ namespace WarCore.Content.MapTools
         private void Replace<T>(MapEditKind<T> kind, T entry) where T : class
         {
             if (entry == null) throw new ArgumentNullException(nameof(entry));
+            CheckInside(kind, entry);
             Step(draft =>
             {
                 List<T> items = draft.Items(kind);
@@ -241,6 +243,11 @@ namespace WarCore.Content.MapTools
             for (int n = 0; n < names.Count; n++)
                 if (string.Equals(names[n], name, StringComparison.Ordinal)) return MapEditDraft.OwnerChar(n);
             throw new ArgumentException("surface name not in the table: " + name);
+        }
+
+        private void CheckInside<T>(MapEditKind<T> kind, T entry) where T : class
+        {
+            if (!kind.Inside(entry, Current)) throw new ArgumentOutOfRangeException(nameof(entry), kind.Name + " is off the map");
         }
 
         private void CheckCell(int x, int z)

@@ -38,7 +38,7 @@ namespace WarCore.Tests
                 Is.EqualTo(e.Current.Removed.Select(s => s.Instance + "/" + s.Kind + "/" + s.Src)));
             Assert.That(back.Stamps.Select(s => s.Instance + "/" + s.Kind + "/" + s.Src + "/" + s.Id),
                 Is.EqualTo(e.Current.Stamps.Select(s => s.Instance + "/" + s.Kind + "/" + s.Src + "/" + s.Id)));
-            Assert.That(back.Stamps.Count, Is.EqualTo(3));
+            Assert.That(back.Stamps.Count, Is.EqualTo(5));
 
             ulong added = e.AddWall(WallAt(6, 5));
             Assert.That(added, Is.EqualTo(3UL));
@@ -77,11 +77,15 @@ namespace WarCore.Tests
             MapSurfaceWrite[] surfaces = Cells(0, 3, 0, 3, "road");
             var walls = new[] { new MapStampEntry<MapWall>(1, WallAt(0, 0)), new MapStampEntry<MapWall>(2, WallAt(2, 2)) };
             var units = new[] { new MapStampEntry<MapUnit>(1, UnitAt(1500, 1500)) };
-            var plan = new MapStampPlan("s1", heights, surfaces, walls, new MapStampEntry<MapPoint>[0], new MapStampEntry<MapBase>[0], units);
+            var points = new[] { new MapStampEntry<MapPoint>(1, PointAt(2500, 500)) };
+            var bases = new[] { new MapStampEntry<MapBase>(1, BaseAt(500, 2500)) };
+            var plan = new MapStampPlan("s1", heights, surfaces, walls, points, bases, units);
             heights[0] = new MapHeightWrite(7, 6, 9000);
             surfaces[0] = new MapSurfaceWrite(7, 5, "mud");
             walls[0] = new MapStampEntry<MapWall>(9, WallAt(7, 5));
             units[0] = new MapStampEntry<MapUnit>(9, UnitAt(7500, 5500));
+            points[0] = new MapStampEntry<MapPoint>(9, PointAt(7500, 5500));
+            bases[0] = new MapStampEntry<MapBase>(9, BaseAt(7500, 5500));
 
             Assert.That(plan.Heights[0].Raw, Is.EqualTo(1000));
             Assert.That(plan.Walls[0].Src, Is.EqualTo(1UL));
@@ -90,6 +94,36 @@ namespace WarCore.Tests
             var fresh = new MapEdit(Read(Plain()));
             fresh.Stamp(S1());
             Assert.That(Bytes(e), Is.EqualTo(Bytes(fresh)));
+            Assert.That(new object[] { e.Current.Points[0].Src.Src, e.Current.Points[0].At, e.Current.Points[0].RadiusMm },
+                Is.EqualTo(new object[] { 1UL, new MapMm(2500, 500), 400 }));
+            Assert.That(new object[] { e.Current.Bases[0].Src.Src, e.Current.Bases[0].At, e.Current.Bases[0].Team },
+                Is.EqualTo(new object[] { 1UL, new MapMm(500, 2500), 1 }));
+            Assert.That(new object[] { e.Current.Units[0].Src.Src, e.Current.Units[0].At }, Is.EqualTo(new object[] { 1UL, new MapMm(1500, 1500) }));
+            Assert.That(new object[] { e.Current.Walls[0].Src.Src, e.Current.Walls[0].Cell }, Is.EqualTo(new object[] { 1UL, new MapXZ(0, 0) }));
+            Assert.That(e.Current.Heights[0][0], Is.EqualTo(1000));
+            Assert.That(SurfaceName(e.Current, 0, 0), Is.EqualTo("road"));
+        }
+
+        [Test]
+        public void EntriesOffTheMapAreRefused()
+        {
+            var e = new MapEdit(Read(Plain()));
+            e.Stamp(S1());
+            byte[] before = Bytes(e);
+            Assert.Throws<ArgumentOutOfRangeException>(() => e.AddWall(WallAt(W, 0)));
+            Assert.Throws<ArgumentOutOfRangeException>(() => e.AddWall(new MapWall(0, "wall", "walls", new MapXZ(7, 4), new MapXZ(1, 3), WallHeight)));
+            Assert.Throws<ArgumentOutOfRangeException>(() => e.AddUnit(UnitAt(W * 1000, 0)));
+            Assert.Throws<ArgumentOutOfRangeException>(() => e.AddPoint(new MapPoint(0, new MapMm(500, 500), 400, 0, new MapMm(-1, 500))));
+            Assert.Throws<ArgumentOutOfRangeException>(() => e.AddBase(BaseAt(500, D * 1000)));
+            Assert.Throws<ArgumentOutOfRangeException>(() => e.ReplaceWall(WallAt(-1, 0, 1)));
+            Assert.Throws<ArgumentOutOfRangeException>(() => e.ReplaceUnit(new MapUnit(1, Soldier, 1, 0, new MapMm(0, -1), false)));
+            var off = new MapStampPlan("s2", Corners(5, 8, 5, 6, 3000), Cells(4, 7, 4, 5, "mud"),
+                new[] { new MapStampEntry<MapWall>(1, WallAt(7, 5)) }, new MapStampEntry<MapPoint>[0], new MapStampEntry<MapBase>[0],
+                new[] { new MapStampEntry<MapUnit>(1, UnitAt(7500, 5500)), new MapStampEntry<MapUnit>(2, UnitAt(8000, 5500)) });
+            Assert.Throws<ArgumentOutOfRangeException>(() => e.Stamp(off));
+            Assert.That(Bytes(e), Is.EqualTo(before));
+            Assert.That(e.AddWall(WallAt(W - 1, D - 1)), Is.EqualTo(3UL));
+            Assert.That(e.AddUnit(UnitAt(W * 1000 - 1, D * 1000 - 1)), Is.EqualTo(2UL));
         }
 
         [Test]

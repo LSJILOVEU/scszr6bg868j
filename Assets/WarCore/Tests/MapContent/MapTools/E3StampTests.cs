@@ -27,13 +27,19 @@ namespace WarCore.Tests
             return e;
         }
 
+        private static readonly string HandExtract = string.Join("\n",
+            "h 1 1 2000", "h 2 2 2000", "s 0 0 mud", "s 1 0 mud", "s 2 0 mud",
+            "  \"walls\": [", "    {", "      \"id\": 2,", "      \"kind\": \"wall\",", "      \"layer\": \"walls\",",
+            "      \"cell\": [3, 3],", "      \"size\": [1, 1],", "      \"heightRaw\": 131072,", "      \"owner\": 0,",
+            "      \"src\": {", "        \"instance\": \"s1\",", "        \"kind\": \"wall\",", "        \"src\": 2", "      }",
+            "    }", "  ],", "  \"points\": [],", "  \"bases\": [],", "  \"units\": [],", "");
+
         [Test]
         public void HandEditsSurviveARerun()
         {
             MapEdit e = HandEdited();
             byte[] hand = Extract(e.Current, MapEdit.Hand);
-            Assert.That(System.Text.Encoding.ASCII.GetString(hand), Is.EqualTo(
-                "h 1 1 2000\nh 2 2 2000\ns 0 0 mud\ns 1 0 mud\ns 2 0 mud\nw 2 wall walls 3 3 1 1 131072 s1/wall/2\n"));
+            Assert.That(System.Text.Encoding.UTF8.GetString(hand), Is.EqualTo(HandExtract));
 
             MapStampResult r = e.Stamp(S1());
 
@@ -42,12 +48,13 @@ namespace WarCore.Tests
             Assert.That(moved.Length, Is.EqualTo(1));
             Assert.That(moved[0].Cell, Is.EqualTo(new MapXZ(3, 3)));
             Assert.That(e.Current.Walls.Count, Is.EqualTo(2));
+            Assert.That(new[] { e.Current.Points.Count, e.Current.Bases.Count, e.Current.Units.Count }, Is.EqualTo(new[] { 1, 1, 1 }));
             Assert.That(r.HeightsSkipped, Is.EqualTo(2));
             Assert.That(r.SurfacesSkipped, Is.EqualTo(3));
             Assert.That(r.EntriesSkipped, Is.EqualTo(1));
             Assert.That(r.HeightsWritten, Is.EqualTo(23));
             Assert.That(r.SurfacesWritten, Is.EqualTo(13));
-            Assert.That(r.EntriesWritten, Is.EqualTo(2));
+            Assert.That(r.EntriesWritten, Is.EqualTo(4));
             Assert.That(MapDescJson.Write(MapDescJson.Read(Bytes(e))), Is.EqualTo(Bytes(e)));
         }
 
@@ -69,9 +76,11 @@ namespace WarCore.Tests
             Assert.That(e.Current.Units.Select(u => u.Key).ToArray(), Is.EqualTo(unitKeys));
             Assert.That(new[] { e.Current.Next.Wall, e.Current.Next.Unit }, Is.EqualTo(new[] { next.Wall, next.Unit }));
             Assert.That(new[] { e.Current.Next.Point, e.Current.Next.Base }, Is.EqualTo(new[] { next.Point, next.Base }));
-            Assert.That(new[] { second.HeightsWritten, second.SurfacesWritten, second.EntriesWritten }, Is.EqualTo(new[] { 25, 16, 3 }));
+            Assert.That(new[] { second.HeightsWritten, second.SurfacesWritten, second.EntriesWritten }, Is.EqualTo(new[] { 25, 16, 5 }));
             Assert.That(new[] { second.HeightsSkipped, second.SurfacesSkipped, second.EntriesSkipped }, Is.EqualTo(new[] { 0, 0, 0 }));
-            Assert.That(new[] { first.HeightsWritten, first.SurfacesWritten, first.EntriesWritten }, Is.EqualTo(new[] { 25, 16, 3 }));
+            Assert.That(new[] { first.HeightsWritten, first.SurfacesWritten, first.EntriesWritten }, Is.EqualTo(new[] { 25, 16, 5 }));
+            Assert.That(e.Current.Points.Select(p => p.Id).ToArray(), Is.EqualTo(new[] { 1 }));
+            Assert.That(e.Current.Bases.Select(b => b.Id).ToArray(), Is.EqualTo(new[] { 1 }));
         }
 
         [Test]
@@ -91,6 +100,29 @@ namespace WarCore.Tests
             Assert.That(e.Current.Next.Wall, Is.EqualTo(4UL));
             Assert.That(e.Current.Stamps.Count, Is.EqualTo(1));
             Assert.That(r.EntriesWritten, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void HandEditedPointBaseAndUnitSurviveARerun()
+        {
+            var e = new MapEdit(Read(Plain()));
+            e.Stamp(S1());
+            e.ReplacePoint(new MapPoint(1, new MapMm(6500, 4500), 900, 2));
+            e.ReplaceBase(new MapBase(1, 2, new MapMm(7500, 5500)));
+            e.ReplaceUnit(new MapUnit(1, Soldier, 2, 3, new MapMm(4500, 4500), true));
+
+            MapStampResult r = e.Stamp(S1());
+
+            Assert.That(new[] { r.EntriesWritten, r.EntriesSkipped }, Is.EqualTo(new[] { 2, 3 }));
+            MapPoint p = e.Current.Points.Single();
+            Assert.That(new object[] { p.Id, p.At, p.RadiusMm, p.InitialOwner, p.Spawn, p.Owner, p.Src.Instance, p.Src.Src },
+                Is.EqualTo(new object[] { 1, new MapMm(6500, 4500), 900, 2, null, 0, "s1", 1UL }));
+            MapBase b = e.Current.Bases.Single();
+            Assert.That(new object[] { b.Id, b.Team, b.At, b.Owner, b.Src.Src }, Is.EqualTo(new object[] { 1, 2, new MapMm(7500, 5500), 0, 1UL }));
+            MapUnit u = e.Current.Units.Single();
+            Assert.That(new object[] { u.Key, u.Type, u.Team, u.Squad, u.At, u.Reserve, u.Owner, u.Src.Src },
+                Is.EqualTo(new object[] { 1UL, Soldier, 2, 3, new MapMm(4500, 4500), true, 0, 1UL }));
+            Assert.That(MapDescJson.Write(MapDescJson.Read(Bytes(e))), Is.EqualTo(Bytes(e)));
         }
 
         // s1 then s2 on (Plain): s2 overlaps s1 on cells x in [2, 3] and corners i in [2, 4].
@@ -126,6 +158,9 @@ namespace WarCore.Tests
             MapEdit e = HandEdited();
             e.ReleaseHand(0, 0, 3, 3);
             Assert.That(CountHeights(e.Current, MapEdit.Hand) + CountSurfaces(e.Current, MapEdit.Hand), Is.EqualTo(0));
+            Assert.That(e.EntryOwner("wall", 2), Is.Null);
+            Assert.That(new[] { e.EntryOwner("wall", 1), e.EntryOwner("point", 1), e.EntryOwner("base", 1), e.EntryOwner("unit", 1) },
+                Is.EqualTo(new[] { "stamp:s1", "stamp:s1", "stamp:s1", "stamp:s1" }));
 
             MapStampResult r = e.Stamp(S1());
 
