@@ -19,9 +19,10 @@ namespace WarCore.Presentation
         public override void RegisterRules(WorldAssembly a)
         {
             WorldRecipe recipe = a.Recipe;
-            if (a.Combat == null || !recipe.Combat.HasBlock || !recipe.Facing)
+            AssemblyPins pins = a.Pinned;
+            if (pins.Combat == null || !recipe.Combat.HasBlock || !recipe.Facing)
                 throw new ArgumentException("The block AI needs combat with block specs and facing.", nameof(recipe));
-            a.Sim.RegisterGameplay("battle.block-ai", new BlockAiSystem(a.Combat, new FacingSource(a.Sim, a.Facings), a.Controlled), SimSystemPhase.Requests);
+            a.Sim.RegisterGameplay("battle.block-ai", new BlockAiSystem(pins.Combat, new FacingSource(a.Sim, pins.Facings), pins.Controlled), SimSystemPhase.Requests);
         }
     }
 

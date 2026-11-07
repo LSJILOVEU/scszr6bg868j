@@ -16,15 +16,15 @@ namespace WarCore.Presentation
 
         public override bool IsActive(WorldAssembly a) => a.Recipe.Combat != null;
 
-        public override void RegisterComponents(WorldAssembly a) =>
+        public override void CompleteComponents(WorldAssembly a) =>
             a.Combatants = a.Sim.Entities.Register<Combatant>(Combatant.ComponentId, new CombatantSerializer());
 
-        public override void PlaceUnit(WorldAssembly a, int index, EntityId unit)
+        public override void CompleteUnit(WorldAssembly a, int index, EntityId unit)
         {
             UnitSpawn spawn = a.Recipe.Units[index];
             a.Sim.BindGameplay(unit, 1);
             int ammo = spawn.Weapon < 0 ? 0 : a.Recipe.Combat.Weapons[spawn.Weapon].Magazine;
-            a.Sim.Entities.Set(a.Combatants, unit, new Combatant(spawn.Team, spawn.Weapon, ammo, 0));
+            a.Sim.Entities.Set(a.Pinned.Combatants, unit, new Combatant(spawn.Team, spawn.Weapon, ammo, 0));
         }
 
         // Runs after the player feature: the combat system keeps the player control it is given.
@@ -32,14 +32,14 @@ namespace WarCore.Presentation
         {
             Simulation sim = a.Sim;
             WorldRecipe recipe = a.Recipe;
-            var combat = new CombatSystem(sim, a.Positions, a.Combatants, recipe.Combat, a.WallMask, WorldAssembly.MoverLayer, recipe.Units.Length, a.Controlled);
+            var combat = new CombatSystem(sim, a.Pinned.Positions, a.Pinned.Combatants, recipe.Combat, a.Pinned.WallMask, WorldAssembly.MoverLayer, recipe.Units.Length, a.Controlled);
             sim.RegisterGameplay("combat.system", combat, SimSystemPhase.Queries);
             // The combat system registers the melee component, so the units get their specs only now.
             for (int i = 0; i < recipe.Units.Length; i++)
                 if (recipe.Units[i].Melee >= 0) combat.SetMelee(a.Units[i], recipe.Units[i].Melee);
             for (int i = 0; i < recipe.Units.Length; i++)
                 if (recipe.Units[i].Block >= 0) combat.SetBlock(a.Units[i], recipe.Units[i].Block);
-            sim.RegisterGameplay("bridge.dead-cleanup", new DeadCleanup(sim, a.Combatants, a.Intents), SimSystemPhase.Requests);
+            sim.RegisterGameplay("bridge.dead-cleanup", new DeadCleanup(sim, a.Pinned.Combatants, a.Pinned.Intents), SimSystemPhase.Requests);
             a.Combat = combat;
         }
     }

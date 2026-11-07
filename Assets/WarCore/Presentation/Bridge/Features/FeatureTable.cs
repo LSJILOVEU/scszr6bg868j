@@ -16,13 +16,15 @@ namespace WarCore.Presentation
         internal static readonly IWorldFeature[] Components =
         {
             MovementFeature.Instance, TerrainFeature.Instance, FacingFeature.Instance, MotionFeature.Instance, StandingFeature.Instance,
-            CombatFeature.Instance,
         };
+        // After every RegisterComponents, extensions included: the combat component, as the builder always registered it last.
+        internal static readonly IWorldStageFeature[] CompleteComponents = { CombatFeature.Instance };
         internal static readonly IWorldFeature[] Walls = { MovementFeature.Instance };
         // Facing and motion are written before the terrain check, the body after it, as the unit loop always did.
-        // Combat binds the unit and writes its combatant state after the body exists.
         internal static readonly IWorldFeature[] Units =
-            { FacingFeature.Instance, MotionFeature.Instance, TerrainFeature.Instance, MovementFeature.Instance, CombatFeature.Instance };
+            { FacingFeature.Instance, MotionFeature.Instance, TerrainFeature.Instance, MovementFeature.Instance };
+        // After every PlaceUnit, extensions included: combat binds the unit and writes its combatant state.
+        internal static readonly IWorldStageFeature[] CompleteUnits = { CombatFeature.Instance };
         // The player control first (combat keeps it), then combat, then the crowd pass rule (it reads both).
         internal static readonly IWorldStageFeature[] Connect = { PlayerFeature.Instance, CombatFeature.Instance, CrowdPassFeature.Instance };
         internal static readonly IWorldFeature[] Systems = { MovementFeature.Instance, FacingFeature.Instance };
@@ -62,6 +64,7 @@ namespace WarCore.Presentation
         internal static void RunComponents(WorldAssembly assembly)
         {
             foreach (IWorldFeature feature in Active(Components, assembly)) feature.RegisterComponents(assembly);
+            foreach (IWorldStageFeature feature in Staged(CompleteComponents, assembly)) feature.CompleteComponents(assembly);
         }
 
         internal static void RunWall(WorldAssembly assembly, WcMapWall wall, EntityId entity)
@@ -72,6 +75,7 @@ namespace WarCore.Presentation
         internal static void RunUnit(WorldAssembly assembly, int index, EntityId unit)
         {
             foreach (IWorldFeature feature in Active(Units, assembly)) feature.PlaceUnit(assembly, index, unit);
+            foreach (IWorldStageFeature feature in Staged(CompleteUnits, assembly)) feature.CompleteUnit(assembly, index, unit);
         }
 
         internal static void RunSystems(WorldAssembly assembly)

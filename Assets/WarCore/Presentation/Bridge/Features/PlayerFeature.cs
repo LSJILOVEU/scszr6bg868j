@@ -26,20 +26,21 @@ namespace WarCore.Presentation
                 throw new ArgumentException("Player key does not match a UnitSpawn.Key.", nameof(recipe));
             EntityId player = a.Units[playerIndex];
             EntityStore entities = a.Sim.Entities;
-            if (!entities.TryGet(a.Positions, player, out _) || !entities.TryGet(a.Intents, player, out _)
-                || !entities.TryGet(a.Colliders, player, out _))
+            if (!entities.TryGet(a.Pinned.Positions, player, out _) || !entities.TryGet(a.Pinned.Intents, player, out _)
+                || !entities.TryGet(a.Pinned.Colliders, player, out _))
                 throw new ArgumentException("Player key must name a deployed unit with Position, MoveIntent and Collider.", nameof(recipe));
             a.Controlled = new PlayerControl(entities, player);
         }
 
         public override void RegisterRules(WorldAssembly a)
         {
-            PlayerControl controlled = a.Controlled;
+            AssemblyPins pins = a.Pinned;
+            PlayerControl controlled = pins.Controlled;
             var sim = a.Sim;
             sim.RegisterGameplay("control.player", controlled, SimSystemPhase.Requests);
-            sim.RegisterGameplay("control.player-fire", new PlayerFire(sim, a.Combat, controlled, a.Recipe.Facing ? a.Facings : (ComponentType<UnitFacing>?)null), SimSystemPhase.Queries);
-            WarCore.Battle.MatchMode mode = a.Mode;
-            sim.RegisterGameplay("control.fallback", new PlayerFallback(a.Combat, controlled, a.Locomotion,
+            sim.RegisterGameplay("control.player-fire", new PlayerFire(sim, pins.Combat, controlled, a.Recipe.Facing ? pins.Facings : (ComponentType<UnitFacing>?)null), SimSystemPhase.Queries);
+            WarCore.Battle.MatchMode mode = pins.Mode;
+            sim.RegisterGameplay("control.fallback", new PlayerFallback(pins.Combat, controlled, pins.Locomotion,
                 () => mode.IsFinished), SimSystemPhase.Requests);
         }
     }

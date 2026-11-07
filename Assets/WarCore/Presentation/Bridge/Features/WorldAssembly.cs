@@ -71,6 +71,30 @@ namespace WarCore.Presentation
         internal ReinforceSystem Reinforce { get; set; }
         internal MatchSystem Match { get; set; }
 
+        // The values the builder has already read, kept as they were at the time (see AssemblyPins): later installers and the
+        // session read these, so an extension that rewrites the assembly in a later hook does not change what was built from it.
+        internal AssemblyPins Pinned { get; } = new AssemblyPins();
+
+        // After Prepare, once the builder knows the floor and the wall layers: the map as read, terrain, floor, walls, the mode.
+        internal void PinMap(WcMap map, long groundRaw, uint wallMask)
+        {
+            GroundRaw = groundRaw; WallMask = wallMask;
+            Pinned.Map = map; Pinned.Terrain = Terrain; Pinned.GroundRaw = groundRaw; Pinned.WallMask = wallMask; Pinned.Mode = Mode;
+        }
+
+        // After RegisterComponents: the component types.
+        internal void PinComponents()
+        {
+            Pinned.Positions = Positions; Pinned.Colliders = Colliders; Pinned.Intents = Intents; Pinned.Facings = Facings;
+            Pinned.Standing = Standing; Pinned.Combatants = Combatants;
+        }
+
+        // After Connect: the objects the systems are made from.
+        internal void PinConnected() { Pinned.Controlled = Controlled; Pinned.Combat = Combat; Pinned.CrowdPass = CrowdPass; }
+
+        // After RegisterSystems: the locomotion.
+        internal void PinLocomotion() => Pinned.Locomotion = Locomotion;
+
         // Where a unit stands when it is placed: the map's flat floor, or the terrain surface where the map has a height field.
         internal SimVec3 SpawnPoint(in UnitSpawn spawn)
         {
@@ -84,5 +108,25 @@ namespace WarCore.Presentation
 
         // A reserve unit of a battle has no body until it is deployed.
         internal bool IsDeployedAtStart(in UnitSpawn spawn) => Recipe.Match == null || !spawn.Reserve;
+    }
+
+    // The builder's own copies of assembly facts, written once each by the WorldAssembly.Pin* calls the builder makes.
+    internal sealed class AssemblyPins
+    {
+        internal WcMap Map;
+        internal TerrainTables Terrain;
+        internal long GroundRaw;
+        internal uint WallMask;
+        internal MatchMode Mode;
+        internal ComponentType<Position> Positions;
+        internal ComponentType<Collider> Colliders;
+        internal ComponentType<MoveIntent> Intents;
+        internal ComponentType<UnitFacing> Facings;
+        internal ComponentType<SquadStanding>? Standing;
+        internal ComponentType<Combatant> Combatants;
+        internal PlayerControl Controlled;
+        internal CombatSystem Combat;
+        internal ICrowdPass CrowdPass;
+        internal InterimLocomotion Locomotion;
     }
 }
