@@ -1,6 +1,7 @@
 using System;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.Rendering;
 using WarCore.Presentation;
 
 namespace WarCore.Unity.Tests
@@ -8,6 +9,106 @@ namespace WarCore.Unity.Tests
     // L7: the terrain mesh view, and a full-output lock on the flat-map view it must leave unchanged.
     public sealed class L7TerrainViewTests
     {
+        // (a) The demo terrain view holds exactly the height-field mesh; 49 x 33 = 1617 vertices fit 16-bit indices.
+        [Test]
+        public void DemoTerrain_GroundMatchesHeightField_UInt16()
+        {
+            byte[] bytes = TerrainBake.DemoMapBytes();
+            GameObject root = TerrainBake.Build(bytes, null, null);
+            try
+            {
+                Mesh mesh = GroundMesh(root);
+                Assert.That(mesh.vertexCount, Is.EqualTo(1617));
+                Assert.That(mesh.indexFormat, Is.EqualTo(IndexFormat.UInt16));
+                Assert.That(TerrainBake.VerifyGround(bytes, root.transform), Is.Empty);
+            }
+            finally { DestroyView(root); }
+        }
+
+        // (d) VerifyGround is not vacuous: each broken view reports something.
+        [Test]
+        public void VerifyGround_VertexMoved_Reports()
+        {
+            byte[] bytes = TerrainBake.DemoMapBytes();
+            GameObject root = TerrainBake.Build(bytes, null, null);
+            try
+            {
+                Mesh mesh = GroundMesh(root);
+                Vector3[] vertices = mesh.vertices;
+                vertices[800].y += 1f;
+                mesh.vertices = vertices;
+                Assert.That(TerrainBake.VerifyGround(bytes, root.transform), Is.Not.Empty);
+            }
+            finally { DestroyView(root); }
+        }
+
+        [Test]
+        public void VerifyGround_IndexSwapped_Reports()
+        {
+            byte[] bytes = TerrainBake.DemoMapBytes();
+            GameObject root = TerrainBake.Build(bytes, null, null);
+            try
+            {
+                Mesh mesh = GroundMesh(root);
+                int[] triangles = mesh.triangles;
+                (triangles[3], triangles[4]) = (triangles[4], triangles[3]);
+                mesh.triangles = triangles;
+                Assert.That(TerrainBake.VerifyGround(bytes, root.transform), Is.Not.Empty);
+            }
+            finally { DestroyView(root); }
+        }
+
+        [Test]
+        public void VerifyGround_GroundMissing_Reports()
+        {
+            byte[] bytes = TerrainBake.DemoMapBytes();
+            GameObject root = TerrainBake.Build(bytes, null, null);
+            try
+            {
+                DestroyGroundMesh(root);
+                UnityEngine.Object.DestroyImmediate(root.transform.Find("Ground").gameObject);
+                Assert.That(TerrainBake.VerifyGround(bytes, root.transform), Is.Not.Empty);
+            }
+            finally { DestroyView(root); }
+        }
+
+        [Test]
+        public void VerifyGround_FlatMap_Reports()
+        {
+            byte[] bytes = M2Bake.MatchMapBytes(true);
+            GameObject root = MapView.Build(ViewMap.Parse(bytes), null, null);
+            try
+            {
+                Assert.That(TerrainBake.VerifyGround(bytes, root.transform), Is.Not.Empty);
+            }
+            finally { UnityEngine.Object.DestroyImmediate(root); }
+        }
+
+        private static Mesh GroundMesh(GameObject root)
+        {
+            Transform ground = root.transform.Find("Ground");
+            Assert.That(ground, Is.Not.Null);
+            MeshFilter filter = ground.GetComponent<MeshFilter>();
+            Assert.That(filter, Is.Not.Null);
+            Assert.That(filter.sharedMesh, Is.Not.Null);
+            return filter.sharedMesh;
+        }
+
+        // The terrain mesh is created by MapView, not an asset; destroy it with the view.
+        private static void DestroyGroundMesh(GameObject root)
+        {
+            Transform ground = root.transform.Find("Ground");
+            MeshFilter filter = ground == null ? null : ground.GetComponent<MeshFilter>();
+            if (filter != null && filter.sharedMesh != null && filter.sharedMesh.name != "Cube")
+                UnityEngine.Object.DestroyImmediate(filter.sharedMesh);
+        }
+
+        private static void DestroyView(GameObject root)
+        {
+            DestroyGroundMesh(root);
+            UnityEngine.Object.DestroyImmediate(root);
+        }
+
         // (c) Flat maps (no height field): children, order, names, local position and scale are bit-exact against an
         // expectation written here independently of MapView (same float expressions, same order as MapView.Build), the
         // ground is the built-in cube, and the existing MapView.Verify still returns empty.
