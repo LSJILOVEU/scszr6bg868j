@@ -14,6 +14,10 @@ Modes (exit 0 clean, 1 findings, 2 setup problem):
   --tree [DIR]             every tracked file in the working tree
   --self-test
 Add --require-terms to fail when no term list is available.
+
+A squash merge made on GitHub is authored by the repository owner's GitHub noreply address and committed by
+GitHub. In --range that one identity is accepted (the owner login is already public in the repository URL);
+its subject may also carry the " (#N)" suffix GitHub adds.
 """
 import os, re, subprocess, sys, tempfile
 
@@ -138,12 +142,13 @@ def scan_diff(diff, terms, rep, label=""):
             line_no += 1
 
 
-def check_message(msg, where, terms, rep):
+def check_message(msg, where, terms, rep, web_merge=False):
     lines = [l for l in msg.rstrip().splitlines()]
     if not lines or not lines[0].strip():
         rep.add("message-empty", where)
         return
-    if len(lines[0]) > MAX_SUBJECT:
+    subject = re.sub(r" \(#\d+\)$", "", lines[0]) if web_merge else lines[0]
+    if len(subject) > MAX_SUBJECT:
         rep.add("message-long-subject", where)
     if len(lines) > MAX_MESSAGE_LINES or len(msg) > MAX_MESSAGE_CHARS:
         rep.add("message-too-long", where)
@@ -157,6 +162,20 @@ def check_identity(name, email, date, role, where, terms, rep):
         rep.add(rid, "%s %s identity" % (where, role))
     if not re.search(r"(?:\+00:?00|Z)$", date.strip()):
         rep.add("timezone", "%s %s date (use TZ=UTC)" % (where, role))
+
+
+def owner_login():
+    login = os.environ.get("GITHUB_REPOSITORY_OWNER", "")
+    if not login:
+        m = re.search(r"github\.com[:/]([A-Za-z0-9-]+)/", git("remote", "get-url", "origin", check=False))
+        login = m.group(1) if m else ""
+    return login.lower()
+
+
+def is_web_merge(an, ae, cn, ce, login):
+    m = re.fullmatch(r"\d+\+([A-Za-z0-9-]+)@users\.noreply\.github\.com", ae.strip(), re.I)
+    return bool(login and m and m.group(1).lower() == login and an.strip().lower() == login
+                and cn == "GitHub" and ce.lower() == "noreply@github.com")
 
 
 def mode_staged(terms, rep):
@@ -178,7 +197,8 @@ def mode_commit_msg(path, terms, rep):
         check_identity(m.group(1), m.group(2), m.group(4).replace("+0000", "Z"), role, "commit", terms, rep)
 
 
-def mode_range(rng, terms, rep):
+def mode_range(rng, terms, rep, login=None):
+    login = owner_login() if login is None else login
     out = git("log", "--format=%H%x1f%an%x1f%ae%x1f%cn%x1f%ce%x1f%aI%x1f%cI%x1f%B%x1e", *rng.split())
     for rec in out.split("\x1e"):
         rec = rec.strip("\n")
@@ -186,9 +206,13 @@ def mode_range(rng, terms, rep):
             continue
         sha, an, ae, cn, ce, ad, cd, body = rec.split("\x1f", 7)
         w = "commit " + sha[:10]
-        check_identity(an, ae, ad, "author", w, terms, rep)
+        web = is_web_merge(an, ae, cn, ce, login)
+        if web:
+            check_identity("warcore", "noreply@users.noreply.github.com", ad, "author", w, terms, rep)
+        else:
+            check_identity(an, ae, ad, "author", w, terms, rep)
         check_identity(cn, ce, cd, "committer", w, terms, rep)
-        check_message(body, w, terms, rep)
+        check_message(body, w, terms, rep, web_merge=web)
         scan_diff(git("diff-tree", "-p", "-U0", "--no-color", "--no-ext-diff", "--root", "-r", "--no-commit-id", sha), terms, rep, w + " ")
 
 
@@ -239,6 +263,15 @@ def self_test():
     expect("identity date tz", any(i[0] == "timezone" for i in r.items))
     r = Report(); check_identity("warcore", "noreply@users.noreply.github.com", "2026-01-01T00:00:00+00:00", "author", "c", [], r)
     expect("identity ok", not r.items)
+    gh = ("Owner1", "123+Owner1@users.noreply.github.com", "GitHub", "noreply@github.com")
+    expect("web merge accepted for owner", is_web_merge(*gh, login="owner1"))
+    expect("web merge rejected for other login", not is_web_merge(*gh, login="other"))
+    expect("web merge rejected without login", not is_web_merge(*gh, login=""))
+    expect("web merge needs GitHub committer", not is_web_merge(gh[0], gh[1], "Owner1", gh[1], login="owner1"))
+    r = Report(); check_message("x" * 72 + " (#12)", "c", [], r, web_merge=True)
+    expect("web merge subject suffix allowed", not r.items)
+    r = Report(); check_message("x" * 72 + " (#12)", "c", [], r)
+    expect("plain subject suffix counted", any(i[0] == "message-long-subject" for i in r.items))
     # end to end in a throwaway repo
     with tempfile.TemporaryDirectory() as d:
         env = dict(os.environ, TZ="UTC", GIT_AUTHOR_NAME="warcore", GIT_AUTHOR_EMAIL="noreply@users.noreply.github.com",
@@ -258,6 +291,16 @@ def self_test():
             expect("range finds PII added then removed", any(i[0] == "home-path" for i in r.items))
             r = Report(); mode_range("HEAD~1..HEAD", [], r)
             expect("range clean after removal", not r.items)
+            wenv = dict(env, GIT_AUTHOR_NAME="Owner1", GIT_AUTHOR_EMAIL="123+Owner1@users.noreply.github.com",
+                        GIT_COMMITTER_NAME="GitHub", GIT_COMMITTER_EMAIL="noreply@github.com")
+            open(os.path.join(d, "c.txt"), "w").write("merged\n")
+            g("add", "-A")
+            subprocess.run(["git", "commit", "-q", "-m", "x" * 70 + " (#7)"], cwd=d, env=wenv, capture_output=True)
+            owner_terms = [(False, "owner1", None)]
+            r = Report(); mode_range("HEAD~1..HEAD", owner_terms, r, login="owner1")
+            expect("range accepts owner web merge", not r.items)
+            r = Report(); mode_range("HEAD~1..HEAD", owner_terms, r, login="someoneelse")
+            expect("range rejects web merge for other owner", any(i[0] == "identity-email" for i in r.items))
             r = Report(); mode_tree(d, [], r)
             expect("tree clean", not r.items)
         finally:
