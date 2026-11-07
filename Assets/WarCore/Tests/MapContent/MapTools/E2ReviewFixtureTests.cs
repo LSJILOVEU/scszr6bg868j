@@ -85,5 +85,22 @@ namespace WarCore.Tests
                 P("GATE_UNREACHABLE", "base 1 point 2", 2, 7, 2500, 7500),
             }));
         }
+
+        // Uneven ground: floor 1 raw, every height point 2 raw except one peak of 65538 raw on the far x edge (point (2, 1)) or
+        // the far z edge (point (1, 2)) of the wall's footprint at cell (1, 1). Clearance needs 1 + h >= 65538 + 65536, so
+        // h = 131072 is exactly 1 raw short and h = 131074 is enough.
+        [TestCase(true, 131072L, true)]
+        [TestCase(true, 131074L, false)]
+        [TestCase(false, 131072L, true)]
+        [TestCase(false, 131074L, false)]
+        public void WallClearanceIncludesTheFarEdges(bool farX, long heightRaw, bool low)
+        {
+            int[][] heights = Enumerable.Range(0, 4).Select(_ => Enumerable.Repeat(2, 5).ToArray()).ToArray();
+            if (farX) heights[1][2] = 65538; else heights[2][1] = 65538;
+            var m = new E2Map { Width = 4, Depth = 3, FloorRaw = 1, Heights = heights }.Wall(1, 1, 1, 1, heightRaw);
+            MapProblem[] problems = Check(m.Bytes(), M6Pack());
+            if (low) Assert.That(problems, Is.EqualTo(new[] { P("GATE_WALL_TERRAIN", "wall 1", 1, 1) }));
+            else Assert.That(problems, Is.Empty);
+        }
     }
 }
