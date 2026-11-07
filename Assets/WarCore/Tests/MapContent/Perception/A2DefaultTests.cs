@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using NUnit.Framework;
 using WarCore.Battle;
 using WarCore.Combat;
@@ -12,14 +11,9 @@ namespace WarCore.Tests.Perception
     {
         private const string Explicit = ", \"concealMilli\": 1000";
 
-        private static IEnumerable<TestCaseData> Packs()
-        {
-            yield return new TestCaseData("", "").SetName("A2_Default_NoField");
-            yield return new TestCaseData(Explicit, Explicit).SetName("A2_Default_Explicit1000");
-        }
-
         // 1a: canonical rule bytes and the terrain digest equal the pre-A2 recordings, field absent or 1000 on every surface.
-        [TestCaseSource(nameof(Packs))]
+        [TestCase("", "")]
+        [TestCase(Explicit, Explicit)]
         public void CanonicalBytesAndDigest_AsRecorded(string dirt, string grass)
         {
             ContentPack pack = A2.Pack(dirt, grass);
@@ -28,7 +22,8 @@ namespace WarCore.Tests.Perception
         }
 
         // 1b: the combat system keeps the recipe's own pack and fixture D runs exactly as recorded for 600 ticks.
-        [TestCaseSource(nameof(Packs))]
+        [TestCase("", "")]
+        [TestCase(Explicit, Explicit)]
         public void FixtureD_SamePackAndRecordedRun(string dirt, string grass)
         {
             M6World w = A2.D(A2.Pack(dirt, grass));
