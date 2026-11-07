@@ -96,8 +96,11 @@ namespace WarCore.Tests.Perception
             Assert.That(A2.Pick(w, large, SimFix.FromInt(30)), Is.EqualTo((false, -1)));
         }
 
-        // The scaled limit never forms L * k: L.Raw = long.MaxValue - 10^6, k = 999 equals the exact floor(L * k / 1000).
+        // The scaled limit never forms L * k: with L.Raw = 1000q + r it is q*k + floor(r*k/1000) <= L.Raw, the exact floor(L * k / 1000).
         [TestCase(long.MaxValue - 1000000, 999)]
+        [TestCase(long.MaxValue, 999)]
+        [TestCase(long.MaxValue, 1000)]
+        [TestCase(1310720, 1000)]
         [TestCase(1310720, 333)]
         [TestCase(999, 1)]
         public void ScaledLimit_IsTheExactFloor(long limitRaw, int k)

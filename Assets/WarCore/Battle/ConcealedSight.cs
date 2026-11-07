@@ -38,7 +38,8 @@ namespace WarCore.Battle
             PolicyKey = hash.Value;
         }
 
-        // floor(limit * k / 1000) for limit >= 0 and k in 1..1000, without forming limit * k (weapon ranges have no upper bound).
+        // floor(limit * k / 1000) for limit >= 0 and k in 1..1000, without forming limit * k (weapon ranges have no upper bound):
+        // with limit = 1000q + r, q*k <= 1000q and r*k/1000 <= r, so the sum never exceeds limit.
         internal static long Scaled(long limitRaw, int k) => limitRaw / 1000 * k + limitRaw % 1000 * k / 1000;
 
         public bool TrySelect(CombatSystem world, EntityId shooter, SimFix range, out EntityId target)
