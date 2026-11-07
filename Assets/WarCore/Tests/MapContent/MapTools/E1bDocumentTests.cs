@@ -123,7 +123,13 @@ namespace WarCore.Tests
 
         // A home-assembly type that leaks a Content type only through inherited members (indexer, Add, enumerator).
         public sealed class LeakList : List<WarCore.Content.ContentPack> { }
-        public sealed class LeakDocument { public LeakList Items => null; }
+        public sealed class LeakDocument
+        {
+            public LeakList Items => null;
+            public IReadOnlyList<WarCore.Content.ContentPack> Packs => null;
+            public List<int> Numbers => null;
+            public IReadOnlyList<int> Allowed => null;
+        }
 
         [Test]
         public void SurfaceWalkerReportsInheritedMembers()
@@ -131,6 +137,10 @@ namespace WarCore.Tests
             List<string> problems = SurfaceViolations(typeof(LeakDocument), typeof(LeakDocument).Assembly, out _);
             Assert.That(problems, Has.Some.EqualTo("LeakList.Add item: WarCore.Content.ContentPack"));
             Assert.That(problems, Has.Some.EqualTo("LeakList.Item: WarCore.Content.ContentPack"));
+            // The element type of IReadOnlyList<T> is checked, and no other generic type is let through.
+            Assert.That(problems, Has.Some.EqualTo("LeakDocument.Packs: WarCore.Content.ContentPack"));
+            Assert.That(problems, Has.Some.StartsWith("LeakDocument.Numbers: System.Collections.Generic.List`1"));
+            Assert.That(problems, Has.None.StartsWith("LeakDocument.Allowed"));
         }
 
         // A description that is valid but not canonical: Save returns the canonical bytes and the hash is taken over them.
