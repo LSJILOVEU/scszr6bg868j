@@ -34,7 +34,8 @@ namespace WarCore.Tests
             MapDesc desc = Read(LinkAcrossKinds());
             Assert.That(desc.Walls[0].Id, Is.EqualTo(1UL));
             Assert.That(desc.Units[0].Key, Is.EqualTo(1UL));
-            var e = new MapEdit(desc);
+            MapEdit e = null;
+            Assert.DoesNotThrow(() => e = new MapEdit(desc));
             Assert.That(e.Current, Is.SameAs(desc));
         }
     }
