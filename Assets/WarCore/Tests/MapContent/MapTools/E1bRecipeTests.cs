@@ -95,7 +95,7 @@ namespace WarCore.Tests
         }
 
         private const string M6PackLine = "\"pack\": \"rwr-m6\",";
-        private const string MismatchMessage = "Map pack 'rwr-melee' does not match content pack 'rwr-m6'. (Parameter 'pack')";
+        private const string MismatchMessage = "Map pack 'rwr-melee' does not match content pack 'rwr-m6'.";
 
         [Test]
         public void SwappingThePackKeepsTheMapAndChangesTheHash()
@@ -108,7 +108,8 @@ namespace WarCore.Tests
             Assert.That(melee.DescHash, Is.Not.EqualTo(m6.DescHash));
             ContentPack m6Pack = RwrPack.Load(RwrPack.M6Layer);
             ArgumentException e = Assert.Throws<ArgumentException>(() => MapRecipe.From(melee, m6Pack));
-            Assert.That(ExceptionText.Of(e), Is.EqualTo(MismatchMessage));
+            Assert.That(ExceptionText.Body(e), Is.EqualTo(MismatchMessage));
+            Assert.That(e.ParamName, Is.EqualTo("pack"));
             Assert.DoesNotThrow(() => MapRecipe.From(melee, RwrPack.Load("rwr-melee")));
         }
     }
