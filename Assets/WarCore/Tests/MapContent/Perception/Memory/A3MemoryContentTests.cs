@@ -48,6 +48,17 @@ namespace WarCore.Tests
             Assert.That(w.System<TargetMemory>(), Is.Not.Null);
         }
 
+        // Both AI memories on: both systems registered, independently (9 before the AI, 13 after it).
+        [Test]
+        public void Assembly_BothMemories_Register()
+        {
+            M6World w = A2.D(A3.Load(A3.PackJson("", "{ \"failedSlotTicks\": 300, \"targetMemoryTicks\": 60 }")));
+            string expected = A3MemoryBaselineTests.Systems
+                .Replace("battle.reinforce|0|8;", "battle.reinforce|0|8;battle.ai-memory|0|9;")
+                .Replace("battle.ai|0|12;", "battle.ai|0|12;battle.ai-contacts|0|13;");
+            Assert.That(L4.Systems(w), Is.EqualTo(expected));
+        }
+
         // 12: neither a surface table nor a height field: not a terrain world, nothing registered.
         [Test]
         public void Assembly_FlatMap_DoesNotRegister()

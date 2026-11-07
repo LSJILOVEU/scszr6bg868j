@@ -17,7 +17,7 @@ namespace WarCore.Tests
         private static M6World RunTo(int? memory, long last)
         {
             M6World w = World(memory);
-            for (long t = 1; t <= last; t++) w.Sim.Step(Script(t));
+            for (long t = 1; t <= last; t++) w.Sim.Step(A3.Drive(w, Script(t)));
             return w;
         }
 
@@ -32,7 +32,7 @@ namespace WarCore.Tests
             SimVec3 p = default;
             for (long t = 1; t <= Save + 150; t++)
             {
-                straight.Sim.Step(Script(t));
+                straight.Sim.Step(A3.Drive(straight, Script(t)));
                 hashes.Add(straight.Hash); counts.Add(A3.Count(straight));
                 if (t == Save) Assert.That(A3.Recall(straight, A3.KeyA, t, out _, out p, out _), Is.True);
             }
@@ -47,11 +47,12 @@ namespace WarCore.Tests
             Assert.That(seen, Is.EqualTo(Seen));
             for (long t = Save + 1; t <= Save + 150; t++)
             {
-                b.Sim.Step(default);
+                b.Sim.Step(A3.Drive(b, default));
                 Assert.That(b.Hash, Is.EqualTo(hashes[(int)t]), "tick " + t);
                 Assert.That(A3.Count(b), Is.EqualTo(counts[(int)t]), "count, tick " + t);
             }
             Assert.That(counts[105], Is.EqualTo(1)); Assert.That(counts[106], Is.EqualTo(0));
+            Assert.That(A3.Commanded(b, A3.KeyB), Is.True);
         }
 
         // 10(b): another positive length: the memory's own check.

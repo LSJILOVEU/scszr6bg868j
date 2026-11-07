@@ -27,11 +27,11 @@ namespace WarCore.Tests
             }
             foreach (FireRecord f in w.Combat.Fires)
                 lines.Add(tick + " f " + f.Shooter.Value + ">" + f.Target.Value + " " + f.Origin.X.Raw + "," + f.Origin.Y.Raw + "," + f.Origin.Z.Raw
-                    + " " + f.End.X.Raw + "," + f.End.Y.Raw + "," + f.End.Z.Raw + " " + f.Distance.Raw + " " + f.DamageRaw + " " + f.ShooterTeam);
+                    + " " + f.End.X.Raw + "," + f.End.Y.Raw + "," + f.End.Z.Raw + " " + f.Distance.Raw + " " + f.DamageRaw + " " + f.ShooterTeam + " " + f.Outcome);
             return lines;
         }
 
-        private static void Compare(M6World on, M6World off, int units, Func<long, InputFrame> script, Action<M6World, long> before, Action<M6World, long> after)
+        private static void Compare(M6World on, M6World off, int units, Func<M6World, long, InputFrame> script, Action<M6World, long> before, Action<M6World, long> after)
         {
             Assert.That(on.Hash, Is.Not.EqualTo(off.Hash), "the state hashes differ from tick 0");
             Assert.That(Frame(on, units, 0), Is.EqualTo(Frame(off, units, 0)));
@@ -39,7 +39,7 @@ namespace WarCore.Tests
             for (long t = 1; t <= 600; t++)
             {
                 before(on, t);
-                on.Sim.Step(script(t)); off.Sim.Step(script(t));
+                on.Sim.Step(script(on, t)); off.Sim.Step(script(off, t));
                 Assert.That(Frame(on, units, t), Is.EqualTo(Frame(off, units, t)), "tick " + t);
                 fires += on.Combat.Fires.Length;
                 after(on, t);
@@ -49,7 +49,7 @@ namespace WarCore.Tests
 
         // Counts, on the M > 0 side, ticks with at least one entry, and selections made on a thinking tick by a unit that,
         // before that step, had a move order more than the arrival distance away (so the AI's stop on selection really runs).
-        private static (int stored, int stoppedOnSight) Walkers(M6World on, M6World off, int units, Func<long, InputFrame> script)
+        private static (int stored, int stoppedOnSight) Walkers(M6World on, M6World off, int units, Func<M6World, long, InputFrame> script)
         {
             Assert.That(off.System<TargetMemory>(), Is.Null);
             IMoveOrders moves = L4.Moves(on);
@@ -81,7 +81,7 @@ namespace WarCore.Tests
         [Test]
         public void FixtureD_SameRun()
         {
-            (int stored, int stoppedOnSight) = Walkers(A2.D(A3.Pack(A3.Grass500, 300)), A2.D(A3.Pack(A3.Grass500, 0)), 4, t => default);
+            (int stored, int stoppedOnSight) = Walkers(A2.D(A3.Pack(A3.Grass500, 300)), A2.D(A3.Pack(A3.Grass500, 0)), 4, (w, t) => default);
             Assert.That(stored, Is.EqualTo(StoredD));
             Assert.That(stoppedOnSight, Is.EqualTo(0));
         }
@@ -94,7 +94,7 @@ namespace WarCore.Tests
         {
             Func<int, M6World> make = m => new M6World(A2.Recipe(new[] { A2.Soldier(1, 1, A2.Cell(10, 10), 0, 3000), A3.Target(2, 2, A2.Cell(32, 20)) },
                 A2.Combat(0), A3.Pack(A3.Grass500, m), standing: true), WcMapWriter.Write(A2.Map(A2.DWalls)));
-            (int stored, int stoppedOnSight) = Walkers(make(300), make(0), 2, t => t == 1 ? A3.Command(SquadCommandKind.Hold, 2) : default);
+            (int stored, int stoppedOnSight) = Walkers(make(300), make(0), 2, (w, t) => t == 1 ? A3.Command(SquadCommandKind.Hold, 2) : default);
             Assert.That(stored, Is.EqualTo(StoredWalking));
             Assert.That(stoppedOnSight, Is.EqualTo(StoppedOnSightWalking));
         }
@@ -110,14 +110,18 @@ namespace WarCore.Tests
             M6World on = make(60), off = make(0);
             Assert.That(off.System<TargetMemory>(), Is.Null);
             int remembered = 0;
+            var holdsOn = new List<long>(); var holdsOff = new List<long>();
             Compare(on, off, 2,
-                t => t == 1 ? A3.Command(SquadCommandKind.Hold, 2) : t == 20 ? A3.Command(SquadCommandKind.MoveTo, 2, A2.Cell(21, 24)) : default,
+                (w, t) => A3.Drive(w, t == 1 ? A3.Command(SquadCommandKind.Hold, 2) : t == 20 ? A3.Command(SquadCommandKind.MoveTo, 2, A2.Cell(21, 24)) : default,
+                    w == on ? holdsOn : holdsOff),
                 (w, t) => { },
                 (w, t) =>
                 {
                     if ((t - 6) % A2.Think == 0 && A3.Recall(w, A3.KeyA, t, out _, out _, out long seen) && seen < t) remembered++;
                 });
             TestContext.Out.WriteLine("remembered " + remembered);
+            Assert.That(holdsOn, Is.EqualTo(new long[] { 87 })); Assert.That(holdsOff, Is.EqualTo(holdsOn));
+            Assert.That(A3.Commanded(on, A3.KeyB), Is.True);
             Assert.That(remembered, Is.EqualTo(RememberedNotSeenF));
         }
     }

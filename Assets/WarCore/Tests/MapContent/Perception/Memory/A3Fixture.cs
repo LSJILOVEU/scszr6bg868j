@@ -51,6 +51,21 @@ namespace WarCore.Tests
         internal static InputFrame Command(SquadCommandKind kind, int squad, SimVec3 at = default) =>
             new InputFrame(default, default, squad: new SquadCommand(kind, squad, at, default));
 
+        // InterimOrders ends a move standing on arrival (InterimOrders.cs Maintain), after which the AI would take the unit
+        // back. Drive sends the scripted command when there is one, otherwise a squad hold for the first target (B, then C)
+        // whose move just ended, so a target stays under squad command for the whole run. holds receives each hold's tick.
+        internal static bool Arrived(M6World w, ulong key) => w.Has<SquadStanding>(key)
+            && w.Read<SquadStanding>(key).Kind == StandingKind.Move && !w.Read<MoveIntent>(key).Active;
+        internal static InputFrame Drive(M6World w, InputFrame scripted, List<long> holds = null, bool withC = false)
+        {
+            if (scripted.Squad.HasValue) return scripted;
+            long next = w.Sim.Clock.Tick + 1;
+            if (Arrived(w, KeyB)) { holds?.Add(next); return Command(SquadCommandKind.Hold, 2); }
+            if (withC && Arrived(w, KeyC)) { holds?.Add(next); return Command(SquadCommandKind.Hold, 3); }
+            return default;
+        }
+        internal static bool Commanded(M6World w, ulong key) => w.Has<SquadStanding>(key);
+
         internal static StableId Id(M6World w, ulong key) => w.Sim.Entities.StableOf(w.Unit(key));
 
         // The first thinking tick of a unit (SimpleAiSystem.cs: (tick + id % T) % T == 0), in 1..T.

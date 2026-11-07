@@ -135,3 +135,33 @@ original:
 |                 { contacts?.Saw(id, seen, c.Clock.Tick); if (moving) StopUnit(id, here, target); continue; }
 replacement:
 |                 { contacts?.Saw(id, seen, c.Clock.Tick); if (moving && contacts == null) StopUnit(id, here, target); continue; }
+
+[a3-13-switch-only-ignored]
+file = Assets/WarCore/Battle/Ai/TargetMemory.cs
+filter = FullyQualifiedName~WarCore.Tests.A3Memory
+expect = WarCore.Tests.A3MemoryTests.NewTarget_ReplacesTheEntry
+note = a different target never replaces an entry (the same target still updates)
+original:
+|         internal void Saw(StableId observer, EntityId target, long tick) =>
+|             entries[observer.Value] = new Entry { Target = combat.Entities.StableOf(target), At = combat.Point(target), Seen = tick };
+replacement:
+|         internal void Saw(StableId observer, EntityId target, long tick)
+|         {
+|             if (entries.TryGetValue(observer.Value, out Entry old) && !old.Target.Equals(combat.Entities.StableOf(target))) return;
+|             entries[observer.Value] = new Entry { Target = combat.Entities.StableOf(target), At = combat.Point(target), Seen = tick };
+|         }
+
+[a3-14-resighting-after-gap-ignored]
+file = Assets/WarCore/Battle/Ai/TargetMemory.cs
+filter = FullyQualifiedName~WarCore.Tests.A3Memory
+expect = WarCore.Tests.A3MemoryTests.SeenAgain_RestartsTheWindow
+note = an entry older than one thinking interval is not refreshed (uninterrupted sighting still updates)
+original:
+|         internal void Saw(StableId observer, EntityId target, long tick) =>
+|             entries[observer.Value] = new Entry { Target = combat.Entities.StableOf(target), At = combat.Point(target), Seen = tick };
+replacement:
+|         internal void Saw(StableId observer, EntityId target, long tick)
+|         {
+|             if (entries.TryGetValue(observer.Value, out Entry old) && tick - old.Seen > 10) return;
+|             entries[observer.Value] = new Entry { Target = combat.Entities.StableOf(target), At = combat.Point(target), Seen = tick };
+|         }

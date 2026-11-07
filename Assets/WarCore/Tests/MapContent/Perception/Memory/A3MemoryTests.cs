@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using NUnit.Framework;
 using WarCore.Combat;
+using WarCore.Interim;
 using WarCore.Presentation;
 using WarCore.Sim;
 
@@ -31,12 +33,16 @@ namespace WarCore.Tests
         private static InputFrame Script(long tick, SimVec3 to) =>
             tick == 1 ? A3.Command(SquadCommandKind.Hold, 2) : tick == MoveTick ? A3.Command(SquadCommandKind.MoveTo, 2, to) : default;
 
-        // Steps one tick; returns B's point at the end of the previous tick. A never moves.
-        private static SimVec3 Step(M6World w, InputFrame input)
+        // Steps one tick (the scripted command, else a hold for a target whose move just ended); returns B's point at the end
+        // of the previous tick. A never moves; B (and C from tick 2) stay under squad command.
+        private static SimVec3 Step(M6World w, InputFrame scripted, List<long> holds = null, bool withC = false)
         {
             SimVec3 before = w.Read<Position>(A3.KeyB).Value;
-            w.Sim.Step(input);
-            Assert.That(w.Read<Position>(A3.KeyA).Value, Is.EqualTo(A3.AAt), "A stands still, tick " + w.Sim.Clock.Tick);
+            w.Sim.Step(A3.Drive(w, scripted, holds, withC));
+            long tick = w.Sim.Clock.Tick;
+            Assert.That(w.Read<Position>(A3.KeyA).Value, Is.EqualTo(A3.AAt), "A stands still, tick " + tick);
+            Assert.That(A3.Commanded(w, A3.KeyB), Is.True, "B under squad command, tick " + tick);
+            if (withC && tick >= 2) Assert.That(A3.Commanded(w, A3.KeyC), Is.True, "C under squad command, tick " + tick);
             return before;
         }
 
@@ -70,17 +76,32 @@ namespace WarCore.Tests
             }
         }
 
+        // The reader's refusals: a tick before S, an observer without an entry; every output is the default.
+        [Test]
+        public void Recall_RefusesWithDefaults()
+        {
+            M6World w = World(BStart, 60);
+            for (long t = 1; t <= 30; t++) Step(w, Script(t, BGrass));
+            Assert.That(A3.Recall(w, A3.KeyA, 30, out _, out _, out long seen), Is.True);
+            Assert.That(seen, Is.EqualTo(26));
+            Assert.That(A3.Recall(w, A3.KeyA, 25, out StableId target, out SimVec3 at, out seen), Is.False, "before S");
+            Assert.That(target, Is.EqualTo(default(StableId))); Assert.That(at, Is.EqualTo(default(SimVec3))); Assert.That(seen, Is.EqualTo(0L));
+            Assert.That(A3.Recall(w, A3.KeyB, 30, out target, out at, out seen), Is.False, "no entry");
+            Assert.That(target, Is.EqualTo(default(StableId))); Assert.That(at, Is.EqualTo(default(SimVec3))); Assert.That(seen, Is.EqualTo(0L));
+        }
+
         // 4, 5, 6: after the last sighting s the entry is frozen for M ticks, readable through s+M-1, refused at s+M before it
         // is deleted, and deleted by the step of s+M. why(w) states, on each later thinking tick, why A no longer sees B.
-        private static void LoseAndForget(SimVec3 start, SimVec3 to, long s, Func<M6World, bool> why)
+        private static void LoseAndForget(SimVec3 start, SimVec3 to, long s, long hold, int dx, int dz, Func<M6World, bool> why)
         {
             const int M = 60;
             M6World w = World(start, M);
             SimVec3 p = default;
             bool apart = false;
+            var holds = new List<long>();
             for (long t = 1; t <= s + M; t++)
             {
-                SimVec3 before = Step(w, Script(t, to));
+                SimVec3 before = Step(w, Script(t, to), holds);
                 if (t == s) p = before;
                 if (t >= s && t <= s + M - 1)
                 {
@@ -95,13 +116,19 @@ namespace WarCore.Tests
                 }
             }
             Assert.That(apart, Is.True, "B's real point differs from P while forgotten");
+            // B ended its move on 'to' (hold sent on the next tick) and stands there under the hold, dx, dz metres from A.
+            Assert.That(holds, Is.EqualTo(new[] { hold }), "the hold after arrival");
+            SimVec3 end = w.Read<Position>(A3.KeyB).Value;
+            Assert.That(end, Is.EqualTo(to));
+            Assert.That(w.Read<SquadStanding>(A3.KeyB).Kind, Is.EqualTo(StandingKind.Hold));
+            Assert.That(A3.Flat(end, A3.AAt), Is.EqualTo(new SimVec3(SimFix.FromInt(dx), default, SimFix.FromInt(dz)).LengthSquared));
             Assert.That(A3.Count(w), Is.EqualTo(0), "deleted by the step of s+M");
         }
 
         [Test]
         public void Grass_LostThenForgotten()
         {
-            LoseAndForget(BStart, BGrass, 46, w =>
+            LoseAndForget(BStart, BGrass, 46, 87, 1, 14, w =>
             {
                 SimVec3 b = w.Read<Position>(A3.KeyB).Value;
                 SimWide d = A3.Flat(b, A3.AAt);
@@ -112,7 +139,7 @@ namespace WarCore.Tests
         [Test]
         public void Wall_LostThenForgotten()
         {
-            LoseAndForget(WallStart, WallEnd, 56, w =>
+            LoseAndForget(WallStart, WallEnd, 56, 81, 10, 9, w =>
             {
                 SimVec3 b = w.Read<Position>(A3.KeyB).Value;
                 return !InGrass(b) && A3.Flat(b, A3.AAt) <= A3.Squared(20) && !w.Combat.Visible(w.Unit(A3.KeyA), w.Unit(A3.KeyB));
@@ -122,7 +149,7 @@ namespace WarCore.Tests
         [Test]
         public void Range_LostThenForgotten()
         {
-            LoseAndForget(FarStart, FarEnd, 136, w =>
+            LoseAndForget(FarStart, FarEnd, 136, 172, 14, 18, w =>
             {
                 SimVec3 b = w.Read<Position>(A3.KeyB).Value;
                 return !InGrass(b) && A3.Flat(b, A3.AAt) > A3.Squared(20);
@@ -136,12 +163,13 @@ namespace WarCore.Tests
             const long lastB = 46, firstC = 66, cMove = 21;
             M6World w = World(BStart, 60, A3.Target(A3.KeyC, 3, A2.Cell(38, 28)));
             SimVec3 pB = default;
+            var holds = new List<long>();
             for (long t = 1; t <= 200; t++)
             {
                 InputFrame input = t == 2 ? A3.Command(SquadCommandKind.Hold, 3)
                     : t == cMove ? A3.Command(SquadCommandKind.MoveTo, 3, A2.Cell(30, 12)) : Script(t, BGrass);
                 SimVec3 cBefore = w.Read<Position>(A3.KeyC).Value;
-                SimVec3 before = Step(w, input);
+                SimVec3 before = Step(w, input, holds, true);
                 if (t == lastB) pB = before;
                 if (t >= lastB && t < firstC) AssertEntry(w, t, A3.KeyB, pB, lastB);
                 if (t == firstC) AssertEntry(w, t, A3.KeyC, cBefore, firstC);
@@ -151,6 +179,7 @@ namespace WarCore.Tests
                     Assert.That(target, Is.EqualTo(A3.Id(w, A3.KeyC)), "never B again, tick " + t);
                 }
             }
+            Assert.That(holds, Is.EqualTo(new long[] { 87 }), "B's hold after arrival; C is still walking at 200");
         }
 
         // 8: B (seen last on 46) walks back out of the grass and is selected again on 66, 76 and 86 before hiding again:
@@ -162,14 +191,15 @@ namespace WarCore.Tests
             const long first = 46, again = 66, s2 = 86;
             M6World w = World(BStart, M);
             SimVec3 p = default;
+            long seenAt = 0;
+            var holds = new List<long>();
             for (long t = 1; t <= s2 + M; t++)
             {
                 InputFrame input = t == 60 ? A3.Command(SquadCommandKind.MoveTo, 2, A2.Cell(21, 20))
                     : t == 80 ? A3.Command(SquadCommandKind.MoveTo, 2, BGrass) : Script(t, BGrass);
-                SimVec3 before = Step(w, input);
-                if (t == first || t == again || t == 76 || t == s2) p = before;
-                if (t >= first && t < again) AssertEntry(w, t, A3.KeyB, p, first);
-                if (t >= s2 && t <= s2 + M - 1) AssertEntry(w, t, A3.KeyB, p, s2);
+                SimVec3 before = Step(w, input, holds);
+                if (t == first || t == again || t == 76 || t == s2) { p = before; seenAt = t; }
+                if (t >= first && t <= s2 + M - 1) AssertEntry(w, t, A3.KeyB, p, seenAt);
                 if (t == again) Assert.That(again - first, Is.LessThan(M), "seen again inside the window");
                 if (t == s2 + M - 1)
                 {
@@ -178,6 +208,8 @@ namespace WarCore.Tests
                 }
             }
             Assert.That(A3.Count(w), Is.EqualTo(0));
+            Assert.That(holds, Is.EqualTo(new long[] { 126 }), "B's hold after its last arrival");
+            Assert.That(w.Read<Position>(A3.KeyB).Value, Is.EqualTo(BGrass));
         }
 
         // 9(a): B killed on tick 70 (death settles after Queries): unreadable at the end of 70, stored until the step of 71.
@@ -193,7 +225,7 @@ namespace WarCore.Tests
             Assert.That(w.Dead(A3.KeyB), Is.True);
             Assert.That(A3.Recall(w, A3.KeyA, 70, out _, out _, out _), Is.False, "the reader refuses a dead target");
             Assert.That(A3.Count(w), Is.EqualTo(1), "the entry is still stored at the end of 70");
-            Step(w, default);
+            w.Sim.Step(default);
             Assert.That(A3.Count(w), Is.EqualTo(0), "deleted on 71");
         }
 
