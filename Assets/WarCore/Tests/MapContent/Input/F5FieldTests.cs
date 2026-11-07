@@ -68,6 +68,21 @@ namespace WarCore.Tests
             Assert.That(w.Session.CommandLog.Count, Is.EqualTo(1));
         }
 
+        // Same contract with MoveTo: no follow target, so a dropped squad command fails on an assertion, not in frame validation.
+        [Test]
+        public void SquadMoveToAndBlock_OnTheSameTick_BothReachTheSim()
+        {
+            var w = F5World.World(standing: true);
+            w.Session.Enqueue(BridgeCommand.MoveTo(2, 1, 40000, 20000));
+            w.Session.SetPlayerInput(2, new PlayerInput(0, 0, block: true));
+            w.Session.StepOnce(); w.Session.StepOnce();
+            InputFrame frame = w.Sim.Context.Input;
+            Assert.That(frame.Block, Is.True);
+            Assert.That(frame.Squad.HasValue, Is.True, "squad command kept beside player input");
+            Assert.That((frame.Squad.Value.Kind, frame.Squad.Value.Squad), Is.EqualTo((SquadCommandKind.MoveTo, 1)));
+            Assert.That(w.Read<MoveIntent>(2).Target, Is.EqualTo(SimVec3.Metres(40, 0, 20)));
+        }
+
         [Test]
         public void SyntheticClick_CopiesBlockThrowAndSkill_ThenReleasesOnlyPrimary()
         {
