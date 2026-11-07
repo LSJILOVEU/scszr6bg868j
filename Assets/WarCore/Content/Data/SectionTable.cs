@@ -17,7 +17,7 @@ namespace WarCore.Content
         internal static readonly SectionTable Default = new SectionTable(new IContentSection[]
         {
             new WeaponsSection(), new MeleeSection(), new UnitTypesSection(), new CombatSection(), new MatchSection(),
-            new SurfacesSection(), new SlopeRuleSection(),
+            new SurfacesSection(), new SlopeRuleSection(), new AiSection(),
         });
 
         private readonly IContentSection[] sections, buildOrder;

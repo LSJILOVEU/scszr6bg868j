@@ -71,7 +71,7 @@ namespace WarCore.Tests
             One(W + "DuplicateIdInOneLayerIsRejected", "dup", "weapons w, w", "dup", "\"weapons\": [ { \"id\": \"w\" }, { \"id\": \"w\" } ]", "content layer 'dup' weapon 'w' is duplicated");
             One(W + "MisspelledFieldIsRejectedNotIgnored", "typo", "fireIntervalMili", "typo",
                 "\"weapons\": [ { \"id\": \"rwr.weapon-1\", \"fireIntervalMili\": 1 } ]", "content pack 'typo' layer 'typo' weapon 'rwr.weapon-1' field 'fireIntervalMili': unknown field name (misspelled?)");
-            Raw(W + "UnknownTopLevelFieldIsRejected", "top", "weapon (singular)", "top", "content layer 'top' has unknown field 'weapon' (line 1); allowed: id, extends, weapons, melee, unitTypes, combat, match, surfaces, slopeRule", L("top", "{ \"id\": \"top\", \"extends\": \"rwr\", \"weapon\": [] }"));
+            Raw(W + "UnknownTopLevelFieldIsRejected", "top", "weapon (singular)", "top", "content layer 'top' has unknown field 'weapon' (line 1); allowed: id, extends, weapons, melee, unitTypes, combat, match, surfaces, slopeRule, ai", L("top", "{ \"id\": \"top\", \"extends\": \"rwr\", \"weapon\": [] }"));
             One(W + "MissingFieldInANewWeaponIsRejectedNotDefaulted", "miss", "new weapon with only magazine", "miss",
                 "\"weapons\": [ { \"id\": \"miss.w\", \"magazine\": 3 } ]", "content pack 'miss' layer 'miss' weapon 'miss.w' is missing field 'fireIntervalMilli'");
             One(W + "DuplicateJsonPropertyIsRejected", "twice", "captureTicks twice", "twice", "\"match\": { \"captureTicks\": 1, \"captureTicks\": 2 }", "content layer 'twice' line 1 (match): field 'captureTicks' is repeated in the same object");
@@ -213,7 +213,7 @@ namespace WarCore.Tests
                 One("new.merge-order", "sections " + first + ".. have the wrong kind", "the first reported is section " + first, "mo" + first,
                     string.Join(", ", wrongKind, first, wrongKind.Length - first), mergeExpected[first]);
             // Layer-level order: the top-level key check and the id check come before the parent is read; the parent merges before the child.
-            Raw("new.layer-order", "unknown key and a missing parent", "-", "lo1", "content layer 'lo1' has unknown field 'nope' (line 1); allowed: id, extends, weapons, melee, unitTypes, combat, match, surfaces, slopeRule", L("lo1", "{ \"id\": \"lo1\", \"extends\": \"missing\", \"nope\": 1 }"));
+            Raw("new.layer-order", "unknown key and a missing parent", "-", "lo1", "content layer 'lo1' has unknown field 'nope' (line 1); allowed: id, extends, weapons, melee, unitTypes, combat, match, surfaces, slopeRule, ai", L("lo1", "{ \"id\": \"lo1\", \"extends\": \"missing\", \"nope\": 1 }"));
             Raw("new.layer-order", "wrong id and a missing parent", "-", "lo2", "content layer file name is 'lo2' but its id is 'other'", L("lo2", "{ \"id\": \"other\", \"extends\": \"missing\" }"));
             Raw("new.layer-order", "bad weapons in parent and child", "-", "lo4", "content layer 'lo3' weapon must be an array",
                 L("lo3", Layer("lo3", "\"weapons\": { }")), L("lo4", "{ \"id\": \"lo4\", \"extends\": \"lo3\", \"weapons\": { } }"));
