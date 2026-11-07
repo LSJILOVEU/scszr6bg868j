@@ -45,10 +45,10 @@ namespace WarCore.Tests
             return bases.ToArray();
         }
 
-        // Capture takes 8000 ticks and the AI thinks every 1000000, so neither acts inside any test window.
+        // Capture takes 8000 ticks (unless a test sets captureTicks) and the AI thinks every 1000000, so neither acts inside any test window.
         internal static MatchPack Pack(ControlPointDef[] points, SpawnAnchor[] bases, int respawn, int columns = 2, int rows = 2,
-            int interval = 1000000, int max = 100000) =>
-            new MatchPack(points, bases, 2, 1, false, 8000, InterruptMode.Reset, 1, interval, 1000000, max, SimFix.FromInt(35),
+            int interval = 1000000, int max = 100000, int captureTicks = 8000) =>
+            new MatchPack(points, bases, 2, 1, false, captureTicks, InterruptMode.Reset, 1, interval, 1000000, max, SimFix.FromInt(35),
                 columns, rows, SimFix.FromInt(2), respawn);
 
         // One literal weapon (index 0): a shot every tick, 30 rounds, no spread; hits deal no damage; 100 health.

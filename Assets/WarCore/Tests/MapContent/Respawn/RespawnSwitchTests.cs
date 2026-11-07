@@ -114,6 +114,31 @@ namespace WarCore.Tests
         public void Anchor_NearestPointBelongsToEnemy_UsesOwnPoint() =>
             Assert.That(RespawnAt(Points(Spawn(1, 22, 20, owner: 2), Spawn(2, 40, 20)), Bases(new SpawnAnchor(1, P(5, 38)))), Is.EqualTo(P(39, 19)));
 
+        // The owner is read live: the neutral point at (25, 20) is captured by an ally standing in it (3 capture ticks) before the
+        // player dies at tick 10, so the respawn uses it, not the point the team owned from the start at (40, 20).
+        [Test]
+        public void Anchor_UsesAPointCapturedDuringTheMatch()
+        {
+            const long death = 10;
+            const ulong taker = 4;
+            var w = World(Units(U(Reserve, 0, 0, reserve: true), U(taker, 26, 21)),
+                Pack(Points(Spawn(1, 25, 20, owner: 0), Spawn(2, 40, 20)), Bases(new SpawnAnchor(1, P(5, 38))), D, captureTicks: 3));
+            KillAt(w, death, Player);
+            w.Step((int)death);
+            Assert.That(w.Capture.Points[0].Owner, Is.EqualTo(1), "captured before the death");
+            Assert.That(w.Dead(Player), Is.True);
+            w.Step(D);
+            Assert.That(w.Sim.Clock.Tick, Is.EqualTo(death + D));
+            Assert.That(Controlled(w), Is.EqualTo(Reserve)); Assert.That(Switches(w), Is.EqualTo(1));
+            Assert.That(Point(w, Reserve), Is.EqualTo(P(24, 19)));
+        }
+
+        // A nearer owned point without a spawn (its Spawn field set to (22, 20) all the same) is never an anchor.
+        [Test]
+        public void Anchor_OwnedPointWithoutSpawnIsSkipped() =>
+            Assert.That(RespawnAt(Points(new ControlPointDef(1, P(22, 20), SimFix.FromInt(2), 1, false, P(22, 20)), Spawn(2, 30, 20)),
+                Bases(new SpawnAnchor(1, P(5, 38)))), Is.EqualTo(P(29, 19)));
+
         [Test]
         public void Anchor_NoOwnedPointAndNoBase_NeverSwitches()
         {
