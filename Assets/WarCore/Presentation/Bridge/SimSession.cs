@@ -313,7 +313,8 @@ namespace WarCore.Presentation
                 input = new InputFrame(
                     new SimVec3(SimFix.Ratio(nextPlayerInput.MoveXMilli, 1000), default, SimFix.Ratio(nextPlayerInput.MoveZMilli, 1000)),
                     Target(nextPlayerInput.AimXMm, nextPlayerInput.AimZMm, groundRaw),
-                    primaryAttack: nextPlayerInput.Primary, squad: squad);
+                    primaryAttack: nextPlayerInput.Primary, block: nextPlayerInput.Block,
+                    @throw: nextPlayerInput.Throw, skillSlot: nextPlayerInput.SkillSlot, squad: squad);
             }
             if (StepTimingEnabled && stepSampleCount < stepSamples.Length)
             {

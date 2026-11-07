@@ -28,8 +28,9 @@ namespace WarCore.Presentation
             releaseTick = 0;
             if (clickTick != 0 && !input.Primary)
             {
+                // Copy every field; only Primary is forced on. Block, throw and skill pass as held.
                 session.SetPlayerInput(next, new PlayerInput(input.MoveXMilli, input.MoveZMilli,
-                    input.AimXMm, input.AimZMm, true));
+                    input.AimXMm, input.AimZMm, true, input.Block, input.Throw, input.SkillSlot));
                 releaseTick = checked(next + 1);
                 session.SetPlayerInput(releaseTick, input);
             }
