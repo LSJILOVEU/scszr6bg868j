@@ -344,6 +344,28 @@ def case_paths(c, base_wt):
           "%d %s %s" % (rc, verdicts(out), first_line(err)))
     check("paths: file behind the link unchanged", read(outside) == body)
     git(c.repo, "reset", "-q", "--hard", "HEAD~1")
+    # a symlinked directory: the file itself is no link, but its real path leaves the copy
+    outdir = os.path.join(c.work, "outside-dir")
+    os.makedirs(outdir)
+    inner = os.path.join(outdir, "Inner.txt")
+    with open(inner, "w") as f:
+        f.write(body)
+    dlink = "Assets/WarCore/Presentation/SelfTestDirLink"
+    os.symlink(outdir, os.path.join(c.repo, dlink))
+    git(c.repo, "-c", "user.name=selftest", "-c", "user.email=selftest@invalid", "-c", "core.hooksPath=/dev/null",
+        "add", dlink)
+    git(c.repo, "-c", "user.name=selftest", "-c", "user.email=selftest@invalid", "-c", "core.hooksPath=/dev/null",
+        "commit", "-q", "-m", "directory symlink")
+    with open(lst, "w") as f:
+        f.write("[selftest-dirlink]\nfile = %s/Inner.txt\nfilter = FullyQualifiedName~E1b\n"
+                "expect = WarCore.Tests.E1bRecipeTests.SoldiersMapFieldByField\nnote = directory symlink\n"
+                "original:\n| = 6000;\nreplacement:\n| = 6001;\n" % dlink)
+    rc, out, err, md = c.run(lst)
+    check("paths: file under a symlinked directory is invalid",
+          verdicts(out) == [("selftest-dirlink", "invalid (original text not found exactly once)")],
+          "%d %s %s" % (rc, verdicts(out), first_line(err)))
+    check("paths: file behind the directory link unchanged", read(inner) == body)
+    git(c.repo, "reset", "-q", "--hard", "HEAD~1")
     for opt in ("--out", "--log"):
         target = os.path.join(c.repo, "tools", "headless", "README.md")
         before = read(target)
@@ -396,6 +418,13 @@ def case_hygiene(work, repo):
     c3 = commit(keep + ["    }", "}"], "delete only")
     rc, out = hy(b0, c3)
     check("6: delete only passes", rc == 0, out)
+    for rule, line in (("assert-pass", "        Assert.Pass(\"done\");"),
+                       ("count-at-least-zero", "        Assert.That(n, Is.GreaterThanOrEqualTo(0));")):
+        git(h, "reset", "-q", "--hard", b0)
+        c4 = commit(keep + [old, line, "    }", "}"], "add " + rule)
+        rc, out = hy(b0, c4)
+        check("6: added %s line fails with file and line" % rule,
+              rc == 1 and "Assets/WarCore/Tests/EditMode/HygieneSelfTest.cs:5: %s" % rule in out, out)
 
 
 def main():
