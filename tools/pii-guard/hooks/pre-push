@@ -1,10 +1,10 @@
 #!/bin/sh
 # Scan every commit that is about to be pushed (messages, identity, dates, diffs).
-# Commits the push target already has right now (its live branch heads, read with ls-remote) are skipped.
+# Commits the push URL already has right now (its live branch heads, read with ls-remote) are skipped.
 # If the target cannot be read, nothing is skipped beyond the ref being updated.
 root="$(git rev-parse --show-toplevel)"
 zero=0000000000000000000000000000000000000000
-heads="$(git ls-remote "$1" 'refs/heads/*' 2>/dev/null | cut -f1)" || heads=""
+heads="$(git ls-remote "$2" 'refs/heads/*' 2>/dev/null | cut -f1)" || heads=""
 excl=""
 for s in $heads; do
   git cat-file -e "$s^{commit}" 2>/dev/null && excl="$excl ^$s"
