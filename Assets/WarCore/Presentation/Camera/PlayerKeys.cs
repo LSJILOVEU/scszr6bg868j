@@ -10,7 +10,7 @@ namespace WarCore.Presentation
         // A new list on every call, so a caller that edits it cannot change the next caller's table.
         public static IReadOnlyList<PlayerKeyBinding> Default => new[]
         {
-            // Two block keys: a trackpad has no convenient right button.
+            // Two block keys, so blocking works without a right mouse button.
             new PlayerKeyBinding("Mouse1", PlayerKeyAction.Block),
             new PlayerKeyBinding("Space", PlayerKeyAction.Block),
             new PlayerKeyBinding("G", PlayerKeyAction.Throw),
