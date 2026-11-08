@@ -167,7 +167,6 @@ namespace WarCore.Sim
             // A preceding dispel can turn a validated refresh into a new instance.
             RequireSaturatedStatusCapture(item,d,sim.Clock.Tick);
             if(statusCount==statuses.Length)throw new SimBoundaryException("M0C_STATUS_UNRESERVED_CAPACITY");
-            if(effectNext==ulong.MaxValue)throw new SimBoundaryException("M0C_STATUS_TOKEN_EXHAUSTED");
             bool grouped=d.StackScope==GameplayStackScope.TargetAndSource;
             GameplayStatusRow created=new GameplayStatusRow{Target=item.Target,
                 Key=new GameplayStatusInstanceKey(item.Target.Id,d.Key,grouped,grouped?item.Snapshot.Source:default,effectNext),

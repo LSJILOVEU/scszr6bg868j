@@ -133,8 +133,7 @@ namespace WarCore.Sim
         public EntityLink Link(EntityId entity) => new EntityLink(StableOf(entity));
         public bool TryResolve(StableId id, out EntityRef entity)
         {
-            if (IdentityMode != IdentityMode.StableWorld)
-                throw new SimBoundaryException("Stable lookup requires StableWorld.");
+            RequireStableWorld();
             int index = FindIdentity(id);
             entity = index < 0 ? default : identities[index].Address;
             return index >= 0 && identities[index].Life == IdentityLife.Active && IsAlive(entity);
