@@ -1,0 +1,206 @@
+# P1 AI reaction time: the required mutations of the work package. Test classes are named P1*.
+
+[p1-01-first-plus-one]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P1
+expect = WarCore.Tests.P1TimingTests.FirstShot_IsTPlusR
+note = the clock starts on t + 1 instead of t
+original:
+| firsts[slot] = tick; lasts[slot] = tick;
+replacement:
+| firsts[slot] = tick + 1; lasts[slot] = tick;
+
+[p1-02-inclusive]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P1
+expect = WarCore.Tests.P1TimingTests.FirstShot_IsTPlusR
+note = the delay check < R becomes <= R
+original:
+| || lasts[slot] != tick || tick - firsts[slot] < ticks)
+replacement:
+| || lasts[slot] != tick || tick - firsts[slot] <= ticks)
+
+[p1-03-start-after-cooldown]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P1
+expect = WarCore.Tests.P1TimingTests.Cooldown_ReactionAndCooldownRunTogether
+note = the clock only starts once the weapon is ready (a cooling shooter keeps no entry)
+original:
+|             if ((uint)slot >= (uint)has.Length) return;
+|             if (unit.Weapon < 0
+replacement:
+|             if ((uint)slot >= (uint)has.Length) return;
+|             if (unit.DueMilli > tick * 1000) { has[slot] = false; return; }
+|             if (unit.Weapon < 0
+
+[p1-04-target-not-compared]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P1
+expect = WarCore.Tests.P1TimingTests.NewTarget_StartsAgain
+note = a new target keeps the old clock
+original:
+| shooters[slot].Equals(self) && targets[slot].Equals(selected) && lasts[slot] == tick - 1)
+replacement:
+| shooters[slot].Equals(self) && lasts[slot] == tick - 1)
+
+[p1-05-no-continuity]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P1
+expect = WarCore.Tests.P1TimingTests.Continuity_WithoutStep
+note = a tick without Sense does not break the clock
+original:
+| targets[slot].Equals(selected) && lasts[slot] == tick - 1)
+replacement:
+| targets[slot].Equals(selected))
+
+[p1-06-not-saved]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P1
+expect = WarCore.Tests.P1StateTests.Restore_KeepsTheClock
+note = the save writes no entries
+original:
+|             writer.Int32(Count);
+|             foreach (EntityId entity in stage.Capture())
+|             {
+|                 if (!Exported(entity)) continue;
+|                 int slot = entity.Id;
+|                 writer.
+replacement:
+|             writer.Int32(0);
+|             foreach (EntityId entity in stage.Capture())
+|             {
+|                 if (entity.Id >= 0) continue;
+|                 int slot = entity.Id;
+|                 writer.
+
+[p1-07-holdfire]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P1
+expect = WarCore.Tests.P1TimingTests.FirstShot_IsTPlusR
+note = the delay holds fire (pushes the cooldown) instead of passing
+original:
+|                 direction = default;
+|                 return AutoFireAction.Pass;
+replacement:
+|                 direction = default;
+|                 return AutoFireAction.HoldFire;
+
+[p1-08-flat-registers]
+file = Assets/WarCore/Presentation/Bridge/Features/AiFireFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.P1
+expect = WarCore.Tests.P1BaselineTests.FlatMapWithPack_DoesNotRegister
+note = a flat map with a content pack registers too
+original:
+| a.Terrain != null && a.Recipe.TerrainPack != null
+replacement:
+| a.Recipe.TerrainPack != null
+
+[p1-09-zero-registers]
+file = Assets/WarCore/Presentation/Bridge/Features/AiFireFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.P1
+expect = WarCore.Tests.P1BaselineTests.LeftOutAndZero_StepTogether
+note = R = 0 registers too (the constructor accepts 0, so nothing throws)
+original:
+| Section<AiRules>().ReactionTicks > 0;
+replacement:
+| Section<AiRules>().ReactionTicks >= 0;
+
+[p1-10-no-target-keeps]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P1
+expect = WarCore.Tests.P1TimingTests.LostTarget_ClearsTheEntryAtOnce
+note = no selectable target leaves the entry in place
+original:
+|             {
+|                 has[slot] = false;
+|                 return;
+|             }
+replacement:
+|             {
+|                 slot += 0;
+|                 return;
+|             }
+
+[p1-11-slot-order]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P1
+expect = WarCore.Tests.P1StateTests.ReverseAllocation_SameHashesAndRestore
+note = the hash lists entries in slot order
+original:
+|             foreach (EntityId entity in stage.Capture())
+|             {
+|                 if (!Exported(entity)) continue;
+|                 int slot = entity.Id;
+|                 hash.Add(
+replacement:
+|             for (int slot = 0; slot < has.Length; slot++)
+|             {
+|                 if (!has[slot]) continue;
+|                 hash.Add(
+
+[p1-12-old-slot]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P1
+expect = WarCore.Tests.P1StateTests.ReverseAllocation_SameHashesAndRestore
+note = the save also writes the source slot and the load puts the entry there (the shooter is still read and checked)
+original:
+|                 writer.UInt64(shooters[slot].Value); writer.UInt64(targets[slot].Value); writer.Int64(firsts[slot]); writer.Int64(lasts[slot]);
+|             }
+|         }
+|
+|         public void LoadState(SimStateReader reader)
+|         {
+|             Array.Clear(has, 0, has.Length);
+|             SimStateReader.Require(reader.Int32() == ticks, "AI reaction time differs.");
+|             int count = reader.Count(combat.Entities.Capacity);
+|             ulong previous = 0;
+|             for (int i = 0; i < count; i++)
+|             {
+|                 ulong key = reader.UInt64();
+|                 SimStateReader.Require(i == 0 || key > previous, "AI reaction shooters are not in strictly increasing order.");
+|                 previous = key;
+|                 var shooter = new StableId(key);
+|                 var target = new StableId(reader.UInt64());
+|                 long first = reader.Int64(), last = reader.Int64();
+|                 SimStateReader.Require(first >= 0, "AI reaction tick is negative.");
+|                 SimStateReader.Require(last >= first, "AI reaction last tick precedes its first tick.");
+|                 SimStateReader.Require(combat.Entities.TryResolve(shooter, out EntityRef found), "AI reaction shooter does not exist.");
+|                 int slot = ((EntityId)found).Id;
+|                 SimStateReader.Require((uint)slot < (uint)has.Length, "AI reaction shooter is outside the entity capacity.");
+|
+replacement:
+|                 writer.UInt64(shooters[slot].Value); writer.UInt64(targets[slot].Value); writer.Int64(firsts[slot]); writer.Int64(lasts[slot]); writer.Int32(slot);
+|             }
+|         }
+|
+|         public void LoadState(SimStateReader reader)
+|         {
+|             Array.Clear(has, 0, has.Length);
+|             SimStateReader.Require(reader.Int32() == ticks, "AI reaction time differs.");
+|             int count = reader.Count(combat.Entities.Capacity);
+|             ulong previous = 0;
+|             for (int i = 0; i < count; i++)
+|             {
+|                 ulong key = reader.UInt64();
+|                 SimStateReader.Require(i == 0 || key > previous, "AI reaction shooters are not in strictly increasing order.");
+|                 previous = key;
+|                 var shooter = new StableId(key);
+|                 var target = new StableId(reader.UInt64());
+|                 long first = reader.Int64(), last = reader.Int64();
+|                 int old = reader.Int32();
+|                 SimStateReader.Require(first >= 0, "AI reaction tick is negative.");
+|                 SimStateReader.Require(last >= first, "AI reaction last tick precedes its first tick.");
+|                 SimStateReader.Require(combat.Entities.TryResolve(shooter, out EntityRef found), "AI reaction shooter does not exist.");
+|                 int slot = old;
+|                 SimStateReader.Require((uint)slot < (uint)has.Length, "AI reaction shooter is outside the entity capacity.");
+|
+
+[p1-13-raw-slots]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P1
+expect = WarCore.Tests.P1StateTests.DestroyedAndReusedSlot_AreNotWritten
+note = the written count takes every raw slot entry, past the entity set and the identity match
+original:
+|                 foreach (EntityId entity in stage.Capture()) if (Exported(entity)) count++;
+replacement:
+|                 for (int slot = 0; slot < has.Length; slot++) if (has[slot]) count++;
