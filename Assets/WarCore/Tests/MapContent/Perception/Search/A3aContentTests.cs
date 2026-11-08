@@ -64,7 +64,9 @@ namespace WarCore.Tests
         {
             M6World w = On(Wp23.Make(A2.Width, A2.Depth, 0, 4 * A2.S, A2.DWalls, 2 * A2.S), A3a.Ai(60, 60));
             Assert.That(L4.Systems(w), Does.Not.Contain("battle.ai-search"));
+            Assert.That(L4.Systems(w), Does.Not.Contain("battle.ai-contacts"));
             Assert.That(w.System<TargetSearch>(), Is.Null);
+            Assert.That(w.System<TargetMemory>(), Is.Null);
         }
 
         // 10: a height field without a surface table is a terrain world: registered.

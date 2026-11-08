@@ -1,8 +1,10 @@
 using System.Collections.Generic;
 using System.Reflection;
+using System;
 using NUnit.Framework;
 using WarCore.Battle;
 using WarCore.Content;
+using WarCore.Interim;
 using WarCore.Presentation;
 using WarCore.Sim;
 
@@ -18,7 +20,7 @@ namespace WarCore.Tests
 
         private static M6World World(out L4.Calls calls)
         {
-            M6World w = A3a.World(X, A3a.Ai(60, 60, 300), L4.Join(A2.DWalls, L4.Ring(30, 14)));
+            M6World w = A3a.World(X, A3a.Ai(60, 60, 300), L4.Join(A2.DWalls, L4.Ring(30, 14)), conceal: 500);
             calls = L4.Observe(w);
             Assert.That(A3a.FirstThink(w, A3a.KeyA), Is.EqualTo(6));
             return w;
@@ -30,6 +32,12 @@ namespace WarCore.Tests
 
         private static void Plant(M6World w, L4.Calls calls)
         {
+            // Slot 0 is a real canonical guard slot: point 1's first slot (the AI's own GuardSlots).
+            object slots = typeof(SimpleAiSystem).GetField("slots", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(w.System<SimpleAiSystem>());
+            Type type = slots.GetType();
+            int start = (int)type.GetMethod("Start").Invoke(slots, new object[] { 0 });
+            Assert.That((int)type.GetMethod("Canonical").Invoke(slots, new object[] { start }), Is.EqualTo(0), "slot 0 is canonical");
+            Assert.That(A3a.IsSlot(w, (SimVec3)type.GetMethod("At").Invoke(slots, new object[] { start })), Is.True);
             Assert.That(Query(w), Is.EqualTo((-1, -1, 0L)), "clean before planting");
             Assert.That(calls.Inner.HasFailed(A3a.Id(w, A3a.KeyA)), Is.False);
             typeof(FailedSlotMemory).GetMethod("Ordered", BindingFlags.NonPublic | BindingFlags.Instance)
@@ -39,7 +47,12 @@ namespace WarCore.Tests
             Assert.That(Query(w).ordered, Is.EqualTo(0), "O planted");
         }
 
-        private static void Step(M6World w, long t) => w.Sim.Step(A3a.Drive(w, t == 1 ? A3a.Command(SquadCommandKind.Hold, 2) : default));
+        // B holds from tick 1 and stays under the squad hold for the whole run.
+        private static void Step(M6World w, long t)
+        {
+            w.Sim.Step(A3a.Drive(w, t == 1 ? A3a.Command(SquadCommandKind.Hold, 2) : default));
+            Assert.That(w.Has<SquadStanding>(A3a.KeyB) && w.Read<SquadStanding>(A3a.KeyB).Kind == StandingKind.Hold, Is.True, "B holds, tick " + t);
+        }
 
         [Test]
         public void X_IsStandableAndUnreachable()

@@ -8,14 +8,14 @@ using WarCore.Sim;
 
 namespace WarCore.Tests
 {
-    // Acceptance 2-5, 7 and 13 on the search fixture (A3aFixture.cs). A thinks on 6, 16, 26, ... B holds from tick 1 and
-    // gets its only move on tick 24; it is last selected on 46 at P = (22.5, 19.7) (dirt, 9.2 m from A) and then walks
-    // into the grass, where it cannot be seen from more than 2 m. "Before the step" is the end of the previous tick: the
-    // AI decides in Requests, movement comes after.
+    // Acceptance 2-5, 7 and 13 on the search fixture (A3aFixture.cs) with the grass at concealMilli 500 (Lc = 10 m). A
+    // thinks on 6, 16, 26, ... B (6 m/s) holds from tick 1, gets its only move on tick 20 towards cell (37, 29) and is last
+    // selected on 36 at P = (24.76, 19.76) (dirt, 9.5 m from A); it hides 16 m from P, in the grass, never within 10 m of A
+    // again. "Before the step" is the end of the previous tick: the AI decides in Requests, movement comes after.
     public sealed class A3aSearchTests
     {
-        private const long Move = 24, S = 46, Go = 56, H = 146, G = 206;
-        private static readonly SimVec3 P = new SimVec3(SimFix.FromRaw(22 * A2.S + A2.S / 2), default, SimFix.FromRaw(1291046));  // z = 19.7 m (recorded raw)
+        private const long Move = 20, S = 36, Go = 46, H = 146, G = 206, RSeen = 116;
+        private static readonly SimVec3 P = new SimVec3(SimFix.FromRaw(1622832), default, SimFix.FromRaw(1295152));  // (24.76, 19.76) m, recorded raw
 
         // One tick: the script, A's point before the step, the AI's orders since the start.
         private sealed class Run
@@ -26,7 +26,7 @@ namespace WarCore.Tests
             private readonly SimVec3 hide;
             internal Run(int memory, int? search, SimVec3 hide, int failed = 0)
             {
-                W = A3a.World(A3a.BStart, A3a.Ai(memory, search, failed));
+                W = A3a.World(A3a.BStart, A3a.Ai(memory, search, failed), conceal: 500, bSpeed: 6000);
                 Calls = L4.Observe(W); this.hide = hide;
                 Assert.That(A3a.FirstThink(W, A3a.KeyA), Is.EqualTo(6), "A's thinking phase");
             }
@@ -43,7 +43,7 @@ namespace WarCore.Tests
             internal long Seen() { Assert.That(A3a.Recall(W, Tick, out _, out _, out long s), Is.True, "recall, tick " + Tick); return s; }
         }
 
-        private static readonly SimVec3 Hide = A2.Cell(22, 26);
+        private static readonly SimVec3 Hide = A2.Cell(37, 29);
 
         // 2: the walk to P, ordered once; 3: the stand, the give-up, no second walk, the deletion.
         [Test]
@@ -54,6 +54,7 @@ namespace WarCore.Tests
             Assert.That(r.ABefore[1], Is.EqualTo(A3a.AAt));
             Assert.That(A3a.At(r.W, A3a.KeyA), Is.EqualTo(A3a.AAt), "A never moved before B did");
             Assert.That(r.Calls.Orders, Is.Empty);
+            Assert.That(A3a.Flat(Hide, P), Is.GreaterThan(A3a.Squared(10)), "the hiding point is more than Lc = 10 m from P");
             r.To(S);
             Assert.That(r.Seen(), Is.EqualTo(S));
             Assert.That(A3a.Recall(r.W, S, out _, out SimVec3 p, out _), Is.True);
@@ -105,7 +106,9 @@ namespace WarCore.Tests
             r.Step();
             Assert.That(r.OrdersIn(G, G), Is.EqualTo(1));
             SimVec3 slot = r.Calls.Orders[r.Calls.Orders.Count - 1].target;
+            Assert.That(A3a.IsSlot(r.W, slot), Is.True, "a guard slot (GuardSlots.TryFind)");
             Assert.That(A3a.Same(slot, A3a.Point2), Is.True, "point 2's only slot");
+            Assert.That(A3a.Same(slot, P), Is.False, "not P");
             // 3(iv): to S + M - 1 no second walk to P; on G + 10 A is not within reach of P, B unseen, A not commanded.
             for (long t = G + 1; t < S + 300; t++)
             {
@@ -133,13 +136,13 @@ namespace WarCore.Tests
             Assert.That(A3a.Same(r.Calls.Orders[r.Calls.Orders.Count - 1].target, A3a.Point2), Is.True);
         }
 
-        // 4: B stops 1.1 m past P in the grass: A sees it again on the way and engages; then B leaves and A follows the new P.
+        // 4: B stops in the grass within Lc of P: A sees it again on the way and engages; then B leaves and A follows the new P.
         [Test]
         public void SeenAgainOnTheWay_Engages()
         {
-            SimVec3 near = new SimVec3(P.X, default, SimFix.FromRaw(20 * A2.S + 8 * A2.S / 10));
+            SimVec3 near = A2.Cell(30, 24);  // grass, 6.8 m from P, 15.4 m from A's start
             var r = new Run(300, 60, near);
-            const long R = 146;
+            const long R = RSeen;
             r.To(R - 1);
             Assert.That(r.Seen(), Is.EqualTo(S), "not selected before R");
             Assert.That(A3a.SearchCount(r.W), Is.EqualTo(0));
@@ -153,7 +156,7 @@ namespace WarCore.Tests
             r.Step(A3a.Command(SquadCommandKind.MoveTo, 2, Hide));
             r.To(R + 60);
             long s2 = r.Seen();
-            Assert.That(s2, Is.GreaterThan(R)); Assert.That(s2 + 10, Is.LessThanOrEqualTo(R + 60), "lost again");
+            Assert.That(s2, Is.GreaterThanOrEqualTo(R)); Assert.That(s2 + 10, Is.LessThanOrEqualTo(R + 60), "lost again");
             Assert.That(A3a.Recall(r.W, r.Tick, out _, out SimVec3 p2, out _), Is.True);
             Assert.That(A3a.Same(p2, P), Is.False, "a new last known point");
             Assert.That(r.To(p2), Is.EqualTo(new List<long> { s2 + 10 }));

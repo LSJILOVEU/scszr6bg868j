@@ -34,6 +34,34 @@ namespace WarCore.Tests
             Assert.That(fold, Is.EqualTo(Run600));
         }
 
+        // The state hash at the end of tick 600 with the search left out, per grass concealment (100: the fixture above;
+        // 500: the behaviour tests' fixture with B at 6 m/s). Recorded on the base code (a worktree at the base commit
+        // with this file and the fixture copied in, "searchTicks" left out); see the work log.
+        internal const ulong End600Conceal100 = 5309563579600792435UL, End600Conceal500 = 1798362610565531771UL;
+
+        private static M6World Pair(int conceal, string ai) =>
+            conceal == 100 ? A3a.World(A3a.BStart, ai) : A3a.World(A3a.BStart, ai, conceal: 500, bSpeed: 6000);
+
+        // 1(b): left out and written as 0 side by side: equal state hashes on every tick, equal snapshot bytes on 300 and
+        // 600, and the tick-600 hash recorded on the base code.
+        [TestCase(100)]
+        [TestCase(500)]
+        public void LeftOutAndZero_StepTogether(int conceal)
+        {
+            M6World off = Pair(conceal, A3a.Ai(60)), zero = Pair(conceal, A3a.Ai(60, 0));
+            Assert.That(L4.Systems(zero), Is.EqualTo(L4.Systems(off)));
+            Assert.That(zero.Hash, Is.EqualTo(off.Hash), "tick 0");
+            for (long tick = 1; tick <= 600; tick++)
+            {
+                off.Sim.Step(A3a.Drive(off, A3a.Script(tick, A3a.BHide)));
+                zero.Sim.Step(A3a.Drive(zero, A3a.Script(tick, A3a.BHide)));
+                Assert.That(zero.Hash, Is.EqualTo(off.Hash), "tick " + tick);
+                if (tick == 300 || tick == 600)
+                    Assert.That(zero.Sim.SaveRetainedSnapshot(), Is.EqualTo(off.Sim.SaveRetainedSnapshot()), "snapshot bytes, tick " + tick);
+            }
+            Assert.That(off.Hash, Is.EqualTo(conceal == 100 ? End600Conceal100 : End600Conceal500));
+        }
+
         [Test]
         public void NoSearchKey_Unchanged() => Check(A3a.Ai(60));
 

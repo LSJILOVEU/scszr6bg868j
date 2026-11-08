@@ -7,14 +7,14 @@ using WarCore.Sim;
 
 namespace WarCore.Tests
 {
-    // Acceptance 8 on the search run of A3aSearchTests (S = 46, walk ordered on 56, standing from H = 146, gives up on
+    // Acceptance 8 on the search run of A3aSearchTests (S = 36, walk ordered on 46, standing from H = 146, gives up on
     // G = 206). Saved on the way (100) and while standing (170).
     public sealed class A3aStateTests
     {
-        private const long Move = 24, H = 146, G = 206;
-        private static readonly SimVec3 Hide = A2.Cell(22, 26);
+        private const long Move = 20, H = 146, G = 206;
+        private static readonly SimVec3 Hide = A2.Cell(37, 29);
         private static M6World World(int? search, bool reverse = false) =>
-            A3a.World(A3a.BStart, search == null ? A3a.Ai(300) : A3a.Ai(300, search.Value), reverse: reverse);
+            A3a.World(A3a.BStart, search == null ? A3a.Ai(300) : A3a.Ai(300, search.Value), reverse: reverse, conceal: 500, bSpeed: 6000);
         private static void Step(M6World w) { long t = w.Sim.Clock.Tick + 1; w.Sim.Step(A3a.Drive(w, A3a.Script(t, Hide, Move))); }
 
         // 8(a): restored mid-walk and mid-stand (both allocation orders): the same hashes and the same give-up tick.
@@ -24,7 +24,7 @@ namespace WarCore.Tests
         [TestCase(170, true)]
         public void Restore_ContinuesTheSearch(long save, bool reverse)
         {
-            Assert.That(save, Is.GreaterThanOrEqualTo(56)); Assert.That(save + 150, Is.GreaterThan(G));
+            Assert.That(save, Is.GreaterThanOrEqualTo(46)); Assert.That(save + 150, Is.GreaterThan(G));
             M6World straight = World(60);
             var hashes = new List<ulong> { straight.Hash };
             for (long t = 1; t <= save + 150; t++) { Step(straight); hashes.Add(straight.Hash); }
