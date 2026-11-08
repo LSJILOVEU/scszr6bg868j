@@ -4,6 +4,7 @@ using WarCore.Battle;
 using WarCore.Combat;
 using WarCore.Content;
 using WarCore.Content.Rwr;
+using WarCore.Interim;
 using WarCore.Presentation;
 using WarCore.Sim;
 
@@ -52,6 +53,21 @@ namespace WarCore.Tests
         internal static readonly SimVec3 A2Behind = A2.Cell(24, 10), A2Aside = A2.Cell(22, 13);
 
         internal static StableId Id(M6World w, ulong key) => P1.Id(w, key);
+        // Whether the placed unit still exists (a destroyed target no longer resolves).
+        internal static bool Present(M6World w, ulong key) => w.Sim.Entities.TryResolve(StableEntityKey.Placed(1, key).Id, out _);
+
+        // P1.Drive with a guard for a destroyed target: the same commands on the same ticks while every unit exists.
+        internal static InputFrame Drive(M6World w, long tick, P1.Move[] script)
+        {
+            if (tick == 1) return P1.Command(SquadCommandKind.Hold, 2);
+            if (tick == 2) return P1.Command(SquadCommandKind.Hold, 3);
+            foreach (P1.Move m in script) if (m.Tick == tick) return P1.Command(SquadCommandKind.MoveTo, m.Squad, m.To);
+            if (Present(w, KeyB) && Ended(w, KeyB)) return P1.Command(SquadCommandKind.Hold, 2);
+            if (Present(w, KeyC) && Ended(w, KeyC)) return P1.Command(SquadCommandKind.Hold, 3);
+            return default;
+        }
+        private static bool Ended(M6World w, ulong key) => w.Has<SquadStanding>(key)
+            && w.Read<SquadStanding>(key).Kind == StandingKind.Move && !w.Read<MoveIntent>(key).Active;
         internal static int Count(M6World w) => P1.Count(w);
         internal static string Systems(M6World w) => P1.Systems(w);
         internal static ulong Digest(byte[] bytes) => A3.Digest(bytes);
@@ -132,12 +148,12 @@ namespace WarCore.Tests
             bool counted = Systems(r.W).Contains("battle.ai-fire");
             for (long tick = 0; tick <= last; tick++)
             {
-                if (tick > 0) r.W.Sim.Step(P1.Drive(r.W, tick, script));
+                if (tick > 0) r.W.Sim.Step(Drive(r.W, tick, script));
                 Record(r.W, KeyA, r.A, tick, true);
                 Record(r.W, KeyA2, r.A2, tick, twin);
                 r.Hashes.Add(r.W.Hash);
                 r.Queries.Add(r.W.Combat.QueriesThisStep);
-                r.AtB.Add(r.W.Sim.Entities.TryResolve(P2.Id(r.W, KeyB), out _) ? r.W.Read<Position>(KeyB).Value : default);
+                r.AtB.Add(Present(r.W, KeyB) ? r.W.Read<Position>(KeyB).Value : default);
                 r.AtC.Add(r.W.Read<Position>(KeyC).Value);
                 r.Counts.Add(counted ? Count(r.W) : -1);
             }

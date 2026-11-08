@@ -1,0 +1,282 @@
+# P2 AI sense interval: the required mutations of the work package. Test classes are named P2*.
+
+[p2-01-no-phase]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P2
+expect = WarCore.Tests.P2TimingTests.TwoShooters_AreStaggered
+note = the phase is dropped: every shooter samples on the multiples of K
+original:
+|             senseTicks == 1 || ((tick % senseTicks) + (long)(self.Value % (ulong)senseTicks)) % senseTicks == 0;
+replacement:
+|             senseTicks == 1 || tick % senseTicks == 0;
+
+[p2-02-off-by-one]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P2
+expect = WarCore.Tests.P2TimingTests.FirstShot_OnTheFirstSampleTickPlusR
+note = the sample test compares with 1 % K instead of 0 (K = 1 unchanged)
+original:
+|             senseTicks == 1 || ((tick % senseTicks) + (long)(self.Value % (ulong)senseTicks)) % senseTicks == 0;
+replacement:
+|             senseTicks == 1 || ((tick % senseTicks) + (long)(self.Value % (ulong)senseTicks)) % senseTicks == 1 % senseTicks;
+
+[p2-03-no-validity]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P2
+expect = WarCore.Tests.P2TimingTests.DestroyedTarget_ClearsTheEntry
+note = a kept tick does not check that the target still exists and lives
+original:
+|                 if (kept && combat.Entities.TryResolve(targets[slot], out EntityRef found) && !combat.IsDead((EntityId)found))
+replacement:
+|                 if (kept)
+
+[p2-04-always-samples]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P2
+expect = WarCore.Tests.P2TimingTests.SelectorQueries_OncePerSampleTick
+expect = WarCore.Tests.P2TimingTests.NearerTarget_WindowShotGoesToTheKeptOne
+note = every tick is a sample tick
+original:
+|             senseTicks == 1 || ((tick % senseTicks) + (long)(self.Value % (ulong)senseTicks)) % senseTicks == 0;
+replacement:
+|             true;
+
+[p2-05-no-last-on-kept-tick]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P2
+expect = WarCore.Tests.P2TimingTests.FirstShot_OnTheFirstSampleTickPlusR
+note = a kept tick leaves Last alone, so TryAim is stopped by Last != tick off the sample ticks
+original:
+|                 if (kept && combat.Entities.TryResolve(targets[slot], out EntityRef found) && !combat.IsDead((EntityId)found))
+|                     lasts[slot] = tick;
+|                 else has[slot] = false;
+replacement:
+|                 if (kept && combat.Entities.TryResolve(targets[slot], out EntityRef found) && !combat.IsDead((EntityId)found))
+|                     return;
+|                 else has[slot] = false;
+
+[p2-06-load-ignores-interval]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P2
+expect = WarCore.Tests.P2StateTests.Restore_OtherInterval_IsRefused
+note = the load reads K and does not compare it
+original:
+|             if (senseTicks > 1) SimStateReader.Require(reader.Int32() == senseTicks, "AI sense interval differs.");
+replacement:
+|             if (senseTicks > 1) reader.Int32();
+
+[p2-07-version-one]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P2
+expect = WarCore.Tests.P2StateTests.Versions_AndTheManifestCheck
+note = the state version stays 1 with an interval
+original:
+|         public int StateVersion => senseTicks > 1 ? 2 : 1;
+replacement:
+|         public int StateVersion => 1;
+
+[p2-08-registration-without-interval]
+file = Assets/WarCore/Presentation/Bridge/Features/AiFireFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.P2
+expect = WarCore.Tests.P2ContentTests.Assembly_IntervalAlone_Registers
+note = the interval alone does not register the feature
+original:
+|             return ai.ReactionTicks > 0 || ai.SenseTicks > 1;
+replacement:
+|             return ai.ReactionTicks > 0;
+
+[p2-09-phase-from-slot]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P2
+expect = WarCore.Tests.P2StateTests.ReverseAllocation_SameHashesAndRestore
+note = the phase comes from the entity slot instead of the stable id
+original:
+|             if (!Samples(self, tick))
+replacement:
+|             if (!Samples(new StableId((ulong)shooter.Id), tick))
+
+[p2-10-aimat-without-ally-check]
+file = Assets/WarCore/Combat/DefaultAutoFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P2
+expect = WarCore.Tests.P2AllyTests.AimAt_BlockedByTeammate_HoldsFire
+expect = WarCore.Tests.P2AllyTests.BlockedShooter_NeverFires_AndTheHoldPushesDue
+note = AimAt always fires
+original:
+|             if (combat.AllyBlocks(shooter, origin, direction) && sim.Rng.NextInt(allyStream, 65536) >= combat.Pack.AllyCheckMissRaw)
+|                 return AutoFireAction.HoldFire;
+replacement:
+|             // mutated: no ally check
+
+[p2-11-tryaim-bypasses-aimat]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P2
+expect = WarCore.Tests.P2AllyTests.BlockedShooter_NeverFires_AndTheHoldPushesDue
+note = TryAim computes the heading itself and fires, without the ally check
+original:
+|             return builtIn.AimAt(combat, shooter, in position, (EntityId)target, out direction);
+replacement:
+|             direction = CombatSystem.Horizontal(combat.Point((EntityId)target) - position.Value);
+|             return AutoFireAction.Fire;
+
+[p2-12-validity-without-dead]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P2
+expect = WarCore.Tests.P2TimingTests.DeadTarget_ClearsTheEntry
+note = a kept tick checks only that the target resolves, not that it lives
+original:
+|                 if (kept && combat.Entities.TryResolve(targets[slot], out EntityRef found) && !combat.IsDead((EntityId)found))
+replacement:
+|                 if (kept && combat.Entities.TryResolve(targets[slot], out EntityRef found))
+
+[p2-13-lower-bound-zero]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~WarCore.Tests.P2
+expect = WarCore.Tests.P2ContentTests.Errors
+note = senseTicks 0 is accepted
+original:
+|                 if (r.Has("senseTicks")) sense = r.Int("senseTicks", 1, MaxSenseTicks);
+replacement:
+|                 if (r.Has("senseTicks")) sense = r.Int("senseTicks", 0, MaxSenseTicks);
+
+[p2-14-registration-at-one]
+file = Assets/WarCore/Presentation/Bridge/Features/AiFireFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.P2
+expect = WarCore.Tests.P2BaselineTests.ZeroAndOne_RegisterNothing
+note = an interval of 1 registers the feature
+original:
+|             return ai.ReactionTicks > 0 || ai.SenseTicks > 1;
+replacement:
+|             return ai.ReactionTicks > 0 || ai.SenseTicks >= 1;
+
+[p2-15-hash-without-interval]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P2
+expect = WarCore.Tests.P2StateTests.WriteState_EndsWithTheInterval
+note = the hash leaves K out (the save still writes it)
+original:
+|             if (senseTicks > 1) hash.Add(senseTicks);
+replacement:
+|             // mutated: K is not hashed
+
+[p2-16-save-without-interval]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P2
+expect = WarCore.Tests.P2StateTests.SaveState_PayloadIsVersionOnePlusTheInterval
+expect = WarCore.Tests.P2StateTests.Restore_OtherInterval_IsRefused
+note = the save does not write K and the load does not read it
+original:
+|             if (senseTicks > 1) writer.Int32(senseTicks);
+|         }
+|
+|         public void LoadState(SimStateReader reader)
+|         {
+|             Array.Clear(has, 0, has.Length);
+|             SimStateReader.Require(reader.Int32() == ticks, "AI reaction time differs.");
+|             int count = reader.Count(combat.Entities.Capacity);
+|             ulong previous = 0;
+|             for (int i = 0; i < count; i++)
+|             {
+|                 ulong key = reader.UInt64();
+|                 SimStateReader.Require(i == 0 || key > previous, "AI reaction shooters are not in strictly increasing order.");
+|                 previous = key;
+|                 var shooter = new StableId(key);
+|                 var target = new StableId(reader.UInt64());
+|                 long first = reader.Int64(), last = reader.Int64();
+|                 SimStateReader.Require(first >= 0, "AI reaction tick is negative.");
+|                 SimStateReader.Require(last >= first, "AI reaction last tick precedes its first tick.");
+|                 SimStateReader.Require(combat.Entities.TryResolve(shooter, out EntityRef found), "AI reaction shooter does not exist.");
+|                 int slot = ((EntityId)found).Id;
+|                 SimStateReader.Require((uint)slot < (uint)has.Length, "AI reaction shooter is outside the entity capacity.");
+|                 has[slot] = true; shooters[slot] = shooter; targets[slot] = target; firsts[slot] = first; lasts[slot] = last;
+|             }
+|             if (senseTicks > 1) SimStateReader.Require(reader.Int32() == senseTicks, "AI sense interval differs.");
+replacement:
+|         }
+|
+|         public void LoadState(SimStateReader reader)
+|         {
+|             Array.Clear(has, 0, has.Length);
+|             SimStateReader.Require(reader.Int32() == ticks, "AI reaction time differs.");
+|             int count = reader.Count(combat.Entities.Capacity);
+|             ulong previous = 0;
+|             for (int i = 0; i < count; i++)
+|             {
+|                 ulong key = reader.UInt64();
+|                 SimStateReader.Require(i == 0 || key > previous, "AI reaction shooters are not in strictly increasing order.");
+|                 previous = key;
+|                 var shooter = new StableId(key);
+|                 var target = new StableId(reader.UInt64());
+|                 long first = reader.Int64(), last = reader.Int64();
+|                 SimStateReader.Require(first >= 0, "AI reaction tick is negative.");
+|                 SimStateReader.Require(last >= first, "AI reaction last tick precedes its first tick.");
+|                 SimStateReader.Require(combat.Entities.TryResolve(shooter, out EntityRef found), "AI reaction shooter does not exist.");
+|                 int slot = ((EntityId)found).Id;
+|                 SimStateReader.Require((uint)slot < (uint)has.Length, "AI reaction shooter is outside the entity capacity.");
+|                 has[slot] = true; shooters[slot] = shooter; targets[slot] = target; firsts[slot] = first; lasts[slot] = last;
+|             }
+
+[p2-17-overflowing-sum]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P2
+expect = WarCore.Tests.P2TimingTests.LongBound_LastLegalTickSamples
+note = the sample test adds the phase to the tick before the remainder (overflows near long.MaxValue)
+original:
+|             senseTicks == 1 || ((tick % senseTicks) + (long)(self.Value % (ulong)senseTicks)) % senseTicks == 0;
+replacement:
+|             senseTicks == 1 || (tick + (long)(self.Value % (ulong)senseTicks)) % senseTicks == 0;
+
+[p2-18-aim-at-frozen-point]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P2
+expect = WarCore.Tests.P2CombinedTests.KeptTarget_IsShotAtItsCurrentPosition_NotTheFrozenPoint
+note = the sample tick stores the target's position; TryAim aims at the stored point without AimAt
+original:
+|             StableId selected = combat.Entities.StableOf(target);
+|             if (kept && targets[slot].Equals(selected))
+|             {
+|                 lasts[slot] = tick;
+|                 return;
+|             }
+|             has[slot] = true; shooters[slot] = self; targets[slot] = selected; firsts[slot] = tick; lasts[slot] = tick;
+|         }
+|
+|         public AutoFireAction TryAim(CombatSystem combat, EntityId shooter, in Combatant unit, in Position position,
+|             in WeaponDef weapon, long tick, out SimVec3 direction)
+|         {
+|             int slot = shooter.Id;
+|             if ((uint)slot >= (uint)has.Length || !has[slot] || !shooters[slot].Equals(combat.Entities.StableOf(shooter))
+|                 || lasts[slot] != tick || tick - firsts[slot] < ticks
+|                 || !combat.Entities.TryResolve(targets[slot], out EntityRef target))
+|             {
+|                 direction = default;
+|                 return AutoFireAction.Pass;
+|             }
+|             return builtIn.AimAt(combat, shooter, in position, (EntityId)target, out direction);
+replacement:
+|             StableId selected = combat.Entities.StableOf(target);
+|             if (frozen == null) frozen = new SimVec3[has.Length];
+|             frozen[slot] = combat.Point(target);
+|             if (kept && targets[slot].Equals(selected))
+|             {
+|                 lasts[slot] = tick;
+|                 return;
+|             }
+|             has[slot] = true; shooters[slot] = self; targets[slot] = selected; firsts[slot] = tick; lasts[slot] = tick;
+|         }
+|
+|         private SimVec3[] frozen;
+|
+|         public AutoFireAction TryAim(CombatSystem combat, EntityId shooter, in Combatant unit, in Position position,
+|             in WeaponDef weapon, long tick, out SimVec3 direction)
+|         {
+|             int slot = shooter.Id;
+|             if ((uint)slot >= (uint)has.Length || !has[slot] || !shooters[slot].Equals(combat.Entities.StableOf(shooter))
+|                 || lasts[slot] != tick || tick - firsts[slot] < ticks
+|                 || !combat.Entities.TryResolve(targets[slot], out EntityRef target))
+|             {
+|                 direction = default;
+|                 return AutoFireAction.Pass;
+|             }
+|             direction = CombatSystem.Horizontal(frozen[slot] - position.Value);
+|             if (direction.LengthSquared.Sign == 0) direction = new SimVec3(SimFix.FromInt(1), default, default);
+|             return AutoFireAction.Fire;

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using NUnit.Framework;
 using WarCore.Battle;
+using WarCore.Content;
 using WarCore.Presentation;
 using WarCore.Sim;
 
@@ -10,6 +11,7 @@ namespace WarCore.Tests
     // (b1) the P1 fixture alone and (b2) the twin fixture with A2 straight behind A on A's line to B (the ally check holds
     // A2's fire). Recorded: the 600-tick run (64-bit FNV-1a over the per-tick hashes), the state hash after tick 600, every
     // shooter's fire ticks, A2's DueMilli sequence (FNV-1a) and the retained snapshots at 300 and 600 (length, digest).
+    // Then the same two fixtures with "senseTicks": 1 written out, and 1(c)(d): a sense interval of 1 registers nothing.
     public sealed class P2BaselineTests
     {
         internal const string Systems = "bridge.dead-cleanup|0|5;battle.reinforce|0|8;interim.orders|0|10;battle.ai|0|12;battle.ai-fire|0|14;"
@@ -75,6 +77,60 @@ namespace WarCore.Tests
             byte[] snapshot = r.W.Sim.SaveRetainedSnapshot();
             Assert.That(snapshot.Length, Is.EqualTo(TwinSnapshot600Length));
             Assert.That(P2.Digest(snapshot), Is.EqualTo(TwinSnapshot600Digest));
+        }
+
+        // 1(b): "senseTicks": 1 written out beside the reaction time: the same system table, state version 1, the same hash
+        // on every tick and the same snapshot bytes on 300, for the single shooter (b1) and the twin behind A (b2).
+        [Test]
+        public void SenseOne_IsByteForByteTheSame()
+        {
+            Same(P1.World(P1.Cast(), P1.Ai(15)), P1.World(P1.Cast(), P2.Ai(15, 1)), "b1");
+            Same(P2.World(P2.Cast(P2.A2Behind), P2.Ai(15, null)), P2.World(P2.Cast(P2.A2Behind), P2.Ai(15, 1)), "b2");
+        }
+        private static void Same(M6World plain, M6World one, string what)
+        {
+            Assert.That(P2.Systems(one), Is.EqualTo(Systems), what);
+            Assert.That(one.System<ReactionFire>().StateVersion, Is.EqualTo(1), what);
+            Assert.That(one.Hash, Is.EqualTo(plain.Hash), what + ", tick 0");
+            for (long tick = 1; tick <= 600; tick++)
+            {
+                plain.Sim.Step(P1.Drive(plain, tick, P1.Walk));
+                one.Sim.Step(P1.Drive(one, tick, P1.Walk));
+                Assert.That(one.Hash, Is.EqualTo(plain.Hash), what + ", tick " + tick);
+                if (tick == 300) Assert.That(one.Sim.SaveRetainedSnapshot(), Is.EqualTo(plain.Sim.SaveRetainedSnapshot()), what + ", snapshot bytes on 300");
+            }
+        }
+
+        // 1(c): { "reactionTicks": 0, "senseTicks": 1 } beside P1's world written as 0: the same system table (without
+        // battle.ai-fire) and the same hash after 600 ticks.
+        [Test]
+        public void ZeroAndOne_RegisterNothing()
+        {
+            M6World zero = P1.World(P2.Cast(), P1.Ai(0)), one = null;
+            Assert.DoesNotThrow(() => one = P2.World(P2.Cast(), P2.Ai(0, 1)));
+            Assert.That(P2.Systems(one), Is.EqualTo(P1BaselineTests.Systems));
+            Assert.That(P2.Systems(zero), Is.EqualTo(P1BaselineTests.Systems));
+            Assert.That(P2.Systems(one), Does.Not.Contain("battle.ai-fire"));
+            Assert.That(one.System<ReactionFire>(), Is.Null);
+            for (long tick = 1; tick <= 600; tick++)
+            {
+                zero.Sim.Step(P1.Drive(zero, tick, P1.Walk));
+                one.Sim.Step(P1.Drive(one, tick, P1.Walk));
+            }
+            Assert.That(one.Hash, Is.EqualTo(zero.Hash));
+        }
+
+        // 1(d): a flat map (no surface table, no height field) with a content layer that sets senseTicks 10: not a terrain
+        // world, so nothing is registered and the system table is the one of 1(c).
+        [Test]
+        public void FlatMapWithSenseInterval_DoesNotRegister()
+        {
+            byte[] map = WcMapWriter.Write(Wp23.Make(A2.Width, A2.Depth, 0, 4 * A2.S, A2.DWalls, 2 * A2.S));
+            M6World flat = null;
+            Assert.DoesNotThrow(() => flat = new M6World(P2.Recipe(P2.Cast(), P2.Ai(0, 10)), map));
+            Assert.That(P2.Systems(flat), Is.EqualTo(P1BaselineTests.Systems));
+            Assert.That(P2.Systems(flat), Does.Not.Contain("battle.ai-fire"));
+            Assert.That(flat.System<ReactionFire>(), Is.Null);
         }
     }
 }
