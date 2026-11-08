@@ -236,15 +236,20 @@ namespace WarCore.Tests
 
         // 11: the sample test on the last legal tick. A's phase is 4 and (long.MaxValue - 1) % 10 = 6, so long.MaxValue - 1 is
         // a sample tick of A under K = 10; a ReactionFire made here (K = 10, R = 0, not registered) sees B on that tick and
-        // TryAim fires. The sum (tick + phase) would overflow and read as no sample.
+        // TryAim fires. The sum (tick + phase) would overflow and read as no sample. The world runs with a reaction time of
+        // 1000 so that A, with B selectable from 40, has not fired by 45 and is ready (3 rounds, DueMilli 0).
         [Test]
         public void LongBound_LastLegalTickSamples()
         {
             const long Tick = 9223372036854775806L;
             Assert.That(Tick, Is.EqualTo(long.MaxValue - 1));
             Assert.That(Tick % K, Is.EqualTo(6L));
-            M6World w = P2.World(P2.Cast(), null);
-            for (long tick = 1; tick <= 45; tick++) w.Sim.Step(P2.Drive(w, tick, P1.Walk));
+            M6World w = P2.World(P2.Cast(), P1.Ai(1000));
+            for (long tick = 1; tick <= 45; tick++)
+            {
+                w.Sim.Step(P2.Drive(w, tick, P1.Walk));
+                Assert.That(P1.Fired(w, P2.KeyA), Is.False, "no shot inside the long reaction time, tick " + tick);
+            }
             Assert.That(P1.Selected(w, P2.KeyA), Is.EqualTo(P2.Id(w, P2.KeyB).Value));
             ulong a = P2.Id(w, P2.KeyA).Value;
             Assert.That(P2.Phase(a, K), Is.EqualTo(PhaseA));
@@ -252,6 +257,7 @@ namespace WarCore.Tests
             var fire = new ReactionFire(w.Combat, w.Combat.BuiltInAutoFire, 0, K);
             EntityId shooter = w.Unit(P2.KeyA);
             Combatant unit = w.Read<Combatant>(P2.KeyA);
+            Assert.That((unit.Ammo, unit.DueMilli), Is.EqualTo((3, 0L)), "A is ready");
             Position at = w.Read<Position>(P2.KeyA);
             WeaponDef weapon = w.Combat.Pack.Weapons[unit.Weapon];
             Assert.That(P1.Count(fire), Is.EqualTo(0), "an empty fire decision");

@@ -24,17 +24,23 @@ namespace WarCore.Tests
         private static string Ai => P2.AiAll(300, 120, 15, K);
 
         // The sine of the angle between two horizontal vectors is |cross| / (|u| |v|); a heading rounded to the fixed-point
-        // scale is off by at most about 1 / Scale. "Along" allows twice that, "away" demands a hundred times more.
-        private static bool Along(SimVec3 u, SimVec3 v) => Sine2(u, v) <= new BigInteger(4);
-        private static bool Away(SimVec3 u, SimVec3 v) => Sine2(u, v) > new BigInteger(4) * 10000;
-        // sin^2 * Scale^2, as a rational compared to the bound: cross^2 * Scale^2 / (|u|^2 |v|^2).
-        private static BigInteger Sine2(SimVec3 u, SimVec3 v)
+        // scale is off by at most about 1 / Scale. "Along" allows sine <= 2 / Scale, "Away" demands a hundred times more;
+        // both compare cross^2 * Scale^2 with 4 * |u|^2 * |v|^2 cross-multiplied in BigInteger, nothing is truncated.
+        // The cross product itself is a long: every raw coordinate here is below 2^21, so a product stays below 2^42.
+        private static bool Along(SimVec3 u, SimVec3 v) => CrossSquaredScaled(u, v) <= Bound(u, v);
+        private static bool Away(SimVec3 u, SimVec3 v) => CrossSquaredScaled(u, v) > Bound(u, v) * 10000;
+        private static BigInteger CrossSquaredScaled(SimVec3 u, SimVec3 v)
         {
             BigInteger cross = new BigInteger(P2.Cross(u, v));
+            return cross * cross * SimFix.Scale * SimFix.Scale;
+        }
+        private static BigInteger Bound(SimVec3 u, SimVec3 v)
+        {
             BigInteger lu = new BigInteger(u.X.Raw) * u.X.Raw + new BigInteger(u.Z.Raw) * u.Z.Raw;
             BigInteger lv = new BigInteger(v.X.Raw) * v.X.Raw + new BigInteger(v.Z.Raw) * v.Z.Raw;
-            return cross * cross * SimFix.Scale * SimFix.Scale / (lu * lv);
+            return 4 * lu * lv;
         }
+        private static long Dot(SimVec3 u, SimVec3 v) => u.X.Raw * v.X.Raw + u.Z.Raw * v.Z.Raw;
 
         [Test]
         public void ThreeSystems_RunTogether_BothOrders()
@@ -75,6 +81,7 @@ namespace WarCore.Tests
             M6World w = P2.World(P2.Cast(), Ai);
             Assert.That(A3.FirstThink(w, P2.KeyA), Is.EqualTo(6L), "A thinks on 6, 16, 26, ...");
             SimVec3 p = default, q = default, at = default, shot = default; long seen = -1, ordered = -1; SimVec3 orderTo = default;
+            FireOutcome outcome = FireOutcome.Hit;
             for (long tick = 1; tick <= ThinkAfterNs; tick++)
             {
                 w.Sim.Step(P2.Drive(w, tick, Script));
@@ -87,8 +94,7 @@ namespace WarCore.Tests
                     Assert.That(w.Combat.Fires.Length, Is.EqualTo(1));
                     FireRecord f = w.Combat.Fires[0];
                     Assert.That(f.Shooter.Value, Is.EqualTo(a));
-                    Assert.That(f.Outcome, Is.EqualTo(FireOutcome.WallBlocked));
-                    shot = P2.Flat(f.End - f.Origin);
+                    shot = P2.Flat(f.End - f.Origin); outcome = f.Outcome;
                 }
                 if (tick == ThinkAfterNs)
                 {
@@ -102,8 +108,11 @@ namespace WarCore.Tests
             SimVec3 toP = P2.Flat(p - at), toQ = P2.Flat(q - at);
             Assert.That(P2.Cross(toP, toQ), Is.Not.EqualTo(0L), "P and Q are not on one line from A");
             Assert.That(Away(toP, toQ), Is.True);
+            // The heading is checked before the outcome: a shot at another point may miss the wall and still be wrong.
+            Assert.That(Dot(shot, toQ), Is.GreaterThan(0L), "the shot goes towards B, not away from it");
             Assert.That(Along(shot, toQ), Is.True, "the shot heads for B's current position");
             Assert.That(Away(shot, toP), Is.True, "not for the frozen point");
+            Assert.That(outcome, Is.EqualTo(FireOutcome.WallBlocked), "and the wall stops it");
             Assert.That(ordered, Is.EqualTo(OrderTick), "the search orders A on its first thinking tick after g");
             Assert.That((orderTo.X.Raw, orderTo.Z.Raw), Is.EqualTo((p.X.Raw, p.Z.Raw)), "to P");
         }

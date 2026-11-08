@@ -10,8 +10,8 @@ namespace WarCore.Tests
     // Acceptance 1(b), recorded on the code before P2 (base a8ac432) with the reaction time on (15) and no sense interval:
     // (b1) the P1 fixture alone and (b2) the twin fixture with A2 straight behind A on A's line to B (the ally check holds
     // A2's fire). Recorded: the 600-tick run (64-bit FNV-1a over the per-tick hashes), the state hash after tick 600, every
-    // shooter's fire ticks, A2's DueMilli sequence (FNV-1a) and the retained snapshots at 300 and 600 (length, digest).
-    // Then the same two fixtures with "senseTicks": 1 written out, and 1(c)(d): a sense interval of 1 registers nothing.
+    // shooter's fire ticks, A2's DueMilli sequence (FNV-1a) and the retained snapshots at 300 and 600 (length, digest; the
+    // twin's tick 300 was recorded on the base code in a second pass). Then the same two fixtures with "senseTicks": 1 written out, and 1(c)(d): a sense interval of 1 registers nothing.
     public sealed class P2BaselineTests
     {
         internal const string Systems = "bridge.dead-cleanup|0|5;battle.reinforce|0|8;interim.orders|0|10;battle.ai|0|12;battle.ai-fire|0|14;"
@@ -26,8 +26,8 @@ namespace WarCore.Tests
         // (b2) A2 behind A: B is first picked by A on 40 and by A2 on 60; A2's first TryAim (75) is held by the ally check,
         // its DueMilli jumps to 75000 + 30000 and it never fires.
         internal const ulong TwinRun600 = 5383590616295255197UL, TwinEnd600 = 439506984530672070UL, TwinDue600 = 8289626199243901359UL;
-        internal const int TwinSnapshot600Length = 7344;
-        internal const ulong TwinSnapshot600Digest = 211481255301620509UL;
+        internal const int TwinSnapshot300Length = 7344, TwinSnapshot600Length = 7344;
+        internal const ulong TwinSnapshot300Digest = 17186642634751420772UL, TwinSnapshot600Digest = 211481255301620509UL;
         internal const long TwinA2First = 60, TwinA2Aim = 75;
 
         [Test]
@@ -77,6 +77,12 @@ namespace WarCore.Tests
             byte[] snapshot = r.W.Sim.SaveRetainedSnapshot();
             Assert.That(snapshot.Length, Is.EqualTo(TwinSnapshot600Length));
             Assert.That(P2.Digest(snapshot), Is.EqualTo(TwinSnapshot600Digest));
+            M6World w = P2.World(P2.Cast(P2.A2Behind), P2.Ai(15, null));
+            for (long tick = 1; tick <= 300; tick++) w.Sim.Step(P2.Drive(w, tick, P1.Walk));
+            Assert.That(w.Hash, Is.EqualTo(r.Hashes[300]));
+            byte[] middle = w.Sim.SaveRetainedSnapshot();
+            Assert.That(middle.Length, Is.EqualTo(TwinSnapshot300Length), "length, tick 300");
+            Assert.That(P2.Digest(middle), Is.EqualTo(TwinSnapshot300Digest), "digest, tick 300");
         }
 
         // 1(b): "senseTicks": 1 written out beside the reaction time: the same system table, state version 1, the same hash

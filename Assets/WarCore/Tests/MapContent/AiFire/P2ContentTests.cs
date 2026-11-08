@@ -86,11 +86,11 @@ namespace WarCore.Tests
             Assert.That(Assert.Throws<ArgumentNullException>(() => new ReactionFire(w.Combat, null, 0, 0)).ParamName, Is.EqualTo("inner"), "the null check comes before the range");
             var silent = Assert.Throws<ArgumentException>(() => new ReactionFire(w.Combat, new Silent(), 0, 10));
             Assert.That(silent.ParamName, Is.EqualTo("inner"));
-            Assert.That(silent.Message, Is.EqualTo(InnerMessage + " (Parameter 'inner')"));
+            Assert.That(silent.Message, Does.StartWith(InnerMessage), "the runtime appends its own parameter suffix");
             Assert.That(ReferenceEquals(other.Combat.BuiltInAutoFire, w.Combat.BuiltInAutoFire), Is.False);
             var foreign = Assert.Throws<ArgumentException>(() => new ReactionFire(w.Combat, other.Combat.BuiltInAutoFire, 0, 10));
             Assert.That(foreign.ParamName, Is.EqualTo("inner"));
-            Assert.That(foreign.Message, Is.EqualTo(InnerMessage + " (Parameter 'inner')"));
+            Assert.That(foreign.Message, Does.StartWith(InnerMessage));
             var one = Assert.Throws<ArgumentException>(() => new ReactionFire(w.Combat, other.Combat.BuiltInAutoFire, 15));
             Assert.That(one.ParamName, Is.EqualTo("inner"), "also with the interval left at 1");
         }
