@@ -1,10 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
+using WarCore.Battle;
 using WarCore.Combat;
 using WarCore.Content;
 using WarCore.Interim;
 using WarCore.Presentation;
 using WarCore.Sim;
+
+using Simulation = WarCore.Sim.Sim;
 
 namespace WarCore.Tests
 {
@@ -72,6 +76,117 @@ namespace WarCore.Tests
             StableId id = Id(w, shooter);
             foreach (FireRecord f in w.Combat.Fires) if (f.Shooter.Equals(id)) return true;
             return false;
+        }
+
+        // One run, recorded tick by tick (index = tick; index 0 is the start): what each shooter's selector picks after the
+        // step, whether it fired, and its weapon state. Shooters are A and, when present, A2.
+        internal sealed class Trace
+        {
+            internal M6World W;
+            internal readonly List<ulong> SelA = new List<ulong>(), SelA2 = new List<ulong>(), Hashes = new List<ulong>();
+            internal readonly List<bool> FireA = new List<bool>(), FireA2 = new List<bool>();
+            internal readonly List<long> DueA = new List<long>();
+            internal readonly List<int> AmmoA = new List<int>();
+            internal readonly List<ulong> TargetA = new List<ulong>();   // the target of A's fire record this tick, 0 for none
+            internal ulong Id(ulong key) => P1.Id(W, key).Value;
+            internal long FirstSelect(ulong shooter, ulong target, long from = 1)
+            {
+                List<ulong> sel = shooter == KeyA ? SelA : SelA2;
+                for (int t = (int)from; t < sel.Count; t++) if (sel[t] == Id(target)) return t;
+                return -1;
+            }
+            internal long FirstFire(ulong shooter, long from = 1)
+            {
+                List<bool> fire = shooter == KeyA ? FireA : FireA2;
+                for (int t = (int)from; t < fire.Count; t++) if (fire[t]) return t;
+                return -1;
+            }
+        }
+
+        internal static Trace Run(UnitSpawn[] units, Move[] script, string ai, long last, bool reverse = false, params IWorldOption[] extensions)
+        {
+            var r = new Trace { W = World(units, ai, reverse, extensions) };
+            bool twin = Array.Exists(units, u => u.Key == KeyA2);
+            for (long tick = 0; tick <= last; tick++)
+            {
+                if (tick > 0) r.W.Sim.Step(Drive(r.W, tick, script));
+                r.SelA.Add(Selected(r.W, KeyA)); r.FireA.Add(tick > 0 && Fired(r.W, KeyA));
+                r.SelA2.Add(twin ? Selected(r.W, KeyA2) : 0); r.FireA2.Add(tick > 0 && twin && Fired(r.W, KeyA2));
+                Combatant a = r.W.Read<Combatant>(KeyA);
+                r.DueA.Add(a.DueMilli); r.AmmoA.Add(a.Ammo); r.Hashes.Add(r.W.Hash);
+                ulong hit = 0;
+                if (tick > 0) foreach (FireRecord f in r.W.Combat.Fires) if (f.Shooter.Equals(Id(r.W, KeyA))) hit = f.Target.Value;
+                r.TargetA.Add(hit);
+            }
+            return r;
+        }
+
+        // The standard cast: A at A3's point, B and C west of A beyond the 20 m sight (B 22.0 m, C 22.8 m away).
+        internal static UnitSpawn[] Cast(SimVec3? cAt = null, SimVec3? bAt = null) => new[]
+        {
+            Shooter(KeyA, A3.AAt), Target(KeyB, 2, bAt ?? A2.Cell(0, 10)), Target(KeyC, 3, cAt ?? A2.Cell(0, 4)),
+        };
+        // B walks east along z = 10 from tick 20; A can first select it on tick 40 (B 19.9 m away).
+        internal static readonly Move[] Walk = { new Move(20, 2, A2.Cell(8, 10)) };
+        internal const long T = 40;
+
+        // The registered reaction state's entry count (internal; the Battle assembly has no InternalsVisibleTo).
+        internal static int Count(M6World w) => Count(w.System<ReactionFire>());
+        internal static int Count(ReactionFire fire) =>
+            (int)typeof(ReactionFire).GetProperty("Count", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(fire);
+
+        // A test extension: a Requests system (Order 25) that submits an aimed intent for A on ticks from .. to.
+        internal sealed class IntentProbe : WorldFeature
+        {
+            private readonly long from, to; private readonly SimVec3 point;
+            internal IntentProbe(long from, long to, SimVec3 point) { this.from = from; this.to = to; this.point = point; }
+            public override string OptionId => "test.p1-intent";
+            public override void RegisterSystems(WorldAssembly a) =>
+                a.Sim.RegisterGameplay("test.p1-intent", new Submitter(this, a.Sim, a.Combat), SimSystemPhase.Requests);
+            private sealed class Submitter : IRetainedGameplaySystem
+            {
+                private readonly IntentProbe owner; private readonly Simulation sim; private readonly CombatSystem combat;
+                internal Submitter(IntentProbe owner, Simulation sim, CombatSystem combat) { this.owner = owner; this.sim = sim; this.combat = combat; }
+                public int Order => 25;
+                public string StateTypeId => "test.p1-intent";
+                public int StateVersion => 1;
+                public void Step(SimContext c)
+                {
+                    long tick = c.Clock.Tick;
+                    if (tick < owner.from || tick > owner.to) return;
+                    StableId a = sim.Entities.StableOf(sim.Entities.Resolve(new EntityLink(StableEntityKey.Placed(1, KeyA).Id)));
+                    combat.Submit(c, FireIntent.Aimed(a, owner.point));
+                }
+                public void SaveState(SimStateWriter writer) { }
+                public void LoadState(SimStateReader reader) { }
+                public void WriteState(StateHash hash) { hash.Add(StateTypeId); hash.Add(StateVersion); }
+            }
+        }
+
+        // A test extension: a Requests system (Order 25) that destroys a placed unit on one tick.
+        internal sealed class DestroyProbe : WorldFeature
+        {
+            private readonly long tick; private readonly ulong key;
+            internal DestroyProbe(long tick, ulong key) { this.tick = tick; this.key = key; }
+            public override string OptionId => "test.p1-destroy";
+            public override void RegisterSystems(WorldAssembly a) =>
+                a.Sim.RegisterGameplay("test.p1-destroy", new Destroyer(this, a.Sim), SimSystemPhase.Requests);
+            private sealed class Destroyer : IRetainedGameplaySystem
+            {
+                private readonly DestroyProbe owner; private readonly Simulation sim;
+                internal Destroyer(DestroyProbe owner, Simulation sim) { this.owner = owner; this.sim = sim; }
+                public int Order => 25;
+                public string StateTypeId => "test.p1-destroy";
+                public int StateVersion => 1;
+                public void Step(SimContext c)
+                {
+                    if (c.Clock.Tick == owner.tick)
+                        sim.Entities.Destroy(sim.Entities.Resolve(new EntityLink(StableEntityKey.Placed(1, owner.key).Id)));
+                }
+                public void SaveState(SimStateWriter writer) { }
+                public void LoadState(SimStateReader reader) { }
+                public void WriteState(StateHash hash) { hash.Add(StateTypeId); hash.Add(StateVersion); }
+            }
         }
 
         // 64-bit FNV-1a over the bytes.

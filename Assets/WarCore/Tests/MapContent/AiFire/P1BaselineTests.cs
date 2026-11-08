@@ -1,4 +1,6 @@
 using NUnit.Framework;
+using WarCore.Battle;
+using WarCore.Content;
 using WarCore.Presentation;
 using WarCore.Sim;
 
@@ -35,6 +37,48 @@ namespace WarCore.Tests
                 each(w, tick);
             }
             return w;
+        }
+
+        // 1(b): left out and written as 0 side by side: equal system tables, equal hashes on every tick.
+        [Test]
+        public void LeftOutAndZero_StepTogether()
+        {
+            M6World off = null, zero = null;
+            Assert.DoesNotThrow(() => off = P1.World(Units(), null));
+            Assert.DoesNotThrow(() => zero = P1.World(Units(), P1.Ai(0)));
+            Assert.That(P1.Systems(zero), Is.EqualTo(Systems));
+            Assert.That(P1.Systems(off), Is.EqualTo(Systems));
+            Assert.That(zero.Hash, Is.EqualTo(off.Hash), "tick 0");
+            for (long tick = 1; tick <= 600; tick++)
+            {
+                off.Sim.Step(P1.Drive(off, tick, Script));
+                zero.Sim.Step(P1.Drive(zero, tick, Script));
+                Assert.That(zero.Hash, Is.EqualTo(off.Hash), "tick " + tick);
+            }
+            Assert.That(zero.Hash, Is.EqualTo(End600));
+        }
+
+        // 1(c): a flat map (no surface table, no height field) with a content layer that sets a positive reaction time: not
+        // a terrain world, so nothing is registered and the run equals the same map with the field written as 0.
+        [Test]
+        public void FlatMapWithPack_DoesNotRegister()
+        {
+            byte[] map = WcMapWriter.Write(Wp23.Make(A2.Width, A2.Depth, 0, 4 * A2.S, A2.DWalls, 2 * A2.S));
+            M6World on = null, zero = null;
+            Assert.DoesNotThrow(() => on = new M6World(P1.Recipe(Units(), P1.Ai(15)), map));
+            Assert.DoesNotThrow(() => zero = new M6World(P1.Recipe(Units(), P1.Ai(0)), map));
+            Assert.That(P1.Systems(on), Is.EqualTo(P1.Systems(zero)));
+            Assert.That(P1.Systems(on), Does.Not.Contain("battle.ai-fire"));
+            Assert.That(on.System<ReactionFire>(), Is.Null);
+            int fires = 0;
+            for (long tick = 1; tick <= 600; tick++)
+            {
+                on.Sim.Step(P1.Drive(on, tick, Script));
+                zero.Sim.Step(P1.Drive(zero, tick, Script));
+                fires += on.Combat.Fires.Length;
+            }
+            Assert.That(fires, Is.GreaterThan(0), "the run reaches the automatic fire branch");
+            Assert.That(on.Hash, Is.EqualTo(zero.Hash));
         }
 
         [Test]
