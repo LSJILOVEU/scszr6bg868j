@@ -54,7 +54,15 @@ namespace WarCore.Presentation
                 contacts = new TargetMemory(combat, memoryTicks);
                 sim.RegisterGameplay("battle.ai-contacts", contacts, SimSystemPhase.Requests);
             }
-            sim.RegisterGameplay("battle.ai", new SimpleAiSystem(combat, recipe.Combat, recipe.Match, capture, adapter, a.Controlled, memory, contacts), SimSystemPhase.Requests);
+            // Only with the memory on: a positive searchTicks adds the search; 0 (the default) adds nothing.
+            TargetSearch search = null;
+            int searchTicks = contacts != null ? recipe.TerrainPack.Section<AiRules>().SearchTicks : 0;
+            if (searchTicks > 0)
+            {
+                search = new TargetSearch(combat.Entities, contacts, searchTicks);
+                sim.RegisterGameplay("battle.ai-search", search, SimSystemPhase.Requests);
+            }
+            sim.RegisterGameplay("battle.ai", new SimpleAiSystem(combat, recipe.Combat, recipe.Match, capture, adapter, a.Controlled, memory, contacts, search), SimSystemPhase.Requests);
             sim.RegisterGameplay("battle.capture", capture, SimSystemPhase.Queries);
             sim.RegisterGameplay("battle.match", match, SimSystemPhase.Queries);
             a.Capture = capture; a.Reinforce = reinforce; a.Match = match;

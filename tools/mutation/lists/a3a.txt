@@ -1,0 +1,116 @@
+# A3a target search: the required mutations of the work package. Test classes are named A3a*.
+
+[a3a-01-stand-forever]
+file = Assets/WarCore/Battle/Ai/TargetSearch.cs
+filter = FullyQualifiedName~WarCore.Tests.A3a
+expect = WarCore.Tests.A3aSearchTests.GoesStandsAndGivesUp
+note = the stand never ends: tick - Since < N becomes tick - Since >= 0
+original:
+|  && e.Seen == seen) return tick - e.Since < ticks ? Hunt.Hold : Hunt.None;
+replacement:
+|  && e.Seen == seen) return tick - e.Since >= 0 ? Hunt.Hold : Hunt.None;
+
+[a3a-02-stand-inclusive]
+file = Assets/WarCore/Battle/Ai/TargetSearch.cs
+filter = FullyQualifiedName~WarCore.Tests.A3a
+expect = WarCore.Tests.A3aSearchTests.GoesStandsAndGivesUp
+note = the stand window tick - Since < N becomes <=
+original:
+|  && e.Seen == seen) return tick - e.Since < ticks ? Hunt.Hold : Hunt.None;
+replacement:
+|  && e.Seen == seen) return tick - e.Since <= ticks ? Hunt.Hold : Hunt.None;
+
+[a3a-03-seen-match-reversed]
+file = Assets/WarCore/Battle/Ai/TargetSearch.cs
+filter = FullyQualifiedName~WarCore.Tests.A3a
+expect = WarCore.Tests.A3aSearchTests.GoesStandsAndGivesUp
+note = the entry matches a different memory instead of its own: the arrival tick is reset on every thought
+original:
+|  && e.Seen == seen) return
+replacement:
+|  && e.Seen != seen) return
+
+[a3a-04-forget-on-give-up]
+file = Assets/WarCore/Battle/Ai/TargetSearch.cs
+filter = FullyQualifiedName~WarCore.Tests.A3a
+expect = WarCore.Tests.A3aSearchTests.GoesStandsAndGivesUp
+note = giving up deletes the entry, so the same memory is searched again
+original:
+|  && e.Seen == seen) return tick - e.Since < ticks ? Hunt.Hold : Hunt.None;
+replacement:
+|  && e.Seen == seen) { if (tick - e.Since < ticks) return Hunt.Hold; entries.Remove(observer.Value); return Hunt.None; }
+
+[a3a-05-failed-slot-not-cleared]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.A3a
+expect = WarCore.Tests.A3aFailedRouteTests.FailedWalk_DoesNotBlameASlot
+note = the walk to P leaves the failed-slot record's O on the old slot
+original:
+|                         { OrderUnit(id, here, moving, target, lastKnown); memory?.Ordered(id, -1); }
+replacement:
+|                         { OrderUnit(id, here, moving, target, lastKnown); }
+
+[a3a-06-never-arrives]
+file = Assets/WarCore/Battle/Ai/TargetSearch.cs
+filter = FullyQualifiedName~WarCore.Tests.A3a
+expect = WarCore.Tests.A3aSearchTests.GoesStandsAndGivesUp
+note = the arrival test is always false
+original:
+|             if (SimpleAiSystem.Arrived(here, lastKnown)) {
+replacement:
+|             if (false) {
+
+[a3a-07-reorder-every-thought]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.A3a
+expect = WarCore.Tests.A3aSearchTests.GoesStandsAndGivesUp
+note = the walk to P is ordered again on every thinking tick
+original:
+|                         if (!moving || target.X.Raw != lastKnown.X.Raw || target.Z.Raw != lastKnown.Z.Raw)
+replacement:
+|                         if (true)
+
+[a3a-08-unarmed-searches]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.A3a
+expect = WarCore.Tests.A3aSearchTests.Unarmed_DoesNotSearch
+note = the search ignores the weapon condition
+original:
+|                 if (search != null && unit.Weapon >= 0)
+replacement:
+|                 if (search != null)
+
+[a3a-09-load-drops-arrival]
+file = Assets/WarCore/Battle/Ai/TargetSearch.cs
+filter = FullyQualifiedName~WarCore.Tests.A3a
+expect = WarCore.Tests.A3aStateTests.Restore_ContinuesTheSearch
+note = loading sets the arrival tick to the seen tick (well-formed, wrong value)
+original:
+|                 entries[key] = new Entry { Seen = seen, Since = since };
+replacement:
+|                 entries[key] = new Entry { Seen = seen, Since = seen };
+
+[a3a-10-load-no-order-check]
+file = Assets/WarCore/Battle/Ai/TargetSearch.cs
+filter = FullyQualifiedName~WarCore.Tests.A3a
+expect = WarCore.Tests.A3aStateTests.Load_RepeatedObserver_IsRefused
+expect = WarCore.Tests.A3aStateTests.Load_ObserversOutOfOrder_IsRefused
+note = loading does not check the observer order
+original:
+|                 SimStateReader.Require(i == 0 || key > previous, "AI search observers are not in strictly increasing order.");
+replacement:
+|                 SimStateReader.Require(true, "AI search observers are not in strictly increasing order.");
+
+[a3a-11-register-when-off]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.A3a
+expect = WarCore.Tests.A3aBaselineTests.SearchZero_Unchanged
+note = a zero search length still registers the system (with length 1)
+original:
+|             if (searchTicks > 0)
+|             {
+|                 search = new TargetSearch(combat.Entities, contacts, searchTicks);
+replacement:
+|             if (contacts != null)
+|             {
+|                 search = new TargetSearch(combat.Entities, contacts, Math.Max(searchTicks, 1));
