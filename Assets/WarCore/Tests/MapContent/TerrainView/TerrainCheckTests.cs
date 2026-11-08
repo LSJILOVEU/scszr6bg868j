@@ -45,7 +45,9 @@ namespace WarCore.Tests.TerrainView
         {
             WcMap map = L8aFixtures.F();
             SimSession s = L8aFixtures.Session(map, L8aFixtures.Pack());
-            Expect(TerrainCheck.Run(s.Map, s), false, 0, 0, 0);
+            TerrainCheckResult clean = TerrainCheck.Run(s.Map, s);
+            Expect(clean, false, 0, 0, 0);
+            Assert.That(clean.ToString(), Is.EqualTo("shape same\nwalls 0\nnav 0\nheights 0\n"));
             Assert.That(s.Map, Is.Not.Null);
             Assert.That(s.TerrainRules, Is.Not.Null);
             Assert.That(Classify(s, map, 3, 4), Is.EqualTo((2, 12, 1, 33, 33)));
@@ -77,10 +79,15 @@ namespace WarCore.Tests.TerrainView
 
         private static SimSession SessionF() => L8aFixtures.Session(L8aFixtures.F(), L8aFixtures.Pack());
 
-        // (4)(i) The wall drawn one column right (bits follow): old 2 + new 2 cells disagree with collision and navigation.
+        // (4)(i) The wall drawn one column right, centre x = 2.5 (bits follow): old 2 + new 2 cells disagree with collision and navigation.
         [Test]
-        public void WallMoved_ReportsFourWallAndFourNavCells() =>
-            Expect(TerrainCheck.Run(View(L8aFixtures.F(wallX: 2)), SessionF()), false, 4, 4, 0);
+        public void WallMoved_ReportsFourWallAndFourNavCells()
+        {
+            TerrainCheckResult r = TerrainCheck.Run(View(L8aFixtures.F(wallX: 2)), SessionF());
+            Expect(r, false, 4, 4, 0);
+            // Scan order is z-major: (1,1) (2,1) (1,2) (2,2).
+            Assert.That(r.ToString(), Is.EqualTo("shape same\nwalls 4 1,1 2,1 1,2 2,2\nnav 4 1,1 2,1 1,2 2,2\nheights 0\n"));
+        }
 
         // (4)(ii) The ridge missing from the view: 12 cells walkable in the view, not in Sim; the 7 points at i = 4 differ.
         [Test]
@@ -94,8 +101,13 @@ namespace WarCore.Tests.TerrainView
 
         // (4)(iv) Every view point 1 raw higher: slopes unchanged, all (8 + 1) * (6 + 1) = 63 points differ.
         [Test]
-        public void AllPointsOneRawHigher_ReportsSixtyThreePoints() =>
-            Expect(TerrainCheck.Run(View(L8aFixtures.F(lift: 1)), SessionF()), false, 0, 0, 63);
+        public void AllPointsOneRawHigher_ReportsSixtyThreePoints()
+        {
+            TerrainCheckResult r = TerrainCheck.Run(View(L8aFixtures.F(lift: 1)), SessionF());
+            Expect(r, false, 0, 0, 63);
+            // Only the first 8 points of the scan (row j = 0, i = 0..7) are listed.
+            Assert.That(r.ToString(), Is.EqualTo("shape same\nwalls 0\nnav 0\nheights 63 0,0 1,0 2,0 3,0 4,0 5,0 6,0 7,0\n"));
+        }
 
         // (4)(v) A 7-wide view: shape mismatch, no cell scan.
         [Test]
@@ -104,8 +116,12 @@ namespace WarCore.Tests.TerrainView
 
         // (4)(vi) The view's origin at x = 1 (Max.X = 9): shape mismatch.
         [Test]
-        public void ShiftedView_ReportsShape() =>
-            Expect(TerrainCheck.Run(View(L8aFixtures.F(minX: 1)), SessionF()), true, 0, 0, 0);
+        public void ShiftedView_ReportsShape()
+        {
+            TerrainCheckResult r = TerrainCheck.Run(View(L8aFixtures.F(minX: 1)), SessionF());
+            Expect(r, true, 0, 0, 0);
+            Assert.That(r.ToString(), Is.EqualTo("shape differs\nwalls 0\nnav 0\nheights 0\n"));
+        }
 
         // (5) Flat worlds: only shape and walls are checked, and they agree.
         [Test]

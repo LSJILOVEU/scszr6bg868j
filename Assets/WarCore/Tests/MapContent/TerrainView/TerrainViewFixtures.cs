@@ -25,7 +25,7 @@ namespace WarCore.Tests.TerrainView
 
         // Map F: 8 x 6 cells, Min = (minX, 0, 0), Max = (minX + width, 4, 6), FlatHeight 0, ChunkSize = width.
         // Heights: raw(i, j) = ridge(i) + lift, ridge(4) = 98304 (1.5 m) and 0 elsewhere. One wall 3 m tall over cells
-        // (wallX, 1) and (wallX, 2) (local centre (wallX + 0.5, 1.5, 2.0), half 0.5 x 1.0); file bits are its exact
+        // (wallX, 1) and (wallX, 2) (local centre (wallX + 0.5, 1.5, 2.0), half 0.5 x 1.0; wallX = 2 puts the centre at x = 2.5); file bits are its exact
         // complement. Surface table ["ground", "mud"] with mud only at (6, 5) (none when mud is false), when surfaces is true.
         internal static WcMap F(int width = 8, long minX = 0, bool heights = true, bool ridge = true, long lift = 0,
             int wallX = 1, bool surfaces = true, bool mud = true)

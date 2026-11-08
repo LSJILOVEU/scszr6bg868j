@@ -22,6 +22,7 @@ namespace WarCore.Presentation
             ShapeMismatch = shape; WallCells = walls; NavCells = nav; HeightPoints = heights; this.text = text;
         }
 
+        // Counts and the first 8 coordinates of each rule (see TerrainCheck.Text).
         public override string ToString() => text ?? "";
     }
 
@@ -44,7 +45,7 @@ namespace WarCore.Presentation
             if (own == null || own.Width != view.Width || own.Depth != view.Depth || own.MinXRaw != view.MinXRaw
                 || own.MinZRaw != view.MinZRaw || own.HasHeightField != view.HasHeightField
                 || own.HasSurfaceTable != view.HasSurfaceTable || (terrain != null && terrain.Ground != null) != view.HasHeightField)
-                return new TerrainCheckResult(true, 0, 0, 0, "shape differs");
+                return new TerrainCheckResult(true, 0, 0, 0, Text(true, 0, null, 0, null, 0, null));
 
             var walls = new List<string>();
             var nav = new List<string>();
@@ -70,13 +71,28 @@ namespace WarCore.Presentation
                     for (int i = 0; i <= view.Width; i++)
                         if (view.VertexRaw(i, j) != terrain.Ground.VertexRaw(i, j))
                             Note(heights, ref heightCount, i, j);
-            if (wallCount == 0 && navCount == 0 && heightCount == 0)
-                return new TerrainCheckResult(false, 0, 0, 0, "");
+            return new TerrainCheckResult(false, wallCount, navCount, heightCount,
+                Text(false, wallCount, walls, navCount, nav, heightCount, heights));
+        }
+
+        // Four lines, always: "shape same|differs", then "walls N", "nav N", "heights N", each count followed by up to
+        // the first 8 disagreeing coordinates "x,z" (cells) or "i,j" (points) in scan order.
+        private static string Text(bool shape, int walls, List<string> wallAt, int nav, List<string> navAt, int heights, List<string> heightAt)
+        {
             var text = new StringBuilder();
-            text.Append("walls ").Append(wallCount).Append(' ').Append(string.Join(" ", walls)).Append('\n');
-            text.Append("nav ").Append(navCount).Append(' ').Append(string.Join(" ", nav)).Append('\n');
-            text.Append("heights ").Append(heightCount).Append(' ').Append(string.Join(" ", heights)).Append('\n');
-            return new TerrainCheckResult(false, wallCount, navCount, heightCount, text.ToString());
+            text.Append("shape ").Append(shape ? "differs" : "same").Append('\n');
+            Line(text, "walls", walls, wallAt);
+            Line(text, "nav", nav, navAt);
+            Line(text, "heights", heights, heightAt);
+            return text.ToString();
+        }
+
+        private static void Line(StringBuilder text, string name, int count, List<string> at)
+        {
+            text.Append(name).Append(' ').Append(count);
+            if (at != null)
+                foreach (string a in at) text.Append(' ').Append(a);
+            text.Append('\n');
         }
 
         private static void Note(List<string> list, ref int count, int x, int z)
