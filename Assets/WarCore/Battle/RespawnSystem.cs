@@ -6,9 +6,10 @@ using Simulation = WarCore.Sim.Sim;
 namespace WarCore.Battle
 {
     // Player respawn: RespawnTicks after the controlled unit died, the first reserve of its team (in Capture() order) is deployed
-    // at the team's owned spawn point nearest the body (else the nearest team base), and control switches to it only once that
-    // deployment succeeded. A failed deployment retries the same anchor on later ticks. No state of its own: the death tick
-    // lives in the Sim, the current target in the control system, and the delay in the pack digest.
+    // at the team's owned, uncontested spawn point nearest the body (else the nearest team base), and control switches to it only
+    // once that deployment succeeded. The anchor is chosen again on every tick until then, so a failed deployment retries the same
+    // anchor unless a point became contested or free meanwhile. No state of its own: the death tick lives in the Sim, the current
+    // target in the control system, and the delay in the pack digest.
     public sealed class RespawnSystem : IRetainedGameplaySystem
     {
         private readonly Simulation sim;
@@ -55,15 +56,28 @@ namespace WarCore.Battle
             }
         }
 
-        // The team's owned spawn point nearest the body, ties to the lower index; with none, the nearest team base the same way.
+        // The team's owned, uncontested spawn point nearest the body, ties to the lower index; with none, the nearest team base the
+        // same way (bases are never contested). With neither there is no anchor and the switch waits.
         private bool TryAnchor(int team, SimVec3 origin, out SimVec3 anchor)
         {
             anchor = default; SimWide best = default; bool found = false;
             for (int i = 0; i < pack.Points.Length; i++)
-                if (capture.Points[i].Owner == team && pack.Points[i].HasSpawn) Closer(pack.Points[i].Spawn, origin, ref anchor, ref best, ref found);
+                if (capture.Points[i].Owner == team && pack.Points[i].HasSpawn && !Contested(team, pack.Points[i])) Closer(pack.Points[i].Spawn, origin, ref anchor, ref best, ref found);
             if (found) return true;
             foreach (var spawn in pack.Bases) if (spawn.Team == team) Closer(spawn.Point, origin, ref anchor, ref best, ref found);
             return found;
+        }
+
+        // Contested: a living unit of the other team with a position stands inside the point's capture circle (centre and radius,
+        // horizontal only, boundary included), counted like CaptureSystem counts units. Read before this tick's movement.
+        // PointState.Capturing is not used: under InterruptMode.Pause it outlives the enemy that set it.
+        private bool Contested(int team, in ControlPointDef point)
+        {
+            foreach (EntityId entity in stage.Capture())
+                if (combat.Entities.TryGet(combatants, entity, out Combatant unit) && unit.Team == 3 - team
+                    && combat.Entities.TryGet(positions, entity, out Position at) && !combat.IsDead(entity) && CaptureSystem.Inside(at.Value, point))
+                    return true;
+            return false;
         }
 
         private static void Closer(SimVec3 point, SimVec3 origin, ref SimVec3 anchor, ref SimWide best, ref bool found)
