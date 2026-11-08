@@ -16,15 +16,16 @@ namespace WarCore.Battle
         private readonly ComponentType<Combatant> combatants;
         private readonly IControlTarget controlled;
         private readonly FailedSlotMemory memory;
+        private readonly TargetMemory contacts;
         private readonly GuardSlots slots;
         // Rebuilt every Step, never persisted: who reserves a slot (active order to it) and who stands at it.
         private readonly bool[] reservedHas, standingHas;
         private readonly ulong[] reservedBy, standingBy;
         public SimpleAiSystem(CombatSystem combat, CombatPack weapons, MatchPack pack, CaptureSystem capture, IMoveOrders moves,
-            IControlTarget controlled = null, FailedSlotMemory memory = null)
+            IControlTarget controlled = null, FailedSlotMemory memory = null, TargetMemory contacts = null)
         {
             this.combat = combat; this.weapons = weapons; this.pack = pack; this.capture = capture; this.moves = moves;
-            this.controlled = controlled; this.memory = memory;
+            this.controlled = controlled; this.memory = memory; this.contacts = contacts;
             slots = new GuardSlots(pack.Points);
             reservedHas = new bool[slots.Total]; standingHas = new bool[slots.Total];
             reservedBy = new ulong[slots.Total]; standingBy = new ulong[slots.Total];
@@ -49,8 +50,8 @@ namespace WarCore.Battle
                 if (moving && Arrived(here, target) && slots.TryFind(target, -1, out _))
                 { StopUnit(id, here, target); moving = false; }
                 if ((c.Clock.Tick + (long)(id.Value % (ulong)pack.ThinkInterval)) % pack.ThinkInterval != 0) continue;
-                if (unit.Weapon >= 0 && combat.Pack.Selector.TrySelect(combat, entity, weapons.Weapons[unit.Weapon].FalloffEnd, out _))
-                { if (moving) StopUnit(id, here, target); continue; }
+                if (unit.Weapon >= 0 && combat.Pack.Selector.TrySelect(combat, entity, weapons.Weapons[unit.Weapon].FalloffEnd, out EntityId seen))
+                { contacts?.Saw(id, seen, c.Clock.Tick); if (moving) StopUnit(id, here, target); continue; }
                 int nearest = -1; SimWide best = default;
                 for (int i = 0; i < pack.Points.Length; i++)
                 {
@@ -71,7 +72,12 @@ namespace WarCore.Battle
                 { OrderUnit(id, here, moving, target, destination); memory?.Ordered(id, slots.Canonical(slot)); }
             }
         }
-        private void Forget(EntityId entity) { if (memory != null) memory.Forget(combat.Entities.StableOf(entity)); }
+        private void Forget(EntityId entity)
+        {
+            if (memory == null && contacts == null) return;
+            StableId id = combat.Entities.StableOf(entity);
+            memory?.Forget(id); contacts?.Forget(id);
+        }
         private void Rebuild()
         {
             Array.Clear(reservedHas, 0, reservedHas.Length); Array.Clear(standingHas, 0, standingHas.Length);
