@@ -83,43 +83,96 @@ namespace WarCore.Tests
             Assert.That(reader.UInt64(), Is.EqualTo(P1.Id(w, P1.KeyA).Value));
         }
 
-        // A2 stands 2 m east and 3 m north of A (off A's line to B): it first picks B later than A does.
+        // A2 stands 3 m north of A (off A's line to B): it first picks B on 42, two ticks after A.
         internal static UnitSpawn[] Twin()
         {
             UnitSpawn[] cast = P1.Cast();
-            return new[] { cast[0], P1.Shooter(P1.KeyA2, A2.Cell(24, 13)), cast[1], cast[2] };
+            return new[] { cast[0], P1.Shooter(P1.KeyA2, A2.Cell(22, 13)), cast[1], cast[2] };
         }
 
-        // 6: two entries at once (different First). Both allocation orders hash alike on every tick and save the same bytes;
-        // the forward save, restored with reverse allocation (A2 lands in another slot), continues tick for tick.
+        // 6: two entries at once (different First). Both allocation orders hash alike on every tick to 300 and save the same
+        // bytes on 300. The forward save on t + 7 (both entries held, before either first shot) restored with reverse
+        // allocation (a shooter lands in another slot) hashes alike at once and on every tick to 300, and both shooters fire
+        // first on the same ticks as in the run without a save.
         [Test]
         public void ReverseAllocation_SameHashesAndRestore()
         {
-            const long Both = 65, Last = 120;
+            const long Last = 300;
             P1.Trace forward = P1.Run(Twin(), P1.Walk, P1.Ai(15), Last);
             P1.Trace reverse = P1.Run(Twin(), P1.Walk, P1.Ai(15), Last, true);
             long a = forward.FirstSelect(P1.KeyA, P1.KeyB), a2 = forward.FirstSelect(P1.KeyA2, P1.KeyB);
             Assert.That(a, Is.EqualTo(P1.T));
-            Assert.That(a2, Is.GreaterThan(a).And.LessThanOrEqualTo(Both), "different First, both before the save");
+            Assert.That(a2, Is.GreaterThan(a).And.LessThanOrEqualTo(Save), "different First, both before the save");
+            long fireA = forward.FirstFire(P1.KeyA), fireA2 = forward.FirstFire(P1.KeyA2);
+            Assert.That(fireA, Is.EqualTo(a + 15));
+            Assert.That(fireA2, Is.EqualTo(a2 + 15));
+            Assert.That(Math.Min(fireA, fireA2), Is.GreaterThan(Save), "the save comes before both first shots");
             for (int t = 0; t <= Last; t++) Assert.That(reverse.Hashes[t], Is.EqualTo(forward.Hashes[t]), "tick " + t);
-            Assert.That(reverse.FirstFire(P1.KeyA), Is.EqualTo(forward.FirstFire(P1.KeyA)));
-            Assert.That(reverse.FirstFire(P1.KeyA2), Is.EqualTo(forward.FirstFire(P1.KeyA2)));
-            Assert.That(forward.FirstFire(P1.KeyA2), Is.EqualTo(a2 + 15));
+            Assert.That(reverse.FirstFire(P1.KeyA), Is.EqualTo(fireA));
+            Assert.That(reverse.FirstFire(P1.KeyA2), Is.EqualTo(fireA2));
+            Assert.That(reverse.W.Sim.SaveRetainedSnapshot(), Is.EqualTo(forward.W.Sim.SaveRetainedSnapshot()), "same bytes on 300");
 
-            M6World f = RunTo(P1.Ai(15), Both, false, Twin());
+            M6World f = RunTo(P1.Ai(15), Save, false, Twin());
             Assert.That(P1.Count(f), Is.EqualTo(2), "two entries saved");
-            Assert.That(RunTo(P1.Ai(15), Both, true, Twin()).Sim.SaveRetainedSnapshot(), Is.EqualTo(f.Sim.SaveRetainedSnapshot()), "same bytes");
             byte[] snapshot = f.Sim.SaveRetainedSnapshot();
             M6World b = P1.World(Twin(), P1.Ai(15), true);
             Assert.DoesNotThrow(() => b.Sim.RestoreRetainedSnapshot(snapshot, reverseAllocation: true));
             Assert.That(b.Unit(P1.KeyA).Id != f.Unit(P1.KeyA).Id || b.Unit(P1.KeyA2).Id != f.Unit(P1.KeyA2).Id, Is.True, "a shooter changed slot");
             Assert.That(b.Hash, Is.EqualTo(f.Hash));
             Assert.That(P1.Count(b), Is.EqualTo(2));
-            for (long tick = Both + 1; tick <= Last; tick++)
+            long restoredA = -1, restoredA2 = -1;
+            for (long tick = Save + 1; tick <= Last; tick++)
             {
                 b.Sim.Step(P1.Drive(b, tick, P1.Walk));
                 Assert.That(b.Hash, Is.EqualTo(forward.Hashes[(int)tick]), "tick " + tick);
+                if (restoredA < 0 && P1.Fired(b, P1.KeyA)) restoredA = tick;
+                if (restoredA2 < 0 && P1.Fired(b, P1.KeyA2)) restoredA2 = tick;
             }
+            Assert.That(restoredA, Is.EqualTo(fireA), "A's first shot after the restore");
+            Assert.That(restoredA2, Is.EqualTo(fireA2), "A2's first shot after the restore");
+        }
+
+        // WriteState, called directly: the type, version, R, the entry count, then per entry (stable-id order) shooter,
+        // target, First, Last; the reverse-allocation world on the same tick writes the same hash.
+        [Test]
+        public void WriteState_ListsTheEntriesInStableOrder()
+        {
+            M6World f = RunTo(P1.Ai(15), Save, false, Twin());
+            M6World r = RunTo(P1.Ai(15), Save, true, Twin());
+            ulong a = P1.Id(f, P1.KeyA).Value, a2 = P1.Id(f, P1.KeyA2).Value, target = P1.Id(f, P1.KeyB).Value;
+            var expected = new StateHash();
+            expected.Add("battle.ai-fire"); expected.Add(1); expected.Add(15); expected.Add(2);
+            foreach ((ulong shooter, long first) in a < a2 ? new[] { (a, P1.T), (a2, P1.T + 2) } : new[] { (a2, P1.T + 2), (a, P1.T) })
+            {
+                expected.Add(shooter); expected.Add(target); expected.Add(first); expected.Add(Save);
+            }
+            var forward = new StateHash();
+            f.System<ReactionFire>().WriteState(forward);
+            var reverse = new StateHash();
+            r.System<ReactionFire>().WriteState(reverse);
+            Assert.That(forward.Value, Is.EqualTo(expected.Value));
+            Assert.That(reverse.Value, Is.EqualTo(expected.Value));
+        }
+
+        // A legal but odd entry loaded on t + 7 (First 0, or a Last in the future): the next Sense does not continue it, so
+        // the clock starts again on t + 8 and the first shot comes on t + 8 + 15, none before.
+        [TestCase(0L, 0L)]
+        [TestCase(0L, long.MaxValue)]
+        [TestCase(long.MaxValue, long.MaxValue)]
+        public void Load_ExtremeTicks_StartTheClockAgain(long first, long last)
+        {
+            M6World w = RunTo(P1.Ai(15), Save);
+            var writer = new SimStateWriter();
+            writer.Int32(15); writer.Int32(1); Entry(writer, P1.Id(w, P1.KeyA).Value, first, last);
+            Assert.DoesNotThrow(() => w.System<ReactionFire>().LoadState(new SimStateReader(writer.ToArray())));
+            Assert.That(P1.Count(w), Is.EqualTo(1));
+            long fired = -1;
+            for (long tick = Save + 1; tick <= Save + 20 && fired < 0; tick++)
+            {
+                w.Sim.Step(P1.Drive(w, tick, P1.Walk));
+                if (P1.Fired(w, P1.KeyA)) fired = tick;
+            }
+            Assert.That(fired, Is.EqualTo(Save + 1 + 15));
         }
 
         [Test]

@@ -81,6 +81,16 @@ namespace WarCore.Tests
             Assert.That(on.Hash, Is.EqualTo(zero.Hash));
         }
 
+        // 1(c): the auto-fire lock worlds (AutoFireFixtures.cs: the flat M6 demo and the open-ground pair) register nothing.
+        [Test]
+        public void AutoFireWorlds_DoNotRegister()
+        {
+            var m6 = new M6World(DemoRecipes.M6(), DemoRecipes.M6MapBytes());
+            Assert.That(P1.Systems(m6), Does.Not.Contain("battle.ai-fire"));
+            Assert.That(m6.System<ReactionFire>(), Is.Null);
+            Assert.That(AssemblyWorlds.Systems(AutoFireFixtures.Pair().Sim), Does.Not.Contain("battle.ai-fire"));
+        }
+
         [Test]
         public void LeftOut_Unchanged()
         {

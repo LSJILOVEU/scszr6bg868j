@@ -19,7 +19,7 @@ namespace WarCore.Presentation
 
         public override void RegisterRules(WorldAssembly a)
         {
-            if (a.Combat == null) throw new ArgumentException("The AI reaction time needs combat.", nameof(a));
+            if (a.Combat == null) throw new ArgumentException("The AI reaction time needs combat.");
             var fire = new ReactionFire(a.Combat, a.Combat.BuiltInAutoFire, a.Recipe.TerrainPack.Section<AiRules>().ReactionTicks);
             a.Combat.UseAutoFire(fire);
             a.Sim.RegisterGameplay("battle.ai-fire", fire, SimSystemPhase.Requests);

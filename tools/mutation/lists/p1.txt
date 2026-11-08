@@ -20,18 +20,35 @@ original:
 replacement:
 | || lasts[slot] != tick || tick - firsts[slot] <= ticks)
 
-[p1-03-start-after-cooldown]
+[p1-03-start-in-tryaim]
 file = Assets/WarCore/Battle/Ai/ReactionFire.cs
 filter = FullyQualifiedName~WarCore.Tests.P1
 expect = WarCore.Tests.P1TimingTests.Cooldown_ReactionAndCooldownRunTogether
-note = the clock only starts once the weapon is ready (a cooling shooter keeps no entry)
+note = Sense only continues an entry and never makes one; TryAim (called only when the weapon is ready) makes it
 original:
-|             if ((uint)slot >= (uint)has.Length) return;
-|             if (unit.Weapon < 0
+|             has[slot] = true; shooters[slot] = self; targets[slot] = selected; firsts[slot] = tick; lasts[slot] = tick;
+|         }
+|
+|         public AutoFireAction TryAim(CombatSystem combat, EntityId shooter, in Combatant unit, in Position position,
+|             in WeaponDef weapon, long tick, out SimVec3 direction)
+|         {
+|             int slot = shooter.Id;
+|             if ((uint)slot >= (uint)has.Length || !has[slot] || !shooters[slot].Equals(combat.Entities.StableOf(shooter))
 replacement:
-|             if ((uint)slot >= (uint)has.Length) return;
-|             if (unit.DueMilli > tick * 1000) { has[slot] = false; return; }
-|             if (unit.Weapon < 0
+|             has[slot] = false;
+|         }
+|
+|         public AutoFireAction TryAim(CombatSystem combat, EntityId shooter, in Combatant unit, in Position position,
+|             in WeaponDef weapon, long tick, out SimVec3 direction)
+|         {
+|             int slot = shooter.Id;
+|             if ((uint)slot < (uint)has.Length && (!has[slot] || lasts[slot] != tick) && unit.Weapon >= 0
+|                 && combat.Pack.Selector.TrySelect(combat, shooter, combat.Pack.Weapons[unit.Weapon].FalloffEnd, out EntityId target))
+|             {
+|                 has[slot] = true; shooters[slot] = combat.Entities.StableOf(shooter); targets[slot] = combat.Entities.StableOf(target);
+|                 firsts[slot] = tick; lasts[slot] = tick;
+|             }
+|             if ((uint)slot >= (uint)has.Length || !has[slot] || !shooters[slot].Equals(combat.Entities.StableOf(shooter))
 
 [p1-04-target-not-compared]
 file = Assets/WarCore/Battle/Ai/ReactionFire.cs
@@ -142,7 +159,7 @@ replacement:
 file = Assets/WarCore/Battle/Ai/ReactionFire.cs
 filter = FullyQualifiedName~WarCore.Tests.P1
 expect = WarCore.Tests.P1StateTests.ReverseAllocation_SameHashesAndRestore
-note = the save also writes the source slot and the load puts the entry there (the shooter is still read and checked)
+note = the save also writes the source slot after each shooter and the load puts the entry there (the shooter is still read and checked)
 original:
 |                 writer.UInt64(shooters[slot].Value); writer.UInt64(targets[slot].Value); writer.Int64(firsts[slot]); writer.Int64(lasts[slot]);
 |             }
@@ -169,7 +186,7 @@ original:
 |                 SimStateReader.Require((uint)slot < (uint)has.Length, "AI reaction shooter is outside the entity capacity.");
 |
 replacement:
-|                 writer.UInt64(shooters[slot].Value); writer.UInt64(targets[slot].Value); writer.Int64(firsts[slot]); writer.Int64(lasts[slot]); writer.Int32(slot);
+|                 writer.UInt64(shooters[slot].Value); writer.Int32(slot); writer.UInt64(targets[slot].Value); writer.Int64(firsts[slot]); writer.Int64(lasts[slot]);
 |             }
 |         }
 |
@@ -182,12 +199,12 @@ replacement:
 |             for (int i = 0; i < count; i++)
 |             {
 |                 ulong key = reader.UInt64();
+|                 int old = reader.Int32();
 |                 SimStateReader.Require(i == 0 || key > previous, "AI reaction shooters are not in strictly increasing order.");
 |                 previous = key;
 |                 var shooter = new StableId(key);
 |                 var target = new StableId(reader.UInt64());
 |                 long first = reader.Int64(), last = reader.Int64();
-|                 int old = reader.Int32();
 |                 SimStateReader.Require(first >= 0, "AI reaction tick is negative.");
 |                 SimStateReader.Require(last >= first, "AI reaction last tick precedes its first tick.");
 |                 SimStateReader.Require(combat.Entities.TryResolve(shooter, out EntityRef found), "AI reaction shooter does not exist.");
@@ -199,8 +216,35 @@ replacement:
 file = Assets/WarCore/Battle/Ai/ReactionFire.cs
 filter = FullyQualifiedName~WarCore.Tests.P1
 expect = WarCore.Tests.P1StateTests.DestroyedAndReusedSlot_AreNotWritten
-note = the written count takes every raw slot entry, past the entity set and the identity match
+note = the save writes every raw slot entry sorted by shooter, past the entity set and the identity match; count and entries agree
 original:
-|                 foreach (EntityId entity in stage.Capture()) if (Exported(entity)) count++;
+|         private bool Exported(EntityId entity) =>
+|             (uint)entity.Id < (uint)has.Length && has[entity.Id] && shooters[entity.Id].Equals(combat.Entities.StableOf(entity));
+|
+|         public void SaveState(SimStateWriter writer)
+|         {
+|             writer.Int32(ticks);
+|             writer.Int32(Count);
+|             foreach (EntityId entity in stage.Capture())
+|             {
+|                 if (!Exported(entity)) continue;
+|                 int slot = entity.Id;
+|                 writer.UInt64(shooters[slot].Value); writer.UInt64(targets[slot].Value); writer.Int64(firsts[slot]); writer.Int64(lasts[slot]);
+|             }
+|         }
 replacement:
-|                 for (int slot = 0; slot < has.Length; slot++) if (has[slot]) count++;
+|         private bool Exported(EntityId entity) =>
+|             (uint)entity.Id < (uint)has.Length && has[entity.Id] && shooters[entity.Id].Equals(combat.Entities.StableOf(entity));
+|
+|         public void SaveState(SimStateWriter writer)
+|         {
+|             writer.Int32(ticks);
+|             var raw = new System.Collections.Generic.List<int>();
+|             for (int slot = 0; slot < has.Length; slot++) if (has[slot]) raw.Add(slot);
+|             raw.Sort((x, y) => shooters[x].Value.CompareTo(shooters[y].Value));
+|             writer.Int32(raw.Count);
+|             foreach (int slot in raw)
+|             {
+|                 writer.UInt64(shooters[slot].Value); writer.UInt64(targets[slot].Value); writer.Int64(firsts[slot]); writer.Int64(lasts[slot]);
+|             }
+|         }

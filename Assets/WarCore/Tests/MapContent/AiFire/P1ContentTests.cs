@@ -84,6 +84,17 @@ namespace WarCore.Tests
             Assert.That(P1.Systems(r.W), Does.Contain("battle.ai-fire|0|14;"));
         }
 
+        // 8: a terrain world without combat: RegisterRules refuses with the dispatch's message (single-argument constructor).
+        [Test]
+        public void Assembly_WithoutCombat_Throws()
+        {
+            var a = new WorldAssembly(P1.Recipe(P1.Cast(), P1.Ai(15)), WcMapWriter.Write(A2.Map(A2.DWalls)), false);
+            Assert.That(a.Combat, Is.Null);
+            var e = Assert.Throws<ArgumentException>(() => AiFireFeature.Instance.RegisterRules(a));
+            Assert.That(e.Message, Is.EqualTo("The AI reaction time needs combat."));
+            Assert.That(e.ParamName, Is.Null);
+        }
+
         // 8: the constructor's checks; 0 is legal (the installer decides whether to register).
         [Test]
         public void Constructor_Checks()
