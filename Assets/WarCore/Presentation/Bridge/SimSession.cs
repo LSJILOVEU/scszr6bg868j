@@ -40,6 +40,9 @@ namespace WarCore.Presentation
         internal IControlTarget Controlled;
         internal CombatPack CombatPack;
         internal ComponentType<UnitFacing>? Facings;
+        // Terrain tables and the rules they were derived under; both null on flat maps. Read by TerrainCheck only.
+        internal TerrainTables Terrain;
+        internal TerrainRules TerrainRules;
     }
 
     /// <summary>
@@ -117,6 +120,8 @@ namespace WarCore.Presentation
             map = parts.Map;
             wallMask = parts.WallMask;
             Map = parts.View;
+            Terrain = parts.Terrain;
+            TerrainRules = parts.TerrainRules;
             sim = parts.Sim;
             units = new StableId[parts.Units.Length];
             for (int i = 0; i < parts.Units.Length; i++) units[i] = sim.Entities.StableOf(parts.Units[i]);
@@ -131,6 +136,8 @@ namespace WarCore.Presentation
         public static SimSession Create(WorldRecipe recipe) => WorldBuilder.Create(recipe);
         public static SimSession Create(WorldRecipe recipe, byte[] mapBytes) => WorldBuilder.Create(recipe, mapBytes);
         public ViewMap Map { get; }
+        internal TerrainTables Terrain { get; }
+        internal TerrainRules TerrainRules { get; }
         // View key is the original UnitSpawn.Key, not the hashed StableId or the physical entity slot.
         public ulong? ControlledKey
         {
@@ -157,6 +164,9 @@ namespace WarCore.Presentation
         public IReadOnlyList<PlayerInputRecord> PlayerLog { get; }
 
         // Collision view of the map: does a static wall touch the centre of cell (x, z)? Test and bake probe.
+        // The probe stands at FlatHeight + 0.5 m whatever the ground does: on a legal terrain map every wall starts at
+        // FlatHeight = Min.Y and rises at least 1 m above the highest ground, so the fixed probe never misses one.
+        // Navigation on terrain is not this: it is the file bit AND a walkable surface AND a legal slope (TerrainCheck).
         public bool BlockedCell(int x, int z)
         {
             if (map == null || wallMask == 0)

@@ -10,15 +10,20 @@ namespace WarCore.Unity
         private readonly Transform parent;
         private readonly Color[] palette;
         private readonly float height;
+        private readonly ViewGround ground;
         private readonly Dictionary<ulong, List<Vector3>> points = new Dictionary<ulong, List<Vector3>>();
         private readonly Dictionary<ulong, LineRenderer> lines = new Dictionary<ulong, LineRenderer>();
 
-        public UnitTrails(Transform parent, Color[] palette, float height)
+        public UnitTrails(Transform parent, Color[] palette, float height, ViewGround ground = null)
         {
+            this.ground = ground;
             this.parent = parent;
             this.palette = palette;
             this.height = height;
         }
+
+        // Height above the ground of the map's height field; the old constant on a flat map (ground null).
+        private float Base(float x, float z) => ground == null ? 0f : ground.HeightAt(x, z, 0f);
 
         public void Add(FrameView frame)
         {
@@ -36,7 +41,7 @@ namespace WarCore.Unity
                     points.Add(entity.Key, new List<Vector3>());
                 }
                 List<Vector3> list = points[entity.Key];
-                var point = new Vector3(entity.X, height, entity.Z);
+                var point = new Vector3(entity.X, Base(entity.X, entity.Z) + height, entity.Z);
                 if (list.Count > 0 && list[list.Count - 1] == point)
                     continue;
                 list.Add(point);
