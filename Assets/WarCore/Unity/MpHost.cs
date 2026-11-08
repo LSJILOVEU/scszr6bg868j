@@ -33,8 +33,7 @@ namespace WarCore.Unity
         private readonly PlayerInputMapper mapper = new PlayerInputMapper(PlayerKeys.Default);
         private PlayerKeyPoller keys;
         private readonly LivePlayerInput liveInput = new LivePlayerInput();
-        private ulong? lastControlledKey;
-        private bool lostPlayer;
+        private PlayerTracker tracker;
         private string hud = "";
         private GUIStyle style;
 
@@ -42,7 +41,7 @@ namespace WarCore.Unity
         {
             UnityEditor.SessionState.EraseBool(ModeKey);
             byte[] bytes = File.ReadAllBytes(Path.Combine(Application.streamingAssetsPath, M2Host.M7MapPath));
-            session = SimSession.Create(DemoRecipes.MpBlockDemo(), bytes);
+            session = SimSession.Create(DemoRecipes.MpRespawnDemo(), bytes);
             try { keys = new PlayerKeyPoller(PlayerKeys.Default, GetKey); }
             catch (ArgumentException e)
             {
@@ -68,7 +67,7 @@ namespace WarCore.Unity
             views = new EntityViews(transform, new Vector3(0.5f, 1f, 0.5f), 0.5f, palette);
             points = new PointViews(transform);
             shots = new ShotLines(transform, palette, 1.5f);
-            lastControlledKey = session.ControlledKey;
+            tracker = new PlayerTracker(session.ControlledKey);
             Show();
         }
 
@@ -97,13 +96,9 @@ namespace WarCore.Unity
         {
             FrameView current = session.Current;
             ulong? key = session.ControlledKey;
-            bool alive = key.HasValue && current.TryGet(key.Value, out ViewEntity controlled) && controlled.Alive;
-            // Advance can span both the death tick and the fallback tick. The old corpse
-            // is still in Current even when the newly controlled soldier is already alive.
-            if (!alive || (lastControlledKey.HasValue && key != lastControlledKey
-                && current.TryGet(lastControlledKey.Value, out ViewEntity old) && !old.Alive))
-                lostPlayer = true;
-            lastControlledKey = key;
+            // Advance can span both the death tick and the takeover tick (PlayerTracker keeps the rule).
+            bool lostPlayer = tracker.Update(current, key);
+            bool alive = tracker.Alive;
 
             points.Apply(current);
             views.Apply(session.Previous, current, session.Alpha);
@@ -118,8 +113,12 @@ namespace WarCore.Unity
             UnitStatus? status = key.HasValue && session.TryUnitStatus(key.Value, out UnitStatus unit)
                 ? unit : (UnitStatus?)null;
             hud = HudLines.Build(current, session.StateHash, key, status, pick);
-            if (lostPlayer)
-                hud += alive ? $"\nDown - now controlling #{key.Value}" : "\nDown";
+            string takeover = HudLines.Takeover(lostPlayer, alive, key);
+            if (takeover != null)
+                hud += "\n" + takeover;
+            string respawn = HudLines.Respawn(current);
+            if (respawn != null)
+                hud += "\n" + respawn;
             if (alive && status.HasValue && !session.IsFinished)
             {
                 UnitStatus value = status.Value;

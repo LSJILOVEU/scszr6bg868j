@@ -66,6 +66,18 @@ namespace WarCore.Presentation
         public static WorldRecipe MpBlockDemo() =>
             WithPlayerBlock(MpDemo(), new WarCore.Combat.BlockSpec(500, 1000)); // PLACEHOLDER: front +-60 degrees, stops all of the blow.
 
+        // C2: the MP block demo with player respawn on, so a death shows the countdown and play goes on in a reserve.
+        public static WorldRecipe MpRespawnDemo() => WithRespawn(MpBlockDemo(), 300); // PLACEHOLDER: 10 s at 30 Hz.
+
+        // The recipe with its match rules rebuilt from every field of the old ones and only the respawn delay replaced.
+        internal static WorldRecipe WithRespawn(WorldRecipe source, int ticks)
+        {
+            WarCore.Battle.MatchPack m = source.Match ?? throw new System.InvalidOperationException("Respawn needs match rules.");
+            return source.WithMatch(new WarCore.Battle.MatchPack(m.Points.ToArray(), m.Bases.ToArray(), m.Num, m.Den, m.Strict,
+                m.CaptureTicks, m.Interrupt, m.DecayPerTick, m.IntervalTicks, m.ThinkInterval, m.MaxTicks, m.Sight,
+                m.GridColumns, m.GridRows, m.GridSpacing, ticks));
+        }
+
         // Appends spec to the recipe's combat pack and gives it to the player's unit only. Every other recipe and pack field is copied.
         internal static WorldRecipe WithPlayerBlock(WorldRecipe source, WarCore.Combat.BlockSpec block)
         {

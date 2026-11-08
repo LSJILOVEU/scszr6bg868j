@@ -48,5 +48,29 @@ namespace WarCore.Presentation
             text.Append(pick.HasValue ? FormattableString.Invariant($"Ground ({pick.Value.X:F1}, {pick.Value.Z:F1})") : "Ground -");
             return text.ToString();
         }
+
+        // The respawn line for the HUD, or null when there is nothing to show (respawn off, the unit alive, or the match over).
+        // Waiting rounds up to whole seconds: 1 to 30 ticks left show 1 s, 31 show 2 s.
+        public static string Respawn(FrameView frame)
+        {
+            if (frame.Match.IsFinished) return null;
+            ViewRespawn respawn = frame.Respawn;
+            switch (respawn.State)
+            {
+                case RespawnPhase.Waiting:
+                    long seconds = (respawn.TicksLeft + SimSession.TickRate - 1) / SimSession.TickRate;
+                    return FormattableString.Invariant($"Respawn in {seconds} s");
+                case RespawnPhase.Overdue: return "Respawn: waiting for an available spawn point";
+                case RespawnPhase.NoReserve: return "No reserves left: no respawn";
+                default: return null;
+            }
+        }
+
+        // The line after losing the controlled unit, or null when it was not lost.
+        public static string Takeover(bool lostPlayer, bool alive, ulong? key)
+        {
+            if (!lostPlayer) return null;
+            return alive ? FormattableString.Invariant($"Down - now controlling #{key.Value}") : "Down";
+        }
     }
 }

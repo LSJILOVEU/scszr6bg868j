@@ -377,7 +377,25 @@ namespace WarCore.Presentation
                     (float)def.Radius.Raw / SimFix.Scale, state.Owner, state.Capturing, (float)state.Progress / matchPack.CaptureTicks);
             }
             return new FrameView(Tick, views.ToArray(), fires, points,
-                new ViewMatch(Winner, (int)EndTick, EndReason, aliveOne, aliveTwo, reserveOne, reserveTwo, IsFinished));
+                new ViewMatch(Winner, (int)EndTick, EndReason, aliveOne, aliveTwo, reserveOne, reserveTwo, IsFinished),
+                Respawn(reserveOne, reserveTwo));
+        }
+
+        // Same reading as RespawnSystem: the controlled unit is dead and respawn is on. The reserves are the ones counted above
+        // (alive, no Position), the rule ReinforceSystem and RespawnSystem take reserves by. Not hashed, recomputed every frame.
+        private ViewRespawn Respawn(int reserveOne, int reserveTwo)
+        {
+            // A controlled unit implies match rules (WorldBuilder refuses a player without them).
+            if (controlled == null || matchPack.RespawnTicks == 0) return default;
+            EntityId player = controlled.Current;
+            if (!sim.Entities.IsAlive(player)) return default;
+            GameplayLifeView life = sim.GameplayLife(sim.Entities.StableOf(player));
+            if (life.State != GameplayLifeState.Dead) return default;
+            int team = combat.Unit(player).Team;
+            int reserves = team == 1 ? reserveOne : team == 2 ? reserveTwo : 0;
+            long left = Math.Max(0, life.EnteredTick + matchPack.RespawnTicks - Tick);
+            RespawnPhase state = reserves == 0 ? RespawnPhase.NoReserve : left > 0 ? RespawnPhase.Waiting : RespawnPhase.Overdue;
+            return new ViewRespawn(state, left, reserves);
         }
 
         public static ViewFire ToView(in FireRecord fire) => new ViewFire(
