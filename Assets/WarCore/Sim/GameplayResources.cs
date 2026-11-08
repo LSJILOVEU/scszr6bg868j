@@ -74,7 +74,7 @@ namespace WarCore.Sim
         }
         private void Count(ref long count)
         {
-            count++;
+            if(count==long.MaxValue)throw new SimBoundaryException("M0C_DIAGNOSTIC_EXHAUSTED"); count++;
         }
         private bool hasAdmission;
         private StableId admissionOwner;

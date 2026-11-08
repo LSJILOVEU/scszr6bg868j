@@ -65,6 +65,7 @@ namespace WarCore.Sim
         }
         private void TransitionLife(int owner,GameplayLifeState next,GameplayLifeRuleDef rule)
         {
+            if(effectNext==ulong.MaxValue)throw new SimBoundaryException("M0C_LIFE_TOKEN_EXHAUSTED");
             ulong token=effectNext;effectNext++;RefreshStatusMeta();
             var previous=lifeStates[owner];StableId id=owners[owner];
             ownerSum=unchecked(ownerSum-RowLeaf(3,owner));
