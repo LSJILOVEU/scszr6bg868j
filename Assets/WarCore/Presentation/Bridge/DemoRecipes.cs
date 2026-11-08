@@ -61,6 +61,38 @@ namespace WarCore.Presentation
             throw new System.InvalidOperationException("MP requires a deployed team 1 unit.");
         }
 
+        // F5u: the MP demo with one block spec that only the player's unit carries, so the HUD can show a held block.
+        // Every other field of the recipe and its combat pack is copied from MpDemo; no block AI is added.
+        public static WorldRecipe MpBlockDemo() =>
+            WithPlayerBlock(MpDemo(), new WarCore.Combat.BlockSpec(500, 1000)); // PLACEHOLDER: front +-60 degrees, stops all of the blow.
+
+        // Appends spec to the recipe's combat pack and gives it to the player's unit only. Every other recipe and pack field is copied.
+        internal static WorldRecipe WithPlayerBlock(WorldRecipe source, WarCore.Combat.BlockSpec block)
+        {
+            WarCore.Combat.CombatPack old = source.Combat;
+            var blocks = new WarCore.Combat.BlockSpec[old.Block.Length + 1];
+            old.Block.CopyTo(blocks);
+            int spec = old.Block.Length;
+            blocks[spec] = block;
+            var pack = new WarCore.Combat.CombatPack(old.Weapons.ToArray(), old.Resolver, old.Selector, old.MaxHealthRaw,
+                old.FriendlyFire, old.FriendlyFireLocked, old.AllyCheckMissRaw, old.AllyHoldMilli, old.Melee.ToArray(), blocks);
+            ulong player = source.PlayerKey.Value;
+            UnitSpawn[] units = source.Units.ToArray();
+            for (int i = 0; i < units.Length; i++)
+            {
+                UnitSpawn u = units[i];
+                if (u.Key != player) continue;
+                units[i] = new UnitSpawn(u.Key, u.Archetype, u.Squad, u.XMm, u.ZMm, u.SpeedMmPerSec, u.Team, u.Weapon, u.Reserve, u.Melee, spec);
+            }
+            WorldRecipe recipe = new WorldRecipe(source.Seed, source.Mover, units, source.Script.ToArray())
+                .WithCombat(pack).WithCrowdPass(source.CrowdPass).WithRuleSet(source.RuleSetId).WithPlayer(player);
+            if (source.Match != null) recipe = recipe.WithMatch(source.Match);
+            if (source.TerrainPack != null) recipe = recipe.WithTerrainRules(source.TerrainPack);
+            if (source.BlockAi) recipe = recipe.WithBlockAi();
+            foreach (IWorldOption option in source.Options) recipe = recipe.With(option);
+            return recipe;
+        }
+
         public static WorldRecipe M7() => M7(WarCore.Content.Rwr.RwrPack.Load(WarCore.Content.Rwr.RwrPack.M6Layer));
 
         public static WorldRecipe M7(ContentPack content)

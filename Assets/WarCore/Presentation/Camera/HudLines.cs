@@ -15,11 +15,14 @@ namespace WarCore.Presentation
         public bool Reloading { get; }
         public bool Alive { get; }
         public bool HasWeapon { get; }
+        // The unit is holding a block in the Sim at the committed tick (not whether a block key is down).
+        public bool Blocking { get; }
+        // Parameters may only be appended at the end.
         public UnitStatus(float health, float maxHealth, int ammo, long waitTicksLeft = 0,
-            bool reloading = false, bool alive = true, bool hasWeapon = true)
+            bool reloading = false, bool alive = true, bool hasWeapon = true, bool blocking = false)
         {
             Health = health; MaxHealth = maxHealth; Ammo = ammo; WaitTicksLeft = waitTicksLeft;
-            Reloading = reloading; Alive = alive; HasWeapon = hasWeapon;
+            Reloading = reloading; Alive = alive; HasWeapon = hasWeapon; Blocking = blocking;
         }
     }
 
@@ -31,7 +34,11 @@ namespace WarCore.Presentation
             var text = new StringBuilder();
             text.Append(FormattableString.Invariant($"Tick {frame.Tick}\nStateHash {stateHash:X16}\n"));
             if (followKey.HasValue && status.HasValue)
+            {
                 text.Append(FormattableString.Invariant($"Follow #{followKey.Value}  HP {status.Value.Health:F0}/{status.Value.MaxHealth:F0}  Ammo {status.Value.Ammo}\n"));
+                if (status.Value.Blocking)
+                    text.Append("Blocking\n");
+            }
             else
                 text.Append("Follow -\n");
             text.Append("Points");
