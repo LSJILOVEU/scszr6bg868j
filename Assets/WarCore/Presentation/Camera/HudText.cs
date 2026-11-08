@@ -27,6 +27,6 @@ namespace WarCore.Presentation
             NowControlling = nowControlling ?? throw new ArgumentNullException(nameof(nowControlling));
         }
 
-        internal static string Format(string format, long value) => string.Format(CultureInfo.InvariantCulture, format, value);
+        internal static string Format(string format, object value) => string.Format(CultureInfo.InvariantCulture, format, value);
     }
 }

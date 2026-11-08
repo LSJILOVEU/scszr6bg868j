@@ -103,3 +103,13 @@ original:
 replacement:
 |             text = HudText.English;
 |             ViewRespawn respawn
+
+[c2-11-signed-key]
+file = Assets/WarCore/Presentation/Camera/HudLines.cs
+filter = FullyQualifiedName~WarCore.Tests.C2
+expect = WarCore.Tests.C2RespawnViewTests.C2Takeover_LargestKey_IsUnsigned
+note = the view key is printed as a signed number
+original:
+| HudText.Format(text.NowControlling, key.Value)
+replacement:
+| HudText.Format(text.NowControlling, (long)key.Value)

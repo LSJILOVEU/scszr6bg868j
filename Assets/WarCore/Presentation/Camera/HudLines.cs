@@ -71,7 +71,7 @@ namespace WarCore.Presentation
         {
             if (!lostPlayer) return null;
             text = text ?? HudText.English;
-            return alive ? HudText.Format(text.NowControlling, (long)key.Value) : text.Down;
+            return alive ? HudText.Format(text.NowControlling, key.Value) : text.Down;
         }
 
         // The one player line the host shows: the respawn line while there is one (it replaces "Down"), else the takeover line.

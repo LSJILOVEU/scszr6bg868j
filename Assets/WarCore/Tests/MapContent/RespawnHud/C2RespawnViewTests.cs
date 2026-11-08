@@ -62,6 +62,29 @@ namespace WarCore.Tests
             Assert.That(Now(3), Is.EqualTo("Now controlling #3"));
         }
 
+        // The default English table, written out: the other tests read their expectations from the table.
+        [Test]
+        public void C2EnglishTable_Lines()
+        {
+            Assert.That(T.RespawnIn, Is.EqualTo("Respawn in {0} s"));
+            Assert.That(T.RespawnWaiting, Is.EqualTo("Respawn: waiting for an available spawn point"));
+            Assert.That(T.NoReserve, Is.EqualTo("No reserves left: no respawn"));
+            Assert.That(T.Down, Is.EqualTo("Down"));
+            Assert.That(T.NowControlling, Is.EqualTo("Now controlling #{0}"));
+            var frame = new FrameView(0, Array.Empty<ViewEntity>(), respawn: new ViewRespawn(RespawnPhase.Waiting, 31, 1));
+            Assert.That(HudLines.Respawn(frame), Is.EqualTo("Respawn in 2 s"));
+            Assert.That(HudLines.Takeover(true, true, 146), Is.EqualTo("Now controlling #146"));
+        }
+
+        // View keys are unsigned: the largest key prints as itself, not as a negative number.
+        [Test]
+        public void C2Takeover_LargestKey_IsUnsigned()
+        {
+            Assert.That(HudLines.Takeover(true, true, ulong.MaxValue), Is.EqualTo("Now controlling #18446744073709551615"));
+            Assert.That(HudLines.PlayerLine(new FrameView(0, Array.Empty<ViewEntity>()), true, true, ulong.MaxValue),
+                Is.EqualTo("Now controlling #18446744073709551615"));
+        }
+
         // Another table changes every line without touching HudLines.
         [Test]
         public void C2AnotherTextTable_IsUsedForEveryLine()
@@ -126,6 +149,7 @@ namespace WarCore.Tests
             {
                 Expect(Step(w), RespawnPhase.Overdue, 0, 1, "tick " + tick);
                 Assert.That(HudLines.Respawn(w.Session.Current), Is.EqualTo(T.RespawnWaiting));
+                Assert.That(HudLines.PlayerLine(w.Session.Current, true, false, w.Session.ControlledKey), Is.EqualTo(T.RespawnWaiting));
                 Assert.That(w.Session.ControlledKey, Is.EqualTo(Player));
             }
             Expect(Step(w), RespawnPhase.None, 0, 0, "tick 9");
@@ -157,6 +181,7 @@ namespace WarCore.Tests
                 Assert.That(r.State, Is.EqualTo(RespawnPhase.NoReserve), "tick " + tick);
                 Assert.That(r.Reserves, Is.Zero, "tick " + tick);
                 Assert.That(HudLines.Respawn(w.Session.Current), Is.EqualTo(T.NoReserve), "tick " + tick);
+                Assert.That(HudLines.PlayerLine(w.Session.Current, true, false, w.Session.ControlledKey), Is.EqualTo(T.NoReserve), "tick " + tick);
                 if (tick == 45) Assert.That(r.TicksLeft, Is.EqualTo(1));
                 if (tick == 46 || tick == 300) Assert.That(r.TicksLeft, Is.Zero);
             }
@@ -259,6 +284,8 @@ namespace WarCore.Tests
                 original.Session.StepOnce(); restored.Session.StepOnce();
                 Assert.That(restored.Session.Current.Respawn, Is.EqualTo(original.Session.Current.Respawn), "tick " + tick);
                 Assert.That(restored.Session.ControlledKey, Is.EqualTo(original.Session.ControlledKey), "tick " + tick);
+                if (tick == 45) Assert.That(restored.Session.ControlledKey, Is.EqualTo(Player));
+                if (tick == 46) Assert.That(restored.Session.ControlledKey, Is.EqualTo(Reserve));
             }
             Assert.That(original.Session.ControlledKey, Is.EqualTo(Reserve));
         }
