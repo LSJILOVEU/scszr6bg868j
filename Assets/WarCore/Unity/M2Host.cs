@@ -89,14 +89,14 @@ namespace WarCore.Unity
             views.Apply(session.Previous, session.Current, 0);
             if (pathMode && !combatMode) // trails would bury the units and shots in a fight
             {
-                trails = new UnitTrails(transform, palette, 1.2f);
+                trails = new UnitTrails(transform, palette, 1.2f, ViewGround.For(session.Map));
                 trails.Add(session.Current);
             }
             if (combatMode)
-                shots = new ShotLines(transform, palette, 1.5f);
+                shots = new ShotLines(transform, palette, 1.5f, ViewGround.For(session.Map));
             if (matchMode)
             {
-                points = new PointViews(transform);
+                points = new PointViews(transform, ViewGround.For(session.Map));
                 points.Apply(session.Current);
             }
             ViewMap map = session.Map;

@@ -10,10 +10,14 @@ namespace WarCore.Unity
         private static readonly Color Neutral = new Color(0.55f, 0.55f, 0.55f);
         private static readonly Color[] Teams = { Neutral, new Color(1f, 0.85f, 0.2f), new Color(0.2f, 0.5f, 1f) };
         private readonly Transform parent;
+        private readonly ViewGround ground;
         private GameObject[] discs = System.Array.Empty<GameObject>();
         private LineRenderer[] rings = System.Array.Empty<LineRenderer>();
 
-        public PointViews(Transform parent) { this.parent = parent; }
+        // ground: the map's height field, or null on a flat map (then every height is the old constant).
+        public PointViews(Transform parent, ViewGround ground = null) { this.parent = parent; this.ground = ground; }
+
+        private float Base(float x, float z) => ground == null ? 0f : ground.HeightAt(x, z, 0f);
 
         public void Apply(FrameView frame)
         {
@@ -38,7 +42,7 @@ namespace WarCore.Unity
             for (int i = 0; i < points.Length; i++)
             {
                 ViewPoint p = points[i];
-                discs[i].transform.position = new Vector3(p.X, 0.02f, p.Z);
+                discs[i].transform.position = new Vector3(p.X, Base(p.X, p.Z) + 0.02f, p.Z);
                 discs[i].transform.localScale = new Vector3(p.Radius * 2, 0.01f, p.Radius * 2);
                 Color owner = Teams[p.Owner % Teams.Length];
                 discs[i].GetComponent<Renderer>().material.color = Color.Lerp(owner, new Color(0.2f, 0.3f, 0.2f), 0.55f);
@@ -49,7 +53,8 @@ namespace WarCore.Unity
                 for (int k = 0; k <= count; k++)
                 {
                     float angle = k * 2 * Mathf.PI / RingSegments;
-                    rings[i].SetPosition(k, new Vector3(p.X + Mathf.Cos(angle) * p.Radius, 0.05f, p.Z + Mathf.Sin(angle) * p.Radius));
+                    float rx = p.X + Mathf.Cos(angle) * p.Radius, rz = p.Z + Mathf.Sin(angle) * p.Radius;
+                    rings[i].SetPosition(k, new Vector3(rx, Base(rx, rz) + 0.05f, rz));
                 }
             }
         }
