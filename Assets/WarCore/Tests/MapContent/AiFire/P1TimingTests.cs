@@ -134,8 +134,8 @@ namespace WarCore.Tests
         }
 
         // 4(iv): continuity without the state system's Step. A ReactionFire made here (R = 15, not registered) is driven by
-        // hand on A while B is selectable: Sense on k, none on k + 1, Sense on every tick k + 2 .. k + 17; TryAim on k + 16
-        // passes, on k + 17 it hands over to the built-in decision (the clock started on k + 2).
+        // hand on A while B is selectable: Sense on k, none on k + 1, then on every tick k + 2 .. k + 17 Sense followed by TryAim;
+        // TryAim passes up to k + 16 and hands over to the built-in decision on k + 17 (the clock started on k + 2, not k).
         [Test]
         public void Continuity_WithoutStep()
         {
@@ -149,9 +149,14 @@ namespace WarCore.Tests
             WeaponDef weapon = w.Combat.Pack.Weapons[unit.Weapon];
             const long K = 1000;
             fire.Sense(w.Combat, a, in unit, in at, K);
-            for (long tick = K + 2; tick <= K + 17; tick++) fire.Sense(w.Combat, a, in unit, in at, tick);
-            Assert.That(fire.TryAim(w.Combat, a, in unit, in at, in weapon, K + 16, out _), Is.EqualTo(AutoFireAction.Pass), "k + 16");
-            Assert.That(fire.TryAim(w.Combat, a, in unit, in at, in weapon, K + 17, out SimVec3 d), Is.EqualTo(AutoFireAction.Fire), "k + 17");
+            SimVec3 d = default;
+            for (long tick = K + 2; tick <= K + 17; tick++)
+            {
+                fire.Sense(w.Combat, a, in unit, in at, tick);
+                AutoFireAction action = fire.TryAim(w.Combat, a, in unit, in at, in weapon, tick, out SimVec3 direction);
+                if (tick < K + 17) Assert.That(action, Is.EqualTo(AutoFireAction.Pass), "tick k + " + (tick - K));
+                else { Assert.That(action, Is.EqualTo(AutoFireAction.Fire), "k + 17"); d = direction; }
+            }
             Assert.That(d.LengthSquared.Sign, Is.Not.EqualTo(0));
         }
     }

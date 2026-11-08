@@ -125,18 +125,18 @@ replacement:
 file = Assets/WarCore/Battle/Ai/ReactionFire.cs
 filter = FullyQualifiedName~WarCore.Tests.P1
 expect = WarCore.Tests.P1StateTests.ReverseAllocation_SameHashesAndRestore
-note = the hash lists entries in slot order
+note = the save (which the retained state hash is built from) lists entries in slot order
 original:
 |             foreach (EntityId entity in stage.Capture())
 |             {
 |                 if (!Exported(entity)) continue;
 |                 int slot = entity.Id;
-|                 hash.Add(
+|                 writer.
 replacement:
 |             for (int slot = 0; slot < has.Length; slot++)
 |             {
 |                 if (!has[slot]) continue;
-|                 hash.Add(
+|                 writer.
 
 [p1-12-old-slot]
 file = Assets/WarCore/Battle/Ai/ReactionFire.cs
