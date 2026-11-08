@@ -65,18 +65,19 @@ namespace WarCore.Tests
                     Assert.That(c.Capture.Changes.ToArray(), Is.EqualTo(a.Capture.Changes.ToArray()), "capture tick " + tick);
                     Assert.That(c.Reinforce.Deployed.ToArray(), Is.EqualTo(a.Reinforce.Deployed.ToArray()), "deploy tick " + tick);
                 }
-                if (a.Match.Winner != 0) break; // the end is checked below, never as a middle point
+                // Events are noted on the end tick too, so a point that falls on it is reported as skipped below.
                 bool point = false;
                 if (firstDeploy < 0 && a.Reinforce.Deployed.Length > 0)
                 { firstDeploy = tick; deployedAtDeploy = a.Reinforce.Deployed.Length; movingAtDeploy = Moving(a); point = true; }
                 if (firstFlip < 0 && a.Capture.Changes.Length > 0) { firstFlip = tick; point = true; }
                 if (tick == 300) { capturing300 = a.Capture.Points[0].Owner == 0 && a.Capture.Points[0].Progress > 0; point = true; }
                 if (tick == 600) { reinforced600 = a.Reinforce.Successes(1) >= 1; point = true; }
+                if (a.Match.Winner != 0) break; // the end is checked below, never as a middle point
                 if (point && taken.Add(tick)) restored.Add((tick, Restore(a, a.Sim.SaveRetainedSnapshot())));
             }
             Assert.That(a.Match.Winner, Is.Not.EqualTo(0));
-            TestContext.Progress.WriteLine("L6 restore points: " + string.Join(",", taken) + "; skipped (at or after the end): "
-                + Skipped(a.Match.EndTick));
+            TestContext.Progress.WriteLine("L6 restore points: " + string.Join(",", taken) + "; skipped (at or after the end, or missing): "
+                + Skipped(a.Match.EndTick, firstDeploy, firstFlip));
             Assert.That(taken.Count, Is.GreaterThanOrEqualTo(3), "at least three distinct middle ticks");
 
             // Evidence that the middle points caught the states they stand for (a point at or after the end has none).
@@ -105,11 +106,14 @@ namespace WarCore.Tests
             Assert.That(last.Sim.SaveRetainedSnapshot(), Is.EqualTo(end));
         }
 
-        private static string Skipped(long endTick)
+        // Every middle point at or after the end is skipped with its evidence (one rule, >= EndTick); a missing event is -1.
+        private static string Skipped(long endTick, long firstDeploy, long firstFlip)
         {
-            var skipped = new List<long>();
-            foreach (long tick in new long[] { 300, 600 }) if (tick >= endTick) skipped.Add(tick);
-            return string.Join(",", skipped);
+            var skipped = new List<string>();
+            var points = new (string Name, long Tick)[] { ("firstDeploy", firstDeploy), ("300", 300), ("firstFlip", firstFlip), ("600", 600) };
+            foreach (var (name, tick) in points)
+                if (tick < 0 || tick >= endTick) skipped.Add(name + "=" + tick);
+            return skipped.Count == 0 ? "none" : string.Join(",", skipped);
         }
     }
 }

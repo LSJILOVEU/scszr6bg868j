@@ -12,7 +12,11 @@ namespace WarCore.Tests
 
         // Behaviour baseline (not a determinism lock), recorded by L6. Known defect until L9: shots are horizontal from foot
         // height, so targets more than about 0.5 m higher or lower are not hit; the match ends on the time limit with the
-        // ridge held 1:0. L9 must re-record it (and the fixed values in Semantics below), listing old and new values in its PR.
+        // ridge held 1:0. L9 must re-record it, the fixed values in the tests below and the restore evidence in
+        // L6DeterminismTests (deploy and movement at the first deploy, capture at 300, reinforcement at 600), listing old and
+        // new values in its PR; it may pick equivalent witness ticks (at least three distinct middle ticks, a point at or after
+        // EndTick is skipped with its evidence). L9 also adds checks that an unobstructed target at a different height (over
+        // 0.5 m) is hit and that a non-zero spread keeps its vertical component.
         // Columns: see L6.Line.
         private const string Golden =
             "41,9000,1,3,B9C49B7E14334C5A,827863B9B8BEF7C1,1B95F55457B8C6D0,00901EF824B88094,12,399,1,7,17,10,10,24005,42,202,93,0";
