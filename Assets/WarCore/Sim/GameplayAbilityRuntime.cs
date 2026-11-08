@@ -239,7 +239,7 @@ namespace WarCore.Sim
             // Capture before the admission fee; a later windup release never rereads these attributes.
             row.SourceSnapshot=CaptureAbilitySource(input.Actor,definition); // S3_MUTATION:capture_admission
             AdmissionOrder(input.Actor,input.CommandOrdinal);
-            if(SpendCore(input.Actor,definition.Costs)!=GameplayFailure.None)throw new SimBoundaryException("M0C_ABILITY_ATOMIC_FEE");
+            SpendCore(input.Actor,definition.Costs);
             ownerSum=unchecked(ownerSum-RowLeaf(3,owner));token=castNext[owner];castNext[owner]++;ownerSum=unchecked(ownerSum+RowLeaf(3,owner));row.Token=token;
             row.NextDueTick=AbilityFutureTick(sim.Clock.Tick,definition.WindupTicks);
             int at=0;while(at<abilityCastCount && abilityCasts[at].Owner.Id.CompareTo(input.Actor.Id)<0)at++;
@@ -329,7 +329,7 @@ namespace WarCore.Sim
             if(row.Phase==GameplayCastPhase.Active && row.NextPulseTick!=0 && row.NextPulseTick<=now && row.NextPulseTick<row.NextDueTick)
             {
                 if(!ReleaseAbilityActions(index,GameplayActionTrigger.ActivePulse,row.NextPulseOrdinal))return;
-                row=abilityCasts[index];if(row.NextPulseOrdinal==uint.MaxValue)throw new SimBoundaryException("M0C_ABILITY_PULSE_EXHAUSTED");
+                row=abilityCasts[index];
                 row.NextPulseOrdinal++;row.NextPulseTick=definition.PulsePeriodTicks<row.NextDueTick-now?GameplayMath.FutureTick(now,definition.PulsePeriodTicks,ref timeSaturations):0;WriteAbilityCast(index,row);
             }
             for(int phase=0;phase<3;phase++)
