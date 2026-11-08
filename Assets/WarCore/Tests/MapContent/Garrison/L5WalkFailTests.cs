@@ -64,6 +64,14 @@ namespace WarCore.Tests
             return t;
         }
 
+        // Every tick: the resting unit is exactly where it spawned (X, Y and Z), and the AI unit has not passed it.
+        private static void CheckCorridor(M6World w, SimVec3 rest)
+        {
+            long tick = w.Sim.Clock.Tick;
+            Assert.That(w.Read<Position>(Blocker).Value, Is.EqualTo(rest), "tick " + tick + ": the resting unit never moves");
+            Assert.That(w.Read<Position>(Ai).Value.X.Raw, Is.LessThan(Rest.X.Raw), "tick " + tick + ": the AI unit never passes the resting unit");
+        }
+
         [Test]
         public void L5_RouteExists_WalkingFails_MemorySkipsThenRetries_AndSnapshotsResume()
         {
@@ -72,9 +80,10 @@ namespace WarCore.Tests
             StableId id = L5.Id(w, Ai);
             SimVec3 rest = w.Read<Position>(Blocker).Value;
             Assert.That((rest.X.Raw, rest.Z.Raw), Is.EqualTo((Rest.X.Raw, Rest.Z.Raw)));
+            CheckCorridor(w, rest);
 
             // (a) the first order and a route at that moment, with this fixture's own content layer.
-            while (o.Log.Count == 0) { w.Step(); Assert.That(w.Sim.Clock.Tick, Is.LessThanOrEqualTo(Think), "the AI orders at its first thinking tick"); }
+            while (o.Log.Count == 0) { w.Step(); CheckCorridor(w, rest); Assert.That(w.Sim.Clock.Tick, Is.LessThanOrEqualTo(Think), "the AI orders at its first thinking tick"); }
             long t0 = o.Log[0].tick;
             Assert.That(o.Log[0].id, Is.EqualTo(id.Value));
             Assert.That((o.Log[0].target.X.Raw, o.Log[0].target.Z.Raw), Is.EqualTo((Slot.X.Raw, Slot.Z.Raw)));
@@ -86,9 +95,7 @@ namespace WarCore.Tests
             {
                 w.Step();
                 long tick = w.Sim.Clock.Tick;
-                SimVec3 at = w.Read<Position>(Ai).Value, b = w.Read<Position>(Blocker).Value;
-                Assert.That(at.X.Raw, Is.LessThan(Rest.X.Raw), "tick " + tick + ": the AI unit never passes the resting unit");
-                Assert.That((b.X.Raw, b.Z.Raw), Is.EqualTo((rest.X.Raw, rest.Z.Raw)), "tick " + tick + ": the resting unit never moves");
+                CheckCorridor(w, rest);
                 if (o.HasFailed(id)) f = tick;
                 else Assert.That(tick - t0, Is.LessThan(Limit), "the order fails within t0 + " + Limit);
             }
@@ -99,6 +106,7 @@ namespace WarCore.Tests
 
             // (d) the memory records the failure on the next tick.
             w.Step();
+            CheckCorridor(w, rest);
             Assert.That(L4.Memory(w), Is.EqualTo((-1, 0, f + 1)), "recorded at f + 1");
 
             // (f) a snapshot at f + 1 restored onto a reversed allocation.
@@ -114,6 +122,7 @@ namespace WarCore.Tests
             for (long tick = f + 2; tick <= f + 320; tick++)
             {
                 w.Step(); c.Step();
+                CheckCorridor(w, rest); CheckCorridor(c, rest);
                 Assert.That(c.Hash, Is.EqualTo(w.Hash), "tick " + tick);
             }
             Assert.That(OrdersTo(o, id.Value, f), Is.EqualTo(new List<long> { retry }), "skipped until f + 301, then ordered again");

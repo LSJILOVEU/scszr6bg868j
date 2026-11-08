@@ -23,6 +23,7 @@ namespace WarCore.Tests
             internal SimVec3[] Start;
             internal int[] FirstArrived;
             internal bool[] ArrivedEnd;
+            internal bool[] StuckFirst = new bool[L5.Ticks + 1];
             internal int[] SlotEnd;
         }
 
@@ -63,6 +64,7 @@ namespace WarCore.Tests
                     if (arrived[i] && r.FirstArrived[i] < 0) r.FirstArrived[i] = tick;
                 }
                 r.Meter.Sample(tick, L5.Positions(w), arrived);
+                r.StuckFirst[tick] = r.Meter.Now(0);
             }
             r.ArrivedEnd = new bool[n]; r.SlotEnd = new int[n];
             for (int i = 0; i < n; i++) r.ArrivedEnd[i] = L5.Arrived(w, r.Orders, r.Slots, i, out r.SlotEnd[i]);
@@ -214,16 +216,16 @@ namespace WarCore.Tests
         [Test]
         public void L5_Meter_QueueThenWalk_WindowRolls()
         {
-            // Standing 350 ticks (a queue), then 1024 raw (1/64 m) per tick: 64 ticks of walking make 1 m.
+            // Standing 350 ticks (a queue), then 0.01 m per tick (x = floor((t - 350) * S / 100)): 1 m is reached at tick 450.
             var meter = new L5StuckMeter(1);
             bool[] f = new bool[601];
             for (long t = 0; t <= 600; t++)
             {
-                meter.Sample(t, new[] { X(Math.Max(0, t - 350) * 1024) }, new[] { false });
+                meter.Sample(t, new[] { X(Math.Max(0, t - 350) * S / 100) }, new[] { false });
                 f[t] = meter.Now(0);
             }
-            Assert.That(f[300], Is.True); Assert.That(f[413], Is.True);
-            Assert.That(f[414], Is.False, "p(414) - p(114) = 1 m");
+            Assert.That(f[300], Is.True); Assert.That(f[449], Is.True, "p(449) - p(149) = floor(99 S / 100) < 1 m");
+            Assert.That(f[450], Is.False, "p(450) - p(150) = 1 m");
             Assert.That(f[600], Is.False);
             Assert.That(meter.EverCount, Is.EqualTo(1));
         }
@@ -240,7 +242,9 @@ namespace WarCore.Tests
         public void L5_Meter_InTheWorld_APinnedUnitIsStuck_AFreeOneIsNot()
         {
             Run pinned = Go(pin: 1);
-            Assert.That(pinned.Meter.Ever(0), Is.True, "key 1 written back to its start every tick");
+            Assert.That(pinned.StuckFirst[299], Is.False, "the window is not full before tick 300");
+            for (int t = 300; t <= L5.Ticks; t++)
+                Assert.That(pinned.StuckFirst[t], Is.True, "key 1 written back to its start every tick is stuck at tick " + t);
             Run free = Go();
             Assert.That(free.Meter.Ever(0), Is.False);
         }
@@ -248,13 +252,18 @@ namespace WarCore.Tests
         [Test]
         public void L5_Arrival_MeasuredFromTheSlotCentre()
         {
-            var slots = new GuardSlots(L5.Points);
-            SimVec3 c = slots.At(slots.Start(0));
+            // The slot of a unit that really arrived at T (the first one in table order), offset from the slot centre.
+            Run r = Go();
+            int i = Array.IndexOf(r.ArrivedEnd, true);
+            Assert.That(i, Is.GreaterThanOrEqualTo(0), "some unit arrived");
+            int target = L5.Target(L5.Table[i].team), other = 1 - target;
+            SimVec3 c = r.Slots.At(r.SlotEnd[i]);
             int s;
-            Assert.That(L5.ArrivedAt(slots, 0, false, c + X(S / 4), out s), Is.True, "0.25 m off the slot centre is arrived");
-            Assert.That(L5.ArrivedAt(slots, 0, false, c + X(S * 3 / 10), out s), Is.False, "0.3 m off is not");
-            Assert.That(L5.ArrivedAt(slots, 0, true, c, out s), Is.False, "a held order is not arrived");
-            Assert.That(L5.ArrivedAt(slots, 1, false, c, out s), Is.False, "the other point's slot is not arrived");
+            Assert.That(L5.ArrivedAt(r.Slots, target, false, c + X(S / 4), out s), Is.True, "0.25 m off the slot centre is arrived");
+            Assert.That(s, Is.EqualTo(r.SlotEnd[i]));
+            Assert.That(L5.ArrivedAt(r.Slots, target, false, c + X(S * 3 / 10), out s), Is.False, "0.3 m off is not");
+            Assert.That(L5.ArrivedAt(r.Slots, target, true, c, out s), Is.False, "a held order is not arrived");
+            Assert.That(L5.ArrivedAt(r.Slots, other, false, c, out s), Is.False, "the other point's slot is not arrived");
         }
     }
 }
