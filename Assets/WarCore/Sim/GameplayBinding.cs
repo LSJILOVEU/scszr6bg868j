@@ -3,8 +3,14 @@ namespace WarCore.Sim
     // Only the immutable archetype reference is a component. Mutable rows live in GameplayState.
     public readonly struct GameplayBinding : IStateHash
     {
-        public ulong ArchetypeKey { get; }
-        public GameplayBinding(ulong archetypeKey) { ArchetypeKey=archetypeKey; }
+        public ulong ArchetypeKey
+        {
+            get;
+        }
+        public GameplayBinding(ulong archetypeKey)
+        {
+            ArchetypeKey = archetypeKey;
+        }
         public void WriteState(StateHash hash) => hash.Add(ArchetypeKey);
     }
 
