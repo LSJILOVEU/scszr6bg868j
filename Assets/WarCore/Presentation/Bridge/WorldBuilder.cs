@@ -99,7 +99,7 @@ namespace WarCore.Presentation
                 WallMask = wallMask, View = mapBytes == null ? null : ViewMap.Parse(mapBytes), Combat = assembly.Combat,
                 MatchPack = recipe.Match, Capture = assembly.Capture, Reinforce = assembly.Reinforce, Match = assembly.Match,
                 MaxHealthRaw = recipe.Combat?.MaxHealthRaw ?? 0, Controlled = assembly.Controlled, CombatPack = recipe.Combat,
-                Facings = facings,
+                Facings = facings, Terrain = assembly.Terrain, TerrainRules = recipe.TerrainPack?.Terrain,
             });
             foreach (BridgeCommand command in recipe.Script)
                 session.Enqueue(command);

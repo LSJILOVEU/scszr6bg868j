@@ -29,7 +29,7 @@ namespace WarCore.Presentation
         internal static readonly IWorldStageFeature[] Connect = { PlayerFeature.Instance, CombatFeature.Instance, CrowdPassFeature.Instance };
         internal static readonly IWorldFeature[] Systems = { MovementFeature.Instance, FacingFeature.Instance };
         // After the movement systems: the match needs the locomotion; the player systems need it and the mode.
-        internal static readonly IWorldStageFeature[] Rules = { MatchFeature.Instance, BlockAiFeature.Instance, PlayerFeature.Instance };
+        internal static readonly IWorldStageFeature[] Rules = { MatchFeature.Instance, AiFireFeature.Instance, BlockAiFeature.Instance, PlayerFeature.Instance };
 
         private static IEnumerable<IWorldFeature> Active(IWorldFeature[] table, WorldAssembly assembly)
         {

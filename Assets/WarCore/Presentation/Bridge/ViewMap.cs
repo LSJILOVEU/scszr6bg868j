@@ -39,6 +39,9 @@ namespace WarCore.Presentation
         public float MinX { get; }
         public float MinZ { get; }
         public float FloorY { get; }
+        // Raw (SimFix) origin, for samplers that must agree with Sim to the last bit.
+        internal long MinXRaw { get; }
+        internal long MinZRaw { get; }
         public ReadOnlySpan<ViewWall> Walls => walls;
 
         private ViewMap(WcMap map, string fileHash)
@@ -49,6 +52,8 @@ namespace WarCore.Presentation
             Depth = (int)map.Depth;
             MinX = Metres(map.Min.X.Raw);
             MinZ = Metres(map.Min.Z.Raw);
+            MinXRaw = map.Min.X.Raw;
+            MinZRaw = map.Min.Z.Raw;
             FloorY = Metres(map.FlatHeight.Raw);
             if (map.HasHeightField)
             {
@@ -82,7 +87,8 @@ namespace WarCore.Presentation
             return new ViewMap(map, BitConverter.ToString(bytes, bytes.Length - 32, 32).Replace("-", ""));
         }
 
-        // Navigation view: 1 = passable.
+        // The file's passability bit: 1 = passable. The format forces it to be the exact complement of the wall footprints
+        // (WcMapValidation NAV_WALL_MISMATCH). On terrain it is one input of navigation, not navigation itself (TerrainCheck).
         public bool IsPassable(int x, int z)
         {
             if (x < 0 || z < 0 || x >= Width || z >= Depth)

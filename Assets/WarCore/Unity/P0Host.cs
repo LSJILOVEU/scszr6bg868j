@@ -53,8 +53,8 @@ namespace WarCore.Unity
             isoCamera = new IsoCamera(DefaultZoom, session.Map.FloorY);
             var palette = new[] { new Color(0.2f, 0.5f, 1f), new Color(1f, 0.85f, 0.2f) };
             views = new EntityViews(transform, new Vector3(0.5f, 1f, 0.5f), 0.5f, palette);
-            points = new PointViews(transform);
-            shots = new ShotLines(transform, palette, 1.5f);
+            points = new PointViews(transform, ViewGround.For(session.Map));
+            shots = new ShotLines(transform, palette, 1.5f, ViewGround.For(session.Map));
             foreach (ViewEntity entity in session.Current.Entities) // sorted by key: the first live team-1 soldier
                 if (entity.Team == 1 && entity.Alive)
                 {

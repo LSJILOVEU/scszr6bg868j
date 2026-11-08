@@ -65,8 +65,8 @@ namespace WarCore.Unity
             isoCamera = new IsoCamera(20f, session.Map.FloorY);
             var palette = new[] { new Color(0.2f, 0.5f, 1f), new Color(1f, 0.85f, 0.2f) };
             views = new EntityViews(transform, new Vector3(0.5f, 1f, 0.5f), 0.5f, palette);
-            points = new PointViews(transform);
-            shots = new ShotLines(transform, palette, 1.5f);
+            points = new PointViews(transform, ViewGround.For(session.Map));
+            shots = new ShotLines(transform, palette, 1.5f, ViewGround.For(session.Map));
             tracker = new PlayerTracker(session.ControlledKey);
             Show();
         }
