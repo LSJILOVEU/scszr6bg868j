@@ -17,15 +17,17 @@ namespace WarCore.Battle
         private readonly IControlTarget controlled;
         private readonly FailedSlotMemory memory;
         private readonly TargetMemory contacts;
+        private readonly TargetSearch search;
         private readonly GuardSlots slots;
         // Rebuilt every Step, never persisted: who reserves a slot (active order to it) and who stands at it.
         private readonly bool[] reservedHas, standingHas;
         private readonly ulong[] reservedBy, standingBy;
         public SimpleAiSystem(CombatSystem combat, CombatPack weapons, MatchPack pack, CaptureSystem capture, IMoveOrders moves,
-            IControlTarget controlled = null, FailedSlotMemory memory = null, TargetMemory contacts = null)
+            IControlTarget controlled = null, FailedSlotMemory memory = null, TargetMemory contacts = null,
+            TargetSearch search = null)
         {
             this.combat = combat; this.weapons = weapons; this.pack = pack; this.capture = capture; this.moves = moves;
-            this.controlled = controlled; this.memory = memory; this.contacts = contacts;
+            this.controlled = controlled; this.memory = memory; this.contacts = contacts; this.search = search;
             slots = new GuardSlots(pack.Points);
             reservedHas = new bool[slots.Total]; standingHas = new bool[slots.Total];
             reservedBy = new ulong[slots.Total]; standingBy = new ulong[slots.Total];
@@ -52,6 +54,20 @@ namespace WarCore.Battle
                 if ((c.Clock.Tick + (long)(id.Value % (ulong)pack.ThinkInterval)) % pack.ThinkInterval != 0) continue;
                 if (unit.Weapon >= 0 && combat.Pack.Selector.TrySelect(combat, entity, weapons.Weapons[unit.Weapon].FalloffEnd, out EntityId seen))
                 { contacts?.Saw(id, seen, c.Clock.Tick); if (moving) StopUnit(id, here, target); continue; }
+                // Nothing in sight: a remembered target comes before the points (go to where it was last seen, stand, give up).
+                if (search != null && unit.Weapon >= 0)
+                {
+                    TargetSearch.Hunt hunt = search.Decide(id, here, c.Clock.Tick, out SimVec3 lastKnown);
+                    if (hunt == TargetSearch.Hunt.Go)
+                    {
+                        // Orders are grounded (only Y changes), so X and Z tell whether the unit is already on its way.
+                        if (!moving || target.X.Raw != lastKnown.X.Raw || target.Z.Raw != lastKnown.Z.Raw)
+                        { OrderUnit(id, here, moving, target, lastKnown); memory?.Ordered(id, -1); }
+                        continue;
+                    }
+                    if (hunt == TargetSearch.Hunt.Hold)
+                    { if (moving) StopUnit(id, here, target); continue; }
+                }
                 int nearest = -1; SimWide best = default;
                 for (int i = 0; i < pack.Points.Length; i++)
                 {
@@ -141,7 +157,7 @@ namespace WarCore.Battle
         // PLACEHOLDER: a quarter of the body-overlap distance of two default capsules (0.5 m), so two units stopped at
         // neighbouring slots (1 m apart) never overlap. Tied to the lattice spacing.
         private static readonly SimWide ArrivalSquared = new SimVec3(SimFix.Ratio(1, 4), default, default).LengthSquared;
-        private static bool Arrived(SimVec3 position, SimVec3 destination) =>
+        internal static bool Arrived(SimVec3 position, SimVec3 destination) =>
             CombatSystem.Horizontal(position - destination).LengthSquared <= ArrivalSquared;
         public void SaveState(SimStateWriter writer) { writer.UInt64(pack.PolicyDigest); writer.UInt64(weapons.PolicyDigest); }
         public void LoadState(SimStateReader reader)

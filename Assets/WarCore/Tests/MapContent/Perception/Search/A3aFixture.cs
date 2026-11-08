@@ -59,8 +59,25 @@ namespace WarCore.Tests
         // B holds from tick 1 and gets its only move command on tick MoveTick.
         internal const long MoveTick = 20;
         internal static readonly SimVec3 BStart = A2.Cell(22, 17), BHide = A2.Cell(22, 26);
-        internal static InputFrame Script(long tick, SimVec3 to) =>
-            tick == 1 ? Command(SquadCommandKind.Hold, 2) : tick == MoveTick ? Command(SquadCommandKind.MoveTo, 2, to) : default;
+        internal static InputFrame Script(long tick, SimVec3 to, long moveTick = MoveTick) =>
+            tick == 1 ? Command(SquadCommandKind.Hold, 2) : tick == moveTick ? Command(SquadCommandKind.MoveTo, 2, to) : default;
+
+        internal static int SearchCount(M6World w) =>
+            (int)typeof(TargetSearch).GetProperty("Count", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(w.System<TargetSearch>());
+        // The search entry (Seen, Since) of A, read from the private dictionary; false without one.
+        internal static bool Entry(M6World w, out long seen, out long since)
+        {
+            var search = w.System<TargetSearch>();
+            object dict = typeof(TargetSearch).GetField("entries", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(search);
+            var args = new object[] { Id(w, KeyA).Value, null };
+            bool found = (bool)dict.GetType().GetMethod("TryGetValue").Invoke(dict, args);
+            seen = since = 0;
+            if (!found) return false;
+            Type entry = args[1].GetType();
+            seen = (long)entry.GetField("Seen", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(args[1]);
+            since = (long)entry.GetField("Since", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(args[1]);
+            return true;
+        }
 
         internal static StableId Id(M6World w, ulong key) => w.Sim.Entities.StableOf(w.Unit(key));
         internal static long FirstThink(M6World w, ulong key)
@@ -70,6 +87,7 @@ namespace WarCore.Tests
         }
         internal static SimVec3 At(M6World w, ulong key) => w.Read<Position>(key).Value;
         internal static bool Order(M6World w, out SimVec3 target) => L4.Moves(w).TryGetOrder(Id(w, KeyA), out target);
+        internal static SimWide Flat(SimVec3 a, SimVec3 b) => CombatSystem.Horizontal(a - b).LengthSquared;
         internal static bool Same(SimVec3 a, SimVec3 b) => a.X.Raw == b.X.Raw && a.Z.Raw == b.Z.Raw;
         // SimpleAiSystem's arrival test: horizontal distance squared <= (1/4 m)^2.
         internal static bool Arrived(SimVec3 a, SimVec3 b) =>
