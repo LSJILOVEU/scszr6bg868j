@@ -16,9 +16,9 @@ filter = FullyQualifiedName~WarCore.Tests.C2
 expect = WarCore.Tests.C2RespawnViewTests.C2Countdown_EveryTick_ThenTakeoverOnTheReserve
 note = whole seconds rounded down instead of up
 original:
-| (respawn.TicksLeft + SimSession.TickRate - 1) / SimSession.TickRate
+| (respawn.TicksLeft + SimSession.TickRate - 1) / SimSession.TickRate)
 replacement:
-| respawn.TicksLeft / SimSession.TickRate
+| respawn.TicksLeft / SimSession.TickRate)
 
 [c2-03-no-reserve-ignored]
 file = Assets/WarCore/Presentation/Bridge/SimSession.cs
@@ -81,3 +81,25 @@ original:
 |                 && current.TryGet(lastKey.Value, out ViewEntity old) && !old.Alive))
 replacement:
 | if (!Alive)
+
+[c2-09-down-beside-countdown]
+file = Assets/WarCore/Presentation/Camera/HudLines.cs
+filter = FullyQualifiedName~WarCore.Tests.C2
+expect = WarCore.Tests.C2RespawnViewTests.C2Countdown_EveryTick_ThenTakeoverOnTheReserve
+note = the takeover line wins over the countdown, so Down stays during the countdown
+original:
+| => Respawn(frame, text) ?? Takeover(lostPlayer, alive, key, text);
+replacement:
+| => Takeover(lostPlayer, alive, key, text) ?? Respawn(frame, text);
+
+[c2-10-table-ignored]
+file = Assets/WarCore/Presentation/Camera/HudLines.cs
+filter = FullyQualifiedName~WarCore.Tests.C2
+expect = WarCore.Tests.C2RespawnViewTests.C2AnotherTextTable_IsUsedForEveryLine
+note = the respawn line always uses the English table
+original:
+|             text = text ?? HudText.English;
+|             ViewRespawn respawn
+replacement:
+|             text = HudText.English;
+|             ViewRespawn respawn

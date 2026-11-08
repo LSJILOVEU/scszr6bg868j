@@ -17,6 +17,10 @@ namespace WarCore.Tests
         internal static M6World Respawning(int delay, long[] kills, params UnitSpawn[] reserves) =>
             World(Units(reserves), Pack(Points(Spawn(1, 30, 20)), Bases(HomeBase), delay), kills: kills);
 
+        private static readonly HudText T = HudText.English;
+        private static string In(long seconds) => string.Format(System.Globalization.CultureInfo.InvariantCulture, T.RespawnIn, seconds);
+        private static string Now(ulong key) => string.Format(System.Globalization.CultureInfo.InvariantCulture, T.NowControlling, key);
+
         internal static ViewRespawn Step(M6World w) { w.Session.StepOnce(); return w.Session.Current.Respawn; }
 
         private static void Expect(ViewRespawn r, RespawnPhase state, long left, int reserves, string at)
@@ -41,15 +45,36 @@ namespace WarCore.Tests
                 Assert.That(w.Session.ControlledKey, Is.EqualTo(Player), "tick " + tick);
                 tracker.Update(w.Session.Current, w.Session.ControlledKey);
                 long seconds = tick <= 15 ? 2 : 1;
-                Assert.That(HudLines.Respawn(w.Session.Current), Is.EqualTo("Respawn in " + seconds + " s"), "tick " + tick);
-                Assert.That(HudLines.Takeover(tracker.LostPlayer, tracker.Alive, w.Session.ControlledKey), Is.EqualTo("Down"), "tick " + tick);
+                Assert.That(HudLines.Respawn(w.Session.Current), Is.EqualTo(In(seconds)), "tick " + tick);
+                Assert.That(HudLines.Takeover(tracker.LostPlayer, tracker.Alive, w.Session.ControlledKey), Is.EqualTo(T.Down), "tick " + tick);
+                Assert.That(HudLines.PlayerLine(w.Session.Current, tracker.LostPlayer, tracker.Alive, w.Session.ControlledKey),
+                    Is.EqualTo(In(seconds)), "the countdown replaces Down, tick " + tick);
             }
             Expect(Step(w), RespawnPhase.None, 0, 0, "tick 46");
             Assert.That(w.Session.Tick, Is.EqualTo(46));
             Assert.That(w.Session.ControlledKey, Is.EqualTo(Reserve));
             Assert.That(HudLines.Respawn(w.Session.Current), Is.Null);
             Assert.That(tracker.Update(w.Session.Current, w.Session.ControlledKey), Is.True);
-            Assert.That(HudLines.Takeover(tracker.LostPlayer, tracker.Alive, w.Session.ControlledKey), Is.EqualTo("Down - now controlling #3"));
+            Assert.That(HudLines.Takeover(tracker.LostPlayer, tracker.Alive, w.Session.ControlledKey), Is.EqualTo(Now(3)));
+            Assert.That(HudLines.PlayerLine(w.Session.Current, tracker.LostPlayer, tracker.Alive, w.Session.ControlledKey), Is.EqualTo(Now(3)));
+        }
+
+        // Another table changes every line without touching HudLines.
+        [Test]
+        public void C2AnotherTextTable_IsUsedForEveryLine()
+        {
+            var other = new HudText("R{0}", "W", "N", "D", "C{0}");
+            FrameView Frame(RespawnPhase state, long left) =>
+                new FrameView(0, Array.Empty<ViewEntity>(), respawn: new ViewRespawn(state, left, 1));
+            Assert.That(HudLines.Respawn(Frame(RespawnPhase.Waiting, 31), other), Is.EqualTo("R2"));
+            Assert.That(HudLines.Respawn(Frame(RespawnPhase.Overdue, 0), other), Is.EqualTo("W"));
+            Assert.That(HudLines.Respawn(Frame(RespawnPhase.NoReserve, 0), other), Is.EqualTo("N"));
+            Assert.That(HudLines.Takeover(true, false, 1, other), Is.EqualTo("D"));
+            Assert.That(HudLines.Takeover(true, true, 7, other), Is.EqualTo("C7"));
+            Assert.That(HudLines.PlayerLine(Frame(RespawnPhase.Waiting, 31), true, false, 1, other), Is.EqualTo("R2"));
+            Assert.That(HudLines.PlayerLine(Frame(RespawnPhase.None, 0), true, false, 1, other), Is.EqualTo("D"));
+            Assert.That(HudLines.PlayerLine(Frame(RespawnPhase.None, 0), false, true, 1, other), Is.Null);
+            Assert.Throws<ArgumentNullException>(() => new HudText(null, "W", "N", "D", "C{0}"));
         }
 
         [TestCase(1L, 1L)]
@@ -59,7 +84,7 @@ namespace WarCore.Tests
         public void C2WaitingSeconds_RoundUp(long left, long seconds)
         {
             var frame = new FrameView(0, Array.Empty<ViewEntity>(), respawn: new ViewRespawn(RespawnPhase.Waiting, left, 1));
-            Assert.That(HudLines.Respawn(frame), Is.EqualTo("Respawn in " + seconds + " s"));
+            Assert.That(HudLines.Respawn(frame), Is.EqualTo(In(seconds)));
         }
 
         // (3) D = 1, death at tick 3 and switch at tick 4 inside one Advance (66667 us at 30 Hz is exactly 2 steps).
@@ -75,7 +100,7 @@ namespace WarCore.Tests
             Assert.That(w.Session.ControlledKey, Is.EqualTo(Reserve));
             Assert.That(tracker.Update(w.Session.Current, w.Session.ControlledKey), Is.True);
             Assert.That(tracker.Alive, Is.True);
-            Assert.That(HudLines.Takeover(tracker.LostPlayer, tracker.Alive, w.Session.ControlledKey), Is.EqualTo("Down - now controlling #3"));
+            Assert.That(HudLines.Takeover(tracker.LostPlayer, tracker.Alive, w.Session.ControlledKey), Is.EqualTo(Now(3)));
 
             var stepped = Respawning(1, new long[] { 3 }, U(Reserve, 0, 0, reserve: true));
             var each = new PlayerTracker(stepped.Session.ControlledKey);
@@ -97,7 +122,7 @@ namespace WarCore.Tests
             for (long tick = 6; tick <= 8; tick++)
             {
                 Expect(Step(w), RespawnPhase.Overdue, 0, 1, "tick " + tick);
-                Assert.That(HudLines.Respawn(w.Session.Current), Is.EqualTo("Respawn: waiting for an available spawn point"));
+                Assert.That(HudLines.Respawn(w.Session.Current), Is.EqualTo(T.RespawnWaiting));
                 Assert.That(w.Session.ControlledKey, Is.EqualTo(Player));
             }
             Expect(Step(w), RespawnPhase.None, 0, 0, "tick 9");
@@ -113,7 +138,7 @@ namespace WarCore.Tests
             for (long tick = 6; tick <= 66; tick++)
             {
                 Expect(Step(w), RespawnPhase.Overdue, 0, 1, "tick " + tick);
-                Assert.That(HudLines.Respawn(w.Session.Current), Is.EqualTo("Respawn: waiting for an available spawn point"));
+                Assert.That(HudLines.Respawn(w.Session.Current), Is.EqualTo(T.RespawnWaiting));
             }
             Assert.That(w.Session.ControlledKey, Is.EqualTo(Player));
         }
@@ -128,7 +153,7 @@ namespace WarCore.Tests
                 ViewRespawn r = Step(w);
                 Assert.That(r.State, Is.EqualTo(RespawnPhase.NoReserve), "tick " + tick);
                 Assert.That(r.Reserves, Is.Zero, "tick " + tick);
-                Assert.That(HudLines.Respawn(w.Session.Current), Is.EqualTo("No reserves left: no respawn"), "tick " + tick);
+                Assert.That(HudLines.Respawn(w.Session.Current), Is.EqualTo(T.NoReserve), "tick " + tick);
                 if (tick == 45) Assert.That(r.TicksLeft, Is.EqualTo(1));
                 if (tick == 46 || tick == 300) Assert.That(r.TicksLeft, Is.Zero);
             }
@@ -191,7 +216,7 @@ namespace WarCore.Tests
             var w = World(Units(U(Reserve, 0, 0, reserve: true)), Pack(Points(Spawn(1, 30, 20)), Bases(HomeBase), 5, max: 3), kills: new long[] { 1 });
             Step(w);
             Step(w);
-            Assert.That(HudLines.Respawn(w.Session.Current), Is.EqualTo("Respawn in 1 s"));
+            Assert.That(HudLines.Respawn(w.Session.Current), Is.EqualTo(In(1)));
             ViewRespawn r = Step(w);
             Assert.That(w.Session.Current.Tick, Is.EqualTo(3));
             Assert.That(w.Session.Current.Match.IsFinished, Is.True);

@@ -113,12 +113,9 @@ namespace WarCore.Unity
             UnitStatus? status = key.HasValue && session.TryUnitStatus(key.Value, out UnitStatus unit)
                 ? unit : (UnitStatus?)null;
             hud = HudLines.Build(current, session.StateHash, key, status, pick);
-            string takeover = HudLines.Takeover(lostPlayer, alive, key);
-            if (takeover != null)
-                hud += "\n" + takeover;
-            string respawn = HudLines.Respawn(current);
-            if (respawn != null)
-                hud += "\n" + respawn;
+            string playerLine = HudLines.PlayerLine(current, lostPlayer, alive, key);
+            if (playerLine != null)
+                hud += "\n" + playerLine;
             if (alive && status.HasValue && !session.IsFinished)
             {
                 UnitStatus value = status.Value;
