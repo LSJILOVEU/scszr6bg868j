@@ -57,6 +57,9 @@ namespace WarCore.Tests
             Assert.That(tracker.Update(w.Session.Current, w.Session.ControlledKey), Is.True);
             Assert.That(HudLines.Takeover(tracker.LostPlayer, tracker.Alive, w.Session.ControlledKey), Is.EqualTo(Now(3)));
             Assert.That(HudLines.PlayerLine(w.Session.Current, tracker.LostPlayer, tracker.Alive, w.Session.ControlledKey), Is.EqualTo(Now(3)));
+            // After the takeover the line names the new unit only; the English table no longer says Down there.
+            Assert.That(Now(3), Does.Not.Contain(T.Down));
+            Assert.That(Now(3), Is.EqualTo("Now controlling #3"));
         }
 
         // Another table changes every line without touching HudLines.

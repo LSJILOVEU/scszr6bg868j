@@ -9,7 +9,7 @@ namespace WarCore.Presentation
     {
         public static readonly HudText English = new HudText(
             "Respawn in {0} s", "Respawn: waiting for an available spawn point", "No reserves left: no respawn",
-            "Down", "Down - now controlling #{0}");
+            "Down", "Now controlling #{0}");
 
         public string RespawnIn { get; }
         public string RespawnWaiting { get; }
