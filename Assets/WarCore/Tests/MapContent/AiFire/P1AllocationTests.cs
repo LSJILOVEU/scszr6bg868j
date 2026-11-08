@@ -9,17 +9,18 @@ using WarCore.Sim;
 namespace WarCore.Tests
 {
     // Acceptance 9: Sense and TryAim do not allocate. A ReactionFire made here (R = 15) is driven by hand on A while B is
-    // selectable. After one identical warm-up window and a positive control of the counter, three measured windows of 1000
-    // calls each: Sense then TryAim per tick (a new clock, so both the delay and the hand-over run, counted in locals and
-    // checked after the window), Sense alone, and TryAim alone on a tick past the delay (the hand-over path). Heap accounting
-    // is settled before each window (AllocationMeter.Stabilize, as the M0c2 allocation tests do).
+    // selectable. The world first runs 100 ticks (the warm-up), then one identical 1000-call window warms the calls themselves;
+    // after a positive control of the counter, three measured windows of 1000 calls each: Sense then TryAim per tick (a new
+    // clock, so both the delay and the hand-over run, counted in locals and checked after the window), Sense alone, and TryAim
+    // alone on a tick past the delay (the hand-over path). Heap accounting is settled before each window
+    // (AllocationMeter.Stabilize, as the M0c2 allocation tests do).
     public sealed class P1AllocationTests
     {
         [Test]
         public void SenseAndTryAim_DoNotAllocate()
         {
             M6World w = P1.World(P1.Cast(), null);
-            for (long tick = 1; tick <= 45; tick++) w.Sim.Step(P1.Drive(w, tick, P1.Walk));
+            for (long tick = 1; tick <= 100; tick++) w.Sim.Step(P1.Drive(w, tick, P1.Walk));
             Assert.That(P1.Selected(w, P1.KeyA), Is.EqualTo(P1.Id(w, P1.KeyB).Value));
             var fire = new ReactionFire(w.Combat, w.Combat.BuiltInAutoFire, 15);
             CombatSystem combat = w.Combat;
