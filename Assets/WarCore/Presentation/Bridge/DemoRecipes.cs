@@ -111,6 +111,28 @@ namespace WarCore.Presentation
                 .WithCombat(content.BuildCombat()).WithMatch(WarCore.Content.Rwr.RwrMatch.CreateM7(content)).WithCrowdPass(CrowdPassKind.TeamIdle);
         }
 
+        // L6: the WP-22 demo terrain (TerrainDemo.MapBytes) as a full match. 20 per team: 10 deployed in the M6 formation around
+        // the team anchor on the road, 10 reserves. Weapons and rules from the RWR M6 layer; surfaces, slope and ai rules from the
+        // terrain demo layer. PLACEHOLDER: unit counts and speed (M5 speed, as M6/M7).
+        public static WorldRecipe TerrainMatch() =>
+            TerrainMatch(WarCore.Content.Rwr.RwrPack.Load(WarCore.Content.Rwr.RwrPack.M6Layer), WarCore.Content.Rwr.RwrPack.Load(TerrainDemoMap.PackId));
+
+        public static WorldRecipe TerrainMatch(ContentPack content, ContentPack terrain)
+        {
+            int[] weapons = TeamWeapons(content);
+            var units = new UnitSpawn[40];
+            for (int i = 0; i < units.Length; i++)
+            {
+                int team = i < 20 ? 1 : 2, rank = i % 20;
+                var offset = WorldBuilder.FormationOffsetMm(rank % 10, 10);
+                units[i] = new UnitSpawn((ulong)i + 1, 0, team, (team == 1 ? 3500 : 44500) + offset.X, 16500 + offset.Z,
+                    6000, team, weapons[team - 1], rank >= 10);
+            }
+            return new WorldRecipe(41, MoverKind.InterimCrowd, units, System.Array.Empty<BridgeCommand>())
+                .WithCombat(content.BuildCombat()).WithMatch(TerrainDemoMap.BuildMatch(content))
+                .WithCrowdPass(CrowdPassKind.TeamIdle).WithTerrainRules(terrain);
+        }
+
         public static WorldRecipe M5()
         {
             WorldRecipe original = M4();

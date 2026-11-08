@@ -1,4 +1,5 @@
 using System;
+using WarCore.Battle;
 using WarCore.Sim;
 
 namespace WarCore.Content
@@ -66,5 +67,13 @@ namespace WarCore.Content
             return new WcMap("terrain-demo", "rwr", default, SimVec3.Metres(Width, 10, Depth), SimFix.FromInt(Width), default,
                 Width, Depth, new[] { new WcMapLayer("walls", 1) }, new[] { wall }, bits, heights, SurfaceNames, surfaces);
         }
+
+        // L6: the demo match on this map. Both control points are 3 m circles that also serve as reinforcement spawns at their
+        // centres; the team anchors are Spawns. Capture, think interval, time limit, sight and the deploy grid come from content.
+        public static MatchPack BuildMatch(ContentPack content) => content.BuildMatch(new[]
+        {
+            new ControlPointDef(1, ControlPoints[0], SimFix.FromInt(3), hasSpawn: true, spawn: ControlPoints[0]),
+            new ControlPointDef(2, ControlPoints[1], SimFix.FromInt(3), hasSpawn: true, spawn: ControlPoints[1]),
+        }, new[] { new SpawnAnchor(1, Spawns[0]), new SpawnAnchor(2, Spawns[1]) });
     }
 }
