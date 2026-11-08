@@ -19,6 +19,8 @@ namespace WarCore.Unity
 
         private float Base(float x, float z) => ground == null ? 0f : ground.HeightAt(x, z, 0f);
 
+        // Each disc and ring owns the material made for it here, so sharedMaterial is that material: no copy is made
+        // (renderer.material would instantiate one, and logs an error in edit mode).
         public void Apply(FrameView frame)
         {
             var points = frame.Points;
@@ -31,12 +33,12 @@ namespace WarCore.Unity
                     discs[i] = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
                     discs[i].name = "Point " + points[i].Id;
                     discs[i].transform.SetParent(parent, false);
-                    discs[i].GetComponent<Renderer>().material = new Material(Shader.Find("Unlit/Color"));
+                    discs[i].GetComponent<Renderer>().sharedMaterial = new Material(Shader.Find("Unlit/Color"));
                     rings[i] = new GameObject("Ring " + points[i].Id).AddComponent<LineRenderer>();
                     rings[i].transform.SetParent(parent, false);
                     rings[i].useWorldSpace = true;
                     rings[i].widthMultiplier = 0.35f;
-                    rings[i].material = new Material(Shader.Find("Unlit/Color"));
+                    rings[i].sharedMaterial = new Material(Shader.Find("Unlit/Color"));
                 }
             }
             for (int i = 0; i < points.Length; i++)
@@ -45,11 +47,11 @@ namespace WarCore.Unity
                 discs[i].transform.position = new Vector3(p.X, Base(p.X, p.Z) + 0.02f, p.Z);
                 discs[i].transform.localScale = new Vector3(p.Radius * 2, 0.01f, p.Radius * 2);
                 Color owner = Teams[p.Owner % Teams.Length];
-                discs[i].GetComponent<Renderer>().material.color = Color.Lerp(owner, new Color(0.2f, 0.3f, 0.2f), 0.55f);
+                discs[i].GetComponent<Renderer>().sharedMaterial.color = Color.Lerp(owner, new Color(0.2f, 0.3f, 0.2f), 0.55f);
                 int count = Mathf.Max(0, Mathf.RoundToInt(p.Progress * RingSegments));
                 rings[i].enabled = count > 0;
                 rings[i].positionCount = count + 1;
-                rings[i].material.color = Teams[p.Capturing % Teams.Length];
+                rings[i].sharedMaterial.color = Teams[p.Capturing % Teams.Length];
                 for (int k = 0; k <= count; k++)
                 {
                     float angle = k * 2 * Mathf.PI / RingSegments;
