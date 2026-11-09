@@ -41,12 +41,12 @@ namespace WarCore.Tests
 
         // The demo terrain (L6 bytes) with the L6 terrain rules; the player is key 1, a still enemy (key 2) stands far away.
         internal static M6World Demo(long xMm, long zMm, long speed = 6000, bool facing = false, ContentPack rules = null,
-            byte[] map = null, UnitSpawn[] extra = null)
+            byte[] map = null, UnitSpawn[] extra = null, CombatPack combat = null, int weapon = -1)
         {
             // The still enemy: far corner of the demo map, or of the 16 x 16 test maps.
             UnitSpawn enemy = map == null || map.Length == L6.MapBytes().Length ? U(2, 44500, 28500, team: 2) : U(2, 14500, 1500, team: 2);
-            var units = new[] { U(1, xMm, zMm, speed: speed), enemy }.Concat(extra ?? Array.Empty<UnitSpawn>()).ToArray();
-            WorldRecipe recipe = M6World.RecipeOf(units, QuietMatch(), Off()).WithTerrainRules(rules ?? L6.Pack()).WithPlayer(1);
+            var units = new[] { U(1, xMm, zMm, speed: speed, weapon: weapon), enemy }.Concat(extra ?? Array.Empty<UnitSpawn>()).ToArray();
+            WorldRecipe recipe = M6World.RecipeOf(units, QuietMatch(), combat ?? Off()).WithTerrainRules(rules ?? L6.Pack()).WithPlayer(1);
             if (facing) recipe = recipe.WithFacing();
             return new M6World(recipe, map ?? L6.MapBytes());
         }

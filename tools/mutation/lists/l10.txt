@@ -220,3 +220,14 @@ original:
 |             if (flat.LengthSquared < new SimVec3(provisional[i].Radius, default, default).LengthSquared) return true;
 replacement:
 |             if (terrain == null && flat.LengthSquared < new SimVec3(provisional[i].Radius, default, default).LengthSquared) return true;
+
+[l10-18-player-fire-ignores-aim-height]
+file = Assets/WarCore/Control/PlayerFire.cs
+filter = FullyQualifiedName~WarCore.Tests.L10AimHeightTests
+expect = WarCore.Tests.L10AimHeightTests.L10Aim_UphillAtTheEnemyHeight_Hits_ShooterHeight_DoesNot
+expect = WarCore.Tests.L10AimHeightTests.L10Aim_DownhillAtTheEnemyHeight_Hits_ShooterHeight_DoesNot
+note = the player's shot takes the shooter's height again (aimYMm ignored)
+original:
+|             combat.Submit(context, FireIntent.Aimed(stable, context.Input.Aim));
+replacement:
+|             combat.Submit(context, FireIntent.Aimed(stable, new SimVec3(context.Input.Aim.X, position.Value.Y, context.Input.Aim.Z)));
