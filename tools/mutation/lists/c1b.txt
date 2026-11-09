@@ -1,0 +1,96 @@
+# C1b respawn anchor skips contested points: the required mutations of the work package. Test classes are named C1b*.
+
+[c1b-01-no-contest-check]
+file = Assets/WarCore/Battle/RespawnSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.C1b
+expect = WarCore.Tests.C1bAnchorTests.EnemyInNearestPoint_UsesNextOwnedPoint
+note = the contest check is dropped from the anchor choice
+original:
+| && !Contested(team, pack.Points[i])) Closer(
+replacement:
+| ) Closer(
+
+[c1b-02-own-team-contests]
+file = Assets/WarCore/Battle/RespawnSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.C1b
+expect = WarCore.Tests.C1bAnchorTests.EnemyInNearestPoint_UsesNextOwnedPoint
+expect = WarCore.Tests.C1bAnchorTests.AllyInPoint_NotContested
+note = the player's own team is taken as the enemy
+original:
+| unit.Team == 3 - team
+replacement:
+| unit.Team == team
+
+[c1b-03-enemy-team-fixed]
+file = Assets/WarCore/Battle/RespawnSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.C1b
+expect = WarCore.Tests.C1bAnchorTests.PlayerOnTeamTwo_TeamOneContests
+note = the enemy team is always team 2
+original:
+| unit.Team == 3 - team
+replacement:
+| unit.Team == 2
+
+[c1b-04-bodies-contest]
+file = Assets/WarCore/Battle/RespawnSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.C1b
+expect = WarCore.Tests.C1bAnchorTests.DeadEnemyInPoint_NotContested
+note = dead enemies (bodies keep a Position) count as contesting
+original:
+| && !combat.IsDead(entity) && CaptureSystem.Inside(at.Value, point))
+replacement:
+| && CaptureSystem.Inside(at.Value, point))
+
+[c1b-05-circle-around-spawn]
+file = Assets/WarCore/Battle/RespawnSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.C1b
+expect = WarCore.Tests.C1bAnchorTests.EnemyAtTheCentre_FarFromTheSpawn_Contested
+expect = WarCore.Tests.C1bAnchorTests.EnemyOnTheSpawn_FarFromTheCentre_NotContested
+note = the circle is measured around the spawn instead of the centre
+original:
+| CaptureSystem.Inside(at.Value, point)
+replacement:
+| CaptureSystem.Inside(at.Value - point.Spawn + point.Center, point)
+
+[c1b-06-boundary-excluded]
+file = Assets/WarCore/Battle/RespawnSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.C1b
+expect = WarCore.Tests.C1bAnchorTests.EnemyOnTheBoundary_Contested
+note = a local strict comparison replaces CaptureSystem.Inside
+original:
+| CaptureSystem.Inside(at.Value, point)
+replacement:
+| CombatSystem.Horizontal(at.Value - point.Center).LengthSquared < new SimVec3(point.Radius, default, default).LengthSquared
+
+[c1b-07-no-base-fallback]
+file = Assets/WarCore/Battle/RespawnSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.C1b
+expect = WarCore.Tests.C1bAnchorTests.AllPointsContested_UsesTheBase
+expect = WarCore.Tests.C1bAnchorTests.AllPointsContested_EqualDistanceBases_LowerIndexWins
+note = with owned spawn points all contested, no anchor at all
+original:
+| if (found) return true;
+replacement:
+| if (found) return true; for (int i = 0; i < pack.Points.Length; i++) if (capture.Points[i].Owner == team && pack.Points[i].HasSpawn) return false;
+
+[c1b-08-contested-fallback]
+file = Assets/WarCore/Battle/RespawnSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.C1b
+expect = WarCore.Tests.C1bAnchorTests.AllPointsContested_UsesTheBase
+expect = WarCore.Tests.C1bAnchorTests.AllPointsContested_EqualDistanceBases_LowerIndexWins
+note = with owned spawn points all contested, the nearest contested point instead of the base
+original:
+| if (found) return true;
+replacement:
+| if (found) return true; for (int i = 0; i < pack.Points.Length; i++) if (capture.Points[i].Owner == team && pack.Points[i].HasSpawn) Closer(pack.Points[i].Spawn, origin, ref anchor, ref best, ref found); if (found) return true;
+
+[c1b-09-capturing-instead]
+file = Assets/WarCore/Battle/RespawnSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.C1b
+expect = WarCore.Tests.C1bAnchorTests.EvenNumbers_CapturingZero_StillContested
+expect = WarCore.Tests.C1bAnchorTests.PauseLeftover_CapturingSet_NoEnemy_NotContested
+note = PointState.Capturing replaces the living-enemy check
+original:
+| && !Contested(team, pack.Points[i])) Closer(
+replacement:
+| && capture.Points[i].Capturing == 0) Closer(
