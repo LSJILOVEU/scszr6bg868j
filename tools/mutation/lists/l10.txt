@@ -46,8 +46,10 @@ filter = FullyQualifiedName~WarCore.Tests.L10
 expect = WarCore.Tests.L10SpeedTests.L10Speed_XStepBySurface
 note = the multiplier is always 1000
 original:
+|                 throw new InvalidOperationException("Terrain worlds cap a unit step at 0.25 m per tick.");
 |             long milli = grid.TryCell(point, out int cell) ? terrain.SpeedMilliAt(cell) : 1000;
 replacement:
+|                 throw new InvalidOperationException("Terrain worlds cap a unit step at 0.25 m per tick.");
 |             long milli = 1000;
 
 [l10-06-target-cell-decides]
@@ -56,8 +58,10 @@ filter = FullyQualifiedName~WarCore.Tests.L10
 expect = WarCore.Tests.L10SpeedTests.L10Speed_TheStartCellDecides
 note = the multiplier comes from the cell after the unscaled step
 original:
+|                 throw new InvalidOperationException("Terrain worlds cap a unit step at 0.25 m per tick.");
 |             long milli = grid.TryCell(point, out int cell) ? terrain.SpeedMilliAt(cell) : 1000;
 replacement:
+|                 throw new InvalidOperationException("Terrain worlds cap a unit step at 0.25 m per tick.");
 |             long milli = grid.TryCell(point + displacement, out int cell) ? terrain.SpeedMilliAt(cell) : 1000;
 
 [l10-07-cap-inclusive]
