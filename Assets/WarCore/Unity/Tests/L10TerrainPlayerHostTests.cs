@@ -50,6 +50,25 @@ namespace WarCore.Unity.Tests
             Assert.That(hud, Does.Not.Contain("\nPlayerY -"));
         }
 
+        [Test]
+        public void L10_ShotLabel_TickHashPlayerAndHold_AllDrawable()
+        {
+            SimSession session = Demo();
+            string[] label = TerrainPlayerHost.ShotLabel(session.Current, session.StateHash, session.ControlledKey, true);
+            Assert.That(label[0], Is.EqualTo("TICK 0"));
+            Assert.That(label[1], Is.EqualTo("STATEHASH " + session.StateHash.ToString("X16")));
+            Assert.That(label[2], Is.EqualTo("PLAYER 1"));
+            Assert.That(label[3], Does.StartWith("PLAYERY ").And.Not.EqualTo("PLAYERY -"));
+            Assert.That(label[4], Is.EqualTo("HOLD"));
+            Assert.That(TerrainPlayerHost.ShotLabel(session.Current, session.StateHash, null, false),
+                Is.EqualTo(new[] { "TICK 0", "STATEHASH " + session.StateHash.ToString("X16"), "PLAYER -", "PLAYERY -" }));
+            foreach (string line in label)
+                foreach (char c in line)
+                    Assert.That(TerrainPlayerHost.HasGlyph(c), Is.True, "glyph for '" + c + "'");
+            foreach (char c in "0123456789ABCDEF.-")
+                Assert.That(TerrainPlayerHost.HasGlyph(c), Is.True, "glyph for '" + c + "'");
+        }
+
         [TestCase("L10", true), TestCase("L10-x", true), TestCase("L10_1", true)]
         [TestCase(null, false), TestCase("", false), TestCase("l10", false), TestCase("L8b", false), TestCase("L10/x", false)]
         [TestCase("L10\\x", false), TestCase("L10.x", false), TestCase("L10 x", false)]
