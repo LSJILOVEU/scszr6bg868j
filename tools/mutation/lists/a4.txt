@@ -1,0 +1,188 @@
+# A4 player aiming at height: the required mutations of the work package. Test classes are named A4*; the intent zero rule
+# is also locked by Wp13AimedTests, and the public AllyBlocks by the A3b tests. a4-12, a4-13, a4-18 belong to A4b; a4-20 is
+# an equivalent mutation and is not listed.
+
+[a4-01-intent-direction-horizontal]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.A4|FullyQualifiedName~WarCore.Tests.Wp13Aimed|FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A4IntentTests.A4Intent_T1_UphillAtTargetCentre_Hits
+expect = WarCore.Tests.A4IntentTests.A4Intent_T2_DownhillAtTargetCentre_Hits
+expect = WarCore.Tests.A4IntentTests.A4Intent_T4_OverATeammateOnLowGround_Hits
+expect = WarCore.Tests.A4IntentTests.A4Intent_F3_TooHigh_PassesOver
+note = the aimed intent flies along the horizontal line again
+original:
+|                         direction = intents[shooter.Id].Point - origin;
+replacement:
+|                         direction = Horizontal(intents[shooter.Id].Point - origin);
+
+[a4-02-zero-rule-3d]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.A4|FullyQualifiedName~WarCore.Tests.Wp13Aimed|FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A4IntentTests.A4Intent_F4_StraightAbove_DoesNotFire
+expect = WarCore.Tests.Wp13AimedTests.PLACEHOLDER_ZeroHorizontalDirectionIsNone_EvenWithDifferentHeight
+note = the zero rule looks at the 3D length
+original:
+|                         if (Horizontal(direction).LengthSquared.Sign == 0) continue;
+replacement:
+|                         if (direction.LengthSquared.Sign == 0) continue;
+
+[a4-03-player-fire-shooter-height]
+file = Assets/WarCore/Control/PlayerFire.cs
+filter = FullyQualifiedName~WarCore.Tests.A4|FullyQualifiedName~WarCore.Tests.Wp13Aimed|FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A4PlayerTests.A4Player_Height200_HitsAlongTheRisingLine
+expect = WarCore.Tests.A4PlayerTests.A4Player_Height3000_PassesOver
+note = the player's shot takes the shooter's height again
+original:
+|             combat.Submit(context, FireIntent.Aimed(stable, context.Input.Aim));
+replacement:
+|             combat.Submit(context, FireIntent.Aimed(stable, new SimVec3(context.Input.Aim.X, position.Value.Y, context.Input.Aim.Z)));
+
+[a4-04-session-ignores-height]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~WarCore.Tests.A4|FullyQualifiedName~WarCore.Tests.Wp13Aimed|FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A4PlayerTests.A4Player_Height200_HitsAlongTheRisingLine
+expect = WarCore.Tests.A4PlayerTests.A4Player_Height3000_PassesOver
+note = an input with a height still gets the ground height
+original:
+|                         ? TargetAt(nextPlayerInput.AimXMm, nextPlayerInput.AimYMm.Value, nextPlayerInput.AimZMm)
+replacement:
+|                         ? Target(nextPlayerInput.AimXMm, nextPlayerInput.AimZMm, groundRaw)
+
+[a4-05-live-click-drops-height]
+file = Assets/WarCore/Presentation/Bridge/LivePlayerInput.cs
+filter = FullyQualifiedName~WarCore.Tests.A4|FullyQualifiedName~WarCore.Tests.Wp13Aimed|FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A4InputTests.A4Input_LiveClickCopiesTheHeight
+note = the synthesized click does not copy the height
+original:
+|                     input.AimXMm, input.AimZMm, true, input.Block, input.Throw, input.SkillSlot, input.AimYMm));
+replacement:
+|                     input.AimXMm, input.AimZMm, true, input.Block, input.Throw, input.SkillSlot));
+
+[a4-06-equals-ignores-height]
+file = Assets/WarCore/Presentation/Bridge/PlayerInput.cs
+filter = FullyQualifiedName~WarCore.Tests.A4|FullyQualifiedName~WarCore.Tests.Wp13Aimed|FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A4InputTests.A4Input_HeightIsOptionalAndPartOfEquality
+note = equality does not compare the height
+original:
+|             && Block == other.Block && Throw == other.Throw && SkillSlot == other.SkillSlot && AimYMm == other.AimYMm;
+replacement:
+|             && Block == other.Block && Throw == other.Throw && SkillSlot == other.SkillSlot;
+
+[a4-07-no-height-bound]
+file = Assets/WarCore/Presentation/Bridge/PlayerInput.cs
+filter = FullyQualifiedName~WarCore.Tests.A4|FullyQualifiedName~WarCore.Tests.Wp13Aimed|FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A4InputTests.A4Input_HeightOutsideTheWorld_Throws
+note = the constructor does not check the height
+original:
+|             if (aimYMm.HasValue) SimSession.CheckAimY(aimYMm.Value);
+replacement:
+|             // no height check
+
+[a4-08-snap-any-team]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~WarCore.Tests.A4|FullyQualifiedName~WarCore.Tests.Wp13Aimed|FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A4PickTests.A4Pick_Snap_OnlyLivingEnemiesInFrontOfTheGround
+note = snapping does not look at the team
+original:
+|                 if (!e.Alive || e.Team == 0 || e.Team == me.Team || e.Key == self.Value) continue;
+replacement:
+|                 if (!e.Alive || e.Team == 0 || e.Key == self.Value) continue;
+
+[a4-09-snap-through-ground]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~WarCore.Tests.A4|FullyQualifiedName~WarCore.Tests.Wp13Aimed|FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A4PickTests.A4Pick_Snap_OnlyLivingEnemiesInFrontOfTheGround
+note = a body behind the ground still snaps
+original:
+|             if (!(best < tGround)) return onGround;
+replacement:
+|             if (!(best < double.PositiveInfinity)) return onGround;
+
+[a4-10-flat-snap-has-height]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~WarCore.Tests.A4|FullyQualifiedName~WarCore.Tests.Wp13Aimed|FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A4PickTests.A4Pick_Snap_OnAFlatMap_HasNoHeight
+note = a snap on a map without a height field carries a height
+original:
+|             long? yMm = ground == null ? (long?)null : (long)Math.Round((double)snapped.Y * 1000.0, MidpointRounding.AwayFromZero);
+replacement:
+|             long? yMm = (long)Math.Round((double)snapped.Y * 1000.0, MidpointRounding.AwayFromZero);
+
+[a4-11-no-bisection]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~WarCore.Tests.A4|FullyQualifiedName~WarCore.Tests.Wp13Aimed|FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A4PickTests.A4Pick_FixedRays_TableL6
+note = the pick takes L9's first sample below instead of bisecting
+original:
+|                 rx = Along(ax, cx, hi); ry = Along(ay, cy, hi); rz = Along(az, cz, hi);
+replacement:
+|                 rx = cx; ry = cy; rz = cz;
+
+[a4-14-mapper-null-aim-focus]
+file = Assets/WarCore/Presentation/Camera/PlayerInputMapper.cs
+filter = FullyQualifiedName~WarCore.Tests.A4|FullyQualifiedName~WarCore.Tests.Wp13Aimed|FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A4InputTests.A4Input_MapperAimNull_IsTheOldOverloadOnEveryF5Sequence
+note = the aim overload with a null aim falls back to the focus instead of the last pick
+original:
+|             GroundPick aim = hasAim ? lastAim : new GroundPick(camera.FocusX, camera.FocusZ);
+replacement:
+|             GroundPick aim = hasAim && !(withAim && !aimed.HasValue) ? lastAim : new GroundPick(camera.FocusX, camera.FocusZ);
+
+[a4-15-ally-blocks-horizontal]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~WarCore.Tests.A4|FullyQualifiedName~WarCore.Tests.Wp13Aimed|FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A4AllyTests.A4Ally_FarTeammateUnderTheRisingLine_DoesNotBlock
+note = the public AllyBlocks keeps the horizontal line
+original:
+|             SimVec3 direction = point - origin;
+replacement:
+|             SimVec3 direction = Horizontal(point - origin);
+
+[a4-16-target-height-scale]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~WarCore.Tests.A4|FullyQualifiedName~WarCore.Tests.Wp13Aimed|FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A4PlayerTests.A4Player_Height200_HitsAlongTheRisingLine
+expect = WarCore.Tests.A4InputTests.A4Input_ReplayOfThePlayerLog_IsTickForTickEqual
+note = the height is read in centimetres
+original:
+|             var target = new SimVec3(flat.X, SimFix.Ratio(yMm, 1000), flat.Z);
+replacement:
+|             var target = new SimVec3(flat.X, SimFix.Ratio(yMm, 100), flat.Z);
+
+[a4-17-bisection-wrong-half]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~WarCore.Tests.A4|FullyQualifiedName~WarCore.Tests.Wp13Aimed|FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A4PickTests.A4Pick_FixedRays_TableL6
+note = the bisection keeps the wrong half
+original:
+|                     if (ground.IsBelowRaw(Along(ax, cx, mid), Along(ay, cy, mid), Along(az, cz, mid))) hi = mid; else lo = mid;
+replacement:
+|                     if (ground.IsBelowRaw(Along(ax, cx, mid), Along(ay, cy, mid), Along(az, cz, mid))) lo = mid; else hi = mid;
+
+[a4-19-mapper-keeps-height-on-plane]
+file = Assets/WarCore/Presentation/Camera/PlayerInputMapper.cs
+filter = FullyQualifiedName~WarCore.Tests.A4|FullyQualifiedName~WarCore.Tests.Wp13Aimed|FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A4InputTests.A4Input_MapperHeightState_FollowsTheTable
+note = a plane pick inside the window keeps the last height
+original:
+|                     lastAim = camera.ScreenToGround(x, y, w, h);
+|                     lastAimYMm = null;
+replacement:
+|                     lastAim = camera.ScreenToGround(x, y, w, h);
+
+[a4-21-closed-height-half-open]
+file = Assets/WarCore/Presentation/Bridge/Features/ViewGround.cs
+filter = FullyQualifiedName~WarCore.Tests.A4|FullyQualifiedName~WarCore.Tests.Wp13Aimed|FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A4PickTests.A4Pick_FixedRays_TableL6
+note = the ground height uses the half-open TryHeightRaw
+original:
+|             long lo = MinHeightRaw - 1, hi = MaxHeightRaw; // below at lo + 1 .. ; never below at hi
+|             while (hi - lo > 1)
+|             {
+|                 long mid = lo + (hi - lo) / 2;
+|                 if (IsBelowRaw(x, mid, z)) lo = mid; else hi = mid;
+|             }
+|             return hi;
+replacement:
+|             if (!TryHeightRaw(x, z, out long y)) throw new ArgumentOutOfRangeException(nameof(x));
+|             return y;
