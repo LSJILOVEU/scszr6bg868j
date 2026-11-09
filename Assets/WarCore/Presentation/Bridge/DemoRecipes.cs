@@ -67,7 +67,8 @@ namespace WarCore.Presentation
             WithPlayerBlock(MpDemo(), new WarCore.Combat.BlockSpec(500, 1000)); // PLACEHOLDER: front +-60 degrees, stops all of the blow.
 
         // C2: the MP block demo with player respawn on, so a death shows the countdown and play goes on in a reserve.
-        public static WorldRecipe MpRespawnDemo() => WithRespawn(MpBlockDemo(), 300); // PLACEHOLDER: 10 s at 30 Hz.
+        // C1c: the new unit takes no combat damage for 90 ticks after the switch.
+        public static WorldRecipe MpRespawnDemo() => WithRespawnGuard(WithRespawn(MpBlockDemo(), 300), 90); // PLACEHOLDER: 10 s and 3 s at 30 Hz.
 
         // The recipe with its match rules rebuilt from every field of the old ones and only the respawn delay replaced.
         internal static WorldRecipe WithRespawn(WorldRecipe source, int ticks)
@@ -75,7 +76,16 @@ namespace WarCore.Presentation
             WarCore.Battle.MatchPack m = source.Match ?? throw new System.InvalidOperationException("Respawn needs match rules.");
             return source.WithMatch(new WarCore.Battle.MatchPack(m.Points.ToArray(), m.Bases.ToArray(), m.Num, m.Den, m.Strict,
                 m.CaptureTicks, m.Interrupt, m.DecayPerTick, m.IntervalTicks, m.ThinkInterval, m.MaxTicks, m.Sight,
-                m.GridColumns, m.GridRows, m.GridSpacing, ticks));
+                m.GridColumns, m.GridRows, m.GridSpacing, ticks, m.RespawnGuardTicks));
+        }
+
+        // The recipe with its match rules rebuilt from every field of the old ones and only the respawn guard replaced.
+        internal static WorldRecipe WithRespawnGuard(WorldRecipe source, int ticks)
+        {
+            WarCore.Battle.MatchPack m = source.Match ?? throw new System.InvalidOperationException("A respawn guard needs match rules.");
+            return source.WithMatch(new WarCore.Battle.MatchPack(m.Points.ToArray(), m.Bases.ToArray(), m.Num, m.Den, m.Strict,
+                m.CaptureTicks, m.Interrupt, m.DecayPerTick, m.IntervalTicks, m.ThinkInterval, m.MaxTicks, m.Sight,
+                m.GridColumns, m.GridRows, m.GridSpacing, m.RespawnTicks, ticks));
         }
 
         // Appends spec to the recipe's combat pack and gives it to the player's unit only. Every other recipe and pack field is copied.
