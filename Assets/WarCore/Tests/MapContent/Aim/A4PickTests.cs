@@ -47,9 +47,10 @@ namespace WarCore.Tests
             Assert.That(o1.YMm.Value, Is.EqualTo((o1.XMm - 6000) / 2.0).Within(1), "O1 height on the front slope");
             Ground(East(12, 2.9999, g), 11.99988, 3000, "G1 grazing the top, 0.85 mm under it");
             Ground(East(12, 3.0001, g), 20.2427, 0, "M1 just over the top");
-            AimTarget e1 = East(23.9996, 0, g);
+            AimTarget e1 = default, e1r = default;
+            Assert.DoesNotThrow(() => e1 = East(23.9996, 0, g), "E1 on the closed maximum edge");
             Ground(e1, 23.9996, 0, "E1"); Assert.That(e1.XMm, Is.EqualTo(24000));
-            AimTarget e1r = Ray(23.9996, 0, -Cos20, -Sin20, g);
+            Assert.DoesNotThrow(() => e1r = Ray(23.9996, 0, -Cos20, -Sin20, g), "E1' on the closed maximum edge");
             Ground(e1r, 23.9996, 0, "E1' from the far side"); Assert.That(e1r.XMm, Is.EqualTo(24000));
             AimTarget s1 = Ray(0, -0.5, 0.8, -0.6, g);
             Ground(s1, 0, 0, "S1 enters through the side below the ground");

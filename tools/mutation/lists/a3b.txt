@@ -164,7 +164,7 @@ filter = FullyQualifiedName~WarCore.Tests.A3b
 expect = WarCore.Tests.A3bGateTests.AllyBlocks_Table
 note = the public read port never finds a teammate
 original:
-|            return direction.LengthSquared.Sign != 0 && AllyBlocks(shooter, origin, direction, range);
+|            return Horizontal(direction).LengthSquared.Sign != 0 && AllyBlocks(shooter, origin, direction, range);
 replacement:
 |            return false;
 
