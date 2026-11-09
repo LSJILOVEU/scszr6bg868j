@@ -48,5 +48,34 @@ namespace WarCore.Presentation
             text.Append(pick.HasValue ? FormattableString.Invariant($"Ground ({pick.Value.X:F1}, {pick.Value.Z:F1})") : "Ground -");
             return text.ToString();
         }
+
+        // The respawn line for the HUD, or null when there is nothing to show (respawn off, the unit alive, or the match over).
+        // Waiting rounds up to whole seconds: 1 to 30 ticks left show 1 s, 31 show 2 s. text defaults to HudText.English.
+        public static string Respawn(FrameView frame, HudText text = null)
+        {
+            if (frame.Match.IsFinished) return null;
+            text = text ?? HudText.English;
+            ViewRespawn respawn = frame.Respawn;
+            switch (respawn.State)
+            {
+                case RespawnPhase.Waiting:
+                    return HudText.Format(text.RespawnIn, (respawn.TicksLeft + SimSession.TickRate - 1) / SimSession.TickRate);
+                case RespawnPhase.Overdue: return text.RespawnWaiting;
+                case RespawnPhase.NoReserve: return text.NoReserve;
+                default: return null;
+            }
+        }
+
+        // The line after losing the controlled unit, or null when it was not lost.
+        public static string Takeover(bool lostPlayer, bool alive, ulong? key, HudText text = null)
+        {
+            if (!lostPlayer) return null;
+            text = text ?? HudText.English;
+            return alive ? HudText.Format(text.NowControlling, key.Value) : text.Down;
+        }
+
+        // The one player line the host shows: the respawn line while there is one (it replaces "Down"), else the takeover line.
+        public static string PlayerLine(FrameView frame, bool lostPlayer, bool alive, ulong? key, HudText text = null)
+            => Respawn(frame, text) ?? Takeover(lostPlayer, alive, key, text);
     }
 }
