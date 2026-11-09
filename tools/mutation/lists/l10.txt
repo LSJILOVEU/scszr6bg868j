@@ -1,0 +1,196 @@
+# L10 terrain player step: the required mutations of the work package. Test classes are named L10*.
+
+[l10-01-no-terrain-branch]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~WarCore.Tests.L10
+expect = WarCore.Tests.L10GroundTests.L10Ground_UpTheSlopeOnGrass
+note = the controlled unit takes the flat branch on a terrain map
+original:
+|             if (terrain != null) { StepControlledTerrain(context, i, displacement); return; }
+replacement:
+|             // flat branch only
+
+[l10-02-whole-step-not-grounded]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~WarCore.Tests.L10
+expect = WarCore.Tests.L10GroundTests.L10Ground_UpTheSlopeOnGrass
+note = the whole-step candidate keeps the old Y
+original:
+|             SimVec3 next = Grounded(point + d);
+replacement:
+|             SimVec3 next = point + d;
+
+[l10-03-x-only-not-grounded]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~WarCore.Tests.L10
+expect = WarCore.Tests.L10GroundTests.L10Ground_SlideAlongTheCliffTakesXOnly
+note = the X-only candidate keeps the old Y
+original:
+|                 next = Grounded(point + new SimVec3(d.X, default, default));
+replacement:
+|                 next = point + new SimVec3(d.X, default, default);
+
+[l10-04-z-only-not-grounded]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~WarCore.Tests.L10
+expect = WarCore.Tests.L10GroundTests.L10Ground_SlideAlongAWallTakesZOnly
+note = the Z-only candidate keeps the old Y
+original:
+|                     next = Grounded(point + new SimVec3(default, default, d.Z));
+replacement:
+|                     next = point + new SimVec3(default, default, d.Z);
+
+[l10-05-no-surface-multiplier]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~WarCore.Tests.L10
+expect = WarCore.Tests.L10SpeedTests.L10Speed_XStepBySurface
+note = the multiplier is always 1000
+original:
+|             long milli = grid.TryCell(point, out int cell) ? terrain.SpeedMilliAt(cell) : 1000;
+replacement:
+|             long milli = 1000;
+
+[l10-06-target-cell-decides]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~WarCore.Tests.L10
+expect = WarCore.Tests.L10SpeedTests.L10Speed_TheStartCellDecides
+note = the multiplier comes from the cell after the unscaled step
+original:
+|             long milli = grid.TryCell(point, out int cell) ? terrain.SpeedMilliAt(cell) : 1000;
+replacement:
+|             long milli = grid.TryCell(point + displacement, out int cell) ? terrain.SpeedMilliAt(cell) : 1000;
+
+[l10-07-cap-inclusive]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~WarCore.Tests.L10
+expect = WarCore.Tests.L10CapTests.L10Cap_ExactlyTheCapWalks
+note = a step of exactly 0.25 m throws
+original:
+|             if (entities.Get(intents, unit).SpeedPerTick.Raw > MaxTerrainStepRaw)
+replacement:
+|             if (entities.Get(intents, unit).SpeedPerTick.Raw >= MaxTerrainStepRaw)
+
+[l10-08-x-floor-toward-negative]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~WarCore.Tests.L10
+expect = WarCore.Tests.L10SpeedTests.L10Speed_XStepBySurface
+note = the X scaling rounds toward negative infinity
+original:
+|             var d = new SimVec3(SimFix.FromRaw(displacement.X.Raw * milli / 1000), default, SimFix.FromRaw(displacement.Z.Raw * milli / 1000));
+replacement:
+|             var d = new SimVec3(SimFix.FromRaw((displacement.X.Raw * milli - (displacement.X.Raw < 0 ? 999 : 0)) / 1000), default, SimFix.FromRaw(displacement.Z.Raw * milli / 1000));
+
+[l10-09-no-cap]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~WarCore.Tests.L10
+expect = WarCore.Tests.L10CapTests.L10Cap_OneStepAboveTheCapThrowsOnTheFirstMove
+note = no cap on the player's step
+original:
+|             if (entities.Get(intents, unit).SpeedPerTick.Raw > MaxTerrainStepRaw)
+|                 throw new InvalidOperationException("Terrain worlds cap a unit step at 0.25 m per tick.");
+replacement:
+|             // no cap
+
+[l10-10-zero-check-x-only]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~WarCore.Tests.L10
+expect = WarCore.Tests.L10SpeedTests.L10Speed_ZStepInMud
+note = a step with no X is dropped
+original:
+|             if (d.X.Raw == 0 && d.Z.Raw == 0) return;
+replacement:
+|             if (d.X.Raw == 0) return;
+
+[l10-11-skip-x-only]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~WarCore.Tests.L10
+expect = WarCore.Tests.L10GroundTests.L10Ground_SlideAlongTheCliffTakesXOnly
+note = the X-only candidate is never taken
+original:
+|                 if (d.X.Raw == 0 || !ControlledAllows(context, i, next))
+replacement:
+|                 if (d.X.Raw == 0 || d.X.Raw != 0)
+
+[l10-12-z-before-x]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~WarCore.Tests.L10
+expect = WarCore.Tests.L10ClearanceTests.L10Clearance_XOnlyComesBeforeZOnly
+note = the Z-only candidate is tried before the X-only one
+original:
+|                 next = Grounded(point + new SimVec3(d.X, default, default));
+|                 if (d.X.Raw == 0 || !ControlledAllows(context, i, next))
+|                 {
+|                     next = Grounded(point + new SimVec3(default, default, d.Z));
+|                     if (d.Z.Raw == 0 || !ControlledAllows(context, i, next)) return;
+replacement:
+|                 next = Grounded(point + new SimVec3(default, default, d.Z));
+|                 if (d.Z.Raw == 0 || !ControlledAllows(context, i, next))
+|                 {
+|                     next = Grounded(point + new SimVec3(d.X, default, default));
+|                     if (d.X.Raw == 0 || !ControlledAllows(context, i, next)) return;
+
+[l10-13-terrain-allows]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~WarCore.Tests.L10
+expect = WarCore.Tests.L10ClearanceTests.L10Clearance_UnitsBlockOnTheSlope
+note = the AI clearance (no units) replaces the controlled one
+original:
+|             if (!ControlledAllows(context, i, next))
+|             {
+|                 next = Grounded(point + new SimVec3(d.X, default, default));
+|                 if (d.X.Raw == 0 || !ControlledAllows(context, i, next))
+|                 {
+|                     next = Grounded(point + new SimVec3(default, default, d.Z));
+|                     if (d.Z.Raw == 0 || !ControlledAllows(context, i, next)) return;
+replacement:
+|             if (!TerrainAllows(context, i, next))
+|             {
+|                 next = Grounded(point + new SimVec3(d.X, default, default));
+|                 if (d.X.Raw == 0 || !TerrainAllows(context, i, next))
+|                 {
+|                     next = Grounded(point + new SimVec3(default, default, d.Z));
+|                     if (d.Z.Raw == 0 || !TerrainAllows(context, i, next)) return;
+
+[l10-14-guard-back]
+file = Assets/WarCore/Presentation/Bridge/Features/TerrainFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.L10|FullyQualifiedName~AssemblyGuard|FullyQualifiedName~E1bTerrain|FullyQualifiedName~Wp23Guard
+expect = WarCore.Tests.L10GroundTests
+expect = WarCore.Tests.Wp23GuardTests.PlayerOnTerrain_IsAllowed_WithThePack
+note = the terrain player guard is restored
+original:
+|             if (a.Recipe.TerrainPack == null)
+replacement:
+|             if (a.Recipe.PlayerKey.HasValue)
+|                 throw new NotSupportedException("Player control on terrain maps is not supported before T1c.");
+|             if (a.Recipe.TerrainPack == null)
+
+[l10-15-no-respawn]
+file = Assets/WarCore/Presentation/Bridge/TerrainPlayerDemo.cs
+filter = FullyQualifiedName~WarCore.Tests.L10
+expect = WarCore.Tests.L10DemoTests.L10Demo_ProductionRecipeAndScript_AreTheReviewedValues
+note = the production recipe loses its respawn delay
+original:
+|         public static WorldRecipe Recipe() => DemoRecipes.WithRespawn(DemoRecipes.TerrainMatch().WithPlayer(1), 300);
+replacement:
+|         public static WorldRecipe Recipe() => DemoRecipes.TerrainMatch().WithPlayer(1);
+
+[l10-16-script-tick]
+file = Assets/WarCore/Presentation/Bridge/TerrainPlayerDemo.cs
+filter = FullyQualifiedName~WarCore.Tests.L10
+expect = WarCore.Tests.L10DemoTests.L10Demo_ProductionRecipeAndScript_AreTheReviewedValues
+note = the third script entry moves one tick
+original:
+|             (160L, new PlayerInput(0, 1000, 30000, 16500)),
+replacement:
+|             (161L, new PlayerInput(0, 1000, 30000, 16500)),
+
+[l10-17-flat-step-zero]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~WarCore.Tests.L10|FullyQualifiedName~F5|FullyQualifiedName~Wp16Movement|FullyQualifiedName~ControlledSweep
+expect = WarCore.Tests.L10FlatLockTests
+expect = WarCore.Tests.Wp16MovementTests
+note = sensitivity: the flat branch never moves
+original:
+|             SimVec3 next = point + displacement;
+replacement:
+|             SimVec3 next = point;
