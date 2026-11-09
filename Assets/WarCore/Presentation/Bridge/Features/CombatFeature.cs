@@ -33,7 +33,7 @@ namespace WarCore.Presentation
         {
             Simulation sim = a.Sim;
             WorldRecipe recipe = a.Recipe;
-            var combat = new CombatSystem(sim, a.Positions, a.Combatants, Covered(a), a.WallMask, WorldAssembly.MoverLayer, recipe.Units.Length, a.Controlled);
+            var combat = new CombatSystem(sim, a.Positions, a.Combatants, Covered(a), a.WallMask, WorldAssembly.MoverLayer, recipe.Units.Length, a.Controlled, a.Terrain?.Ground);
             sim.RegisterGameplay("combat.system", combat, SimSystemPhase.Queries);
             // The combat system registers the melee component, so the units get their specs only now.
             for (int i = 0; i < recipe.Units.Length; i++)

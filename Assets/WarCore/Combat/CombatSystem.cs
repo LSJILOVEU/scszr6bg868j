@@ -30,9 +30,10 @@ namespace WarCore.Combat
         public int QueriesThisStep { get; private set; }
         private readonly IAutoFire builtInAutoFire;
         private IAutoFire autoFire;
+        private readonly HeightField ground;
 
         public CombatSystem(Simulation sim, ComponentType<Position> positions, ComponentType<Combatant> combatants,
-            CombatPack pack, uint wallMask, uint unitLayerMask, int unitCount, IControlTarget controlled = null)
+            CombatPack pack, uint wallMask, uint unitLayerMask, int unitCount, IControlTarget controlled = null, HeightField ground = null)
         {
             this.sim = sim; this.positions = positions; this.combatants = combatants; this.pack = pack;
             this.wallMask = wallMask; this.unitLayerMask = unitLayerMask;
@@ -45,6 +46,7 @@ namespace WarCore.Combat
             colliders = Entities.Resolve<Collider>();
             liveUnits = new LiveUnit[Entities.Capacity];
             this.controlled = controlled;
+            this.ground = ground;
             intents = new FireIntent[Entities.Capacity];
             intentTicks = new long[Entities.Capacity];
             intentSlots = new int[candidates.Length];

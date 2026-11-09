@@ -15,7 +15,7 @@ namespace WarCore.Combat
         public SimVec3 Point(EntityId entity) => Entities.Read(positions, entity).Value;
         public Combatant Unit(EntityId entity) => Entities.Read(combatants, entity);
         public bool IsDead(EntityId entity) => sim.GameplayLife(Entities.StableOf(entity)).State == GameplayLifeState.Dead;
-        private static SimVec3 AimPoint(SimVec3 point) => point + new SimVec3(default, SimFix.Ratio(1, 2), default);
+        public static SimVec3 AimPoint(SimVec3 point) => point + new SimVec3(default, SimFix.Ratio(1, 2), default);
         public static SimVec3 Horizontal(SimVec3 delta) => new SimVec3(delta.X, default, delta.Z);
 
         public ReadOnlySpan<SpatialHit> Candidates(EntityId shooter, SimFix range)
@@ -77,14 +77,18 @@ namespace WarCore.Combat
             var from = AimPoint(Point(shooter)); var to = AimPoint(Point(target));
             if (Horizontal(to - from).LengthSquared.Sign == 0) return true;
             var delta = to - from;
-            // Explicit AtTarget intents keep the wall-only line of sight; the Aimed and Auto paths use Trace.
-            return !sim.SpatialQuery.Any(SpatialQueries.Ray(from, delta, delta.Length, wallMask));
+            // Walls, then (L9) the ground on the same eye line. Explicit AtTarget intents use this; Aimed and Auto use Trace.
+            if (sim.SpatialQuery.Any(SpatialQueries.Ray(from, delta, delta.Length, wallMask))) return false;
+            return ground == null || !ground.TryFirstBelow(from, to, out _);
         }
 
         private enum Struck : byte { Open, Wall, Enemy, Friend }
 
         // First living unit (any team but 0, never the shooter) or wall along a ray; ties go to the wall, then the smaller StableId.
-        private Struck Trace(EntityId shooter, SimVec3 origin, SimVec3 direction, SimFix range, out EntityId hit, out SimFix distance)
+        // end is where the ray stops. L9: the ray lifted by 0.5 m (the eye height of AimPoint) is then tested against the ground
+        // up to that end; if it goes under, the shot is a wall hit at the first blocked sample lowered back by 0.5 m, recorded
+        // as is (no second rounding). The ground wins a tie with the unit or wall at the end.
+        private Struck Trace(EntityId shooter, SimVec3 origin, SimVec3 direction, SimFix range, out EntityId hit, out SimFix distance, out SimVec3 end)
         {
             hit = default; distance = range;
             var result = sim.SpatialQuery.AllCapped(SpatialQueries.Ray(origin, direction, range, unitLayerMask), candidates.Length, candidates);
@@ -100,19 +104,24 @@ namespace WarCore.Combat
                 if (found && (d.Raw > best.Raw || (d.Raw == best.Raw && id.CompareTo(bestId) >= 0))) continue;
                 hit = entity; best = d; bestId = id; found = true;
             }
+            Struck struck;
             if (sim.SpatialQuery.Nearest(SpatialQueries.Ray(origin, direction, range, wallMask), out SpatialHit wall)
                 && (!found || wall.Distance.Raw <= best.Raw))
+            { hit = default; distance = wall.Distance; struck = Struck.Wall; }
+            else if (!found) struck = Struck.Open;
+            else { distance = best; struck = IsFriend(shooter, hit) ? Struck.Friend : Struck.Enemy; }
+            end = origin + direction.Normalized * distance;
+            if (ground != null)
             {
-                hit = default; distance = wall.Distance;
-                return Struck.Wall;
+                SimVec3 lift = new SimVec3(default, SimFix.Ratio(1, 2), default);
+                if (ground.TryFirstBelow(origin + lift, end + lift, out SimVec3 at))
+                { hit = default; end = at - lift; distance = (end - origin).Length; return Struck.Wall; }
             }
-            if (!found) return Struck.Open;
-            distance = best;
-            return IsFriend(shooter, hit) ? Struck.Friend : Struck.Enemy;
+            return struck;
         }
 
         // AI check: is a living teammate the first thing on the straight line to the chosen target (no spread)?
         internal bool AllyBlocks(EntityId shooter, SimVec3 origin, SimVec3 direction) =>
-            Trace(shooter, origin, direction, direction.Length, out _, out _) == Struck.Friend;
+            Trace(shooter, origin, direction, direction.Length, out _, out _, out _) == Struck.Friend;
     }
 }

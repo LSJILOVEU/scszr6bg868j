@@ -23,15 +23,17 @@ namespace WarCore.Combat
             return AutoFireAction.Pass;
         }
 
-        // The decision for a target already chosen: the heading to it, then the ally check with its miss roll.
+        // The decision for a target already chosen: the 3D heading to it (L9: targets above or below are aimed at), then the
+        // ally check with its miss roll.
         public AutoFireAction AimAt(CombatSystem combat, EntityId shooter, in Position position, EntityId target, out SimVec3 direction)
         {
             SimVec3 origin = position.Value;
-            direction = CombatSystem.Horizontal(combat.Point(target) - origin);
-            // Zero-direction rule: a target standing on the shooter gives no heading, so the shot goes along +X
+            direction = combat.Point(target) - origin;
+            // Zero-direction rule: a target standing on (or straight above or below) the shooter gives no horizontal heading,
+            // so the shot goes along +X
             // and takes the same ally check, spread, wall and teammate handling as any other ray.
             // PLACEHOLDER: +X is arbitrary; switch to the unit's facing once units have one (block 5 C1, T1b/H1).
-            if (direction.LengthSquared.Sign == 0) direction = new SimVec3(SimFix.FromInt(1), default, default);
+            if (CombatSystem.Horizontal(direction).LengthSquared.Sign == 0) direction = new SimVec3(SimFix.FromInt(1), default, default);
             if (combat.AllyBlocks(shooter, origin, direction) && sim.Rng.NextInt(allyStream, 65536) >= combat.Pack.AllyCheckMissRaw)
                 return AutoFireAction.HoldFire;
             return AutoFireAction.Fire;
