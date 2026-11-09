@@ -15,7 +15,7 @@ namespace WarCore.Combat
         public SimVec3 Point(EntityId entity) => Entities.Read(positions, entity).Value;
         public Combatant Unit(EntityId entity) => Entities.Read(combatants, entity);
         public bool IsDead(EntityId entity) => sim.GameplayLife(Entities.StableOf(entity)).State == GameplayLifeState.Dead;
-        private static SimVec3 AimPoint(SimVec3 point) => point + new SimVec3(default, SimFix.Ratio(1, 2), default);
+        public static SimVec3 AimPoint(SimVec3 point) => point + new SimVec3(default, SimFix.Ratio(1, 2), default);
         public static SimVec3 Horizontal(SimVec3 delta) => new SimVec3(delta.X, default, delta.Z);
 
         public ReadOnlySpan<SpatialHit> Candidates(EntityId shooter, SimFix range)
@@ -74,22 +74,27 @@ namespace WarCore.Combat
 
         public bool Visible(EntityId shooter, EntityId target) => LineClear(AimPoint(Point(shooter)), AimPoint(Point(target)));
 
-        // Line of sight from the shooter to a point on the ground (both lifted to the aim height), walls only.
+        // Line of sight from the shooter to a point on the ground (both lifted to the aim height), walls and (L9) the ground.
         public bool Visible(EntityId shooter, SimVec3 point) => LineClear(AimPoint(Point(shooter)), AimPoint(point));
 
-        // The one line-of-sight judgement: a horizontal zero length is clear, otherwise nothing of the wall layer on the segment.
-        // Explicit AtTarget intents keep the wall-only line of sight; the Aimed and Auto paths use Trace.
+        // The one line-of-sight judgement: a horizontal zero length is clear, otherwise nothing of the wall layer on the segment
+        // and (L9) the segment nowhere under the ground.
+        // Explicit AtTarget intents use this; the Aimed and Auto paths use Trace.
         private bool LineClear(SimVec3 from, SimVec3 to)
         {
             if (Horizontal(to - from).LengthSquared.Sign == 0) return true;
             var delta = to - from;
-            return !sim.SpatialQuery.Any(SpatialQueries.Ray(from, delta, delta.Length, wallMask));
+            if (sim.SpatialQuery.Any(SpatialQueries.Ray(from, delta, delta.Length, wallMask))) return false;
+            return ground == null || !ground.TryFirstBelow(from, to, out _);
         }
 
         private enum Struck : byte { Open, Wall, Enemy, Friend }
 
         // First living unit (any team but 0, never the shooter) or wall along a ray; ties go to the wall, then the smaller StableId.
-        private Struck Trace(EntityId shooter, SimVec3 origin, SimVec3 direction, SimFix range, out EntityId hit, out SimFix distance)
+        // end is where the ray stops. L9: the ray lifted by 0.5 m (the eye height of AimPoint) is then tested against the ground
+        // up to that end; if it goes under, the shot is a wall hit at the first blocked sample lowered back by 0.5 m, recorded
+        // as is (no second rounding). The ground wins a tie with the unit or wall at the end.
+        private Struck Trace(EntityId shooter, SimVec3 origin, SimVec3 direction, SimFix range, out EntityId hit, out SimFix distance, out SimVec3 end)
         {
             hit = default; distance = range;
             var result = sim.SpatialQuery.AllCapped(SpatialQueries.Ray(origin, direction, range, unitLayerMask), candidates.Length, candidates);
@@ -105,22 +110,27 @@ namespace WarCore.Combat
                 if (found && (d.Raw > best.Raw || (d.Raw == best.Raw && id.CompareTo(bestId) >= 0))) continue;
                 hit = entity; best = d; bestId = id; found = true;
             }
+            Struck struck;
             if (sim.SpatialQuery.Nearest(SpatialQueries.Ray(origin, direction, range, wallMask), out SpatialHit wall)
                 && (!found || wall.Distance.Raw <= best.Raw))
+            { hit = default; distance = wall.Distance; struck = Struck.Wall; }
+            else if (!found) struck = Struck.Open;
+            else { distance = best; struck = IsFriend(shooter, hit) ? Struck.Friend : Struck.Enemy; }
+            end = origin + direction.Normalized * distance;
+            if (ground != null)
             {
-                hit = default; distance = wall.Distance;
-                return Struck.Wall;
+                SimVec3 lift = new SimVec3(default, SimFix.Ratio(1, 2), default);
+                if (ground.TryFirstBelow(origin + lift, end + lift, out SimVec3 at))
+                { hit = default; end = at - lift; distance = (end - origin).Length; return Struck.Wall; }
             }
-            if (!found) return Struck.Open;
-            distance = best;
-            return IsFriend(shooter, hit) ? Struck.Friend : Struck.Enemy;
+            return struck;
         }
 
         // AI check: is a living teammate the first thing on the straight line to the chosen target (no spread)?
         internal bool AllyBlocks(EntityId shooter, SimVec3 origin, SimVec3 direction) =>
             AllyBlocks(shooter, origin, direction, direction.Length);
         internal bool AllyBlocks(EntityId shooter, SimVec3 origin, SimVec3 direction, SimFix range) =>
-            Trace(shooter, origin, direction, range, out _, out _) == Struck.Friend;
+            Trace(shooter, origin, direction, range, out _, out _, out _) == Struck.Friend;
 
         // AI read port: is a living teammate the first thing on the horizontal straight line from the shooter towards a point,
         // traced out to range (the whole flight of a shot, not only to the point)? A point on the shooter gives no line.

@@ -1,0 +1,228 @@
+# L9 height-field rays for sight and shots: the required mutations of the work package. Test classes are named L9*.
+
+[l9-01-round-toward-zero]
+file = Assets/WarCore/Sim/HeightField.cs
+filter = FullyQualifiedName~WarCore.Tests.L9|FullyQualifiedName~WarCore.Tests.L6
+expect = WarCore.Tests.L9GroundLineTests.L9Line_V3FloorsTowardNegativeInfinity
+expect = WarCore.Tests.L9GroundLineTests.L9Line_V10uOneRawBelow
+note = floor(n b / d) rounds toward zero
+original:
+|             return p.Negative ? (exact ? -r : -r - 1) : r;
+replacement:
+|             return p.Negative ? -r : r;
+
+[l9-02-ends-only]
+file = Assets/WarCore/Sim/HeightField.cs
+filter = FullyQualifiedName~WarCore.Tests.L9|FullyQualifiedName~WarCore.Tests.L6
+expect = WarCore.Tests.L9GroundLineTests.L9Line_V1RidgeBlocksAtTheGridLine
+expect = WarCore.Tests.L9SightTests.L9Sight_RidgeHidesBothSidesFlatTwinDoesNot
+note = only the two ends are sampled
+original:
+|             Family(ref best, fx, dx, OriginX.Raw, 0, Width, fx, fy, fz, dx, dy, dz);
+|             Family(ref best, fz, dz, OriginZ.Raw, 0, Depth, fx, fy, fz, dx, dy, dz);
+|             Family(ref best, fx - fz, dx - dz, OriginX.Raw - OriginZ.Raw, -Depth, Width, fx, fy, fz, dx, dy, dz);
+replacement:
+|             // no crossings sampled
+
+[l9-03-no-diagonal]
+file = Assets/WarCore/Sim/HeightField.cs
+filter = FullyQualifiedName~WarCore.Tests.L9|FullyQualifiedName~WarCore.Tests.L6
+expect = WarCore.Tests.L9GroundLineTests.L9Line_V2OnlyTheDiagonalBlocks
+note = the diagonal family is not sampled
+original:
+|             Family(ref best, fx - fz, dx - dz, OriginX.Raw - OriginZ.Raw, -Depth, Width, fx, fy, fz, dx, dy, dz);
+replacement:
+|             // no diagonal
+
+[l9-04-last-line-missed]
+file = Assets/WarCore/Sim/HeightField.cs
+filter = FullyQualifiedName~WarCore.Tests.L9|FullyQualifiedName~WarCore.Tests.L6
+expect = WarCore.Tests.L9GroundLineTests.L9Line_V6TheLastGridLineCounts
+note = the last grid line before the end is not sampled (increasing direction)
+original:
+|                 long k0 = CeilDiv(s0 - origin, S), k1 = FloorDiv(s0 + ds - origin, S);
+replacement:
+|                 long k0 = CeilDiv(s0 - origin, S), k1 = FloorDiv(s0 + ds - origin, S) - 1;
+
+[l9-05-touching-blocks]
+file = Assets/WarCore/Sim/HeightField.cs
+filter = FullyQualifiedName~WarCore.Tests.L9|FullyQualifiedName~WarCore.Tests.L6
+expect = WarCore.Tests.L9GroundLineTests.L9Line_V1RidgeBlocksAtTheGridLine
+expect = WarCore.Tests.L9GroundLineTests.L9Line_V10TouchingIsNotBlocked
+note = ground equal to the line counts as blocked
+original:
+|             if (!InClosedDomain(x, xExact, z, zExact) || !ClosedHeight(x, z, out long h) || h <= y) return false;
+replacement:
+|             if (!InClosedDomain(x, xExact, z, zExact) || !ClosedHeight(x, z, out long h) || h < y) return false;
+
+[l9-06a-latest-family]
+file = Assets/WarCore/Sim/HeightField.cs
+filter = FullyQualifiedName~WarCore.Tests.L9|FullyQualifiedName~WarCore.Tests.L6
+expect = WarCore.Tests.L9GroundLineTests.L9Line_V10uOneRawBelow
+expect = WarCore.Tests.L9GroundLineTests.L9Line_V11TheEarliestFamilyWins
+note = across families the latest blocked sample wins
+original:
+|             if (!best.Found || FixedUInt128.Multiply((ulong)n, (ulong)best.D).CompareTo(FixedUInt128.Multiply((ulong)best.N, (ulong)d)) < 0)
+replacement:
+|             if (!best.Found || FixedUInt128.Multiply((ulong)n, (ulong)best.D).CompareTo(FixedUInt128.Multiply((ulong)best.N, (ulong)d)) > 0)
+
+[l9-06b-farthest-in-family]
+file = Assets/WarCore/Sim/HeightField.cs
+filter = FullyQualifiedName~WarCore.Tests.L9|FullyQualifiedName~WarCore.Tests.L6
+expect = WarCore.Tests.L9GroundLineTests.L9Line_V7TheNearestRidgeWins
+expect = WarCore.Tests.L9GroundLineTests.L9Line_V7rTheNearestRidgeWinsReversed
+note = within a family (increasing direction) the farthest line is tried first
+original:
+|                 for (long k = k0; k <= k1; k++)
+replacement:
+|                 for (long k = k1; k >= k0; k--)
+
+[l9-07-sight-ignores-ground]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~WarCore.Tests.L9|FullyQualifiedName~WarCore.Tests.L6
+expect = WarCore.Tests.L9SightTests.L9Sight_RidgeHidesBothSidesFlatTwinDoesNot
+note = Visible does not look at the ground
+original:
+|             return ground == null || !ground.TryFirstBelow(from, to, out _);
+replacement:
+|             return true;
+
+[l9-08-trace-ignores-ground]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~WarCore.Tests.L9|FullyQualifiedName~WarCore.Tests.L6
+expect = WarCore.Tests.L9SightTests.L9Sight_RidgeStopsTheShotAndFlatTwinHits
+note = Trace does not look at the ground
+original:
+|             if (ground != null)
+replacement:
+|             if (ground != null && origin.X.Raw == long.MinValue)
+
+[l9-09-spread-drops-y]
+file = Assets/WarCore/Combat/CombatSystem.Resolve.cs
+filter = FullyQualifiedName~WarCore.Tests.L9|FullyQualifiedName~WarCore.Tests.L6
+expect = WarCore.Tests.L9HeightFireTests.L9HeightFire_SpreadKeepsTheVerticalComponent
+note = spread clears the vertical component again
+original:
+|             return new SimVec3(direction.X * cos - direction.Z * sin, direction.Y, direction.X * sin + direction.Z * cos);
+replacement:
+|             return new SimVec3(direction.X * cos - direction.Z * sin, default, direction.X * sin + direction.Z * cos);
+
+[l9-10-aim-horizontal]
+file = Assets/WarCore/Combat/DefaultAutoFire.cs
+filter = FullyQualifiedName~WarCore.Tests.L9|FullyQualifiedName~WarCore.Tests.L6
+expect = WarCore.Tests.L9HeightFireTests.L9HeightFire_AHigherTargetIsHit
+expect = WarCore.Tests.L9HeightFireTests.L9HeightFire_ALowerTargetIsHit
+note = automatic fire aims horizontally again
+original:
+|             direction = combat.Point(target) - origin;
+replacement:
+|             direction = CombatSystem.Horizontal(combat.Point(target) - origin);
+
+[l9-11-no-ground-wired]
+file = Assets/WarCore/Presentation/Bridge/Features/CombatFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.L9|FullyQualifiedName~WarCore.Tests.L6
+expect = WarCore.Tests.L9SightTests.L9Sight_RidgeHidesBothSidesFlatTwinDoesNot
+expect = WarCore.Tests.L9SightTests.L9Sight_RidgeStopsTheShotAndFlatTwinHits
+note = the world does not pass the height field to combat
+original:
+| recipe.Units.Length, a.Controlled, a.Terrain?.Ground);
+replacement:
+| recipe.Units.Length, a.Controlled, null);
+
+[l9-12-no-lift]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~WarCore.Tests.L9|FullyQualifiedName~WarCore.Tests.L6
+expect = WarCore.Tests.L9SightTests.L9Sight_RidgeStopsTheShotAndFlatTwinHits
+expect = WarCore.Tests.L9HeightFireTests.L9HeightFire_AHigherTargetIsHit
+note = the shot line is tested at foot height
+original:
+|                 SimVec3 lift = new SimVec3(default, SimFix.Ratio(1, 2), default);
+replacement:
+|                 SimVec3 lift = default;
+
+[l9-13-ground-to-range]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~WarCore.Tests.L9|FullyQualifiedName~WarCore.Tests.L6
+expect = WarCore.Tests.L9SightTests.L9Sight_APersonBeforeTheRidgeIsHit
+expect = WarCore.Tests.L9SightTests.L9Sight_AWallBeforeTheRidgeStopsTheShot
+note = the ground test runs to the full range instead of the hit
+original:
+|                 if (ground.TryFirstBelow(origin + lift, end + lift, out SimVec3 at))
+replacement:
+|                 if (ground.TryFirstBelow(origin + lift, origin + direction.Normalized * range + lift, out SimVec3 at))
+
+[l9-14-half-open]
+file = Assets/WarCore/Sim/HeightField.cs
+filter = FullyQualifiedName~WarCore.Tests.L9|FullyQualifiedName~WarCore.Tests.L6
+expect = WarCore.Tests.L9GroundLineTests.L9Line_E1TheFarEdgeIsOnTheField
+note = the ground is read half-open (TryHeightAt) instead of on the closed field
+original:
+|             if (!InClosedDomain(x, xExact, z, zExact) || !ClosedHeight(x, z, out long h) || h <= y) return false;
+replacement:
+|             if (!InClosedDomain(x, xExact, z, zExact) || !TryHeightAt(SimFix.FromRaw(x), SimFix.FromRaw(z), out SimFix hf) || hf.Raw <= y) return false;
+
+[l9-15-world-check]
+file = Assets/WarCore/Sim/HeightField.cs
+filter = FullyQualifiedName~WarCore.Tests.L9|FullyQualifiedName~WarCore.Tests.L6
+expect = WarCore.Tests.L9GroundLineTests.L9Line_W1PastTheWorldEdgeIsAccepted
+expect = WarCore.Tests.L9GroundLineTests.L9Line_W2PastTheWorldEdgeBlocks
+note = both ends must lie in the world
+original:
+|             long fx = from.X.Raw, fy = from.Y.Raw, fz = from.Z.Raw;
+replacement:
+|             from.ValidateWorld(); to.ValidateWorld();
+|             long fx = from.X.Raw, fy = from.Y.Raw, fz = from.Z.Raw;
+
+[l9-16-end-recomputed]
+file = Assets/WarCore/Combat/CombatSystem.Resolve.cs
+filter = FullyQualifiedName~WarCore.Tests.L9|FullyQualifiedName~WarCore.Tests.L6
+expect = WarCore.Tests.L9SightTests.L9Sight_AnObliqueShotEndsExactlyOnTheBlockedSample
+note = FireRay rebuilds the end from the distance again
+original:
+|             Struck struck = Trace(shooter, origin, direction, weapon.FalloffEnd, out EntityId hit, out SimFix distance, out SimVec3 end);
+replacement:
+|             Struck struck = Trace(shooter, origin, direction, weapon.FalloffEnd, out EntityId hit, out SimFix distance, out SimVec3 end);
+|             end = origin + direction.Normalized * distance;
+
+[l9-17-domain-after-rounding]
+file = Assets/WarCore/Sim/HeightField.cs
+filter = FullyQualifiedName~WarCore.Tests.L9|FullyQualifiedName~WarCore.Tests.L6
+expect = WarCore.Tests.L9GroundLineTests.L9Line_E2xAnOffFieldCrossingIsNotPulledBack
+expect = WarCore.Tests.L9GroundLineTests.L9Line_E2zAnOffFieldCrossingIsNotPulledBack
+note = the closed field is decided on the rounded point
+original:
+|             return (rx < mx || xExact) && (rz < mz || zExact);
+replacement:
+|             return true;
+
+[l9-18-no-end-sample]
+file = Assets/WarCore/Sim/HeightField.cs
+filter = FullyQualifiedName~WarCore.Tests.L9|FullyQualifiedName~WarCore.Tests.L6
+expect = WarCore.Tests.L9GroundLineTests.L9Line_VvVertical
+expect = WarCore.Tests.L9SightTests.L9Sight_TheGroundWinsATieWithThePerson
+note = the end of the segment is not sampled
+original:
+|             Sample(ref best, 1, 1, fx, fy, fz, dx, dy, dz);
+|             at = best.At;
+replacement:
+|             at = best.At;
+
+[l9-19-no-start-sample]
+file = Assets/WarCore/Sim/HeightField.cs
+filter = FullyQualifiedName~WarCore.Tests.L9|FullyQualifiedName~WarCore.Tests.L6
+expect = WarCore.Tests.L9GroundLineTests.L9Line_VsOnlyTheStartIsBelow
+note = the start of the segment is not sampled
+original:
+|             Sample(ref best, 0, 1, fx, fy, fz, dx, dy, dz);
+replacement:
+|             // start sample removed
+
+[l9-20-ground-toward-zero]
+file = Assets/WarCore/Sim/HeightField.cs
+filter = FullyQualifiedName~WarCore.Tests.L9|FullyQualifiedName~WarCore.Tests.L6
+expect = WarCore.Tests.L9GroundLineTests.L9Line_VrGroundIsFlooredDown
+note = the closed-field ground height rounds toward zero instead of down
+original:
+|             height = FloorDiv(numerator, SimFix.Scale);
+replacement:
+|             height = numerator / SimFix.Scale;

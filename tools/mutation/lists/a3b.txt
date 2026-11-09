@@ -125,9 +125,9 @@ filter = FullyQualifiedName~WarCore.Tests.A3b
 expect = WarCore.Tests.A3bGateTests.LineOfSight_BlockedByTheWall
 note = the shared line-of-sight judgement ignores the walls
 original:
-|            return !sim.SpatialQuery.Any(SpatialQueries.Ray(from, delta, delta.Length, wallMask));
+|            if (sim.SpatialQuery.Any(SpatialQueries.Ray(from, delta, delta.Length, wallMask))) return false;
 replacement:
-|            return true;
+|            // wall test removed
 
 [a3b-14-no-since-check]
 file = Assets/WarCore/Battle/Ai/TargetSuppress.cs
