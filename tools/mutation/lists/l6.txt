@@ -1,0 +1,96 @@
+# L6 terrain demo match: the required mutations of the work package. Test classes are named L6*.
+
+[l6-01-no-grounding]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~WarCore.Tests.L6
+expect = WarCore.Tests.L6BaselineTests.L6Baseline_TeamOneStandsOnTheRidge
+expect = WarCore.Tests.L6BaselineTests.L6Baseline_MatchesTheRecording
+note = units keep their old height instead of following the ground
+original:
+| ground != null && ground.TryHeightAt(p.X, p.Z, out SimFix y) ? new SimVec3(p.X, y, p.Z) : p;
+replacement:
+| ground != null && ground.TryHeightAt(p.X, p.Z, out SimFix y) ? p : p;
+
+[l6-02-progress-not-restored]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.L6
+expect = WarCore.Tests.L6DeterminismTests.L6Determinism_RestoresInTheMiddleAndAtTheEnd
+note = capture progress is dropped on restore
+original:
+| states[i] = new PointState(reader.Int32(), reader.Int32(), reader.Int32()); changeCount = 0; }
+replacement:
+| states[i] = new PointState(reader.Int32(), reader.Int32(), reader.Int32() * 0); changeCount = 0; }
+
+[l6-03-points-winner-swapped]
+file = Assets/WarCore/Battle/MatchRules.cs
+filter = FullyQualifiedName~WarCore.Tests.L6
+expect = WarCore.Tests.L6BaselineTests.L6Baseline_TimeLimitDecidesOnPoints
+expect = WarCore.Tests.L6BaselineTests.L6Baseline_MatchesTheRecording
+note = the time limit gives the win to the team with fewer points
+original:
+| winner = pointsOne != pointsTwo ? (pointsOne > pointsTwo ? 1 : 2) : one != two ? (one > two ? 1 : 2) : -1;
+replacement:
+| winner = pointsOne != pointsTwo ? (pointsOne > pointsTwo ? 2 : 1) : one != two ? (one > two ? 1 : 2) : -1;
+
+[l6-04-ridge-no-spawn]
+file = Assets/WarCore/Content/TerrainDemoMap.cs
+filter = FullyQualifiedName~WarCore.Tests.L6
+expect = WarCore.Tests.L6DemoRecipeTests.L6Demo_LayoutIsTheFixture
+note = the ridge point stops being a reinforcement spawn in the production match
+original:
+| new ControlPointDef(1, ControlPoints[0], SimFix.FromInt(3), hasSpawn: true, spawn: ControlPoints[0]),
+replacement:
+| new ControlPointDef(1, ControlPoints[0], SimFix.FromInt(3), hasSpawn: false, spawn: ControlPoints[0]),
+
+[l6-05-half-speed]
+file = Assets/WarCore/Presentation/Bridge/DemoRecipes.cs
+filter = FullyQualifiedName~WarCore.Tests.L6
+expect = WarCore.Tests.L6DemoRecipeTests.L6Demo_LayoutIsTheFixture
+note = the production match spawns units at half speed
+original:
+|                 units[i] = new UnitSpawn((ulong)i + 1, 0, team, (team == 1 ? 3500 : 44500) + offset.X, 16500 + offset.Z,
+|                     6000, team, weapons[team - 1], rank >= 10);
+replacement:
+|                 units[i] = new UnitSpawn((ulong)i + 1, 0, team, (team == 1 ? 3500 : 44500) + offset.X, 16500 + offset.Z,
+|                     3000, team, weapons[team - 1], rank >= 10);
+
+[l6-06-never-ends]
+file = Assets/WarCore/Presentation/Bridge/DemoRecipes.cs
+filter = FullyQualifiedName~WarCore.Tests.L6
+expect = WarCore.Tests.L6DemoRecipeTests.L6Demo_LayoutIsTheFixture
+expect = WarCore.Tests.L6DemoRecipeTests.L6Demo_ThePublicSessionPlaysTheMatchToAResult
+note = the production match uses the rule set that never ends
+original:
+|                 .WithCrowdPass(CrowdPassKind.TeamIdle).WithTerrainRules(terrain);
+replacement:
+|                 .WithCrowdPass(CrowdPassKind.TeamIdle).WithTerrainRules(terrain).WithRuleSet("test.never-ends");
+
+[l6-07-not-reversed]
+file = Assets/WarCore/Tests/MapContent/Terrain/L6DeterminismTests.cs
+filter = FullyQualifiedName~WarCore.Tests.L6
+expect = WarCore.Tests.L6DeterminismTests.L6Determinism_ReversedAllocationGivesTheSameMatch
+note = the second world is built without reversed physical allocation
+original:
+|             var b = L6.World(reverse: true);
+replacement:
+|             var b = L6.World();
+
+[l6-08-shipped-combat]
+file = Assets/WarCore/Presentation/Bridge/DemoRecipes.cs
+filter = FullyQualifiedName~WarCore.Tests.L6
+expect = WarCore.Tests.L6DemoRecipeTests.L6Demo_CombatAndMatchFromContent_TerrainFromTerrain
+note = the production match ignores the given content pack for combat
+original:
+|                 .WithCombat(content.BuildCombat()).WithMatch(TerrainDemoMap.BuildMatch(content))
+replacement:
+|                 .WithCombat(WarCore.Content.Rwr.RwrPack.Load(WarCore.Content.Rwr.RwrPack.M6Layer).BuildCombat()).WithMatch(TerrainDemoMap.BuildMatch(content))
+
+[l6-09-winner-not-restored]
+file = Assets/WarCore/Battle/MatchMode.cs
+filter = FullyQualifiedName~WarCore.Tests.L6
+expect = WarCore.Tests.L6DeterminismTests.L6Determinism_RestoresInTheMiddleAndAtTheEnd
+note = the winner is cleared on restore
+original:
+| pack.Check(reader); Winner = reader.Int32(); EndTick = reader.Int64(); EndReason = (MatchEndReason)reader.Int32();
+replacement:
+| pack.Check(reader); Winner = reader.Int32() * 0; EndTick = reader.Int64(); EndReason = (MatchEndReason)reader.Int32();
