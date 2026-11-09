@@ -138,6 +138,8 @@ namespace WarCore.Presentation
         public ViewMap Map { get; }
         internal TerrainTables Terrain { get; }
         internal TerrainRules TerrainRules { get; }
+        // The match the session runs (null without one); read by PointCheck.
+        internal MatchPack MatchPack => matchPack;
         // View key is the original UnitSpawn.Key, not the hashed StableId or the physical entity slot.
         public ulong? ControlledKey
         {
