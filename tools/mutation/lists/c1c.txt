@@ -187,3 +187,23 @@ original:
 |             long damage = pack.Resolver.DamageRaw(in weapon, falloff, roll, pack.MaxHealthRaw);
 replacement:
 |             long damage = Shielded(Entities.StableOf(target), tick) ? 0 : pack.Resolver.DamageRaw(in weapon, falloff, roll, pack.MaxHealthRaw);
+
+[c1c-15-shielded-hit-not-settled]
+file = Assets/WarCore/Combat/CombatSystem.Resolve.cs
+filter = FullyQualifiedName~WarCore.Tests.C1c
+expect = WarCore.Tests.C1cRangedTests.C1cRanged_GuardZeroesHitsForTenTicks_ThenTheHitKills
+note = a shielded ranged hit skips the zero-damage command
+original:
+|             c.Damage(sim.GameplayTarget(victim), new GameplayApplyKey(source, (ulong)tick, 0, source, (ulong)tick, 0), 1, damage);
+replacement:
+|             if (!Shielded(victim, tick)) c.Damage(sim.GameplayTarget(victim), new GameplayApplyKey(source, (ulong)tick, 0, source, (ulong)tick, 0), 1, damage);
+
+[c1c-16-guard-slot-not-hashed]
+file = Assets/WarCore/Battle/RespawnSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.C1c
+expect = WarCore.Tests.C1cSaveAndGateTests.C1cSave_WriteStateHashesTheGuardSlotInOrder
+note = WriteState drops the guard slot
+original:
+|             if (pack.RespawnGuardTicks > 0) { hash.Add(pack.RespawnGuardTicks); hash.Add(guarded.Value); hash.Add(guardEnd); }
+replacement:
+|             _ = guardEnd;

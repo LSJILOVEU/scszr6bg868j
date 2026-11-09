@@ -30,6 +30,21 @@ namespace WarCore.Tests
             }
         }
 
+        // The guard slot is hashed after the old fields, in this order: guard ticks, guarded id, end tick.
+        [Test]
+        public void C1cSave_WriteStateHashesTheGuardSlotInOrder()
+        {
+            var w = C1c.World(C1c.ShooterUnits(), C1c.Pack(10));
+            w.Step(8);
+            RespawnSystem respawn = w.System<RespawnSystem>();
+            var actual = new StateHash();
+            respawn.WriteState(actual);
+            var expected = new StateHash();
+            expected.Add("battle.respawn"); expected.Add(2); expected.Add(C1c.D);
+            expected.Add(10); expected.Add(w.Sim.Entities.StableOf(w.Unit(C1c.Reserve)).Value); expected.Add((long)(C1c.Switch + 10));
+            Assert.That(actual.Value, Is.EqualTo(expected.Value));
+        }
+
         private static byte[] SavedAt8(int guard)
         {
             var w = C1c.World(C1c.ShooterUnits(), C1c.Pack(guard));

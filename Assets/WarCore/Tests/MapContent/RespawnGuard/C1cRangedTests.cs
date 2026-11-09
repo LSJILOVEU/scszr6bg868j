@@ -36,6 +36,10 @@ namespace WarCore.Tests
                 Assert.That(Controlled(w), Is.EqualTo(C1c.Reserve), "tick " + tick);
                 Assert.That(C1c.Holds(w, C1c.Reserve), Is.True, "alive after tick " + tick);
                 Assert.That(C1c.Hits(w, C1c.Shooter, C1c.Reserve), Is.EqualTo(new[] { 0L }), "a zeroed hit on tick " + tick);
+                // The zero-damage command is still settled: one Damage fact of 0 and one FinalLife fact.
+                var facts = C1c.Facts(w, C1c.Reserve, tick);
+                Assert.That(facts.damage, Is.EqualTo(new[] { 0L }), "Damage fact on tick " + tick);
+                Assert.That(facts.finalLife, Is.EqualTo(1), "FinalLife fact on tick " + tick);
             }
             Assert.That(Wp16TestWorld.Point(w, C1c.Reserve), Is.EqualTo(C1c.Spot));
             w.Step();

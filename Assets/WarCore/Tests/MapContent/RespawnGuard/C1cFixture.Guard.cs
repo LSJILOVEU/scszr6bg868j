@@ -27,6 +27,22 @@ namespace WarCore.Tests
             return hits;
         }
 
+        // Settlement facts of one tick for one unit: the damage amounts (raw) and the number of FinalLife facts.
+        internal static (List<long> damage, int finalLife) Facts(M6World w, ulong key, long tick)
+        {
+            var damage = new List<long>(); int finalLife = 0;
+            StableId id = w.Sim.Entities.StableOf(w.Unit(key));
+            int count = w.Sim.Events.Read(tick).Length;
+            for (int i = 0; i < count; i++)
+            {
+                StableSimEvent e = w.Sim.ReadStableEvent(tick, i);
+                if (!e.Target.HasValue || !e.Target.Id.Equals(id)) continue;
+                if (e.Type.Equals(GameplayEvents.Damage)) damage.Add(e.Payload.Magnitude.Raw);
+                if (e.Type.Equals(GameplayEvents.FinalLife)) finalLife++;
+            }
+            return (damage, finalLife);
+        }
+
         // Melee fixture (3): no guns; one melee spec (windup 3, active 1, recovery 2, radius 2 m, 60 degrees, damage 100 = lethal,
         // engage 1.8 m) and one block spec (60 degrees, stops all). Reserve 3 carries block spec 0; enemy 11 at (21.5, 19) swings.
         internal static CombatPack MeleePack() => new CombatPack(System.Array.Empty<WeaponDef>(), new ZeroResolver(), new NearestVisibleEnemy(),
