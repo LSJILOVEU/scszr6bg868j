@@ -87,6 +87,8 @@ H = 无头，任何 Linux/macOS 机器可跑；U = 需要交互式 Unity 编辑�
 
 本文件即仓库所有者的许可：外部 AI 可以在本仓库开 PR。不要开 issue，不要在别人的 PR 上评论。
 
+**本仓库的 `main` 就是正本。** `CLAUDE.md` 里“改动从私有源仓库快照过来”那句已过时：现在所有改动（包括外部 AI 的 PR）都以 squash 合进这里，没有从别处快照覆盖 `main` 的流程，合进来的工作不会被冲掉。开工前 `git fetch` 并基于最新 `main`；和别的在途 PR 冲突时 rebase 到最新 `main` 再推。
+
 ## 5 必须遵守的规则
 
 ### 5.1 公开仓库隐私规则（最高优先，详见 `CLAUDE.md`）
@@ -172,6 +174,7 @@ docs/             peak-baseline.md（交火峰值基线）、本文件
 - WarCore: deterministic, reskinnable top-down war-game foundation (Unity 6000.6.0f1, C#). First prove it by matching the gameplay of Running With Rifles, then reskin (melee ancient war, ninja skills, cultivation, open world). Theme-specific content goes in content packs; the foundation stays generic. Zero-code map making is a hard goal.
 - Status: ~47 of ~76 work packages merged (estimate). Player control, respawn, AI perception/memory/burst/suppression, terrain walking, height-field line of sight and aim are in. Nobody has play-tested the build yet.
 - Next: spawn-order bias fix, F6 unit spawn by type id, R2 data-selected rule parts, V1/V2 reskin test, S1/V3 skins, F1b mutation gate in CI, A4b, M7–M10 dash and mounts, R3–R6, E4–E8 map editor, A1/PF1/P5/P6, C6–C9.
+- `main` of this repository is the source of truth; nothing is snapshotted over it (the "snapshots from the private source repository" line in `CLAUDE.md` is outdated).
 - Work: branch from `main` (`ext/<id>-<name>`), commit as `warcore <noreply@users.noreply.github.com>` with `TZ=UTC`, PR to `main` (squash only).
 - Gates: dual-platform CI green; every mutation in `tools/mutation/lists/<id>.txt` killed; `hygiene.py` PASS; Unity EditMode `failed=0` when Unity code is touched; maintainer privacy review (`Privacy: PASS <sha7>` + `reviewed` label; never add these yourself).
 - Rules: no personal data or attribution lines anywhere; never bypass the guard; determinism locks are permanent; behaviour baselines only re-recorded when the task says so, with old/new values listed; new mechanics default off with an unchanged-when-off lock test; no unrelated defensive code; always write a Departures section.
