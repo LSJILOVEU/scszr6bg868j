@@ -54,6 +54,32 @@ namespace WarCore.Tests
                 Assert.That(A3b.Same(records[t].End, A3b.Raw(1382235, 0, 1666818)), A3b.V(records[t].End));
         }
 
+        // 4(b) boundary: P exactly FalloffEnd (15 m) west of A along x, so the horizontal squared distance equals the squared
+        // range: the point is in range and the suppression fires from there (121, 151, 181; Origin the boundary point).
+        [Test]
+        public void Range_PointOnTheFalloffEnd_Fires()
+        {
+            SimVec3 boundary = A3b.P - new SimVec3(SimFix.FromInt(15), default, default);
+            var records = new Dictionary<long, FireRecord>();
+            List<long> fires = A3b.Run(A3b.World(A3b.Ai(300, 300), A3b.Combat15()), 200, A3b.Script, (x, t) =>
+            {
+                if (t == 100)
+                {
+                    A3b.Place(x, A3b.KeyA, boundary);
+                    SimFix range = x.Combat.Pack.Weapons[0].FalloffEnd;
+                    Assert.That(range, Is.EqualTo(SimFix.FromInt(15)));
+                    Assert.That(CombatSystem.Horizontal(A3b.P - x.Combat.Point(A3b.A(x))).LengthSquared, Is.EqualTo(new SimVec3(range, default, default).LengthSquared));
+                    Assert.That(x.Combat.Visible(A3b.A(x), A3b.P), Is.True);
+                }
+            }, (x, t) => { if (A3b.Fired(x, out FireRecord f)) records[t] = f; });
+            Assert.That(fires, Is.EqualTo(A3b.Ticks(1, 31, 61, 121, 151, 181)));
+            foreach (long t in new long[] { 121, 151, 181 })
+            {
+                Assert.That(A3b.Same(records[t].Origin, boundary), "origin, tick " + t);
+                Assert.That(records[t].Outcome, Is.EqualTo(FireOutcome.Open), "outcome, tick " + t);
+            }
+        }
+
         // 4(d): F on the midpoint of A -> P during [100, 159]: the intent is declined when consumed (no shot, no ammo, no
         // cooldown change); the entry stays; the shots resume on 160. The contrast with F never moved equals the D = 300
         // vector without F.

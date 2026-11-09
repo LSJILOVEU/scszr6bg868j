@@ -197,3 +197,23 @@ original:
 |                        if (intents[shooter.Id].AvoidAllies && AllyBlocks(shooter, origin, direction, weapon.FalloffEnd)) continue;
 replacement:
 |                        if (intents[shooter.Id].AvoidAllies && AllyBlocks(shooter, origin, direction, weapon.FalloffEnd)) { sim.Rng.NextInt(spreadStream, 65536); continue; }
+
+[a3b-21-range-exclusive]
+file = Assets/WarCore/Battle/Ai/TargetSuppress.cs
+filter = FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A3bGateTests.Range_PointOnTheFalloffEnd_Fires
+note = a point exactly at the weapon's range is treated as out of range
+original:
+|                    || CombatSystem.Horizontal(lastKnown - here).LengthSquared > new SimVec3(range, default, default).LengthSquared
+replacement:
+|                    || CombatSystem.Horizontal(lastKnown - here).LengthSquared >= new SimVec3(range, default, default).LengthSquared
+
+[a3b-22-keys-unsorted]
+file = Assets/WarCore/Battle/Ai/TargetSuppress.cs
+filter = FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A3bStateTests.LaterEntryWithSmallerKey_SavedInKeyOrder
+note = a new key is appended instead of inserted in order, so a later entry with a smaller key is saved out of order
+original:
+|            if (!entries.ContainsKey(key)) keys.Insert(~keys.BinarySearch(key), key);
+replacement:
+|            if (!entries.ContainsKey(key)) keys.Add(key);

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 using WarCore.Battle;
+using WarCore.Combat;
 using WarCore.Presentation;
 using WarCore.Sim;
 
@@ -165,6 +166,54 @@ namespace WarCore.Tests
             Assert.That(A3b.Entry(w, A3b.KeyA, out long seen, out long since), Is.True);
             Assert.That(seen, Is.EqualTo(A3b.Seen)); Assert.That(since, Is.EqualTo(A3b.Since));
             Assert.That(Own(w), Is.EqualTo(own));
+        }
+
+        // 7(f): the save lists the entries by key, not by the order they were made: A (the smaller id) is disarmed on
+        // [50, 99], so its sighting (46) is kept but its entry comes on 106, after A2's (64, 74); the 56 bytes still list
+        // A first, and a fresh world restores them to the same hash.
+        [Test]
+        public void LaterEntryWithSmallerKey_SavedInKeyOrder()
+        {
+            M6World w = A3b.World(Ai, null, false, null, A3b.Second());
+            Combatant armed = w.Read<Combatant>(A3b.KeyA);
+            for (long t = 1; t <= 130; t++)
+            {
+                if (t == 50 || t == 100)
+                {
+                    Combatant u = w.Read<Combatant>(A3b.KeyA);
+                    w.Set(A3b.KeyA, new Combatant(u.Team, t == 50 ? -1 : armed.Weapon, u.Ammo, u.DueMilli, u.SpreadStored, u.SpreadLastMilli));
+                }
+                A3b.Step(w, A3b.Script(t));
+                if (t == 74)
+                {
+                    Assert.That(A3b.Count(w), Is.EqualTo(1));
+                    Assert.That(A3b.Entry(w, A3b.KeyA, out _, out _), Is.False);
+                    Assert.That(A3b.Entry(w, A3b.KeyA2, out long seen2, out long since2), Is.True);
+                    Assert.That(seen2, Is.EqualTo(64)); Assert.That(since2, Is.EqualTo(74));
+                }
+                if (t == 105) Assert.That(A3b.Count(w), Is.EqualTo(1));
+                if (t == 106)
+                {
+                    Assert.That(A3b.Count(w), Is.EqualTo(2));
+                    Assert.That(A3b.Entry(w, A3b.KeyA, out long seen, out long since), Is.True);
+                    Assert.That(seen, Is.EqualTo(A3b.Seen)); Assert.That(since, Is.EqualTo(106));
+                }
+            }
+            byte[] own = Own(w);
+            Assert.That(own, Is.EqualTo(Bytes(100, 2, (A3b.IdA, 46, 106), (A3b.IdA2, 64, 74))));
+            var expected = new StateHash();
+            expected.Add("battle.ai-suppress"); expected.Add(1); expected.Add(100); expected.Add(2);
+            expected.Add(A3b.IdA); expected.Add(46L); expected.Add(106L);
+            expected.Add(A3b.IdA2); expected.Add(64L); expected.Add(74L);
+            var actual = new StateHash();
+            w.System<TargetSuppress>().WriteState(actual);
+            Assert.That(actual.Value, Is.EqualTo(expected.Value));
+            byte[] snapshot = w.Sim.SaveRetainedSnapshot();
+            M6World b = A3b.World(Ai, null, false, null, A3b.Second());
+            Assert.DoesNotThrow(() => b.Sim.RestoreRetainedSnapshot(snapshot));
+            Assert.That(b.Hash, Is.EqualTo(w.Hash));
+            Assert.That(A3b.Count(b), Is.EqualTo(2));
+            Assert.That(Own(b), Is.EqualTo(own));
         }
 
         // 7(e): a second shooter (key 4 at Cell(22,13), thinking phase 4) makes two entries at tick 100: (A, 46, 56) and
