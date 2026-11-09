@@ -1,0 +1,203 @@
+# L8b: PointCheck, ContentLayers.Terrain and the A3a demo replay. Test classes are named PointCheck*, L8bBase*, A3aDemo*.
+
+[l8b-01-no-height]
+file = Assets/WarCore/Presentation/Bridge/Features/PointCheck.cs
+filter = FullyQualifiedName~PointCheck|FullyQualifiedName~L8bBase|FullyQualifiedName~A3aDemo
+expect = WarCore.Tests.PointCheckTests.PointCheck_CentreBelowTheCrest
+expect = WarCore.Tests.PointCheckTests.PointCheck_SpawnBelowTheCrest
+note = rule (h) never counts
+original:
+|                     Note(heights, ref heightCount, at);
+replacement:
+|                     { }
+
+[l8b-02-terrain-file-bit]
+file = Assets/WarCore/Presentation/Bridge/Features/PointCheck.cs
+filter = FullyQualifiedName~PointCheck|FullyQualifiedName~L8bBase|FullyQualifiedName~A3aDemo
+expect = WarCore.Tests.PointCheckTests.PointCheck_CentreOnASteepCell
+note = rule (b) on terrain reads the file bit instead of navigation
+original:
+| bool refused = terrain != null ? !terrain.Nav.IsPassable(x, z) :
+replacement:
+| bool refused = terrain != null ? !map.IsPassable(x, z) :
+
+[l8b-03-no-spawn]
+file = Assets/WarCore/Presentation/Bridge/Features/PointCheck.cs
+filter = FullyQualifiedName~PointCheck|FullyQualifiedName~L8bBase|FullyQualifiedName~A3aDemo
+expect = WarCore.Tests.PointCheckTests.PointCheck_SpawnBelowTheCrest
+note = point spawns are not checked
+original:
+| if (def.HasSpawn) positions.Add(def.Spawn);
+replacement:
+| if (def.HasSpawn) { }
+
+[l8b-04-no-bases]
+file = Assets/WarCore/Presentation/Bridge/Features/PointCheck.cs
+filter = FullyQualifiedName~PointCheck|FullyQualifiedName~L8bBase|FullyQualifiedName~A3aDemo
+expect = WarCore.Tests.PointCheckTests.PointCheck_AnchorInAWall
+note = team anchors are not checked
+original:
+|                 positions.Add(anchor.Point);
+replacement:
+|                 { }
+
+[l8b-05-truncate]
+file = Assets/WarCore/Presentation/Bridge/Features/PointCheck.cs
+filter = FullyQualifiedName~PointCheck|FullyQualifiedName~L8bBase|FullyQualifiedName~A3aDemo
+expect = WarCore.Tests.PointCheckTests.PointCheck_CentreOffTheMap
+note = the cell rounds towards zero instead of minus infinity
+original:
+| long cx = (p.X.Raw - map.MinXRaw) >> 16, cz = (p.Z.Raw - map.MinZRaw) >> 16;
+replacement:
+| long cx = (p.X.Raw - map.MinXRaw) / 65536, cz = (p.Z.Raw - map.MinZRaw) / 65536;
+
+[l8b-06-width-inclusive]
+file = Assets/WarCore/Presentation/Bridge/Features/PointCheck.cs
+filter = FullyQualifiedName~PointCheck|FullyQualifiedName~L8bBase|FullyQualifiedName~A3aDemo
+expect = WarCore.Tests.PointCheckTests.PointCheck_CentreOffTheMap
+note = x == Width counts as on the map
+original:
+| cx >= map.Width
+replacement:
+| cx > map.Width
+
+[l8b-07-no-skip]
+file = Assets/WarCore/Presentation/Bridge/Features/PointCheck.cs
+filter = FullyQualifiedName~PointCheck|FullyQualifiedName~L8bBase|FullyQualifiedName~A3aDemo
+expect = WarCore.Tests.PointCheckTests.PointCheck_CentreOffTheMap
+note = an off-map position is checked further
+original:
+|                     Note(off, ref offCount, at);
+|                     continue;
+replacement:
+|                     Note(off, ref offCount, at);
+
+[l8b-08-view-z]
+file = Assets/WarCore/Presentation/Bridge/Features/PointCheck.cs
+filter = FullyQualifiedName~PointCheck|FullyQualifiedName~L8bBase|FullyQualifiedName~A3aDemo
+expect = WarCore.Tests.PointCheckTests.PointCheck_DrawnPointDiffers
+note = rule (v) ignores Z
+original:
+| !Same(v.Z, (float)def.Center.Z.Raw / SimFix.Scale)
+replacement:
+| false
+
+[l8b-08x-view-x]
+file = Assets/WarCore/Presentation/Bridge/Features/PointCheck.cs
+filter = FullyQualifiedName~PointCheck|FullyQualifiedName~L8bBase|FullyQualifiedName~A3aDemo
+expect = WarCore.Tests.PointCheckTests.PointCheck_DrawnPointDiffers
+note = rule (v) ignores X
+original:
+| !Same(v.X, (float)def.Center.X.Raw / SimFix.Scale)
+replacement:
+| false
+
+[l8b-08i-view-id]
+file = Assets/WarCore/Presentation/Bridge/Features/PointCheck.cs
+filter = FullyQualifiedName~PointCheck|FullyQualifiedName~L8bBase|FullyQualifiedName~A3aDemo
+expect = WarCore.Tests.PointCheckTests.PointCheck_DrawnPointDiffers
+note = rule (v) ignores Id
+original:
+| v.Id != def.Id
+replacement:
+| false
+
+[l8b-08r-view-radius]
+file = Assets/WarCore/Presentation/Bridge/Features/PointCheck.cs
+filter = FullyQualifiedName~PointCheck|FullyQualifiedName~L8bBase|FullyQualifiedName~A3aDemo
+expect = WarCore.Tests.PointCheckTests.PointCheck_DrawnPointDiffers
+note = rule (v) ignores Radius
+original:
+| !Same(v.Radius, (float)def.Radius.Raw / SimFix.Scale)
+replacement:
+| false
+
+[l8b-09-flat-never-blocked]
+file = Assets/WarCore/Presentation/Bridge/Features/PointCheck.cs
+filter = FullyQualifiedName~PointCheck|FullyQualifiedName~L8bBase|FullyQualifiedName~A3aDemo
+expect = WarCore.Tests.PointCheckTests.PointCheck_FlatPointInAWall
+note = rule (b) on a flat map is always false
+original:
+| : session.BlockedCell(x, z) || !map.IsPassable(x, z);
+replacement:
+| : false;
+
+[l8b-10-no-count]
+file = Assets/WarCore/Presentation/Bridge/Features/PointCheck.cs
+filter = FullyQualifiedName~PointCheck|FullyQualifiedName~L8bBase|FullyQualifiedName~A3aDemo
+expect = WarCore.Tests.PointCheckTests.PointCheck_DrawnPointDiffers
+note = rule (n) never sets CountMismatch
+original:
+| bool count = drawn.Length != match.Points.Length;
+replacement:
+| bool count = false;
+
+[l8b-11-terrain-ignores-layer]
+file = Assets/WarCore/Presentation/Bridge/ContentLayers.cs
+filter = FullyQualifiedName~PointCheck|FullyQualifiedName~L8bBase|FullyQualifiedName~A3aDemo
+expect = WarCore.Tests.PointCheckTests.PointCheck_ContentLayersTerrainIsTheDemoMatch
+note = ContentLayers.Terrain ignores its parameter
+original:
+| ContentLoader.Load(FileContentSource.Rwr(), terrainLayerId));
+replacement:
+| ContentLoader.Load(FileContentSource.Rwr(), "rwr-terrain-demo"));
+
+[l8b-12-clean-ignores-heights]
+file = Assets/WarCore/Presentation/Bridge/Features/PointCheck.cs
+filter = FullyQualifiedName~PointCheck|FullyQualifiedName~L8bBase|FullyQualifiedName~A3aDemo
+expect = WarCore.Tests.PointCheckTests.PointCheck_CentreBelowTheCrest
+note = IsClean leaves out Heights
+original:
+| Blocked == 0 && Heights == 0 && Views == 0
+replacement:
+| Blocked == 0 && Views == 0
+
+[l8b-13-hold-late]
+file = Assets/WarCore/Presentation/Bridge/Features/A3aDemo.cs
+filter = FullyQualifiedName~PointCheck|FullyQualifiedName~L8bBase|FullyQualifiedName~A3aDemo
+expect = WarCore.Tests.A3aDemoTests.A3aDemo_ReplaysTheFixture
+note = the third command one tick late
+original:
+| BridgeCommand.Hold(140, 2)
+replacement:
+| BridgeCommand.Hold(141, 2)
+
+[l8b-14-search-59]
+file = Assets/WarCore/Presentation/Bridge/Features/A3aDemo.cs
+filter = FullyQualifiedName~PointCheck|FullyQualifiedName~L8bBase|FullyQualifiedName~A3aDemo
+expect = WarCore.Tests.A3aDemoTests.A3aDemo_ReplaysTheFixture
+note = searchTicks 59 instead of 60
+original:
+| \"searchTicks\": 60 }
+replacement:
+| \"searchTicks\": 59 }
+
+[l8b-15-source-no-delegate]
+file = Assets/WarCore/Presentation/Bridge/Features/A3aDemo.cs
+filter = FullyQualifiedName~PointCheck|FullyQualifiedName~L8bBase|FullyQualifiedName~A3aDemo
+expect = WarCore.Tests.A3aDemoTests.A3aDemo_ReplaysTheFixture
+note = the private content source does not delegate to the files (extends rwr fails)
+original:
+| if (layerId != LayerId) return files.TryRead(layerId, out text, out location);
+replacement:
+| if (layerId != LayerId) { text = null; location = "demo:" + layerId; return false; }
+
+[l8b-16-no-z-bounds]
+file = Assets/WarCore/Presentation/Bridge/Features/PointCheck.cs
+filter = FullyQualifiedName~PointCheck|FullyQualifiedName~L8bBase|FullyQualifiedName~A3aDemo
+expect = WarCore.Tests.PointCheckTests.PointCheck_CentreOffTheMapInZ
+note = rule (o) checks X only (review addition)
+original:
+| if (cx < 0 || cx >= map.Width || cz < 0 || cz >= map.Depth)
+replacement:
+| if (cx < 0 || cx >= map.Width)
+
+[l8b-17-view-tolerance]
+file = Assets/WarCore/Presentation/Bridge/Features/PointCheck.cs
+filter = FullyQualifiedName~PointCheck|FullyQualifiedName~L8bBase|FullyQualifiedName~A3aDemo
+expect = WarCore.Tests.PointCheckTests.PointCheck_DrawnPointOneBitOff
+note = rule (v) compares within 1e-3 instead of bit for bit (review addition)
+original:
+| private static bool Same(float a, float b) => BitConverter.SingleToInt32Bits(a) == BitConverter.SingleToInt32Bits(b);
+replacement:
+| private static bool Same(float a, float b) => Math.Abs(a - b) < 1e-3f;

@@ -25,6 +25,9 @@ namespace WarCore.Presentation
     {
         public static WorldRecipe M6(string layerId) => DemoRecipes.M6(ContentLoader.Load(FileContentSource.Rwr(), layerId));
         public static WorldRecipe M7(string layerId) => DemoRecipes.M7(ContentLoader.Load(FileContentSource.Rwr(), layerId));
+        // The demo terrain match (DemoRecipes.TerrainMatch) with the M6 layer for weapons and rules and the given terrain layer.
+        public static WorldRecipe Terrain(string terrainLayerId) => DemoRecipes.TerrainMatch(
+            ContentLoader.Load(FileContentSource.Rwr(), WarCore.Content.Rwr.RwrPack.M6Layer), ContentLoader.Load(FileContentSource.Rwr(), terrainLayerId));
 
         public static IReadOnlyList<ContentWeaponRow> Weapons(string layerId)
         {
