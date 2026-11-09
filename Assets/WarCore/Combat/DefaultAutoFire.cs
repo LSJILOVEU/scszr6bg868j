@@ -17,8 +17,15 @@ namespace WarCore.Combat
         public AutoFireAction TryAim(CombatSystem combat, EntityId shooter, in Combatant unit, in Position position,
             in WeaponDef weapon, long tick, out SimVec3 direction)
         {
+            if (combat.Pack.Selector.TrySelect(combat, shooter, weapon.FalloffEnd, out EntityId target))
+                return AimAt(combat, shooter, in position, target, out direction);
             direction = default;
-            if (!combat.Pack.Selector.TrySelect(combat, shooter, weapon.FalloffEnd, out EntityId target)) return AutoFireAction.Pass;
+            return AutoFireAction.Pass;
+        }
+
+        // The decision for a target already chosen: the heading to it, then the ally check with its miss roll.
+        public AutoFireAction AimAt(CombatSystem combat, EntityId shooter, in Position position, EntityId target, out SimVec3 direction)
+        {
             SimVec3 origin = position.Value;
             direction = CombatSystem.Horizontal(combat.Point(target) - origin);
             // Zero-direction rule: a target standing on the shooter gives no heading, so the shot goes along +X

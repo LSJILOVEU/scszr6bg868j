@@ -6,15 +6,22 @@ namespace WarCore.Battle
 {
     // AI reaction time R: an automatic shooter does not fire at a target before R ticks have passed since it first could
     // select that target. Per shooter one entry (target T, First = the tick the clock for T started, Last = the latest tick
-    // Sense selected T, i.e. the latest tick the shooter took part in automatic fire). Selecting T on consecutive ticks keeps
-    // the clock; any other tick (another target, no target, or no Sense call because of an intent, the player or death)
-    // starts it again. Cooldown and reaction run side by side: the first shot comes at max(First + R, weapon ready).
+    // Sense kept T, i.e. the latest tick the shooter took part in automatic fire). Keeping T on consecutive ticks keeps the
+    // clock; any other tick (another target, no target, or no Sense call because of an intent, the player or death) starts
+    // it again. Cooldown and reaction run side by side: the first shot comes at max(First + R, weapon ready).
+    //
+    // AI sense interval K: a shooter asks the selector only on its sample ticks, every K ticks at a phase taken from its
+    // stable identity (so shooters are staggered and the phase survives a reverse allocation). Between samples it keeps the
+    // target it has while that target exists and is not dead, firing at the target's current position without checking range,
+    // sight or cover again (the shot itself still obeys the weapon range and the walls); a target that is gone drops the entry
+    // and the shooter waits for its next sample. K = 1 is the pre-interval behaviour, byte for byte.
     //
     // One object is both the fire decision (installed with CombatSystem.UseAutoFire) and the state system battle.ai-fire
     // (Order 14, before combat). It wraps only the combat system's built-in decision, which uses the same selector and range,
-    // so the target Sense records is the one the built-in TryAim aims at. Sense and TryAim never allocate: the entries live in
-    // arrays indexed by entity slot. Saves and hashes list them in stable-identity order (the combat stage order), only for
-    // entities that exist and whose identity matches the entry, so a destroyed or reused slot is never written.
+    // and aims at the recorded target through that decision's AimAt, so the selector is asked once per sample tick. Sense and
+    // TryAim never allocate: the entries live in arrays indexed by entity slot. Saves and hashes list them in stable-identity
+    // order (the combat stage order), only for entities that exist and whose identity matches the entry, so a destroyed or
+    // reused slot is never written. With K above 1 the state is version 2: version 1's payload followed by K.
     public sealed class ReactionFire : IAutoFire, IRetainedGameplaySystem
     {
         // Same bound as the content field (Content/Data/Sections/AiSection.cs MaxReactionTicks); Battle cannot see Content.
@@ -22,18 +29,24 @@ namespace WarCore.Battle
 
         private readonly CombatSystem combat;
         private readonly IAutoFire inner;
-        private readonly int ticks;
+        private readonly DefaultAutoFire builtIn;
+        private readonly int ticks, senseTicks;
         private readonly EntityStage stage;
         private readonly bool[] has;
         private readonly StableId[] shooters, targets;
         private readonly long[] firsts, lasts;
 
-        public ReactionFire(CombatSystem combat, IAutoFire inner, int ticks)
+        public ReactionFire(CombatSystem combat, IAutoFire inner, int ticks, int senseTicks = 1)
         {
             if (ticks < 0 || ticks > MaxTicks) throw new ArgumentOutOfRangeException(nameof(ticks));
             this.combat = combat ?? throw new ArgumentNullException(nameof(combat));
             this.inner = inner ?? throw new ArgumentNullException(nameof(inner));
+            if (senseTicks < 1 || senseTicks > MaxTicks) throw new ArgumentOutOfRangeException(nameof(senseTicks));
+            if (!ReferenceEquals(inner, combat.BuiltInAutoFire))
+                throw new ArgumentException("The AI fire decision wraps only its own combat system's built-in decision.", nameof(inner));
+            builtIn = (DefaultAutoFire)inner;
             this.ticks = ticks;
+            this.senseTicks = senseTicks;
             stage = new EntityStage(combat.Entities);
             int capacity = combat.Entities.Capacity;
             has = new bool[capacity];
@@ -43,7 +56,7 @@ namespace WarCore.Battle
 
         public int Order => 14;
         public string StateTypeId => "battle.ai-fire";
-        public int StateVersion => 1;
+        public int StateVersion => senseTicks > 1 ? 2 : 1;
 
         // The number of entries a save or hash would write now.
         internal int Count
@@ -56,19 +69,36 @@ namespace WarCore.Battle
             }
         }
 
+        // Whether this shooter asks the selector on this tick. Both remainders are below K, so the sum never overflows.
+        private bool Samples(StableId self, long tick) =>
+            senseTicks == 1 || ((tick % senseTicks) + (long)(self.Value % (ulong)senseTicks)) % senseTicks == 0;
+
         public void Sense(CombatSystem combat, EntityId shooter, in Combatant unit, in Position position, long tick)
         {
             inner.Sense(combat, shooter, in unit, in position, tick);
             int slot = shooter.Id;
             if ((uint)slot >= (uint)has.Length) return;
-            if (unit.Weapon < 0
-                || !combat.Pack.Selector.TrySelect(combat, shooter, combat.Pack.Weapons[unit.Weapon].FalloffEnd, out EntityId target))
+            if (unit.Weapon < 0)
             {
                 has[slot] = false;
                 return;
             }
-            StableId self = combat.Entities.StableOf(shooter), selected = combat.Entities.StableOf(target);
-            if (has[slot] && shooters[slot].Equals(self) && targets[slot].Equals(selected) && lasts[slot] == tick - 1)
+            StableId self = combat.Entities.StableOf(shooter);
+            bool kept = has[slot] && shooters[slot].Equals(self) && lasts[slot] == tick - 1;
+            if (!Samples(self, tick))
+            {
+                if (kept && combat.Entities.TryResolve(targets[slot], out EntityRef found) && !combat.IsDead((EntityId)found))
+                    lasts[slot] = tick;
+                else has[slot] = false;
+                return;
+            }
+            if (!combat.Pack.Selector.TrySelect(combat, shooter, combat.Pack.Weapons[unit.Weapon].FalloffEnd, out EntityId target))
+            {
+                has[slot] = false;
+                return;
+            }
+            StableId selected = combat.Entities.StableOf(target);
+            if (kept && targets[slot].Equals(selected))
             {
                 lasts[slot] = tick;
                 return;
@@ -81,12 +111,13 @@ namespace WarCore.Battle
         {
             int slot = shooter.Id;
             if ((uint)slot >= (uint)has.Length || !has[slot] || !shooters[slot].Equals(combat.Entities.StableOf(shooter))
-                || lasts[slot] != tick || tick - firsts[slot] < ticks)
+                || lasts[slot] != tick || tick - firsts[slot] < ticks
+                || !combat.Entities.TryResolve(targets[slot], out EntityRef target))
             {
                 direction = default;
                 return AutoFireAction.Pass;
             }
-            return inner.TryAim(combat, shooter, in unit, in position, in weapon, tick, out direction);
+            return builtIn.AimAt(combat, shooter, in position, (EntityId)target, out direction);
         }
 
         // Clears, one tick late, the entries Sense did not touch on the previous tick.
@@ -110,6 +141,7 @@ namespace WarCore.Battle
                 int slot = entity.Id;
                 writer.UInt64(shooters[slot].Value); writer.UInt64(targets[slot].Value); writer.Int64(firsts[slot]); writer.Int64(lasts[slot]);
             }
+            if (senseTicks > 1) writer.Int32(senseTicks);
         }
 
         public void LoadState(SimStateReader reader)
@@ -133,6 +165,7 @@ namespace WarCore.Battle
                 SimStateReader.Require((uint)slot < (uint)has.Length, "AI reaction shooter is outside the entity capacity.");
                 has[slot] = true; shooters[slot] = shooter; targets[slot] = target; firsts[slot] = first; lasts[slot] = last;
             }
+            if (senseTicks > 1) SimStateReader.Require(reader.Int32() == senseTicks, "AI sense interval differs.");
         }
 
         public void WriteState(StateHash hash)
@@ -144,6 +177,7 @@ namespace WarCore.Battle
                 int slot = entity.Id;
                 hash.Add(shooters[slot].Value); hash.Add(targets[slot].Value); hash.Add(firsts[slot]); hash.Add(lasts[slot]);
             }
+            if (senseTicks > 1) hash.Add(senseTicks);
         }
     }
 }

@@ -11,8 +11,13 @@ namespace WarCore.Content
         public int SearchTicks { get; }
         // Ticks an AI shooter waits after it first can select a target before it fires at it; 0 turns the delay off.
         public int ReactionTicks { get; }
-        internal AiRules(int failedSlotTicks, int targetMemoryTicks = 0, int searchTicks = 0, int reactionTicks = 0)
-        { FailedSlotTicks = failedSlotTicks; TargetMemoryTicks = targetMemoryTicks; SearchTicks = searchTicks; ReactionTicks = reactionTicks; }
+        // Ticks between two looks of an AI shooter at the battlefield; between them it keeps firing at the target it has. 1 looks every tick.
+        public int SenseTicks { get; }
+        internal AiRules(int failedSlotTicks, int targetMemoryTicks = 0, int searchTicks = 0, int reactionTicks = 0, int senseTicks = 1)
+        {
+            FailedSlotTicks = failedSlotTicks; TargetMemoryTicks = targetMemoryTicks; SearchTicks = searchTicks; ReactionTicks = reactionTicks;
+            SenseTicks = senseTicks;
+        }
     }
 
     internal sealed class AiSection : ObjectSection
@@ -22,12 +27,13 @@ namespace WarCore.Content
         internal const int MaxTargetMemoryTicks = 1000000;
         internal const int MaxSearchTicks = 1000000;
         internal const int MaxReactionTicks = 1000000;
+        internal const int MaxSenseTicks = 1000000;
         internal AiSection() : base(SectionKey) { }
 
         public override void Build(SectionBuild b)
         {
             ContentEntry entry = b.Single(Key);
-            int failed = 0, memory = 0, search = 0, reaction = 0;
+            int failed = 0, memory = 0, search = 0, reaction = 0, sense = 1;
             if (entry != null)
             {
                 var r = new EntryReader(b.Pack, entry);
@@ -35,9 +41,10 @@ namespace WarCore.Content
                 if (r.Has("targetMemoryTicks")) memory = r.Int("targetMemoryTicks", 0, MaxTargetMemoryTicks);
                 if (r.Has("searchTicks")) search = r.Int("searchTicks", 0, MaxSearchTicks);
                 if (r.Has("reactionTicks")) reaction = r.Int("reactionTicks", 0, MaxReactionTicks);
+                if (r.Has("senseTicks")) sense = r.Int("senseTicks", 1, MaxSenseTicks);
                 r.Done();
             }
-            b.Publish(new AiRules(failed, memory, search, reaction));
+            b.Publish(new AiRules(failed, memory, search, reaction, sense));
         }
     }
 }
