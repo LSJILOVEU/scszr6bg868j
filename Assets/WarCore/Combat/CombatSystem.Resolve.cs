@@ -22,7 +22,8 @@ namespace WarCore.Combat
 
     public sealed partial class CombatSystem
     {
-        // Rotates a horizontal direction by a uniform offset in [-angle, +angle] (thousandths of a degree) chosen by roll.
+        // Rotates the horizontal part of a direction about the vertical axis by a uniform offset in [-angle, +angle]
+        // (thousandths of a degree) chosen by roll; the vertical component is kept.
         private static SimVec3 Rotate(SimVec3 direction, int angleMilli, int roll)
         {
             long offset = angleMilli * (2L * roll - 65535) / 65535;
@@ -30,7 +31,7 @@ namespace WarCore.Combat
             SimFix sin = SimMath.Sin(turns), cos = SimMath.Cos(turns);
             // Fixed-point products would truncate a sub-millimetre vector to zero; its direction alone is what matters.
             if (Math.Abs(direction.X.Raw) < SimFix.Scale && Math.Abs(direction.Z.Raw) < SimFix.Scale) direction = direction.Normalized;
-            return new SimVec3(direction.X * cos - direction.Z * sin, default, direction.X * sin + direction.Z * cos);
+            return new SimVec3(direction.X * cos - direction.Z * sin, direction.Y, direction.X * sin + direction.Z * cos);
         }
 
         private void FireAtTarget(SimContext c, EntityId shooter, in Combatant unit, in Position position, in WeaponDef weapon,
@@ -49,8 +50,7 @@ namespace WarCore.Combat
         private void FireRay(SimContext c, EntityId shooter, in Combatant unit, in Position position, in WeaponDef weapon,
             long tick, SimVec3 origin, SimVec3 direction, int angle)
         {
-            Struck struck = Trace(shooter, origin, direction, weapon.FalloffEnd, out EntityId hit, out SimFix distance);
-            SimVec3 end = origin + direction.Normalized * distance;
+            Struck struck = Trace(shooter, origin, direction, weapon.FalloffEnd, out EntityId hit, out SimFix distance, out SimVec3 end);
             int stored = weapon.Spread.IsNone ? 0 : weapon.Spread.StoredAfter(angle);
             long last = weapon.Spread.IsNone ? 0 : tick * 1000;
             if (struck == Struck.Enemy || (struck == Struck.Friend && pack.FriendlyFire))
