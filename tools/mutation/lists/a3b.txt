@@ -1,0 +1,178 @@
+# A3b suppressive fire: the required mutations of the work package. Test classes are named A3b*.
+
+[a3b-01-fire-at-self]
+file = Assets/WarCore/Battle/Ai/TargetSuppress.cs
+filter = FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A3bSuppressTests.Vector_FiveShotsThenSilence
+note = the intent points at the shooter itself instead of the last known point: no line, no shot
+original:
+|                combat.Submit(c, FireIntent.Suppress(observer, lastKnown));
+replacement:
+|                combat.Submit(c, FireIntent.Suppress(observer, here));
+
+[a3b-02-duration-exclusive]
+file = Assets/WarCore/Battle/Ai/TargetSuppress.cs
+filter = FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A3bSuppressTests.Duration_LastSubmissionIsSincePlusDMinusOne
+note = the window tick - Since >= D becomes > D: one tick too many (D = 125 fires on 181)
+original:
+|                if (tick - e.Since >= ticks || moves.IsCommanded(observer)
+replacement:
+|                if (tick - e.Since > ticks || moves.IsCommanded(observer)
+
+[a3b-03-duration-short]
+file = Assets/WarCore/Battle/Ai/TargetSuppress.cs
+filter = FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A3bSuppressTests.Duration_LastSubmissionIsSincePlusDMinusOne
+note = the window ends one tick early (D = 126 does not fire on 181)
+original:
+|                if (tick - e.Since >= ticks || moves.IsCommanded(observer)
+replacement:
+|                if (tick - e.Since >= ticks - 1 || moves.IsCommanded(observer)
+
+[a3b-04-redecide]
+file = Assets/WarCore/Battle/Ai/TargetSuppress.cs
+filter = FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A3bSuppressTests.Vector_FiveShotsThenSilence
+note = every thinking tick restarts the suppression of the same sighting: the fire never stops within the memory
+original:
+|            if (entries.TryGetValue(observer.Value, out Entry e) && e.Seen == seen) return;
+replacement:
+|            if (entries.TryGetValue(observer.Value, out Entry e) && false) return;
+
+[a3b-05-keep-stale]
+file = Assets/WarCore/Battle/Ai/TargetSuppress.cs
+filter = FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A3bSuppressTests.SeenAgain_EntryGoesOnTheThinkingTick
+note = an entry of an older sighting is kept after the target was seen again
+original:
+| || seen != e.Seen) { drop.Add(key); continue; }
+replacement:
+| ) { drop.Add(key); continue; }
+
+[a3b-06-no-range]
+file = Assets/WarCore/Battle/Ai/TargetSuppress.cs
+filter = FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A3bGateTests.Range_UsesTheWeaponsFalloffEnd
+note = the range gate is dropped: a point beyond the weapon's reach is fired at
+original:
+|                    || CombatSystem.Horizontal(lastKnown - here).LengthSquared > new SimVec3(range, default, default).LengthSquared
+replacement:
+
+[a3b-07-no-los]
+file = Assets/WarCore/Battle/Ai/TargetSuppress.cs
+filter = FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A3bGateTests.LineOfSight_BlockedByTheWall
+note = the line-of-sight gate is dropped: the intent is submitted through the wall
+original:
+|                    || !combat.Visible(shooter, lastKnown)) continue;
+replacement:
+|                    ) continue;
+
+[a3b-08-no-arrived]
+file = Assets/WarCore/Battle/Ai/TargetSuppress.cs
+filter = FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A3bSearchTests.WithSearch_NoShotWhileStandingOnP
+note = the arrival gate is dropped: a unit standing on the point fires at it
+original:
+|                if (SimpleAiSystem.Arrived(here, lastKnown)
+replacement:
+|                if (false
+
+[a3b-09-ignore-command]
+file = Assets/WarCore/Battle/Ai/TargetSuppress.cs
+filter = FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A3bSuppressTests.Commanded_Hold_NoSubmissionEntryStays
+note = a unit under squad command keeps submitting
+original:
+| || moves.IsCommanded(observer) ||
+replacement:
+| ||
+
+[a3b-10-save-since]
+file = Assets/WarCore/Battle/Ai/TargetSuppress.cs
+filter = FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A3bStateTests.Restore_ContinuesTheSameRun
+note = SaveState writes the sighting twice and loses the start tick
+original:
+|            { writer.UInt64(pair.Key); writer.Int64(pair.Value.Seen); writer.Int64(pair.Value.Since); }
+replacement:
+|            { writer.UInt64(pair.Key); writer.Int64(pair.Value.Seen); writer.Int64(pair.Value.Seen); }
+
+[a3b-11-no-order-check]
+file = Assets/WarCore/Battle/Ai/TargetSuppress.cs
+filter = FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A3bStateTests.Load_RejectsBadBytes
+note = LoadState accepts keys out of order
+original:
+|                SimStateReader.Require(i == 0 || key > previous, "AI suppression observers are not in strictly increasing order.");
+replacement:
+
+[a3b-12-register-when-off]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A3bDefaultTests.SuppressWithoutMemory_FixtureDUnchanged
+note = the system is built with D = 0 as well: the constructor refuses it and the world does not build
+original:
+|            if (suppressTicks > 0)
+replacement:
+|            if (suppressTicks >= 0)
+
+[a3b-13-visible-always]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A3bGateTests.LineOfSight_BlockedByTheWall
+note = the shared line-of-sight judgement ignores the walls
+original:
+|            return !sim.SpatialQuery.Any(SpatialQueries.Ray(from, delta, delta.Length, wallMask));
+replacement:
+|            return true;
+
+[a3b-14-no-since-check]
+file = Assets/WarCore/Battle/Ai/TargetSuppress.cs
+filter = FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A3bStateTests.Load_RejectsBadBytes
+note = LoadState accepts a start before the sighting
+original:
+|                SimStateReader.Require(since >= seen, "AI suppression start precedes the sighting.");
+replacement:
+
+[a3b-15-hash-omits-since]
+file = Assets/WarCore/Battle/Ai/TargetSuppress.cs
+filter = FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A3bStateTests.TwoShooters_WriteStateByHand
+note = WriteState leaves the start tick out of the hash
+original:
+| hash.Add(pair.Value.Seen); hash.Add(pair.Value.Since); }
+replacement:
+| hash.Add(pair.Value.Seen); }
+
+[a3b-16-ignore-ally]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A3bGateTests.AllyOnTheLine_DeclinedWhenConsumed
+expect = WarCore.Tests.A3bGateTests.AllyCrossesTheLine_DeclinedOnTheReadyTick
+note = the ally check of the intent path is removed: the shot goes through the teammate
+original:
+|                        if (intents[shooter.Id].AvoidAllies && AllyBlocks(shooter, origin, direction, weapon.FalloffEnd)) continue;
+replacement:
+
+[a3b-17-ally-port-never]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A3bGateTests.AllyBlocks_Table
+note = the public read port never finds a teammate
+original:
+|            return direction.LengthSquared.Sign != 0 && AllyBlocks(shooter, origin, direction, range);
+replacement:
+|            return false;
+
+[a3b-18-ally-only-to-point]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A3bGateTests.AllyBeyondThePoint_StillDeclined
+note = the ally check stops at the point instead of the whole flight of the shot
+original:
+|                        if (intents[shooter.Id].AvoidAllies && AllyBlocks(shooter, origin, direction, weapon.FalloffEnd)) continue;
+replacement:
+|                        if (intents[shooter.Id].AvoidAllies && AllyBlocks(shooter, origin, direction, direction.Length)) continue;
