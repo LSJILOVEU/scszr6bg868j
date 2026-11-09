@@ -9,35 +9,13 @@ namespace WarCore.Presentation
     {
         private readonly HeightField field;
 
-        private ViewGround(HeightField field, ViewMap map)
-        {
-            this.field = field;
-            MinXRaw = map.MinXRaw; MinZRaw = map.MinZRaw;
-            MaxXRaw = map.MinXRaw + map.Width * SimFix.Scale; MaxZRaw = map.MinZRaw + map.Depth * SimFix.Scale;
-            long low = long.MaxValue, high = long.MinValue;
-            for (int j = 0; j <= map.Depth; j++)
-                for (int i = 0; i <= map.Width; i++)
-                {
-                    long h = map.VertexRaw(i, j);
-                    if (h < low) low = h;
-                    if (h > high) high = h;
-                }
-            MinHeightRaw = low; MaxHeightRaw = high;
-        }
-
-        // The closed rectangle of the height field and its lowest and highest grid point (raw).
-        public long MinXRaw { get; }
-        public long MaxXRaw { get; }
-        public long MinZRaw { get; }
-        public long MaxZRaw { get; }
-        public long MinHeightRaw { get; }
-        public long MaxHeightRaw { get; }
+        private ViewGround(HeightField field) { this.field = field; }
 
         // Null when the map has no height field (flat maps and surface-only terrain maps).
         public static ViewGround For(ViewMap map)
         {
             if (map == null) throw new ArgumentNullException(nameof(map));
-            return map.HasHeightField ? new ViewGround(Field(map), map) : null;
+            return map.HasHeightField ? new ViewGround(Field(map)) : null;
         }
 
         // Same construction as TerrainDerivation: absolute raw heights, origin at the map's Min.X, Min.Z.
@@ -55,6 +33,31 @@ namespace WarCore.Presentation
             bool inside = field.TryHeightAt(SimFix.FromRaw(xRaw), SimFix.FromRaw(zRaw), out SimFix y);
             yRaw = inside ? y.Raw : 0;
             return inside;
+        }
+
+        // The closed rectangle of the height field and its lowest and highest grid point (raw).
+        public long MinXRaw => field.OriginX.Raw;
+        public long MaxXRaw => field.OriginX.Raw + field.Width * SimFix.Scale;
+        public long MinZRaw => field.OriginZ.Raw;
+        public long MaxZRaw => field.OriginZ.Raw + field.Depth * SimFix.Scale;
+        public long MinHeightRaw { get { Band(); return lowRaw; } }
+        public long MaxHeightRaw { get { Band(); return highRaw; } }
+
+        private bool bandKnown;
+        private long lowRaw, highRaw;
+
+        private void Band()
+        {
+            if (bandKnown) return;
+            long low = long.MaxValue, high = long.MinValue;
+            for (int j = 0; j < field.PointsZ; j++)
+                for (int i = 0; i < field.PointsX; i++)
+                {
+                    long h = field.VertexRaw(i, j);
+                    if (h < low) low = h;
+                    if (h > high) high = h;
+                }
+            lowRaw = low; highRaw = high; bandKnown = true;
         }
 
         // L9's line test (HeightField.TryFirstBelow) on raw points: the first sample strictly below the ground on the segment.

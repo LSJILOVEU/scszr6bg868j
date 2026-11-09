@@ -124,9 +124,11 @@ filter = FullyQualifiedName~WarCore.Tests.A4|FullyQualifiedName~WarCore.Tests.Wp
 expect = WarCore.Tests.A4InputTests.A4Input_MapperAimNull_IsTheOldOverloadOnEveryF5Sequence
 note = the aim overload with a null aim falls back to the focus instead of the last pick
 original:
-|             GroundPick aim = hasAim ? lastAim : new GroundPick(camera.FocusX, camera.FocusZ);
+|             if (!hasAim) return flat;
 replacement:
-|             GroundPick aim = hasAim && !(withAim && !aimed.HasValue) ? lastAim : new GroundPick(camera.FocusX, camera.FocusZ);
+|             if (!hasAim || !aim.HasValue)
+|                 return new PlayerInput(flat.MoveXMilli, flat.MoveZMilli, new GroundPick(camera.FocusX, camera.FocusZ).XMm,
+|                     new GroundPick(camera.FocusX, camera.FocusZ).ZMm, flat.Primary, flat.Block, flat.Throw, flat.SkillSlot);
 
 [a4-15-ally-blocks-horizontal]
 file = Assets/WarCore/Combat/CombatSystem.Sight.cs
@@ -163,12 +165,12 @@ replacement:
 file = Assets/WarCore/Presentation/Camera/PlayerInputMapper.cs
 filter = FullyQualifiedName~WarCore.Tests.A4|FullyQualifiedName~WarCore.Tests.Wp13Aimed|FullyQualifiedName~WarCore.Tests.A3b
 expect = WarCore.Tests.A4InputTests.A4Input_MapperHeightState_FollowsTheTable
-note = a plane pick inside the window keeps the last height
+note = a flat pick inside the window keeps the last height
 original:
-|                     lastAim = camera.ScreenToGround(x, y, w, h);
-|                     lastAimYMm = null;
+|                 lastAim = camera.ScreenToGround(x, y, w, h);
+|                 lastAimYMm = null;
 replacement:
-|                     lastAim = camera.ScreenToGround(x, y, w, h);
+|                 lastAim = camera.ScreenToGround(x, y, w, h);
 
 [a4-21-closed-height-half-open]
 file = Assets/WarCore/Presentation/Bridge/Features/ViewGround.cs

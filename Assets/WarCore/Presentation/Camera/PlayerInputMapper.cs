@@ -58,32 +58,13 @@ namespace WarCore.Presentation
         // Block / throw: any bound key held. Skill: the first skill binding in table order whose
         // key is held, else 0. A null isKeyDown means no key is held.
         public PlayerInput Map(IsoCamera camera, float ix, float iy, float x, float y,
-            float w, float h, bool mouseInWindow, bool primary, Func<string, bool> isKeyDown) =>
-            Map(camera, ix, iy, x, y, w, h, mouseInWindow, primary, isKeyDown, false, null);
-
-        // A4: as above, but a valid pick inside the window takes aim (AimPick's result) when it is given, with its height.
-        // aim == null inside the window picks the flat plane, as the overloads above do; outside the window the last pick
-        // and its height are kept. The overloads above never output a height and clear it on a pick inside the window.
-        public PlayerInput Map(IsoCamera camera, float ix, float iy, float x, float y,
-            float w, float h, bool mouseInWindow, bool primary, Func<string, bool> isKeyDown, AimTarget? aim) =>
-            Map(camera, ix, iy, x, y, w, h, mouseInWindow, primary, isKeyDown, true, aim);
-
-        private PlayerInput Map(IsoCamera camera, float ix, float iy, float x, float y,
-            float w, float h, bool mouseInWindow, bool primary, Func<string, bool> isKeyDown, bool withAim, AimTarget? aimed)
+            float w, float h, bool mouseInWindow, bool primary, Func<string, bool> isKeyDown)
         {
             if (camera == null) throw new ArgumentNullException(nameof(camera));
             if (mouseInWindow && w > 0 && h > 0)
             {
-                if (withAim && aimed.HasValue)
-                {
-                    lastAim = new GroundPick(aimed.Value.X, aimed.Value.Z);
-                    lastAimYMm = aimed.Value.YMm;
-                }
-                else
-                {
-                    lastAim = camera.ScreenToGround(x, y, w, h);
-                    lastAimYMm = null;
-                }
+                lastAim = camera.ScreenToGround(x, y, w, h);
+                lastAimYMm = null;
                 hasAim = true;
             }
             GroundPick aim = hasAim ? lastAim : new GroundPick(camera.FocusX, camera.FocusZ);
@@ -100,8 +81,25 @@ namespace WarCore.Presentation
                     else if (skillSlot == 0) skillSlot = binding.SkillSlot;
                 }
             }
-            long? aimYMm = withAim && hasAim ? lastAimYMm : null;
-            return new PlayerInput(Milli(move.X), Milli(move.Z), aim.XMm, aim.ZMm, primary, block, @throw, skillSlot, aimYMm);
+            return new PlayerInput(Milli(move.X), Milli(move.Z), aim.XMm, aim.ZMm, primary, block, @throw, skillSlot);
+        }
+
+        // A4: as above, but a valid pick inside the window takes aim (AimPick's result) when it is given, with its height.
+        // aim == null inside the window picks the flat plane, as the overloads above do; outside the window the last pick
+        // and its height are kept; before the first valid pick, the focus with no height. The overloads above never output
+        // a height and clear it on a pick inside the window.
+        public PlayerInput Map(IsoCamera camera, float ix, float iy, float x, float y,
+            float w, float h, bool mouseInWindow, bool primary, Func<string, bool> isKeyDown, AimTarget? aim)
+        {
+            PlayerInput flat = Map(camera, ix, iy, x, y, w, h, mouseInWindow, primary, isKeyDown);
+            if (mouseInWindow && w > 0 && h > 0 && aim.HasValue)
+            {
+                lastAim = new GroundPick(aim.Value.X, aim.Value.Z);
+                lastAimYMm = aim.Value.YMm;
+            }
+            if (!hasAim) return flat;
+            return new PlayerInput(flat.MoveXMilli, flat.MoveZMilli, lastAim.XMm, lastAim.ZMm, flat.Primary,
+                flat.Block, flat.Throw, flat.SkillSlot, lastAimYMm);
         }
 
         // Scale then truncate toward zero. Clamp before the cast to keep the conversion bounded.
