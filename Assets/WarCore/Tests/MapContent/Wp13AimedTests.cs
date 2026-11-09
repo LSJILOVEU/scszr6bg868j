@@ -10,6 +10,7 @@ namespace WarCore.Tests
 {
     public sealed class Wp13AimedTests
     {
+        // A4: an aimed intent keeps the point's height, so the point is at the shooter's height; "a point's Y is ignored" no longer holds and is locked the other way by A4IntentTests (F3).
         [TestCase(0, true)]
         [TestCase(200, true)]
         [TestCase(300, false)]
@@ -18,7 +19,7 @@ namespace WarCore.Tests
             var spy = new Wp13SelectorSpy();
             var w = new Wp13TestWorld(new[] { M5TestWorld.Spawn(1, 0),
                 M5TestWorld.Spawn(2, 10000, lateralMm, team: 2, weapon: -1) }, M5TestWorld.Pack(new ZeroResolver(), spy), spread: 0);
-            w.Produce = c => w.Aim(c, 0, SimVec3.Metres(1, 123, 0)); w.Step();
+            w.Produce = c => w.Aim(c, 0, SimVec3.Metres(1, 0, 0)); w.Step();
             Assert.That(w.Combat.Fires.Length, Is.EqualTo(1)); var f = w.Combat.Fires[0];
             Assert.That(f.Shooter, Is.EqualTo(w.Id(0))); Assert.That(f.ShooterTeam, Is.EqualTo(1));
             Assert.That(f.Target, Is.EqualTo(hit ? w.Id(1) : default)); Assert.That(f.Origin, Is.EqualTo(w.Point(0)));

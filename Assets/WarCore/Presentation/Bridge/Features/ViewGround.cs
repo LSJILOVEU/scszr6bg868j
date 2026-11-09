@@ -35,6 +35,58 @@ namespace WarCore.Presentation
             return inside;
         }
 
+        // The closed rectangle of the height field and its lowest and highest grid point (raw).
+        public long MinXRaw => field.OriginX.Raw;
+        public long MaxXRaw => field.OriginX.Raw + field.Width * SimFix.Scale;
+        public long MinZRaw => field.OriginZ.Raw;
+        public long MaxZRaw => field.OriginZ.Raw + field.Depth * SimFix.Scale;
+        public long MinHeightRaw { get { Band(); return lowRaw; } }
+        public long MaxHeightRaw { get { Band(); return highRaw; } }
+
+        private bool bandKnown;
+        private long lowRaw, highRaw;
+
+        private void Band()
+        {
+            if (bandKnown) return;
+            long low = long.MaxValue, high = long.MinValue;
+            for (int j = 0; j < field.PointsZ; j++)
+                for (int i = 0; i < field.PointsX; i++)
+                {
+                    long h = field.VertexRaw(i, j);
+                    if (h < low) low = h;
+                    if (h > high) high = h;
+                }
+            lowRaw = low; highRaw = high; bandKnown = true;
+        }
+
+        // L9's line test (HeightField.TryFirstBelow) on raw points: the first sample strictly below the ground on the segment.
+        public bool TryFirstBelowRaw(long x0, long y0, long z0, long x1, long y1, long z1, out long x, out long y, out long z)
+        {
+            bool found = field.TryFirstBelow(Raw(x0, y0, z0), Raw(x1, y1, z1), out SimVec3 at);
+            x = found ? at.X.Raw : 0; y = found ? at.Y.Raw : 0; z = found ? at.Z.Raw : 0;
+            return found;
+        }
+
+        // Is the raw point strictly below the ground? A zero-length segment samples only its end points, so this is exactly
+        // the test TryFirstBelow applies at every sample (closed domain; false outside it).
+        public bool IsBelowRaw(long x, long y, long z) => field.TryFirstBelow(Raw(x, y, z), Raw(x, y, z), out _);
+
+        // The ground height that IsBelowRaw tests against at a raw (x, z) in the closed rectangle: the lowest y that is not below.
+        public long ClosedHeightRaw(long x, long z)
+        {
+            if (x < MinXRaw || x > MaxXRaw || z < MinZRaw || z > MaxZRaw) throw new ArgumentOutOfRangeException(nameof(x));
+            long lo = MinHeightRaw - 1, hi = MaxHeightRaw; // below at lo + 1 .. ; never below at hi
+            while (hi - lo > 1)
+            {
+                long mid = lo + (hi - lo) / 2;
+                if (IsBelowRaw(x, mid, z)) lo = mid; else hi = mid;
+            }
+            return hi;
+        }
+
+        private static SimVec3 Raw(long x, long y, long z) => new SimVec3(SimFix.FromRaw(x), SimFix.FromRaw(y), SimFix.FromRaw(z));
+
         // Ground height in metres at (x, z) metres; fallback outside the height field.
         public float HeightAt(float x, float z, float fallback)
         {

@@ -132,13 +132,14 @@ namespace WarCore.Combat
         internal bool AllyBlocks(EntityId shooter, SimVec3 origin, SimVec3 direction, SimFix range) =>
             Trace(shooter, origin, direction, range, out _, out _, out _) == Struck.Friend;
 
-        // AI read port: is a living teammate the first thing on the horizontal straight line from the shooter towards a point,
-        // traced out to range (the whole flight of a shot, not only to the point)? A point on the shooter gives no line.
+        // AI read port: is a living teammate the first thing on the straight (3D) line from the shooter towards a point, traced
+        // out to range (the whole flight of a shot, not only to the point)? It is the line an aimed intent at the point flies
+        // along. A point straight above or below the shooter gives no line.
         public bool AllyBlocks(EntityId shooter, SimVec3 point, SimFix range)
         {
             SimVec3 origin = Point(shooter);
-            SimVec3 direction = Horizontal(point - origin);
-            return direction.LengthSquared.Sign != 0 && AllyBlocks(shooter, origin, direction, range);
+            SimVec3 direction = point - origin;
+            return Horizontal(direction).LengthSquared.Sign != 0 && AllyBlocks(shooter, origin, direction, range);
         }
     }
 }
