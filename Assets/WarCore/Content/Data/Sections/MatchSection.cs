@@ -29,6 +29,7 @@ namespace WarCore.Content
             SimFix spacing = mr.Fix("gridSpacing");
             ContentField interruptField = mr.FieldOf("interrupt");
             int respawn = mr.Has("respawnTicks") ? mr.Int("respawnTicks", 0, MatchPack.MaxRespawnTicks) : 0;
+            int guard = mr.Has("respawnGuardTicks") ? mr.Int("respawnGuardTicks", 0, MatchPack.MaxRespawnTicks) : 0;
             mr.Done();
             if (num < den) throw mr.Bad(mr.FieldOf("captureAdvantageNum"), "must be at least captureAdvantageDen");
             if (sight.Raw <= 0) throw mr.Bad(mr.FieldOf("sight"), "must be greater than 0");
@@ -41,7 +42,7 @@ namespace WarCore.Content
                 case "decay": interrupt = InterruptMode.Decay; break;
                 default: throw mr.Bad(interruptField, "must be reset, pause or decay");
             }
-            b.Rules = new MatchRules(num, den, strict, captureTicks, interrupt, decay, interval, think, max, sight, columns, rows, spacing, respawn);
+            b.Rules = new MatchRules(num, den, strict, captureTicks, interrupt, decay, interval, think, max, sight, columns, rows, spacing, respawn, guard);
         }
     }
 }

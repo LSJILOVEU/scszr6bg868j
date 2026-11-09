@@ -12,16 +12,16 @@ namespace WarCore.Content
         public readonly bool CaptureStrict;
         public readonly InterruptMode Interrupt;
         public readonly SimFix Sight, GridSpacing;
-        public readonly int RespawnTicks;
+        public readonly int RespawnTicks, RespawnGuardTicks;
 
         public MatchRules(int num, int den, bool strict, int captureTicks, InterruptMode interrupt, int decayPerTick,
             int intervalTicks, int thinkInterval, int maxTicks, SimFix sight, int gridColumns, int gridRows, SimFix gridSpacing,
-            int respawnTicks = 0)
+            int respawnTicks = 0, int respawnGuardTicks = 0)
         {
             CaptureAdvantageNum = num; CaptureAdvantageDen = den; CaptureStrict = strict; CaptureTicks = captureTicks;
             Interrupt = interrupt; DecayPerTick = decayPerTick; IntervalTicks = intervalTicks; ThinkInterval = thinkInterval;
             MaxTicks = maxTicks; Sight = sight; GridColumns = gridColumns; GridRows = gridRows; GridSpacing = gridSpacing;
-            RespawnTicks = respawnTicks;
+            RespawnTicks = respawnTicks; RespawnGuardTicks = respawnGuardTicks;
         }
     }
 
@@ -124,7 +124,7 @@ namespace WarCore.Content
             {
                 return new MatchPack(points, bases, m.CaptureAdvantageNum, m.CaptureAdvantageDen, m.CaptureStrict, m.CaptureTicks,
                     m.Interrupt, m.DecayPerTick, m.IntervalTicks, m.ThinkInterval, m.MaxTicks, m.Sight, m.GridColumns, m.GridRows, m.GridSpacing,
-                    m.RespawnTicks);
+                    m.RespawnTicks, m.RespawnGuardTicks);
             }
             catch (ArgumentException e)
             {

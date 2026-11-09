@@ -1,0 +1,209 @@
+# C1c spawn guard after respawn: the required mutations of the work package. Test classes are named C1c*.
+
+[c1c-01-ranged-unguarded]
+file = Assets/WarCore/Combat/CombatSystem.Resolve.cs
+filter = FullyQualifiedName~WarCore.Tests.C1c
+expect = WarCore.Tests.C1cRangedTests.C1cRanged_GuardZeroesHitsForTenTicks_ThenTheHitKills
+expect = WarCore.Tests.C1cRangedTests.C1cRanged_GuardOne_ShieldsOnlyTheSwitchTick
+expect = WarCore.Tests.C1cRangedTests.C1cRanged_EverySwitchHasItsOwnWindow
+note = the ranged hit ignores the guard
+original:
+|             if (Shielded(victim, tick)) damage = 0;
+replacement:
+|             _ = victim;
+
+[c1c-02-melee-unguarded]
+file = Assets/WarCore/Combat/CombatSystem.Melee.cs
+filter = FullyQualifiedName~WarCore.Tests.C1c
+expect = WarCore.Tests.C1cMeleeTests.C1cMelee_GuardZeroesStrikesInTheWindow
+expect = WarCore.Tests.C1cMeleeTests.C1cMelee_GuardIsCheckedBeforeTheBlock
+note = the melee strike ignores the guard
+original:
+|                 if (Shielded(victim, tick)) damage = 0;
+replacement:
+|                 if (Shielded(victim, tick) && victim.Value == 0) damage = 0;
+
+[c1c-03-melee-block-first]
+file = Assets/WarCore/Combat/CombatSystem.Melee.cs
+filter = FullyQualifiedName~WarCore.Tests.C1c
+expect = WarCore.Tests.C1cMeleeTests.C1cMelee_GuardIsCheckedBeforeTheBlock
+note = the guard is checked after the block
+original:
+|                 if (Shielded(victim, tick)) damage = 0;
+|                 else if (pack.HasBlock && TryBlock(meleeTargets[i].Entity, origin, out BlockSpec shield))
+|                 {
+|                     damage = shield.Through(damage);
+|                     if (damage == 0)
+|                     {
+|                         blocked++;
+|                         Record(new StrikeRecord(StrikeKind.Blocked, source, victim, tick, 0, origin));
+|                         continue;
+|                     }
+|                 }
+|                 var key = new GameplayApplyKey(source, (ulong)state.StartTick, 0, source, (ulong)state.StartTick, 1, (uint)i);
+|                 GameplayFailure failure = c.Damage(sim.GameplayTarget(victim), key, 1, damage);
+replacement:
+|                 if (pack.HasBlock && TryBlock(meleeTargets[i].Entity, origin, out BlockSpec shield))
+|                 {
+|                     damage = shield.Through(damage);
+|                     if (damage == 0)
+|                     {
+|                         blocked++;
+|                         Record(new StrikeRecord(StrikeKind.Blocked, source, victim, tick, 0, origin));
+|                         continue;
+|                     }
+|                 }
+|                 var key = new GameplayApplyKey(source, (ulong)state.StartTick, 0, source, (ulong)state.StartTick, 1, (uint)i);
+|                 if (Shielded(victim, tick)) damage = 0;
+|                 GameplayFailure failure = c.Damage(sim.GameplayTarget(victim), key, 1, damage);
+
+[c1c-04-shield-everyone]
+file = Assets/WarCore/Battle/RespawnSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.C1c
+expect = WarCore.Tests.C1cRangedTests.C1cRanged_OnlyTheNewUnitIsShielded
+note = the identity check is dropped
+original:
+|         public bool Shields(StableId victim, long tick) => pack.RespawnGuardTicks > 0 && victim.Value != 0 && victim.Equals(guarded) && tick < guardEnd;
+replacement:
+|         public bool Shields(StableId victim, long tick) => pack.RespawnGuardTicks > 0 && victim.Value != 0 && tick < guardEnd;
+
+[c1c-05-window-one-long]
+file = Assets/WarCore/Battle/RespawnSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.C1c
+expect = WarCore.Tests.C1cRangedTests.C1cRanged_GuardZeroesHitsForTenTicks_ThenTheHitKills
+expect = WarCore.Tests.C1cRangedTests.C1cRanged_GuardOne_ShieldsOnlyTheSwitchTick
+note = the window ends one tick late
+original:
+|         public bool Shields(StableId victim, long tick) => pack.RespawnGuardTicks > 0 && victim.Value != 0 && victim.Equals(guarded) && tick < guardEnd;
+replacement:
+|         public bool Shields(StableId victim, long tick) => pack.RespawnGuardTicks > 0 && victim.Value != 0 && victim.Equals(guarded) && tick <= guardEnd;
+
+[c1c-06-window-one-short]
+file = Assets/WarCore/Battle/RespawnSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.C1c
+expect = WarCore.Tests.C1cRangedTests.C1cRanged_GuardZeroesHitsForTenTicks_ThenTheHitKills
+expect = WarCore.Tests.C1cRangedTests.C1cRanged_GuardOne_ShieldsOnlyTheSwitchTick
+note = the window ends one tick early
+original:
+|                 if (pack.RespawnGuardTicks > 0) { guarded = combat.Entities.StableOf(reserve); guardEnd = c.Clock.Tick + pack.RespawnGuardTicks; }
+replacement:
+|                 if (pack.RespawnGuardTicks > 0) { guarded = combat.Entities.StableOf(reserve); guardEnd = c.Clock.Tick + pack.RespawnGuardTicks - 1; }
+
+[c1c-07-first-switch-only]
+file = Assets/WarCore/Battle/RespawnSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.C1c
+expect = WarCore.Tests.C1cRangedTests.C1cRanged_EverySwitchHasItsOwnWindow
+note = only the first switch is shielded
+original:
+|                 if (pack.RespawnGuardTicks > 0) { guarded = combat.Entities.StableOf(reserve); guardEnd = c.Clock.Tick + pack.RespawnGuardTicks; }
+replacement:
+|                 if (pack.RespawnGuardTicks > 0 && guarded.Value == 0) { guarded = combat.Entities.StableOf(reserve); guardEnd = c.Clock.Tick + pack.RespawnGuardTicks; }
+
+[c1c-08-not-saved]
+file = Assets/WarCore/Battle/RespawnSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.C1c
+expect = WarCore.Tests.C1cSaveAndGateTests.C1cSave_InsideTheWindow_RestoresToTheSameRun
+note = the guard slot is neither saved nor loaded
+original:
+|         public void SaveState(SimStateWriter writer) { if (pack.RespawnGuardTicks > 0) { writer.UInt64(guarded.Value); writer.Int64(guardEnd); } }
+|         public void LoadState(SimStateReader reader) { if (pack.RespawnGuardTicks > 0) { guarded = new StableId(reader.UInt64()); guardEnd = reader.Int64(); } }
+replacement:
+|         public void SaveState(SimStateWriter writer) { }
+|         public void LoadState(SimStateReader reader) { }
+
+[c1c-09-saved-when-off]
+file = Assets/WarCore/Battle/RespawnSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.C1c
+expect = WarCore.Tests.C1cOffLockTests
+note = the guard slot is saved with the guard off
+original:
+|         public void SaveState(SimStateWriter writer) { if (pack.RespawnGuardTicks > 0) { writer.UInt64(guarded.Value); writer.Int64(guardEnd); } }
+|         public void LoadState(SimStateReader reader) { if (pack.RespawnGuardTicks > 0) { guarded = new StableId(reader.UInt64()); guardEnd = reader.Int64(); } }
+replacement:
+|         public void SaveState(SimStateWriter writer) { writer.UInt64(guarded.Value); writer.Int64(guardEnd); }
+|         public void LoadState(SimStateReader reader) { if (pack.RespawnGuardTicks > 0) { guarded = new StableId(reader.UInt64()); guardEnd = reader.Int64(); } }
+
+[c1c-10-digest-always]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~WarCore.Tests.C1c
+expect = WarCore.Tests.C1cContentTests.C1cContent_OffKeepsTheDigest
+expect = WarCore.Tests.C1cOffLockTests
+note = the guard joins the digest when off
+original:
+|             if (respawnGuardTicks > 0) { hash.Add("battle.pack.respawn-guard.v1"); hash.Add(respawnGuardTicks); }
+replacement:
+|             { hash.Add("battle.pack.respawn-guard.v1"); hash.Add(respawnGuardTicks); }
+
+[c1c-11-guard-without-respawn]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~WarCore.Tests.C1c
+expect = WarCore.Tests.C1cContentTests.C1cContent_GuardWithoutRespawnIsAContentError
+expect = WarCore.Tests.C1cContentTests.C1cContent_ConstructorRejects
+note = a guard without a respawn delay is accepted
+original:
+|             if (respawnGuardTicks < 0 || respawnGuardTicks > MaxRespawnTicks || (respawnGuardTicks > 0 && respawnTicks == 0))
+replacement:
+|             if (respawnGuardTicks < 0 || respawnGuardTicks > MaxRespawnTicks)
+
+[c1c-12-content-drops-guard]
+file = Assets/WarCore/Content/Data/ContentPack.cs
+filter = FullyQualifiedName~WarCore.Tests.C1c
+expect = WarCore.Tests.C1cContentTests.C1cContent_RangeEndsLoad
+note = BuildMatch passes 0
+original:
+|                     m.RespawnTicks, m.RespawnGuardTicks);
+replacement:
+|                     m.RespawnTicks, 0);
+
+[c1c-13-not-bound]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.C1c
+expect = WarCore.Tests.C1cRangedTests.C1cRanged_GuardZeroesHitsForTenTicks_ThenTheHitKills
+expect = WarCore.Tests.C1cRangedTests.C1cRanged_GuardOne_ShieldsOnlyTheSwitchTick
+expect = WarCore.Tests.C1cRangedTests.C1cRanged_EverySwitchHasItsOwnWindow
+expect = WarCore.Tests.C1cMeleeTests.C1cMelee_GuardZeroesStrikesInTheWindow
+note = assembly never binds the guard
+original:
+|                 if (recipe.Match.RespawnGuardTicks > 0) combat.SetDamageGuard(respawn);
+replacement:
+|                 _ = respawn;
+
+[c1c-14a-no-roll-when-shielded]
+file = Assets/WarCore/Combat/CombatSystem.Resolve.cs
+filter = FullyQualifiedName~WarCore.Tests.C1c
+expect = WarCore.Tests.C1cRangedTests.C1cRanged_GuardZeroesHitsForTenTicks_ThenTheHitKills
+note = a shielded hit skips the random draw
+original:
+|             int roll = sim.Rng.NextInt(hitStream, 65536);
+replacement:
+|             int roll = Shielded(Entities.StableOf(target), tick) ? 0 : sim.Rng.NextInt(hitStream, 65536);
+
+[c1c-14b-no-resolver-when-shielded]
+file = Assets/WarCore/Combat/CombatSystem.Resolve.cs
+filter = FullyQualifiedName~WarCore.Tests.C1c
+expect = WarCore.Tests.C1cRangedTests.C1cRanged_GuardZeroesHitsForTenTicks_ThenTheHitKills
+note = a shielded hit skips the resolver
+original:
+|             long damage = pack.Resolver.DamageRaw(in weapon, falloff, roll, pack.MaxHealthRaw);
+replacement:
+|             long damage = Shielded(Entities.StableOf(target), tick) ? 0 : pack.Resolver.DamageRaw(in weapon, falloff, roll, pack.MaxHealthRaw);
+
+[c1c-15-shielded-hit-not-settled]
+file = Assets/WarCore/Combat/CombatSystem.Resolve.cs
+filter = FullyQualifiedName~WarCore.Tests.C1c
+expect = WarCore.Tests.C1cRangedTests.C1cRanged_GuardZeroesHitsForTenTicks_ThenTheHitKills
+note = a shielded ranged hit skips the zero-damage command
+original:
+|             c.Damage(sim.GameplayTarget(victim), new GameplayApplyKey(source, (ulong)tick, 0, source, (ulong)tick, 0), 1, damage);
+replacement:
+|             if (!Shielded(victim, tick)) c.Damage(sim.GameplayTarget(victim), new GameplayApplyKey(source, (ulong)tick, 0, source, (ulong)tick, 0), 1, damage);
+
+[c1c-16-guard-slot-not-hashed]
+file = Assets/WarCore/Battle/RespawnSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.C1c
+expect = WarCore.Tests.C1cSaveAndGateTests.C1cSave_WriteStateHashesTheGuardSlotInOrder
+note = WriteState drops the guard slot
+original:
+|             if (pack.RespawnGuardTicks > 0) { hash.Add(pack.RespawnGuardTicks); hash.Add(guarded.Value); hash.Add(guardEnd); }
+replacement:
+|             _ = guardEnd;

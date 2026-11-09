@@ -11,7 +11,7 @@ namespace WarCore.Tests
     {
         // Recorded values (see the PR for the base commit they were recorded on).
         private const ulong WalkHash = 0x270B175D7AA026D7UL, WalkFires = 0x005F344E51360E1DUL;
-        private const ulong RespawnHash = 0x63183215151A8738UL, RespawnFires = 0x3607050946E87BE3UL;
+        private const ulong RespawnHash = 0xB96F5CAAFF7B6967UL, RespawnFires = 0x925651B92AAA2726UL;
         private const ulong LiftedHash = 0x240307C3F07ED4C2UL, LiftedFires = 0x37EC6CA8DA130E1DUL;
         private const int RespawnTicks = 3000;
 
