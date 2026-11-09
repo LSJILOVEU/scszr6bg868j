@@ -33,6 +33,37 @@ namespace WarCore.Tests
             Assert.That(fires, Is.EqualTo(firesAfter));
         }
 
+        // The two legal boundaries of the latest shot (review mutations r-01, r-02): saved on a firing tick the record's
+        // latest shot equals the entry's Last (tick 45: (2, 45), Last 45); saved between the first shot and the second,
+        // with R = 0, it equals the entry's First (tick 42: (1, 40), First 40). Both restore and hash alike.
+        [TestCase(45L, 2, 45L, "last")]
+        [TestCase(42L, 1, 40L, "first")]
+        public void Restore_LatestShotOnTheEntryBoundary(long save, int shots, long lastShot, string boundary)
+        {
+            P3.Trace straight = P3.Run(P2.Cast(), P1.Walk, Ai, 200);
+            M6World f = P3.RunTo(Ai, save);
+            P3.Saved s = P3.Parse(P3.Payload(f.System<ReactionFire>()));
+            Assert.That(s.Count, Is.EqualTo(1));
+            Assert.That(s.Bursts, Is.EqualTo(new[] { (shots, lastShot) }));
+            Assert.That(s.Entries[0].First, Is.EqualTo(P1.T));
+            Assert.That(s.Entries[0].Last, Is.EqualTo(save));
+            if (boundary == "last") Assert.That(lastShot, Is.EqualTo(s.Entries[0].Last), "the latest shot is the entry's Last");
+            else Assert.That(lastShot, Is.EqualTo(s.Entries[0].First), "the latest shot is the entry's First");
+            byte[] snapshot = f.Sim.SaveRetainedSnapshot();
+            M6World b = P3.World(P2.Cast(), Ai);
+            Assert.DoesNotThrow(() => b.Sim.RestoreRetainedSnapshot(snapshot));
+            Assert.That(b.Hash, Is.EqualTo(straight.Hashes[(int)save]), "at once");
+            Assert.That(P3.Parse(P3.Payload(b.System<ReactionFire>())).Bursts, Is.EqualTo(new[] { (shots, lastShot) }));
+            var fires = new List<long>();
+            for (long tick = save + 1; tick <= 200; tick++)
+            {
+                b.Sim.Step(P2.Drive(b, tick, P1.Walk));
+                Assert.That(b.Hash, Is.EqualTo(straight.Hashes[(int)tick]), "tick " + tick);
+                if (P1.Fired(b, P3.KeyA)) fires.Add(tick);
+            }
+            Assert.That(fires, Is.EqualTo(straight.A.FireTicks(200).FindAll(t => t > save)));
+        }
+
         // 9(a): saved on 47, inside the first burst (two shots fired): the third shot still on 50, then the pause.
         [Test]
         public void Restore_MidBurst() => Restored(47, new long[] { 50, 70, 75, 80, 100, 105, 110, 130, 190, 195, 200 });
