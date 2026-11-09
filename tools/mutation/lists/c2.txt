@@ -1,0 +1,115 @@
+# C2 respawn HUD: the required mutations of the work package. Test classes are named C2*.
+
+[c2-01-countdown-one-short]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~WarCore.Tests.C2
+expect = WarCore.Tests.C2RespawnViewTests.C2Countdown_EveryTick_ThenTakeoverOnTheReserve
+note = ticks left one short: due - Tick becomes due - Tick - 1
+original:
+| life.EnteredTick + matchPack.RespawnTicks - Tick)
+replacement:
+| life.EnteredTick + matchPack.RespawnTicks - Tick - 1)
+
+[c2-02-seconds-round-down]
+file = Assets/WarCore/Presentation/Camera/HudLines.cs
+filter = FullyQualifiedName~WarCore.Tests.C2
+expect = WarCore.Tests.C2RespawnViewTests.C2Countdown_EveryTick_ThenTakeoverOnTheReserve
+note = whole seconds rounded down instead of up
+original:
+| (respawn.TicksLeft + SimSession.TickRate - 1) / SimSession.TickRate)
+replacement:
+| respawn.TicksLeft / SimSession.TickRate)
+
+[c2-03-no-reserve-ignored]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~WarCore.Tests.C2
+expect = WarCore.Tests.C2RespawnViewTests.C2NoReserve_ForThreeHundredTicks
+note = the NoReserve branch is dropped
+original:
+| reserves == 0 ? RespawnPhase.NoReserve : left > 0
+replacement:
+| left > 0
+
+[c2-04-overdue-as-waiting]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~WarCore.Tests.C2
+expect = WarCore.Tests.C2RespawnViewTests.C2BlockedAnchor_IsOverdueUntilTheSwitch
+expect = WarCore.Tests.C2RespawnViewTests.C2NoAnchor_StaysOverdue
+note = a met delay still reads Waiting: left > 0 becomes left >= 0
+original:
+| left > 0 ? RespawnPhase.Waiting
+replacement:
+| left >= 0 ? RespawnPhase.Waiting
+
+[c2-05-finished-not-hidden]
+file = Assets/WarCore/Presentation/Camera/HudLines.cs
+filter = FullyQualifiedName~WarCore.Tests.C2
+expect = WarCore.Tests.C2RespawnViewTests.C2MatchOver_HidesTheLine
+note = the respawn line is shown after the match ended
+original:
+| if (frame.Match.IsFinished) return null;
+replacement:
+| if (false) return null;
+
+[c2-06-interpolate-drops-respawn]
+file = Assets/WarCore/Presentation/Bridge/FrameView.cs
+filter = FullyQualifiedName~WarCore.Tests.C2
+expect = WarCore.Tests.C2RespawnViewTests.C2Interpolate_KeepsTheRespawnState
+note = the interpolated frame loses the respawn state
+original:
+| current.Match, current.Respawn);
+replacement:
+| current.Match);
+
+[c2-07-wrong-team]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~WarCore.Tests.C2
+expect = WarCore.Tests.C2RespawnViewTests.C2NoReserve_CountsOnlyThePlayersTeam
+note = always the team 1 reserve count
+original:
+| int reserves = team == 1 ? reserveOne : team == 2 ? reserveTwo : 0;
+replacement:
+| int reserves = reserveOne;
+
+[c2-08-same-frame-takeover-missed]
+file = Assets/WarCore/Presentation/Camera/PlayerTracker.cs
+filter = FullyQualifiedName~WarCore.Tests.C2
+expect = WarCore.Tests.C2RespawnViewTests.C2DeathAndTakeoverInOneFrame_AreSeenAsATakeover
+note = the corpse-still-in-frame half of the rule is dropped
+original:
+| if (!Alive || (lastKey.HasValue && key != lastKey
+|                 && current.TryGet(lastKey.Value, out ViewEntity old) && !old.Alive))
+replacement:
+| if (!Alive)
+
+[c2-09-down-beside-countdown]
+file = Assets/WarCore/Presentation/Camera/HudLines.cs
+filter = FullyQualifiedName~WarCore.Tests.C2
+expect = WarCore.Tests.C2RespawnViewTests.C2Countdown_EveryTick_ThenTakeoverOnTheReserve
+note = the takeover line wins over the countdown, so Down stays during the countdown
+original:
+| => Respawn(frame, text) ?? Takeover(lostPlayer, alive, key, text);
+replacement:
+| => Takeover(lostPlayer, alive, key, text) ?? Respawn(frame, text);
+
+[c2-10-table-ignored]
+file = Assets/WarCore/Presentation/Camera/HudLines.cs
+filter = FullyQualifiedName~WarCore.Tests.C2
+expect = WarCore.Tests.C2RespawnViewTests.C2AnotherTextTable_IsUsedForEveryLine
+note = the respawn line always uses the English table
+original:
+|             text = text ?? HudText.English;
+|             ViewRespawn respawn
+replacement:
+|             text = HudText.English;
+|             ViewRespawn respawn
+
+[c2-11-signed-key]
+file = Assets/WarCore/Presentation/Camera/HudLines.cs
+filter = FullyQualifiedName~WarCore.Tests.C2
+expect = WarCore.Tests.C2RespawnViewTests.C2Takeover_LargestKey_IsUnsigned
+note = the view key is printed as a signed number
+original:
+| HudText.Format(text.NowControlling, key.Value)
+replacement:
+| HudText.Format(text.NowControlling, (long)key.Value)

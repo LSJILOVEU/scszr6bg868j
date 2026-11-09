@@ -10,12 +10,13 @@ namespace WarCore.Presentation
         private readonly ViewPoint[] points;
         public ReadOnlySpan<ViewPoint> Points => points;
         public ViewMatch Match { get; }
+        public ViewRespawn Respawn { get; }
         public ReadOnlySpan<ViewFire> Fires => fires;
 
         public long Tick { get; }
         public ReadOnlySpan<ViewEntity> Entities => entities;
 
-        public FrameView(long tick, ViewEntity[] entities, ReadOnlySpan<ViewFire> fires = default, ReadOnlySpan<ViewPoint> points = default, ViewMatch match = default)
+        public FrameView(long tick, ViewEntity[] entities, ReadOnlySpan<ViewFire> fires = default, ReadOnlySpan<ViewPoint> points = default, ViewMatch match = default, ViewRespawn respawn = default)
         {
             if (tick < 0)
                 throw new ArgumentOutOfRangeException(nameof(tick));
@@ -23,7 +24,7 @@ namespace WarCore.Presentation
                 throw new ArgumentNullException(nameof(entities));
             Tick = tick;
             this.fires = fires.ToArray();
-            this.points = points.ToArray(); Match = match;
+            this.points = points.ToArray(); Match = match; Respawn = respawn;
             this.entities = (ViewEntity[])entities.Clone();
             Array.Sort(this.entities, (a, b) => a.Key.CompareTo(b.Key));
             for (int i = 1; i < this.entities.Length; i++)
@@ -74,7 +75,7 @@ namespace WarCore.Presentation
                 result[i] = new ViewEntity(next.Key, next.Archetype,
                     old.X + dx * alpha, old.Y + dy * alpha, old.Z + dz * alpha, next.Squad, next.Team, next.Alive);
             }
-            return new FrameView(current.Tick, result, current.fires, current.points, current.Match);
+            return new FrameView(current.Tick, result, current.fires, current.points, current.Match, current.Respawn);
         }
     }
 }
