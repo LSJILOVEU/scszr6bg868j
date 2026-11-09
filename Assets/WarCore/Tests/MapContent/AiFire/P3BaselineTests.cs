@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using NUnit.Framework;
 using WarCore.Battle;
+using WarCore.Content;
 using WarCore.Presentation;
 using WarCore.Sim;
 
@@ -73,5 +74,61 @@ namespace WarCore.Tests
         [Test]
         public void Nothing_FastRifle_Unchanged() =>
             Baseline(P3.Ai(0), P1.T, Fires0, Run0, End0, Snapshot0Length, Snapshot0Digest, P1BaselineTests.Systems, null);
+
+        // 1(b), after the change: "burstShots": 0 written out, alone and with "burstPauseTicks": 50, beside each of the
+        // three worlds: the same system table, the same state version, the same hash on every tick, the same shots and the
+        // same snapshot bytes on 300.
+        [TestCase(15, null, 1)]
+        [TestCase(0, 10, 2)]
+        [TestCase(0, null, null)]
+        public void BurstZero_IsByteForByteTheSame(int reaction, int? sense, int? version)
+        {
+            Same(P3.Ai(reaction, sense), P3.Ai(reaction, sense, 0), version, "burstShots 0");
+            Same(P3.Ai(reaction, sense), P3.Ai(reaction, sense, 0, 50), version, "burstShots 0, burstPauseTicks 50");
+        }
+        private static void Same(string plainAi, string zeroAi, int? version, string what)
+        {
+            M6World plain = P3.World(P2.Cast(), plainAi), zero = P3.World(P2.Cast(), zeroAi);
+            Assert.That(P3.Systems(zero), Is.EqualTo(P3.Systems(plain)), what);
+            if (version == null) Assert.That(zero.System<ReactionFire>(), Is.Null, what);
+            else Assert.That(zero.System<ReactionFire>().StateVersion, Is.EqualTo(version.Value), what);
+            Assert.That(zero.Hash, Is.EqualTo(plain.Hash), what + ", tick 0");
+            var plainFires = new List<long>(); var zeroFires = new List<long>();
+            for (long tick = 1; tick <= 300; tick++)
+            {
+                plain.Sim.Step(P2.Drive(plain, tick, P1.Walk));
+                zero.Sim.Step(P2.Drive(zero, tick, P1.Walk));
+                Assert.That(zero.Hash, Is.EqualTo(plain.Hash), what + ", tick " + tick);
+                if (P1.Fired(plain, P3.KeyA)) plainFires.Add(tick);
+                if (P1.Fired(zero, P3.KeyA)) zeroFires.Add(tick);
+            }
+            Assert.That(zeroFires, Is.EqualTo(plainFires), what + ", shots");
+            Assert.That(plainFires.Count, Is.GreaterThan(0), what + ", the run fires");
+            Assert.That(zero.Sim.SaveRetainedSnapshot(), Is.EqualTo(plain.Sim.SaveRetainedSnapshot()), what + ", snapshot bytes on 300");
+        }
+
+        // 1(c): reaction 0, interval 1, burst 0 with a pause written: nothing is registered.
+        [Test]
+        public void ZeroBurstWithPause_RegistersNothing()
+        {
+            M6World w = null;
+            Assert.DoesNotThrow(() => w = P3.World(P2.Cast(), P3.Ai(0, 1, 0, 50)));
+            Assert.That(P3.Systems(w), Is.EqualTo(P1BaselineTests.Systems));
+            Assert.That(P3.Systems(w), Does.Not.Contain("battle.ai-fire"));
+            Assert.That(w.System<ReactionFire>(), Is.Null);
+        }
+
+        // 1(d): a flat map (no surface table, no height field) with a content layer that sets a burst: not a terrain world,
+        // so nothing is registered.
+        [Test]
+        public void FlatMapWithBurst_DoesNotRegister()
+        {
+            byte[] map = WcMapWriter.Write(Wp23.Make(A2.Width, A2.Depth, 0, 4 * A2.S, A2.DWalls, 2 * A2.S));
+            M6World flat = null;
+            Assert.DoesNotThrow(() => flat = new M6World(P3.Recipe(P2.Cast(), P3.Ai(0, null, 3, 20)), map));
+            Assert.That(P3.Systems(flat), Is.EqualTo(P1BaselineTests.Systems));
+            Assert.That(P3.Systems(flat), Does.Not.Contain("battle.ai-fire"));
+            Assert.That(flat.System<ReactionFire>(), Is.Null);
+        }
     }
 }

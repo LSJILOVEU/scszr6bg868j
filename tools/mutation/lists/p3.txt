@@ -1,0 +1,319 @@
+# P3 AI burst: the required mutations of the work package. Test classes are named P3*.
+
+[p3-01-pause-off-by-one]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P3
+expect = WarCore.Tests.P3TimingTests.Burst3Pause20_Rhythm
+note = the pause lasts one tick longer (70 is still gated)
+original:
+|                 if (tick - lastShots[slot] < burstPauseTicks)
+replacement:
+|                 if (tick - lastShots[slot] <= burstPauseTicks)
+
+[p3-02-pause-short-by-one]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P3
+expect = WarCore.Tests.P3TimingTests.Burst3Pause20_Rhythm
+note = the pause ends one tick early (69 fires)
+original:
+|                 if (tick - lastShots[slot] < burstPauseTicks)
+replacement:
+|                 if (tick - lastShots[slot] < burstPauseTicks - 1)
+
+[p3-03-reload-keeps-count]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P3
+expect = WarCore.Tests.P3TimingTests.ReloadInsideABurst_ResetsTheCount
+expect = WarCore.Tests.P3TimingTests.LastShotOfABurstEmptiesTheMagazine_NoPauseAdded
+note = the shot that empties the magazine does not reset the count
+original:
+|                 shots[slot] = unit.Ammo == 1 ? 0 : shots[slot] + 1;
+replacement:
+|                 shots[slot] = shots[slot] + 1;
+
+[p3-04-zero-burst-becomes-one]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P3
+expect = WarCore.Tests.P3BaselineTests.ReactionOnly_FastRifle_Unchanged
+expect = WarCore.Tests.P3BaselineTests.IntervalOnly_FastRifle_Unchanged
+expect = WarCore.Tests.P3BaselineTests.BurstZero_IsByteForByteTheSame
+note = the constructor treats B = 0 as 1: version 3 and single-shot bursts where nothing should change
+original:
+|             this.burstShots = burstShots;
+replacement:
+|             this.burstShots = Math.Max(1, burstShots);
+
+[p3-05-content-default-one]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~WarCore.Tests.P3
+expect = WarCore.Tests.P3ContentTests.ValuesAndDefaults
+expect = WarCore.Tests.P3BaselineTests.Nothing_FastRifle_Unchanged
+note = the content default of burstShots becomes 1
+original:
+|             int failed = 0, memory = 0, search = 0, reaction = 0, sense = 1, burst = 0, pause = 0;
+replacement:
+|             int failed = 0, memory = 0, search = 0, reaction = 0, sense = 1, burst = 1, pause = 0;
+
+[p3-06-registration-ignores-burst]
+file = Assets/WarCore/Presentation/Bridge/Features/AiFireFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.P3
+expect = WarCore.Tests.P3ContentTests.Assembly_BurstAlone_Registers
+note = a burst alone registers nothing
+original:
+|             return ai.ReactionTicks > 0 || ai.SenseTicks > 1 || ai.BurstShots > 0;
+replacement:
+|             return ai.ReactionTicks > 0 || ai.SenseTicks > 1;
+
+[p3-07-version-not-raised]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P3
+expect = WarCore.Tests.P3StateTests.Versions_AndTheManifestCheck
+note = a burst does not raise the state version to 3
+original:
+|         public int StateVersion => burstShots > 0 ? 3 : senseTicks > 1 ? 2 : 1;
+replacement:
+|         public int StateVersion => senseTicks > 1 ? 2 : 1;
+
+[p3-08-save-skips-bursts]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P3
+expect = WarCore.Tests.P3AllyTests.HeldShot_CountsNoRound_AndThePayload
+expect = WarCore.Tests.P3StateTests.Restore_MidPause
+note = SaveState writes no burst block and LoadState reads none (B, Q and the records are lost)
+original:
+|             if (burstShots > 0) SaveBursts(writer);
+|         }
+|
+|         private void SaveBursts(SimStateWriter writer)
+|         {
+|             writer.Int32(burstShots); writer.Int32(burstPauseTicks);
+|             foreach (EntityId entity in stage.Capture())
+|             {
+|                 if (!Exported(entity)) continue;
+|                 writer.Int32(shots[entity.Id]); writer.Int64(lastShots[entity.Id]);
+|             }
+|         }
+|
+|         public void LoadState(SimStateReader reader)
+|         {
+|             Array.Clear(has, 0, has.Length);
+|             SimStateReader.Require(reader.Int32() == ticks, "AI reaction time differs.");
+|             int count = reader.Count(combat.Entities.Capacity);
+|             ulong previous = 0;
+|             for (int i = 0; i < count; i++)
+|             {
+|                 ulong key = reader.UInt64();
+|                 SimStateReader.Require(i == 0 || key > previous, "AI reaction shooters are not in strictly increasing order.");
+|                 previous = key;
+|                 var shooter = new StableId(key);
+|                 var target = new StableId(reader.UInt64());
+|                 long first = reader.Int64(), last = reader.Int64();
+|                 SimStateReader.Require(first >= 0, "AI reaction tick is negative.");
+|                 SimStateReader.Require(last >= first, "AI reaction last tick precedes its first tick.");
+|                 SimStateReader.Require(combat.Entities.TryResolve(shooter, out EntityRef found), "AI reaction shooter does not exist.");
+|                 int slot = ((EntityId)found).Id;
+|                 SimStateReader.Require((uint)slot < (uint)has.Length, "AI reaction shooter is outside the entity capacity.");
+|                 has[slot] = true; shooters[slot] = shooter; targets[slot] = target; firsts[slot] = first; lasts[slot] = last;
+|             }
+|             if (StateVersion < 2) return;
+|             SimStateReader.Require(reader.Int32() == senseTicks, "AI sense interval differs.");
+|             if (burstShots > 0) LoadBursts(reader);
+replacement:
+|         }
+|
+|         private void SaveBursts(SimStateWriter writer)
+|         {
+|             writer.Int32(burstShots); writer.Int32(burstPauseTicks);
+|             foreach (EntityId entity in stage.Capture())
+|             {
+|                 if (!Exported(entity)) continue;
+|                 writer.Int32(shots[entity.Id]); writer.Int64(lastShots[entity.Id]);
+|             }
+|         }
+|
+|         public void LoadState(SimStateReader reader)
+|         {
+|             Array.Clear(has, 0, has.Length);
+|             SimStateReader.Require(reader.Int32() == ticks, "AI reaction time differs.");
+|             int count = reader.Count(combat.Entities.Capacity);
+|             ulong previous = 0;
+|             for (int i = 0; i < count; i++)
+|             {
+|                 ulong key = reader.UInt64();
+|                 SimStateReader.Require(i == 0 || key > previous, "AI reaction shooters are not in strictly increasing order.");
+|                 previous = key;
+|                 var shooter = new StableId(key);
+|                 var target = new StableId(reader.UInt64());
+|                 long first = reader.Int64(), last = reader.Int64();
+|                 SimStateReader.Require(first >= 0, "AI reaction tick is negative.");
+|                 SimStateReader.Require(last >= first, "AI reaction last tick precedes its first tick.");
+|                 SimStateReader.Require(combat.Entities.TryResolve(shooter, out EntityRef found), "AI reaction shooter does not exist.");
+|                 int slot = ((EntityId)found).Id;
+|                 SimStateReader.Require((uint)slot < (uint)has.Length, "AI reaction shooter is outside the entity capacity.");
+|                 has[slot] = true; shooters[slot] = shooter; targets[slot] = target; firsts[slot] = first; lasts[slot] = last;
+|             }
+|             if (StateVersion < 2) return;
+|             SimStateReader.Require(reader.Int32() == senseTicks, "AI sense interval differs.");
+
+[p3-09-load-ignores-burst]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P3
+expect = WarCore.Tests.P3StateTests.Restore_Mismatch_IsRefused
+note = LoadState reads B without comparing it
+original:
+|             SimStateReader.Require(reader.Int32() == burstShots, "AI burst length differs.");
+replacement:
+|             reader.Int32();
+
+[p3-10-load-ignores-pause]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P3
+expect = WarCore.Tests.P3StateTests.Restore_Mismatch_IsRefused
+note = LoadState reads Q without comparing it
+original:
+|             SimStateReader.Require(reader.Int32() == burstPauseTicks, "AI burst pause differs.");
+replacement:
+|             reader.Int32();
+
+[p3-11-hash-skips-bursts]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P3
+expect = WarCore.Tests.P3AllyTests.HeldShot_CountsNoRound_AndThePayload
+note = WriteState leaves the burst block out of the hash
+original:
+|             if (burstShots > 0) HashBursts(hash);
+replacement:
+
+
+[p3-12-held-shot-counts]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P3
+expect = WarCore.Tests.P3AllyTests.HeldShot_CountsNoRound_AndThePayload
+expect = WarCore.Tests.P3AllyTests.PauseDrawsNoNumber_HeldShotAtTheExpiryCountsNothing
+note = a held shot counts as a round
+original:
+|             if (action == AutoFireAction.Fire && burstShots > 0)
+replacement:
+|             if (action != AutoFireAction.Pass && burstShots > 0)
+
+[p3-13-new-entry-keeps-burst]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P3
+expect = WarCore.Tests.P3TimingTests.NewTarget_InheritsNoPause
+note = a new entry keeps the previous burst state (the pause follows the shooter to its next target)
+original:
+|             shots[slot] = 0; lastShots[slot] = 0;
+replacement:
+
+
+[p3-14-expiry-keeps-count]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P3
+expect = WarCore.Tests.P3TimingTests.Burst3Pause20_Rhythm
+note = the count is not cleared when the pause is over
+original:
+|                 shots[slot] = 0;   // the pause is over: the next burst starts with this aim
+replacement:
+
+
+[p3-15-no-last-shot]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P3
+expect = WarCore.Tests.P3TimingTests.Burst3Pause20_Rhythm
+note = the tick of the latest shot is never recorded (no pause)
+original:
+|                 lastShots[slot] = tick;
+replacement:
+
+
+[p3-16-empty-off-by-one]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P3
+expect = WarCore.Tests.P3TimingTests.ReloadInsideABurst_ResetsTheCount
+expect = WarCore.Tests.P3TimingTests.Burst3Pause20_Rhythm
+note = the magazine counts as emptied one round early
+original:
+|                 shots[slot] = unit.Ammo == 1 ? 0 : shots[slot] + 1;
+replacement:
+|                 shots[slot] = unit.Ammo <= 2 ? 0 : shots[slot] + 1;
+
+[p3-17-gate-after-aim]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P3
+expect = WarCore.Tests.P3AllyTests.PauseDrawsNoNumber_HeldShotAtTheExpiryCountsNothing
+note = the aim (and its ally roll) happens before the pause gate and its result is thrown away
+original:
+|             if (burstShots > 0 && shots[slot] == burstShots)
+|             {
+|                 if (tick - lastShots[slot] < burstPauseTicks)
+|                 {
+|                     direction = default;
+|                     return AutoFireAction.Pass;
+|                 }
+|                 shots[slot] = 0;   // the pause is over: the next burst starts with this aim
+|             }
+|             AutoFireAction action = builtIn.AimAt(combat, shooter, in position, (EntityId)target, out direction);
+|             if (action == AutoFireAction.Fire && burstShots > 0)
+|             {
+|                 lastShots[slot] = tick;
+|                 shots[slot] = unit.Ammo == 1 ? 0 : shots[slot] + 1;
+|             }
+|             return action;
+replacement:
+|             AutoFireAction action = builtIn.AimAt(combat, shooter, in position, (EntityId)target, out direction);
+|             if (burstShots > 0 && shots[slot] == burstShots)
+|             {
+|                 if (tick - lastShots[slot] < burstPauseTicks)
+|                 {
+|                     direction = default;
+|                     return AutoFireAction.Pass;
+|                 }
+|                 shots[slot] = 0;   // the pause is over: the next burst starts with this aim
+|             }
+|             if (action == AutoFireAction.Fire && burstShots > 0)
+|             {
+|                 lastShots[slot] = tick;
+|                 shots[slot] = unit.Ammo == 1 ? 0 : shots[slot] + 1;
+|             }
+|             return action;
+
+[p3-18-v3-ignores-interval]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P3
+expect = WarCore.Tests.P3StateTests.Restore_Mismatch_IsRefused
+note = LoadState reads K without comparing it
+original:
+|             SimStateReader.Require(reader.Int32() == senseTicks, "AI sense interval differs.");
+replacement:
+|             reader.Int32();
+
+[p3-19-v3-skips-interval-one]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P3
+expect = WarCore.Tests.P3AllyTests.HeldShot_CountsNoRound_AndThePayload
+note = K = 1 is not written in version 3 (the payload is 4 bytes short)
+original:
+|             writer.Int32(senseTicks);
+replacement:
+|             if (senseTicks > 1) writer.Int32(senseTicks);
+
+[p3-20-no-count-range]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P3
+expect = WarCore.Tests.P3StateTests.Load_CountOutOfRange_IsRefused
+note = LoadState accepts any count
+original:
+|                 SimStateReader.Require(fired >= 0 && fired <= burstShots, "AI burst shot count is out of range.");
+replacement:
+
+
+[p3-21-no-last-shot-bounds]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P3
+expect = WarCore.Tests.P3StateTests.Load_LatestShotOutsideTheEntry_IsRefused
+expect = WarCore.Tests.P3StateTests.Load_CountWithoutAShot_IsRefused
+note = LoadState accepts any latest shot
+original:
+|                 SimStateReader.Require((fired == 0 && last == 0) || (last > 0 && firsts[slot] <= last && last <= lasts[slot]), "AI burst last shot is outside its entry.");
+replacement:
+

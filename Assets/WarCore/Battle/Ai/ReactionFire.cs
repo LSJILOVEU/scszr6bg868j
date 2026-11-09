@@ -22,6 +22,14 @@ namespace WarCore.Battle
     // TryAim never allocate: the entries live in arrays indexed by entity slot. Saves and hashes list them in stable-identity
     // order (the combat stage order), only for entities that exist and whose identity matches the entry, so a destroyed or
     // reused slot is never written. With K above 1 the state is version 2: version 1's payload followed by K.
+    //
+    // AI burst B and pause Q: a shooter fires B rounds at its target, then holds for Q ticks from the tick of the B-th shot
+    // (the weapon may be ready; the decision passes without aiming, so no ally roll is drawn), then starts the next burst.
+    // The shot that empties the magazine resets the count and adds no pause: the reload is the pause. A held shot (an ally
+    // on the line) or a pass counts no round; when the pause is over the count is cleared before the aim. The burst state
+    // belongs to the entry: a new entry starts at zero, so another target inherits no pause. B = 0 is continuous fire,
+    // byte for byte the pre-burst behaviour; with B above 0 the state is version 3: the version 2 payload (K written even
+    // when it is 1) followed by B, Q and, per entry in entry order, the count and the tick of the latest shot.
     public sealed class ReactionFire : IAutoFire, IRetainedGameplaySystem
     {
         // Same bound as the content field (Content/Data/Sections/AiSection.cs MaxReactionTicks); Battle cannot see Content.
@@ -30,13 +38,15 @@ namespace WarCore.Battle
         private readonly CombatSystem combat;
         private readonly IAutoFire inner;
         private readonly DefaultAutoFire builtIn;
-        private readonly int ticks, senseTicks;
+        private readonly int ticks, senseTicks, burstShots, burstPauseTicks;
         private readonly EntityStage stage;
         private readonly bool[] has;
         private readonly StableId[] shooters, targets;
         private readonly long[] firsts, lasts;
+        private readonly int[] shots;        // rounds fired in the entry's current burst
+        private readonly long[] lastShots;   // the tick of the entry's latest shot, 0 for none yet
 
-        public ReactionFire(CombatSystem combat, IAutoFire inner, int ticks, int senseTicks = 1)
+        public ReactionFire(CombatSystem combat, IAutoFire inner, int ticks, int senseTicks = 1, int burstShots = 0, int burstPauseTicks = 0)
         {
             if (ticks < 0 || ticks > MaxTicks) throw new ArgumentOutOfRangeException(nameof(ticks));
             this.combat = combat ?? throw new ArgumentNullException(nameof(combat));
@@ -44,19 +54,24 @@ namespace WarCore.Battle
             if (senseTicks < 1 || senseTicks > MaxTicks) throw new ArgumentOutOfRangeException(nameof(senseTicks));
             if (!ReferenceEquals(inner, combat.BuiltInAutoFire))
                 throw new ArgumentException("The AI fire decision wraps only its own combat system's built-in decision.", nameof(inner));
+            if (burstShots < 0 || burstShots > MaxTicks) throw new ArgumentOutOfRangeException(nameof(burstShots));
+            if (burstPauseTicks < 0 || burstPauseTicks > MaxTicks) throw new ArgumentOutOfRangeException(nameof(burstPauseTicks));
             builtIn = (DefaultAutoFire)inner;
             this.ticks = ticks;
             this.senseTicks = senseTicks;
+            this.burstShots = burstShots;
+            this.burstPauseTicks = burstPauseTicks;
             stage = new EntityStage(combat.Entities);
             int capacity = combat.Entities.Capacity;
             has = new bool[capacity];
             shooters = new StableId[capacity]; targets = new StableId[capacity];
             firsts = new long[capacity]; lasts = new long[capacity];
+            shots = new int[capacity]; lastShots = new long[capacity];
         }
 
         public int Order => 14;
         public string StateTypeId => "battle.ai-fire";
-        public int StateVersion => senseTicks > 1 ? 2 : 1;
+        public int StateVersion => burstShots > 0 ? 3 : senseTicks > 1 ? 2 : 1;
 
         // The number of entries a save or hash would write now.
         internal int Count
@@ -104,6 +119,7 @@ namespace WarCore.Battle
                 return;
             }
             has[slot] = true; shooters[slot] = self; targets[slot] = selected; firsts[slot] = tick; lasts[slot] = tick;
+            shots[slot] = 0; lastShots[slot] = 0;
         }
 
         public AutoFireAction TryAim(CombatSystem combat, EntityId shooter, in Combatant unit, in Position position,
@@ -117,7 +133,22 @@ namespace WarCore.Battle
                 direction = default;
                 return AutoFireAction.Pass;
             }
-            return builtIn.AimAt(combat, shooter, in position, (EntityId)target, out direction);
+            if (burstShots > 0 && shots[slot] == burstShots)
+            {
+                if (tick - lastShots[slot] < burstPauseTicks)
+                {
+                    direction = default;
+                    return AutoFireAction.Pass;
+                }
+                shots[slot] = 0;   // the pause is over: the next burst starts with this aim
+            }
+            AutoFireAction action = builtIn.AimAt(combat, shooter, in position, (EntityId)target, out direction);
+            if (action == AutoFireAction.Fire && burstShots > 0)
+            {
+                lastShots[slot] = tick;
+                shots[slot] = unit.Ammo == 1 ? 0 : shots[slot] + 1;
+            }
+            return action;
         }
 
         // Clears, one tick late, the entries Sense did not touch on the previous tick.
@@ -141,7 +172,19 @@ namespace WarCore.Battle
                 int slot = entity.Id;
                 writer.UInt64(shooters[slot].Value); writer.UInt64(targets[slot].Value); writer.Int64(firsts[slot]); writer.Int64(lasts[slot]);
             }
-            if (senseTicks > 1) writer.Int32(senseTicks);
+            if (StateVersion < 2) return;
+            writer.Int32(senseTicks);
+            if (burstShots > 0) SaveBursts(writer);
+        }
+
+        private void SaveBursts(SimStateWriter writer)
+        {
+            writer.Int32(burstShots); writer.Int32(burstPauseTicks);
+            foreach (EntityId entity in stage.Capture())
+            {
+                if (!Exported(entity)) continue;
+                writer.Int32(shots[entity.Id]); writer.Int64(lastShots[entity.Id]);
+            }
         }
 
         public void LoadState(SimStateReader reader)
@@ -165,7 +208,27 @@ namespace WarCore.Battle
                 SimStateReader.Require((uint)slot < (uint)has.Length, "AI reaction shooter is outside the entity capacity.");
                 has[slot] = true; shooters[slot] = shooter; targets[slot] = target; firsts[slot] = first; lasts[slot] = last;
             }
-            if (senseTicks > 1) SimStateReader.Require(reader.Int32() == senseTicks, "AI sense interval differs.");
+            if (StateVersion < 2) return;
+            SimStateReader.Require(reader.Int32() == senseTicks, "AI sense interval differs.");
+            if (burstShots > 0) LoadBursts(reader);
+        }
+
+        // The entries were loaded in strictly increasing key order, which is the stage's capture order, so the burst
+        // records follow the same order as the save wrote them.
+        private void LoadBursts(SimStateReader reader)
+        {
+            SimStateReader.Require(reader.Int32() == burstShots, "AI burst length differs.");
+            SimStateReader.Require(reader.Int32() == burstPauseTicks, "AI burst pause differs.");
+            foreach (EntityId entity in stage.Capture())
+            {
+                if (!Exported(entity)) continue;
+                int slot = entity.Id;
+                int fired = reader.Int32();
+                long last = reader.Int64();
+                SimStateReader.Require(fired >= 0 && fired <= burstShots, "AI burst shot count is out of range.");
+                SimStateReader.Require((fired == 0 && last == 0) || (last > 0 && firsts[slot] <= last && last <= lasts[slot]), "AI burst last shot is outside its entry.");
+                shots[slot] = fired; lastShots[slot] = last;
+            }
         }
 
         public void WriteState(StateHash hash)
@@ -177,7 +240,19 @@ namespace WarCore.Battle
                 int slot = entity.Id;
                 hash.Add(shooters[slot].Value); hash.Add(targets[slot].Value); hash.Add(firsts[slot]); hash.Add(lasts[slot]);
             }
-            if (senseTicks > 1) hash.Add(senseTicks);
+            if (StateVersion < 2) return;
+            hash.Add(senseTicks);
+            if (burstShots > 0) HashBursts(hash);
+        }
+
+        private void HashBursts(StateHash hash)
+        {
+            hash.Add(burstShots); hash.Add(burstPauseTicks);
+            foreach (EntityId entity in stage.Capture())
+            {
+                if (!Exported(entity)) continue;
+                hash.Add(shots[entity.Id]); hash.Add(lastShots[entity.Id]);
+            }
         }
     }
 }
