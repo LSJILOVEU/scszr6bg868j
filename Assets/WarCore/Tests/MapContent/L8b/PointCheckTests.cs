@@ -109,6 +109,14 @@ namespace WarCore.Tests
             Dirty(Check(L6With(new ControlPointDef(1, Raw(H(48), 0, H(16)), SimFix.FromInt(3)))), 5, false, 1, 0, 0, 0, "(v')");
         }
 
+        // Z on both edges as for X (review addition): one row below the map, and Z = Depth (32 on the demo map).
+        [Test]
+        public void PointCheck_CentreOffTheMapInZ()
+        {
+            Dirty(Check(L6With(new ControlPointDef(1, Raw(H(22), 0, -32768), SimFix.FromInt(3)))), 5, false, 1, 0, 0, 0, "z below");
+            Dirty(Check(L6With(new ControlPointDef(1, Raw(H(22), 0, H(32)), SimFix.FromInt(3)))), 5, false, 1, 0, 0, 0, "z = depth");
+        }
+
         // (vi) The production frame at tick 0, copied with one field of point 1 changed.
         private static FrameView Copy(FrameView f, Func<ViewPoint, ViewPoint> first, bool onlyFirst = false)
         {
@@ -128,6 +136,19 @@ namespace WarCore.Tests
             Dirty(PointCheck.Run(Copy(f, p => new ViewPoint(9, p.X, p.Z, p.Radius, p.Owner, p.Capturing, p.Progress)), s), 6, false, 0, 0, 0, 1, "(vi-id)");
             Dirty(PointCheck.Run(Copy(f, p => new ViewPoint(p.Id, p.X, p.Z, p.Radius + 1f, p.Owner, p.Capturing, p.Progress)), s), 6, false, 0, 0, 0, 1, "(vi-r)");
             Dirty(PointCheck.Run(Copy(f, p => p, onlyFirst: true), s), 6, true, 0, 0, 0, 0, "(vi')");
+        }
+
+        private static float Up(float v) => BitConverter.Int32BitsToSingle(BitConverter.SingleToInt32Bits(v) + 1);
+
+        // One float bit off in each compared field (review addition): the comparison is bit for bit, not within a tolerance.
+        [Test]
+        public void PointCheck_DrawnPointOneBitOff()
+        {
+            SimSession s = SimSession.Create(DemoRecipes.TerrainMatch(), TerrainDemo.MapBytes());
+            FrameView f = s.Current;
+            Dirty(PointCheck.Run(Copy(f, p => new ViewPoint(p.Id, Up(p.X), p.Z, p.Radius, p.Owner, p.Capturing, p.Progress)), s), 6, false, 0, 0, 0, 1, "x");
+            Dirty(PointCheck.Run(Copy(f, p => new ViewPoint(p.Id, p.X, Up(p.Z), p.Radius, p.Owner, p.Capturing, p.Progress)), s), 6, false, 0, 0, 0, 1, "z");
+            Dirty(PointCheck.Run(Copy(f, p => new ViewPoint(p.Id, p.X, p.Z, Up(p.Radius), p.Owner, p.Capturing, p.Progress)), s), 6, false, 0, 0, 0, 1, "radius");
         }
 
         [Test]

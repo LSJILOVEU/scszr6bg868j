@@ -159,6 +159,15 @@ namespace WarCore.Unity.Tests
         }
 
         [Test]
+        public void L8b_ShotPrefixIsAPlainFileName()
+        {
+            foreach (string good in new[] { "L8b", "L8b-A3a", "L8b_x1" })
+                Assert.That(TerrainHost.IsShotPrefix(good), Is.True, good);
+            foreach (string bad in new[] { null, "", "x", "l8b", "L8b/x", "L8b\\x", "L8b/../x", "/tmp/L8b", "L8b.x", "L8b x" })
+                Assert.That(TerrainHost.IsShotPrefix(bad), Is.False, bad ?? "null");
+        }
+
+        [Test]
         public void L8b_A3aReplicaIsClean()
         {
             using (Scene s = Build(SimSession.Create(A3aDemo.Recipe(), A3aDemo.MapBytes())))

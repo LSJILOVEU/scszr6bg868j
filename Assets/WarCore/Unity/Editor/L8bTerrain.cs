@@ -42,6 +42,17 @@ namespace WarCore.Unity.Editor
                     return;
                 }
             }
+            string prefix = Environment.GetEnvironmentVariable("WARCORE_SHOT_PREFIX");
+            if (string.IsNullOrEmpty(prefix))
+                prefix = demo == TerrainHost.A3aDemoName ? TerrainHost.DefaultPrefix + "-A3a" : TerrainHost.DefaultPrefix;
+            if (!TerrainHost.IsShotPrefix(prefix))
+            {
+                Debug.LogError("L8b: WARCORE_SHOT_PREFIX must be a plain file name starting with " + TerrainHost.DefaultPrefix
+                    + " (letters, digits, '-', '_'); got '" + prefix + "'. Not entering Play mode.");
+                if (Batch)
+                    EditorApplication.Exit(2);
+                return;
+            }
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
                 return;
             EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
@@ -51,9 +62,6 @@ namespace WarCore.Unity.Editor
             if (capture)
                 PlayModeWindow.SetCustomRenderingResolution(1920, 1080, "WarCore L8b shots");
             string layer = Environment.GetEnvironmentVariable("WARCORE_TERRAIN_LAYER");
-            string prefix = Environment.GetEnvironmentVariable("WARCORE_SHOT_PREFIX");
-            if (string.IsNullOrEmpty(prefix))
-                prefix = demo == TerrainHost.A3aDemoName ? TerrainHost.DefaultPrefix + "-A3a" : TerrainHost.DefaultPrefix;
             SessionState.SetString(TerrainHost.DemoKey, demo);
             SessionState.SetString(TerrainHost.LayerKey, string.IsNullOrEmpty(layer) ? TerrainHost.DefaultLayer : layer);
             SessionState.SetString(TerrainHost.ShotDirKey, dir);

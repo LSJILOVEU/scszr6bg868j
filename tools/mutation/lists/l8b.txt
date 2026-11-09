@@ -181,3 +181,23 @@ original:
 | if (layerId != LayerId) return files.TryRead(layerId, out text, out location);
 replacement:
 | if (layerId != LayerId) { text = null; location = "demo:" + layerId; return false; }
+
+[l8b-16-no-z-bounds]
+file = Assets/WarCore/Presentation/Bridge/Features/PointCheck.cs
+filter = FullyQualifiedName~PointCheck|FullyQualifiedName~L8bBase|FullyQualifiedName~A3aDemo
+expect = WarCore.Tests.PointCheckTests.PointCheck_CentreOffTheMapInZ
+note = rule (o) checks X only (review addition)
+original:
+| if (cx < 0 || cx >= map.Width || cz < 0 || cz >= map.Depth)
+replacement:
+| if (cx < 0 || cx >= map.Width)
+
+[l8b-17-view-tolerance]
+file = Assets/WarCore/Presentation/Bridge/Features/PointCheck.cs
+filter = FullyQualifiedName~PointCheck|FullyQualifiedName~L8bBase|FullyQualifiedName~A3aDemo
+expect = WarCore.Tests.PointCheckTests.PointCheck_DrawnPointOneBitOff
+note = rule (v) compares within 1e-3 instead of bit for bit (review addition)
+original:
+| private static bool Same(float a, float b) => BitConverter.SingleToInt32Bits(a) == BitConverter.SingleToInt32Bits(b);
+replacement:
+| private static bool Same(float a, float b) => Math.Abs(a - b) < 1e-3f;

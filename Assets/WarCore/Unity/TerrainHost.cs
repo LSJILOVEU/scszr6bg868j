@@ -35,6 +35,7 @@ namespace WarCore.Unity
         private string hud = "";
         private GUIStyle style;
         private bool firstShotLogged;
+        private string writeError;
 
         private void Awake()
         {
@@ -68,7 +69,10 @@ namespace WarCore.Unity
                 session = null;
                 if (dir != "")
                 {
-                    File.WriteAllText(Path.Combine(dir, prefix + "-selfcheck-failed.txt"), problems);
+                    string error = IsShotPrefix(prefix) ? TryWrite(() => File.WriteAllText(Path.Combine(dir, prefix + "-selfcheck-failed.txt"), problems))
+                        : "bad shot prefix";
+                    if (error != null)
+                        Debug.LogError("L8b self-check report not written: " + error);
 #if UNITY_EDITOR
                     if (Environment.GetEnvironmentVariable("WARCORE_EXIT_AFTER_SHOTS") == "1")
                         UnityEditor.EditorApplication.Exit(1);
@@ -82,6 +86,37 @@ namespace WarCore.Unity
                 capturing = true;
                 StartCoroutine(Capture(dir));
             }
+        }
+
+        // A shot prefix is a plain file name starting with L8b: letters, digits, '-' or '_' only, so every output stays
+        // flat in the shot directory.
+        public static bool IsShotPrefix(string prefix)
+        {
+            if (string.IsNullOrEmpty(prefix) || !prefix.StartsWith(DefaultPrefix, StringComparison.Ordinal))
+                return false;
+            foreach (char c in prefix)
+                if (!(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '-' || c == '_'))
+                    return false;
+            return true;
+        }
+
+        // Capture failed (a picture or the csv could not be written): log it, stop, and in automatic mode exit with 1.
+        private void Fail(string what)
+        {
+            capturing = false;
+            session = null;
+            Debug.LogError("L8b capture failed: " + what);
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+            if (Environment.GetEnvironmentVariable("WARCORE_EXIT_AFTER_SHOTS") == "1")
+                UnityEditor.EditorApplication.Exit(1);
+#endif
+        }
+
+        private static string TryWrite(Action write)
+        {
+            try { write(); return null; }
+            catch (Exception e) { return e.GetType().Name + ": " + e.Message; }
         }
 
         private static Material NewMaterial(Color color)
@@ -220,8 +255,18 @@ namespace WarCore.Unity
         {
             for (int i = 0; i < 30; i++)
                 yield return null; // let the editor finish compiling shaders before the first picture
+            if (!IsShotPrefix(prefix))
+            {
+                Fail("shot prefix '" + prefix + "' is not a plain file name starting with " + DefaultPrefix);
+                yield break;
+            }
             string csv = Path.Combine(dir, prefix + "-shots.csv");
-            File.WriteAllText(csv, "file,tick,hash\n");
+            string error = TryWrite(() => File.WriteAllText(csv, "file,tick,hash\n"));
+            if (error != null)
+            {
+                Fail(csv + ": " + error);
+                yield break;
+            }
             var plan = new ShotPlan();
             var anchors = new List<ShotAnchor>();
             long last = a3a ? A3aLastTick : MatchLimit, frame = 0;
@@ -245,15 +290,33 @@ namespace WarCore.Unity
                 foreach (string name in names)
                 {
                     yield return Write(Path.Combine(dir, name), false);
-                    File.AppendAllText(csv, FormattableString.Invariant($"{name},{session.Tick},{session.StateHash:X16}\n"));
+                    string row = FormattableString.Invariant($"{name},{session.Tick},{session.StateHash:X16}\n");
+                    writeError = writeError ?? TryWrite(() => File.AppendAllText(csv, row));
+                    if (writeError != null)
+                    {
+                        Fail(writeError);
+                        yield break;
+                    }
                 }
                 yield return Write(Path.Combine(dir, FormattableString.Invariant($"{prefix}-frame-{frame++:0000}.png")), false);
+                if (writeError != null)
+                {
+                    Fail(writeError);
+                    yield break;
+                }
                 if (!a3a && session.IsFinished)
                     break;
             }
             if (!a3a)
                 for (int i = 0; i < HoldFrames; i++)
+                {
                     yield return Write(Path.Combine(dir, FormattableString.Invariant($"{prefix}-frame-{frame++:0000}.png")), true);
+                    if (writeError != null)
+                    {
+                        Fail(writeError);
+                        yield break;
+                    }
+                }
             capturing = false;
             Debug.Log(FormattableString.Invariant($"L8b shots written to {dir}: {frame} frames; last tick {session.Tick}, hash {session.StateHash:X16}"));
 #if UNITY_EDITOR
@@ -269,8 +332,13 @@ namespace WarCore.Unity
             yield return null;
             yield return new WaitForEndOfFrame();
             Texture2D image = ScreenCapture.CaptureScreenshotAsTexture();
-            File.WriteAllBytes(path, image.EncodeToPNG());
+            string error = TryWrite(() => File.WriteAllBytes(path, image.EncodeToPNG()));
             Destroy(image);
+            if (error != null)
+            {
+                writeError = path + ": " + error;
+                yield break;
+            }
             if (!firstShotLogged)
             {
                 firstShotLogged = true;
