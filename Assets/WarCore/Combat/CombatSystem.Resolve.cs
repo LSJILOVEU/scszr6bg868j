@@ -79,6 +79,7 @@ namespace WarCore.Combat
             int roll = sim.Rng.NextInt(hitStream, 65536);
             long damage = pack.Resolver.DamageRaw(in weapon, falloff, roll, pack.MaxHealthRaw);
             StableId source = Entities.StableOf(shooter), victim = Entities.StableOf(target);
+            if (Shielded(victim, tick)) damage = 0;
             c.Damage(sim.GameplayTarget(victim), new GameplayApplyKey(source, (ulong)tick, 0, source, (ulong)tick, 0), 1, damage);
             Entities.Set(combatants, shooter, Settle(in unit, in weapon, tick, spreadStored, spreadLast));
             fires[fireCount++] = new FireRecord(source, victim, origin, recordEnd, distance, damage, unit.Team, outcome);

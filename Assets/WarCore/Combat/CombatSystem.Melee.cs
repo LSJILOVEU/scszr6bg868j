@@ -165,7 +165,8 @@ namespace WarCore.Combat
             {
                 StableId victim = meleeTargets[i].Id;
                 long damage = spec.Damage.Raw;
-                if (pack.HasBlock && TryBlock(meleeTargets[i].Entity, origin, out BlockSpec shield))
+                if (Shielded(victim, tick)) damage = 0;
+                else if (pack.HasBlock && TryBlock(meleeTargets[i].Entity, origin, out BlockSpec shield))
                 {
                     damage = shield.Through(damage);
                     if (damage == 0)

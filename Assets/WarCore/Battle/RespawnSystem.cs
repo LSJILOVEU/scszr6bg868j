@@ -8,9 +8,11 @@ namespace WarCore.Battle
     // Player respawn: RespawnTicks after the controlled unit died, the first reserve of its team (in Capture() order) is deployed
     // at the team's owned, uncontested spawn point nearest the body (else the nearest team base), and control switches to it only
     // once that deployment succeeded. The anchor is chosen again on every tick until then, so a failed deployment retries the same
-    // anchor unless a point became contested or free meanwhile. No state of its own: the death tick lives in the Sim, the current
-    // target in the control system, and the delay in the pack digest.
-    public sealed class RespawnSystem : IRetainedGameplaySystem
+    // anchor unless a point became contested or free meanwhile. The death tick lives in the Sim, the current target in the control
+    // system, and the delays in the pack digest. With a positive RespawnGuardTicks the unit switched to takes no combat damage on
+    // ticks [switch, switch + guard - 1] (IDamageGuard, bound to CombatSystem at assembly); that one slot is this system's only state,
+    // saved and hashed only when the guard is on, so a world without it keeps its old bytes.
+    public sealed class RespawnSystem : IRetainedGameplaySystem, IDamageGuard
     {
         private readonly Simulation sim;
         private readonly CombatSystem combat;
@@ -21,6 +23,8 @@ namespace WarCore.Battle
         private readonly EntityStage stage;
         private readonly ComponentType<Position> positions;
         private readonly ComponentType<Combatant> combatants;
+        private StableId guarded;
+        private long guardEnd;
 
         public RespawnSystem(Simulation sim, CombatSystem combat, MatchPack pack, CaptureSystem capture, IUnitDeployer deployer, IControlTarget controlled)
         {
@@ -29,7 +33,7 @@ namespace WarCore.Battle
         }
         public int Order => 4;
         public string StateTypeId => "battle.respawn";
-        public int StateVersion => 1;
+        public int StateVersion => pack.RespawnGuardTicks > 0 ? 2 : 1;
 
         public void Step(SimContext c)
         {
@@ -52,6 +56,7 @@ namespace WarCore.Battle
                     default, SimFix.Ratio(2 * (slot / pack.GridColumns) - pack.GridRows + 1, 2) * pack.GridSpacing);
                 if (!deployer.TryDeploy(reserve, anchor + offset)) continue;
                 controlled.Switch(c, reserve);
+                if (pack.RespawnGuardTicks > 0) { guarded = combat.Entities.StableOf(reserve); guardEnd = c.Clock.Tick + pack.RespawnGuardTicks; }
                 return;
             }
         }
@@ -87,8 +92,15 @@ namespace WarCore.Battle
             anchor = point; best = distance; found = true;
         }
 
-        public void SaveState(SimStateWriter writer) { }
-        public void LoadState(SimStateReader reader) { }
-        public void WriteState(StateHash hash) { hash.Add(StateTypeId); hash.Add(StateVersion); hash.Add(pack.RespawnTicks); }
+        // Pure read: the default identity matches no unit, so nothing is shielded before the first switch.
+        public bool Shields(StableId victim, long tick) => pack.RespawnGuardTicks > 0 && victim.Value != 0 && victim.Equals(guarded) && tick < guardEnd;
+
+        public void SaveState(SimStateWriter writer) { if (pack.RespawnGuardTicks > 0) { writer.UInt64(guarded.Value); writer.Int64(guardEnd); } }
+        public void LoadState(SimStateReader reader) { if (pack.RespawnGuardTicks > 0) { guarded = new StableId(reader.UInt64()); guardEnd = reader.Int64(); } }
+        public void WriteState(StateHash hash)
+        {
+            hash.Add(StateTypeId); hash.Add(StateVersion); hash.Add(pack.RespawnTicks);
+            if (pack.RespawnGuardTicks > 0) { hash.Add(pack.RespawnGuardTicks); hash.Add(guarded.Value); hash.Add(guardEnd); }
+        }
     }
 }
