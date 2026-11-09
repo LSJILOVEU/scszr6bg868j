@@ -18,16 +18,17 @@ namespace WarCore.Battle
         private readonly FailedSlotMemory memory;
         private readonly TargetMemory contacts;
         private readonly TargetSearch search;
+        private readonly TargetSuppress suppress;
         private readonly GuardSlots slots;
         // Rebuilt every Step, never persisted: who reserves a slot (active order to it) and who stands at it.
         private readonly bool[] reservedHas, standingHas;
         private readonly ulong[] reservedBy, standingBy;
         public SimpleAiSystem(CombatSystem combat, CombatPack weapons, MatchPack pack, CaptureSystem capture, IMoveOrders moves,
             IControlTarget controlled = null, FailedSlotMemory memory = null, TargetMemory contacts = null,
-            TargetSearch search = null)
+            TargetSearch search = null, TargetSuppress suppress = null)
         {
             this.combat = combat; this.weapons = weapons; this.pack = pack; this.capture = capture; this.moves = moves;
-            this.controlled = controlled; this.memory = memory; this.contacts = contacts; this.search = search;
+            this.controlled = controlled; this.memory = memory; this.contacts = contacts; this.search = search; this.suppress = suppress;
             slots = new GuardSlots(pack.Points);
             reservedHas = new bool[slots.Total]; standingHas = new bool[slots.Total];
             reservedBy = new ulong[slots.Total]; standingBy = new ulong[slots.Total];
@@ -54,6 +55,8 @@ namespace WarCore.Battle
                 if ((c.Clock.Tick + (long)(id.Value % (ulong)pack.ThinkInterval)) % pack.ThinkInterval != 0) continue;
                 if (unit.Weapon >= 0 && combat.Pack.Selector.TrySelect(combat, entity, weapons.Weapons[unit.Weapon].FalloffEnd, out EntityId seen))
                 { contacts?.Saw(id, seen, c.Clock.Tick); if (moving) StopUnit(id, here, target); continue; }
+                // Nothing in sight: a remembered target may be suppressed (fire at where it was last seen) from this tick on.
+                if (suppress != null && unit.Weapon >= 0) suppress.Decide(id, c.Clock.Tick);
                 // Nothing in sight: a remembered target comes before the points (go to where it was last seen, stand, give up).
                 if (search != null && unit.Weapon >= 0)
                 {

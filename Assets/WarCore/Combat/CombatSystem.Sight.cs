@@ -72,14 +72,18 @@ namespace WarCore.Combat
             !shooter.Equals(candidate) && Entities.TryGet(combatants, candidate, out Combatant other)
             && Unit(shooter).Team != 0 && other.Team == Unit(shooter).Team && !IsDead(candidate);
 
-        public bool Visible(EntityId shooter, EntityId target)
+        public bool Visible(EntityId shooter, EntityId target) => LineClear(AimPoint(Point(shooter)), AimPoint(Point(target)));
+
+        // Line of sight from the shooter to a point on the ground (both lifted to the aim height), walls only.
+        public bool Visible(EntityId shooter, SimVec3 point) => LineClear(AimPoint(Point(shooter)), AimPoint(point));
+
+        // The one line-of-sight judgement: a horizontal zero length is clear, otherwise nothing of the wall layer on the segment.
+        // Explicit AtTarget intents keep the wall-only line of sight; the Aimed and Auto paths use Trace.
+        private bool LineClear(SimVec3 from, SimVec3 to)
         {
-            var from = AimPoint(Point(shooter)); var to = AimPoint(Point(target));
             if (Horizontal(to - from).LengthSquared.Sign == 0) return true;
             var delta = to - from;
-            // Walls, then (L9) the ground on the same eye line. Explicit AtTarget intents use this; Aimed and Auto use Trace.
-            if (sim.SpatialQuery.Any(SpatialQueries.Ray(from, delta, delta.Length, wallMask))) return false;
-            return ground == null || !ground.TryFirstBelow(from, to, out _);
+            return !sim.SpatialQuery.Any(SpatialQueries.Ray(from, delta, delta.Length, wallMask));
         }
 
         private enum Struck : byte { Open, Wall, Enemy, Friend }
@@ -122,6 +126,17 @@ namespace WarCore.Combat
 
         // AI check: is a living teammate the first thing on the straight line to the chosen target (no spread)?
         internal bool AllyBlocks(EntityId shooter, SimVec3 origin, SimVec3 direction) =>
-            Trace(shooter, origin, direction, direction.Length, out _, out _, out _) == Struck.Friend;
+            AllyBlocks(shooter, origin, direction, direction.Length);
+        internal bool AllyBlocks(EntityId shooter, SimVec3 origin, SimVec3 direction, SimFix range) =>
+            Trace(shooter, origin, direction, range, out _, out _, out _) == Struck.Friend;
+
+        // AI read port: is a living teammate the first thing on the horizontal straight line from the shooter towards a point,
+        // traced out to range (the whole flight of a shot, not only to the point)? A point on the shooter gives no line.
+        public bool AllyBlocks(EntityId shooter, SimVec3 point, SimFix range)
+        {
+            SimVec3 origin = Point(shooter);
+            SimVec3 direction = Horizontal(point - origin);
+            return direction.LengthSquared.Sign != 0 && AllyBlocks(shooter, origin, direction, range);
+        }
     }
 }

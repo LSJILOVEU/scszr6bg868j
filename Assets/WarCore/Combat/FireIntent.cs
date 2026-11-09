@@ -11,11 +11,14 @@ namespace WarCore.Combat
         public readonly FireIntentKind Kind;
         public readonly SimVec3 Point;
         public readonly StableId Target;
+        // Aimed only: decline the shot (no ammo, no cooldown change) when a living teammate is the first thing on the line.
+        public readonly bool AvoidAllies;
 
-        private FireIntent(StableId shooter, FireIntentKind kind, SimVec3 point, StableId target)
-        { Shooter = shooter; Kind = kind; Point = point; Target = target; }
+        private FireIntent(StableId shooter, FireIntentKind kind, SimVec3 point, StableId target, bool avoidAllies = false)
+        { Shooter = shooter; Kind = kind; Point = point; Target = target; AvoidAllies = avoidAllies; }
 
         public static FireIntent Aimed(StableId shooter, SimVec3 point) => new FireIntent(shooter, FireIntentKind.Aimed, point, default);
         public static FireIntent AtTarget(StableId shooter, StableId target) => new FireIntent(shooter, FireIntentKind.AtTarget, default, target);
+        public static FireIntent Suppress(StableId shooter, SimVec3 point) => new FireIntent(shooter, FireIntentKind.Aimed, point, default, true);
     }
 }
