@@ -77,5 +77,19 @@ namespace WarCore.Tests
             Assert.That(after.X.Raw, Is.GreaterThan(before.X.Raw), "X moved");
             Assert.That(OnGround(w, after), Is.True);
         }
+
+        // K3 on terrain: a short step (0.2 m, under the 0.25 m radius) is judged by its end alone. This one passes the corner of
+        // the single-cell wall at (5, 10) on the Z slope at about 0.235 m in the middle while both ends are about 0.255 m from
+        // it (the flat ControlledSweepTests geometry moved 5 m in -X); a swept test would refuse it.
+        [Test]
+        public void L10Clearance_AShortStepGrazesACornerByItsEnd()
+        {
+            var w = Demo(4763, 9905, map: ZSlope());
+            SimVec3 before = At(w);
+            SimVec3[] p = Walk(w, 1000, -1000, 1);
+            Assert.That(p[0].X.Raw, Is.GreaterThan(before.X.Raw), "moved right");
+            Assert.That(p[0].Z.Raw, Is.LessThan(before.Z.Raw), "and down the slope");
+            Assert.That(OnGround(w, p[0]), Is.True);
+        }
     }
 }

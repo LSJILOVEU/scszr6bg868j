@@ -222,6 +222,11 @@ namespace WarCore.Unity
                 if (session.IsFinished)
                     break;
             }
+            if (!session.IsFinished)
+            {
+                Fail(FormattableString.Invariant($"the match did not end by tick {MatchLimit}"));
+                yield break;
+            }
             long real = frame;
             while (frame < VideoFrames)
             {
@@ -242,9 +247,14 @@ namespace WarCore.Unity
             Show(session.Current, session.Current, 0, hold);
             yield return null;
             yield return new WaitForEndOfFrame();
-            Texture2D image = ScreenCapture.CaptureScreenshotAsTexture();
-            string error = TryWrite(() => File.WriteAllBytes(path, image.EncodeToPNG()));
-            Destroy(image);
+            Texture2D image = null;
+            string error = TryWrite(() =>
+            {
+                image = ScreenCapture.CaptureScreenshotAsTexture();
+                File.WriteAllBytes(path, image.EncodeToPNG());
+            });
+            if (image != null)
+                Destroy(image);
             if (error != null)
                 writeError = path + ": " + error;
         }

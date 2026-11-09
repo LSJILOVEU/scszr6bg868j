@@ -65,6 +65,9 @@ namespace WarCore.Tests
             new[] { "grass", "mud", "road" },
             (x, z) => (byte)(z >= 14 && z < 18 ? 2 : x >= 36 && x < 40 && z >= 4 && z < 12 ? 1 : 0)));
 
+        // A flat 48 x 32 map: no height field, no surface table (a non-terrain map, so the flat branch steps the player).
+        internal static byte[] Flat() => WcMapWriter.Write(Wp23.Make(48, 32, 0, 10 * S, null, 4 * S));
+
         // The demo map's height units (half-metres), copied as a literal rule (TerrainDemoMap.cs:38-42 at the base).
         private static int DemoUnits(int i, int j) =>
             (i <= 10 ? 0 : i <= 22 ? i - 10 : i <= 34 ? 34 - i : 0) + (j >= 23 && i >= 14 && i <= 30 ? 2 : 0);

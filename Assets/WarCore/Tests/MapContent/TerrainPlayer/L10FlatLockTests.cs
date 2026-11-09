@@ -82,6 +82,37 @@ namespace WarCore.Tests
             Assert.That(string.Join(";", trail), Is.EqualTo(SlideTrail));
         }
 
+        // The same block with a frozen recipe (L10Fixture: literal match, no weapons; nothing read from production content).
+        // From the south-west the corner refuses the whole step and X only slides; from the west face X is refused and Z only
+        // slides. Each trail is recorded on the base; both slide kinds are counted so the trail cannot lose one unnoticed.
+        [TestCase(8600, 8600, "X")]
+        [TestCase(8600, 10600, "Z")]
+        public void L10Flat_FrozenSlide(long xMm, long zMm, string axis)
+        {
+            UnitSpawn[] units = { L10Fixture.U(1, xMm, zMm), L10Fixture.U(2, 70000, 35000, team: 2) };
+            var w = new M6World(M6World.RecipeOf(units, L10Fixture.QuietMatch(), L10Fixture.Off()).WithPlayer(1),
+                WcMapWriter.Write(M3TestWorld.Boxes(80, 40, (10, 10, 1, 3))));
+            var trail = new List<string>();
+            int xOnly = 0, zOnly = 0;
+            SimVec3 before = Point(w);
+            for (int tick = 1; tick <= 30; tick++)
+            {
+                w.Sim.Step(Input(1, 1));
+                SimVec3 p = Point(w);
+                bool dx = p.X.Raw != before.X.Raw, dz = p.Z.Raw != before.Z.Raw;
+                if (dx && !dz) xOnly++;
+                if (dz && !dx) zOnly++;
+                trail.Add(p.X.Raw + "," + p.Z.Raw);
+                before = p;
+            }
+            Assert.That((xOnly, zOnly), Is.EqualTo(axis == "X" ? (10, 0) : (0, 10)), "X-only and Z-only steps");
+            Assert.That(string.Join(";", trail), Is.EqualTo(axis == "X" ? FrozenTrailX : FrozenTrailZ));
+        }
+
+        private const string FrozenTrailX = SlideTrail; // equal to the trail above, recorded on the base with this frozen recipe
+        private const string FrozenTrailZ =
+            "572876,703948;582143,713215;591410,722482;600677,731749;609944,741016;619211,750283;628478,759550;637745,768817;637745,778084;637745,787351;637745,796618;637745,805885;637745,815152;637745,824419;637745,833686;637745,842953;637745,852220;637745,861487;647012,870754;656279,880021;665546,889288;674813,898555;684080,907822;693347,917089;702614,926356;711881,935623;721148,944890;730415,954157;739682,963424;748949,972691";
+
         private const string F5At60 = "2986499F0453B1F8|1|753655,0,655360";
         private const string DemoAt150 = "82603C921ABF193D|1|747109,0,655360";
         private const string DemoAt300 = "98AFAE2282E05A3B|1|26224,0,1441780";

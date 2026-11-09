@@ -198,3 +198,25 @@ original:
 |             SimVec3 next = point + displacement;
 replacement:
 |             SimVec3 next = point;
+
+[l10-19-face-the-whole-step]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~WarCore.Tests.L10
+expect = WarCore.Tests.L10GroundTests.L10Ground_SlideFacingFollowsTheTakenStep
+note = the facing follows the scaled whole step, not the candidate taken
+original:
+|             Face(unit, point, next);
+|             provisional[i].Point = next;
+replacement:
+|             Face(unit, point, point + d);
+|             provisional[i].Point = next;
+
+[l10-20-terrain-short-step-swept]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~WarCore.Tests.L10
+expect = WarCore.Tests.L10ClearanceTests.L10Clearance_AShortStepGrazesACornerByItsEnd
+note = on terrain a short step is swept like a long one
+original:
+|             if (flat.LengthSquared < new SimVec3(provisional[i].Radius, default, default).LengthSquared) return true;
+replacement:
+|             if (terrain == null && flat.LengthSquared < new SimVec3(provisional[i].Radius, default, default).LengthSquared) return true;

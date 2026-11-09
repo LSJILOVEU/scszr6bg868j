@@ -49,8 +49,9 @@ namespace WarCore.Tests
         {
             var w = Demo(12500, 6500, speed: 7500, rules: Fast());
             SimVec3 before = At(w);
-            SimVec3[] p = Walk(w, 1000, 0, 12);
+            SimVec3[] p = Walk(w, 1000, 0, 20);
             Assert.That(p[0].X.Raw - before.X.Raw, Is.EqualTo(32768));
+            for (int t = 1; t < p.Length; t++) Assert.That(p[t].X.Raw - p[t - 1].X.Raw, Is.EqualTo(32768), "tick " + (t + 1));
             foreach (SimVec3 q in p)
             {
                 Assert.That(OnGround(w, q), Is.True);
@@ -63,11 +64,13 @@ namespace WarCore.Tests
         [Test]
         public void L10Speed_AStepScaledToNothingDoesNothing()
         {
-            var grass = Demo(12500, 6500, speed: 900, facing: true);
-            SimVec3 g0 = At(grass);
-            grass.Session.SetPlayerInput(1, new PlayerInput(1, 0));
-            grass.Session.StepOnce();
-            Assert.That(At(grass).X.Raw - g0.X.Raw, Is.EqualTo(1), "grass moves one raw");
+            // Flat twin (no height field, no surface table: the flat branch) and grass (multiplier 1000): one raw per tick.
+            foreach (M6World moving in new[] { Demo(12500, 6500, speed: 900, facing: true, map: Flat()), Demo(12500, 6500, speed: 900, facing: true) })
+            {
+                SimVec3 before = At(moving);
+                SimVec3[] p = Walk(moving, 1, 0, 10);
+                foreach (SimVec3 now in p) { Assert.That(now.X.Raw - before.X.Raw, Is.EqualTo(1), "one raw per tick"); before = now; }
+            }
 
             var mud = Demo(37500, 8500, speed: 900, facing: true);
             var still = Demo(37500, 8500, speed: 900, facing: true);

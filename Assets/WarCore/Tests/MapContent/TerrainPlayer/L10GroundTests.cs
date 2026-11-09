@@ -83,6 +83,18 @@ namespace WarCore.Tests
             Assert.That(xOnly, Is.GreaterThanOrEqualTo(5), "X-only steps that changed height");
         }
 
+        // The facing follows the step actually taken: after an X-only slide under the cliff band it points along +X only.
+        [Test]
+        public void L10Ground_SlideFacingFollowsTheTakenStep()
+        {
+            var w = Demo(15500, 21500, facing: true);
+            SimVec3[] p = Walk(w, 707, 707, 20);
+            Assert.That((p[19].Z.Raw == p[18].Z.Raw, p[19].X.Raw > p[18].X.Raw), Is.EqualTo((true, true)), "the last step is X only");
+            UnitFacing f = w.Read<UnitFacing>(1);
+            Assert.That(f.Z.Raw, Is.EqualTo(0));
+            Assert.That(f.X.Raw, Is.GreaterThan(0));
+        }
+
         // Diagonal into the wall strip at x = 10 on the Z slope: X is refused, the Z-only candidate climbs.
         [Test]
         public void L10Ground_SlideAlongAWallTakesZOnly()
