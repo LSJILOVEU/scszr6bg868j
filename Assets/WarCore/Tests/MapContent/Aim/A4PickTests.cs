@@ -164,6 +164,47 @@ namespace WarCore.Tests
             Assert.That(noHit + grazing, Is.LessThanOrEqualTo(4 * 2 * (25 + 9)), "only edge grid points");
         }
 
+        // A ray with no x component (yaw 0 can give one): outside the field's x range it never meets the field, inside it does.
+        [Test]
+        public void A4Pick_RayParallelToTheXSides_InsideOrOutsideTheField()
+        {
+            ViewGround g = A4.RidgeGround();
+            float fy = (float)-Sin20, fz = (float)Cos20;
+            AimTarget outside = AimPick.PickRay(-1f, 10f, -20f, 0f, fy, fz, 0f, g, null, null);
+            Assert.That(outside.Kind, Is.EqualTo(AimKind.Plane), "x = -1 m, beside the field");
+            Assert.That(outside.YMm, Is.Null);
+            float t = (0f - 10f) / fy;
+            Assert.That(outside.X, Is.EqualTo(-1f)); Assert.That(outside.Z, Is.EqualTo(-20f + fz * t));
+            AimTarget inside = AimPick.PickRay(9f, 10f, -20f, 0f, fy, fz, 0f, g, null, null);
+            Assert.That(inside.Kind, Is.EqualTo(AimKind.Ground), "x = 9 m, over the front slope");
+            Assert.That(inside.X, Is.EqualTo(9f)); Assert.That(inside.YMm, Is.EqualTo(1500));
+        }
+
+        // YMm is the ground height at the millimetre point Sim will aim at (XMm, ZMm), not at the exact pick point. On the
+        // front slope (1:2) the two differ by up to 0.25 mm, which changes the rounded millimetre for some picks.
+        [Test]
+        public void A4Pick_HeightIsReadAtTheMillimetrePoint()
+        {
+            ViewGround g = A4.RidgeGround();
+            int checkedPicks = 0, differs = 0;
+            for (int k = 0; k < 4000; k++)
+            {
+                double px = 6.5 + k * 0.00137;
+                AimTarget a = East(px, (px - 6) / 2, g);
+                Assert.That(a.Kind, Is.EqualTo(AimKind.Ground), "px " + px);
+                var q = SimSession.TargetAt(a.XMm, 0, a.ZMm);
+                long atMm = Mm(g.ClosedHeightRaw(q.X.Raw, q.Z.Raw));
+                long atPick = Mm(g.ClosedHeightRaw((long)(a.X * 65536.0), (long)(a.Z * 65536.0)));
+                Assert.That(a.YMm, Is.EqualTo(atMm), "px " + px);
+                if (atPick != atMm) differs++;
+                checkedPicks++;
+            }
+            TestContext.Progress.WriteLine($"A4Pick millimetre height: {checkedPicks} picks, {differs} differ from the height at the pick point");
+            Assert.That(differs, Is.GreaterThan(0), "the case is exercised");
+        }
+
+        private static long Mm(long raw) => (long)Math.Round(raw * 1000.0 / 65536, MidpointRounding.AwayFromZero);
+
         [Test]
         public void A4Pick_FlatMap_IsAlwaysThePlanePick()
         {

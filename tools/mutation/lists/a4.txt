@@ -228,3 +228,23 @@ original:
 |             PlayerInput flat = Map(camera, ix, iy, x, y, w, h, mouseInWindow && !picked, primary, isKeyDown);
 replacement:
 |             PlayerInput flat = Map(camera, ix, iy, x, y, w, h, mouseInWindow, primary, isKeyDown);
+
+[a4-26-slab-parallel-always-inside]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~WarCore.Tests.A4|FullyQualifiedName~WarCore.Tests.Wp13Aimed|FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A4PickTests.A4Pick_RayParallelToTheXSides_InsideOrOutsideTheField
+note = a ray parallel to a pair of sides is always between them
+original:
+|             if (d == 0) return o >= lo && o <= hi && ta <= tb;
+replacement:
+|             if (d == 0) return ta <= tb;
+
+[a4-27-height-at-the-pick-point]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~WarCore.Tests.A4|FullyQualifiedName~WarCore.Tests.Wp13Aimed|FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A4PickTests.A4Pick_HeightIsReadAtTheMillimetrePoint
+note = YMm reads the height at the exact pick point instead of the millimetre point Sim uses
+original:
+|             long h = ground.ClosedHeightRaw(Clamp(q.X.Raw, ground.MinXRaw, ground.MaxXRaw), Clamp(q.Z.Raw, ground.MinZRaw, ground.MaxZRaw));
+replacement:
+|             long h = ground.ClosedHeightRaw(rx, rz);
