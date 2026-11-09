@@ -117,6 +117,7 @@ namespace WarCore.Interim
         private void StepControlled(SimContext context, int i, SimVec3 displacement)
         {
             if (displacement.LengthSquared.Sign == 0) return;
+            if (terrain != null) { StepControlledTerrain(context, i, displacement); return; }
             SimVec3 point = provisional[i].Point;
             SimVec3 next = point + displacement;
             if (!ControlledAllows(context, i, next))

@@ -15,8 +15,6 @@ namespace WarCore.Tests
     // E1 acceptance 4: the four height-field / surface-table combinations run from a description, and the terrain layer file.
     public sealed class E1bTerrainTests
     {
-        private const string TerrainPlayerGuard = "Player control on terrain maps is not supported before T1c.";
-
         [TestCase(false, false)]
         [TestCase(true, false)]
         [TestCase(false, true)]
@@ -49,8 +47,10 @@ namespace WarCore.Tests
 
             if (heights || surfaces)
             {
-                NotSupportedException e = Assert.Throws<NotSupportedException>(() => SimSession.Create(recipe.WithPlayer(1), result.WcMapBytes));
-                Assert.That(e.Message, Is.EqualTo(TerrainPlayerGuard));
+                // L10: a player is allowed on terrain maps; on a height field it stands on the plateau like the other units.
+                SimSession player = SimSession.Create(recipe.WithPlayer(1), result.WcMapBytes);
+                Assert.That(player.ControlledKey, Is.EqualTo(1UL));
+                if (heights) Assert.That(M3TestWorld.Position(player, 1).Y.Raw, Is.EqualTo(PlateauRaw));
             }
         }
 

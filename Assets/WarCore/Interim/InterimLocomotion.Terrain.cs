@@ -287,5 +287,33 @@ namespace WarCore.Interim
             }
             entities.Set(progress, unit, p);
         }
+
+        // The controlled unit's step on a terrain map. The surface under the unit scales the step as for AI units (floor toward
+        // zero per axis, so the four directions are symmetric) and the same base cap applies. The candidates and their clearance
+        // are the flat rule's (whole step, X only, Z only, each through ControlledAllows); each candidate is placed on the ground
+        // first. No MoveProgress: the player has no order whose progress could be accounted.
+        private void StepControlledTerrain(SimContext context, int i, SimVec3 displacement)
+        {
+            SimVec3 point = provisional[i].Point;
+            EntityId unit = provisional[i].Unit;
+            if (entities.Get(intents, unit).SpeedPerTick.Raw > MaxTerrainStepRaw)
+                throw new InvalidOperationException("Terrain worlds cap a unit step at 0.25 m per tick.");
+            long milli = grid.TryCell(point, out int cell) ? terrain.SpeedMilliAt(cell) : 1000;
+            var d = new SimVec3(SimFix.FromRaw(displacement.X.Raw * milli / 1000), default, SimFix.FromRaw(displacement.Z.Raw * milli / 1000));
+            if (d.X.Raw == 0 && d.Z.Raw == 0) return;
+            SimVec3 next = Grounded(point + d);
+            if (!ControlledAllows(context, i, next))
+            {
+                next = Grounded(point + new SimVec3(d.X, default, default));
+                if (d.X.Raw == 0 || !ControlledAllows(context, i, next))
+                {
+                    next = Grounded(point + new SimVec3(default, default, d.Z));
+                    if (d.Z.Raw == 0 || !ControlledAllows(context, i, next)) return;
+                }
+            }
+            context.SubmitMovement(unit, next);
+            Face(unit, point, next);
+            provisional[i].Point = next;
+        }
     }
 }

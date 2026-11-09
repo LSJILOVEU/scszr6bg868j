@@ -25,13 +25,13 @@ namespace WarCore.Tests
             foreach (string piece in new[]
             {
                 "Unsupported mover", "require map bytes", "Battle requires combat and crowd movement", "Player control requires InterimCrowd",
-                "Terrain maps (height field or surface table) need a path or crowd mover", "Player control on terrain maps is not supported",
+                "Terrain maps (height field or surface table) need a path or crowd mover",
                 "A terrain map needs a content pack with terrain rules", "Wall layers must not share the mover layer",
                 "is not on standable ground", "Player key does not match", "Player key must name a deployed unit",
                 "A crowd pass rule requires crowd movement and combat", "The block AI needs combat with block specs and facing",
             })
                 Assert.That(all, Does.Contain(piece), piece);
-            Assert.That(AssemblyGuardGolden.Lines.Count(l => l.EndsWith("|OK")), Is.EqualTo(2));
+            Assert.That(AssemblyGuardGolden.Lines.Count(l => l.EndsWith("|OK")), Is.EqualTo(3));
         }
     }
 }

@@ -17,11 +17,9 @@ namespace WarCore.Presentation
 
         public override void Prepare(WorldAssembly a)
         {
-            // Order matters (the tests pin it): mover kind, then the player, then a missing pack, then the derivation.
+            // Order matters (the tests pin it): mover kind, then a missing pack, then the derivation.
             if (!a.Path)
                 throw new NotSupportedException("Terrain maps (height field or surface table) need a path or crowd mover.");
-            if (a.Recipe.PlayerKey.HasValue)
-                throw new NotSupportedException("Player control on terrain maps is not supported before T1c.");
             if (a.Recipe.TerrainPack == null)
                 throw new ArgumentException("A terrain map needs a content pack with terrain rules (WorldRecipe.WithTerrainRules).", "recipe");
             a.Terrain = TerrainDerivation.Derive(a.Map, a.Recipe.TerrainPack);
