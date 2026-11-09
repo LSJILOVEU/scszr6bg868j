@@ -91,25 +91,80 @@ namespace WarCore.Tests
             return w.ToArray();
         }
 
-        // 7(d): hand-written bytes against a registered world: keys out of order, a negative sighting, a start before the
-        // sighting and a count beyond the entity capacity are refused with their messages; the system's own 32 bytes load.
+        // 7(d): hand-written bytes against a registered world holding A's entry (A, 46, 56). LoadState is not transactional:
+        // the length and the count are checked before the entries are cleared, so a refusal there keeps the old entry; a
+        // refused record clears the old entries and keeps the records read before it. Each bad input on a fresh world.
         [Test]
-        public void Load_RejectsBadBytes()
+        public void Load_OtherLength_KeepsTheEntries()
+        {
+            M6World w = RunTo(Ai, 100);
+            Assert.That(Assert.Throws<SimSnapshotException>(() => w.System<TargetSuppress>().LoadState(new SimStateReader(Bytes(99, 1, (A3b.IdA, 46, 56))))).Message, Is.EqualTo(LengthDiffers));
+            Assert.That(A3b.Count(w), Is.EqualTo(1));
+            Assert.That(A3b.Entry(w, A3b.KeyA, out long seen, out long since), Is.True);
+            Assert.That(seen, Is.EqualTo(A3b.Seen)); Assert.That(since, Is.EqualTo(A3b.Since));
+        }
+
+        [Test]
+        public void Load_CountBeyondCapacity_KeepsTheEntries()
+        {
+            M6World w = RunTo(Ai, 100);
+            Assert.That(Assert.Throws<SimSnapshotException>(() => w.System<TargetSuppress>().LoadState(new SimStateReader(Bytes(100, w.Combat.Entities.Capacity + 1)))).Message,
+                Is.EqualTo("Snapshot count exceeds its section bounds."));
+            Assert.That(A3b.Count(w), Is.EqualTo(1));
+            Assert.That(A3b.Entry(w, A3b.KeyA, out _, out _), Is.True);
+        }
+
+        [Test]
+        public void Load_KeysOutOfOrder_KeepsTheRecordsBefore()
+        {
+            M6World w = RunTo(Ai, 100);
+            Assert.That(Assert.Throws<SimSnapshotException>(() => w.System<TargetSuppress>().LoadState(new SimStateReader(Bytes(100, 2, (A3b.IdA2, 64, 74), (A3b.IdA, 46, 56))))).Message, Is.EqualTo(NotIncreasing));
+            Assert.That(A3b.Count(w), Is.EqualTo(1));
+            Assert.That(A3b.Entry(w, A3b.KeyA, out _, out _), Is.False, "the old entry is gone");
+            Assert.That(A3b.EntryOf(w, A3b.IdA2, out long seen, out long since), Is.True, "the first record stays");
+            Assert.That(seen, Is.EqualTo(64)); Assert.That(since, Is.EqualTo(74));
+        }
+
+        [Test]
+        public void Load_DuplicateKey_Refused()
+        {
+            M6World w = RunTo(Ai, 100);
+            Assert.That(Assert.Throws<SimSnapshotException>(() => w.System<TargetSuppress>().LoadState(new SimStateReader(Bytes(100, 2, (A3b.IdA, 46, 56), (A3b.IdA, 46, 56))))).Message, Is.EqualTo(NotIncreasing));
+            Assert.That(A3b.Count(w), Is.EqualTo(1));
+            Assert.That(A3b.Entry(w, A3b.KeyA, out long seen, out long since), Is.True);
+            Assert.That(seen, Is.EqualTo(46)); Assert.That(since, Is.EqualTo(56));
+        }
+
+        [Test]
+        public void Load_NegativeSeen_ClearsTheEntries()
+        {
+            M6World w = RunTo(Ai, 100);
+            Assert.That(Assert.Throws<SimSnapshotException>(() => w.System<TargetSuppress>().LoadState(new SimStateReader(Bytes(100, 1, (A3b.IdA, -1, 56))))).Message, Is.EqualTo(SeenNegative));
+            Assert.That(A3b.Count(w), Is.EqualTo(0));
+        }
+
+        [Test]
+        public void Load_StartBeforeSighting_ClearsTheEntries()
+        {
+            M6World w = RunTo(Ai, 100);
+            Assert.That(Assert.Throws<SimSnapshotException>(() => w.System<TargetSuppress>().LoadState(new SimStateReader(Bytes(100, 1, (A3b.IdA, 46, 45))))).Message, Is.EqualTo(SincePrecedes));
+            Assert.That(A3b.Count(w), Is.EqualTo(0));
+        }
+
+        // The system's own 32 bytes load back into a world whose entries were cleared by a refused record.
+        [Test]
+        public void Load_OwnBytes_RestoreTheEntry()
         {
             M6World w = RunTo(Ai, 100);
             TargetSuppress s = w.System<TargetSuppress>();
             byte[] own = Own(w);
-            Assert.That(Assert.Throws<SimSnapshotException>(() => s.LoadState(new SimStateReader(Bytes(100, 2, (A3b.IdA2, 64, 74), (A3b.IdA, 46, 56))))).Message, Is.EqualTo(NotIncreasing));
-            Assert.That(Assert.Throws<SimSnapshotException>(() => s.LoadState(new SimStateReader(Bytes(100, 1, (A3b.IdA, -1, 56))))).Message, Is.EqualTo(SeenNegative));
-            Assert.That(Assert.Throws<SimSnapshotException>(() => s.LoadState(new SimStateReader(Bytes(100, 1, (A3b.IdA, 46, 45))))).Message, Is.EqualTo(SincePrecedes));
-            Assert.That(Assert.Throws<SimSnapshotException>(() => s.LoadState(new SimStateReader(Bytes(100, w.Combat.Entities.Capacity + 1)))).Message,
-                Is.EqualTo("Snapshot count exceeds its section bounds."));
-            Assert.That(Assert.Throws<SimSnapshotException>(() => s.LoadState(new SimStateReader(Bytes(99, 1, (A3b.IdA, 46, 56))))).Message, Is.EqualTo(LengthDiffers));
-            Assert.That(A3b.Count(w), Is.EqualTo(0), "a refused load leaves no entries");
+            Assert.Throws<SimSnapshotException>(() => s.LoadState(new SimStateReader(Bytes(100, 1, (A3b.IdA, -1, 56)))));
+            Assert.That(A3b.Count(w), Is.EqualTo(0));
             Assert.DoesNotThrow(() => s.LoadState(new SimStateReader(own)));
             Assert.That(A3b.Count(w), Is.EqualTo(1));
             Assert.That(A3b.Entry(w, A3b.KeyA, out long seen, out long since), Is.True);
             Assert.That(seen, Is.EqualTo(A3b.Seen)); Assert.That(since, Is.EqualTo(A3b.Since));
+            Assert.That(Own(w), Is.EqualTo(own));
         }
 
         // 7(e): a second shooter (key 4 at Cell(22,13), thinking phase 4) makes two entries at tick 100: (A, 46, 56) and

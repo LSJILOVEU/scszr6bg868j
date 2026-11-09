@@ -95,14 +95,15 @@ filter = FullyQualifiedName~WarCore.Tests.A3b
 expect = WarCore.Tests.A3bStateTests.Restore_ContinuesTheSameRun
 note = SaveState writes the sighting twice and loses the start tick
 original:
-|            { writer.UInt64(pair.Key); writer.Int64(pair.Value.Seen); writer.Int64(pair.Value.Since); }
+|                writer.UInt64(keys[i]); writer.Int64(e.Seen); writer.Int64(e.Since);
 replacement:
-|            { writer.UInt64(pair.Key); writer.Int64(pair.Value.Seen); writer.Int64(pair.Value.Seen); }
+|                writer.UInt64(keys[i]); writer.Int64(e.Seen); writer.Int64(e.Seen);
 
 [a3b-11-no-order-check]
 file = Assets/WarCore/Battle/Ai/TargetSuppress.cs
 filter = FullyQualifiedName~WarCore.Tests.A3b
-expect = WarCore.Tests.A3bStateTests.Load_RejectsBadBytes
+expect = WarCore.Tests.A3bStateTests.Load_KeysOutOfOrder_KeepsTheRecordsBefore
+expect = WarCore.Tests.A3bStateTests.Load_DuplicateKey_Refused
 note = LoadState accepts keys out of order
 original:
 |                SimStateReader.Require(i == 0 || key > previous, "AI suppression observers are not in strictly increasing order.");
@@ -131,7 +132,7 @@ replacement:
 [a3b-14-no-since-check]
 file = Assets/WarCore/Battle/Ai/TargetSuppress.cs
 filter = FullyQualifiedName~WarCore.Tests.A3b
-expect = WarCore.Tests.A3bStateTests.Load_RejectsBadBytes
+expect = WarCore.Tests.A3bStateTests.Load_StartBeforeSighting_ClearsTheEntries
 note = LoadState accepts a start before the sighting
 original:
 |                SimStateReader.Require(since >= seen, "AI suppression start precedes the sighting.");
@@ -143,9 +144,9 @@ filter = FullyQualifiedName~WarCore.Tests.A3b
 expect = WarCore.Tests.A3bStateTests.TwoShooters_WriteStateByHand
 note = WriteState leaves the start tick out of the hash
 original:
-| hash.Add(pair.Value.Seen); hash.Add(pair.Value.Since); }
+| hash.Add(keys[i]); hash.Add(e.Seen); hash.Add(e.Since);
 replacement:
-| hash.Add(pair.Value.Seen); }
+| hash.Add(keys[i]); hash.Add(e.Seen);
 
 [a3b-16-ignore-ally]
 file = Assets/WarCore/Combat/CombatSystem.cs
@@ -176,3 +177,23 @@ original:
 |                        if (intents[shooter.Id].AvoidAllies && AllyBlocks(shooter, origin, direction, weapon.FalloffEnd)) continue;
 replacement:
 |                        if (intents[shooter.Id].AvoidAllies && AllyBlocks(shooter, origin, direction, direction.Length)) continue;
+
+[a3b-19-order-not-strict]
+file = Assets/WarCore/Battle/Ai/TargetSuppress.cs
+filter = FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A3bStateTests.Load_DuplicateKey_Refused
+note = LoadState accepts a repeated observer key
+original:
+|                SimStateReader.Require(i == 0 || key > previous, "AI suppression observers are not in strictly increasing order.");
+replacement:
+|                SimStateReader.Require(i == 0 || key >= previous, "AI suppression observers are not in strictly increasing order.");
+
+[a3b-20-decline-draws]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A3bGateTests.AllyOnTheLine_DeclinedWhenConsumed
+note = a declined intent still draws a spread random number
+original:
+|                        if (intents[shooter.Id].AvoidAllies && AllyBlocks(shooter, origin, direction, weapon.FalloffEnd)) continue;
+replacement:
+|                        if (intents[shooter.Id].AvoidAllies && AllyBlocks(shooter, origin, direction, weapon.FalloffEnd)) { sim.Rng.NextInt(spreadStream, 65536); continue; }

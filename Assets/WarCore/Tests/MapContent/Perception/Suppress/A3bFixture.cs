@@ -89,11 +89,13 @@ namespace WarCore.Tests
         internal static int FireCount(M6World w) =>
             (int)typeof(ReactionFire).GetProperty("Count", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(w.System<ReactionFire>());
         // The suppression entry (Seen, Since) of a unit, read from the private dictionary (A3aFixture.cs Entry); false without one.
-        internal static bool Entry(M6World w, ulong key, out long seen, out long since)
+        internal static bool Entry(M6World w, ulong key, out long seen, out long since) => EntryOf(w, A3.Id(w, key).Value, out seen, out since);
+        // The same by the observer's stable id, for ids that name no spawned unit.
+        internal static bool EntryOf(M6World w, ulong id, out long seen, out long since)
         {
             var system = w.System<TargetSuppress>();
             object dict = typeof(TargetSuppress).GetField("entries", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(system);
-            var args = new object[] { A3.Id(w, key).Value, null };
+            var args = new object[] { id, null };
             bool found = (bool)dict.GetType().GetMethod("TryGetValue").Invoke(dict, args);
             seen = since = 0;
             if (!found) return false;

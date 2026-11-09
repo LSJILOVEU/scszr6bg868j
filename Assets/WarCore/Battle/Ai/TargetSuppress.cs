@@ -12,6 +12,9 @@ namespace WarCore.Battle
     // the suppression started. The entry goes when the memory no longer gives that sighting (expired, target dead, seen
     // again or replaced); a sighting is suppressed once, so an expired entry stays until its memory goes.
     //
+    // Entries live in a dictionary; their keys are kept sorted in a list sized to the entity capacity, so Step, save and
+    // hash walk the observers in increasing order without allocating.
+    //
     // Order 18, after the memory (13) and the AI fire state (14): the intent replaces the automatic decision for the tick.
     public sealed class TargetSuppress : IRetainedGameplaySystem
     {
@@ -21,8 +24,8 @@ namespace WarCore.Battle
         private readonly TargetMemory contacts;
         private readonly IMoveOrders moves;
         private readonly int ticks;
-        private readonly SortedDictionary<ulong, Entry> entries = new SortedDictionary<ulong, Entry>();
-        private readonly List<ulong> keys = new List<ulong>(), drop = new List<ulong>();
+        private readonly Dictionary<ulong, Entry> entries;
+        private readonly List<ulong> keys, drop;
 
         public TargetSuppress(CombatSystem combat, TargetMemory contacts, IMoveOrders moves, int ticks)
         {
@@ -31,6 +34,10 @@ namespace WarCore.Battle
             this.contacts = contacts ?? throw new ArgumentNullException(nameof(contacts));
             this.moves = moves ?? throw new ArgumentNullException(nameof(moves));
             this.ticks = ticks;
+            int capacity = combat.Entities.Capacity;
+            entries = new Dictionary<ulong, Entry>(capacity);
+            keys = new List<ulong>(capacity);
+            drop = new List<ulong>(capacity);
         }
 
         public int Order => 18;
@@ -43,15 +50,22 @@ namespace WarCore.Battle
         {
             if (!contacts.TryRecall(observer, tick, out _, out _, out long seen)) return;
             if (entries.TryGetValue(observer.Value, out Entry e) && e.Seen == seen) return;
-            entries[observer.Value] = new Entry { Seen = seen, Since = tick };
+            Put(observer.Value, new Entry { Seen = seen, Since = tick });
+        }
+
+        private void Put(ulong key, Entry entry)
+        {
+            if (!entries.ContainsKey(key)) keys.Insert(~keys.BinarySearch(key), key);
+            entries[key] = entry;
         }
 
         public void Step(SimContext c)
         {
             long tick = c.Clock.Tick;
-            keys.Clear(); keys.AddRange(entries.Keys); drop.Clear();
-            foreach (ulong key in keys)
+            drop.Clear();
+            for (int i = 0; i < keys.Count; i++)
             {
+                ulong key = keys[i];
                 Entry e = entries[key];
                 var observer = new StableId(key);
                 if (!contacts.TryRecall(observer, tick, out _, out SimVec3 lastKnown, out long seen) || seen != e.Seen) { drop.Add(key); continue; }
@@ -66,22 +80,30 @@ namespace WarCore.Battle
                     || !combat.Visible(shooter, lastKnown)) continue;
                 combat.Submit(c, FireIntent.Suppress(observer, lastKnown));
             }
-            foreach (ulong key in drop) entries.Remove(key);
+            for (int i = 0; i < drop.Count; i++)
+            {
+                ulong key = drop[i];
+                entries.Remove(key);
+                keys.RemoveAt(keys.BinarySearch(key));
+            }
         }
 
         public void SaveState(SimStateWriter writer)
         {
             writer.Int32(ticks);
-            writer.Int32(entries.Count);
-            foreach (KeyValuePair<ulong, Entry> pair in entries)
-            { writer.UInt64(pair.Key); writer.Int64(pair.Value.Seen); writer.Int64(pair.Value.Since); }
+            writer.Int32(keys.Count);
+            for (int i = 0; i < keys.Count; i++)
+            {
+                Entry e = entries[keys[i]];
+                writer.UInt64(keys[i]); writer.Int64(e.Seen); writer.Int64(e.Since);
+            }
         }
 
         public void LoadState(SimStateReader reader)
         {
             SimStateReader.Require(reader.Int32() == ticks, "AI suppression length differs.");
             int count = reader.Count(combat.Entities.Capacity);
-            entries.Clear();
+            entries.Clear(); keys.Clear();
             ulong previous = 0;
             for (int i = 0; i < count; i++)
             {
@@ -92,13 +114,18 @@ namespace WarCore.Battle
                 SimStateReader.Require(seen >= 0, "AI suppression seen tick is negative.");
                 SimStateReader.Require(since >= seen, "AI suppression start precedes the sighting.");
                 entries[key] = new Entry { Seen = seen, Since = since };
+                keys.Add(key);
             }
         }
 
         public void WriteState(StateHash hash)
         {
-            hash.Add(StateTypeId); hash.Add(StateVersion); hash.Add(ticks); hash.Add(entries.Count);
-            foreach (KeyValuePair<ulong, Entry> pair in entries) { hash.Add(pair.Key); hash.Add(pair.Value.Seen); hash.Add(pair.Value.Since); }
+            hash.Add(StateTypeId); hash.Add(StateVersion); hash.Add(ticks); hash.Add(keys.Count);
+            for (int i = 0; i < keys.Count; i++)
+            {
+                Entry e = entries[keys[i]];
+                hash.Add(keys[i]); hash.Add(e.Seen); hash.Add(e.Since);
+            }
         }
     }
 }

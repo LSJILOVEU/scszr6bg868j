@@ -87,6 +87,33 @@ namespace WarCore.Tests
             }
         }
 
+        // (v) with K = 3: the same beside a sense length, so the zero default is byte-identical to P3 whatever the other
+        // fields are; the tick-300 snapshot was recorded on the same main branch (fires 18, 48, 198, 258, 288, 333, 393).
+        [Test]
+        public void ZeroSuppress_WithSense_ByteIdenticalToP3()
+        {
+            const string off = "{ \"targetMemoryTicks\": 300, \"reactionTicks\": 15, \"senseTicks\": 3, \"burstShots\": 2, \"burstPauseTicks\": 45 }";
+            const string zero = "{ \"targetMemoryTicks\": 300, \"reactionTicks\": 15, \"senseTicks\": 3, \"burstShots\": 2, \"burstPauseTicks\": 45, \"suppressTicks\": 0 }";
+            M6World a = A3b.World(off), b = A3b.World(zero);
+            Assert.That(L4.Systems(b), Is.EqualTo(L4.Systems(a)));
+            Assert.That(L4.Systems(b), Does.Not.Contain("battle.ai-suppress"));
+            var fires = new List<long>();
+            for (long t = 1; t <= 400; t++)
+            {
+                A3b.Step(a, A3b.Back(t)); A3b.Step(b, A3b.Back(t));
+                Assert.That(b.Hash, Is.EqualTo(a.Hash), "tick " + t);
+                if (A3b.Fired(a)) fires.Add(t);
+                if (t == 300)
+                {
+                    byte[] x = a.Sim.SaveRetainedSnapshot(), y = b.Sim.SaveRetainedSnapshot();
+                    Assert.That(y, Is.EqualTo(x));
+                    Assert.That(x.Length, Is.EqualTo(5722));
+                    Assert.That(A3.Digest(x), Is.EqualTo(12323171008582189071UL));
+                }
+            }
+            Assert.That(fires, Is.EqualTo(A3b.Ticks(18, 48, 198, 258, 288, 333, 393)));
+        }
+
         // 8: the eight fields of the ai section written together each read their value.
         [Test]
         public void EightFields_EachRead()

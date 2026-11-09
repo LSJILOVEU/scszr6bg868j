@@ -60,11 +60,12 @@ namespace WarCore.Tests
         [Test]
         public void AllyOnTheLine_DeclinedWhenConsumed()
         {
-            var fired = new HashSet<long>();
+            ulong rng = 0; var spread = default(Combatant);
             List<long> fires = A3b.Run(A3b.World(A3b.Ai(300, 300), null, false, null, A3b.Friend()), 400, A3b.FScript, (x, t) =>
             {
                 if (t == 100)
                 {
+                    rng = P3.Rng(x); spread = x.Read<Combatant>(A3b.KeyA);
                     A3b.Place(x, A3b.KeyF, A3b.Mid);
                     Assert.That(x.Combat.AllyBlocks(A3b.A(x), A3b.P, A3b.R30), Is.True);
                     Assert.That(x.Combat.Visible(A3b.A(x), A3b.P), Is.True);
@@ -78,6 +79,11 @@ namespace WarCore.Tests
                     Assert.That(A3b.Same(A3b.At(x, A3b.KeyF), A3b.Mid), "F moved, tick " + t);
                     Assert.That(A3b.Due(x), Is.EqualTo(121000L), "due, tick " + t);
                     Assert.That(A3b.Ammo(x), Is.EqualTo(3), "ammo, tick " + t);
+                    // A declined shot draws no random number and leaves the spread state alone.
+                    Assert.That(P3.Rng(x), Is.EqualTo(rng), "rng, tick " + t);
+                    Combatant u = x.Read<Combatant>(A3b.KeyA);
+                    Assert.That(u.SpreadStored, Is.EqualTo(spread.SpreadStored), "spread, tick " + t);
+                    Assert.That(u.SpreadLastMilli, Is.EqualTo(spread.SpreadLastMilli), "spread time, tick " + t);
                 }
                 A3b.AssertNoFriendRecord(x);
             });
