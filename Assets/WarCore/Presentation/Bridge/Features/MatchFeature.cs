@@ -62,7 +62,15 @@ namespace WarCore.Presentation
                 search = new TargetSearch(combat.Entities, contacts, searchTicks);
                 sim.RegisterGameplay("battle.ai-search", search, SimSystemPhase.Requests);
             }
-            sim.RegisterGameplay("battle.ai", new SimpleAiSystem(combat, recipe.Combat, recipe.Match, capture, adapter, a.Controlled, memory, contacts, search), SimSystemPhase.Requests);
+            // Only with the memory on: a positive suppressTicks adds the suppressive fire; 0 (the default) adds nothing.
+            TargetSuppress suppress = null;
+            int suppressTicks = contacts != null ? recipe.TerrainPack.Section<AiRules>().SuppressTicks : 0;
+            if (suppressTicks > 0)
+            {
+                suppress = new TargetSuppress(combat, contacts, adapter, suppressTicks);
+                sim.RegisterGameplay("battle.ai-suppress", suppress, SimSystemPhase.Requests);
+            }
+            sim.RegisterGameplay("battle.ai", new SimpleAiSystem(combat, recipe.Combat, recipe.Match, capture, adapter, a.Controlled, memory, contacts, search, suppress), SimSystemPhase.Requests);
             sim.RegisterGameplay("battle.capture", capture, SimSystemPhase.Queries);
             sim.RegisterGameplay("battle.match", match, SimSystemPhase.Queries);
             a.Capture = capture; a.Reinforce = reinforce; a.Match = match;

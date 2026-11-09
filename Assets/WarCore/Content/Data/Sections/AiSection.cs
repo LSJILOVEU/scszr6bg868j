@@ -13,10 +13,13 @@ namespace WarCore.Content
         public int ReactionTicks { get; }
         // Ticks between two looks of an AI shooter at the battlefield; between them it keeps firing at the target it has. 1 looks every tick.
         public int SenseTicks { get; }
-        internal AiRules(int failedSlotTicks, int targetMemoryTicks = 0, int searchTicks = 0, int reactionTicks = 0, int senseTicks = 1)
+        // Ticks an AI unit keeps firing at its target's last known point after it lost sight of it; 0 turns the suppression off. Needs the memory.
+        public int SuppressTicks { get; }
+        internal AiRules(int failedSlotTicks, int targetMemoryTicks = 0, int searchTicks = 0, int reactionTicks = 0, int senseTicks = 1,
+            int suppressTicks = 0)
         {
             FailedSlotTicks = failedSlotTicks; TargetMemoryTicks = targetMemoryTicks; SearchTicks = searchTicks; ReactionTicks = reactionTicks;
-            SenseTicks = senseTicks;
+            SenseTicks = senseTicks; SuppressTicks = suppressTicks;
         }
     }
 
@@ -28,12 +31,13 @@ namespace WarCore.Content
         internal const int MaxSearchTicks = 1000000;
         internal const int MaxReactionTicks = 1000000;
         internal const int MaxSenseTicks = 1000000;
+        internal const int MaxSuppressTicks = 1000000;
         internal AiSection() : base(SectionKey) { }
 
         public override void Build(SectionBuild b)
         {
             ContentEntry entry = b.Single(Key);
-            int failed = 0, memory = 0, search = 0, reaction = 0, sense = 1;
+            int failed = 0, memory = 0, search = 0, reaction = 0, sense = 1, suppress = 0;
             if (entry != null)
             {
                 var r = new EntryReader(b.Pack, entry);
@@ -42,9 +46,10 @@ namespace WarCore.Content
                 if (r.Has("searchTicks")) search = r.Int("searchTicks", 0, MaxSearchTicks);
                 if (r.Has("reactionTicks")) reaction = r.Int("reactionTicks", 0, MaxReactionTicks);
                 if (r.Has("senseTicks")) sense = r.Int("senseTicks", 1, MaxSenseTicks);
+                if (r.Has("suppressTicks")) suppress = r.Int("suppressTicks", 0, MaxSuppressTicks);
                 r.Done();
             }
-            b.Publish(new AiRules(failed, memory, search, reaction, sense));
+            b.Publish(new AiRules(failed, memory, search, reaction, sense, suppress));
         }
     }
 }
