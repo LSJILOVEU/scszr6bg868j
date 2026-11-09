@@ -323,7 +323,9 @@ namespace WarCore.Presentation
                     nextPlayerInput = pendingPlayer[playerCount++].Input;
                 input = new InputFrame(
                     new SimVec3(SimFix.Ratio(nextPlayerInput.MoveXMilli, 1000), default, SimFix.Ratio(nextPlayerInput.MoveZMilli, 1000)),
-                    Target(nextPlayerInput.AimXMm, nextPlayerInput.AimZMm, groundRaw),
+                    nextPlayerInput.AimYMm.HasValue
+                        ? TargetAt(nextPlayerInput.AimXMm, nextPlayerInput.AimYMm.Value, nextPlayerInput.AimZMm)
+                        : Target(nextPlayerInput.AimXMm, nextPlayerInput.AimZMm, groundRaw),
                     primaryAttack: nextPlayerInput.Primary, block: nextPlayerInput.Block,
                     @throw: nextPlayerInput.Throw, skillSlot: nextPlayerInput.SkillSlot, squad: squad);
             }
@@ -411,6 +413,24 @@ namespace WarCore.Presentation
             (float)fire.Origin.X.Raw / SimFix.Scale, (float)fire.Origin.Z.Raw / SimFix.Scale,
             (float)fire.End.X.Raw / SimFix.Scale, (float)fire.End.Z.Raw / SimFix.Scale,
             fire.ShooterTeam, fire.DamageRaw > 0);
+
+        // A4: an aim point with its own height. X and Z convert and check exactly as in Target; Y = yMm / 1000 m.
+        internal static SimVec3 TargetAt(long xMm, long yMm, long zMm)
+        {
+            CheckAimY(yMm);
+            SimVec3 flat = Target(xMm, zMm);
+            var target = new SimVec3(flat.X, SimFix.Ratio(yMm, 1000), flat.Z);
+            target.ValidateWorld();
+            return target;
+        }
+
+        // The height bound of PlayerInput.AimYMm (the world limit, as for X and Z).
+        internal static void CheckAimY(long yMm)
+        {
+            const long limitMm = SimVec3.WorldLimitMetres * 1000L;
+            if (yMm < -limitMm || yMm > limitMm)
+                throw new ArgumentOutOfRangeException("aimYMm", "Aim height exceeds the world bounds.");
+        }
 
         internal static SimVec3 Target(long xMm, long zMm, long groundRaw = 0)
         {
