@@ -41,6 +41,32 @@ namespace WarCore.Tests
         [Test]
         public void Restore_MidPause() => Restored(60, new long[] { 70, 75, 80, 100, 105, 110, 130, 190, 195, 200 });
 
+        // A legal record with the count 0 and a latest shot above 0: the tenth round (130) emptied the magazine and reset
+        // the count. Saved on 150 (reloading) the record is (0, 130); restored, it hashes alike and fires 190, 195, 200.
+        [Test]
+        public void Restore_AfterTheEmptyingShot_CountZeroWithALatestShot()
+        {
+            P3.Trace straight = P3.Run(P2.Cast(), P1.Walk, Ai, 200);
+            M6World f = P3.RunTo(Ai, 150);
+            P3.Saved s = P3.Parse(P3.Payload(f.System<ReactionFire>()));
+            Assert.That(s.Count, Is.EqualTo(1));
+            Assert.That(s.Bursts, Is.EqualTo(new[] { (0, 130L) }), "the count reset by the emptying shot, the shot itself recorded");
+            Assert.That(s.Entries[0].First, Is.LessThan(130L));
+            byte[] snapshot = f.Sim.SaveRetainedSnapshot();
+            M6World b = P3.World(P2.Cast(), Ai);
+            Assert.DoesNotThrow(() => b.Sim.RestoreRetainedSnapshot(snapshot));
+            Assert.That(b.Hash, Is.EqualTo(straight.Hashes[150]));
+            Assert.That(P3.Parse(P3.Payload(b.System<ReactionFire>())).Bursts, Is.EqualTo(new[] { (0, 130L) }));
+            var fires = new List<long>();
+            for (long tick = 151; tick <= 200; tick++)
+            {
+                b.Sim.Step(P2.Drive(b, tick, P1.Walk));
+                Assert.That(b.Hash, Is.EqualTo(straight.Hashes[(int)tick]), "tick " + tick);
+                if (P1.Fired(b, P3.KeyA)) fires.Add(tick);
+            }
+            Assert.That(fires, Is.EqualTo(new long[] { 190, 195, 200 }));
+        }
+
         // 9(c): a { R 0, K 10, B 3, Q 20 } snapshot into a world of the same version with another B, another Q, or K = 1.
         [TestCase(10, 4, 20, "AI burst length differs.")]
         [TestCase(10, 3, 30, "AI burst pause differs.")]
@@ -157,6 +183,16 @@ namespace WarCore.Tests
             byte[] bytes = Payload7(out M6World w);
             Assert.DoesNotThrow(() => w.System<ReactionFire>().LoadState(new SimStateReader(bytes)));
             Assert.That(P3.Payload(w.System<ReactionFire>()), Is.EqualTo(bytes), "written back as read");
+        }
+
+        // A's record patched to the legal (0, 50): the count 0 with a latest shot inside the entry is accepted.
+        [Test]
+        public void Load_CountZeroWithALatestShot_IsAccepted()
+        {
+            byte[] bytes = Payload7(out M6World w);
+            Patch(bytes, 84, 0);
+            Assert.DoesNotThrow(() => w.System<ReactionFire>().LoadState(new SimStateReader(bytes)));
+            Assert.That(P3.Parse(P3.Payload(w.System<ReactionFire>())).Bursts, Is.EqualTo(new[] { (0, 50L), (0, 0L) }));
         }
 
         [TestCase(-1)]

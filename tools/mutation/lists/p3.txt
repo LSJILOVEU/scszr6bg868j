@@ -317,3 +317,23 @@ original:
 |                 SimStateReader.Require((fired == 0 && last == 0) || (last > 0 && firsts[slot] <= last && last <= lasts[slot]), "AI burst last shot is outside its entry.");
 replacement:
 
+[p3-22-count-zero-rejected]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P3
+expect = WarCore.Tests.P3StateTests.Restore_AfterTheEmptyingShot_CountZeroWithALatestShot
+expect = WarCore.Tests.P3StateTests.Load_CountZeroWithALatestShot_IsAccepted
+note = the right branch also demands a count above 0: the legal record (0, s) after an emptying shot is refused
+original:
+|                 SimStateReader.Require((fired == 0 && last == 0) || (last > 0 && firsts[slot] <= last && last <= lasts[slot]), "AI burst last shot is outside its entry.");
+replacement:
+|                 SimStateReader.Require((fired == 0 && last == 0) || (fired > 0 && last > 0 && firsts[slot] <= last && last <= lasts[slot]), "AI burst last shot is outside its entry.");
+
+[p3-23-last-shot-zero-accepted]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.P3
+expect = WarCore.Tests.P3StateTests.Load_LatestShotOutsideTheEntry_IsRefused
+note = the latest shot 0 is accepted whenever First is 0 (only the bounds are checked)
+original:
+|                 SimStateReader.Require((fired == 0 && last == 0) || (last > 0 && firsts[slot] <= last && last <= lasts[slot]), "AI burst last shot is outside its entry.");
+replacement:
+|                 SimStateReader.Require((fired == 0 && last == 0) || (firsts[slot] <= last && last <= lasts[slot]), "AI burst last shot is outside its entry.");

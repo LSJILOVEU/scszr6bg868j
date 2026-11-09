@@ -37,6 +37,10 @@ namespace WarCore.Tests
             return "{ " + string.Join(", ", parts) + " }";
         }
 
+        // The ai section with only the burst fields (reactionTicks and senseTicks left at their defaults).
+        internal static string AiBurst(int burst, int? pause = null) =>
+            pause == null ? "{ \"burstShots\": " + burst + " }" : "{ \"burstShots\": " + burst + ", \"burstPauseTicks\": " + pause.Value + " }";
+
         internal static WorldRecipe Recipe(UnitSpawn[] units, string ai, params IWorldOption[] extensions)
         {
             WorldRecipe r = A3.Recipe(units, A3.Load(P1.PackJson(ai))).WithCombat(Combat());

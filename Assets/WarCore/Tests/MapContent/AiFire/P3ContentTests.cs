@@ -47,19 +47,22 @@ namespace WarCore.Tests
             Assert.That(e.Message, Is.EqualTo(Prefix + field + "': " + message));
         }
 
-        // 11: a terrain world with only the burst set: exactly one battle.ai-fire (Requests, Order 14), version 3, and it is
-        // the decision combat calls (the rhythm of acceptance 2). With the pause left out (0) it registers and fires
-        // continuously.
+        // 11: a terrain world whose ai section holds only burstShots and burstPauseTicks (reactionTicks and senseTicks at
+        // their defaults 0 and 1): exactly one battle.ai-fire (Requests, Order 14), version 3, and it is the decision
+        // combat calls (the rhythm of acceptance 2). With the pause left out too (0) it registers and fires continuously.
         [Test]
         public void Assembly_BurstAlone_Registers()
         {
-            P3.Trace r = P3.Run(P2.Cast(), P1.Walk, P3.Ai(0, null, 3, 20), 300);
+            AiRules rules = Rules(P3.AiBurst(3, 20));
+            Assert.That((rules.ReactionTicks, rules.SenseTicks, rules.BurstShots, rules.BurstPauseTicks), Is.EqualTo((0, 1, 3, 20)), "R and K at their defaults");
+            P3.Trace r = P3.Run(P2.Cast(), P1.Walk, P3.AiBurst(3, 20), 300);
             Assert.That(P3.Systems(r.W), Is.EqualTo(P2BaselineTests.Systems));
             Assert.That(P3.Systems(r.W), Is.EqualTo(P1BaselineTests.Systems.Replace("battle.ai|0|12;", "battle.ai|0|12;battle.ai-fire|0|14;")));
             Assert.That(r.W.System<ReactionFire>(), Is.Not.Null);
             Assert.That(r.W.System<ReactionFire>().StateVersion, Is.EqualTo(3));
             Assert.That(r.A.FireTicks(300), Is.EqualTo(P3TimingTests.Burst3Pause20), "the burst shows: the decision is installed");
-            P3.Trace noPause = P3.Run(P2.Cast(), P1.Walk, P3.Ai(0, null, 3), 300);
+            Assert.That(Rules(P3.AiBurst(3)).BurstPauseTicks, Is.EqualTo(0));
+            P3.Trace noPause = P3.Run(P2.Cast(), P1.Walk, P3.AiBurst(3), 300);
             Assert.That(P3.Systems(noPause.W), Is.EqualTo(P2BaselineTests.Systems));
             Assert.That(noPause.W.System<ReactionFire>().StateVersion, Is.EqualTo(3));
             Assert.That(noPause.A.FireTicks(300), Is.EqualTo(P3BaselineTests.Fires0), "a pause of 0 changes nothing");

@@ -205,13 +205,14 @@ namespace WarCore.Tests
             Assert.That(P2.Present(r.W, P3.KeyB), Is.False, "B is gone");
             Assert.That(r.Counts[(int)Destroy], Is.EqualTo(0), "the entry is gone at the end of 60");
             Assert.That(r.A.Sel[(int)Destroy], Is.EqualTo(0UL), "nothing selectable on 60");
-            Assert.That(r.A.FirstSelect(c), Is.EqualTo(C));
-            Assert.That(C, Is.GreaterThan(Destroy).And.LessThan(50 + 40), "c falls inside the pause after 50");
-            P3.NoFire(r.A, 51, C - 1, "before c");
-            Assert.That(r.A.Fire[(int)C], Is.True, "the first shot at C on c");
-            Assert.That(r.A.Target[(int)C], Is.EqualTo(c));
-            Assert.That(r.A.FireTicks(120), Is.EqualTo(new long[] { 40, 45, 50, C, C + 5, C + 10, C + 10 + 40, C + 15 + 40 }), "the next burst from 114");
-            P3.NoFire(r.A, C + 11, C + 10 + 39, "the pause after the burst at C");
+            long first = r.A.FirstSelect(c);
+            Assert.That(first, Is.EqualTo(C));
+            Assert.That(first, Is.GreaterThan(Destroy).And.LessThan(50 + 40), "c falls inside the pause after 50");
+            P3.NoFire(r.A, 51, first - 1, "before c");
+            Assert.That(r.A.Fire[(int)first], Is.True, "the first shot at C on c");
+            Assert.That(r.A.Target[(int)first], Is.EqualTo(c));
+            Assert.That(r.A.FireTicks(120), Is.EqualTo(new long[] { 40, 45, 50, first, first + 5, first + 10, first + 10 + 40, first + 15 + 40 }), "the next burst from 114");
+            P3.NoFire(r.A, first + 11, first + 10 + 39, "the pause after the burst at C");
         }
     }
 }
