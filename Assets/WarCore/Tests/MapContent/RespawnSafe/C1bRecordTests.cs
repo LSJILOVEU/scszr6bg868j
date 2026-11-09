@@ -14,8 +14,8 @@ using static WarCore.Tests.Wp16TestWorld;
 namespace WarCore.Tests
 {
     // C1b record (no improvement gate): the MP demo on the M7 map with a 30-tick respawn, the controlled unit killed on a fixed
-    // table. Before every tick's respawn step (order 4) a sampler notes, for the dead controlled unit, the anchor the C1 rule would
-    // pick (nearest owned point with a spawn) and the living enemies inside it. Each switch is then joined with that sample and
+    // table. Before every tick's respawn step (order 4) a sampler notes, for the dead controlled unit, the living enemies inside
+    // every owned point with a spawn and which of them the C1 rule would pick (the nearest). Each switch is then joined with that sample and
     // the new unit is watched for 30 ticks (switch tick included). Output goes to C1B_RECORD_OUT when set, else to the test log.
     public sealed class C1bRecordTests
     {
@@ -65,7 +65,7 @@ namespace WarCore.Tests
                 foreach (var s in switches) Watch(w, s.key, tick);
             }
             int unplanned = 0, incomplete = 0, survived = 0;
-            lines.AppendLine("tick | key | C1 anchor (enemies inside) | deployed at | 30-tick window");
+            lines.AppendLine("tick | key | sample before order 4: C1 anchor and enemies inside, then every owned spawn point | deployed at | 30-tick window");
             foreach (var s in switches)
             {
                 string outcome = Outcome(s.tick, s.key, finished);
@@ -150,23 +150,32 @@ namespace WarCore.Tests
             SimVec3 body = combat.Point(player);
             MatchPack pack = world.Recipe.Match;
             int best = -1; SimWide bestDistance = default;
+            var text = new System.Text.StringBuilder();
+            int bestEnemies = 0;
             for (int i = 0; i < pack.Points.Length; i++)
             {
                 if (world.Capture.Points[i].Owner != team || !pack.Points[i].HasSpawn) continue;
+                int enemies = EnemiesInside(combat, team, pack.Points[i]);
+                text.Append(text.Length == 0 ? "" : " ").Append("p").Append(pack.Points[i].Id).Append('=').Append(enemies);
                 SimWide d = CombatSystem.Horizontal(pack.Points[i].Spawn - body).LengthSquared;
-                if (best < 0 || d < bestDistance) { best = i; bestDistance = d; }
+                if (best < 0 || d < bestDistance) { best = i; bestDistance = d; bestEnemies = enemies; }
             }
-            if (best < 0) { samples[c.Clock.Tick] = "base (no owned spawn point)"; return; }
+            if (best < 0) { samples[c.Clock.Tick] = "no owned spawn point (base)"; return; }
+            if (bestEnemies > 0) contested.Add(c.Clock.Tick);
+            samples[c.Clock.Tick] = "C1 anchor p" + pack.Points[best].Id + " enemies " + bestEnemies + "; owned " + text;
+        }
+
+        private int EnemiesInside(CombatSystem combat, int team, in ControlPointDef point)
+        {
             int enemies = 0;
             foreach (UnitSpawn unit in world.Recipe.Units)
             {
                 EntityId e = world.Unit(unit.Key);
                 if (!combat.Entities.IsAlive(e) || !combat.Entities.TryGet(combat.Entities.Resolve<Combatant>(), e, out Combatant u)
                     || u.Team != 3 - team || !combat.Entities.TryGet(combat.Entities.Resolve<Position>(), e, out Position at) || combat.IsDead(e)) continue;
-                if (CaptureSystem.Inside(at.Value, pack.Points[best])) enemies++;
+                if (CaptureSystem.Inside(at.Value, point)) enemies++;
             }
-            if (enemies > 0) contested.Add(c.Clock.Tick);
-            samples[c.Clock.Tick] = "anchor point " + pack.Points[best].Id + " enemies " + enemies;
+            return enemies;
         }
 
         public void SaveState(SimStateWriter w) { }

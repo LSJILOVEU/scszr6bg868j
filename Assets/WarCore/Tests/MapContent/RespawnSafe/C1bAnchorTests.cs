@@ -132,7 +132,9 @@ namespace WarCore.Tests
         [Test]
         public void AllPointsContested_EqualDistanceBases_LowerIndexWins() =>
             Assert.That(Respawned(World(Units(U(Reserve, 0, 0, reserve: true), U(Other, 24, 21, team: 2), U(Second, 40, 21, team: 2)),
-                Pack(AB(), Bases(new SpawnAnchor(1, P(20, 30)), new SpawnAnchor(1, P(20, 10))), D)), EnemyInA), Is.EqualTo(P(19, 29)));
+                Pack(AB(), Bases(new SpawnAnchor(1, P(20, 30)), new SpawnAnchor(1, P(20, 10))), D)),
+                w => { EnemyInA(w); Assert.That(CaptureSystem.Inside(Point(w, Second), w.Recipe.Match.Points[1]), Is.True); Assert.That(w.Dead(Second), Is.False); }),
+                Is.EqualTo(P(19, 29)));
 
         // (6) Only A, contested, and no team base: no switch until the enemy leaves at K + 7 (order 19, after respawn).
         [Test]
@@ -142,8 +144,10 @@ namespace WarCore.Tests
             w.Sim.RegisterGameplay("test.respawn-move", new MoveAt(w, K + 7, Other, P(60, 30)), SimSystemPhase.Requests);
             KillAt(w, K, Player);
             w.Step(K + D - 1);
+            EnemyInA(w);
             for (long tick = K + D; tick <= K + 7; tick++)
             {
+                EnemyInA(w);
                 w.Step();
                 Assert.That(w.Sim.Clock.Tick, Is.EqualTo(tick));
                 Assert.That(Controlled(w), Is.EqualTo(Player), "tick " + tick); Assert.That(Switches(w), Is.Zero, "tick " + tick);
@@ -162,7 +166,13 @@ namespace WarCore.Tests
             var w = World(Units(U(Reserve, 0, 0, reserve: true), U(Other, 24, 21, team: 2)), Pack(Points(Spawn(1, 24, 20)), Bases(), D, interval: K + 6));
             Assert.That(w.Reinforce.NextTick(1), Is.EqualTo(K + 6));
             KillAt(w, K, Player);
-            w.Step(K + 6);
+            w.Step(K + D - 1);
+            EnemyInA(w);
+            Assert.That(w.Has<Position>(Reserve), Is.False);
+            w.Step(); EnemyInA(w);
+            Assert.That(Controlled(w), Is.EqualTo(Player), "due tick, A contested, no base: no switch");
+            w.Step();
+            Assert.That(w.Sim.Clock.Tick, Is.EqualTo(K + 6));
             Assert.That(w.Has<Position>(Reserve), Is.True);
             Assert.That(w.Reinforce.Deployed.Length, Is.EqualTo(1));
             Assert.That(w.Reinforce.Deployed[0].Unit, Is.EqualTo(StableEntityKey.Placed(1, Reserve).Id));
