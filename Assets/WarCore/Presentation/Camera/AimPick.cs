@@ -132,8 +132,10 @@ namespace WarCore.Presentation
             double r = SnapRadius, bottom = e.Y, top = e.Y + BodyHeight;
             double px = ox - e.X, pz = oz - e.Z;
             double a = fx * fx + fz * fz, b = 2 * (px * fx + pz * fz), c = px * px + pz * pz - r * r;
+            if (a == 0) // straight down: inside the circle it meets the top cap, else nothing
+                return c <= 0 && oy >= top ? (top - oy) / fy : double.PositiveInfinity;
             double disc = b * b - 4 * a * c;
-            if (a == 0 || disc < 0) return double.PositiveInfinity;
+            if (disc < 0) return double.PositiveInfinity;
             double root = Math.Sqrt(disc), t1 = (-b - root) / (2 * a), t2 = (-b + root) / (2 * a);
             double y1 = oy + t1 * fy;
             if (y1 >= bottom && y1 <= top) return t1 >= 0 ? t1 : double.PositiveInfinity;

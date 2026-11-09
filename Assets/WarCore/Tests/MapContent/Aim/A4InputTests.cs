@@ -66,21 +66,24 @@ namespace WarCore.Tests
 
         private static PlayerInput FrameInput(int i) => new PlayerInput(0, 0, Frames[i].x, 2000, true, aimYMm: Frames[i].y);
 
-        private static List<ulong> Run(M6World w, int ticks)
+        // Per tick: the raw StateHash, and a fold of that tick's fire records (End and Outcome).
+        private static (List<ulong> hashes, List<ulong> fires) Run(M6World w, int ticks)
         {
-            var folds = new List<ulong>();
+            var hashes = new List<ulong>();
+            var fires = new List<ulong>();
             for (int t = 0; t < ticks; t++)
             {
                 w.Session.StepOnce();
-                ulong fold = A4.Fnv(14695981039346656037UL, w.Session.StateHash);
+                hashes.Add(w.Session.StateHash);
+                ulong fold = 14695981039346656037UL;
                 foreach (FireRecord f in w.Combat.Fires)
                 {
                     fold = A4.Fnv(fold, (ulong)f.End.X.Raw); fold = A4.Fnv(fold, (ulong)f.End.Y.Raw); fold = A4.Fnv(fold, (ulong)f.End.Z.Raw);
                     fold = A4.Fnv(fold, (ulong)f.Outcome);
                 }
-                folds.Add(fold);
+                fires.Add(fold);
             }
-            return folds;
+            return (hashes, fires);
         }
 
         [Test]
@@ -89,7 +92,7 @@ namespace WarCore.Tests
             int last = (int)Frames[Frames.Length - 1].tick + 120;
             var original = PlayerWorld();
             for (int i = 0; i < Frames.Length; i++) original.Session.SetPlayerInput(Frames[i].tick, FrameInput(i));
-            List<ulong> a = Run(original, last);
+            var a = Run(original, last);
             var log = original.Session.PlayerLog;
             Assert.That(log.Count, Is.EqualTo(Frames.Length), "every frame differs from the one before");
             bool negative = false;
@@ -98,9 +101,11 @@ namespace WarCore.Tests
 
             var replay = PlayerWorld();
             foreach (var r in log) replay.Session.SetPlayerInput(r.AtTick, r.Input);
-            Assert.That(Run(replay, last), Is.EqualTo(a));
+            var b = Run(replay, last);
+            Assert.That(b.hashes, Is.EqualTo(a.hashes), "StateHash tick for tick");
+            Assert.That(b.fires, Is.EqualTo(a.fires), "fire records tick for tick");
 
-            // One frame's height one millimetre off: that frame's shot ends elsewhere.
+            // One frame's height one millimetre off: the state hash is equal before that frame and differs from that tick on.
             var changed = PlayerWorld();
             foreach (var r in log)
             {
@@ -108,11 +113,15 @@ namespace WarCore.Tests
                 if (r.AtTick == 85) p = new PlayerInput(p.MoveXMilli, p.MoveZMilli, p.AimXMm, p.AimZMm, p.Primary, p.Block, p.Throw, p.SkillSlot, 201);
                 changed.Session.SetPlayerInput(r.AtTick, p);
             }
-            List<ulong> c = Run(changed, last);
-            for (int t = 0; t < 84; t++) Assert.That(c[t], Is.EqualTo(a[t]), "before the changed frame, tick " + (t + 1));
-            bool differs = false;
-            for (int t = 84; t < last; t++) if (c[t] != a[t]) differs = true;
-            Assert.That(differs, Is.True, "a 1 mm change of the aim height shows from that frame on");
+            var c = Run(changed, last);
+            for (int t = 0; t < 84; t++) Assert.That(c.hashes[t], Is.EqualTo(a.hashes[t]), "StateHash before the changed frame, tick " + (t + 1));
+            for (int t = 84; t < 110 - 1; t++)
+                Assert.That(c.hashes[t], Is.Not.EqualTo(a.hashes[t]), "StateHash while the changed frame is held, tick " + (t + 1));
+            const ulong none = 14695981039346656037UL;
+            int shot = 84;
+            while (a.fires[shot] == none) shot++;
+            Assert.That(shot + 1, Is.LessThan(110), "a shot while the changed frame is held");
+            Assert.That(c.fires[shot], Is.Not.EqualTo(a.fires[shot]), "the first shot after the change ends elsewhere, tick " + (shot + 1));
         }
 
         // ---- Mapper (acceptance 7) ----
@@ -236,6 +245,43 @@ namespace WarCore.Tests
                 if ((tick - 1) % 150 != 0) return null;
                 PlayerInput s = A4.FlatScript((int)((tick - 1) / 150));
                 return new PlayerInput(s.MoveXMilli, s.MoveZMilli, s.AimXMm, s.AimZMm, s.Primary, s.Block, s.Throw, s.SkillSlot, null);
+            }, 0);
+            Assert.That(hash, Is.EqualTo(0x270B175D7AA026D7UL));
+            Assert.That(fires, Is.EqualTo(0x005F344E51360E1DUL));
+        }
+
+        // A valid pick near the world edge is used as given; the flat plane point under the same mouse lies outside the world.
+        [Test]
+        public void A4Input_MapperWithAPick_DoesNotTestThePlanePoint()
+        {
+            var camera = new IsoCamera(10); camera.Follow(16380, 4.5f);
+            Assert.Throws<ArgumentOutOfRangeException>(() => new PlayerInputMapper().Map(camera, 0, 0, 800, 300, 800, 600, true, true, null),
+                "precondition: the plane point is outside the world");
+            var m = new PlayerInputMapper();
+            PlayerInput p = default;
+            Assert.DoesNotThrow(() => p = m.Map(camera, 0, 0, 800, 300, 800, 600, true, true, null, Ground(16380, 4.5f, 10000)));
+            Assert.That(p.AimXMm, Is.EqualTo(16380000)); Assert.That(p.AimZMm, Is.EqualTo(4500)); Assert.That(p.AimYMm, Is.EqualTo(10000));
+            PlayerInput kept = m.Map(camera, 0, 0, 800, 300, 800, 600, false, true, null, null);
+            Assert.That(kept, Is.EqualTo(p), "outside the window the pick and its height are kept");
+        }
+
+        // Acceptance 7, last line: the walk script of 4(a) goes through the new overload with aim = null (mouse on the screen
+        // point of each aim point, keys as move axes at yaw 0); the mapper outputs the script's inputs and the folds equal 4(a).
+        [Test]
+        public void A4Input_FlatWalkThroughTheNewOverload_MatchesTheLock()
+        {
+            var camera = new IsoCamera(30, 0, 0, 45); camera.Follow(32, 16);
+            var mapper = new PlayerInputMapper();
+            var w = new M6World(A4.FlatRecipe(), DemoRecipes.M2bMapBytes());
+            var (hash, fires, _) = A4.RunPlayer(w, A4.FlatTicks, tick =>
+            {
+                if ((tick - 1) % 150 != 0) return null;
+                PlayerInput s = A4.FlatScript((int)((tick - 1) / 150));
+                var (sx, sy) = A4.Project(camera, s.AimXMm / 1000.0, 0, s.AimZMm / 1000.0, 800, 600);
+                PlayerInput p = mapper.Map(camera, s.MoveXMilli / 1000f, s.MoveZMilli / 1000f, sx, sy, 800, 600, true, s.Primary, null, null);
+                Assert.That(p, Is.EqualTo(s), "mapper output at tick " + tick);
+                Assert.That(p.AimYMm, Is.Null);
+                return p;
             }, 0);
             Assert.That(hash, Is.EqualTo(0x270B175D7AA026D7UL));
             Assert.That(fires, Is.EqualTo(0x005F344E51360E1DUL));

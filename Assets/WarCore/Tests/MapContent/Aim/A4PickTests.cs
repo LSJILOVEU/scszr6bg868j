@@ -8,6 +8,8 @@ namespace WarCore.Tests
     public sealed class A4PickTests
     {
         private const double Tol = 0.01; // 1 cm
+        private const double EdgeGrazeMetres = 1.0 / 65536; // one raw unit: below the pick's resolution
+        private const double EdgeMissMetres = 1e-5;          // float error of projecting and casting back a grid point (10 um)
         private static readonly double Cos20 = Math.Cos(20 * Math.PI / 180), Sin20 = Math.Sin(20 * Math.PI / 180);
         private const double Z = 4.5;
 
@@ -106,7 +108,8 @@ namespace WarCore.Tests
         public void A4Pick_GridPointsAtPitch80_RoundTripOrHitTheFrontSlope()
         {
             ViewGround g = A4.RidgeGround();
-            int visible = 0, hidden = 0, outside = 0;
+            int visible = 0, hidden = 0, noHit = 0, grazing = 0;
+            double maxMiss = 0, maxGap = 0;
             foreach (float yaw in new[] { 0f, 45f, 135f, 300f })
             {
                 var camera = new IsoCamera(8, 0, yaw, 80);
@@ -120,20 +123,26 @@ namespace WarCore.Tests
                         var o = camera.RayOrigin(sx, sy, 800, 600); var f = camera.Forward;
                         double t = A4.OracleT(o.X, o.Y, o.Z, f.X, f.Y, f.Z, A4.Ridge);
                         string at = $"grid ({i}, {j}) yaw {yaw}";
-                        if (double.IsNaN(t))
+                        bool edgePoint = i == 0 || i == 24 || j == 0 || j == 8;
+                        double ox = double.NaN, oz = double.NaN;
+                        if (!double.IsNaN(t)) { ox = o.X + t * f.X; oz = o.Z + t * f.Z; }
+                        double edgeGap = double.IsNaN(t) ? double.NaN : Math.Min(Math.Min(ox, 24 - ox), Math.Min(oz, 8 - oz));
+                        if (a.Kind == AimKind.Plane && (double.IsNaN(t) || edgeGap <= EdgeGrazeMetres))
                         {
-                            // Float projection error moves an edge point's ray just past the field: no surface, so the plane pick.
-                            Assert.That(i == 0 || i == 24 || j == 0 || j == 8, Is.True, at);
-                            Assert.That(a.Kind, Is.EqualTo(AimKind.Plane), at);
-                            outside++;
-                            continue;
-                        }
-                        double ox = o.X + t * f.X, oz = o.Z + t * f.Z;
-                        bool onEdge = ox <= Tol || ox >= 24 - Tol || oz <= Tol || oz >= 8 - Tol;
-                        if (onEdge && a.Kind == AimKind.Plane)
-                        {
-                            // The surface hit is within Tol of the field's edge; the quantized ray may graze past it.
-                            outside++;
+                            // An edge point whose float ray misses the closed field (no oracle hit) or grazes its edge by less
+                            // than one raw unit: the pick is the plane pick, exactly as ScreenToGround, with no height, and the
+                            // ray passes within EdgeMissMetres of the grid point.
+                            Assert.That(edgePoint, Is.True, at + " is not on the field edge");
+                            GroundPick plane = camera.ScreenToGround(sx, sy, 800, 600);
+                            Assert.That(a.X, Is.EqualTo(plane.X), at); Assert.That(a.Z, Is.EqualTo(plane.Z), at);
+                            Assert.That(a.XMm, Is.EqualTo(plane.XMm), at); Assert.That(a.ZMm, Is.EqualTo(plane.ZMm), at);
+                            Assert.That(a.YMm, Is.Null, at);
+                            double px = i - o.X, py = h - o.Y, pz = j - o.Z;
+                            double cx = py * f.Z - pz * f.Y, cy = pz * f.X - px * f.Z, cz = px * f.Y - py * f.X;
+                            double miss = Math.Sqrt(cx * cx + cy * cy + cz * cz);
+                            Assert.That(miss, Is.LessThanOrEqualTo(EdgeMissMetres), at + " ray to grid point");
+                            if (miss > maxMiss) maxMiss = miss;
+                            if (double.IsNaN(t)) noHit++; else { grazing++; if (edgeGap > maxGap) maxGap = edgeGap; }
                             continue;
                         }
                         Assert.That(a.Kind, Is.EqualTo(AimKind.Ground), at);
@@ -150,10 +159,9 @@ namespace WarCore.Tests
                         }
                     }
             }
-            TestContext.Progress.WriteLine($"A4Pick pitch80 visible={visible} hidden={hidden} outside={outside}");
-            Assert.That(visible + hidden + outside, Is.EqualTo(4 * 25 * 9));
-            Assert.That(outside, Is.LessThanOrEqualTo(4 * 2 * (25 + 9)));
-            Assert.That(visible, Is.GreaterThan(4 * 25 * 9 / 2));
+            TestContext.Progress.WriteLine($"A4Pick pitch80 visible={visible} hidden={hidden} edgeNoHit={noHit} edgeGrazing={grazing} maxMiss={maxMiss:R} maxGap={maxGap:R}");
+            Assert.That(visible + hidden + noHit + grazing, Is.EqualTo(4 * 25 * 9));
+            Assert.That(noHit + grazing, Is.LessThanOrEqualTo(4 * 2 * (25 + 9)), "only edge grid points");
         }
 
         [Test]
@@ -209,6 +217,37 @@ namespace WarCore.Tests
             Assert.That(AtBody(9, 1.5f, g, Frame(Me(), Enemy(2, 9, 1.5f)), self: null).Kind, Is.EqualTo(AimKind.Ground), "no self");
             // Behind the ridge: the ray through the body centre meets the front slope first.
             Assert.That(AtBody(16, 1f, g, Frame(Me(), Enemy(2, 16, 1f))).Kind, Is.EqualTo(AimKind.Ground), "behind the ridge");
+        }
+
+        [Test]
+        public void A4Pick_Snap_ASteepRayThroughTheTopCap()
+        {
+            // Pitch 80 through the centre of the body's top: the ray meets the side of the infinite cylinder 2.8 m above the top,
+            // so only the top cap gives the hit.
+            ViewGround g = A4.RidgeGround();
+            double c80 = Math.Cos(80 * Math.PI / 180), s80 = Math.Sin(80 * Math.PI / 180);
+            var o = A4.Through(9, 2.5, Z, c80, -s80, 0);
+            AimTarget a = AimPick.PickRay(o.ox, o.oy, o.oz, (float)c80, (float)-s80, 0f, 0f, g, Frame(Me(), Enemy(2, 9, 1.5f)), 1);
+            Assert.That(a.Kind, Is.EqualTo(AimKind.Unit)); Assert.That(a.UnitKey, Is.EqualTo(2UL));
+        }
+
+        [Test]
+        public void A4Pick_Snap_AVerticalRay()
+        {
+            ViewGround g = A4.RidgeGround();
+            AimTarget over = AimPick.PickRay(9.2f, 40f, 4.6f, 0f, -1f, 0f, 0f, g, Frame(Me(), Enemy(2, 9, 1.5f)), 1);
+            Assert.That(over.Kind, Is.EqualTo(AimKind.Unit), "straight down onto the top"); Assert.That(over.UnitKey, Is.EqualTo(2UL));
+            AimTarget beside = AimPick.PickRay(9.6f, 40f, 4.5f, 0f, -1f, 0f, 0f, g, Frame(Me(), Enemy(2, 9, 1.5f)), 1);
+            Assert.That(beside.Kind, Is.EqualTo(AimKind.Ground), "0.6 m beside the axis");
+            Assert.That(beside.X, Is.EqualTo(9.6).Within(Tol));
+        }
+
+        [Test]
+        public void A4Pick_Snap_EqualDistance_TakesTheSmallerKey()
+        {
+            ViewGround g = A4.RidgeGround();
+            Assert.That(AtBody(9, 1.5f, g, Frame(Me(), Enemy(3, 9, 1.5f), Enemy(2, 9, 1.5f))).UnitKey, Is.EqualTo(2UL), "larger key first");
+            Assert.That(AtBody(9, 1.5f, g, Frame(Me(), Enemy(2, 9, 1.5f), Enemy(3, 9, 1.5f))).UnitKey, Is.EqualTo(2UL), "smaller key first");
         }
 
         [Test]

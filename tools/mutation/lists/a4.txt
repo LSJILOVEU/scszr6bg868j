@@ -188,3 +188,43 @@ original:
 replacement:
 |             if (!TryHeightRaw(x, z, out long y)) throw new ArgumentOutOfRangeException(nameof(x));
 |             return y;
+
+[a4-22-snap-no-top-cap]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~WarCore.Tests.A4|FullyQualifiedName~WarCore.Tests.Wp13Aimed|FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A4PickTests.A4Pick_Snap_ASteepRayThroughTheTopCap
+note = a ray that enters the body through its top does not snap
+original:
+|                 if (cap <= t2 && cap >= 0) return cap;
+replacement:
+|                 // no top cap
+
+[a4-23-snap-tie-larger-key]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~WarCore.Tests.A4|FullyQualifiedName~WarCore.Tests.Wp13Aimed|FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A4PickTests.A4Pick_Snap_EqualDistance_TakesTheSmallerKey
+note = two bodies at the same distance: the larger key wins
+original:
+|                 if (t < best || (t == best && t < double.PositiveInfinity && e.Key < snapped.Key)) { best = t; snapped = e; }
+replacement:
+|                 if (t < best || (t == best && t < double.PositiveInfinity && e.Key > snapped.Key)) { best = t; snapped = e; }
+
+[a4-24-snap-vertical-ray-misses]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~WarCore.Tests.A4|FullyQualifiedName~WarCore.Tests.Wp13Aimed|FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A4PickTests.A4Pick_Snap_AVerticalRay
+note = a vertical ray never meets a body
+original:
+|                 return c <= 0 && oy >= top ? (top - oy) / fy : double.PositiveInfinity;
+replacement:
+|                 return double.PositiveInfinity;
+
+[a4-25-mapper-pick-tests-the-plane]
+file = Assets/WarCore/Presentation/Camera/PlayerInputMapper.cs
+filter = FullyQualifiedName~WarCore.Tests.A4|FullyQualifiedName~WarCore.Tests.Wp13Aimed|FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A4InputTests.A4Input_MapperWithAPick_DoesNotTestThePlanePoint
+note = the aim overload computes the plane point even with a pick in hand
+original:
+|             PlayerInput flat = Map(camera, ix, iy, x, y, w, h, mouseInWindow && !picked, primary, isKeyDown);
+replacement:
+|             PlayerInput flat = Map(camera, ix, iy, x, y, w, h, mouseInWindow, primary, isKeyDown);

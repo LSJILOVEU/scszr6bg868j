@@ -91,11 +91,14 @@ namespace WarCore.Presentation
         public PlayerInput Map(IsoCamera camera, float ix, float iy, float x, float y,
             float w, float h, bool mouseInWindow, bool primary, Func<string, bool> isKeyDown, AimTarget? aim)
         {
-            PlayerInput flat = Map(camera, ix, iy, x, y, w, h, mouseInWindow, primary, isKeyDown);
-            if (mouseInWindow && w > 0 && h > 0 && aim.HasValue)
+            bool picked = mouseInWindow && w > 0 && h > 0 && aim.HasValue;
+            // With a pick in hand the flat plane point is never computed: it can lie outside the world when the pick does not.
+            PlayerInput flat = Map(camera, ix, iy, x, y, w, h, mouseInWindow && !picked, primary, isKeyDown);
+            if (picked)
             {
                 lastAim = new GroundPick(aim.Value.X, aim.Value.Z);
                 lastAimYMm = aim.Value.YMm;
+                hasAim = true;
             }
             if (!hasAim) return flat;
             return new PlayerInput(flat.MoveXMilli, flat.MoveZMilli, lastAim.XMm, lastAim.ZMm, flat.Primary,
