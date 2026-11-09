@@ -74,16 +74,18 @@ namespace WarCore.Combat
 
         public bool Visible(EntityId shooter, EntityId target) => LineClear(AimPoint(Point(shooter)), AimPoint(Point(target)));
 
-        // Line of sight from the shooter to a point on the ground (both lifted to the aim height), walls only.
+        // Line of sight from the shooter to a point on the ground (both lifted to the aim height), walls and (L9) the ground.
         public bool Visible(EntityId shooter, SimVec3 point) => LineClear(AimPoint(Point(shooter)), AimPoint(point));
 
-        // The one line-of-sight judgement: a horizontal zero length is clear, otherwise nothing of the wall layer on the segment.
-        // Explicit AtTarget intents keep the wall-only line of sight; the Aimed and Auto paths use Trace.
+        // The one line-of-sight judgement: a horizontal zero length is clear, otherwise nothing of the wall layer on the segment
+        // and (L9) the segment nowhere under the ground.
+        // Explicit AtTarget intents use this; the Aimed and Auto paths use Trace.
         private bool LineClear(SimVec3 from, SimVec3 to)
         {
             if (Horizontal(to - from).LengthSquared.Sign == 0) return true;
             var delta = to - from;
-            return !sim.SpatialQuery.Any(SpatialQueries.Ray(from, delta, delta.Length, wallMask));
+            if (sim.SpatialQuery.Any(SpatialQueries.Ray(from, delta, delta.Length, wallMask))) return false;
+            return ground == null || !ground.TryFirstBelow(from, to, out _);
         }
 
         private enum Struck : byte { Open, Wall, Enemy, Friend }

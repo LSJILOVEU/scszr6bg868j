@@ -202,8 +202,8 @@ namespace WarCore.Tests
             Assert.That(w.Combat.Visible(a, b), Is.EqualTo(w.Combat.Visible(a, w.Combat.Point(b))));
         }
 
-        // 5(b): a 2 m ridge north of A (z 4..5, slopes 1:1) does not block the wall-only line to Q = Cell(22,1) on this code
-        // (the terrain line of sight is another package's); the lines to P and B are clear. Static read ports only.
+        // 5(b): a 2 m ridge north of A (z 4..5, slopes 1:1) blocks the line to Q = Cell(22,1) at the ground height since L9 wired
+        // the ground into the shared line of sight (name kept); the lines to P and B are clear. Static read ports only.
         [Test]
         public void Terrain_Ridge_WallOnlyLineOfSight()
         {
@@ -211,7 +211,7 @@ namespace WarCore.Tests
             M6World w = A3b.World(A3b.Ai(300, 300), null, false, ridge);
             EntityId a = A3b.A(w), b = w.Unit(A3b.KeyB);
             Assert.That(A3b.At(w, A3b.KeyA).Y.Raw, Is.EqualTo(0L));
-            Assert.That(w.Combat.Visible(a, A2.Cell(22, 1)), Is.True);
+            Assert.That(w.Combat.Visible(a, A2.Cell(22, 1)), Is.False, "the ridge hides Q");
             Assert.That(w.Combat.Visible(a, A3b.P), Is.True);
             Assert.That(w.Combat.Visible(a, b), Is.True);
             Assert.That(w.Combat.Visible(a, b), Is.EqualTo(w.Combat.Visible(a, w.Combat.Point(b))));
