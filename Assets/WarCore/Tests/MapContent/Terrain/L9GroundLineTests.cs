@@ -113,6 +113,15 @@ namespace WarCore.Tests
         [Test] public void L9Line_VzZeroLengthAbove() => Clear(Flat(4, 1), V(3 * S / 2, S / 2, S / 2), V(3 * S / 2, S / 2, S / 2));
         [Test] public void L9Line_VzuZeroLengthBelow() => Below(Flat(4, 1), V(3 * S / 2, -1, S / 2), V(3 * S / 2, -1, S / 2), 3 * S / 2, -1, S / 2);
 
+        // Vs: only the start is under the ground (1 x 1 zero field, Y from -1 raw to +1 raw); the diagonal crossing at x = 0.5
+        // has Y = 0, touching, and the end is above. Without the start sample the answer would be "not blocked".
+        [Test] public void L9Line_VsOnlyTheStartIsBelow() =>
+            Below(Flat(1, 1), V(S / 4, -1, S / 2), V(3 * S / 4, 1, S / 2), S / 4, -1, S / 2);
+        // Vr: the ground is floored towards negative infinity. 1 x 1, h(0, j) = -1 raw, h(1, j) = 0; at (0.5, 0.25) (triangle A)
+        // the exact ground is -0.5 raw, floored to -1, so a point at Y = -1 raw touches it (rounding towards zero would give 0).
+        [Test] public void L9Line_VrGroundIsFlooredDown() =>
+            Clear(Field(1, 1, 0, 0, (i, j) => i == 0 ? -1 : 0), V(S / 2, -1, S / 4), V(S / 2, -1, S / 4));
+
         // Vbig: 512 x 512, h = 2 m at i = 256; the line y = 1 m along x = z is parallel to the diagonals (d = 0), and the x and z
         // families meet at the grid point (256, 256) where the ground is 2 m.
         [Test] public void L9Line_VbigLargestField() =>

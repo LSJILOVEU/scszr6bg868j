@@ -206,3 +206,23 @@ original:
 |             at = best.At;
 replacement:
 |             at = best.At;
+
+[l9-19-no-start-sample]
+file = Assets/WarCore/Sim/HeightField.cs
+filter = FullyQualifiedName~WarCore.Tests.L9|FullyQualifiedName~WarCore.Tests.L6
+expect = WarCore.Tests.L9GroundLineTests.L9Line_VsOnlyTheStartIsBelow
+note = the start of the segment is not sampled
+original:
+|             Sample(ref best, 0, 1, fx, fy, fz, dx, dy, dz);
+replacement:
+|             // start sample removed
+
+[l9-20-ground-toward-zero]
+file = Assets/WarCore/Sim/HeightField.cs
+filter = FullyQualifiedName~WarCore.Tests.L9|FullyQualifiedName~WarCore.Tests.L6
+expect = WarCore.Tests.L9GroundLineTests.L9Line_VrGroundIsFlooredDown
+note = the closed-field ground height rounds toward zero instead of down
+original:
+|             height = FloorDiv(numerator, SimFix.Scale);
+replacement:
+|             height = numerator / SimFix.Scale;

@@ -17,7 +17,7 @@ namespace WarCore.Tests
 
         // Recorded values (see the PR for the base commit they were recorded on).
         private const ulong DuelHash = 0x7D934E199E729DDDUL, DuelFires = 0xD90E8BF18C2EDC45UL;
-        private const ulong PlateauHash = 0x0310C2E95EB46CB6UL, PlateauFires = 0xD89A2331FBA86BF1UL;
+        private const ulong PlateauHash = 0x182E7897702788E8UL, PlateauFires = 0xD89A2331FBA86BF1UL;
 
         [Test]
         public void L9FlatLock_ZeroFieldDuelIsUnchanged()
@@ -37,6 +37,7 @@ namespace WarCore.Tests
                     // The wall is the box x 12..13 m, z 6..7 m; a blocked shot ends on its boundary (within 32 raw: origin + unit direction * distance rounds by about 1 raw per metre).
                     Assert.That(OutsideBy(f.End.X.Raw, 12 * L9.S, 13 * L9.S), Is.LessThanOrEqualTo(32), "x of a wall-blocked end");
                     Assert.That(OutsideBy(f.End.Z.Raw, 6 * L9.S, 7 * L9.S), Is.LessThanOrEqualTo(32), "z of a wall-blocked end");
+                    Assert.That(ToFace(f.End.X.Raw, f.End.Z.Raw), Is.LessThanOrEqualTo(32), "a wall-blocked end lies on a face, not inside");
                 }
                 // Every pair of opponents stands on one line of constant z, so a shot that leaves that line was turned by spread.
                 if (f.End.Z.Raw != f.Origin.Z.Raw) off++;
@@ -51,6 +52,11 @@ namespace WarCore.Tests
         }
 
         private static long OutsideBy(long v, long lo, long hi) => v < lo ? lo - v : v > hi ? v - hi : 0;
+        // Distance to the nearest of the four faces x = 12, x = 13, z = 6, z = 7 (m).
+        private static long ToFace(long x, long z) =>
+            Min(Min(Abs(x - 12 * L9.S), Abs(x - 13 * L9.S)), Min(Abs(z - 6 * L9.S), Abs(z - 7 * L9.S)));
+        private static long Abs(long v) => v < 0 ? -v : v;
+        private static long Min(long a, long b) => a < b ? a : b;
 
         [Test]
         public void L9FlatLock_PlateauIsUnchanged()

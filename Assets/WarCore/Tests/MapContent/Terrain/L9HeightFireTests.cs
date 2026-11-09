@@ -22,7 +22,7 @@ namespace WarCore.Tests
             for (int t = 1; t <= WithinTicks && shots.Count < Shots; t++)
             {
                 w.Step();
-                shots.AddRange(w.Combat.Fires);
+                foreach (FireRecord f in w.Combat.Fires) shots.Add(f);
             }
             Assert.That(shots.Count, Is.GreaterThanOrEqualTo(Shots), "shots within " + WithinTicks + " ticks");
             Assert.That(w.Read<Position>(2).Value.Y.Raw - w.Read<Position>(1).Value.Y.Raw,

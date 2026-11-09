@@ -36,10 +36,21 @@ namespace WarCore.Tests
             }
         }
 
-        // One aimed shot on tick 1 from unit 1 towards (20.5, 0, 4.5); unit 2 is unarmed.
-        private static FireRecord OneShot(byte[] map, long bxMm, out M6World world)
+        // Deals a fixed 1 m of damage and counts its calls, so a test can see whether the damage path was entered.
+        private sealed class CountingResolver : IHitResolver
         {
-            world = L9.World(map, Pair(bxMm, -1), 0, new L9.Aim(1, 1, 1, FarSide));
+            internal const long Damage = S;
+            internal int Calls;
+            public ulong PolicyKey => 0x4C39000000000001;
+            public long DamageRaw(in WeaponDef weapon, long falloffRaw, int rollRaw, long maxHealthRaw) { Calls++; return Damage; }
+        }
+
+        private static long Health(M6World w, ulong key) => w.Sim.GameplayResource(w.Sim.Entities.StableOf(w.Unit(key)), 1);
+
+        // One aimed shot on tick 1 from unit 1 towards (20.5, 0, 4.5); unit 2 is unarmed.
+        private static FireRecord OneShot(byte[] map, long bxMm, out M6World world, IHitResolver resolver = null)
+        {
+            world = L9.World(map, Pair(bxMm, -1), 0, new L9.Aim(1, 1, 1, FarSide), false, resolver);
             world.Step();
             Assert.That(world.Combat.Fires.Length, Is.EqualTo(1), "one record on tick 1");
             return world.Combat.Fires[0];
@@ -50,16 +61,22 @@ namespace WarCore.Tests
         [Test]
         public void L9Sight_RidgeStopsTheShotAndFlatTwinHits()
         {
-            FireRecord f = OneShot(L9.RidgeMap(true), 20500, out _);
+            var ridgeDamage = new CountingResolver();
+            FireRecord f = OneShot(L9.RidgeMap(true), 20500, out M6World w, ridgeDamage);
             Assert.That(f.Outcome, Is.EqualTo(FireOutcome.WallBlocked));
             Assert.That(f.Target, Is.EqualTo(default(StableId)), "no target: unit 2 takes nothing");
             Assert.That(f.End, Is.EqualTo(L9.Raw(491520, 0, 294912)));
             Assert.That(f.Distance.Raw, Is.EqualTo(4 * S));
+            Assert.That(ridgeDamage.Calls, Is.EqualTo(0), "the damage path is not entered");
+            Assert.That(Health(w, 2), Is.EqualTo(100 * S), "unit 2 keeps its health");
 
-            FireRecord flat = OneShot(L9.RidgeMap(false), 20500, out M6World fw);
+            var flatDamage = new CountingResolver();
+            FireRecord flat = OneShot(L9.RidgeMap(false), 20500, out M6World fw, flatDamage);
             Assert.That(flat.Outcome, Is.EqualTo(FireOutcome.Hit));
             Assert.That(flat.Target, Is.EqualTo(fw.Sim.Entities.StableOf(fw.Unit(2))));
             Assert.That(flat.End, Is.EqualTo(L9.Raw(1327104, 0, 294912)));
+            Assert.That(flatDamage.Calls, Is.EqualTo(1), "control: the same shot on flat ground enters the damage path");
+            Assert.That(Health(fw, 2), Is.EqualTo(100 * S - CountingResolver.Damage), "control: unit 2 loses health");
         }
 
         // 3(b) the person before the terrain: unit 2 at x = 5.5 (flat ground) is hit before x = 7.5.
@@ -94,6 +111,7 @@ namespace WarCore.Tests
             Assert.That(w.Combat.Fires.Length, Is.EqualTo(1));
             FireRecord f = w.Combat.Fires[0];
             Assert.That(f.Outcome, Is.EqualTo(FireOutcome.WallBlocked));
+            Assert.That(f.Target, Is.EqualTo(default(StableId)));
             Assert.That(f.End, Is.EqualTo(L9.Raw(237568, 0, 106496)));
         }
 

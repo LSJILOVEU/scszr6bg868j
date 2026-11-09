@@ -29,9 +29,9 @@ namespace WarCore.Tests
         // One weapon: 30 ticks between shots, 30 rounds, falloff 10..30 m, effect 6554; spread in thousandths of a degree.
         internal static WeaponDef Rifle(int spread) => new WeaponDef(30000, 30, 60000, SimFix.FromInt(10), SimFix.FromInt(30), 6554,
             spread == 0 ? default : new SpreadSpec(spread, 0, 0, spread));
-        // ZeroResolver: no damage, so nobody dies and the shot count only depends on the fire interval.
-        internal static CombatPack Combat(int spread) =>
-            new CombatPack(new[] { Rifle(spread) }, new ZeroResolver(), new NearestVisibleEnemy(), 100 * S);
+        // ZeroResolver by default: no damage, so nobody dies and the shot count only depends on the fire interval.
+        internal static CombatPack Combat(int spread, IHitResolver resolver = null) =>
+            new CombatPack(new[] { Rifle(spread) }, resolver ?? new ZeroResolver(), new NearestVisibleEnemy(), 100 * S);
 
         internal static UnitSpawn Unit(ulong key, int team, long xMm, long zMm, int weapon) =>
             new UnitSpawn(key, 0, team, xMm, zMm, 3000, team, weapon, false);
@@ -67,9 +67,10 @@ namespace WarCore.Tests
             Unit(1, 1, 3500, 2500, 0), Unit(2, 1, 3500, 5500, 0), Unit(3, 2, 13500, 2500, 0), Unit(4, 2, 13500, 5500, 0),
         };
 
-        // Acceptance 6(b): a 3 m plateau over grid points 4..20 with 1.5 m ramp points at 3 and 21 (slope 1.5), and one ground
-        // wall in the corner, away from the plateau. Both teams stand on the plateau (x in 6..18), so every eye line stays above it.
-        internal static int Plateau(int i, int j) => i >= 4 && i <= 20 ? (int)(3 * S) : i == 3 || i == 21 ? (int)(3 * S / 2) : 0;
+        // Acceptance 6(b): a 3 m plateau over grid points 4..20 with 1.5 m ramp points at 2, 3, 21 and 22 (appendix A), and one
+        // ground wall in the corner, away from the plateau. Both teams stand on the plateau (x in 6..18), so every eye line stays above it.
+        internal static int Plateau(int i, int j) =>
+            i >= 4 && i <= 20 ? (int)(3 * S) : i == 2 || i == 3 || i == 21 || i == 22 ? (int)(3 * S / 2) : 0;
         internal static readonly (int, int, int, int)[] PlateauWalls = { (0, 0, 1, 1) };
         internal static byte[] PlateauMap() =>
             WcMapWriter.Write(Wp23.Make(24, 8, 0, 6 * S, PlateauWalls, 2 * S, Plateau, Names, (x, z) => 0));
@@ -78,9 +79,10 @@ namespace WarCore.Tests
             Unit(1, 1, 7500, 2500, 0), Unit(2, 1, 7500, 5500, 0), Unit(3, 2, 16500, 2500, 0), Unit(4, 2, 16500, 5500, 0),
         };
 
-        internal static M6World World(byte[] map, UnitSpawn[] units, int spread = 0, IWorldOption extra = null, bool reverse = false)
+        internal static M6World World(byte[] map, UnitSpawn[] units, int spread = 0, IWorldOption extra = null, bool reverse = false,
+            IHitResolver resolver = null)
         {
-            WorldRecipe r = new WorldRecipe(41, MoverKind.InterimCrowd, units, Array.Empty<BridgeCommand>()).WithCombat(Combat(spread))
+            WorldRecipe r = new WorldRecipe(41, MoverKind.InterimCrowd, units, Array.Empty<BridgeCommand>()).WithCombat(Combat(spread, resolver))
                 .WithCrowdPass(CrowdPassKind.TeamIdle).WithTerrainRules(Pack());
             if (extra != null) r = r.With(extra);
             return new M6World(r, map, reverse);
