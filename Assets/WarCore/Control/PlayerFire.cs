@@ -58,9 +58,9 @@ namespace WarCore.Control
                     sim.Entities.Set(facings.Value, unit, new UnitFacing(direction.X, direction.Z));
                 }
             }
-            // Position is the capsule centre. Keep its Y; do not add a muzzle offset.
-            combat.Submit(context, FireIntent.Aimed(stable,
-                new SimVec3(context.Input.Aim.X, position.Value.Y, context.Input.Aim.Z)));
+            // The aim point carries its own height (the ground height when the input has none); the shot leaves from the capsule
+            // centre, with no muzzle offset.
+            combat.Submit(context, FireIntent.Aimed(stable, context.Input.Aim));
         }
 
         public void SaveState(SimStateWriter writer) { }

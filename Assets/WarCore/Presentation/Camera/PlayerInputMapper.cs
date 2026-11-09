@@ -34,6 +34,7 @@ namespace WarCore.Presentation
         private readonly PlayerKeyBinding[] bindings;
         private bool hasAim;
         private GroundPick lastAim;
+        private long? lastAimYMm; // A4: height of the last valid pick from the aim overload; null after any other pick
 
         public PlayerInputMapper() { bindings = Array.Empty<PlayerKeyBinding>(); }
 
@@ -63,6 +64,7 @@ namespace WarCore.Presentation
             if (mouseInWindow && w > 0 && h > 0)
             {
                 lastAim = camera.ScreenToGround(x, y, w, h);
+                lastAimYMm = null;
                 hasAim = true;
             }
             GroundPick aim = hasAim ? lastAim : new GroundPick(camera.FocusX, camera.FocusZ);
@@ -80,6 +82,27 @@ namespace WarCore.Presentation
                 }
             }
             return new PlayerInput(Milli(move.X), Milli(move.Z), aim.XMm, aim.ZMm, primary, block, @throw, skillSlot);
+        }
+
+        // A4: as above, but a valid pick inside the window takes aim (AimPick's result) when it is given, with its height.
+        // aim == null inside the window picks the flat plane, as the overloads above do; outside the window the last pick
+        // and its height are kept; before the first valid pick, the focus with no height. The overloads above never output
+        // a height and clear it on a pick inside the window.
+        public PlayerInput Map(IsoCamera camera, float ix, float iy, float x, float y,
+            float w, float h, bool mouseInWindow, bool primary, Func<string, bool> isKeyDown, AimTarget? aim)
+        {
+            bool picked = mouseInWindow && w > 0 && h > 0 && aim.HasValue;
+            // With a pick in hand the flat plane point is never computed: it can lie outside the world when the pick does not.
+            PlayerInput flat = Map(camera, ix, iy, x, y, w, h, mouseInWindow && !picked, primary, isKeyDown);
+            if (picked)
+            {
+                lastAim = new GroundPick(aim.Value.X, aim.Value.Z);
+                lastAimYMm = aim.Value.YMm;
+                hasAim = true;
+            }
+            if (!hasAim) return flat;
+            return new PlayerInput(flat.MoveXMilli, flat.MoveZMilli, lastAim.XMm, lastAim.ZMm, flat.Primary,
+                flat.Block, flat.Throw, flat.SkillSlot, lastAimYMm);
         }
 
         // Scale then truncate toward zero. Clamp before the cast to keep the conversion bounded.

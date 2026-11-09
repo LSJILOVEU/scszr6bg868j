@@ -144,8 +144,8 @@ namespace WarCore.Combat
                     SimVec3 origin = position.Value, direction;
                     if (hasIntent)
                     {
-                        direction = Horizontal(intents[shooter.Id].Point - origin);
-                        if (direction.LengthSquared.Sign == 0) continue;
+                        direction = intents[shooter.Id].Point - origin;
+                        if (Horizontal(direction).LengthSquared.Sign == 0) continue;
                         // Positions are final here (after movement): an intent that avoids allies is declined for this tick
                         // when a living teammate is first on the line, with no shot, no ammo and no cooldown change.
                         if (intents[shooter.Id].AvoidAllies && AllyBlocks(shooter, origin, direction, weapon.FalloffEnd)) continue;

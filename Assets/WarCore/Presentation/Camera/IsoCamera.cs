@@ -20,7 +20,7 @@ namespace WarCore.Presentation
 
     // Orthographic isometric camera, engine-free. Same convention as Unity's Quaternion.Euler(Pitch, Yaw, 0):
     // forward = (sinY*cosP, -sinP, cosY*cosP), right = (cosY, 0, -sinY), up = forward x right.
-    // The ground is a flat plane for now; once terrain exists the pick should ask the map's ground query instead.
+    // ScreenToGround picks on the flat plane at GroundY; AimPick follows the same ray (RayOrigin, Forward) onto the height field.
     public sealed class IsoCamera
     {
         public const float DefaultYaw = 45f;
@@ -111,6 +111,18 @@ namespace WarCore.Presentation
             float oz = p.Z + r.Z * nx * Zoom * aspect + u.Z * ny * Zoom;
             float t = (GroundY - oy) / f.Y;
             return new GroundPick(ox + f.X * t, oz + f.Z * t);
+        }
+
+        // The start of the pick ray through a screen pixel (same formula as ScreenToGround); its direction is Forward.
+        public (float X, float Y, float Z) RayOrigin(float screenX, float screenY, float screenWidth, float screenHeight)
+        {
+            float nx = 2f * screenX / screenWidth - 1f, ny = 2f * screenY / screenHeight - 1f;
+            float aspect = screenWidth / screenHeight;
+            var p = Position; var r = Right; var u = Up;
+            float ox = p.X + r.X * nx * Zoom * aspect + u.X * ny * Zoom;
+            float oy = p.Y + r.Y * nx * Zoom * aspect + u.Y * ny * Zoom;
+            float oz = p.Z + r.Z * nx * Zoom * aspect + u.Z * ny * Zoom;
+            return (ox, oy, oz);
         }
 
         // Keys to a world-axis direction: up (iy=+1, W) is screen-up along the ground, right (ix=+1, D) is screen-right.
