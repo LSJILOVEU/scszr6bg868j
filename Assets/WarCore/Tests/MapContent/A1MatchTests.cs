@@ -17,6 +17,8 @@ namespace WarCore.Tests
             ulong fold = 14695981039346656037UL;
             for (int tick = 1; tick <= A1.MaxTicks; tick++)
             {
+                Assert.That(omitted.Mode.IsFinished, Is.False, "before tick " + tick);
+                Assert.That(zero.Mode.IsFinished, Is.False, "before tick " + tick);
                 omitted.Step(); zero.Step();
                 Assert.That(zero.Hash, Is.EqualTo(omitted.Hash), "tick " + tick);
                 fold = (fold ^ omitted.Hash) * 1099511628211UL;
