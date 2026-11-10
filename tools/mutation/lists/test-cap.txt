@@ -1,0 +1,342 @@
+# TEST-CAP: single-line capture and reinforcement regression mutations.
+
+[test-cap-c01-ratio-denominator]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.TestCapCaptureTests.RatioDenominatorControlsProgressAndCaptureTick
+note = the capture ratio ignores its denominator
+original:
+|                 bool advantage = leader != 0 && (pack.Strict ? a * pack.Den > b * pack.Num : a * pack.Den >= b * pack.Num);
+replacement:
+|                 bool advantage = leader != 0 && (pack.Strict ? a > b * pack.Num : a >= b * pack.Num);
+
+[test-cap-c02-decay-fixed-one]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.TestCapCaptureTests.ConfiguredDecayRemovesThreeProgressTicksAndClampsAtZero
+note = interrupted progress loses one tick instead of the configured amount
+original:
+|                     int progress = pack.Interrupt == InterruptMode.Decay ? Math.Max(0, old.Progress - pack.DecayPerTick) : 0;
+replacement:
+|                     int progress = pack.Interrupt == InterruptMode.Decay ? Math.Max(0, old.Progress - 1) : 0;
+
+[test-cap-c03-radius-exclusive]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.M6CaptureTests.D1_PLACEHOLDER_EqualCountsNeverLeadEvenOneToOne_DeadAndReserveExcluded_BoundaryIncluded
+note = the capture radius excludes its boundary
+original:
+|             CombatSystem.Horizontal(point - def.Center).LengthSquared <= new SimVec3(def.Radius, default, default).LengthSquared;
+replacement:
+|             CombatSystem.Horizontal(point - def.Center).LengthSquared < new SimVec3(def.Radius, default, default).LengthSquared;
+
+[test-cap-c04-dead-counted]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.M6CaptureTests.D1_PLACEHOLDER_EqualCountsNeverLeadEvenOneToOne_DeadAndReserveExcluded_BoundaryIncluded
+note = dead units still count toward capture
+original:
+|                     || !combat.Entities.TryGet(positions, unit, out Position position) || combat.IsDead(unit)) continue;
+replacement:
+|                     || !combat.Entities.TryGet(positions, unit, out Position position)) continue;
+
+[test-cap-c05-team-two-excluded]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.M6CaptureTests.D1_D2_PLACEHOLDER_RatioAndExactCaptureTick
+note = team two cannot contribute to capture
+original:
+|                 if (!combat.Entities.TryGet(combatants, unit, out Combatant value) || value.Team < 1 || value.Team > 2
+replacement:
+|                 if (!combat.Entities.TryGet(combatants, unit, out Combatant value) || value.Team < 1 || value.Team >= 2
+
+[test-cap-c06-strict-inclusive]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.M6CaptureTests.D1_D2_PLACEHOLDER_RatioAndExactCaptureTick
+note = a strict ratio accepts equality
+original:
+|                 bool advantage = leader != 0 && (pack.Strict ? a * pack.Den > b * pack.Num : a * pack.Den >= b * pack.Num);
+replacement:
+|                 bool advantage = leader != 0 && (pack.Strict ? a * pack.Den >= b * pack.Num : a * pack.Den >= b * pack.Num);
+
+[test-cap-c07-inclusive-strict]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.M6CaptureTests.D1_D2_PLACEHOLDER_RatioAndExactCaptureTick
+note = an inclusive ratio rejects equality
+original:
+|                 bool advantage = leader != 0 && (pack.Strict ? a * pack.Den > b * pack.Num : a * pack.Den >= b * pack.Num);
+replacement:
+|                 bool advantage = leader != 0 && (pack.Strict ? a * pack.Den > b * pack.Num : a * pack.Den > b * pack.Num);
+
+[test-cap-c08-progress-two]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.M6CaptureTests.D1_D2_PLACEHOLDER_RatioAndExactCaptureTick
+note = capture advances by two ticks
+original:
+|                     int progress = (old.Capturing == leader ? old.Progress : 0) + 1;
+replacement:
+|                     int progress = (old.Capturing == leader ? old.Progress : 0) + 2;
+
+[test-cap-c09-capture-late]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.M6CaptureTests.D1_D2_PLACEHOLDER_RatioAndExactCaptureTick
+note = ownership changes one tick late
+original:
+|                     if (progress >= pack.CaptureTicks)
+replacement:
+|                     if (progress > pack.CaptureTicks)
+
+[test-cap-c10-new-leader-inherits]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.M6CaptureTests.D3_PLACEHOLDER_InterruptModesAndChangedLeader
+note = a new leader inherits the previous leader progress
+original:
+|                     int progress = (old.Capturing == leader ? old.Progress : 0) + 1;
+replacement:
+|                     int progress = old.Progress + 1;
+
+[test-cap-c11-owner-recaptures]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.TestCapCaptureTests.OccupyingOwnerKeepsZeroProgressAndEmitsNoCapture
+note = the owner starts capturing its own point
+original:
+|                 if (advantage && leader != old.Owner)
+replacement:
+|                 if (advantage)
+
+[test-cap-c12-pause-reversed]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.M6CaptureTests.D3_PLACEHOLDER_InterruptModesAndChangedLeader
+note = only pause mode enters the interruption branch
+original:
+|                 else if (pack.Interrupt != InterruptMode.Pause)
+replacement:
+|                 else if (pack.Interrupt == InterruptMode.Pause)
+
+[test-cap-c13-decay-floor-negative]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.TestCapCaptureTests.DecayPastRemainingProgressStaysAtZeroOnEmptyTicks
+note = decay can leave negative progress
+original:
+|                     int progress = pack.Interrupt == InterruptMode.Decay ? Math.Max(0, old.Progress - pack.DecayPerTick) : 0;
+replacement:
+|                     int progress = pack.Interrupt == InterruptMode.Decay ? Math.Max(-1, old.Progress - pack.DecayPerTick) : 0;
+
+[test-cap-c14-initial-owner-neutral]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.M6DeployTests.D5_PLACEHOLDER_ExactAttemptsStableOrderComponentsAnchorsAndExhaustion
+note = every point starts neutral
+original:
+|             for (int i = 0; i < states.Length; i++) states[i] = new PointState(pack.Points[i].InitialOwner, 0, 0);
+replacement:
+|             for (int i = 0; i < states.Length; i++) states[i] = new PointState(0, 0, 0);
+
+[test-cap-c15-event-tick-late]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.M6CaptureTests.D1_D2_PLACEHOLDER_RatioAndExactCaptureTick
+note = the capture record names the following tick
+original:
+|                         changes[changeCount++] = new CaptureRecord(c.Clock.Tick, pack.Points[i].Id, old.Owner, leader);
+replacement:
+|                         changes[changeCount++] = new CaptureRecord(c.Clock.Tick + 1, pack.Points[i].Id, old.Owner, leader);
+
+[test-cap-c16-completed-progress-one]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.M6CaptureTests.D1_D2_PLACEHOLDER_RatioAndExactCaptureTick
+note = a completed capture keeps one progress tick
+original:
+|                         states[i] = new PointState(leader, 0, 0);
+replacement:
+|                         states[i] = new PointState(leader, 0, 1);
+
+[test-cap-c17-event-owners-swapped]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.M6CaptureTests.D4_PLACEHOLDER_RecaptureEventsAreOrderedExactAndEphemeral
+note = capture records swap the old and new owner
+original:
+|                         changes[changeCount++] = new CaptureRecord(c.Clock.Tick, pack.Points[i].Id, old.Owner, leader);
+replacement:
+|                         changes[changeCount++] = new CaptureRecord(c.Clock.Tick, pack.Points[i].Id, leader, old.Owner);
+
+[test-cap-r01-initial-tick-late]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.M6DeployTests.D5_PLACEHOLDER_ExactAttemptsStableOrderComponentsAnchorsAndExhaustion
+note = The first reinforcement attempt is one tick late.
+original:
+|             next[0] = next[1] = startTick + pack.IntervalTicks;
+replacement:
+|             next[0] = next[1] = startTick + pack.IntervalTicks + 1;
+
+[test-cap-r02-due-tick-late]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.M6DeployTests.D5_PLACEHOLDER_ExactAttemptsStableOrderComponentsAnchorsAndExhaustion
+note = The attempt at the exact due tick is skipped.
+original:
+|                 if (c.Clock.Tick < next[index]) continue;
+replacement:
+|                 if (c.Clock.Tick <= next[index]) continue;
+
+[test-cap-r03-interval-long]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.M6DeployTests.D5_PLACEHOLDER_ExactAttemptsStableOrderComponentsAnchorsAndExhaustion
+note = Later attempts use an interval one tick too long.
+original:
+|                 next[index] += pack.IntervalTicks;
+replacement:
+|                 next[index] += pack.IntervalTicks + 1;
+
+[test-cap-r04-team-two-skipped]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.M6DeployTests.D5_PLACEHOLDER_SameRequestDeploymentsSeeEachOther
+note = The second team receives no reinforcement attempts.
+original:
+|             for (int team = 1; team <= 2; team++)
+replacement:
+|             for (int team = 1; team < 2; team++)
+
+[test-cap-r05-wrong-team-reserve]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.M6DeployTests.D5_PLACEHOLDER_ExactAttemptsStableOrderComponentsAnchorsAndExhaustion
+note = The reserve comes from another team.
+original:
+|                     if (combat.Entities.TryGet(combatants, entity, out Combatant unit) && unit.Team == team
+replacement:
+|                     if (combat.Entities.TryGet(combatants, entity, out Combatant unit) && unit.Team != team
+
+[test-cap-r06-active-unit-candidate]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.M6DeployTests.D5_PLACEHOLDER_ExactAttemptsStableOrderComponentsAnchorsAndExhaustion
+note = A deployed unit can block selection of a reserve.
+original:
+|                         && !combat.Entities.TryGet(positions, entity, out _) && !combat.IsDead(entity))
+replacement:
+|                         && !combat.IsDead(entity))
+
+[test-cap-r07-dead-reserve-candidate]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.TestCapReinforceTests.DeadReserveDoesNotDeployAtDueTick
+expect = WarCore.Tests.TestCapReinforceTests.DeadReserveDoesNotBlockLivingReserve
+note = A dead reserve can block selection of a living reserve.
+original:
+|                         && !combat.Entities.TryGet(positions, entity, out _) && !combat.IsDead(entity))
+replacement:
+|                         && !combat.Entities.TryGet(positions, entity, out _))
+
+[test-cap-r08-wrong-team-base]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.M6DeployTests.D5_PLACEHOLDER_ExactAttemptsStableOrderComponentsAnchorsAndExhaustion
+note = A team uses the opposing base.
+original:
+|                 foreach (var anchor in pack.Bases) if (anchor.Team == team) anchors[count++] = anchor.Point;
+replacement:
+|                 foreach (var anchor in pack.Bases) if (anchor.Team != team) anchors[count++] = anchor.Point;
+
+[test-cap-r09-wrong-owner-point]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.M6DeployTests.D5_PLACEHOLDER_ExactAttemptsStableOrderComponentsAnchorsAndExhaustion
+note = A team uses a control point it does not own.
+original:
+|                     if (capture.Points[i].Owner == team && pack.Points[i].HasSpawn) anchors[count++] = pack.Points[i].Spawn;
+replacement:
+|                     if (capture.Points[i].Owner != team && pack.Points[i].HasSpawn) anchors[count++] = pack.Points[i].Spawn;
+
+[test-cap-r10-point-spawn-check-removed]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.TestCapReinforceTests.OwnedPointWithoutSpawnDoesNotProvideAnchor
+note = An owned point without a spawn becomes a deployment anchor.
+original:
+|                     if (capture.Points[i].Owner == team && pack.Points[i].HasSpawn) anchors[count++] = pack.Points[i].Spawn;
+replacement:
+|                     if (capture.Points[i].Owner == team) anchors[count++] = pack.Points[i].Spawn;
+
+[test-cap-r11-grid-cell-count-long]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.M6DeployTests.D5_PLACEHOLDER_UnavailableGridSkipsWithoutBankingAndRetries
+note = The grid tries one cell outside its defined rows.
+original:
+|                 int cells = pack.GridColumns * pack.GridRows;
+replacement:
+|                 int cells = pack.GridColumns * pack.GridRows + 1;
+
+[test-cap-r12-last-anchor-skipped]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.M6DeployTests.D5_PLACEHOLDER_SameRequestDeploymentsSeeEachOther
+note = The last available deployment anchor is skipped.
+original:
+|                 for (int a = 0; a < count && !done; a++)
+replacement:
+|                 for (int a = 0; a < count - 1 && !done; a++)
+
+[test-cap-r13-last-cell-skipped]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.M6DeployTests.D5_PLACEHOLDER_UnavailableGridSkipsWithoutBankingAndRetries
+note = The final grid candidate is never tried.
+original:
+|                     for (int cell = 0; cell < cells; cell++)
+replacement:
+|                     for (int cell = 0; cell < cells - 1; cell++)
+
+[test-cap-r14-rotation-one-ahead]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.M6DeployTests.D5_RealDeploymentUsesFirstLegalCellInRotatingRowMajorOrder
+note = The first candidate starts one cell ahead.
+original:
+|                         int slot = (int)((attempt + cell) % cells);
+replacement:
+|                         int slot = (int)((attempt + cell + 1) % cells);
+
+[test-cap-r15-x-grid-shift]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.M6DeployTests.D5_PLACEHOLDER_ExactAttemptsStableOrderComponentsAnchorsAndExhaustion
+note = The grid shifts one spacing unit on the horizontal axis.
+original:
+|                         SimVec3 offset = new SimVec3(SimFix.Ratio(2 * (slot % pack.GridColumns) - pack.GridColumns + 1, 2) * pack.GridSpacing,
+replacement:
+|                         SimVec3 offset = new SimVec3(SimFix.Ratio(2 * (slot % pack.GridColumns) - pack.GridColumns - 1, 2) * pack.GridSpacing,
+
+[test-cap-r16-z-grid-shift]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.M6DeployTests.D5_PLACEHOLDER_ExactAttemptsStableOrderComponentsAnchorsAndExhaustion
+note = The grid shifts one spacing unit on the depth axis.
+original:
+|                             default, SimFix.Ratio(2 * (slot / pack.GridColumns) - pack.GridRows + 1, 2) * pack.GridSpacing);
+replacement:
+|                             default, SimFix.Ratio(2 * (slot / pack.GridColumns) - pack.GridRows - 1, 2) * pack.GridSpacing);
+
+[test-cap-r17-success-count-double]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarCore.Tests.M6DeployTests|FullyQualifiedName~WarCore.Tests.M6SnapshotTests|FullyQualifiedName~WarCore.Tests.TestCap
+expect = WarCore.Tests.M6DeployTests.D5_PLACEHOLDER_ExactAttemptsStableOrderComponentsAnchorsAndExhaustion
+note = One deployment counts as two successes.
+original:
+|                         successes[index]++;
+replacement:
+|                         successes[index] += 2;
