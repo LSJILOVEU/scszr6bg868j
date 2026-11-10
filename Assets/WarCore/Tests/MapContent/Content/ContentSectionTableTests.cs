@@ -87,9 +87,9 @@ namespace WarCore.Tests
         {
             var source = new FixedLocationSource(Layers);
             string message = Assert.Throws<ContentException>(() => ContentLoader.Load(source, "fake-parent")).Message;
-            Assert.That(message, Is.EqualTo("content layer 'fake-parent' has unknown field 'fake' (line 1); allowed: id, extends, weapons, melee, block, unitTypes, combat, match, surfaces, slopeRule, ai"));
+            Assert.That(message, Is.EqualTo("content layer 'fake-parent' has unknown field 'fake' (line 1); allowed: id, extends, weapons, melee, block, unitTypes, combat, match, surfaces, slopeRule, ai, rules"));
             string withRow = Assert.Throws<ContentException>(() => ContentLoader.Load(source, "fake-parent", WithExtra(new RecordingSection("other", 0, new List<string>())))).Message;
-            Assert.That(withRow, Is.EqualTo("content layer 'fake-parent' has unknown field 'fake' (line 1); allowed: id, extends, weapons, melee, block, unitTypes, combat, match, surfaces, slopeRule, ai, other"));
+            Assert.That(withRow, Is.EqualTo("content layer 'fake-parent' has unknown field 'fake' (line 1); allowed: id, extends, weapons, melee, block, unitTypes, combat, match, surfaces, slopeRule, ai, rules, other"));
         }
 
         [Test]

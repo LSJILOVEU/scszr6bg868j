@@ -38,6 +38,7 @@ namespace WarCore.Content
         private readonly string resolverId, selectorId;
         private readonly long maxHealthRaw;
         private readonly MatchRules? match;
+        private readonly string[] ruleIds;
         private readonly bool friendlyFire, friendlyFireLocked;
         private readonly int allyCheckMissRaw;
         private readonly long allyHoldMilli;
@@ -57,11 +58,12 @@ namespace WarCore.Content
             long maxHealthRaw, string resolverId, string selectorId, MatchRules? match,
             bool friendlyFire, bool friendlyFireLocked, int allyCheckMissRaw, long allyHoldMilli,
             BlockSpec[] block, int[] unitTypeBlock, int[] unitTypeArchetypes, long?[] unitTypeSpeeds,
-            string[] meleeIds = null, MeleeSpec[] melee = null, int[] unitTypeMelee = null, TerrainRules terrain = null, object[] sections = null)
+            string[] meleeIds = null, MeleeSpec[] melee = null, int[] unitTypeMelee = null, TerrainRules terrain = null, object[] sections = null, string[] ruleIds = null)
         {
             this.block = block; this.unitTypeBlock = unitTypeBlock;
             this.unitTypeArchetypes = unitTypeArchetypes; this.unitTypeSpeeds = unitTypeSpeeds;
             Terrain = terrain;
+            this.ruleIds = ruleIds;
             this.sections = sections ?? Array.Empty<object>();
             this.meleeIds = meleeIds ?? Array.Empty<string>(); this.melee = melee ?? Array.Empty<MeleeSpec>();
             this.unitTypeMelee = unitTypeMelee ?? NoMelee(unitTypeIds.Length);
@@ -140,7 +142,7 @@ namespace WarCore.Content
             {
                 return new MatchPack(points, bases, m.CaptureAdvantageNum, m.CaptureAdvantageDen, m.CaptureStrict, m.CaptureTicks,
                     m.Interrupt, m.DecayPerTick, m.IntervalTicks, m.ThinkInterval, m.MaxTicks, m.Sight, m.GridColumns, m.GridRows, m.GridSpacing,
-                    m.RespawnTicks, m.RespawnGuardTicks);
+                    m.RespawnTicks, m.RespawnGuardTicks, ruleIds);
             }
             catch (ArgumentException e)
             {

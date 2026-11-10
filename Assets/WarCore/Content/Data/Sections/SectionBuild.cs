@@ -27,6 +27,7 @@ namespace WarCore.Content
         internal bool FriendlyFire, FriendlyFireLocked;
         internal int AllyCheckMissRaw;
         internal MatchRules? Rules;
+        internal string[] RuleIds;
         internal int SlopeNumerator = HeightField.MaxSlopeNumerator, SlopeDenominator = HeightField.MaxSlopeDenominator;
         internal TerrainRules Terrain;
 
@@ -45,6 +46,6 @@ namespace WarCore.Content
 
         internal ContentPack ToPack() => new ContentPack(Pack, WeaponIds, Weapons, UnitIds, UnitWeapons, MaxHealthRaw, ResolverId, SelectorId, Rules,
             FriendlyFire, FriendlyFireLocked, AllyCheckMissRaw, AllyHoldMilli, Block, UnitBlock, UnitArchetypes, UnitSpeeds,
-            MeleeIds, Melee, UnitMelee, Terrain, published.ToArray());
+            MeleeIds, Melee, UnitMelee, Terrain, published.ToArray(), RuleIds);
     }
 }
