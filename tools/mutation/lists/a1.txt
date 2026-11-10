@@ -1,0 +1,102 @@
+# A1 melee chasing: optional range, pure melee units, nearest visible target, and engagement stop.
+
+[a1-01-radius-reversed]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.A1BehaviorTests|FullyQualifiedName~WarCore.Tests.A1ContentTests|FullyQualifiedName~WarCore.Tests.A1MatchTests
+expect = WarCore.Tests.A1BehaviorTests.A1_ChaseRadiusIncludesBoundary
+expect = WarCore.Tests.A1MatchTests.A1_ChaseEndsTheMatch
+note = candidates inside the chase radius are rejected
+original:
+|                 if (distance > limit) continue;
+replacement:
+|                 if (distance < limit) continue;
+
+[a1-02-zero-chases]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.A1BehaviorTests|FullyQualifiedName~WarCore.Tests.A1ContentTests|FullyQualifiedName~WarCore.Tests.A1MatchTests
+expect = WarCore.Tests.A1MatchTests.A1_OffIsUnchanged
+note = zero enables an eighty metre chase radius
+original:
+|             this.meleeChaseRange = SimFix.FromInt(meleeChaseRange);
+replacement:
+|             this.meleeChaseRange = SimFix.FromInt(meleeChaseRange == 0 ? 80 : meleeChaseRange);
+
+[a1-03-armed-chases]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.A1BehaviorTests|FullyQualifiedName~WarCore.Tests.A1ContentTests|FullyQualifiedName~WarCore.Tests.A1MatchTests
+expect = WarCore.Tests.A1BehaviorTests.A1_ArmedUnitKeepsRouteBeyondGunRange
+note = armed units with melee specs also chase
+original:
+|                 if (meleeChaseRange.Raw > 0 && unit.Weapon < 0 && weapons.HasMelee
+replacement:
+|                 if (meleeChaseRange.Raw > 0 && weapons.HasMelee
+
+[a1-04-no-engage-stop]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.A1BehaviorTests|FullyQualifiedName~WarCore.Tests.A1ContentTests|FullyQualifiedName~WarCore.Tests.A1MatchTests
+expect = WarCore.Tests.A1BehaviorTests.A1_StopsAtOwnEngageRange
+note = entering the melee engagement range never stops movement
+original:
+|                     if (CombatSystem.Horizontal(enemy - here).LengthSquared <= new SimVec3(engage, default, default).LengthSquared)
+replacement:
+|                     if (false)
+
+[a1-05-invisible-chases]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.A1BehaviorTests|FullyQualifiedName~WarCore.Tests.A1ContentTests|FullyQualifiedName~WarCore.Tests.A1MatchTests
+expect = WarCore.Tests.A1BehaviorTests.A1_InvisibleEnemyKeepsRoute
+note = blocked line of sight no longer rejects the target
+original:
+|                 if (!combat.Visible(entity, candidate)) continue;
+replacement:
+|                 if (false) continue;
+
+[a1-06-farthest-target]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.A1BehaviorTests|FullyQualifiedName~WarCore.Tests.A1ContentTests|FullyQualifiedName~WarCore.Tests.A1MatchTests
+expect = WarCore.Tests.A1BehaviorTests.A1_NearestEnemyIsChosen
+note = the target search prefers greater distances
+original:
+|                 if (found && (distance > best || (distance == best && id.CompareTo(bestId) >= 0))) continue;
+replacement:
+|                 if (found && (distance < best || (distance == best && id.CompareTo(bestId) >= 0))) continue;
+
+[a1-07-content-drops-range]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~WarCore.Tests.A1BehaviorTests|FullyQualifiedName~WarCore.Tests.A1ContentTests|FullyQualifiedName~WarCore.Tests.A1MatchTests
+expect = WarCore.Tests.A1ContentTests.A1_ContentRangeAndDefaults
+note = the content section does not publish the requested range
+original:
+|             b.Publish(new AiRules(failed, memory, search, reaction, sense, burst, pause, suppress, chase));
+replacement:
+|             b.Publish(new AiRules(failed, memory, search, reaction, sense, burst, pause, suppress, 0));
+
+[a1-08-installer-drops-range]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.A1BehaviorTests|FullyQualifiedName~WarCore.Tests.A1ContentTests|FullyQualifiedName~WarCore.Tests.A1MatchTests
+expect = WarCore.Tests.A1MatchTests.A1_ChaseEndsTheMatch
+note = world assembly never passes the chase range to the AI
+original:
+|             int meleeChaseRange = terrain != null ? recipe.TerrainPack.Section<AiRules>().MeleeChaseRange : 0;
+replacement:
+|             int meleeChaseRange = 0;
+
+[a1-09-chase-keeps-guard-memory]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.A1BehaviorTests|FullyQualifiedName~WarCore.Tests.A1ContentTests|FullyQualifiedName~WarCore.Tests.A1MatchTests
+expect = WarCore.Tests.A1BehaviorTests.A1_ChaseReleasesRememberedGuardSlot
+note = a chase route keeps the previous guard slot registered as its movement target
+original:
+|                     { OrderUnit(id, here, moving, target, enemy); memory?.Forget(id); }
+replacement:
+|                     { OrderUnit(id, here, moving, target, enemy); }
+
+[a1-10-unbounded-range]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~WarCore.Tests.A1BehaviorTests|FullyQualifiedName~WarCore.Tests.A1ContentTests|FullyQualifiedName~WarCore.Tests.A1MatchTests
+expect = WarCore.Tests.A1ContentTests.A1_ContentRejectsInvalidRange("513"
+note = the content reader accepts chase ranges above the maximum
+original:
+|                 if (r.Has("meleeChaseRange")) chase = r.Int("meleeChaseRange", 0, MaxMeleeChaseRange);
+replacement:
+|                 if (r.Has("meleeChaseRange")) chase = r.Int("meleeChaseRange", 0);
