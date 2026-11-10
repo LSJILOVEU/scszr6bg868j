@@ -14,6 +14,8 @@ namespace WarCore.Battle
         private readonly EntityStage stage;
         private readonly ComponentType<Position> positions;
         private readonly ComponentType<Combatant> combatants;
+        private readonly ComponentType<MeleeState> meleeStates;
+        private readonly SimFix meleeChaseRange;
         private readonly IControlTarget controlled;
         private readonly FailedSlotMemory memory;
         private readonly TargetMemory contacts;
@@ -25,14 +27,16 @@ namespace WarCore.Battle
         private readonly ulong[] reservedBy, standingBy;
         public SimpleAiSystem(CombatSystem combat, CombatPack weapons, MatchPack pack, CaptureSystem capture, IMoveOrders moves,
             IControlTarget controlled = null, FailedSlotMemory memory = null, TargetMemory contacts = null,
-            TargetSearch search = null, TargetSuppress suppress = null)
+            TargetSearch search = null, TargetSuppress suppress = null, int meleeChaseRange = 0)
         {
             this.combat = combat; this.weapons = weapons; this.pack = pack; this.capture = capture; this.moves = moves;
             this.controlled = controlled; this.memory = memory; this.contacts = contacts; this.search = search; this.suppress = suppress;
+            this.meleeChaseRange = SimFix.FromInt(meleeChaseRange);
             slots = new GuardSlots(pack.Points);
             reservedHas = new bool[slots.Total]; standingHas = new bool[slots.Total];
             reservedBy = new ulong[slots.Total]; standingBy = new ulong[slots.Total];
             stage = new EntityStage(combat.Entities); positions = combat.Entities.Resolve<Position>(); combatants = combat.Entities.Resolve<Combatant>();
+            if (weapons.HasMelee) meleeStates = combat.Entities.Resolve<MeleeState>();
         }
         public int Order => 12;
         public string StateTypeId => "battle.ai";
@@ -53,6 +57,17 @@ namespace WarCore.Battle
                 if (moving && Arrived(here, target) && slots.TryFind(target, -1, out _))
                 { StopUnit(id, here, target); moving = false; }
                 if ((c.Clock.Tick + (long)(id.Value % (ulong)pack.ThinkInterval)) % pack.ThinkInterval != 0) continue;
+                if (meleeChaseRange.Raw > 0 && unit.Weapon < 0 && weapons.HasMelee
+                    && combat.Entities.TryGet(meleeStates, entity, out MeleeState melee) && melee.Spec >= 0
+                    && TryMeleeTarget(entity, here, out SimVec3 enemy))
+                {
+                    SimFix engage = weapons.Melee[melee.Spec].EngageRange;
+                    if (CombatSystem.Horizontal(enemy - here).LengthSquared <= new SimVec3(engage, default, default).LengthSquared)
+                    { if (moving) StopUnit(id, here, target); }
+                    else if (!moving || target.X.Raw != enemy.X.Raw || target.Z.Raw != enemy.Z.Raw)
+                    { OrderUnit(id, here, moving, target, enemy); memory?.Forget(id); }
+                    continue;
+                }
                 if (unit.Weapon >= 0 && combat.Pack.Selector.TrySelect(combat, entity, weapons.Weapons[unit.Weapon].FalloffEnd, out EntityId seen))
                 { contacts?.Saw(id, seen, c.Clock.Tick); if (moving) StopUnit(id, here, target); continue; }
                 // Nothing in sight: a remembered target may be suppressed (fire at where it was last seen) from this tick on.
@@ -90,6 +105,25 @@ namespace WarCore.Battle
                 if (!moving || !target.Equals(destination))
                 { OrderUnit(id, here, moving, target, destination); memory?.Ordered(id, slots.Canonical(slot)); }
             }
+        }
+        private bool TryMeleeTarget(EntityId entity, SimVec3 here, out SimVec3 target)
+        {
+            target = default;
+            bool found = false; SimWide best = default; StableId bestId = default;
+            SimWide limit = new SimVec3(meleeChaseRange, default, default).LengthSquared;
+            foreach (var hit in combat.Candidates(entity, meleeChaseRange))
+            {
+                EntityId candidate = hit.Entity;
+                if (!combat.IsEnemy(entity, candidate)) continue;
+                SimVec3 at = combat.Point(candidate);
+                SimWide distance = CombatSystem.Horizontal(at - here).LengthSquared;
+                if (distance > limit) continue;
+                StableId id = combat.Entities.StableOf(candidate);
+                if (found && (distance > best || (distance == best && id.CompareTo(bestId) >= 0))) continue;
+                if (!combat.Visible(entity, candidate)) continue;
+                target = at; best = distance; bestId = id; found = true;
+            }
+            return found;
         }
         private void Forget(EntityId entity)
         {
