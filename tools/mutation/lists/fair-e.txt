@@ -1,0 +1,105 @@
+# FAIR-E decision collection, seeded arbitration and default-off compatibility.
+
+[fair-e-01-inverted-option]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~FairEStateTests
+expect = WarCore.Tests.FairEStateTests.FairE_VersionPolicySaveAndHash
+note = an explicitly disabled option enables fair decisions
+original:
+|             bool fair = recipe.TerrainPack != null && recipe.TerrainPack.Section<AiRules>().FairDecisions;
+replacement:
+|             bool fair = recipe.TerrainPack != null && !recipe.TerrainPack.Section<AiRules>().FairDecisions;
+
+[fair-e-02-immediate-claims]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~FairE_OnFixedOutcomesAndRepeat&Name~41UL
+expect = WarCore.Tests.FairEOnTests
+note = movement decisions immediately issue orders and occupy slots during collection
+original:
+|         private void OrderUnit(StableId id, SimVec3 here, bool moving, SimVec3 oldTarget, SimVec3 destination, int memorySlot)
+|         {
+|             if (fairDecisions)
+replacement:
+|         private void OrderUnit(StableId id, SimVec3 here, bool moving, SimVec3 oldTarget, SimVec3 destination, int memorySlot)
+|         {
+|             if (false)
+
+[fair-e-03-key-order]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~FairE_OnFixedOutcomesAndRepeat&Name~41UL
+expect = WarCore.Tests.FairEOnTests
+note = contested slots are awarded in key order without the seed
+original:
+|             ulong x = Priority(a), y = Priority(b);
+replacement:
+|             ulong x = a, y = b;
+
+[fair-e-04-old-version]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~FairEStateTests
+expect = WarCore.Tests.FairEStateTests.FairE_VersionPolicySaveAndHash
+note = the enabled option retains version 3
+original:
+|         public int StateVersion => fairDecisions ? 4 : 3;
+replacement:
+|         public int StateVersion => 3;
+
+[fair-e-05-old-policy]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~FairEStateTests
+expect = WarCore.Tests.FairEStateTests.FairE_VersionPolicySaveAndHash
+note = the saved and hashed policy omits the option and decision seed
+original:
+|                 policyDigest = hash.Value;
+replacement:
+|                 policyDigest = pack.PolicyDigest;
+
+[fair-e-06-old-hash]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~FairEStateTests
+expect = WarCore.Tests.FairEStateTests.FairE_VersionPolicySaveAndHash
+note = state hashing ignores the enabled policy
+original:
+|         { hash.Add(StateTypeId); hash.Add(StateVersion); hash.Add(policyDigest); hash.Add(weapons.PolicyDigest); }
+replacement:
+|         { hash.Add(StateTypeId); hash.Add(StateVersion); hash.Add(pack.PolicyDigest); hash.Add(weapons.PolicyDigest); }
+
+[fair-e-07-unseeded-phase]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~FairE_OnFixedOutcomesAndRepeat&Name~41UL
+expect = WarCore.Tests.FairEOnTests
+note = thinking phases use the original stable-key modulo
+original:
+|                 if ((c.Clock.Tick + (long)((fairDecisions ? Mix(id.Value ^ seedSalt) : id.Value) % (ulong)pack.ThinkInterval)) % pack.ThinkInterval != 0) continue;
+replacement:
+|                 if ((c.Clock.Tick + (long)(id.Value % (ulong)pack.ThinkInterval)) % pack.ThinkInterval != 0) continue;
+
+[fair-e-08-content-drops-option]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~FairEStateTests
+expect = WarCore.Tests.FairEStateTests.FairE_ContentDefaultAndValues
+note = the parsed option is discarded
+original:
+|             b.Publish(new AiRules(failed, memory, search, reaction, sense, burst, pause, suppress, chase, fair));
+replacement:
+|             b.Publish(new AiRules(failed, memory, search, reaction, sense, burst, pause, suppress, chase, false));
+
+[fair-e-09-original-loop]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~FairE_OnFixedOutcomesAndRepeat&Name~41UL
+expect = WarCore.Tests.FairEOnTests.FairE_OnFixedOutcomesAndRepeat
+note = enabled steps delegate to the original sequential decision loop with the same dependencies
+original:
+|             decisionTick = c.Clock.Tick; intentCount = 0;
+replacement:
+|             if (fairDecisions) { new SimpleAiSystem(combat, weapons, pack, capture, moves, controlled, memory, contacts, search, suppress, (int)(meleeChaseRange.Raw / SimFix.Scale)).Step(c); return; } decisionTick = c.Clock.Tick; intentCount = 0;
+
+[fair-e-10-immediate-chase]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~FairE_MeleeChaseUsesArbitration
+expect = WarCore.Tests.FairEOnTests.FairE_MeleeChaseUsesArbitration
+note = melee chase orders bypass fair decision collection and arbitration
+original:
+|                     { OrderUnit(id, here, moving, target, enemy, -2); }
+replacement:
+|                     { moves.Order(id, enemy); memory?.Forget(id); }
