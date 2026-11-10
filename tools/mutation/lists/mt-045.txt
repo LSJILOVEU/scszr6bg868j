@@ -1,0 +1,22 @@
+# GridQueryContext
+# Surviving mutations of Assets/WarCore/Sim/GridQueryContext.cs. Test classes are named Mt045GridQueryContext*.
+
+[mt-045-01]
+file = Assets/WarCore/Sim/GridQueryContext.cs
+filter = FullyQualifiedName~Mt045GridQueryContext
+expect = WarCore.Tests.Mt045GridQueryContextTests.ConstructorAllocatesSortKeysForEverySlot
+note = The sorting buffer cannot hold a key for every context slot.
+original:
+| SortKeys = new ulong[capacity];
+replacement:
+| SortKeys = new ulong[capacity - 1];
+
+[mt-045-02]
+file = Assets/WarCore/Sim/GridQueryContext.cs
+filter = FullyQualifiedName~Mt045GridQueryContext
+expect = WarCore.Tests.Mt045GridQueryContextTests.AnyClearsTruncatedHitsAfterCappedQuery
+note = An ordinary query reports a truncated hit after resetting the context.
+original:
+| TruncatedHits = 0;
+replacement:
+| TruncatedHits = 1;

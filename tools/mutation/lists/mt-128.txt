@@ -1,0 +1,62 @@
+# GameplayStatusData
+# Surviving mutations of Assets/WarCore/Sim/GameplayStatusData.cs. Test classes are named Mt128GameplayStatusData*.
+
+[mt-128-01]
+file = Assets/WarCore/Sim/GameplayStatusData.cs
+filter = FullyQualifiedName~Mt128GameplayStatusData
+expect = WarCore.Tests.Mt128GameplayStatusDataTests.DefinitionAcceptsMaximumModifierCount
+note = Rejects a status definition with exactly the permitted modifier count.
+original:
+| if ((modifiers != null && modifiers.Length > GameplayMath.MaxModifiers) || (periodicActions != null && periodicActions.Length > GameplayMath.MaxPackets))
+replacement:
+| if ((modifiers != null && modifiers.Length >= GameplayMath.MaxModifiers) || (periodicActions != null && periodicActions.Length > GameplayMath.MaxPackets))
+
+[mt-128-03]
+file = Assets/WarCore/Sim/GameplayStatusData.cs
+filter = FullyQualifiedName~Mt128GameplayStatusData
+expect = WarCore.Tests.Mt128GameplayStatusDataTests.DefinitionSortsModifiersByKey
+note = Leaves the first reversed modifier pair unsorted.
+original:
+| for (int i = 1; i < this.modifiers.Length; i++)
+replacement:
+| for (int i = 2; i < this.modifiers.Length; i++)
+
+[mt-128-04]
+file = Assets/WarCore/Sim/GameplayStatusData.cs
+filter = FullyQualifiedName~Mt128GameplayStatusData
+expect = WarCore.Tests.Mt128GameplayStatusDataTests.DefinitionSortsModifiersByKey
+note = Prevents a lower modifier key from moving to the first position.
+original:
+| while (j > 0 && this.modifiers[j - 1].Key > v.Key)
+replacement:
+| while (j > 1 && this.modifiers[j - 1].Key > v.Key)
+
+[mt-128-05]
+file = Assets/WarCore/Sim/GameplayStatusData.cs
+filter = FullyQualifiedName~Mt128GameplayStatusData
+expect = WarCore.Tests.Mt128GameplayStatusDataTests.DefinitionSortsModifiersByKey
+note = Stores modifiers in descending key order instead of ascending order.
+original:
+| while (j > 0 && this.modifiers[j - 1].Key > v.Key)
+replacement:
+| while (j > 0 && this.modifiers[j - 1].Key < v.Key)
+
+[mt-128-06]
+file = Assets/WarCore/Sim/GameplayStatusData.cs
+filter = FullyQualifiedName~Mt128GameplayStatusData
+expect = WarCore.Tests.Mt128GameplayStatusDataTests.DefinitionSortsPeriodicActionsByOrdinal
+note = Leaves the first reversed periodic action pair unsorted.
+original:
+| for (int i = 1; i < this.periodicActions.Length; i++)
+replacement:
+| for (int i = 2; i < this.periodicActions.Length; i++)
+
+[mt-128-07]
+file = Assets/WarCore/Sim/GameplayStatusData.cs
+filter = FullyQualifiedName~Mt128GameplayStatusData
+expect = WarCore.Tests.Mt128GameplayStatusDataTests.DefinitionSortsPeriodicActionsByOrdinal
+note = Stores periodic actions in descending ordinal order instead of ascending order.
+original:
+| while (j > 0 && this.periodicActions[j - 1].Ordinal > v.Ordinal)
+replacement:
+| while (j > 0 && this.periodicActions[j - 1].Ordinal < v.Ordinal)

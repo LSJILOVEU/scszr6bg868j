@@ -1,0 +1,12 @@
+# FactionRelations
+# Surviving mutations of Assets/WarCore/Sim/FactionRelations.cs. Test classes are named Mt042FactionRelations*.
+
+[mt-042-01]
+file = Assets/WarCore/Sim/FactionRelations.cs
+filter = FullyQualifiedName~Mt042FactionRelations
+expect = WarCore.Tests.Mt042FactionRelationsTests.CompleteMatrixWithoutTrailingBytesLoads
+note = Rejects a complete faction matrix when no trailing bytes remain.
+original:
+| SimStateReader.Require(size <= reader.Remaining / 4, "Truncated faction matrix.");
+replacement:
+| SimStateReader.Require(size < reader.Remaining / 4, "Truncated faction matrix.");

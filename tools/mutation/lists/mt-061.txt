@@ -1,0 +1,22 @@
+# SimConfig
+# Surviving mutations of Assets/WarCore/Sim/SimConfig.cs. Test classes are named Mt061SimConfig*.
+
+[mt-061-01]
+file = Assets/WarCore/Sim/SimConfig.cs
+filter = FullyQualifiedName~Mt061SimConfig
+expect = WarCore.Tests.Mt061SimConfigTests.MaximumRequestCapacityIsAccepted
+note = Rejects the maximum legal request capacity of 134217728.
+original:
+| if (capacity < 1 || capacity > (1 << 27))
+replacement:
+| if (capacity < 1 || capacity >= (1 << 27))
+
+[mt-061-02]
+file = Assets/WarCore/Sim/SimConfig.cs
+filter = FullyQualifiedName~Mt061SimConfig
+expect = WarCore.Tests.Mt061SimConfigTests.SignedAdditionCanReachMaxValue
+note = Rejects signed addition whose exact result is long.MaxValue.
+original:
+| if ((right > 0 && left > long.MaxValue - right) || (right < 0 && left < long.MinValue - right))
+replacement:
+| if ((right > 0 && left >= long.MaxValue - right) || (right < 0 && left < long.MinValue - right))

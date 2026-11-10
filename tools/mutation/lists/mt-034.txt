@@ -1,0 +1,52 @@
+# ControlTarget
+# Surviving mutations of Assets/WarCore/Sim/ControlTarget.cs. Test classes are named Mt034ControlTarget*.
+
+[mt-034-01]
+file = Assets/WarCore/Sim/ControlTarget.cs
+filter = FullyQualifiedName~Mt034ControlTarget
+expect = WarCore.Tests.Mt034ControlTargetTests.StateVersionIsOne
+note = Changes the public control state version from one to two.
+original:
+| public int StateVersion => 1;
+replacement:
+| public int StateVersion => 2;
+
+[mt-034-02]
+file = Assets/WarCore/Sim/ControlTarget.cs
+filter = FullyQualifiedName~Mt034ControlTarget
+expect = WarCore.Tests.Mt034ControlTargetTests.ConstructorRejectsDefaultEventType
+note = Accepts the default zero event type for control switches.
+original:
+| if (entities == null || !entities.IsAlive(initial) || handler == null || switchType.Value <= 0
+replacement:
+| if (entities == null || !entities.IsAlive(initial) || handler == null || switchType.Value < 0
+
+[mt-034-03]
+file = Assets/WarCore/Sim/ControlTarget.cs
+filter = FullyQualifiedName~Mt034ControlTarget
+expect = WarCore.Tests.Mt034ControlTargetTests.ConstructorRejectsZeroHandlerVersion
+note = Accepts an input handler with state version zero.
+original:
+| || string.IsNullOrEmpty(handler.StateTypeId) || handler.StateVersion <= 0)
+replacement:
+| || string.IsNullOrEmpty(handler.StateTypeId) || handler.StateVersion < 0)
+
+[mt-034-04]
+file = Assets/WarCore/Sim/ControlTarget.cs
+filter = FullyQualifiedName~Mt034ControlTarget
+expect = WarCore.Tests.Mt034ControlTargetTests.ReactivatedTargetDoesNotEmitSwitchEvent
+note = Emits a switch event when rebinding the same stable identity after cold reactivation.
+original:
+| if (entities.IdentityMode == IdentityMode.StableWorld && entities.Link(target).Equals(CurrentLink))
+replacement:
+| if (entities.IdentityMode != IdentityMode.StableWorld && entities.Link(target).Equals(CurrentLink))
+
+[mt-034-05]
+file = Assets/WarCore/Sim/ControlTarget.cs
+filter = FullyQualifiedName~Mt034ControlTarget
+expect = WarCore.Tests.Mt034ControlTargetTests.StableSwitchPreservesEventEndpoints
+note = Reverses the previous and current stable control targets in the switch event.
+original:
+| context.Emit(new StableSimEvent(switchType,previousLink,CurrentLink));
+replacement:
+| context.Emit(new StableSimEvent(switchType,CurrentLink,previousLink));

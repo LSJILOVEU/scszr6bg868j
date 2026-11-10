@@ -1,0 +1,12 @@
+# EntityReferenceCleanup
+# Surviving mutations of Assets/WarCore/Sim/EntityReferenceCleanup.cs. Test classes are named Mt035EntityReferenceCleanup*.
+
+[mt-035-01]
+file = Assets/WarCore/Sim/EntityReferenceCleanup.cs
+filter = FullyQualifiedName~Mt035EntityReferenceCleanup
+expect = WarCore.Tests.Mt035EntityReferenceCleanupTests.ReferenceSlotOrderingIncludesMostSignificantByte
+note = Omitting the most significant byte pass misorders reference slots across the 24-bit boundary.
+original:
+| for (int shift = 0; shift < 32; shift += 8)
+replacement:
+| for (int shift = 0; shift < 24; shift += 8)

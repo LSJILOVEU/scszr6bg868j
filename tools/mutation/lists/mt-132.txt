@@ -1,0 +1,32 @@
+# GameplayWorld
+# Surviving mutations of Assets/WarCore/Sim/GameplayWorld.cs. Test classes are named Mt132GameplayWorld*.
+
+[mt-132-01]
+file = Assets/WarCore/Sim/GameplayWorld.cs
+filter = FullyQualifiedName~Mt132GameplayWorld
+expect = WarCore.Tests.Mt132GameplayWorldTests.WorldWithoutGameplayHasZeroStatuses
+note = Worlds without gameplay must report zero statuses.
+original:
+| public int GameplayStatusCount => gameplay == null ? 0 : gameplay.StatusCount;
+replacement:
+| public int GameplayStatusCount => gameplay == null ? 1 : gameplay.StatusCount;
+
+[mt-132-02]
+file = Assets/WarCore/Sim/GameplayWorld.cs
+filter = FullyQualifiedName~Mt132GameplayWorld
+expect = WarCore.Tests.Mt132GameplayWorldTests.BindUnboundEntityAfterStepIsRejected
+note = Gameplay binding must reject unbound entities after the first step.
+original:
+| if (gameplay == null || started || stepping)
+replacement:
+| if (gameplay == null || stepping)
+
+[mt-132-03]
+file = Assets/WarCore/Sim/GameplayWorld.cs
+filter = FullyQualifiedName~Mt132GameplayWorld
+expect = WarCore.Tests.Mt132GameplayWorldTests.ChangeResourceAfterStepIsRejectedOutsideQueries
+note = Gameplay writes must be rejected outside the query phase.
+original:
+| if (gameplay == null || !gameplayQueries)
+replacement:
+| if (gameplay == null)

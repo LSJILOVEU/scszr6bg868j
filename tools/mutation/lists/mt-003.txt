@@ -1,0 +1,12 @@
+# TargetSuppress
+# Surviving mutations of Assets/WarCore/Battle/Ai/TargetSuppress.cs. Test classes are named Mt003TargetSuppress*.
+
+[mt-003-01]
+file = Assets/WarCore/Battle/Ai/TargetSuppress.cs
+filter = FullyQualifiedName~Mt003TargetSuppress
+expect = WarCore.Tests.Mt003TargetSuppressStateTests.Load_ZeroSeen_RoundTrips
+note = Rejects a valid suppression sighting at tick zero.
+original:
+|                 SimStateReader.Require(seen >= 0, "AI suppression seen tick is negative.");
+replacement:
+|                 SimStateReader.Require(seen > 0, "AI suppression seen tick is negative.");

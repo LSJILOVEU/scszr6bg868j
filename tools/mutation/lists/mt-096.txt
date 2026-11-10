@@ -1,0 +1,42 @@
+# StablePosture
+# Surviving mutations of Assets/WarCore/Sim/StablePosture.cs. Test classes are named Mt096StablePosture*.
+
+[mt-096-01]
+file = Assets/WarCore/Sim/StablePosture.cs
+filter = FullyQualifiedName~Mt096StablePosture
+expect = WarCore.Tests.Mt096StablePostureTests.ZeroDurationIsRejectedEvenWhenTargetIsCurrentPosture
+note = Zero duration must be rejected even when the target posture is unchanged.
+original:
+| if (context.Entities != entities || durationTicks <= 0)
+replacement:
+| if (context.Entities != entities || durationTicks < 0)
+
+[mt-096-02]
+file = Assets/WarCore/Sim/StablePosture.cs
+filter = FullyQualifiedName~Mt096StablePosture
+expect = WarCore.Tests.Mt096StablePostureTests.TransitionStartsAndCompletesAtExactDueTick
+note = A different target posture must start a transition and become current at its deadline.
+original:
+| if (targetId == previous.CurrentId)
+replacement:
+| if (targetId != previous.CurrentId)
+
+[mt-096-03]
+file = Assets/WarCore/Sim/StablePosture.cs
+filter = FullyQualifiedName~Mt096StablePosture
+expect = WarCore.Tests.Mt096StablePostureTests.TransitionStartsAndCompletesAtExactDueTick
+note = The transition deadline must equal the current tick plus the requested duration.
+original:
+| long due = SimChecked.Add(context.Clock.Tick,durationTicks);
+replacement:
+| long due = SimChecked.Add(context.Clock.Tick,durationTicks + 1);
+
+[mt-096-04]
+file = Assets/WarCore/Sim/StablePosture.cs
+filter = FullyQualifiedName~Mt096StablePosture
+expect = WarCore.Tests.Mt096StablePostureTests.RestoreValidationRejectsPendingTaskAtCurrentTick
+note = Restore validation must reject a pending posture task due at the current tick.
+original:
+| && task.Key.DueTick == posture.DueTick && task.Key.DueTick > context.Clock.Tick
+replacement:
+| && task.Key.DueTick == posture.DueTick && task.Key.DueTick >= context.Clock.Tick

@@ -1,0 +1,12 @@
+# SpatialGeometrySlow
+# Surviving mutations of Assets/WarCore/Sim/SpatialGeometrySlow.cs. Test classes are named Mt075SpatialGeometrySlow*.
+
+[mt-075-01]
+file = Assets/WarCore/Sim/SpatialGeometrySlow.cs
+filter = FullyQualifiedName~Mt075SpatialGeometrySlow
+expect = WarCore.Tests.Mt075SpatialGeometrySlowTests.SlowSectorIncludesPointDirectlyBehindOnlyAtFullAngle
+note = Treating cosine -999 as a full angle incorrectly includes a zero-radius point directly behind the sector.
+original:
+| if (q.Cosine == -1000 || (x == 0 && z == 0))
+replacement:
+| if (q.Cosine == -999 || (x == 0 && z == 0))

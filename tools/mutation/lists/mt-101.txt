@@ -1,0 +1,32 @@
+# StableTasks
+# Surviving mutations of Assets/WarCore/Sim/StableTasks.cs. Test classes are named Mt101StableTasks*.
+
+[mt-101-01]
+file = Assets/WarCore/Sim/StableTasks.cs
+filter = FullyQualifiedName~Mt101StableTasks
+expect = WarCore.Tests.Mt101StableTasksTests.TaskKeyRejectsZeroDueTick
+note = Allows a stable task key with a zero due tick.
+original:
+| if (dueTick <= 0 || originDomain > 1)
+replacement:
+| if (dueTick < 0 || originDomain > 1)
+
+[mt-101-02]
+file = Assets/WarCore/Sim/StableTasks.cs
+filter = FullyQualifiedName~Mt101StableTasks
+expect = WarCore.Tests.Mt101StableTasksTests.StableTaskAtCurrentTickThrowsBoundaryException
+note = Rejects a task at the current tick with the wrong exception type.
+original:
+| if (key.DueTick <= advancedThrough || key.Counter == ulong.MaxValue)
+replacement:
+| if (key.DueTick < advancedThrough || key.Counter == ulong.MaxValue)
+
+[mt-101-03]
+file = Assets/WarCore/Sim/StableTasks.cs
+filter = FullyQualifiedName~Mt101StableTasks
+expect = WarCore.Tests.Mt101StableTasksTests.FirstSlotDuplicateDoesNotConsumeSlots
+note = Consumes a free slot before rejecting a duplicate key in the first slot.
+original:
+| if (FindStableTask(key) >= 0)
+replacement:
+| if (FindStableTask(key) > 0)

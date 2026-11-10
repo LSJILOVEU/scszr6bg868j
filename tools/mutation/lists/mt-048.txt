@@ -1,0 +1,12 @@
+# InputFrame
+# Surviving mutations of Assets/WarCore/Sim/InputFrame.cs. Test classes are named Mt048InputFrame*.
+
+[mt-048-01]
+file = Assets/WarCore/Sim/InputFrame.cs
+filter = FullyQualifiedName~Mt048InputFrame
+expect = WarCore.Tests.Mt048InputFrameTests.SquadCommandRejectsTargetOutsideWorld
+note = Removing target validation allows squad commands with coordinates outside the world bounds.
+original:
+| targetPoint.ValidateWorld();
+replacement:
+| ;

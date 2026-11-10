@@ -1,0 +1,62 @@
+# IAutoFire
+# Surviving mutations of Assets/WarCore/Combat/IAutoFire.cs. Test classes are named Mt019IAutoFire*.
+
+[mt-019-01]
+file = Assets/WarCore/Combat/IAutoFire.cs
+filter = FullyQualifiedName~Mt019IAutoFire
+expect = WarCore.Tests.Mt019IAutoFireTests.PassHasValueZero
+note = Changing Pass from zero shifts every action value.
+original:
+|         Pass = 0,
+replacement:
+|         Pass = 1,
+
+[mt-019-02]
+file = Assets/WarCore/Combat/IAutoFire.cs
+filter = FullyQualifiedName~Mt019IAutoFire
+expect = WarCore.Tests.Mt019IAutoFireTests.PassHasValueZero
+note = Changing Pass from zero shifts every action value.
+original:
+|         Pass = 0,
+replacement:
+|         Pass = 2,
+
+[mt-019-03]
+file = Assets/WarCore/Combat/IAutoFire.cs
+filter = FullyQualifiedName~Mt019IAutoFire
+expect = WarCore.Tests.Mt019IAutoFireTests.FireHasValueOne
+note = Changing Fire from one shifts the implicit HoldFire value.
+original:
+|         Fire,
+replacement:
+|         Fire = 2,
+
+[mt-019-04]
+file = Assets/WarCore/Combat/IAutoFire.cs
+filter = FullyQualifiedName~Mt019IAutoFire
+expect = WarCore.Tests.Mt019IAutoFireTests.FireHasValueOne
+note = Changing Fire from one shifts the implicit HoldFire value.
+original:
+|         Fire,
+replacement:
+|         Fire = 3,
+
+[mt-019-05]
+file = Assets/WarCore/Combat/IAutoFire.cs
+filter = FullyQualifiedName~Mt019IAutoFire
+expect = WarCore.Tests.Mt019IAutoFireTests.HoldFireHasValueTwo
+note = HoldFire no longer has value two.
+original:
+|         HoldFire
+replacement:
+|         HoldFire = 4
+
+[mt-019-06]
+file = Assets/WarCore/Combat/IAutoFire.cs
+filter = FullyQualifiedName~Mt019IAutoFire
+expect = WarCore.Tests.Mt019IAutoFireTests.HoldFireHasValueTwo
+note = HoldFire no longer has value two.
+original:
+|         HoldFire
+replacement:
+|         HoldFire = 3

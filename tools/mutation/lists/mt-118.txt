@@ -1,0 +1,22 @@
+# GameplayInputData
+# Surviving mutations of Assets/WarCore/Sim/GameplayInputData.cs. Test classes are named Mt118GameplayInputData*.
+
+[mt-118-02]
+file = Assets/WarCore/Sim/GameplayInputData.cs
+filter = FullyQualifiedName~Mt118GameplayInputData
+expect = WarCore.Tests.Mt118GameplayInputDataTests.AuthorityRejectsDuplicateActorsAtFirstSortedPair
+note = Skipping the first sorted pair accepts duplicate authorized actor identifiers.
+original:
+| for (int i = 1; i < this.actors.Length; i++)
+replacement:
+| for (int i = 2; i < this.actors.Length; i++)
+
+[mt-118-03]
+file = Assets/WarCore/Sim/GameplayInputData.cs
+filter = FullyQualifiedName~Mt118GameplayInputData
+expect = WarCore.Tests.Mt118GameplayInputDataTests.AuthorityRejectsDuplicateActorsAtFirstSortedPair
+note = Disabling duplicate detection accepts repeated authorized actor identifiers.
+original:
+| if (this.actors[i - 1].Equals(this.actors[i]))
+replacement:
+| if (false)

@@ -1,0 +1,12 @@
+# SpatialRay
+# Surviving mutations of Assets/WarCore/Sim/SpatialRay.cs. Test classes are named Mt084SpatialRay*.
+
+[mt-084-01]
+file = Assets/WarCore/Sim/SpatialRay.cs
+filter = FullyQualifiedName~Mt084SpatialRay
+expect = WarCore.Tests.Mt084SpatialRayTests.SingletonSideIntervalHitsZeroRadiusCapsule
+note = Rejects a valid zero-radius capsule hit when its quantized side interval contains one point.
+original:
+| if (lower.CompareTo(upper) > 0)
+replacement:
+| if (lower.CompareTo(upper) >= 0)

@@ -1,0 +1,22 @@
+# GameplayStatuses
+# Surviving mutations of Assets/WarCore/Sim/GameplayStatuses.cs. Test classes are named Mt131GameplayStatuses*.
+
+[mt-131-01]
+file = Assets/WarCore/Sim/GameplayStatuses.cs
+filter = FullyQualifiedName~Mt131GameplayStatuses
+expect = WarCore.Tests.Mt131GameplayStatusesTests.ExpiryPublishesRemovalNoticeAtBoundary
+note = Suppresses the phase zero status removal notice at expiry.
+original:
+| if (noticePhase >= 0)
+replacement:
+| if (noticePhase > 0)
+
+[mt-131-02]
+file = Assets/WarCore/Sim/GameplayStatuses.cs
+filter = FullyQualifiedName~Mt131GameplayStatuses
+expect = WarCore.Tests.Mt131GameplayStatusesTests.RetainedPulseIsRejectedAtExactExpiry
+note = Allows a retained status pulse at the exact expiry tick after the expiry task is consumed.
+original:
+| if (r.ExpiryTick != 0 && r.ExpiryTick <= sim.Clock.Tick)
+replacement:
+| if (r.ExpiryTick != 0 && r.ExpiryTick < sim.Clock.Tick)

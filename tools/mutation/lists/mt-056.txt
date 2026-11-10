@@ -1,0 +1,12 @@
+# RayCellTraversal
+# Surviving mutations of Assets/WarCore/Sim/RayCellTraversal.cs. Test classes are named Mt056RayCellTraversal*.
+
+[mt-056-01]
+file = Assets/WarCore/Sim/RayCellTraversal.cs
+filter = FullyQualifiedName~Mt056RayCellTraversal
+expect = WarCore.Tests.Mt056RayCellTraversalTests.ZeroRangePassesLimitGuardAndVisitsOnlyOriginCell
+note = The range guard rejects a valid zero-range ray instead of allowing its origin cell.
+original:
+| if (request.Range.Raw < 0 || request.Range.Raw > 1L << 30)
+replacement:
+| if (request.Range.Raw <= 0 || request.Range.Raw > 1L << 30)

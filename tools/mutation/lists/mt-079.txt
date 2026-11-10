@@ -1,0 +1,32 @@
+# SpatialPartitionRequests
+# Surviving mutations of Assets/WarCore/Sim/SpatialPartitionRequests.cs. Test classes are named Mt079SpatialPartitionRequests*.
+
+[mt-079-01]
+file = Assets/WarCore/Sim/SpatialPartitionRequests.cs
+filter = FullyQualifiedName~Mt079SpatialPartitionRequests
+expect = WarCore.Tests.Mt079SpatialPartitionRequestsTests.RequestAtReservedCapacityThrowsBoundaryException
+note = A request at the reserved capacity must throw the boundary exception before indexing request storage.
+original:
+| if (entity.Id >= staticRequestFlags.Length)
+replacement:
+| if (entity.Id > staticRequestFlags.Length)
+
+[mt-079-02]
+file = Assets/WarCore/Sim/SpatialPartitionRequests.cs
+filter = FullyQualifiedName~Mt079SpatialPartitionRequests
+expect = WarCore.Tests.Mt079SpatialPartitionRequestsTests.PendingRequestHashesCanonicalBooleanByte
+note = Pending static requests must hash false as byte zero and true as byte one.
+original:
+| hash.Add(staticRequestFlags[i] == 2);
+replacement:
+| hash.Add(staticRequestFlags[i] != 2);
+
+[mt-079-03]
+file = Assets/WarCore/Sim/SpatialPartitionRequests.cs
+filter = FullyQualifiedName~Mt079SpatialPartitionRequests
+expect = WarCore.Tests.Mt079SpatialPartitionRequestsTests.SnapshotRejectsAdjacentRequestsForTheSameLiveEntity
+note = Snapshot request owners must be strictly increasing so duplicate live entities are rejected.
+original:
+| SimStateReader.Require(owner.Id > previous && owner.Id < staticRequestFlags.Length
+replacement:
+| SimStateReader.Require(owner.Id >= previous && owner.Id < staticRequestFlags.Length
