@@ -94,7 +94,7 @@ namespace WarCore.Tests
             return bytes;
         }
 
-        [Test, Explicit("Full Sim.Step allocates during contact transitions."), Category("Manual")]
+        [Test]
         public void FullStep_FirstContactLossAndReacquisition_AllocateZero()
         {
             Contacts(World(target: true));
@@ -115,7 +115,7 @@ namespace WarCore.Tests
             return bytes + Window(w, 29, "path continuation");
         }
 
-        [Test, Explicit("Full Sim.Step allocates on the first complex path and squad command."), Category("Manual")]
+        [Test]
         public void FullStep_FirstComplexPath_AllocatesZero()
         {
             ComplexPath(World());
@@ -138,7 +138,7 @@ namespace WarCore.Tests
         }
 
         [TestCase(1)]
-        [TestCase(16, Explicit = true, Category = "Manual", Reason = "Full Sim.Step allocates when reinforcement grows the crowd buffer.")]
+        [TestCase(16, Reason = "Full Sim.Step allocates when reinforcement grows the crowd buffer.")]
         public void FullStep_FirstReinforcement_AllocatesZero(int deployed)
         {
             Reinforcement(World(deployed: deployed), deployed);
