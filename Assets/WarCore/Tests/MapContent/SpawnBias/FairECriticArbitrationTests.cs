@@ -7,7 +7,7 @@ namespace WarCore.Tests
 {
     public sealed class FairECriticArbitrationTests
     {
-        [Category("Manual"), Test, Explicit("Reproduces an active chase reservation omitted from arbitration.")]
+        [Test]
         public void FairECritic_ChaseReservationRemainsExclusiveOnNextTick()
         {
             var units = new[] { A1.Unit(1, 1, 10, 18), A1.Unit(2, 1, 10, 22), A1.Unit(3, 2, 40, 20, melee: -1) };

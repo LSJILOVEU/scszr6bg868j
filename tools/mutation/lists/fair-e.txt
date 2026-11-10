@@ -103,3 +103,13 @@ original:
 |                     { OrderUnit(id, here, moving, target, enemy, -2); }
 replacement:
 |                     { moves.Order(id, enemy); memory?.Forget(id); }
+
+[fair-e-11-omit-retained-reservations]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~FairECritic_ChaseReservationRemainsExclusiveOnNextTick
+expect = WarCore.Tests.FairECriticArbitrationTests.FairECritic_ChaseReservationRemainsExclusiveOnNextTick
+note = retained chase reservations do not participate in arbitration
+original:
+|                 if (proposal.Kind == 0 && moves.TryGetOrder(proposal.Id, out SimVec3 target)
+replacement:
+|                 if (false && moves.TryGetOrder(proposal.Id, out SimVec3 target)
