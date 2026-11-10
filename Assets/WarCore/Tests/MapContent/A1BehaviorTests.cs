@@ -120,8 +120,10 @@ namespace WarCore.Tests
             var units = new[] { A1.Unit(1, 1, 10, 20), A1.Unit(2, 2, 30, 20, melee: -1, speed: 1) };
             var walls = new[] { (20, 0, 1, 40) };
             var off = A1.World(null, units, walls); var on = A1.World(Chase(60), units, walls);
+            var offCalls = L4.Observe(off); var onCalls = L4.Observe(on);
             Assert.That(on.Combat.Visible(on.Unit(1), on.Unit(2)), Is.False);
             To(off, FirstThink(off)); To(on, FirstThink(on));
+            Assert.That(onCalls.Orders, Is.EqualTo(offCalls.Orders));
             Assert.That(on.Read<MoveIntent>(1).Target, Is.EqualTo(off.Read<MoveIntent>(1).Target));
             Assert.That(on.Read<MoveIntent>(1).Target, Is.Not.EqualTo(At(on, 2)));
             Assert.That(At(on, 1), Is.EqualTo(At(off, 1)));
