@@ -1,0 +1,61 @@
+# FAIR-E default-off seeded two-phase decisions.
+
+[fair-e-01-inverted-option]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.FairEOffTests.FairE_OffIsIdentical
+expect = WarCore.Tests.FairEOffTests.FairE_OffIsIdentical
+note = the default-off path uses seeded decisions
+original:
+|         private bool FairDecisions => decisionPolicy != 0;
+replacement:
+|         private bool FairDecisions => decisionPolicy == 0;
+
+[fair-e-02-sequential-claims]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.FairEOnTests.FairE_On
+expect = WarCore.Tests.FairEOnTests.FairE_On
+note = apply the previous unit intent and refresh occupancy before deciding the next unit
+original:
+|                 if (FairDecisions) { current = intentCount++; intents[current] = new Intent { Id = id }; }
+replacement:
+|                 if (FairDecisions) { ApplyIntents(); Rebuild(); current = 0; intentCount = 1; intents[current] = new Intent { Id = id }; }
+
+[fair-e-03-key-arbitration]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.FairEOnTests.FairE_On
+expect = WarCore.Tests.FairEOnTests.FairE_On
+note = resolve contested slots by stable key rather than seeded priority
+original:
+|             return x < y || (x == y && a < b);
+replacement:
+|             return a < b;
+
+[fair-e-04-old-version]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.FairEStateTests.FairE_StateEncoding
+expect = WarCore.Tests.FairEStateTests.FairE_StateEncoding
+note = enabled decisions keep version 3
+original:
+|         public int StateVersion => FairDecisions ? 4 : 3;
+replacement:
+|         public int StateVersion => 3;
+
+[fair-e-05-policy-omits-option]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~WarCore.Tests.FairEStateTests.FairE_PolicyDigest
+expect = WarCore.Tests.FairEStateTests.FairE_PolicyDigest
+note = the policy digest omits the enabled option byte
+original:
+|             if (fairDecisions) { var hash = new StateHash(); hash.Add("battle.ai.decisions.v1"); hash.Add(fairDecisions); PolicyDigest = hash.Value; }
+replacement:
+|             if (fairDecisions) { var hash = new StateHash(); hash.Add("battle.ai.decisions.v1"); PolicyDigest = hash.Value; }
+
+[fair-e-06-state-omits-policy]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.FairEStateTests.FairE_StateEncoding
+expect = WarCore.Tests.FairEStateTests.FairE_StateEncoding
+note = the retained state hash omits the decision policy digest
+original:
+|         { hash.Add(StateTypeId); hash.Add(StateVersion); hash.Add(pack.PolicyDigest); hash.Add(weapons.PolicyDigest); if (FairDecisions) { hash.Add(decisionPolicy); hash.Add(decisionSeed); } }
+replacement:
+|         { hash.Add(StateTypeId); hash.Add(StateVersion); hash.Add(pack.PolicyDigest); hash.Add(weapons.PolicyDigest); if (FairDecisions) { hash.Add(decisionSeed); } }
