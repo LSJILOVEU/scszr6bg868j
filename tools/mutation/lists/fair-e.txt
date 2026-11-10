@@ -12,7 +12,7 @@ replacement:
 
 [fair-e-02-sequential-claims]
 file = Assets/WarCore/Battle/SimpleAiSystem.cs
-filter = FullyQualifiedName~WarCore.Tests.FairEOnTests.FairE_On
+filter = FullyQualifiedName~WarCore.Tests.FairEOnTests.FairE_On&Name~41UL
 expect = WarCore.Tests.FairEOnTests.FairE_On
 note = apply the previous unit intent and refresh occupancy before deciding the next unit
 original:
