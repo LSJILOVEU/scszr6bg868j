@@ -5,7 +5,7 @@ namespace WarCore.Content
 {
     // Layer file shape (all names are exact; unknown names are errors):
     //   { "id": "<file name>", "extends": "<layer id>", <one key per data section> }
-    // "id" and "extends" are the loader's own. The data sections ("weapons", "melee", "unitTypes", "combat", "match", "surfaces",
+    // "id" and "extends" are the loader's own. The data sections ("weapons", "melee", "block", "unitTypes", "combat", "match", "surfaces",
     // "slopeRule") are listed in SectionTable, one file each under Sections/. Inheritance is single. Entries with the same id
     // merge field by field (the child's fields win, including an explicit 0 or false); new ids are appended after the parent's
     // entries; "combat", "match" and "slopeRule" merge field by field. Field tables: docs/content-data.md.

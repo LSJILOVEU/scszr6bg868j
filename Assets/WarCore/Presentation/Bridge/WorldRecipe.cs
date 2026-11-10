@@ -28,7 +28,13 @@ namespace WarCore.Presentation
         public int Block { get; }
 
         // Placeholder bound: ten metres per tick at 30 ticks per second. A step this long is still swept in full by the movers.
-        public const long MaxSpeedMmPerSec = 300000;
+        public const long MaxSpeedMmPerSec = ContentPack.MaxUnitSpeedMmPerSec;
+
+        public static UnitSpawn OfType(ulong key, ContentPack pack, string unitTypeId, int squad, int team, long xMm, long zMm, bool reserve = false)
+        {
+            var type = pack.SpawnOfUnitType(unitTypeId);
+            return new UnitSpawn(key, type.Archetype, squad, xMm, zMm, type.SpeedMmPerSec, team, type.Weapon, reserve, type.Melee, type.Block);
+        }
 
         public UnitSpawn(ulong key, int archetype, int squad, long xMm, long zMm, long speedMmPerSec, int team = 0, int weapon = -1, bool reserve = false, int melee = -1, int block = -1)
         {

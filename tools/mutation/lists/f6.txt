@@ -1,0 +1,81 @@
+# F6 unit-type spawning and block content: one production line per mutation.
+
+[f6-01-swap-weapon-melee]
+file = Assets/WarCore/Presentation/Bridge/WorldRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.F6UnitTypeSpawnTests
+expect = WarCore.Tests.F6UnitTypeSpawnTests.F6_OfType_MatchesManualSpawn
+note = OfType swaps the weapon and melee indices
+original:
+|             return new UnitSpawn(key, type.Archetype, squad, xMm, zMm, type.SpeedMmPerSec, team, type.Weapon, reserve, type.Melee, type.Block);
+replacement:
+|             return new UnitSpawn(key, type.Archetype, squad, xMm, zMm, type.SpeedMmPerSec, team, type.Melee, reserve, type.Weapon, type.Block);
+
+[f6-02-drop-unit-block]
+file = Assets/WarCore/Presentation/Bridge/WorldRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.F6UnitTypeSpawnTests
+expect = WarCore.Tests.F6UnitTypeSpawnTests.F6_OfType_MatchesManualSpawn
+note = OfType discards the block index
+original:
+|             return new UnitSpawn(key, type.Archetype, squad, xMm, zMm, type.SpeedMmPerSec, team, type.Weapon, reserve, type.Melee, type.Block);
+replacement:
+|             return new UnitSpawn(key, type.Archetype, squad, xMm, zMm, type.SpeedMmPerSec, team, type.Weapon, reserve, type.Melee, -1);
+
+[f6-03-allow-unknown-block]
+file = Assets/WarCore/Content/Data/Sections/UnitTypesSection.cs
+filter = FullyQualifiedName~WarCore.Tests.F6UnitTypeSpawnTests
+expect = WarCore.Tests.F6UnitTypeSpawnTests.F6_UnknownBlockNamesPackEntryAndField
+note = a dangling block reference is accepted
+original:
+|                 if (blockId != null && block < 0) throw r.Bad(blockField, "referenced block '" + blockId + "' does not exist");
+replacement:
+|                 _ = blockField;
+
+[f6-04-drop-missing-speed-error]
+file = Assets/WarCore/Content/Data/ContentPack.cs
+filter = FullyQualifiedName~WarCore.Tests.F6UnitTypeSpawnTests
+expect = WarCore.Tests.F6UnitTypeSpawnTests.F6_OfType_MissingSpeedNamesPackEntryAndField
+note = a unit type without speed loses its content error
+original:
+|             if (!unitTypeSpeeds[index].HasValue) throw new ContentException("content pack '" + Id + "' unit type '" + unitTypeId + "' is missing field 'speed'");
+replacement:
+|             _ = index;
+
+[f6-05-change-default-archetype]
+file = Assets/WarCore/Content/Data/Sections/UnitTypesSection.cs
+filter = FullyQualifiedName~WarCore.Tests.F6UnitTypeSpawnTests
+expect = WarCore.Tests.F6UnitTypeSpawnTests.F6_OfType_DefaultArchetypeAndBlock
+note = an omitted archetype becomes 1 instead of 0
+original:
+|                 unitArchetypes[i] = r.Has("archetype") ? r.Int("archetype") : 0;
+replacement:
+|                 unitArchetypes[i] = r.Has("archetype") ? r.Int("archetype") : 1;
+
+[f6-06-allow-zero-speed]
+file = Assets/WarCore/Content/Data/Sections/UnitTypesSection.cs
+filter = FullyQualifiedName~WarCore.Tests.F6UnitTypeSpawnTests
+expect = WarCore.Tests.F6UnitTypeSpawnTests.F6_SpeedOutsideSpawnRangeIsRejected
+note = speed 0 is accepted by the content loader
+original:
+|                 unitSpeeds[i] = r.Has("speed") ? r.Long("speed", 1, ContentPack.MaxUnitSpeedMmPerSec) : (long?)null;
+replacement:
+|                 unitSpeeds[i] = r.Has("speed") ? r.Long("speed", 0, ContentPack.MaxUnitSpeedMmPerSec) : (long?)null;
+
+[f6-07-allow-speed-above-bound]
+file = Assets/WarCore/Content/Data/Sections/UnitTypesSection.cs
+filter = FullyQualifiedName~WarCore.Tests.F6UnitTypeSpawnTests
+expect = WarCore.Tests.F6UnitTypeSpawnTests.F6_SpeedOutsideSpawnRangeIsRejected
+note = speed one above the spawn limit is accepted by the content loader
+original:
+|                 unitSpeeds[i] = r.Has("speed") ? r.Long("speed", 1, ContentPack.MaxUnitSpeedMmPerSec) : (long?)null;
+replacement:
+|                 unitSpeeds[i] = r.Has("speed") ? r.Long("speed", 1, ContentPack.MaxUnitSpeedMmPerSec + 1) : (long?)null;
+
+[f6-08-drop-combat-block-data]
+file = Assets/WarCore/Content/Data/ContentPack.cs
+filter = FullyQualifiedName~WarCore.Tests.F6UnitTypeSpawnTests
+expect = WarCore.Tests.F6UnitTypeSpawnTests.F6_BlockLoadsAllThreeFieldsInEntryOrder
+note = BuildCombat discards the loaded block specs
+original:
+|                 effective, friendlyFireLocked, allyCheckMissRaw, allyHoldMilli, melee.Length == 0 ? null : melee, block.Length == 0 ? null : block);
+replacement:
+|                 effective, friendlyFireLocked, allyCheckMissRaw, allyHoldMilli, melee.Length == 0 ? null : melee, null);

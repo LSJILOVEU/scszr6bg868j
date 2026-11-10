@@ -16,7 +16,7 @@ namespace WarCore.Content
         // Weapons come before unit types and combat before match: later sections read what earlier ones built.
         internal static readonly SectionTable Default = new SectionTable(new IContentSection[]
         {
-            new WeaponsSection(), new MeleeSection(), new UnitTypesSection(), new CombatSection(), new MatchSection(),
+            new WeaponsSection(), new MeleeSection(), new BlockSection(), new UnitTypesSection(), new CombatSection(), new MatchSection(),
             new SurfacesSection(), new SlopeRuleSection(), new AiSection(),
         });
 
