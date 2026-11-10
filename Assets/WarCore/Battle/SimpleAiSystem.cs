@@ -64,6 +64,7 @@ namespace WarCore.Battle
         public void Step(SimContext c)
         {
             decisionTick = c.Clock.Tick; intentCount = 0;
+            if (fairDecisions) Array.Clear(winners, 0, winners.Length);
             Rebuild();
             foreach (EntityId entity in stage.Capture())
             {
@@ -164,7 +165,11 @@ namespace WarCore.Battle
                 if (!combat.Entities.TryGet(combatants, entity, out Combatant _) || !combat.Entities.TryGet(positions, entity, out Position position)
                     || combat.IsDead(entity)) continue;
                 StableId id = combat.Entities.StableOf(entity);
-                if (moves.TryGetOrder(id, out SimVec3 target) && slots.TryFind(target, -1, out int reserved)) Claim(reservedHas, reservedBy, reserved, id);
+                if (moves.TryGetOrder(id, out SimVec3 target) && slots.TryFind(target, -1, out int reserved))
+                {
+                    Claim(reservedHas, reservedBy, reserved, id);
+                    if (fairDecisions && moves.IsCommanded(id)) winners[reserved] = -1;
+                }
                 else
                 {
                     int standing = slots.Nearest(position.Value);
@@ -212,7 +217,7 @@ namespace WarCore.Battle
         }
         private void StopUnit(StableId id, SimVec3 here, SimVec3 oldTarget)
         {
-            if (fairDecisions) { intents[current] = new Intent { Id = id, Kind = 1 }; memory?.Forget(id); return; }
+            if (fairDecisions) { intents[current] = new Intent { Id = id, Kind = 1, Slot = slots.Nearest(here) }; memory?.Forget(id); return; }
             if (slots.TryFind(oldTarget, -1, out int old)) Release(reservedHas, reservedBy, old, id);
             moves.Stop(id);
             memory?.Forget(id);
@@ -221,11 +226,16 @@ namespace WarCore.Battle
         }
         private void ApplyIntents()
         {
-            Array.Clear(winners, 0, winners.Length);
+            for (int i = 0; i < intentCount; i++)
+            {
+                Intent proposal = intents[i];
+                if (proposal.Kind == 1 && proposal.Slot >= 0) winners[proposal.Slot] = -1;
+            }
             for (int i = 0; i < intentCount; i++)
             {
                 Intent proposal = intents[i];
                 if ((proposal.Kind != 2 && proposal.Kind != 3) || proposal.Slot < 0) continue;
+                if (winners[proposal.Slot] < 0) continue;
                 int incumbent = winners[proposal.Slot] - 1;
                 if (incumbent < 0 || Precedes(proposal.Id.Value, intents[incumbent].Id.Value)) winners[proposal.Slot] = i + 1;
             }

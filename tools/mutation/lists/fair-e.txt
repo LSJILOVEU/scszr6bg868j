@@ -113,3 +113,23 @@ original:
 |                 { intents[current] = new Intent { Id = id, Kind = 3, Slot = retained }; }
 replacement:
 |                 { intents[current] = new Intent { Id = id, Kind = 0, Slot = retained }; }
+
+[fair-e-12-omitted-commanded-reservation]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~FairECritic2_ChaseRespectsCommandedReservation
+expect = WarCore.Tests.FairECritic2ArbitrationTests.FairECritic2_ChaseRespectsCommandedReservation
+note = commanded reservations do not occupy slots during arbitration
+original:
+|                     if (fairDecisions && moves.IsCommanded(id)) winners[reserved] = -1;
+replacement:
+|                     if (fairDecisions && moves.IsCommanded(id)) winners[reserved] = 0;
+
+[fair-e-13-omitted-stopped-occupancy]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~FairECritic2_StoppedUnitKeepsItsStandingSlot
+expect = WarCore.Tests.FairECritic2ArbitrationTests.FairECritic2_StoppedUnitKeepsItsStandingSlot
+note = stopped units do not occupy their standing slots before routes are granted
+original:
+|                 if (proposal.Kind == 1 && proposal.Slot >= 0) winners[proposal.Slot] = -1;
+replacement:
+|                 if (proposal.Kind == 1 && proposal.Slot >= 0) winners[proposal.Slot] = 0;

@@ -9,7 +9,6 @@ namespace WarCore.Tests
     public sealed class FairECritic2ArbitrationTests
     {
         [Test]
-        [Explicit("Known reservation conflict; run by name.")]
         public void FairECritic2_ChaseRespectsCommandedReservation()
         {
             SimVec3 enemy = SimVec3.Metres(40, 0, 20);
@@ -33,7 +32,6 @@ namespace WarCore.Tests
         }
 
         [Test]
-        [Explicit("Known standing-slot conflict; run by name.")]
         public void FairECritic2_StoppedUnitKeepsItsStandingSlot()
         {
             SimVec3 standing = M6World.P(40), destination = M6World.P(60);
