@@ -1,0 +1,15 @@
+{
+  "id": "rwr-ai-playtest",
+  "extends": "rwr-terrain-demo",
+  "ai": {
+    "failedSlotTicks": 90,
+    "targetMemoryTicks": 300,
+    "searchTicks": 90,
+    "reactionTicks": 6,
+    "senseTicks": 3,
+    "burstShots": 3,
+    "burstPauseTicks": 15,
+    "suppressTicks": 60,
+    "meleeChaseRange": 12
+  }
+}
