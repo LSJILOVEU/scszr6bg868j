@@ -35,6 +35,9 @@ namespace WarCore.Battle
 
     public sealed class MatchPack
     {
+        private static readonly string[] DefaultRules = { "all-points", "exhausted", "time-limit" };
+        private readonly string[] rules;
+        public ReadOnlySpan<string> Rules => rules;
         private readonly ControlPointDef[] points;
         private readonly SpawnAnchor[] bases;
         public ReadOnlySpan<ControlPointDef> Points => points;
@@ -61,7 +64,8 @@ namespace WarCore.Battle
 
         public MatchPack(ControlPointDef[] points, SpawnAnchor[] bases, int num, int den, bool strict,
             int captureTicks, InterruptMode interrupt, int decayPerTick, int intervalTicks, int thinkInterval,
-            int maxTicks, SimFix sight, int gridColumns, int gridRows, SimFix gridSpacing, int respawnTicks = 0, int respawnGuardTicks = 0)
+            int maxTicks, SimFix sight, int gridColumns, int gridRows, SimFix gridSpacing, int respawnTicks = 0, int respawnGuardTicks = 0,
+            string[] rules = null)
         {
             if (den < 1 || num < den) throw new ArgumentOutOfRangeException(nameof(num));
             if (captureTicks < 1 || intervalTicks < 1 || thinkInterval < 1 || maxTicks < 1)
@@ -74,6 +78,9 @@ namespace WarCore.Battle
             if (respawnTicks < 0 || respawnTicks > MaxRespawnTicks) throw new ArgumentOutOfRangeException(nameof(respawnTicks));
             if (respawnGuardTicks < 0 || respawnGuardTicks > MaxRespawnTicks || (respawnGuardTicks > 0 && respawnTicks == 0))
                 throw new ArgumentOutOfRangeException(nameof(respawnGuardTicks));
+            this.rules = rules == null ? DefaultRules : (string[])rules.Clone();
+            for (int i = 0; i < this.rules.Length; i++)
+                if (!MatchMode.RuleFactories.ContainsKey(this.rules[i])) throw new ArgumentException("rules contains unknown id '" + this.rules[i] + "'.", nameof(rules));
             this.points = (ControlPointDef[])points.Clone(); this.bases = (SpawnAnchor[])bases.Clone();
             for (int i = 0; i < points.Length; i++)
             {
@@ -92,6 +99,9 @@ namespace WarCore.Battle
             // Only a positive delay is hashed, so a pack without respawn keeps its digest from before the field existed.
             if (respawnTicks > 0) { hash.Add("battle.pack.respawn.v1"); hash.Add(respawnTicks); }
             if (respawnGuardTicks > 0) { hash.Add("battle.pack.respawn-guard.v1"); hash.Add(respawnGuardTicks); }
+            // Default rule order keeps the existing snapshot digest.
+            if (!Rules.SequenceEqual(DefaultRules))
+            { hash.Add("battle.pack.rules.v1"); hash.Add(this.rules.Length); foreach (string id in this.rules) hash.Add(id); }
             PolicyDigest = hash.Value;
         }
         internal void Check(SimStateReader reader)
