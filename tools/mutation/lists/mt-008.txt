@@ -1,0 +1,22 @@
+# MatchPack
+# Surviving mutations of Assets/WarCore/Battle/MatchPack.cs. Test classes are named Mt008MatchPack*.
+
+[mt-008-01]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~Mt008MatchPack
+expect = WarCore.Tests.Mt008MatchPackTests.ControlPointDef_RejectsInitialOwnerAboveTwo
+note = Allows initial owner 3 outside the supported range.
+original:
+|             if (initialOwner < 0 || initialOwner > 2) throw new ArgumentOutOfRangeException(nameof(initialOwner));
+replacement:
+|             if (initialOwner < 0 || initialOwner > 3) throw new ArgumentOutOfRangeException(nameof(initialOwner));
+
+[mt-008-02]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~Mt008MatchPack
+expect = WarCore.Tests.Mt008MatchPackTests.SpawnAnchor_RejectsNeutralTeam
+note = Allows a neutral team to define a spawn anchor.
+original:
+|             if (team < 1 || team > 2) throw new ArgumentOutOfRangeException(nameof(team));
+replacement:
+|             if (team < 0 || team > 2) throw new ArgumentOutOfRangeException(nameof(team));

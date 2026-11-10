@@ -1,0 +1,22 @@
+# StableSpawns
+# Surviving mutations of Assets/WarCore/Sim/StableSpawns.cs. Test classes are named Mt099StableSpawns*.
+
+[mt-099-01]
+file = Assets/WarCore/Sim/StableSpawns.cs
+filter = FullyQualifiedName~Mt099StableSpawns
+expect = WarCore.Tests.Mt099StableSpawnsTests.DuplicateFirstRequestReportsSpawnKeyError
+note = Duplicate first requests report a lookup error instead of the spawn request key error.
+original:
+| if (requestKeys.Find(request.Key) >= 0)
+replacement:
+| if (requestKeys.Find(request.Key) > 0)
+
+[mt-099-02]
+file = Assets/WarCore/Sim/StableSpawns.cs
+filter = FullyQualifiedName~Mt099StableSpawns
+expect = WarCore.Tests.Mt099StableSpawnsTests.CommitCanFillLastWorldCursorSlot
+note = A batch that exactly fills the remaining world cursor capacity is rejected.
+original:
+| if (newWorlds > worlds.Length-worldCount)
+replacement:
+| if (newWorlds >= worlds.Length-worldCount)

@@ -1,0 +1,12 @@
+# PlayerFire
+# Surviving mutations of Assets/WarCore/Control/PlayerFire.cs. Test classes are named Mt023PlayerFire*.
+
+[mt-023-01]
+file = Assets/WarCore/Control/PlayerFire.cs
+filter = FullyQualifiedName~Mt023PlayerFire
+expect = WarCore.Tests.Mt023PlayerFireTests.HoldingAtOwnPositionUsesFacing
+note = A block aimed at the unit's own position must retain its facing axes.
+original:
+|                     combat.Hold(unit, new SimVec3(facing.X, default, facing.Z));
+replacement:
+|                     combat.Hold(unit, new SimVec3(facing.Z, default, facing.X));

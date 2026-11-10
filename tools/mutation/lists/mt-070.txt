@@ -1,0 +1,32 @@
+# SpatialBodyColumns
+# Surviving mutations of Assets/WarCore/Sim/SpatialBodyColumns.cs. Test classes are named Mt070SpatialBodyColumns*.
+
+[mt-070-01]
+file = Assets/WarCore/Sim/SpatialBodyColumns.cs
+filter = FullyQualifiedName~Mt070SpatialBodyColumns
+expect = WarCore.Tests.Mt070SpatialBodyColumnsTests.ConstructorAllocatesEachColumnAtRequestedCapacity
+note = The positions column allocates one element beyond the requested capacity.
+original:
+| Positions = new SimVec3[capacity];
+replacement:
+| Positions = new SimVec3[capacity + 1];
+
+[mt-070-02]
+file = Assets/WarCore/Sim/SpatialBodyColumns.cs
+filter = FullyQualifiedName~Mt070SpatialBodyColumns
+expect = WarCore.Tests.Mt070SpatialBodyColumnsTests.ConstructorAllocatesEachColumnAtRequestedCapacity
+note = The colliders column allocates one element beyond the requested capacity.
+original:
+| Colliders = new Collider[capacity];
+replacement:
+| Colliders = new Collider[capacity + 1];
+
+[mt-070-03]
+file = Assets/WarCore/Sim/SpatialBodyColumns.cs
+filter = FullyQualifiedName~Mt070SpatialBodyColumns
+expect = WarCore.Tests.Mt070SpatialBodyColumnsTests.ConstructorAllocatesEachColumnAtRequestedCapacity
+note = The geometry column allocates one element beyond the requested capacity.
+original:
+| Geometry = new SpatialBody[capacity];
+replacement:
+| Geometry = new SpatialBody[capacity + 1];

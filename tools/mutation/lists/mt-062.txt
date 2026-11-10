@@ -1,0 +1,32 @@
+# SimEvents
+# Surviving mutations of Assets/WarCore/Sim/SimEvents.cs. Test classes are named Mt062SimEvents*.
+
+[mt-062-01]
+file = Assets/WarCore/Sim/SimEvents.cs
+filter = FullyQualifiedName~Mt062SimEvents
+expect = WarCore.Tests.Mt062SimEventsTests.ZeroEventTypeIdIsRejected
+note = Accepts zero as an event type identifier instead of rejecting it.
+original:
+| if (value <= 0)
+replacement:
+| if (value < 0)
+
+[mt-062-02]
+file = Assets/WarCore/Sim/SimEvents.cs
+filter = FullyQualifiedName~Mt062SimEvents
+expect = WarCore.Tests.Mt062SimEventsTests.OverflowSummaryUsesProtocolIdOne
+note = Changes the overflow summary protocol identifier from one to three.
+original:
+| public const int EventsDropped = 1;
+replacement:
+| public const int EventsDropped = 3;
+
+[mt-062-03]
+file = Assets/WarCore/Sim/SimEvents.cs
+filter = FullyQualifiedName~Mt062SimEvents
+expect = WarCore.Tests.Mt062SimEventsTests.TruncatedRestoreDoesNotExposeExpiredEvents
+note = Exposes an expired event after a truncated snapshot partially restores its slot.
+original:
+| if (tick <= 0 || tick > currentTick || currentTick - tick >= slots.Length)
+replacement:
+| if (tick <= 0 || tick > currentTick || currentTick - tick > slots.Length)

@@ -1,0 +1,12 @@
+# StableContentManifest
+# Surviving mutations of Assets/WarCore/Sim/StableContentManifest.cs. Test classes are named Mt089StableContentManifest*.
+
+[mt-089-01]
+file = Assets/WarCore/Sim/StableContentManifest.cs
+filter = FullyQualifiedName~Mt089StableContentManifest
+expect = WarCore.Tests.Mt089StableContentManifestTests.DigestUsesAscendingOrdinalNames
+note = Descending name order changes the canonical manifest digest.
+original:
+| public int Compare(StableContentKey a, StableContentKey b) => StringComparer.Ordinal.Compare(a.Name,b.Name);
+replacement:
+| public int Compare(StableContentKey a, StableContentKey b) => StringComparer.Ordinal.Compare(b.Name,a.Name);

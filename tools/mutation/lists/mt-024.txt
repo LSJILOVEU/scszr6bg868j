@@ -1,0 +1,12 @@
+# PlayerStep
+# Surviving mutations of Assets/WarCore/Control/PlayerStep.cs. Test classes are named Mt024PlayerStep*.
+
+[mt-024-01]
+file = Assets/WarCore/Control/PlayerStep.cs
+filter = FullyQualifiedName~Mt024PlayerStep
+expect = WarCore.Tests.Mt024PlayerStepTests.DeathTickRejectsCorpseWithRetainedMoveIntent
+note = Allows movement for a dead controlled unit whose MoveIntent component is still present.
+original:
+|                 || sim.GameplayLife(sim.Entities.StableOf(unit)).State == GameplayLifeState.Dead) return false;
+replacement:
+|                 || false) return false;

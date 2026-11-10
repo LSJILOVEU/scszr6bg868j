@@ -1,0 +1,12 @@
+# StableSchedulerState
+# Surviving mutations of Assets/WarCore/Sim/StableSchedulerState.cs. Test classes are named Mt098StableSchedulerState*.
+
+[mt-098-01]
+file = Assets/WarCore/Sim/StableSchedulerState.cs
+filter = FullyQualifiedName~Mt098StableSchedulerState
+expect = WarCore.Tests.Mt098StableSchedulerStateTests.DueTaskMatchesCanonicalStableHash
+note = Due task payloads are omitted from the stable scheduler hash.
+original:
+| else if (taskStates[slot] == 2)
+replacement:
+| else if (taskStates[slot] == 1)

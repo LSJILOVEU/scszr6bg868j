@@ -1,0 +1,22 @@
+# SnapshotValues
+# Surviving mutations of Assets/WarCore/Sim/SnapshotValues.cs. Test classes are named Mt069SnapshotValues*.
+
+[mt-069-01]
+file = Assets/WarCore/Sim/SnapshotValues.cs
+filter = FullyQualifiedName~Mt069SnapshotValues
+expect = WarCore.Tests.Mt069SnapshotValuesTests.ZeroEventTypeIsRejectedBeforeReadingPayload
+note = Zero event types bypass header rejection and raise the wrong exception after reading payload fields.
+original:
+| SimStateReader.Require(type > 0 && tick >= 0 && sequence >= 0, "Invalid snapshot event header.");
+replacement:
+| SimStateReader.Require(type >= 0 && tick >= 0 && sequence >= 0, "Invalid snapshot event header.");
+
+[mt-069-02]
+file = Assets/WarCore/Sim/SnapshotValues.cs
+filter = FullyQualifiedName~Mt069SnapshotValues
+expect = WarCore.Tests.Mt069SnapshotValuesTests.TickZeroEventTemplateRoundTrips
+note = Valid event templates at tick zero are rejected during decoding.
+original:
+| SimStateReader.Require(type > 0 && tick >= 0 && sequence >= 0, "Invalid snapshot event header.");
+replacement:
+| SimStateReader.Require(type > 0 && tick > 0 && sequence >= 0, "Invalid snapshot event header.");

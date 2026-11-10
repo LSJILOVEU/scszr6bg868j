@@ -1,0 +1,32 @@
+# GameplayNotices
+# Surviving mutations of Assets/WarCore/Sim/GameplayNotices.cs. Test classes are named Mt121GameplayNotices*.
+
+[mt-121-01]
+file = Assets/WarCore/Sim/GameplayNotices.cs
+filter = FullyQualifiedName~Mt121GameplayNotices
+expect = WarCore.Tests.Mt121GameplayNoticesTests.MalformedFrameNoticePrecedesDueCastFailure
+note = Due cast failure is published before the malformed frame failure.
+original:
+| QueueNotice(10, actor.Id, new GameplayApplyKey(actor.Id, token, 0, actor.Id, token, ordinal), 5,
+replacement:
+| QueueNotice(9, actor.Id, new GameplayApplyKey(actor.Id, token, 0, actor.Id, token, ordinal), 5,
+
+[mt-121-02]
+file = Assets/WarCore/Sim/GameplayNotices.cs
+filter = FullyQualifiedName~Mt121GameplayNotices
+expect = WarCore.Tests.Mt121GameplayNoticesTests.UnknownNoticeLinkIsRejectedBeforePublication(True)
+note = Unknown source references are accepted in a non-retained stable world.
+original:
+| Entities.ValidateLink(item.Source, false);
+replacement:
+| ;
+
+[mt-121-03]
+file = Assets/WarCore/Sim/GameplayNotices.cs
+filter = FullyQualifiedName~Mt121GameplayNotices
+expect = WarCore.Tests.Mt121GameplayNoticesTests.UnknownNoticeLinkIsRejectedBeforePublication(False)
+note = Unknown target references are accepted in a non-retained stable world.
+original:
+| Entities.ValidateLink(item.Target, false);
+replacement:
+| ;

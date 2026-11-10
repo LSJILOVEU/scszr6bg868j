@@ -1,0 +1,42 @@
+# MeleeSpec
+# Surviving mutations of Assets/WarCore/Combat/MeleeSpec.cs. Test classes are named Mt020MeleeSpec*.
+
+[mt-020-01]
+file = Assets/WarCore/Combat/MeleeSpec.cs
+filter = FullyQualifiedName~Mt020MeleeSpec
+expect = WarCore.Tests.Mt020MeleeSpecTests.ActiveTicksAboveMaximumAreRejected
+note = Accepts an active duration of 601 ticks beyond the 600 tick limit.
+original:
+|             if (activeTicks < 1 || activeTicks > MaxTicks) throw new ArgumentOutOfRangeException(nameof(activeTicks));
+replacement:
+|             if (activeTicks < 1 || activeTicks > MaxTicks + 1) throw new ArgumentOutOfRangeException(nameof(activeTicks));
+
+[mt-020-02]
+file = Assets/WarCore/Combat/MeleeSpec.cs
+filter = FullyQualifiedName~Mt020MeleeSpec
+expect = WarCore.Tests.Mt020MeleeSpecTests.RecoveryTicksAboveMaximumAreRejected
+note = Accepts a recovery duration of 601 ticks beyond the 600 tick limit.
+original:
+|             if (recoveryTicks < 0 || recoveryTicks > MaxTicks) throw new ArgumentOutOfRangeException(nameof(recoveryTicks));
+replacement:
+|             if (recoveryTicks < 0 || recoveryTicks > MaxTicks + 1) throw new ArgumentOutOfRangeException(nameof(recoveryTicks));
+
+[mt-020-03]
+file = Assets/WarCore/Combat/MeleeSpec.cs
+filter = FullyQualifiedName~Mt020MeleeSpec
+expect = WarCore.Tests.Mt020MeleeSpecTests.LineHalfWidthOneRawUnitAboveMaximumIsRejected
+note = Accepts a thrust half width one raw fixed point unit above the 16 metre limit.
+original:
+|             if (lineHalfWidth.Raw < 0 || lineHalfWidth > MaxReach) throw new ArgumentOutOfRangeException(nameof(lineHalfWidth));
+replacement:
+|             if (lineHalfWidth.Raw < 0 || lineHalfWidth > MaxReach + SimFix.FromRaw(1)) throw new ArgumentOutOfRangeException(nameof(lineHalfWidth));
+
+[mt-020-04]
+file = Assets/WarCore/Combat/MeleeSpec.cs
+filter = FullyQualifiedName~Mt020MeleeSpec
+expect = WarCore.Tests.Mt020MeleeSpecTests.SwingStartingAtTickZeroIsPending
+note = Reports a swing starting at tick zero as not pending.
+original:
+|         public bool Pending => StartTick >= 0;
+replacement:
+|         public bool Pending => StartTick > 0;

@@ -1,0 +1,32 @@
+# InterimLocomotion.Crowd
+# Surviving mutations of Assets/WarCore/Interim/InterimLocomotion.Crowd.cs. Test classes are named Mt026InterimLocomotionCrowd*.
+
+[mt-026-01]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~Mt026InterimLocomotionCrowd
+expect = WarCore.Tests.Mt026InterimLocomotionCrowdTests.ZeroDotSidestepKeepsTheFirstSide
+note = Reverses the preferred sidestep when its dot product with the target direction is zero.
+original:
+| if (SimVec3.Dot(side, delta).Sign < 0) side = default(SimVec3) - side;
+replacement:
+| if (SimVec3.Dot(side, delta).Sign <= 0) side = default(SimVec3) - side;
+
+[mt-026-02]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~Mt026InterimLocomotionCrowd
+expect = WarCore.Tests.Mt026InterimLocomotionCrowdTests.PassRuleReceivesMoverBeforeIdleUnit
+note = Reverses the moving and idle units passed to a directional pass rule.
+original:
+| if (pass != null && !provisional[j].Active && pass.MayPass(provisional[i].Unit, provisional[j].Unit)) continue;
+replacement:
+| if (pass != null && !provisional[j].Active && pass.MayPass(provisional[j].Unit, provisional[i].Unit)) continue;
+
+[mt-026-03]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~Mt026InterimLocomotionCrowd
+expect = WarCore.Tests.Mt026InterimLocomotionCrowdTests.EqualDistanceOverlapRequiresASidestep
+note = Allows a nonzero step that remains overlapping without increasing separation.
+original:
+| bool clear = newDistance >= threshold || (oldDistance < threshold && newDistance > oldDistance);
+replacement:
+| bool clear = newDistance >= threshold || (oldDistance < threshold && newDistance >= oldDistance);

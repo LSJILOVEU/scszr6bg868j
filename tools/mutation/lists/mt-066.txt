@@ -1,0 +1,12 @@
+# SimStateIO
+# Surviving mutations of Assets/WarCore/Sim/SimStateIO.cs. Test classes are named Mt066SimStateIO*.
+
+[mt-066-01]
+file = Assets/WarCore/Sim/SimStateIO.cs
+filter = FullyQualifiedName~Mt066SimStateIO
+expect = WarCore.Tests.Mt066SimStateIOTests.BytesRejectsOneByteOverLimitBeforeWritingHeader
+note = Allows a byte block whose four-byte length header and payload exceed the snapshot byte limit by one.
+original:
+| if (stream.Length > int.MaxValue - 4L - value.Length)
+replacement:
+| if (stream.Length > int.MaxValue - 3L - value.Length)

@@ -1,0 +1,12 @@
+# StableActiveSet
+# Surviving mutations of Assets/WarCore/Sim/StableActiveSet.cs. Test classes are named Mt088StableActiveSet*.
+
+[mt-088-01]
+file = Assets/WarCore/Sim/StableActiveSet.cs
+filter = FullyQualifiedName~Mt088StableActiveSet
+expect = WarCore.Tests.Mt088StableActiveSetTests.PublicationAdvancesOncePerPublishedChange
+note = Each stable-set publication must advance the publication counter by exactly one.
+original:
+| ActiveSetPublication = unchecked(ActiveSetPublication + 1);
+replacement:
+| ActiveSetPublication = unchecked(ActiveSetPublication + 2);

@@ -1,0 +1,12 @@
+# SpatialBounds
+# Surviving mutations of Assets/WarCore/Sim/SpatialBounds.cs. Test classes are named Mt071SpatialBounds*.
+
+[mt-071-01]
+file = Assets/WarCore/Sim/SpatialBounds.cs
+filter = FullyQualifiedName~Mt071SpatialBounds
+expect = WarCore.Tests.Mt071SpatialBoundsTests.ScalarSlabGuardUsesFixedBoundary
+note = Shrinking the scalar limit rejects directions within the fixed 2^29 guard boundary.
+original:
+| internal const ulong ScalarSlabLimit = 1UL << 29;
+replacement:
+| internal const ulong ScalarSlabLimit = 1UL << 28;

@@ -1,0 +1,32 @@
+# SchedulerSlots
+# Surviving mutations of Assets/WarCore/Sim/SchedulerSlots.cs. Test classes are named Mt059SchedulerSlots*.
+
+[mt-059-01]
+file = Assets/WarCore/Sim/SchedulerSlots.cs
+filter = FullyQualifiedName~Mt059SchedulerSlots
+expect = WarCore.Tests.Mt059SchedulerSlotsTests.ConstructorAllocatesTheSmallestHalfFullIdTable
+note = Power-of-two capacities allocate twice the required id table storage.
+original:
+| while (size / 2 < capacity)
+replacement:
+| while (size / 2 <= capacity)
+
+[mt-059-02]
+file = Assets/WarCore/Sim/SchedulerSlots.cs
+filter = FullyQualifiedName~Mt059SchedulerSlots
+expect = WarCore.Tests.Mt059SchedulerSlotsTests.NewlyScheduledTaskRemainsPendingAfterPartialRestoreFailure
+note = Retained due entries hide a newly scheduled pending task after a partial restore failure.
+original:
+| ulong bits = unchecked((ulong)id * 11400714819323198485UL);
+replacement:
+| ulong bits = unchecked((ulong)id * 11400714819323198484UL);
+
+[mt-059-03]
+file = Assets/WarCore/Sim/SchedulerSlots.cs
+filter = FullyQualifiedName~Mt059SchedulerSlots
+expect = WarCore.Tests.Mt059SchedulerSlotsTests.FailedRestoreDoesNotExposeTheUncommittedNextId
+note = A failed restore exposes a task whose id equals the uncommitted next id.
+original:
+| if (id <= 0 || id >= nextId)
+replacement:
+| if (id <= 0 || id > nextId)

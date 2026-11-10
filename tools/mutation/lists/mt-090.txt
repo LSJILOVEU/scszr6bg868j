@@ -1,0 +1,22 @@
+# StableEntityStore
+# Surviving mutations of Assets/WarCore/Sim/StableEntityStore.cs. Test classes are named Mt090StableEntityStore*.
+
+[mt-090-01]
+file = Assets/WarCore/Sim/StableEntityStore.cs
+filter = FullyQualifiedName~Mt090StableEntityStore
+expect = WarCore.Tests.Mt090StableEntityStoreTests.FullEntityCapacityRejectsCreationAfterWarmup
+note = A full entity store must reject creation with the capacity boundary exception after warmup.
+original:
+| if (freeCount == 0 && allocated == Capacity)
+replacement:
+| if (freeCount == 0 && allocated > Capacity)
+
+[mt-090-02]
+file = Assets/WarCore/Sim/StableEntityStore.cs
+filter = FullyQualifiedName~Mt090StableEntityStore
+expect = WarCore.Tests.Mt090StableEntityStoreTests.RetiredIdentityMayArchiveAtRetentionDeadline
+note = Retired identities must be eligible for archival at the retention deadline.
+original:
+| return RetiredRetentionTicks != long.MaxValue && tick-identities[index].RetiredAt >= RetiredRetentionTicks;
+replacement:
+| return RetiredRetentionTicks != long.MaxValue && tick-identities[index].RetiredAt > RetiredRetentionTicks;

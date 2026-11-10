@@ -1,0 +1,12 @@
+# GameplayStatusSchema
+# Surviving mutations of Assets/WarCore/Sim/GameplayStatusSchema.cs. Test classes are named Mt130GameplayStatusSchema*.
+
+[mt-130-01]
+file = Assets/WarCore/Sim/GameplayStatusSchema.cs
+filter = FullyQualifiedName~Mt130GameplayStatusSchema
+expect = WarCore.Tests.Mt130GameplayStatusSchemaTests.StatusModifierCapacityAcceptsExactly65535
+note = Rejects a valid status modifier capacity product of exactly 65535.
+original:
+| if (modifiers > (ulong)GameplayMath.MaxModifiers)
+replacement:
+| if (modifiers >= (ulong)GameplayMath.MaxModifiers)

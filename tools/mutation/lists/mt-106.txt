@@ -1,0 +1,32 @@
+# TieredTimeline
+# Surviving mutations of Assets/WarCore/Sim/TieredTimeline.cs. Test classes are named Mt106TieredTimeline*.
+
+[mt-106-01]
+file = Assets/WarCore/Sim/TieredTimeline.cs
+filter = FullyQualifiedName~Mt106TieredTimeline
+expect = WarCore.Tests.Mt106TieredTimelineTests.DormantEntityRejectsTickZero
+note = Dormant elapsed integration accepts tick zero without an active tick.
+original:
+| if (tick <= 0 || entity.Id < 0 || entity.Id >= entries.Length)
+replacement:
+| if (tick < 0 || entity.Id < 0 || entity.Id >= entries.Length)
+
+[mt-106-02]
+file = Assets/WarCore/Sim/TieredTimeline.cs
+filter = FullyQualifiedName~Mt106TieredTimeline
+expect = WarCore.Tests.Mt106TieredTimelineTests.CapacityGrowthBeforeWarmupLeavesTimelineHashEmpty
+note = State hashing reads beyond the timeline after entity capacity grows before warmup.
+original:
+| private bool Deferred(EntityId entity) => entity.Id < entries.Length
+replacement:
+| private bool Deferred(EntityId entity) => entity.Id <= entries.Length
+
+[mt-106-03]
+file = Assets/WarCore/Sim/TieredTimeline.cs
+filter = FullyQualifiedName~Mt106TieredTimeline
+expect = WarCore.Tests.Mt106TieredTimelineTests.DuplicateDeferredEntityIdsAreRejected
+note = Loading deferred records accepts duplicate entity identifiers.
+original:
+| SimStateReader.Require(entity.Id > previous && entities.IsAlive(entity) && tick >= 0
+replacement:
+| SimStateReader.Require(entity.Id >= previous && entities.IsAlive(entity) && tick >= 0

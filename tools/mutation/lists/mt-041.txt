@@ -1,0 +1,22 @@
+# ExtensionSerializers
+# Surviving mutations of Assets/WarCore/Sim/ExtensionSerializers.cs. Test classes are named Mt041ExtensionSerializers*.
+
+[mt-041-01]
+file = Assets/WarCore/Sim/ExtensionSerializers.cs
+filter = FullyQualifiedName~Mt041ExtensionSerializers
+expect = WarCore.Tests.Mt041ExtensionSerializersTests.SeatRejectsRetiredCarrierBeforeComponentWrite
+note = Allows a seat to retain a retired carrier reference.
+original:
+| store.ValidateLink(value.CarrierLink,true,false);
+replacement:
+| store.ValidateLink(value.CarrierLink,false,false);
+
+[mt-041-02]
+file = Assets/WarCore/Sim/ExtensionSerializers.cs
+filter = FullyQualifiedName~Mt041ExtensionSerializers
+expect = WarCore.Tests.Mt041ExtensionSerializersTests.OccupantRejectsEmptySeatLinkBeforeComponentWrite
+note = Allows an occupant to have an empty required seat reference.
+original:
+| store.ValidateLink(value.SeatLink,true,false);
+replacement:
+| store.ValidateLink(value.SeatLink,true,true);

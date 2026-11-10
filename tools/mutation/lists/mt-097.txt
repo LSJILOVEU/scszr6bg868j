@@ -1,0 +1,82 @@
+# StableRestoreObservation
+# Surviving mutations of Assets/WarCore/Sim/StableRestoreObservation.cs. Test classes are named Mt097StableRestoreObservation*.
+
+[mt-097-01]
+file = Assets/WarCore/Sim/StableRestoreObservation.cs
+filter = FullyQualifiedName~Mt097StableRestoreObservation
+expect = WarCore.Tests.Mt097StableRestoreObservationTests.PhasesHaveDistinctOrderedDiagnosticIndices
+note = IdentityMapped aliases Begin and shifts later diagnostic indices.
+original:
+| public enum StableRestorePhase { Begin, IdentityMapped, ComponentsBound, ReferencesBound, SpatialRebuilt, Complete }
+replacement:
+| public enum StableRestorePhase { Begin, IdentityMapped = 0, ComponentsBound, ReferencesBound, SpatialRebuilt, Complete }
+
+[mt-097-02]
+file = Assets/WarCore/Sim/StableRestoreObservation.cs
+filter = FullyQualifiedName~Mt097StableRestoreObservation
+expect = WarCore.Tests.Mt097StableRestoreObservationTests.PhasesHaveDistinctOrderedDiagnosticIndices
+note = ComponentsBound aliases IdentityMapped and shifts later diagnostic indices.
+original:
+| public enum StableRestorePhase { Begin, IdentityMapped, ComponentsBound, ReferencesBound, SpatialRebuilt, Complete }
+replacement:
+| public enum StableRestorePhase { Begin, IdentityMapped, ComponentsBound = 1, ReferencesBound, SpatialRebuilt, Complete }
+
+[mt-097-03]
+file = Assets/WarCore/Sim/StableRestoreObservation.cs
+filter = FullyQualifiedName~Mt097StableRestoreObservation
+expect = WarCore.Tests.Mt097StableRestoreObservationTests.PhasesHaveDistinctOrderedDiagnosticIndices
+note = ComponentsBound aliases Begin and shifts later diagnostic indices.
+original:
+| public enum StableRestorePhase { Begin, IdentityMapped, ComponentsBound, ReferencesBound, SpatialRebuilt, Complete }
+replacement:
+| public enum StableRestorePhase { Begin, IdentityMapped, ComponentsBound = 0, ReferencesBound, SpatialRebuilt, Complete }
+
+[mt-097-04]
+file = Assets/WarCore/Sim/StableRestoreObservation.cs
+filter = FullyQualifiedName~Mt097StableRestoreObservation
+expect = WarCore.Tests.Mt097StableRestoreObservationTests.PhasesHaveDistinctOrderedDiagnosticIndices
+note = ReferencesBound aliases ComponentsBound and shifts later diagnostic indices.
+original:
+| public enum StableRestorePhase { Begin, IdentityMapped, ComponentsBound, ReferencesBound, SpatialRebuilt, Complete }
+replacement:
+| public enum StableRestorePhase { Begin, IdentityMapped, ComponentsBound, ReferencesBound = 2, SpatialRebuilt, Complete }
+
+[mt-097-05]
+file = Assets/WarCore/Sim/StableRestoreObservation.cs
+filter = FullyQualifiedName~Mt097StableRestoreObservation
+expect = WarCore.Tests.Mt097StableRestoreObservationTests.PhasesHaveDistinctOrderedDiagnosticIndices
+note = ReferencesBound aliases IdentityMapped and shifts later diagnostic indices.
+original:
+| public enum StableRestorePhase { Begin, IdentityMapped, ComponentsBound, ReferencesBound, SpatialRebuilt, Complete }
+replacement:
+| public enum StableRestorePhase { Begin, IdentityMapped, ComponentsBound, ReferencesBound = 1, SpatialRebuilt, Complete }
+
+[mt-097-06]
+file = Assets/WarCore/Sim/StableRestoreObservation.cs
+filter = FullyQualifiedName~Mt097StableRestoreObservation
+expect = WarCore.Tests.Mt097StableRestoreObservationTests.PhasesHaveDistinctOrderedDiagnosticIndices
+note = SpatialRebuilt aliases ReferencesBound and shifts the completion index.
+original:
+| public enum StableRestorePhase { Begin, IdentityMapped, ComponentsBound, ReferencesBound, SpatialRebuilt, Complete }
+replacement:
+| public enum StableRestorePhase { Begin, IdentityMapped, ComponentsBound, ReferencesBound, SpatialRebuilt = 3, Complete }
+
+[mt-097-07]
+file = Assets/WarCore/Sim/StableRestoreObservation.cs
+filter = FullyQualifiedName~Mt097StableRestoreObservation
+expect = WarCore.Tests.Mt097StableRestoreObservationTests.PhasesHaveDistinctOrderedDiagnosticIndices
+note = SpatialRebuilt aliases ComponentsBound and shifts the completion index.
+original:
+| public enum StableRestorePhase { Begin, IdentityMapped, ComponentsBound, ReferencesBound, SpatialRebuilt, Complete }
+replacement:
+| public enum StableRestorePhase { Begin, IdentityMapped, ComponentsBound, ReferencesBound, SpatialRebuilt = 2, Complete }
+
+[mt-097-08]
+file = Assets/WarCore/Sim/StableRestoreObservation.cs
+filter = FullyQualifiedName~Mt097StableRestoreObservation
+expect = WarCore.Tests.Mt097StableRestoreObservationTests.PhasesHaveDistinctOrderedDiagnosticIndices
+note = Complete aliases SpatialRebuilt and overwrites its diagnostic slot.
+original:
+| public enum StableRestorePhase { Begin, IdentityMapped, ComponentsBound, ReferencesBound, SpatialRebuilt, Complete }
+replacement:
+| public enum StableRestorePhase { Begin, IdentityMapped, ComponentsBound, ReferencesBound, SpatialRebuilt, Complete = 4 }

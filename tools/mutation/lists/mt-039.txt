@@ -1,0 +1,12 @@
+# EntityViews
+# Surviving mutations of Assets/WarCore/Sim/EntityViews.cs. Test classes are named Mt039EntityViews*.
+
+[mt-039-01]
+file = Assets/WarCore/Sim/EntityViews.cs
+filter = FullyQualifiedName~Mt039EntityViews
+expect = WarCore.Tests.Mt039EntityViewsTests.ComponentViewSkipsColdEntitiesWithRetainedComponents
+note = Component traversal includes cold entities whose components remain present.
+original:
+| if (!owner.alive[index] || !storage.Present[index])
+replacement:
+| if (!storage.Present[index])

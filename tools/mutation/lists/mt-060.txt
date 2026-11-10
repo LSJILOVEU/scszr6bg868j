@@ -1,0 +1,22 @@
+# Sim
+# Surviving mutations of Assets/WarCore/Sim/Sim.cs. Test classes are named Mt060Sim*.
+
+[mt-060-01]
+file = Assets/WarCore/Sim/Sim.cs
+filter = FullyQualifiedName~Mt060Sim
+expect = WarCore.Tests.Mt060SimClockTests.LastRepresentableTickAdvancesBeforeExhaustion
+note = Rejects the final representable tick before the clock is exhausted.
+original:
+| if (Tick == long.MaxValue)
+replacement:
+| if (Tick == long.MaxValue - 1)
+
+[mt-060-02]
+file = Assets/WarCore/Sim/Sim.cs
+filter = FullyQualifiedName~Mt060Sim
+expect = WarCore.Tests.Mt060SimModeTests.RetainedWorldRunsMatchMode
+note = Rejects retained gameplay modes in valid stable retained worlds.
+original:
+| if (mode is IRetainedGameplayMode && (retainedWorld == null || placedCatalog == null || identityMode != IdentityMode.StableWorld))
+replacement:
+| if (mode is IRetainedGameplayMode && (retainedWorld == null || placedCatalog == null || identityMode == IdentityMode.StableWorld))
