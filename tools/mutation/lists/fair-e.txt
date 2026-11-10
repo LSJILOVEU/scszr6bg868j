@@ -103,3 +103,13 @@ original:
 |                     { OrderUnit(id, here, moving, target, enemy, -2); }
 replacement:
 |                     { moves.Order(id, enemy); memory?.Forget(id); }
+
+[fair-e-11-omitted-retained-reservation]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~FairECritic_ChaseReservationRemainsExclusiveOnNextTick
+expect = WarCore.Tests.FairECriticArbitrationTests.FairECritic_ChaseReservationRemainsExclusiveOnNextTick
+note = retained movement reservations do not participate in arbitration
+original:
+|                 { intents[current] = new Intent { Id = id, Kind = 3, Slot = retained }; }
+replacement:
+|                 { intents[current] = new Intent { Id = id, Kind = 0, Slot = retained }; }

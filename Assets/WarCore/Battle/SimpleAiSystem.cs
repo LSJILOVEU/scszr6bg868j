@@ -76,6 +76,8 @@ namespace WarCore.Battle
                 memory?.Observe(id, c.Input);
                 SimVec3 here = position.Value;
                 bool moving = moves.TryGetOrder(id, out SimVec3 target);
+                if (fairDecisions && moving && slots.TryFind(target, -1, out int retained))
+                { intents[current] = new Intent { Id = id, Kind = 3, Slot = retained }; }
                 if (moving && Arrived(here, target) && slots.TryFind(target, -1, out _))
                 { StopUnit(id, here, target); moving = false; }
                 if ((c.Clock.Tick + (long)((fairDecisions ? Mix(id.Value ^ seedSalt) : id.Value) % (ulong)pack.ThinkInterval)) % pack.ThinkInterval != 0) continue;
@@ -223,14 +225,14 @@ namespace WarCore.Battle
             for (int i = 0; i < intentCount; i++)
             {
                 Intent proposal = intents[i];
-                if (proposal.Kind != 2 || proposal.Slot < 0) continue;
+                if ((proposal.Kind != 2 && proposal.Kind != 3) || proposal.Slot < 0) continue;
                 int incumbent = winners[proposal.Slot] - 1;
                 if (incumbent < 0 || Precedes(proposal.Id.Value, intents[incumbent].Id.Value)) winners[proposal.Slot] = i + 1;
             }
             for (int i = 0; i < intentCount; i++)
             {
                 Intent proposal = intents[i];
-                if (proposal.Kind == 0) continue;
+                if (proposal.Kind == 0 || (proposal.Kind == 3 && winners[proposal.Slot] == i + 1)) continue;
                 if (proposal.Kind == 2 && (proposal.Slot < 0 || winners[proposal.Slot] == i + 1))
                 { moves.Order(proposal.Id, proposal.Destination); if (proposal.MemorySlot == -2) memory?.Forget(proposal.Id); else memory?.Ordered(proposal.Id, proposal.MemorySlot); }
                 else { moves.Stop(proposal.Id); memory?.Forget(proposal.Id); }
