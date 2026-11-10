@@ -17,6 +17,10 @@ namespace WarCore.Content
         internal string[] WeaponIds = Array.Empty<string>(), MeleeIds = Array.Empty<string>(), UnitIds = Array.Empty<string>();
         internal WeaponDef[] Weapons = Array.Empty<WeaponDef>();
         internal MeleeSpec[] Melee = Array.Empty<MeleeSpec>();
+        internal string[] BlockIds = Array.Empty<string>();
+        internal BlockSpec[] Block = Array.Empty<BlockSpec>();
+        internal int[] UnitBlock = Array.Empty<int>(), UnitArchetypes = Array.Empty<int>();
+        internal long?[] UnitSpeeds = Array.Empty<long?>();
         internal int[] UnitWeapons = Array.Empty<int>(), UnitMelee = Array.Empty<int>();
         internal long MaxHealthRaw, AllyHoldMilli;
         internal string ResolverId, SelectorId;
@@ -40,6 +44,7 @@ namespace WarCore.Content
         internal void Publish(object value) => published.Add(value);
 
         internal ContentPack ToPack() => new ContentPack(Pack, WeaponIds, Weapons, UnitIds, UnitWeapons, MaxHealthRaw, ResolverId, SelectorId, Rules,
-            FriendlyFire, FriendlyFireLocked, AllyCheckMissRaw, AllyHoldMilli, MeleeIds, Melee, UnitMelee, Terrain, published.ToArray());
+            FriendlyFire, FriendlyFireLocked, AllyCheckMissRaw, AllyHoldMilli, Block, UnitBlock, UnitArchetypes, UnitSpeeds,
+            MeleeIds, Melee, UnitMelee, Terrain, published.ToArray());
     }
 }

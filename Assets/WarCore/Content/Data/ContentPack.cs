@@ -29,6 +29,8 @@ namespace WarCore.Content
     // Weapons keep their merged order because CombatPack hashes the array in order and units refer to it by index.
     public sealed class ContentPack
     {
+        public const long MaxUnitSpeedMmPerSec = 300000;
+
         private readonly string[] weaponIds;
         private readonly WeaponDef[] weapons;
         private readonly string[] unitTypeIds;
@@ -42,6 +44,9 @@ namespace WarCore.Content
         private readonly string[] meleeIds;
         private readonly MeleeSpec[] melee;
         private readonly int[] unitTypeMelee;
+        private readonly BlockSpec[] block;
+        private readonly int[] unitTypeBlock, unitTypeArchetypes;
+        private readonly long?[] unitTypeSpeeds;
         private readonly object[] sections;
 
         public string Id { get; }
@@ -51,8 +56,11 @@ namespace WarCore.Content
         internal ContentPack(string id, string[] weaponIds, WeaponDef[] weapons, string[] unitTypeIds, int[] unitTypeWeapons,
             long maxHealthRaw, string resolverId, string selectorId, MatchRules? match,
             bool friendlyFire, bool friendlyFireLocked, int allyCheckMissRaw, long allyHoldMilli,
+            BlockSpec[] block, int[] unitTypeBlock, int[] unitTypeArchetypes, long?[] unitTypeSpeeds,
             string[] meleeIds = null, MeleeSpec[] melee = null, int[] unitTypeMelee = null, TerrainRules terrain = null, object[] sections = null)
         {
+            this.block = block; this.unitTypeBlock = unitTypeBlock;
+            this.unitTypeArchetypes = unitTypeArchetypes; this.unitTypeSpeeds = unitTypeSpeeds;
             Terrain = terrain;
             this.sections = sections ?? Array.Empty<object>();
             this.meleeIds = meleeIds ?? Array.Empty<string>(); this.melee = melee ?? Array.Empty<MeleeSpec>();
@@ -106,6 +114,14 @@ namespace WarCore.Content
             return unitTypeMelee[index];
         }
 
+        public (int Archetype, int Weapon, int Melee, int Block, long SpeedMmPerSec) SpawnOfUnitType(string unitTypeId)
+        {
+            int index = Array.IndexOf(unitTypeIds, unitTypeId);
+            if (index < 0) throw new ContentException("content pack '" + Id + "' unit type '" + unitTypeId + "' field 'unitTypeId': does not exist");
+            if (!unitTypeSpeeds[index].HasValue) throw new ContentException("content pack '" + Id + "' unit type '" + unitTypeId + "' is missing field 'speed'");
+            return (unitTypeArchetypes[index], unitTypeWeapons[index], unitTypeMelee[index], unitTypeBlock[index], unitTypeSpeeds[index].Value);
+        }
+
         // The one place a player's friendly-fire request meets the pack's lock: a locked pack ignores the request.
         // The returned CombatPack is immutable, so the setting cannot change during a match.
         public CombatPack BuildCombat(bool? requestedFriendlyFire = null)
@@ -113,7 +129,7 @@ namespace WarCore.Content
             SimFix sight = selectorId == ContentPolicies.SightLimitedNearest ? Match.Sight : default;
             bool effective = friendlyFireLocked ? friendlyFire : requestedFriendlyFire ?? friendlyFire;
             return new CombatPack(weapons, ContentPolicies.Resolver(resolverId), ContentPolicies.Selector(selectorId, sight), maxHealthRaw,
-                effective, friendlyFireLocked, allyCheckMissRaw, allyHoldMilli, melee.Length == 0 ? null : melee);
+                effective, friendlyFireLocked, allyCheckMissRaw, allyHoldMilli, melee.Length == 0 ? null : melee, block.Length == 0 ? null : block);
         }
 
         // Control points and spawn anchors are map data and stay with the caller.
