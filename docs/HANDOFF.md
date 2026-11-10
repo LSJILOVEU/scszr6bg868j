@@ -24,7 +24,7 @@ WarCore 是一个可换皮的俯视角（等距视角）战争游戏底座，Uni
 - **确定性仿真核心**：定点数学、实体存储、快照与状态哈希、同种子同结果、`Sim.Step` 零分配（M0–M2）。
 - **地图与寻路**：地图字节格式与墙、网格 A*、人群移动与扫掠碰撞、地图描述文件烘焙成 `.wcmap`、地图门禁、手改保护（E1a/E2/E3，#24–#33）。
 - **战斗**：即时命中射击、散布、友伤开关、近战挥砍与突刺、格挡与格挡 AI、开火决策接缝 `IAutoFire`（#15–#23）。
-- **对局**：据点占领、补员、胜负、规则模式（M6）；100 对 100 性能（M7）。
+- **对局**：据点占领、补员、胜负、规则模式（M6）；100 对 100 性能（里程碑 M7）。
 - **装配与内容**：按特性表装配世界（安装器）、内容按段加载（json → ContentPack）（#21、#22、#29）。
 - **玩家**：等距相机与拾取、HUD、玩家移动、瞄准射击、格挡/投掷/技能键位（只接到输入，技能未实现）、玩家重生（切到预备兵，#38）、重生倒计时 HUD（C2）、重生点避开有敌人的据点（C1b）、重生无敌时间（C1c）。
 - **AI**：寻路失败退避（L4）、地表遮挡缩短发现距离（A2）、目标记忆/最后已知位置（A3）、搜索最后已知位置（A3a）、反应时间（P1）、感知间隔（P2）、点射节奏（P3）、朝最后已知位置压制射击（A3b）。这些都是“默认关”，由数据打开。
@@ -35,7 +35,7 @@ WarCore 是一个可换皮的俯视角（等距视角）战争游戏底座，Uni
 
 - 生成次序偏差：在 C1b/C1c 的样本里，后生成的一方（单位键 151–300）总是赢，原因未定位（见 PR #61 正文末段）。
 - 冲刺穿人、贴墙卡住；重生时可能撞上开枪请求容量上限。
-- M7 演示里 52 人驻守不到位；`M6` 的反应/感知/点射三项（D8–D10）占位值未按 RWR 录像校准。
+- 里程碑 M7 演示里 52 人驻守不到位；`M6` 的反应/感知/点射三项（D8–D10）占位值未按 RWR 录像校准。
 - 10 条碰撞 oracle 测试 CI 和 Unity 都不自动跑，改碰撞代码要手动跑并在 PR 里写明。
 - AI 不会主动追击近战（A1 未做）；格挡没接 Unity 输入到玩法层。
 - 变异测试还没进 CI（F1b 未做），现在靠 PR 作者本地跑并贴结果。
@@ -53,7 +53,7 @@ WarCore 是一个可换皮的俯视角（等距视角）战争游戏底座，Uni
 | 5 | S1 → V3 | 皮肤映射最小版（兵种 id → 颜色/形状/名字，不碰 Sim）；两套内容包在同一张图跑通，交缺口清单 | U |
 | 6 | F1b | 变异门槛进 CI：PR 新增或改动的 `tools/mutation/lists/*.txt` 全部杀死才绿；没改清单的 PR 也要报成功；改 `.github/` 的 PR 只能由仓库所有者手动合并 | H |
 | 7 | A4b | 瞄准预览（地形抬高线、墙中心线，被挡变红）与 Unity 接线、截图录屏 | U |
-| 8 | M7 → M8 → M9 → M10 | 冲刺（含冲刺输入位，只有旧字段时快照字节不变）→ 载具/坐骑上下与座位跟随 → 骑乘控制与坐骑死亡 → 马、车、飞剑三份数据（只改数据） | H |
+| 8 | M7 → M8 → M9 → M10（移动坐骑车道编号，和第 2 节的里程碑 M1–M7 不是一回事） | 冲刺（含冲刺输入位，只有旧字段时快照字节不变）→ 载具/坐骑上下与座位跟随 → 骑乘控制与坐骑死亡 → 马、车、飞剑三份数据（只改数据） | H |
 | 9 | R3–R6 | 无据点/无 AI 世界能跑；关键实体与斩首；计时器与守塔；战场事件最小版 | H |
 | 10 | E4–E8 | Unity 地图编辑器：高度笔刷、表面笔刷、摆墙/据点/出生点、按兵种名摆兵、一键烘焙运行 + 一致性自检（0 差异） | U |
 | 11 | A1、PF1、P5、P6 | AI 近战追击（默认半径 0 = 关）；玩法翻转（在 RWR 包里把 P1–P3/A1 设为占位值，**唯一允许重录行为基线的包**）；视线候选走空间格子；交火峰值 ≤4 ms | H |
@@ -82,12 +82,10 @@ H = 无头，任何 Linux/macOS 机器可跑；U = 需要交互式 Unity 编辑�
      --filter "TestCategory=StackBound"                                # Linux
    dotnet test  ... --filter "FullyQualifiedName~C1c"                  # 子集，几秒
    ```
-5. 推分支，开 PR 到 `main`。`main` 受保护：只许 squash 合并，禁止强推，禁止直推。
+5. 推分支，按 `CLAUDE.md` 的流程提 PR 到 `main`。`main` 受保护：只许 squash 合并，禁止强推，禁止直推。
 6. 攒一批改动再推：每次推送都会触发 Ubuntu + Windows 双平台 CI。
 
-本文件即仓库所有者的许可：外部 AI 可以在本仓库开 PR。不要开 issue，不要在别人的 PR 上评论。
-
-**本仓库的 `main` 就是正本。** `CLAUDE.md` 里“改动从私有源仓库快照过来”那句已过时：现在所有改动（包括外部 AI 的 PR）都以 squash 合进这里，没有从别处快照覆盖 `main` 的流程，合进来的工作不会被冲掉。开工前 `git fetch` 并基于最新 `main`；和别的在途 PR 冲突时 rebase 到最新 `main` 再推。
+谁可以开 PR、改动怎么进入本仓库，以根目录 `CLAUDE.md` 为准；本文件不改变那里的任何规则。不要开 issue，不要在别人的 PR 上评论。开工前 `git fetch` 并基于最新 `main`；和别的在途 PR 冲突时 rebase 到最新 `main` 再推。
 
 ## 5 必须遵守的规则
 
@@ -104,7 +102,7 @@ H = 无头，任何 Linux/macOS 机器可跑；U = 需要交互式 Unity 编辑�
 
 PR 只有同时满足以下几条才会合并：
 
-1. **CI 双平台全绿**：`headless-tests`（Ubuntu + Windows）、`pii-guard`、`privacy-gate`。
+1. **CI 双平台全绿**：workflow `headless-tests`（PR 页面显示为 `test (ubuntu-latest)`、`test (windows-latest)`）、`pii-guard`（显示为 `guard`）、`privacy-gate`（显示为 `gate`）。
 2. **变异测试全部杀死（硬门槛）**：每条新规则至少一条测试；在 `tools/mutation/lists/<包号>.txt` 写变异清单（每条只改一行生产代码，并点名应该变红的测试，格式照现有清单），本地跑 `python3 tools/mutation/mutate.py tools/mutation/lists/<包号>.txt --out <仓库外的文件>`，必须全部被断言失败杀死，结果贴进 PR。CI 暂时不自动跑这一步（F1b 未做），由审查方复跑。只能在 Linux/macOS 跑，仓库须无未提交改动。
 3. **测试卫生**：`python3 tools/mutation/hygiene.py origin/main HEAD` 必须 PASS（拒绝弱断言写法）。
 4. **Unity EditMode failed=0**：改到 `Assets/WarCore/Unity/**`、场景、或任何会被 Unity 编译的代码时，要在 Unity 6000.6.0f1 里跑 EditMode 测试，结果 XML 里 `failed="0"`。没有 Unity 的话在 PR 里写“需要 Unity EditMode 验证”，由仓库维护方代跑；不过不合。注意：无头测试用 NUnit 3.14/.NET 8，Unity 用 NUnit 3.5/netstandard，只有 Unity 有的 API 差异无头抓不到。
@@ -173,8 +171,7 @@ docs/             peak-baseline.md（交火峰值基线）、本文件
 
 - WarCore: deterministic, reskinnable top-down war-game foundation (Unity 6000.6.0f1, C#). First prove it by matching the gameplay of Running With Rifles, then reskin (melee ancient war, ninja skills, cultivation, open world). Theme-specific content goes in content packs; the foundation stays generic. Zero-code map making is a hard goal.
 - Status: ~47 of ~76 work packages merged (estimate). Player control, respawn, AI perception/memory/burst/suppression, terrain walking, height-field line of sight and aim are in. Nobody has play-tested the build yet.
-- Next: spawn-order bias fix, F6 unit spawn by type id, R2 data-selected rule parts, V1/V2 reskin test, S1/V3 skins, F1b mutation gate in CI, A4b, M7–M10 dash and mounts, R3–R6, E4–E8 map editor, A1/PF1/P5/P6, C6–C9.
-- `main` of this repository is the source of truth; nothing is snapshotted over it (the "snapshots from the private source repository" line in `CLAUDE.md` is outdated).
-- Work: branch from `main` (`ext/<id>-<name>`), commit as `warcore <noreply@users.noreply.github.com>` with `TZ=UTC`, PR to `main` (squash only).
+- Next: spawn-order bias fix, F6 unit spawn by type id, R2 data-selected rule parts, V1/V2 reskin test, S1/V3 skins, F1b mutation gate in CI, A4b, movement-lane M7–M10 dash and mounts (not the M1–M7 milestones), R3–R6, E4–E8 map editor, A1/PF1/P5/P6, C6–C9.
+- Work: branch from `main` (`ext/<id>-<name>`), commit as `warcore <noreply@users.noreply.github.com>` with `TZ=UTC`, PR to `main` (squash only) following `CLAUDE.md`, which governs who may open pull requests.
 - Gates: dual-platform CI green; every mutation in `tools/mutation/lists/<id>.txt` killed; `hygiene.py` PASS; Unity EditMode `failed=0` when Unity code is touched; maintainer privacy review (`Privacy: PASS <sha7>` + `reviewed` label; never add these yourself).
 - Rules: no personal data or attribution lines anywhere; never bypass the guard; determinism locks are permanent; behaviour baselines only re-recorded when the task says so, with old/new values listed; new mechanics default off with an unchanged-when-off lock test; no unrelated defensive code; always write a Departures section.
