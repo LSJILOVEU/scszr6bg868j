@@ -90,3 +90,13 @@ original:
 |                     { OrderUnit(id, here, moving, target, enemy); memory?.Forget(id); }
 replacement:
 |                     { OrderUnit(id, here, moving, target, enemy); }
+
+[a1-10-unbounded-range]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~WarCore.Tests.A1BehaviorTests|FullyQualifiedName~WarCore.Tests.A1ContentTests|FullyQualifiedName~WarCore.Tests.A1MatchTests
+expect = WarCore.Tests.A1ContentTests.A1_ContentRejectsInvalidRange("513"
+note = the content reader accepts chase ranges above the maximum
+original:
+|                 if (r.Has("meleeChaseRange")) chase = r.Int("meleeChaseRange", 0, MaxMeleeChaseRange);
+replacement:
+|                 if (r.Has("meleeChaseRange")) chase = r.Int("meleeChaseRange", 0);

@@ -9,13 +9,14 @@ namespace WarCore.Tests
         [TestCase("{ }", 0)]
         [TestCase("{ \"meleeChaseRange\": 0 }", 0)]
         [TestCase("{ \"meleeChaseRange\": 80 }", 80)]
-        [TestCase("{ \"meleeChaseRange\": 2147483647 }", 2147483647)]
+        [TestCase("{ \"meleeChaseRange\": 512 }", 512)]
         public void A1_ContentRangeAndDefaults(string ai, int expected)
         {
             Assert.That(A1.Pack(ai).Section<AiRules>().MeleeChaseRange, Is.EqualTo(expected));
         }
 
-        [TestCase("-1", "out of range [0, 2147483647]")]
+        [TestCase("-1", "out of range [0, 512]")]
+        [TestCase("513", "out of range [0, 512]")]
         [TestCase("1.5", "must be an integer")]
         [TestCase("\"5\"", "must be an integer")]
         public void A1_ContentRejectsInvalidRange(string value, string reason)

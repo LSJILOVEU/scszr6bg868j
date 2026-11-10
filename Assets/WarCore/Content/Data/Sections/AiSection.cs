@@ -40,6 +40,7 @@ namespace WarCore.Content
         internal const int MaxBurstShots = 1000000;
         internal const int MaxBurstPauseTicks = 1000000;
         internal const int MaxSuppressTicks = 1000000;
+        internal const int MaxMeleeChaseRange = 512; // PLACEHOLDER: maximum map side length in metres.
         internal AiSection() : base(SectionKey) { }
 
         public override void Build(SectionBuild b)
@@ -57,7 +58,7 @@ namespace WarCore.Content
                 if (r.Has("burstShots")) burst = r.Int("burstShots", 0, MaxBurstShots);
                 if (r.Has("burstPauseTicks")) pause = r.Int("burstPauseTicks", 0, MaxBurstPauseTicks);
                 if (r.Has("suppressTicks")) suppress = r.Int("suppressTicks", 0, MaxSuppressTicks);
-                if (r.Has("meleeChaseRange")) chase = r.Int("meleeChaseRange", 0);
+                if (r.Has("meleeChaseRange")) chase = r.Int("meleeChaseRange", 0, MaxMeleeChaseRange);
                 r.Done();
             }
             b.Publish(new AiRules(failed, memory, search, reaction, sense, burst, pause, suppress, chase));
