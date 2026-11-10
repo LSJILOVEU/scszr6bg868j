@@ -74,7 +74,8 @@ namespace WarCore.Presentation
                 suppress = new TargetSuppress(combat, contacts, adapter, suppressTicks);
                 sim.RegisterGameplay("battle.ai-suppress", suppress, SimSystemPhase.Requests);
             }
-            sim.RegisterGameplay("battle.ai", new SimpleAiSystem(combat, recipe.Combat, recipe.Match, capture, adapter, a.Controlled, memory, contacts, search, suppress), SimSystemPhase.Requests);
+            bool fair = recipe.TerrainPack != null && recipe.TerrainPack.Section<AiRules>().FairDecisions;
+            sim.RegisterGameplay("battle.ai", new SimpleAiSystem(combat, recipe.Combat, recipe.Match, capture, adapter, a.Controlled, memory, contacts, search, suppress, fair, recipe.Seed), SimSystemPhase.Requests);
             sim.RegisterGameplay("battle.capture", capture, SimSystemPhase.Queries);
             sim.RegisterGameplay("battle.match", match, SimSystemPhase.Queries);
             a.Capture = capture; a.Reinforce = reinforce; a.Match = match;
