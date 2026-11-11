@@ -28,6 +28,8 @@ namespace WarCore.Interim
             this.slotSpacing = slotSpacing;
             this.controlled = controlled;
             this.standing = standing;
+            members = new EntityId[entities.Capacity];
+            spots = new SimVec3[entities.Capacity];
             stage = new EntityStage(entities);
             intents = entities.Resolve<MoveIntent>();
             if (slotSpacing.Raw != 0 || standing.HasValue) positions = entities.Resolve<Position>();
