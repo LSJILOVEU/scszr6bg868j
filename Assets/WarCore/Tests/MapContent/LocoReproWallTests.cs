@@ -5,7 +5,7 @@ namespace WarCore.Tests
 {
     public sealed class LocoReproWallTests
     {
-        [Category("Manual"), Test, Explicit("Reproduces blocked AI movement at wall contact.")]
+        [Test]
         public void WallContact_AllowsTangentialMovement()
         {
             var map = M3TestWorld.Boxes(4, 4, (2, 0, 1, 4));
