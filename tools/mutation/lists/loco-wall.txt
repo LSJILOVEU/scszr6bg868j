@@ -1,0 +1,19 @@
+[loco-wall-01-full-radius]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName=WarCore.Tests.LocoReproWallTests.WallContact_AllowsTangentialMovement
+expect = WarCore.Tests.LocoReproWallTests.WallContact_AllowsTangentialMovement
+note = the full radius blocks tangential movement at wall contact
+original:
+|                 provisional[i].Point, next, SimFix.FromRaw(MaxRaw(0, provisional[i].Radius.Raw - 1)), wallMask));
+replacement:
+|                 provisional[i].Point, next, provisional[i].Radius, wallMask));
+
+[loco-wall-02-zero-tolerance]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName=WarCore.Tests.LocoReproWallTests.WallContact_AllowsTangentialMovement
+expect = WarCore.Tests.LocoReproWallTests.WallContact_AllowsTangentialMovement
+note = zero tolerance blocks tangential movement at wall contact
+original:
+|                 provisional[i].Point, next, SimFix.FromRaw(MaxRaw(0, provisional[i].Radius.Raw - 1)), wallMask));
+replacement:
+|                 provisional[i].Point, next, SimFix.FromRaw(MaxRaw(0, provisional[i].Radius.Raw - 0)), wallMask));
