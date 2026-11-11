@@ -233,6 +233,7 @@ namespace WarCore.Battle
                 Intent proposal = intents[i];
                 if ((proposal.Kind != 2 && proposal.Kind != 3) || proposal.Slot < 0) continue;
                 if (proposal.Kind == 2 && proposal.MemorySlot == -1 && standingHas[proposal.Slot] && standingBy[proposal.Slot] != proposal.Id.Value) continue;
+                if (proposal.Kind == 3 && standingHas[proposal.Slot] && standingBy[proposal.Slot] != proposal.Id.Value) continue;
                 if (winners[proposal.Slot] < 0) continue;
                 int incumbent = winners[proposal.Slot] - 1;
                 if (incumbent < 0 || Precedes(proposal.Id.Value, intents[incumbent].Id.Value)) winners[proposal.Slot] = i + 1;
@@ -248,14 +249,26 @@ namespace WarCore.Battle
                     if (proposal.Standing < 0 || winners[proposal.Standing] < 0) continue;
                     winners[proposal.Standing] = -1; changed = true;
                 }
+                if (changed) continue;
+                for (int i = 0; i < intentCount; i++)
+                {
+                    Intent proposal = intents[i];
+                    if (proposal.Kind != 2 || (proposal.Slot >= 0 && winners[proposal.Slot] != i + 1)) continue;
+                    moves.Order(proposal.Id, proposal.Destination);
+                    if (proposal.MemorySlot == -2) memory?.Forget(proposal.Id); else memory?.Ordered(proposal.Id, proposal.MemorySlot);
+                    intents[i].Kind = proposal.Slot < 0 ? 0 : 3;
+                    if (!moves.TryGetOrder(proposal.Id, out _))
+                    {
+                        intents[i].Kind = 0;
+                        if (proposal.Standing >= 0) { winners[proposal.Standing] = -1; changed = true; }
+                    }
+                }
             } while (changed);
             for (int i = 0; i < intentCount; i++)
             {
                 Intent proposal = intents[i];
                 if (proposal.Kind == 0 || (proposal.Kind == 3 && winners[proposal.Slot] == i + 1)) continue;
-                if (proposal.Kind == 2 && (proposal.Slot < 0 || winners[proposal.Slot] == i + 1))
-                { moves.Order(proposal.Id, proposal.Destination); if (proposal.MemorySlot == -2) memory?.Forget(proposal.Id); else memory?.Ordered(proposal.Id, proposal.MemorySlot); }
-                else { moves.Stop(proposal.Id); memory?.Forget(proposal.Id); }
+                moves.Stop(proposal.Id); memory?.Forget(proposal.Id);
             }
         }
         private bool Precedes(ulong a, ulong b)
