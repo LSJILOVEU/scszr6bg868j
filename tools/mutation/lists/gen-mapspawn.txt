@@ -1,0 +1,31 @@
+# Map spawning uses content only when explicitly enabled.
+
+[gen-mapspawn-01-fixed-speed]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.GenMapSpawnTests
+expect = WarCore.Tests.GenMapSpawnTests.EnabledSpawnsUseContentInTheWorld
+note = Enabled map spawns keep the legacy speed
+original:
+|                     ? UnitSpawn.OfType(s.Key, pack, s.Type, s.Squad, s.Team, s.XMm, s.ZMm, s.Reserve)
+replacement:
+|                     ? new UnitSpawn(s.Key, pack.SpawnOfUnitType(s.Type).Archetype, s.Squad, s.XMm, s.ZMm, SpeedMmPerSec, s.Team, pack.WeaponOfUnitType(s.Type), s.Reserve, pack.MeleeOfUnitType(s.Type), pack.SpawnOfUnitType(s.Type).Block)
+
+[gen-mapspawn-02-drop-block]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.GenMapSpawnTests
+expect = WarCore.Tests.GenMapSpawnTests.EnabledSpawnsUseContentInTheWorld
+note = Enabled map spawns discard the block spec
+original:
+|                     ? UnitSpawn.OfType(s.Key, pack, s.Type, s.Squad, s.Team, s.XMm, s.ZMm, s.Reserve)
+replacement:
+|                     ? new UnitSpawn(s.Key, pack.SpawnOfUnitType(s.Type).Archetype, s.Squad, s.XMm, s.ZMm, pack.SpawnOfUnitType(s.Type).SpeedMmPerSec, s.Team, pack.WeaponOfUnitType(s.Type), s.Reserve, pack.MeleeOfUnitType(s.Type))
+
+[gen-mapspawn-03-invert-switch]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.GenMapSpawnTests
+expect = WarCore.Tests.GenMapSpawnTests.EnabledSpawnsUseContentInTheWorld
+note = The opt-in switch selects the opposite spawn path
+original:
+|                 units[i] = useUnitTypes
+replacement:
+|                 units[i] = !useUnitTypes
