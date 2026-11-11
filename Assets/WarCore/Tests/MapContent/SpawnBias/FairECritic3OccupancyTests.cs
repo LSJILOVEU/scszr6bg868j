@@ -7,7 +7,7 @@ namespace WarCore.Tests
 {
     public sealed class FairECritic3OccupancyTests
     {
-        [Category("Manual"), Test, Explicit("Exposes a standing ally omitted from fair search arbitration.")]
+        [Test]
         public void FairECritic3_SearchRespectsStandingAlly()
         {
             SimVec3 standing = M6World.P(40);

@@ -233,9 +233,24 @@ namespace WarCore.Battle
                 Intent proposal = intents[i];
                 if ((proposal.Kind != 2 && proposal.Kind != 3) || proposal.Slot < 0) continue;
                 if (winners[proposal.Slot] < 0) continue;
+                if (proposal.Kind == 2 && proposal.MemorySlot == -1 && standingHas[proposal.Slot] && standingBy[proposal.Slot] != proposal.Id.Value) continue;
                 int incumbent = winners[proposal.Slot] - 1;
                 if (incumbent < 0 || Precedes(proposal.Id.Value, intents[incumbent].Id.Value)) winners[proposal.Slot] = i + 1;
             }
+            bool changed;
+            do
+            {
+                changed = false;
+                for (int i = 0; i < intentCount; i++)
+                {
+                    Intent proposal = intents[i];
+                    if ((proposal.Kind != 2 && proposal.Kind != 3) || proposal.Slot < 0 || winners[proposal.Slot] == i + 1) continue;
+                    combat.Entities.TryResolve(proposal.Id, out EntityRef entity);
+                    int standing = slots.Nearest(combat.Entities.Get(positions, entity).Value);
+                    if (standing < 0 || winners[standing] < 0) continue;
+                    winners[standing] = -1; changed = true;
+                }
+            } while (changed);
             for (int i = 0; i < intentCount; i++)
             {
                 Intent proposal = intents[i];

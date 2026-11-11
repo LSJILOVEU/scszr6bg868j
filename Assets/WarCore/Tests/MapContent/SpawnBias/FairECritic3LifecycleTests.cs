@@ -8,7 +8,7 @@ namespace WarCore.Tests
 {
     public sealed class FairECritic3LifecycleTests
     {
-        [Category("Manual"), Test, Explicit("Exposes a retained chase loser releasing its standing slot.")]
+        [Test]
         public void FairECritic3_ReinforcementCannotExposeRetainedLosersStandingSlot()
         {
             SimVec3 slot = M6World.P(40), enemy = M6World.P(60);
