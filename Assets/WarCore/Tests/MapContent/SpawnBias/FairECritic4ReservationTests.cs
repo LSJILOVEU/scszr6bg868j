@@ -8,7 +8,7 @@ namespace WarCore.Tests
 {
     public sealed class FairECritic4ReservationTests
     {
-        [Category("Manual"), Test, Explicit("Reproduces a retained search reservation entering an occupied guard slot.")]
+        [Test]
         public void FairECritic4_RetainedSearchRespectsReinforcedAlly()
         {
             SimVec3 standing = M6World.P(40);

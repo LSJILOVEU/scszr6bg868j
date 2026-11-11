@@ -153,3 +153,23 @@ original:
 |                 if (proposal.Kind == 2 && proposal.MemorySlot == -1 && standingHas[proposal.Slot] && standingBy[proposal.Slot] != proposal.Id.Value) continue;
 replacement:
 |                 if (false) continue;
+
+[fair-e-16-omitted-retained-ally-occupancy]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~FairECritic4_RetainedSearchRespectsReinforcedAlly
+expect = WarCore.Tests.FairECritic4ReservationTests.FairECritic4_RetainedSearchRespectsReinforcedAlly
+note = retained reservations ignore standing allies
+original:
+|                 if (proposal.Kind == 3 && standingHas[proposal.Slot] && combat.IsFriend(combat.Entities.Resolve(new EntityLink(proposal.Id)),
+replacement:
+|                 if (false && standingHas[proposal.Slot] && combat.IsFriend(combat.Entities.Resolve(new EntityLink(proposal.Id)),
+
+[fair-e-17-omitted-failed-departure-occupancy]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~FairECritic4_FailedDepartureKeepsItsStandingSlot
+expect = WarCore.Tests.FairECritic4LifecycleTests.FairECritic4_FailedDepartureKeepsItsStandingSlot
+note = failed departures do not occupy their standing slots during arbitration
+original:
+|                     if (moves.TryGetOrder(proposal.Id, out _) || proposal.Standing < 0) continue;
+replacement:
+|                     if (true) continue;
