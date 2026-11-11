@@ -17,15 +17,17 @@ namespace WarCore.Content
         public int BurstShots { get; }
         // Ticks an AI shooter holds its fire after a burst, counted from the burst's last shot; ignored when the burst is off.
         public int BurstPauseTicks { get; }
+        public bool BurstPauseFollowsShooter { get; }
         // Ticks an AI unit keeps firing at its target's last known point after it lost sight of it; 0 turns the suppression off. Needs the memory.
         public int SuppressTicks { get; }
         public int MeleeChaseRange { get; }
         internal AiRules(int failedSlotTicks, int targetMemoryTicks = 0, int searchTicks = 0, int reactionTicks = 0, int senseTicks = 1,
-            int burstShots = 0, int burstPauseTicks = 0, int suppressTicks = 0, int meleeChaseRange = 0)
+            int burstShots = 0, int burstPauseTicks = 0, int suppressTicks = 0, int meleeChaseRange = 0, bool burstPauseFollowsShooter = false)
         {
             FailedSlotTicks = failedSlotTicks; TargetMemoryTicks = targetMemoryTicks; SearchTicks = searchTicks; ReactionTicks = reactionTicks;
             SenseTicks = senseTicks; BurstShots = burstShots; BurstPauseTicks = burstPauseTicks; SuppressTicks = suppressTicks;
             MeleeChaseRange = meleeChaseRange;
+            BurstPauseFollowsShooter = burstPauseFollowsShooter;
         }
     }
 
@@ -47,6 +49,7 @@ namespace WarCore.Content
         {
             ContentEntry entry = b.Single(Key);
             int failed = 0, memory = 0, search = 0, reaction = 0, sense = 1, burst = 0, pause = 0, suppress = 0, chase = 0;
+            bool follows = false;
             if (entry != null)
             {
                 var r = new EntryReader(b.Pack, entry);
@@ -57,11 +60,12 @@ namespace WarCore.Content
                 if (r.Has("senseTicks")) sense = r.Int("senseTicks", 1, MaxSenseTicks);
                 if (r.Has("burstShots")) burst = r.Int("burstShots", 0, MaxBurstShots);
                 if (r.Has("burstPauseTicks")) pause = r.Int("burstPauseTicks", 0, MaxBurstPauseTicks);
+                if (r.Has("burstPauseFollowsShooter")) follows = r.Bool("burstPauseFollowsShooter");
                 if (r.Has("suppressTicks")) suppress = r.Int("suppressTicks", 0, MaxSuppressTicks);
                 if (r.Has("meleeChaseRange")) chase = r.Int("meleeChaseRange", 0, MaxMeleeChaseRange);
                 r.Done();
             }
-            b.Publish(new AiRules(failed, memory, search, reaction, sense, burst, pause, suppress, chase));
+            b.Publish(new AiRules(failed, memory, search, reaction, sense, burst, pause, suppress, chase, follows));
         }
     }
 }
