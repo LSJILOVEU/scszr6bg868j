@@ -6,7 +6,7 @@ namespace WarCore.Tests
 {
     public sealed class Crash1Critic1Tests
     {
-        [Test, Explicit("Known CRASH-1 regression; run by full name."), Category("Manual")]
+        [Test]
         public void TargetLosesPosition_BeforeThinkingTick_DoesNotFault()
         {
             M6World w = P2.World(P2.Cast(), P2.Ai(15, 10));
