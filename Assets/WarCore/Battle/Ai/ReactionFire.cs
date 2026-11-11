@@ -45,8 +45,10 @@ namespace WarCore.Battle
         private readonly long[] firsts, lasts;
         private readonly int[] shots;        // rounds fired in the entry's current burst
         private readonly long[] lastShots;   // the tick of the entry's latest shot, 0 for none yet
+        private readonly BurstCadence cadence;
 
-        public ReactionFire(CombatSystem combat, IAutoFire inner, int ticks, int senseTicks = 1, int burstShots = 0, int burstPauseTicks = 0)
+        public ReactionFire(CombatSystem combat, IAutoFire inner, int ticks, int senseTicks = 1, int burstShots = 0, int burstPauseTicks = 0,
+            BurstCadence cadence = null)
         {
             if (ticks < 0 || ticks > MaxTicks) throw new ArgumentOutOfRangeException(nameof(ticks));
             this.combat = combat ?? throw new ArgumentNullException(nameof(combat));
@@ -61,6 +63,7 @@ namespace WarCore.Battle
             this.senseTicks = senseTicks;
             this.burstShots = burstShots;
             this.burstPauseTicks = burstPauseTicks;
+            this.cadence = cadence;
             stage = new EntityStage(combat.Entities);
             int capacity = combat.Entities.Capacity;
             has = new bool[capacity];
@@ -128,6 +131,7 @@ namespace WarCore.Battle
             int slot = shooter.Id;
             if ((uint)slot >= (uint)has.Length || !has[slot] || !shooters[slot].Equals(combat.Entities.StableOf(shooter))
                 || lasts[slot] != tick || tick - firsts[slot] < ticks
+                || (cadence != null && cadence.Paused(shooter, tick))
                 || !combat.Entities.TryResolve(targets[slot], out EntityRef target))
             {
                 direction = default;
@@ -147,6 +151,7 @@ namespace WarCore.Battle
             {
                 lastShots[slot] = tick;
                 shots[slot] = unit.Ammo == 1 ? 0 : shots[slot] + 1;
+                if (cadence != null && shots[slot] == burstShots) cadence.Pause(shooter, tick + burstPauseTicks);
             }
             return action;
         }
