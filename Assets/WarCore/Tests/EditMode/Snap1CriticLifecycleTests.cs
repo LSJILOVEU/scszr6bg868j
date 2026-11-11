@@ -4,10 +4,10 @@ using Simulation = WarCore.Sim.Sim;
 
 namespace WarCore.Tests
 {
-    [TestFixture, Category("Manual")]
+    [TestFixture]
     public sealed class Snap1CriticLifecycleTests
     {
-        [Test, Explicit]
+        [Test]
         public void PendingSpawnFromDestroyedSourceRestoresToTheSameRun()
         {
             var uninterrupted = new Simulation(1,identityMode:IdentityMode.StableWorld);

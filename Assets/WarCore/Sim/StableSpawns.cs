@@ -285,6 +285,8 @@ namespace WarCore.Sim
                 request.Counter = reader.UInt64();
                 request.Chunk = reader.UInt64();
                 request.Values = SpawnValues.Read(reader);
+                if (!entities.UsesRetainedProtocol && spawner.HasValue && entities.LifeOf(spawner.Id) == IdentityLife.Retired)
+                    entities.ConsumeSpawnCounter(spawner,request.Counter);
                 Add(request);
             }
             worldCount = reader.Count(worlds.Length);
