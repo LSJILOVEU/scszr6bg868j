@@ -21,7 +21,6 @@ namespace WarCore.Unity
             return mapper.Map(camera, ix, iy, mouse.x, mouse.y, w, h, mouseInWindow, focused && primaryHeld, poller.KeyDown(focused));
         }
 
-#if UNITY_EDITOR
         // Built once: a method group converted every frame would allocate a new delegate.
         private static readonly Func<KeyCode, bool> GetKey = Input.GetKey;
         private SimSession session;
@@ -39,7 +38,9 @@ namespace WarCore.Unity
 
         private void Awake()
         {
+#if UNITY_EDITOR
             UnityEditor.SessionState.EraseBool(ModeKey);
+#endif
             byte[] bytes = File.ReadAllBytes(Path.Combine(Application.streamingAssetsPath, M2Host.M7MapPath));
             session = SimSession.Create(DemoRecipes.MpRespawnDemo(), bytes);
             try { keys = new PlayerKeyPoller(PlayerKeys.Default, GetKey); }
@@ -138,6 +139,5 @@ namespace WarCore.Unity
             float height = style.CalcHeight(new GUIContent(hud), width) + style.lineHeight;
             GUI.Box(new Rect(12, 12, width, height), hud, style);
         }
-#endif
     }
 }
