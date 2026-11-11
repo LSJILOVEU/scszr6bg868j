@@ -67,6 +67,8 @@ namespace WarCore.Presentation
 
         public CombatPack Combat { get; private set; }
         public MatchPack Match { get; private set; }
+        // Flat maps opt in; terrain maps keep the rules from TerrainPack.
+        public AiRules Ai { get; private set; }
         public ulong? PlayerKey { get; private set; }
         public CrowdPassKind CrowdPass { get; private set; }
         // Opens the per-unit facing component. Off by default: a world without it is byte-identical to one built before it existed.
@@ -108,6 +110,7 @@ namespace WarCore.Presentation
         {
             var copy = new WorldRecipe(Seed, Mover, units, script);
             copy.Combat = Combat; copy.Match = Match; copy.PlayerKey = PlayerKey; copy.RuleSetId = RuleSetId; copy.CrowdPass = CrowdPass; copy.TerrainPack = TerrainPack; copy.BlockAi = BlockAi; copy.options.AddRange(options);
+            copy.Ai = Ai;
             return copy;
         }
 
@@ -143,6 +146,12 @@ namespace WarCore.Presentation
         {
             if (pack == null) throw new ArgumentNullException(nameof(pack));
             var copy = Copy(); copy.TerrainPack = pack;
+            return copy;
+        }
+
+        public WorldRecipe WithAiRules(ContentPack pack)
+        {
+            var copy = Copy(); copy.Ai = pack.Section<AiRules>();
             return copy;
         }
 

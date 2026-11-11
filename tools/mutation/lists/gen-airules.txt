@@ -1,0 +1,126 @@
+# Explicit flat-map AI rules and unchanged terrain rule precedence.
+
+[gen-airules-01-flat-defaults]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatMap_OptInChasesAtFirstThink
+note = opted-in flat maps still use default AI rules
+original:
+|             AiRules ai = terrain != null ? recipe.TerrainPack.Section<AiRules>() : recipe.Ai;
+replacement:
+|             AiRules ai = terrain != null ? recipe.TerrainPack.Section<AiRules>() : null;
+
+[gen-airules-02-opt-in-reversed]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatMap_OptInChasesAtFirstThink
+expect = WarCore.Tests.GenAiRulesTests.FlatMap_DefaultIgnoresContentAi
+note = flat maps read content only when the explicit option is absent
+original:
+|             AiRules ai = terrain != null ? recipe.TerrainPack.Section<AiRules>() : recipe.Ai;
+replacement:
+|             AiRules ai = terrain != null ? recipe.TerrainPack.Section<AiRules>() : recipe.Ai == null ? recipe.TerrainPack?.Section<AiRules>() : null;
+
+[gen-airules-03-terrain-source]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.Terrain_ExplicitAiDoesNotOverrideTerrainRules
+note = explicit flat-map rules override terrain rules
+original:
+|             AiRules ai = terrain != null ? recipe.TerrainPack.Section<AiRules>() : recipe.Ai;
+replacement:
+|             AiRules ai = recipe.Ai ?? (terrain != null ? recipe.TerrainPack.Section<AiRules>() : null);
+
+[gen-airules-04-wrong-range]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatMap_OptInChasesAtFirstThink
+note = melee chase range is read from target memory duration
+original:
+|             int meleeChaseRange = ai?.MeleeChaseRange ?? 0;
+replacement:
+|             int meleeChaseRange = ai?.TargetMemoryTicks ?? 0;
+
+[gen-airules-05-copy-drops-option]
+file = Assets/WarCore/Presentation/Bridge/WorldRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatMap_OptInChasesAtFirstThink
+note = a subsequent recipe option discards the AI rules
+original:
+|             copy.Ai = Ai;
+replacement:
+|             copy.Ai = null;
+
+[gen-airules-06-failed-memory-disabled]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatMap_OptInRegistersContentSystems
+note = failed-slot memory remains disabled after opt-in
+original:
+|             int failedTicks = ai?.FailedSlotTicks ?? 0;
+replacement:
+|             int failedTicks = 0;
+
+[gen-airules-07-target-memory-disabled]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatMap_OptInRegistersContentSystems
+note = target memory remains disabled after opt-in
+original:
+|             int memoryTicks = ai?.TargetMemoryTicks ?? 0;
+replacement:
+|             int memoryTicks = 0;
+
+[gen-airules-08-search-disabled]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatMap_OptInRegistersContentSystems
+note = target search remains disabled after opt-in
+original:
+|             int searchTicks = contacts != null ? ai.SearchTicks : 0;
+replacement:
+|             int searchTicks = 0;
+
+[gen-airules-09-suppression-disabled]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatMap_OptInRegistersContentSystems
+note = suppression remains disabled after opt-in
+original:
+|             int suppressTicks = contacts != null ? ai.SuppressTicks : 0;
+replacement:
+|             int suppressTicks = 0;
+
+[gen-airules-10-fire-disabled]
+file = Assets/WarCore/Presentation/Bridge/Features/AiFireFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatMap_OptInRegistersContentSystems
+note = the fire rules never register on flat maps
+original:
+|             if (ai == null) return false;
+replacement:
+|             if (ai == null || a.Terrain == null) return false;
+
+[gen-airules-11-fire-terrain-source]
+file = Assets/WarCore/Presentation/Bridge/Features/AiFireFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.Terrain_ExplicitAiDoesNotOverrideTerrainRules
+note = terrain fire activation uses the explicit flat-map rules
+original:
+|             AiRules ai = a.Terrain != null ? a.Recipe.TerrainPack.Section<AiRules>() : a.Recipe.Ai;
+|             if (ai == null) return false;
+replacement:
+|             AiRules ai = a.Recipe.Ai ?? (a.Terrain != null ? a.Recipe.TerrainPack.Section<AiRules>() : null);
+|             if (ai == null) return false;
+
+[gen-airules-12-fire-terrain-tuning]
+file = Assets/WarCore/Presentation/Bridge/Features/AiFireFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.Terrain_ExplicitAiDoesNotOverrideTerrainRules
+note = registered terrain fire systems use the explicit flat-map tuning
+original:
+|             AiRules ai = a.Terrain != null ? a.Recipe.TerrainPack.Section<AiRules>() : a.Recipe.Ai;
+|             var fire = new ReactionFire(a.Combat, a.Combat.BuiltInAutoFire, ai.ReactionTicks, ai.SenseTicks, ai.BurstShots, ai.BurstPauseTicks);
+replacement:
+|             AiRules ai = a.Recipe.Ai ?? (a.Terrain != null ? a.Recipe.TerrainPack.Section<AiRules>() : null);
+|             var fire = new ReactionFire(a.Combat, a.Combat.BuiltInAutoFire, ai.ReactionTicks, ai.SenseTicks, ai.BurstShots, ai.BurstPauseTicks);
