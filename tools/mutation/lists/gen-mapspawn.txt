@@ -1,0 +1,52 @@
+# Map spawning: one production line per mutation.
+
+[gen-mapspawn-01-fixed-speed]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.GenMapSpawnTests
+expect = WarCore.Tests.GenMapSpawnTests.OptInUsesContentSpeedAndBlockInWorld
+note = content-backed spawning keeps the legacy speed
+original:
+|                     units[i] = UnitSpawn.OfType(s.Key, pack, s.Type, s.Squad, s.Team, s.XMm, s.ZMm, s.Reserve);
+replacement:
+|                     units[i] = new UnitSpawn(s.Key, pack.SpawnOfUnitType(s.Type).Archetype, s.Squad, s.XMm, s.ZMm, SpeedMmPerSec, s.Team, pack.WeaponOfUnitType(s.Type), s.Reserve, pack.MeleeOfUnitType(s.Type), pack.SpawnOfUnitType(s.Type).Block);
+
+[gen-mapspawn-02-drop-block]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.GenMapSpawnTests
+expect = WarCore.Tests.GenMapSpawnTests.OptInUsesContentSpeedAndBlockInWorld
+note = content-backed spawning drops the unit block index
+original:
+|                     units[i] = UnitSpawn.OfType(s.Key, pack, s.Type, s.Squad, s.Team, s.XMm, s.ZMm, s.Reserve);
+replacement:
+|                     units[i] = new UnitSpawn(s.Key, pack.SpawnOfUnitType(s.Type).Archetype, s.Squad, s.XMm, s.ZMm, pack.SpawnOfUnitType(s.Type).SpeedMmPerSec, s.Team, pack.WeaponOfUnitType(s.Type), s.Reserve, pack.MeleeOfUnitType(s.Type));
+
+[gen-mapspawn-03-invert-switch]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.GenMapSpawnTests
+expect = WarCore.Tests.GenMapSpawnTests.OptInUsesContentSpeedAndBlockInWorld
+expect = WarCore.Tests.GenMapSpawnTests.DefaultAndDisabledKeepLegacySpawns
+note = the opt-in switch selects the opposite spawn path
+original:
+|                 if (useUnitTypes)
+replacement:
+|                 if (!useUnitTypes)
+
+[gen-mapspawn-04-default-on]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.GenMapSpawnTests
+expect = WarCore.Tests.GenMapSpawnTests.DefaultAndDisabledKeepLegacySpawns
+note = content-backed spawning becomes the default
+original:
+|         public static WorldRecipe From(MapBakeResult result, ContentPack pack, bool useUnitTypes = false)
+replacement:
+|         public static WorldRecipe From(MapBakeResult result, ContentPack pack, bool useUnitTypes = true)
+
+[gen-mapspawn-05-fixed-archetype]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.GenMapSpawnTests
+expect = WarCore.Tests.GenMapSpawnTests.OptInUsesContentSpeedAndBlockInWorld
+note = content-backed spawning keeps archetype zero
+original:
+|                     units[i] = UnitSpawn.OfType(s.Key, pack, s.Type, s.Squad, s.Team, s.XMm, s.ZMm, s.Reserve);
+replacement:
+|                     units[i] = new UnitSpawn(s.Key, 0, s.Squad, s.XMm, s.ZMm, pack.SpawnOfUnitType(s.Type).SpeedMmPerSec, s.Team, pack.WeaponOfUnitType(s.Type), s.Reserve, pack.MeleeOfUnitType(s.Type), pack.SpawnOfUnitType(s.Type).Block);
