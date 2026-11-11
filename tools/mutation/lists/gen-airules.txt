@@ -1,0 +1,142 @@
+# GEN-AIRULES-3: explicit flat-map AI rules and unchanged terrain precedence.
+
+[gen-airules-01-flat-rules-dropped]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatOptIn_ChasesAtFirstThinkTick
+note = flat maps ignore the explicit AI pack
+original:
+|             AiRules ai = (terrain != null ? recipe.TerrainPack : recipe.AiPack)?.Section<AiRules>();
+replacement:
+|             AiRules ai = (terrain != null ? recipe.TerrainPack : null)?.Section<AiRules>();
+
+[gen-airules-02-opt-in-reversed]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatWithoutOptIn_IgnoresContentAi
+expect = WarCore.Tests.GenAiRulesTests.FlatOptIn_ChasesAtFirstThinkTick
+note = flat maps read content only when the explicit option is absent
+original:
+|             AiRules ai = (terrain != null ? recipe.TerrainPack : recipe.AiPack)?.Section<AiRules>();
+replacement:
+|             AiRules ai = (terrain != null || recipe.AiPack == null ? recipe.TerrainPack : null)?.Section<AiRules>();
+
+[gen-airules-03-terrain-match-source]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.TerrainKeepsItsRuleSource
+note = terrain match AI uses the competing explicit pack
+original:
+|             AiRules ai = (terrain != null ? recipe.TerrainPack : recipe.AiPack)?.Section<AiRules>();
+replacement:
+|             AiRules ai = (recipe.AiPack ?? recipe.TerrainPack)?.Section<AiRules>();
+
+[gen-airules-04-wrong-chase-field]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatOptIn_ChasesAtFirstThinkTick
+note = flat melee chase reads the target memory length as its radius
+original:
+|             if (terrain == null && ai != null) meleeChaseRange = ai.MeleeChaseRange;
+replacement:
+|             if (terrain == null && ai != null) meleeChaseRange = ai.TargetMemoryTicks;
+
+[gen-airules-05-copy-drops-option]
+file = Assets/WarCore/Presentation/Bridge/WorldRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatOptIn_ChasesAtFirstThinkTick
+note = later recipe options discard the explicit AI pack
+original:
+|             copy.AiPack = AiPack;
+replacement:
+|             copy.AiPack = null;
+
+[gen-airules-06-option-drops-pack]
+file = Assets/WarCore/Presentation/Bridge/WorldRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatOptIn_ChasesAtFirstThinkTick
+note = the explicit option does not retain its content pack
+original:
+|             var copy = Copy(); copy.AiPack = pack;
+replacement:
+|             var copy = Copy(); copy.AiPack = null;
+
+[gen-airules-07-flat-fire-disabled]
+file = Assets/WarCore/Presentation/Bridge/Features/AiFireFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatOptIn_AssemblesAllContentRules
+note = flat maps still cannot register AI fire rules
+original:
+|             if (ai == null) return false;
+replacement:
+|             if (a.Terrain == null || ai == null) return false;
+
+[gen-airules-08-flat-fire-wrong-source]
+file = Assets/WarCore/Presentation/Bridge/Features/AiFireFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatOptIn_AssemblesAllContentRules
+note = flat fire assembly reads the terrain pack instead of the explicit pack
+original:
+|             AiRules ai = (a.Terrain != null ? a.Recipe.TerrainPack : a.Recipe.AiPack).Section<AiRules>();
+replacement:
+|             AiRules ai = a.Recipe.TerrainPack.Section<AiRules>();
+
+[gen-airules-09-terrain-fire-activation-source]
+file = Assets/WarCore/Presentation/Bridge/Features/AiFireFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.TerrainKeepsItsRuleSource
+note = terrain fire activation uses the competing explicit pack
+original:
+|             AiRules ai = (a.Terrain != null ? a.Recipe.TerrainPack : a.Recipe.AiPack)?.Section<AiRules>();
+replacement:
+|             AiRules ai = (a.Recipe.AiPack ?? a.Recipe.TerrainPack)?.Section<AiRules>();
+
+[gen-airules-10-terrain-fire-assembly-source]
+file = Assets/WarCore/Presentation/Bridge/Features/AiFireFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.TerrainKeepsItsRuleSource
+note = terrain fire settings come from the competing explicit pack
+original:
+|             AiRules ai = (a.Terrain != null ? a.Recipe.TerrainPack : a.Recipe.AiPack).Section<AiRules>();
+replacement:
+|             AiRules ai = (a.Recipe.AiPack ?? a.Recipe.TerrainPack).Section<AiRules>();
+
+[gen-airules-11-failed-memory-dropped]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatOptIn_AssemblesAllContentRules
+note = failed-slot memory ignores its configured length
+original:
+|             int failedTicks = ai?.FailedSlotTicks ?? 0;
+replacement:
+|             int failedTicks = 0;
+
+[gen-airules-12-target-memory-dropped]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatOptIn_AssemblesAllContentRules
+note = target memory ignores its configured length
+original:
+|             int memoryTicks = ai?.TargetMemoryTicks ?? 0;
+replacement:
+|             int memoryTicks = 0;
+
+[gen-airules-13-search-wrong-field]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatOptIn_AssemblesAllContentRules
+note = search uses the failed-slot memory length
+original:
+|             int searchTicks = contacts != null ? ai.SearchTicks : 0;
+replacement:
+|             int searchTicks = contacts != null ? ai.FailedSlotTicks : 0;
+
+[gen-airules-14-suppression-wrong-field]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatOptIn_AssemblesAllContentRules
+note = suppression uses the failed-slot memory length
+original:
+|             int suppressTicks = contacts != null ? ai.SuppressTicks : 0;
+replacement:
+|             int suppressTicks = contacts != null ? ai.FailedSlotTicks : 0;
