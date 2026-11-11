@@ -1,0 +1,114 @@
+# GEN-AIRULES-2: explicit flat-world AI rules and unchanged terrain rule selection.
+
+[gen-airules-01-flat-defaults]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatOptIn_ChasesAtTickSix
+note = flat worlds ignore the explicit AI rules
+original:
+|             AiRules ai = terrain != null ? recipe.TerrainPack.Section<AiRules>() : recipe.Ai;
+replacement:
+|             AiRules ai = terrain != null ? recipe.TerrainPack.Section<AiRules>() : null;
+
+[gen-airules-02-inverted-opt-in]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatOptIn_ChasesAtTickSix
+expect = WarCore.Tests.GenAiRulesTests.FlatWithoutOptIn_KeepsLegacyBytesAndDoesNotChase
+note = flat worlds use content only when the explicit AI option is absent
+original:
+|             AiRules ai = terrain != null ? recipe.TerrainPack.Section<AiRules>() : recipe.Ai;
+replacement:
+|             AiRules ai = terrain != null ? recipe.TerrainPack.Section<AiRules>() : recipe.Ai == null ? recipe.TerrainPack?.Section<AiRules>() : null;
+
+[gen-airules-03-terrain-source]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.TerrainKeepsOriginalRuleSource
+note = the flat-world option overrides the terrain rule source
+original:
+|             AiRules ai = terrain != null ? recipe.TerrainPack.Section<AiRules>() : recipe.Ai;
+replacement:
+|             AiRules ai = recipe.Ai ?? (terrain != null ? recipe.TerrainPack.Section<AiRules>() : null);
+
+[gen-airules-04-wrong-chase-field]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatOptIn_ChasesAtTickSix
+note = chase range is taken from target memory duration
+original:
+|             int meleeChaseRange = ai?.MeleeChaseRange ?? 0;
+replacement:
+|             int meleeChaseRange = ai?.TargetMemoryTicks ?? 0;
+
+[gen-airules-05-flat-fire-disabled]
+file = Assets/WarCore/Presentation/Bridge/Features/AiFireFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatOptIn_AssemblesAllAiRules
+note = reaction, sense and burst remain restricted to terrain worlds
+original:
+|             return ai != null && (ai.ReactionTicks > 0 || ai.SenseTicks > 1 || ai.BurstShots > 0);
+replacement:
+|             return a.Terrain != null && ai != null && (ai.ReactionTicks > 0 || ai.SenseTicks > 1 || ai.BurstShots > 0);
+
+[gen-airules-06-fire-source]
+file = Assets/WarCore/Presentation/Bridge/Features/AiFireFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatOptIn_AssemblesAllAiRules
+note = flat-world fire reads the terrain pack instead of the explicit AI rules
+original:
+|             if (a.Combat == null) throw new ArgumentException("The AI reaction time needs combat.");
+|             AiRules ai = a.Terrain != null ? a.Recipe.TerrainPack.Section<AiRules>() : a.Recipe.Ai;
+replacement:
+|             if (a.Combat == null) throw new ArgumentException("The AI reaction time needs combat.");
+|             AiRules ai = a.Recipe.TerrainPack?.Section<AiRules>() ?? a.Recipe.Ai;
+
+[gen-airules-07-failed-slots]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatOptIn_AssemblesAllAiRules
+note = failed-slot memory is omitted
+original:
+|             int failedTicks = ai?.FailedSlotTicks ?? 0;
+replacement:
+|             int failedTicks = 0;
+
+[gen-airules-08-target-memory]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatOptIn_AssemblesAllAiRules
+note = target memory is omitted
+original:
+|             int memoryTicks = ai?.TargetMemoryTicks ?? 0;
+replacement:
+|             int memoryTicks = 0;
+
+[gen-airules-09-search]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatOptIn_AssemblesAllAiRules
+note = target search is omitted
+original:
+|             int searchTicks = contacts != null ? ai.SearchTicks : 0;
+replacement:
+|             int searchTicks = 0;
+
+[gen-airules-10-suppression]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatOptIn_AssemblesAllAiRules
+note = suppression is omitted
+original:
+|             int suppressTicks = contacts != null ? ai.SuppressTicks : 0;
+replacement:
+|             int suppressTicks = 0;
+
+[gen-airules-11-copy-loses-option]
+file = Assets/WarCore/Presentation/Bridge/WorldRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatOptIn_ChasesAtTickSix
+note = a later recipe option drops the explicit AI rules
+original:
+|             copy.Combat = Combat; copy.Match = Match; copy.Ai = Ai; copy.PlayerKey = PlayerKey; copy.RuleSetId = RuleSetId; copy.CrowdPass = CrowdPass; copy.TerrainPack = TerrainPack; copy.BlockAi = BlockAi; copy.options.AddRange(options);
+replacement:
+|             copy.Combat = Combat; copy.Match = Match; copy.PlayerKey = PlayerKey; copy.RuleSetId = RuleSetId; copy.CrowdPass = CrowdPass; copy.TerrainPack = TerrainPack; copy.BlockAi = BlockAi; copy.options.AddRange(options);
