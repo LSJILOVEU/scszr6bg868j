@@ -189,7 +189,8 @@ namespace WarCore.Sim
                     planOrigins.Add(origin,group);
                     ulong next;
                     if (request.Spawner.HasValue)
-                        next = entities.CapturedSpawnCounter(request.Spawner,request.Counter);
+                        next = !entities.UsesRetainedProtocol && entities.LifeOf(request.Spawner.Id) == IdentityLife.Retired
+                            ? request.Counter : entities.CapturedSpawnCounter(request.Spawner,request.Counter);
                     else
                     {
                         int cursor = WorldIndex(request.Key.System);

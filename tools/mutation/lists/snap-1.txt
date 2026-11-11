@@ -59,3 +59,13 @@ original:
 |                 request.Values = SpawnValues.Read(reader);
 replacement:
 |                 request.Values = SpawnValues.Read(reader); if (!entities.UsesRetainedProtocol && spawner.HasValue) request.Values = entities.CaptureSpawnValues(entities.ResolveLogical(spawner));
+
+[snap-1-retired-counter-recomputed]
+file = Assets/WarCore/Sim/StableSpawns.cs
+filter = FullyQualifiedName=WarCore.Tests.Snap1CriticLifecycleTests.PendingSpawnFromDestroyedSourceRestoresToTheSameRun
+expect = WarCore.Tests.Snap1CriticLifecycleTests.PendingSpawnFromDestroyedSourceRestoresToTheSameRun
+note = non-retained retired spawns use the counter omitted from the snapshot
+original:
+|                             ? request.Counter : entities.CapturedSpawnCounter(request.Spawner,request.Counter);
+replacement:
+|                             ? entities.CapturedSpawnCounter(request.Spawner,request.Counter) : entities.CapturedSpawnCounter(request.Spawner,request.Counter);
