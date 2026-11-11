@@ -102,7 +102,8 @@ namespace WarCore.Battle
             bool kept = has[slot] && shooters[slot].Equals(self) && lasts[slot] == tick - 1;
             if (!Samples(self, tick))
             {
-                if (kept && combat.Entities.TryResolve(targets[slot], out EntityRef found) && !combat.IsDead((EntityId)found))
+                if (kept && combat.Entities.TryResolve(targets[slot], out EntityRef found)
+                    && combat.Entities.TryGet<Position>((EntityId)found, out _) && !combat.IsDead((EntityId)found))
                     lasts[slot] = tick;
                 else has[slot] = false;
                 return;

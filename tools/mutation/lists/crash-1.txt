@@ -1,0 +1,19 @@
+[crash-1-01-position-check-removed]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.Crash1Tests
+expect = WarCore.Tests.Crash1Tests.TargetLosesPosition_ClearsEntryAndRestartsReaction
+note = a retained target without Position reaches AimAt
+original:
+|                     && combat.Entities.TryGet<Position>((EntityId)found, out _) && !combat.IsDead((EntityId)found))
+replacement:
+|                     && !combat.IsDead((EntityId)found))
+
+[crash-1-02-position-check-inverted]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.Crash1Tests
+expect = WarCore.Tests.Crash1Tests.TargetLosesPosition_ClearsEntryAndRestartsReaction
+note = a retained target with Position is lost between samples
+original:
+|                     && combat.Entities.TryGet<Position>((EntityId)found, out _) && !combat.IsDead((EntityId)found))
+replacement:
+|                     && !combat.Entities.TryGet<Position>((EntityId)found, out _) && !combat.IsDead((EntityId)found))
