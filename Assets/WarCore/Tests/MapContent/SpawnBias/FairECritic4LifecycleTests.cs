@@ -8,7 +8,7 @@ namespace WarCore.Tests
 {
     public sealed class FairECritic4LifecycleTests
     {
-        [Category("Manual"), Test, Explicit("Reproduces a failed departure exposing its standing slot.")]
+        [Test]
         public void FairECritic4_FailedDepartureKeepsItsStandingSlot()
         {
             SimVec3 standing = L4.Cell(40, 20), blocked = L4.Cell(30, 20), previous = L4.Cell(60, 20);

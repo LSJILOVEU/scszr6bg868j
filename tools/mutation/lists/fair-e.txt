@@ -153,3 +153,23 @@ original:
 |                 if (proposal.Kind == 2 && proposal.MemorySlot == -1 && standingHas[proposal.Slot] && standingBy[proposal.Slot] != proposal.Id.Value) continue;
 replacement:
 |                 if (false) continue;
+
+[fair-e-16-omitted-retained-search-occupancy]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~FairECritic4_RetainedSearchRespectsReinforcedAlly
+expect = WarCore.Tests.FairECritic4ReservationTests.FairECritic4_RetainedSearchRespectsReinforcedAlly
+note = retained search reservations ignore newly occupied standing slots
+original:
+|                 if (proposal.Kind == 3 && standingHas[proposal.Slot] && standingBy[proposal.Slot] != proposal.Id.Value) continue;
+replacement:
+|                 if (false) continue;
+
+[fair-e-17-omitted-failed-departure-occupancy]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~FairECritic4_FailedDepartureKeepsItsStandingSlot
+expect = WarCore.Tests.FairECritic4LifecycleTests.FairECritic4_FailedDepartureKeepsItsStandingSlot
+note = failed departures expose their standing slots to dependent routes
+original:
+|                         if (proposal.Standing >= 0) winners[proposal.Standing] = -1;
+replacement:
+|                         if (false) winners[proposal.Standing] = -1;
