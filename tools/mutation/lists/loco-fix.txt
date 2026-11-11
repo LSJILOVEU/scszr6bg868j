@@ -1,0 +1,31 @@
+# Wall contact tolerance and unit clearance along short steps.
+
+[loco-fix-01-full-wall-radius]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~WarCore.Tests.LocoReproWallTests
+expect = WarCore.Tests.LocoReproWallTests.WallContact_AllowsTangentialMovement
+note = the full wall query radius blocks tangential movement at contact
+original:
+|                 provisional[i].Point, next, SimFix.FromRaw(MaxRaw(0, provisional[i].Radius.Raw - 1)), wallMask));
+replacement:
+|                 provisional[i].Point, next, provisional[i].Radius, wallMask));
+
+[loco-fix-02-zero-wall-tolerance]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~WarCore.Tests.LocoReproWallTests
+expect = WarCore.Tests.LocoReproWallTests.WallContact_AllowsTangentialMovement
+note = zero raw tolerance blocks tangential movement at contact
+original:
+|                 provisional[i].Point, next, SimFix.FromRaw(MaxRaw(0, provisional[i].Radius.Raw - 1)), wallMask));
+replacement:
+|                 provisional[i].Point, next, SimFix.FromRaw(MaxRaw(0, provisional[i].Radius.Raw - 0)), wallMask));
+
+[loco-fix-03-no-unit-sweep]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~WarCore.Tests.LocoReproUnitTests
+expect = WarCore.Tests.LocoReproUnitTests.FastShortChord_DoesNotPassThroughAStationaryUnit
+note = removing the unit sweep permits penetration between clear endpoints
+original:
+|                     && SweepsThrough(provisional[i].Point, next, provisional[j].Point, threshold))
+replacement:
+|                     && false)

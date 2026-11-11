@@ -209,14 +209,13 @@ namespace WarCore.Interim
             if (!grid.TryCell(next, out int cell) || !grid.IsPassable(cell % grid.Width, cell / grid.Width)) return false;
             if (terrain != null && !grid.SegmentClear(provisional[i].Point, next, UnitFootprint)) return false;
             return wallMask == 0 || !context.SpatialQuery.Any(SpatialQueries.Capsule(
-                provisional[i].Point, next, provisional[i].Radius, wallMask));
+                provisional[i].Point, next, SimFix.FromRaw(MaxRaw(0, provisional[i].Radius.Raw - 1)), wallMask));
         }
 
         private bool UnitsAllow(int i, SimVec3 next, out int blocker)
         {
             blocker = -1;
             SimWide nearest = default;
-            SimWide stepSquared = Planar(next - provisional[i].Point).LengthSquared;
             long px = provisional[i].Point.X.Raw, pz = provisional[i].Point.Z.Raw;
             long lowX = MinRaw(px, next.X.Raw), highX = MaxRaw(px, next.X.Raw);
             long lowZ = MinRaw(pz, next.Z.Raw), highZ = MaxRaw(pz, next.Z.Raw);
@@ -237,8 +236,7 @@ namespace WarCore.Interim
                 SimFix radius = provisional[i].Radius + provisional[j].Radius;
                 SimWide threshold = new SimVec3(radius, default, default).LengthSquared;
                 bool clear = newDistance >= threshold || (oldDistance < threshold && newDistance > oldDistance);
-                // A step shorter than the two radii cannot jump a unit, so only longer steps are checked along their path.
-                if (clear && oldDistance >= threshold && newDistance >= threshold && stepSquared >= threshold
+                if (clear && oldDistance >= threshold && newDistance >= threshold
                     && SweepsThrough(provisional[i].Point, next, provisional[j].Point, threshold))
                     clear = false;
                 if (clear) continue;
