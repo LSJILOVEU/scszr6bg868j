@@ -1,0 +1,51 @@
+# SNAP-1 pending spawn snapshot capture.
+
+[snap-1-01-default-chunk]
+file = Assets/WarCore/Sim/StableSpawns.cs
+filter = FullyQualifiedName~WarCore.Tests.Snap1
+expect = WarCore.Tests.Snap1SnapshotTests.PendingSpawnAfterChunkChangeContinuesWithTheSameHash
+note = save a default chunk instead of the captured chunk
+original:
+|                 writer.UInt64(requests[i].Chunk);
+replacement:
+|                 writer.UInt64(0);
+
+[snap-1-02-recompute-counter]
+file = Assets/WarCore/Sim/StableSpawns.cs
+filter = FullyQualifiedName~WarCore.Tests.Snap1
+expect = WarCore.Tests.Snap1SnapshotTests.PendingSnapshotKeepsCapturedCounterAndValues
+note = replace the restored counter with the current spawner counter
+original:
+|                 request.Counter = reader.UInt64();
+replacement:
+|                 request.Counter = reader.UInt64(); if (spawner.HasValue) request.Counter = entities.Read(entities.spawnSequences,entities.ResolveLogical(spawner)).Next;
+
+[snap-1-03-old-version]
+file = Assets/WarCore/Sim/StableSimState.cs
+filter = FullyQualifiedName~WarCore.Tests.Snap1
+expect = WarCore.Tests.Snap1SnapshotTests.StableSnapshotsUseVersionSixAndRejectVersionFive
+note = keep the previous snapshot version
+original:
+|         public const int StableSnapshotVersion = 6;
+replacement:
+|         public const int StableSnapshotVersion = 5;
+
+[snap-1-04-default-counter]
+file = Assets/WarCore/Sim/StableSpawns.cs
+filter = FullyQualifiedName~WarCore.Tests.Snap1
+expect = WarCore.Tests.Snap1SnapshotTests.PendingSnapshotKeepsCapturedCounterAndValues
+note = save a default counter instead of the captured counter
+original:
+|                 writer.UInt64(requests[i].Counter);
+replacement:
+|                 writer.UInt64(0);
+
+[snap-1-05-default-values]
+file = Assets/WarCore/Sim/StableSpawns.cs
+filter = FullyQualifiedName~WarCore.Tests.Snap1
+expect = WarCore.Tests.Snap1SnapshotTests.PendingSnapshotKeepsCapturedCounterAndValues
+note = save default values instead of the captured position facing and ownership
+original:
+|                 requests[i].Values.Save(writer);
+replacement:
+|                 default(SpawnValues).Save(writer);
