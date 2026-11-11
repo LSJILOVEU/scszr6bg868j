@@ -20,8 +20,9 @@ namespace WarCore.Battle
         private readonly int ticks;
         // True when the unit receives a squad move command to this squad number (same test as the orders system).
         private readonly Func<StableId, int, bool> inSquad;
-        private readonly SortedDictionary<ulong, Entry> entries = new SortedDictionary<ulong, Entry>();
-        private readonly List<ulong> keys = new List<ulong>(), drop = new List<ulong>();
+        private readonly SortedList<ulong, Entry> entries;
+        private readonly IList<ulong> keys;
+        private readonly List<ulong> drop;
 
         public FailedSlotMemory(EntityStore entities, IMoveOrders moves, int ticks, Func<StableId, int, bool> inSquad)
         {
@@ -30,6 +31,9 @@ namespace WarCore.Battle
             this.moves = moves ?? throw new ArgumentNullException(nameof(moves));
             this.inSquad = inSquad ?? throw new ArgumentNullException(nameof(inSquad));
             this.ticks = ticks;
+            entries = new SortedList<ulong, Entry>(entities.Capacity);
+            keys = entries.Keys;
+            drop = new List<ulong>(entities.Capacity);
         }
 
         public int Order => 9;
@@ -39,9 +43,10 @@ namespace WarCore.Battle
         public void Step(SimContext c)
         {
             long tick = c.Clock.Tick;
-            keys.Clear(); keys.AddRange(entries.Keys); drop.Clear();
-            foreach (ulong key in keys)
+            drop.Clear();
+            for (int i = 0; i < keys.Count; i++)
             {
+                ulong key = keys[i];
                 var id = new StableId(key);
                 if (!entities.TryResolve(id, out _)) { drop.Add(key); continue; }
                 Entry e = entries[key];

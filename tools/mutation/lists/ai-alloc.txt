@@ -1,0 +1,133 @@
+# Allocation regressions must fail the named zero-allocation assertions.
+
+[ai-alloc-memory-insert]
+file = Assets/WarCore/Battle/Ai/TargetMemory.cs
+filter = FullyQualifiedName~WarCore.Tests.AiPlaytestAllocationTests
+expect = WarCore.Tests.AiPlaytestAllocationTests.FullStep_FirstContactLossAndReacquisition_AllocateZero
+note = The first inserted entry grows backing arrays instead of using constructor capacity.
+original:
+|             entries = new SortedList<ulong, Entry>(combat.Entities.Capacity);
+replacement:
+|             entries = new SortedList<ulong, Entry>();
+
+[ai-alloc-memory-keys]
+file = Assets/WarCore/Battle/Ai/TargetMemory.cs
+filter = FullyQualifiedName~WarCore.Tests.AiPlaytestAllocationTests
+expect = WarCore.Tests.AiPlaytestAllocationTests.FullStep_FirstContactLossAndReacquisition_AllocateZero
+note = Each tick copies the ordered keys into a new temporary list.
+original:
+|             drop.Clear();
+replacement:
+|             drop.Clear(); GC.KeepAlive(new List<ulong>(keys));
+
+[ai-alloc-memory-expiry]
+file = Assets/WarCore/Battle/Ai/TargetMemory.cs
+filter = FullyQualifiedName~WarCore.Tests.AiPlaytestAllocationTests
+expect = WarCore.Tests.AiPlaytestAllocationTests.FullStep_FirstContactLossAndReacquisition_AllocateZero
+note = The first removal grows the scratch list instead of using constructor capacity.
+original:
+|             drop = new List<ulong>(combat.Entities.Capacity);
+replacement:
+|             drop = new List<ulong>();
+
+[ai-alloc-search-insert]
+file = Assets/WarCore/Battle/Ai/TargetSearch.cs
+filter = FullyQualifiedName~WarCore.Tests.AiPlaytestAllocationTests
+expect = WarCore.Tests.AiPlaytestAllocationTests.FullStep_FirstContactLossAndReacquisition_AllocateZero
+note = The first inserted entry grows backing arrays instead of using constructor capacity.
+original:
+|             entries = new SortedList<ulong, Entry>(entities.Capacity);
+replacement:
+|             entries = new SortedList<ulong, Entry>();
+
+[ai-alloc-search-keys]
+file = Assets/WarCore/Battle/Ai/TargetSearch.cs
+filter = FullyQualifiedName~WarCore.Tests.AiPlaytestAllocationTests
+expect = WarCore.Tests.AiPlaytestAllocationTests.FullStep_FirstContactLossAndReacquisition_AllocateZero
+note = Each tick copies the ordered keys into a new temporary list.
+original:
+|             drop.Clear();
+replacement:
+|             drop.Clear(); GC.KeepAlive(new List<ulong>(keys));
+
+[ai-alloc-search-expiry]
+file = Assets/WarCore/Battle/Ai/TargetSearch.cs
+filter = FullyQualifiedName~WarCore.Tests.AiPlaytestAllocationTests
+expect = WarCore.Tests.AiPlaytestAllocationTests.FullStep_FirstContactLossAndReacquisition_AllocateZero
+note = The first removal grows the scratch list instead of using constructor capacity.
+original:
+|             drop = new List<ulong>(entities.Capacity);
+replacement:
+|             drop = new List<ulong>();
+
+[ai-alloc-failed-slot-insert]
+file = Assets/WarCore/Battle/Ai/FailedSlotMemory.cs
+filter = FullyQualifiedName~WarCore.Tests.AiPlaytestAllocationTests
+expect = WarCore.Tests.AiPlaytestAllocationTests.FullStep_FirstContactLossAndReacquisition_AllocateZero
+expect = WarCore.Tests.AiPlaytestAllocationTests.FullStep_FirstComplexPath_AllocatesZero
+note = The first inserted entry grows backing arrays instead of using constructor capacity. Measured transition coverage remains unverified.
+original:
+|             entries = new SortedList<ulong, Entry>(entities.Capacity);
+replacement:
+|             entries = new SortedList<ulong, Entry>();
+
+[ai-alloc-failed-slot-keys]
+file = Assets/WarCore/Battle/Ai/FailedSlotMemory.cs
+filter = FullyQualifiedName~WarCore.Tests.AiPlaytestAllocationTests
+expect = WarCore.Tests.AiPlaytestAllocationTests.FullStep_FirstContactLossAndReacquisition_AllocateZero
+note = Each tick copies the ordered keys into a new temporary list.
+original:
+|             drop.Clear();
+replacement:
+|             drop.Clear(); GC.KeepAlive(new List<ulong>(keys));
+
+[ai-alloc-failed-slot-expiry]
+file = Assets/WarCore/Battle/Ai/FailedSlotMemory.cs
+filter = FullyQualifiedName~WarCore.Tests.AiPlaytestAllocationTests
+expect = WarCore.Tests.AiPlaytestAllocationTests.FullStep_FirstContactLossAndReacquisition_AllocateZero
+expect = WarCore.Tests.AiPlaytestAllocationTests.FullStep_FirstComplexPath_AllocatesZero
+note = The first removal grows the scratch list instead of using constructor capacity. Measured transition coverage remains unverified.
+original:
+|             drop = new List<ulong>(entities.Capacity);
+replacement:
+|             drop = new List<ulong>();
+
+[ai-alloc-orders-members]
+file = Assets/WarCore/Interim/InterimOrders.cs
+filter = FullyQualifiedName~WarCore.Tests.AiPlaytestAllocationTests
+expect = WarCore.Tests.AiPlaytestAllocationTests.FullStep_FirstComplexPath_AllocatesZero
+note = The first squad move allocates member storage through the original resize path.
+original:
+|             members = new EntityId[entities.Capacity];
+replacement:
+|             members = Array.Empty<EntityId>();
+
+[ai-alloc-orders-spots]
+file = Assets/WarCore/Interim/InterimOrders.cs
+filter = FullyQualifiedName~WarCore.Tests.AiPlaytestAllocationTests
+expect = WarCore.Tests.AiPlaytestAllocationTests.FullStep_FirstComplexPath_AllocatesZero
+note = Each squad member copies the position buffer while preserving its contents.
+original:
+|                 spots[slot] = at;
+replacement:
+|                 spots = (SimVec3[])spots.Clone(); spots[slot] = at;
+
+[ai-alloc-path-heap]
+file = Assets/WarCore/Sim/GridPathfinder.cs
+filter = FullyQualifiedName~WarCore.Tests.AiPlaytestAllocationTests
+expect = WarCore.Tests.AiPlaytestAllocationTests.FullStep_FirstComplexPath_AllocatesZero
+note = The first complex path grows the heap from its original small capacity.
+original:
+|             heap = new Entry[grid.Count * 8];
+replacement:
+|             heap = new Entry[16];
+
+[ai-alloc-crowd-growth]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~WarCore.Tests.AiPlaytestAllocationTests
+expect = WarCore.Tests.AiPlaytestAllocationTests.FullStep_FirstReinforcement_AllocatesZero(16)
+note = The seventeenth deployed unit grows the crowd buffer through the original resize path.
+original:
+|             provisional = new CrowdMember[entities.Capacity];
+replacement:
+|             provisional = Array.Empty<CrowdMember>();
