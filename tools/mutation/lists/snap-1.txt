@@ -1,0 +1,41 @@
+# SNAP-1 pending spawn captures and snapshot version.
+
+[snap-1-01-chunk-default]
+file = Assets/WarCore/Sim/StableSpawns.cs
+filter = FullyQualifiedName~WarCore.Tests.Snap1
+expect = WarCore.Tests.Snap1SpawnSnapshotTests.PendingSpawnKeepsCapturedChunkAfterRestore
+note = the saved Chunk defaults to zero instead of preserving the captured value
+original:
+|                 writer.UInt64(requests[i].Chunk);
+replacement:
+|                 writer.UInt64(0);
+
+[snap-1-02-counter-recomputed]
+file = Assets/WarCore/Sim/StableSpawns.cs
+filter = FullyQualifiedName~WarCore.Tests.Snap1
+expect = WarCore.Tests.Snap1SpawnSnapshotTests.PendingSnapshotPreservesCounterAndValues
+note = the restored Counter is replaced by the current spawner counter
+original:
+|                 request.Counter = reader.UInt64();
+replacement:
+|                 request.Counter = reader.UInt64(); if (spawner.HasValue) request.Counter = entities.Read(entities.spawnSequences,entities.ResolveLogical(spawner)).Next;
+
+[snap-1-03-version-unchanged]
+file = Assets/WarCore/Sim/StableSimState.cs
+filter = FullyQualifiedName~WarCore.Tests.Snap1
+expect = WarCore.Tests.Snap1SpawnSnapshotTests.SnapshotVersionSixRejectsVersionFive
+note = the extended snapshot keeps version five
+original:
+|         public const int StableSnapshotVersion = 6;
+replacement:
+|         public const int StableSnapshotVersion = 5;
+
+[snap-1-04-values-default]
+file = Assets/WarCore/Sim/StableSpawns.cs
+filter = FullyQualifiedName~WarCore.Tests.Snap1
+expect = WarCore.Tests.Snap1SpawnSnapshotTests.PendingSnapshotPreservesCounterAndValues
+note = the restored Values are discarded
+original:
+|                 request.Values = SpawnValues.Read(reader);
+replacement:
+|                 request.Values = SpawnValues.Read(reader); request.Values = default;

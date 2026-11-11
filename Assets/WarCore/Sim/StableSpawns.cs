@@ -255,12 +255,9 @@ namespace WarCore.Sim
                 requests[i].Key.Save(writer);
                 writer.Link(requests[i].Spawner);
                 writer.Int64(requests[i].Tick);
-                if (entities.UsesRetainedProtocol)
-                {
-                    writer.UInt64(requests[i].Counter);
-                    writer.UInt64(requests[i].Chunk);
-                    requests[i].Values.Save(writer);
-                }
+                writer.UInt64(requests[i].Counter);
+                writer.UInt64(requests[i].Chunk);
+                requests[i].Values.Save(writer);
             }
             ValueOrder.Sort(worlds.AsSpan(0,worldCount));
             worldLookup.Clear();
@@ -285,19 +282,9 @@ namespace WarCore.Sim
                 long tick = reader.Int64();
                 SimStateReader.Require(tick >= 0 && (i == 0 || requests[i-1].Key.CompareTo(key) < 0),"Invalid spawn request order.");
                 var request = new Request { Key=key, Spawner=spawner, Tick=tick };
-                if (entities.UsesRetainedProtocol)
-                {
-                    request.Counter = reader.UInt64();
-                    request.Chunk = reader.UInt64();
-                    request.Values = SpawnValues.Read(reader);
-                }
-                else if (spawner.HasValue)
-                {
-                    EntityId source = entities.ResolveLogical(spawner);
-                    request.Counter = entities.Read(entities.spawnSequences,source).Next;
-                    request.Chunk = entities.ChunkOf(spawner.Id);
-                    request.Values = entities.CaptureSpawnValues(source);
-                }
+                request.Counter = reader.UInt64();
+                request.Chunk = reader.UInt64();
+                request.Values = SpawnValues.Read(reader);
                 Add(request);
             }
             worldCount = reader.Count(worlds.Length);
