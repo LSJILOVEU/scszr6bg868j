@@ -1,0 +1,102 @@
+# Explicit flat-world AI rules, recipe copying, and terrain rule precedence.
+
+[gen-airules-01-flat-defaults]
+file = Assets/WarCore/Presentation/Bridge/WorldRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatWithOption_ChasesOnFirstTick
+note = flat worlds ignore the explicit AI pack
+original:
+|         internal AiRules AiRulesFor(bool terrain) => (terrain ? TerrainPack : AiPack)?.Section<AiRules>();
+replacement:
+|         internal AiRules AiRulesFor(bool terrain) => (terrain ? TerrainPack : null)?.Section<AiRules>();
+
+[gen-airules-02-option-reversed]
+file = Assets/WarCore/Presentation/Bridge/WorldRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatWithOption_ChasesOnFirstTick
+expect = WarCore.Tests.GenAiRulesTests.FlatWithoutOption_KeepsOriginalState
+note = flat AI is enabled only when the explicit option is absent
+original:
+|         internal AiRules AiRulesFor(bool terrain) => (terrain ? TerrainPack : AiPack)?.Section<AiRules>();
+replacement:
+|         internal AiRules AiRulesFor(bool terrain) => (terrain ? TerrainPack : AiPack == null ? TerrainPack : null)?.Section<AiRules>();
+
+[gen-airules-03-terrain-source]
+file = Assets/WarCore/Presentation/Bridge/WorldRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.TerrainWithOption_KeepsTerrainRules
+note = the explicit AI pack overrides the terrain world's existing rule source
+original:
+|         internal AiRules AiRulesFor(bool terrain) => (terrain ? TerrainPack : AiPack)?.Section<AiRules>();
+replacement:
+|         internal AiRules AiRulesFor(bool terrain) => (AiPack ?? TerrainPack)?.Section<AiRules>();
+
+[gen-airules-04-wrong-chase-field]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatWithOption_ChasesOnFirstTick
+note = the chase radius uses failed-slot duration instead of meleeChaseRange
+original:
+|             int meleeChaseRange = ai?.MeleeChaseRange ?? 0;
+replacement:
+|             int meleeChaseRange = ai?.FailedSlotTicks ?? 0;
+
+[gen-airules-05-copy-drops-option]
+file = Assets/WarCore/Presentation/Bridge/WorldRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatWithOption_ChasesOnFirstTick
+note = a later recipe option discards the explicit AI pack
+original:
+|             copy.Combat = Combat; copy.Match = Match; copy.PlayerKey = PlayerKey; copy.RuleSetId = RuleSetId; copy.CrowdPass = CrowdPass; copy.TerrainPack = TerrainPack; copy.AiPack = AiPack; copy.BlockAi = BlockAi; copy.options.AddRange(options);
+replacement:
+|             copy.Combat = Combat; copy.Match = Match; copy.PlayerKey = PlayerKey; copy.RuleSetId = RuleSetId; copy.CrowdPass = CrowdPass; copy.TerrainPack = TerrainPack; copy.BlockAi = BlockAi; copy.options.AddRange(options);
+
+[gen-airules-06-failed-memory-disabled]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatWithOption_RegistersContentRules
+note = explicit failed-slot memory is not registered
+original:
+|             int failedTicks = ai?.FailedSlotTicks ?? 0;
+replacement:
+|             int failedTicks = 0;
+
+[gen-airules-07-target-memory-disabled]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatWithOption_RegistersContentRules
+note = explicit target memory is not registered
+original:
+|             int memoryTicks = ai?.TargetMemoryTicks ?? 0;
+replacement:
+|             int memoryTicks = 0;
+
+[gen-airules-08-search-disabled]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatWithOption_RegistersContentRules
+note = explicit target search is not registered
+original:
+|             int searchTicks = contacts != null ? ai.SearchTicks : 0;
+replacement:
+|             int searchTicks = 0;
+
+[gen-airules-09-suppression-disabled]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatWithOption_RegistersContentRules
+note = explicit suppression is not registered
+original:
+|             int suppressTicks = contacts != null ? ai.SuppressTicks : 0;
+replacement:
+|             int suppressTicks = 0;
+
+[gen-airules-10-flat-fire-disabled]
+file = Assets/WarCore/Presentation/Bridge/Features/AiFireFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatWithOption_RegistersContentRules
+note = fire rules remain restricted to terrain worlds
+original:
+|             if (ai == null) return false;
+replacement:
+|             if (a.Terrain == null || ai == null) return false;
