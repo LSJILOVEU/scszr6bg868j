@@ -38,6 +38,7 @@ namespace WarCore.Battle
         private readonly CombatSystem combat;
         private readonly IAutoFire inner;
         private readonly DefaultAutoFire builtIn;
+        private readonly BurstCadence cadence;
         private readonly int ticks, senseTicks, burstShots, burstPauseTicks;
         private readonly EntityStage stage;
         private readonly bool[] has;
@@ -46,7 +47,8 @@ namespace WarCore.Battle
         private readonly int[] shots;        // rounds fired in the entry's current burst
         private readonly long[] lastShots;   // the tick of the entry's latest shot, 0 for none yet
 
-        public ReactionFire(CombatSystem combat, IAutoFire inner, int ticks, int senseTicks = 1, int burstShots = 0, int burstPauseTicks = 0)
+        public ReactionFire(CombatSystem combat, IAutoFire inner, int ticks, int senseTicks = 1, int burstShots = 0, int burstPauseTicks = 0,
+            BurstCadence cadence = null)
         {
             if (ticks < 0 || ticks > MaxTicks) throw new ArgumentOutOfRangeException(nameof(ticks));
             this.combat = combat ?? throw new ArgumentNullException(nameof(combat));
@@ -61,6 +63,7 @@ namespace WarCore.Battle
             this.senseTicks = senseTicks;
             this.burstShots = burstShots;
             this.burstPauseTicks = burstPauseTicks;
+            this.cadence = cadence;
             stage = new EntityStage(combat.Entities);
             int capacity = combat.Entities.Capacity;
             has = new bool[capacity];
@@ -133,6 +136,11 @@ namespace WarCore.Battle
                 direction = default;
                 return AutoFireAction.Pass;
             }
+            if (cadence != null && !cadence.Ready(shooter, tick))
+            {
+                direction = default;
+                return AutoFireAction.Pass;
+            }
             if (burstShots > 0 && shots[slot] == burstShots)
             {
                 if (tick - lastShots[slot] < burstPauseTicks)
@@ -143,6 +151,7 @@ namespace WarCore.Battle
                 shots[slot] = 0;   // the pause is over: the next burst starts with this aim
             }
             AutoFireAction action = builtIn.AimAt(combat, shooter, in position, (EntityId)target, out direction);
+            if (action == AutoFireAction.Fire && cadence != null) cadence.Fired(shooter, in unit, tick);
             if (action == AutoFireAction.Fire && burstShots > 0)
             {
                 lastShots[slot] = tick;

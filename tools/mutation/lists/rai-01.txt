@@ -1,0 +1,91 @@
+# RAI-01 shooter-owned burst cadence. Each mutation changes one production line.
+
+[rai-01-target-clears-pause]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.Rai01TimingTests.SwitchTargetKeepsPause
+expect = WarCore.Tests.Rai01TimingTests.SwitchTargetKeepsPause
+note = A target change clears the shooter cadence.
+original:
+|             shots[slot] = 0; lastShots[slot] = 0;
+replacement:
+|             shots[slot] = 0; lastShots[slot] = 0; cadence?.Forget(slot);
+
+[rai-01-held-shot-counts]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.Rai01TimingTests.HeldShotDoesNotCount
+expect = WarCore.Tests.Rai01TimingTests.HeldShotDoesNotCount
+note = An ally hold counts as a round.
+original:
+|             if (action == AutoFireAction.Fire && cadence != null) cadence.Fired(shooter, in unit, tick);
+replacement:
+|             if (action != AutoFireAction.Pass && cadence != null) cadence.Fired(shooter, in unit, tick);
+
+[rai-01-pause-one-tick-early]
+file = Assets/WarCore/Battle/Ai/BurstCadence.cs
+filter = FullyQualifiedName~WarCore.Tests.Rai01TimingTests.SwitchTargetKeepsPause
+expect = WarCore.Tests.Rai01TimingTests.SwitchTargetKeepsPause
+note = The pause ends one tick before the deadline.
+original:
+|                 if (tick - lastShots[slot] < pauseTicks) return false;
+replacement:
+|                 if (tick - lastShots[slot] < pauseTicks - 1) return false;
+
+[rai-01-slot-inherits-pause]
+file = Assets/WarCore/Battle/Ai/BurstCadence.cs
+filter = FullyQualifiedName~WarCore.Tests.Rai01TimingTests.ReusedSlotDoesNotInheritPause
+expect = WarCore.Tests.Rai01TimingTests.ReusedSlotDoesNotInheritPause
+note = A reused nonempty slot retains the previous shooter cadence.
+original:
+|             if (!shooters[slot].Equals(self))
+replacement:
+|             if (shooters[slot].Value == 0)
+
+[rai-01-default-on]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~WarCore.Tests.Rai01StateTests.DisabledPreservesHashesSnapshotsAndSystems
+expect = WarCore.Tests.Rai01StateTests.DisabledPreservesHashesSnapshotsAndSystems
+note = An absent policy enables shooter cadence.
+original:
+|             bool follows = false;
+replacement:
+|             bool follows = true;
+
+[rai-01-reload-keeps-count]
+file = Assets/WarCore/Battle/Ai/BurstCadence.cs
+filter = FullyQualifiedName~WarCore.Tests.Rai01TimingTests.EmptyMagazineKeepsReloadRule
+expect = WarCore.Tests.Rai01TimingTests.EmptyMagazineKeepsReloadRule
+note = The emptying shot does not reset the burst count.
+original:
+|             shots[slot] = unit.Ammo == 1 ? 0 : shots[slot] + 1;
+replacement:
+|             shots[slot] = shots[slot] + 1;
+
+[rai-01-hash-omits-last-shot]
+file = Assets/WarCore/Battle/Ai/BurstCadence.cs
+filter = FullyQualifiedName~WarCore.Tests.Rai01StateTests.StateVersionAndHashCoverSavedFields
+expect = WarCore.Tests.Rai01StateTests.StateVersionAndHashCoverSavedFields
+note = The hash loses the pause anchor.
+original:
+|                 hash.Add(shooters[slot].Value); hash.Add(shots[slot]); hash.Add(lastShots[slot]);
+replacement:
+|                 hash.Add(shooters[slot].Value); hash.Add(shots[slot]);
+
+[rai-01-save-loses-last-shot]
+file = Assets/WarCore/Battle/Ai/BurstCadence.cs
+filter = FullyQualifiedName~WarCore.Tests.Rai01StateTests.StateVersionAndHashCoverSavedFields
+expect = WarCore.Tests.Rai01StateTests.StateVersionAndHashCoverSavedFields
+note = The saved pause anchor becomes zero.
+original:
+|                 writer.UInt64(shooters[slot].Value); writer.Int32(shots[slot]); writer.Int64(lastShots[slot]);
+replacement:
+|                 writer.UInt64(shooters[slot].Value); writer.Int32(shots[slot]); writer.Int64(0);
+
+[rai-01-dead-shooter-retained]
+file = Assets/WarCore/Battle/Ai/BurstCadence.cs
+filter = FullyQualifiedName~WarCore.Tests.Rai01TimingTests.DeadShooterLosesPause
+expect = WarCore.Tests.Rai01TimingTests.DeadShooterLosesPause
+note = A dead shooter is retained in cadence snapshots.
+original:
+|             shooters[entity.Id].Equals(combat.Entities.StableOf(entity)) && !combat.IsDead(entity);
+replacement:
+|             shooters[entity.Id].Equals(combat.Entities.StableOf(entity));
