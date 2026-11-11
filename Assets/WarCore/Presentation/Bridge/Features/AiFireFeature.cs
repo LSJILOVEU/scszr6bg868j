@@ -26,7 +26,13 @@ namespace WarCore.Presentation
         {
             if (a.Combat == null) throw new ArgumentException("The AI reaction time needs combat.");
             AiRules ai = a.Recipe.TerrainPack.Section<AiRules>();
-            var fire = new ReactionFire(a.Combat, a.Combat.BuiltInAutoFire, ai.ReactionTicks, ai.SenseTicks, ai.BurstShots, ai.BurstPauseTicks);
+            BurstCadence cadence = null;
+            if (ai.BurstPauseFollowsShooter && ai.BurstShots > 0)
+            {
+                cadence = new BurstCadence(a.Combat, ai.BurstPauseTicks);
+                a.Sim.RegisterGameplay("battle.ai-burst-cadence", cadence, SimSystemPhase.Requests);
+            }
+            var fire = new ReactionFire(a.Combat, a.Combat.BuiltInAutoFire, ai.ReactionTicks, ai.SenseTicks, ai.BurstShots, ai.BurstPauseTicks, cadence);
             a.Combat.UseAutoFire(fire);
             a.Sim.RegisterGameplay("battle.ai-fire", fire, SimSystemPhase.Requests);
         }

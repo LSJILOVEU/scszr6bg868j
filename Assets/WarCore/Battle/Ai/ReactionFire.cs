@@ -38,6 +38,7 @@ namespace WarCore.Battle
         private readonly CombatSystem combat;
         private readonly IAutoFire inner;
         private readonly DefaultAutoFire builtIn;
+        private readonly BurstCadence cadence;
         private readonly int ticks, senseTicks, burstShots, burstPauseTicks;
         private readonly EntityStage stage;
         private readonly bool[] has;
@@ -46,7 +47,8 @@ namespace WarCore.Battle
         private readonly int[] shots;        // rounds fired in the entry's current burst
         private readonly long[] lastShots;   // the tick of the entry's latest shot, 0 for none yet
 
-        public ReactionFire(CombatSystem combat, IAutoFire inner, int ticks, int senseTicks = 1, int burstShots = 0, int burstPauseTicks = 0)
+        public ReactionFire(CombatSystem combat, IAutoFire inner, int ticks, int senseTicks = 1, int burstShots = 0, int burstPauseTicks = 0,
+            BurstCadence cadence = null)
         {
             if (ticks < 0 || ticks > MaxTicks) throw new ArgumentOutOfRangeException(nameof(ticks));
             this.combat = combat ?? throw new ArgumentNullException(nameof(combat));
@@ -59,6 +61,7 @@ namespace WarCore.Battle
             builtIn = (DefaultAutoFire)inner;
             this.ticks = ticks;
             this.senseTicks = senseTicks;
+            this.cadence = cadence;
             this.burstShots = burstShots;
             this.burstPauseTicks = burstPauseTicks;
             stage = new EntityStage(combat.Entities);
@@ -142,11 +145,17 @@ namespace WarCore.Battle
                 }
                 shots[slot] = 0;   // the pause is over: the next burst starts with this aim
             }
+            if (cadence != null && !cadence.Ready(shooter, tick))
+            {
+                direction = default;
+                return AutoFireAction.Pass;
+            }
             AutoFireAction action = builtIn.AimAt(combat, shooter, in position, (EntityId)target, out direction);
             if (action == AutoFireAction.Fire && burstShots > 0)
             {
                 lastShots[slot] = tick;
                 shots[slot] = unit.Ammo == 1 ? 0 : shots[slot] + 1;
+                if (cadence != null && shots[slot] == burstShots) cadence.Pause(shooter, tick);
             }
             return action;
         }

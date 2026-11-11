@@ -1,0 +1,91 @@
+# RAI-01: shooter-owned burst pause deadlines.
+
+[rai-01-target-clears-pause]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.Rai01Tests
+expect = WarCore.Tests.Rai01Tests.SwitchTargetKeepsPause
+note = selecting a new target clears the shooter deadline
+original:
+|             shots[slot] = 0; lastShots[slot] = 0;
+replacement:
+|             shots[slot] = 0; lastShots[slot] = 0; cadence?.Pause(shooter, tick - burstPauseTicks);
+
+[rai-01-held-shot-counts]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.Rai01Tests
+expect = WarCore.Tests.Rai01Tests.HeldShotDoesNotCount
+note = HoldFire counts as a fired round
+original:
+|             if (action == AutoFireAction.Fire && burstShots > 0)
+replacement:
+|             if (action != AutoFireAction.Pass && burstShots > 0)
+
+[rai-01-pause-early]
+file = Assets/WarCore/Battle/Ai/BurstCadence.cs
+filter = FullyQualifiedName~WarCore.Tests.Rai01Tests
+expect = WarCore.Tests.Rai01Tests.SwitchTargetKeepsPause
+note = the pause expires one tick early after a target switch
+original:
+|             return tick >= pauseUntil[slot];
+replacement:
+|             return tick + 1 >= pauseUntil[slot];
+
+[rai-01-reused-slot]
+file = Assets/WarCore/Battle/Ai/BurstCadence.cs
+filter = FullyQualifiedName~WarCore.Tests.Rai01Tests
+expect = WarCore.Tests.Rai01Tests.ReusedSlotDoesNotInheritPause
+note = a new shooter inherits a reused slot deadline
+original:
+|             if (!has[slot] || !shooters[slot].Equals(self))
+replacement:
+|             if (!has[slot])
+
+[rai-01-dead-shooter-saved]
+file = Assets/WarCore/Battle/Ai/BurstCadence.cs
+filter = FullyQualifiedName~WarCore.Tests.Rai01Tests
+expect = WarCore.Tests.Rai01Tests.DeathClearsPauseBeforeSave
+note = a dead shooter is exported
+original:
+|             && shooters[entity.Id].Equals(combat.Entities.StableOf(entity)) && !combat.IsDead(entity);
+replacement:
+|             && shooters[entity.Id].Equals(combat.Entities.StableOf(entity));
+
+[rai-01-deadline-not-hashed]
+file = Assets/WarCore/Battle/Ai/BurstCadence.cs
+filter = FullyQualifiedName~WarCore.Tests.Rai01Tests
+expect = WarCore.Tests.Rai01Tests.CadencePayloadAndHashIncludeDeadline
+note = the state hash omits the deadline
+original:
+|                 hash.Add(shooters[slot].Value); hash.Add(pauseUntil[slot]);
+replacement:
+|                 hash.Add(shooters[slot].Value);
+
+[rai-01-deadline-not-restored]
+file = Assets/WarCore/Battle/Ai/BurstCadence.cs
+filter = FullyQualifiedName~WarCore.Tests.Rai01Tests
+expect = WarCore.Tests.Rai01Tests.StableOrderRerunAndRestoreKeepPause
+note = a restored shooter loses its deadline
+original:
+|                 has[slot] = true; shooters[slot] = shooter; pauseUntil[slot] = until;
+replacement:
+|                 has[slot] = true; shooters[slot] = shooter; pauseUntil[slot] = 0;
+
+[rai-01-enabled-when-off]
+file = Assets/WarCore/Presentation/Bridge/Features/AiFireFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.Rai01Tests
+expect = WarCore.Tests.Rai01Tests.DisabledKeepsHashesSnapshotsAndSystems
+note = the optional state registers when the policy is disabled
+original:
+|             if (ai.BurstPauseFollowsShooter && ai.BurstShots > 0)
+replacement:
+|             if (ai.BurstShots > 0)
+
+[rai-01-reload-adds-pause]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.Rai01Tests
+expect = WarCore.Tests.Rai01Tests.EmptyMagazineKeepsExistingReload
+note = the emptying shot keeps the burst count and adds a pause after reload
+original:
+|                 shots[slot] = unit.Ammo == 1 ? 0 : shots[slot] + 1;
+replacement:
+|                 shots[slot] = shots[slot] + 1;
