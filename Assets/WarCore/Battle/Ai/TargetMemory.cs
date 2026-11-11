@@ -18,14 +18,18 @@ namespace WarCore.Battle
 
         private readonly CombatSystem combat;
         private readonly int ticks;
-        private readonly SortedDictionary<ulong, Entry> entries = new SortedDictionary<ulong, Entry>();
-        private readonly List<ulong> keys = new List<ulong>(), drop = new List<ulong>();
+        private readonly SortedList<ulong, Entry> entries;
+        private readonly IList<ulong> keys;
+        private readonly List<ulong> drop;
 
         public TargetMemory(CombatSystem combat, int ticks)
         {
             if (ticks < 1) throw new ArgumentOutOfRangeException(nameof(ticks));
             this.combat = combat ?? throw new ArgumentNullException(nameof(combat));
             this.ticks = ticks;
+            entries = new SortedList<ulong, Entry>(combat.Entities.Capacity);
+            keys = entries.Keys;
+            drop = new List<ulong>(combat.Entities.Capacity);
         }
 
         public int Order => 13;
@@ -36,9 +40,10 @@ namespace WarCore.Battle
         public void Step(SimContext c)
         {
             long tick = c.Clock.Tick;
-            keys.Clear(); keys.AddRange(entries.Keys); drop.Clear();
-            foreach (ulong key in keys)
+            drop.Clear();
+            for (int i = 0; i < keys.Count; i++)
             {
+                ulong key = keys[i];
                 Entry e = entries[key];
                 if (!Alive(new StableId(key)) || !Alive(e.Target) || tick - e.Seen >= ticks) drop.Add(key);
             }
