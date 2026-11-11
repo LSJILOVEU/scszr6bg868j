@@ -1,0 +1,131 @@
+# Explicit flat-map AI rules, default-off compatibility, and terrain source precedence.
+
+[gen-airules-01-flat-defaults]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatOptIn_ChasesAtTickSix
+note = The explicit flat-map pack is ignored.
+original:
+|             AiRules ai = (terrain != null ? recipe.TerrainPack : recipe.AiPack)?.Section<AiRules>();
+replacement:
+|             AiRules ai = (terrain != null ? recipe.TerrainPack : null)?.Section<AiRules>();
+
+[gen-airules-02-switch-reversed]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatOptIn_ChasesAtTickSix
+note = Supplying the AI pack disables flat-map AI; omitting it reads terrain rules.
+original:
+|             AiRules ai = (terrain != null ? recipe.TerrainPack : recipe.AiPack)?.Section<AiRules>();
+replacement:
+|             AiRules ai = (terrain != null || recipe.AiPack == null ? recipe.TerrainPack : null)?.Section<AiRules>();
+
+[gen-airules-03-terrain-source]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.Terrain_KeepsExistingRuleSource
+note = The explicit AI pack overrides the existing terrain source.
+original:
+|             AiRules ai = (terrain != null ? recipe.TerrainPack : recipe.AiPack)?.Section<AiRules>();
+replacement:
+|             AiRules ai = (recipe.AiPack ?? recipe.TerrainPack)?.Section<AiRules>();
+
+[gen-airules-04-chase-field]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatOptIn_ChasesAtTickSix
+note = The chase radius reads reaction ticks.
+original:
+|             int meleeChaseRange = ai?.MeleeChaseRange ?? 0;
+replacement:
+|             int meleeChaseRange = ai?.ReactionTicks ?? 0;
+
+[gen-airules-05-copy-loses-option]
+file = Assets/WarCore/Presentation/Bridge/WorldRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatOptIn_ChasesAtTickSix
+note = A later recipe option discards the AI pack.
+original:
+|             copy.Combat = Combat; copy.Match = Match; copy.PlayerKey = PlayerKey; copy.RuleSetId = RuleSetId; copy.CrowdPass = CrowdPass; copy.TerrainPack = TerrainPack; copy.AiPack = AiPack; copy.BlockAi = BlockAi; copy.options.AddRange(options);
+replacement:
+|             copy.Combat = Combat; copy.Match = Match; copy.PlayerKey = PlayerKey; copy.RuleSetId = RuleSetId; copy.CrowdPass = CrowdPass; copy.TerrainPack = TerrainPack; copy.BlockAi = BlockAi; copy.options.AddRange(options);
+
+[gen-airules-06-field-failedslotticks]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatOptIn_InstallsAllContentRules
+note = The installer reads the wrong FailedSlotTicks value.
+original:
+|             int failedTicks = ai?.FailedSlotTicks ?? 0;
+replacement:
+|             int failedTicks = ai?.TargetMemoryTicks ?? 0;
+
+[gen-airules-07-field-targetmemoryticks]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatOptIn_InstallsAllContentRules
+note = The installer reads the wrong TargetMemoryTicks value.
+original:
+|             int memoryTicks = ai?.TargetMemoryTicks ?? 0;
+replacement:
+|             int memoryTicks = ai?.FailedSlotTicks ?? 0;
+
+[gen-airules-08-field-searchticks]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatOptIn_InstallsAllContentRules
+note = The installer reads the wrong SearchTicks value.
+original:
+|             int searchTicks = contacts != null ? ai.SearchTicks : 0;
+replacement:
+|             int searchTicks = contacts != null ? ai.SuppressTicks : 0;
+
+[gen-airules-09-field-suppressticks]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatOptIn_InstallsAllContentRules
+note = The installer reads the wrong SuppressTicks value.
+original:
+|             int suppressTicks = contacts != null ? ai.SuppressTicks : 0;
+replacement:
+|             int suppressTicks = contacts != null ? ai.SearchTicks : 0;
+
+[gen-airules-10-fire-flat-defaults]
+file = Assets/WarCore/Presentation/Bridge/Features/AiFireFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatOptIn_InstallsAllContentRules
+note = The fire installer ignores the explicit flat-map pack.
+original:
+|             AiRules ai = (a.Terrain != null ? a.Recipe.TerrainPack : a.Recipe.AiPack)?.Section<AiRules>();
+replacement:
+|             AiRules ai = (a.Terrain != null ? a.Recipe.TerrainPack : null)?.Section<AiRules>();
+
+[gen-airules-11-fire-terrain-activation]
+file = Assets/WarCore/Presentation/Bridge/Features/AiFireFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.Terrain_KeepsExistingRuleSource
+note = Fire activation prefers the explicit pack in terrain worlds.
+original:
+|             AiRules ai = (a.Terrain != null ? a.Recipe.TerrainPack : a.Recipe.AiPack)?.Section<AiRules>();
+replacement:
+|             AiRules ai = (a.Recipe.AiPack ?? a.Recipe.TerrainPack)?.Section<AiRules>();
+
+[gen-airules-12-fire-flat-source]
+file = Assets/WarCore/Presentation/Bridge/Features/AiFireFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.FlatOptIn_InstallsAllContentRules
+note = Flat-map fire parameters come from the unrelated terrain pack.
+original:
+|             AiRules ai = (a.Terrain != null ? a.Recipe.TerrainPack : a.Recipe.AiPack).Section<AiRules>();
+replacement:
+|             AiRules ai = (a.Recipe.TerrainPack ?? a.Recipe.AiPack).Section<AiRules>();
+
+[gen-airules-13-fire-terrain-source]
+file = Assets/WarCore/Presentation/Bridge/Features/AiFireFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.GenAiRulesTests
+expect = WarCore.Tests.GenAiRulesTests.Terrain_KeepsExistingRuleSource
+note = Terrain fire parameters come from the explicit flat-map pack.
+original:
+|             AiRules ai = (a.Terrain != null ? a.Recipe.TerrainPack : a.Recipe.AiPack).Section<AiRules>();
+replacement:
+|             AiRules ai = (a.Recipe.AiPack ?? a.Recipe.TerrainPack).Section<AiRules>();
