@@ -8,8 +8,6 @@ using static WarCore.Tests.Wp16TestWorld;
 
 namespace WarCore.Tests
 {
-    // M5: a step longer than the two radii is checked along its path against other units, for the controlled unit and the crowd
-    // alike, so a fast unit cannot jump over a unit that stands in its way. Shorter steps keep the end-only rule.
     // Every unit has radius 0.25 m, so two units touch at 0.5 m.
     public sealed class UnitSweepTests
     {
@@ -111,14 +109,13 @@ namespace WarCore.Tests
         }
 
         [Test]
-        public void AShortStepThatGrazesAUnitKeepsTheEndPointRule()
+        public void AShortStepThatGrazesAUnitIsBlocked()
         {
-            // The 0.2 m step has both end points just outside the other unit's circle (0.5 m) while its middle is inside it
-            // (0.495 m away). Steps shorter than the two radii have always been judged on their end points, and still are.
+            // Both end points are clear, but the middle is only 0.495 m from the other unit.
             var w = new M6World(Recipe(new[] { U(1, 8000, 10000, speed: 6000), U(2, 70000, 35000, team: 2, squad: 2), U(3, 8100, 10495, squad: 3) }));
             long start = Point(w).X.Raw;
             w.Sim.Step(Input(1, 0));
-            Assert.That(Point(w).X.Raw, Is.EqualTo(start + 6000L * SimFix.Scale / 1000 / 30), "the walk is not held back");
+            Assert.That(Point(w).X.Raw, Is.EqualTo(start), "the swept path must stay clear");
         }
 
         [Test]
