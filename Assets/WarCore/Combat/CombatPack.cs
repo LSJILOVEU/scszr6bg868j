@@ -46,7 +46,7 @@ namespace WarCore.Combat
             var hash = new StateHash();
             hash.Add("combat.pack.v2"); hash.Add(weapons.Length);
             foreach (var weapon in this.weapons) weapon.WriteState(hash);
-            hash.Add(maxHealthRaw); hash.Add(resolver.PolicyKey); hash.Add(selector.PolicyKey);
+            hash.Add(maxHealthRaw); hash.Add(resolver?.PolicyKey ?? 0UL); hash.Add(selector.PolicyKey);
             hash.Add(friendlyFire); hash.Add(friendlyFireLocked); hash.Add(allyCheckMissRaw); hash.Add(allyHoldMilli);
             // Appended only when present, so a pack without melee keeps the digest it had before WP-20.
             if (this.melee.Length > 0)
