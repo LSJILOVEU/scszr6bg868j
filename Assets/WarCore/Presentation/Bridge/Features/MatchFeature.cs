@@ -26,6 +26,7 @@ namespace WarCore.Presentation
             WorldRecipe recipe = a.Recipe;
             CombatSystem combat = a.Combat;
             TerrainTables terrain = a.Terrain;
+            AiRules ai = recipe.AiRulesFor(terrain != null);
             var capture = new CaptureSystem(combat, recipe.Match);
             var adapter = new BattleAdapter(sim, a.Locomotion, recipe, new DeployGround(terrain != null ? terrain.Nav : WcMapNavigation.Create(a.Map), terrain, a.GroundRaw), a.GroundRaw, a.Standing);
             var reinforce = new ReinforceSystem(combat, recipe.Match, capture, adapter);
@@ -39,9 +40,8 @@ namespace WarCore.Presentation
                 sim.RegisterGameplay("battle.respawn", respawn, SimSystemPhase.Requests);
                 if (recipe.Match.RespawnGuardTicks > 0) combat.SetDamageGuard(respawn);
             }
-            // Terrain worlds only: a positive failedSlotTicks adds the failed-slot memory; 0 (the default) adds nothing.
             FailedSlotMemory memory = null;
-            int failedTicks = terrain != null ? recipe.TerrainPack.Section<AiRules>().FailedSlotTicks : 0;
+            int failedTicks = ai?.FailedSlotTicks ?? 0;
             if (failedTicks > 0)
             {
                 ComponentType<MoveIntent> intents = sim.Entities.Resolve<MoveIntent>();
@@ -50,9 +50,8 @@ namespace WarCore.Presentation
                     sim.Entities.TryGet(intents, sim.Entities.Resolve(new EntityLink(unit)), out MoveIntent intent) && intent.Squad == squad);
                 sim.RegisterGameplay("battle.ai-memory", memory, SimSystemPhase.Requests);
             }
-            // Terrain worlds only: a positive targetMemoryTicks adds the target memory; 0 (the default) adds nothing.
             TargetMemory contacts = null;
-            int memoryTicks = terrain != null ? recipe.TerrainPack.Section<AiRules>().TargetMemoryTicks : 0;
+            int memoryTicks = ai?.TargetMemoryTicks ?? 0;
             if (memoryTicks > 0)
             {
                 contacts = new TargetMemory(combat, memoryTicks);
@@ -60,7 +59,7 @@ namespace WarCore.Presentation
             }
             // Only with the memory on: a positive searchTicks adds the search; 0 (the default) adds nothing.
             TargetSearch search = null;
-            int searchTicks = contacts != null ? recipe.TerrainPack.Section<AiRules>().SearchTicks : 0;
+            int searchTicks = contacts != null ? ai.SearchTicks : 0;
             if (searchTicks > 0)
             {
                 search = new TargetSearch(combat.Entities, contacts, searchTicks);
@@ -68,13 +67,13 @@ namespace WarCore.Presentation
             }
             // Only with the memory on: a positive suppressTicks adds the suppressive fire; 0 (the default) adds nothing.
             TargetSuppress suppress = null;
-            int suppressTicks = contacts != null ? recipe.TerrainPack.Section<AiRules>().SuppressTicks : 0;
+            int suppressTicks = contacts != null ? ai.SuppressTicks : 0;
             if (suppressTicks > 0)
             {
                 suppress = new TargetSuppress(combat, contacts, adapter, suppressTicks);
                 sim.RegisterGameplay("battle.ai-suppress", suppress, SimSystemPhase.Requests);
             }
-            int meleeChaseRange = terrain != null ? recipe.TerrainPack.Section<AiRules>().MeleeChaseRange : 0;
+            int meleeChaseRange = ai?.MeleeChaseRange ?? 0;
             sim.RegisterGameplay("battle.ai", new SimpleAiSystem(combat, recipe.Combat, recipe.Match, capture, adapter, a.Controlled, memory, contacts, search, suppress, meleeChaseRange), SimSystemPhase.Requests);
             sim.RegisterGameplay("battle.capture", capture, SimSystemPhase.Queries);
             sim.RegisterGameplay("battle.match", match, SimSystemPhase.Queries);
