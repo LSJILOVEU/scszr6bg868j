@@ -208,7 +208,7 @@ namespace WarCore.Interim
             if (!grid.TryCell(next, out int cell) || !grid.IsPassable(cell % grid.Width, cell / grid.Width)) return false;
             if (terrain != null && !grid.SegmentClear(provisional[i].Point, next, UnitFootprint)) return false;
             return wallMask == 0 || !context.SpatialQuery.Any(SpatialQueries.Capsule(
-                provisional[i].Point, next, provisional[i].Radius, wallMask));
+                provisional[i].Point, next, SimFix.FromRaw(MaxRaw(0, provisional[i].Radius.Raw - 1)), wallMask));
         }
 
         private bool UnitsAllow(int i, SimVec3 next, out int blocker)
