@@ -18,8 +18,9 @@ namespace WarCore.Battle
         private readonly EntityStore entities;
         private readonly TargetMemory contacts;
         private readonly int ticks;
-        private readonly SortedDictionary<ulong, Entry> entries = new SortedDictionary<ulong, Entry>();
-        private readonly List<ulong> keys = new List<ulong>(), drop = new List<ulong>();
+        private readonly SortedList<ulong, Entry> entries;
+        private readonly IList<ulong> keys;
+        private readonly List<ulong> drop;
 
         public TargetSearch(EntityStore entities, TargetMemory contacts, int ticks)
         {
@@ -27,6 +28,9 @@ namespace WarCore.Battle
             this.entities = entities ?? throw new ArgumentNullException(nameof(entities));
             this.contacts = contacts ?? throw new ArgumentNullException(nameof(contacts));
             this.ticks = ticks;
+            entries = new SortedList<ulong, Entry>(entities.Capacity);
+            keys = entries.Keys;
+            drop = new List<ulong>(entities.Capacity);
         }
 
         public int Order => 17;
@@ -37,9 +41,12 @@ namespace WarCore.Battle
         public void Step(SimContext c)
         {
             long tick = c.Clock.Tick;
-            keys.Clear(); keys.AddRange(entries.Keys); drop.Clear();
-            foreach (ulong key in keys)
+            drop.Clear();
+            for (int i = 0; i < keys.Count; i++)
+            {
+                ulong key = keys[i];
                 if (!contacts.TryRecall(new StableId(key), tick, out _, out _, out long seen) || seen != entries[key].Seen) drop.Add(key);
+            }
             foreach (ulong key in drop) entries.Remove(key);
         }
 
