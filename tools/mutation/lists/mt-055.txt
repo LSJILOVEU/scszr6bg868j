@@ -1,0 +1,62 @@
+# QueueSnapshots
+# Surviving mutations of Assets/WarCore/Sim/QueueSnapshots.cs. Test classes are named Mt055QueueSnapshots*.
+
+[mt-055-01]
+file = Assets/WarCore/Sim/QueueSnapshots.cs
+filter = FullyQualifiedName~Mt055QueueSnapshots
+expect = WarCore.Tests.Mt055QueueSnapshotsTests.RejectsTaskIdSharedByPendingAndDueTasks
+note = Duplicate task ids across pending and due queues are accepted.
+original:
+| SimStateReader.Require(id > 0 && id < limit && seen.Add(id), "Invalid or duplicate scheduled task id.");
+replacement:
+| SimStateReader.Require(id > 0 && id < limit && true, "Invalid or duplicate scheduled task id.");
+
+[mt-055-02]
+file = Assets/WarCore/Sim/QueueSnapshots.cs
+filter = FullyQualifiedName~Mt055QueueSnapshots
+expect = WarCore.Tests.Mt055QueueSnapshotsTests.RejectsZeroSchedulerCapacityAsInvalidHeader
+note = Zero scheduler capacity reports a due queue error instead of an invalid header.
+original:
+| SimStateReader.Require(capacity > 0 && capacity <= 1 << 28 && savedNextId > 0 && savedThrough == tick, "Invalid scheduler snapshot header.");
+replacement:
+| SimStateReader.Require(capacity >= 0 && capacity <= 1 << 28 && savedNextId > 0 && savedThrough == tick, "Invalid scheduler snapshot header.");
+
+[mt-055-03]
+file = Assets/WarCore/Sim/QueueSnapshots.cs
+filter = FullyQualifiedName~Mt055QueueSnapshots
+expect = WarCore.Tests.Mt055QueueSnapshotsTests.RejectsPendingTaskAtSavedTick
+note = Pending tasks at the saved tick are accepted instead of requiring future ticks.
+original:
+| SimStateReader.Require(task.Event.Tick > tick, "Pending task is not in the future.");
+replacement:
+| SimStateReader.Require(task.Event.Tick >= tick, "Pending task is not in the future.");
+
+[mt-055-04]
+file = Assets/WarCore/Sim/QueueSnapshots.cs
+filter = FullyQualifiedName~Mt055QueueSnapshots
+expect = WarCore.Tests.Mt055QueueSnapshotsTests.RejectsEmptyDueHeadEqualToCapacity
+note = An empty due queue accepts a head equal to its capacity.
+original:
+| SimStateReader.Require(head >= 0 && head < capacity, "Invalid due queue head.");
+replacement:
+| SimStateReader.Require(head >= 0 && head <= capacity, "Invalid due queue head.");
+
+[mt-055-05]
+file = Assets/WarCore/Sim/QueueSnapshots.cs
+filter = FullyQualifiedName~Mt055QueueSnapshots
+expect = WarCore.Tests.Mt055QueueSnapshotsTests.RejectsZeroNextSequenceInEmptyEventWindow
+note = An empty event window accepts a zero next sequence.
+original:
+| SimStateReader.Require(savedTick == tick && sequence > 0 && dropped >= 0 && total >= dropped, "Invalid event snapshot counters.");
+replacement:
+| SimStateReader.Require(savedTick == tick && sequence >= 0 && dropped >= 0 && total >= dropped, "Invalid event snapshot counters.");
+
+[mt-055-06]
+file = Assets/WarCore/Sim/QueueSnapshots.cs
+filter = FullyQualifiedName~Mt055QueueSnapshots
+expect = WarCore.Tests.Mt055QueueSnapshotsTests.RejectsNonIncreasingRetainedSequences
+note = Retained events accept a zero first sequence or duplicate sequences.
+original:
+| SimStateReader.Require(item.Tick == slotTick && item.Sequence > previous && item.Sequence < sequence, "Invalid retained event order.");
+replacement:
+| SimStateReader.Require(item.Tick == slotTick && item.Sequence >= previous && item.Sequence < sequence, "Invalid retained event order.");

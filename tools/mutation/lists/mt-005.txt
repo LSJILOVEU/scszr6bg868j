@@ -1,0 +1,52 @@
+# ConcealedSight
+# Surviving mutations of Assets/WarCore/Battle/ConcealedSight.cs. Test classes are named Mt005ConcealedSight*.
+
+[mt-005-01]
+file = Assets/WarCore/Battle/ConcealedSight.cs
+filter = FullyQualifiedName~Mt005ConcealedSight
+expect = WarCore.Tests.Perception.Mt005ConcealedSightTests.NullInner_IsRejected
+note = A null inner selector must throw ArgumentNullException.
+original:
+|             if (inner == null) throw new ArgumentNullException(nameof(inner));
+replacement:
+|             if (false) throw new ArgumentNullException(nameof(inner));
+
+[mt-005-02]
+file = Assets/WarCore/Battle/ConcealedSight.cs
+filter = FullyQualifiedName~Mt005ConcealedSight
+expect = WarCore.Tests.Perception.Mt005ConcealedSightTests.CoverLengthMismatch_IsRejected
+note = Cover arrays must contain exactly one factor per grid cell.
+original:
+|             if (concealMilli.Length != grid.Count) throw new ArgumentException("One cover factor per grid cell is required.", nameof(concealMilli));
+replacement:
+|             if (false) throw new ArgumentException("One cover factor per grid cell is required.", nameof(concealMilli));
+
+[mt-005-03]
+file = Assets/WarCore/Battle/ConcealedSight.cs
+filter = FullyQualifiedName~Mt005ConcealedSight
+expect = WarCore.Tests.Perception.Mt005ConcealedSightTests.CoverFactorOutOfRange_IsRejected(0)
+note = A zero cover factor must throw ArgumentOutOfRangeException.
+original:
+|                 if (k < 1 || k > 1000) throw new ArgumentOutOfRangeException(nameof(concealMilli));
+replacement:
+|                 if (k < 0 || k > 1000) throw new ArgumentOutOfRangeException(nameof(concealMilli));
+
+[mt-005-04]
+file = Assets/WarCore/Battle/ConcealedSight.cs
+filter = FullyQualifiedName~Mt005ConcealedSight
+expect = WarCore.Tests.Perception.Mt005ConcealedSightTests.CoverFactorOutOfRange_IsRejected(1001)
+note = A cover factor above 1000 must throw ArgumentOutOfRangeException.
+original:
+|                 if (k < 1 || k > 1000) throw new ArgumentOutOfRangeException(nameof(concealMilli));
+replacement:
+|                 if (k < 1 || k > 1001) throw new ArgumentOutOfRangeException(nameof(concealMilli));
+
+[mt-005-05]
+file = Assets/WarCore/Battle/ConcealedSight.cs
+filter = FullyQualifiedName~Mt005ConcealedSight
+expect = WarCore.Tests.Perception.Mt005ConcealedSightTests.OutsideTheGrid_AtSightLimit_IsSelected
+note = Targets outside the grid must remain visible at the full sight limit.
+original:
+|                 int k = grid.TryCell(at, out int key) ? conceal[key] : 1000;
+replacement:
+|                 int k = grid.TryCell(at, out int key) ? conceal[key] : 999;

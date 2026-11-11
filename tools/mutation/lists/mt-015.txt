@@ -1,0 +1,22 @@
+# CombatSystem.Resolve
+# Surviving mutations of Assets/WarCore/Combat/CombatSystem.Resolve.cs. Test classes are named Mt015CombatSystemResolve*.
+
+[mt-015-01]
+file = Assets/WarCore/Combat/CombatSystem.Resolve.cs
+filter = FullyQualifiedName~Mt015CombatSystemResolve
+expect = WarCore.Tests.Mt015CombatSystemResolveTests.SpreadKeepsTheQuantizedShotEndpoint
+note = Changing the turn denominator shifts the quantized spread angle and shot endpoint.
+original:
+|             SimFix turns = SimFix.Ratio(offset, 360000);
+replacement:
+|             SimFix turns = SimFix.Ratio(offset, 360001);
+
+[mt-015-02]
+file = Assets/WarCore/Combat/CombatSystem.Resolve.cs
+filter = FullyQualifiedName~Mt015CombatSystemResolve
+expect = WarCore.Tests.Mt015CombatSystemResolveTests.AtTargetFiresAtMaximumRange
+note = Rejecting equality prevents targeted shots at exactly the maximum range.
+original:
+|                 || Horizontal(targetPosition.Value - origin).LengthSquared > new SimVec3(weapon.FalloffEnd, default, default).LengthSquared
+replacement:
+|                 || Horizontal(targetPosition.Value - origin).LengthSquared >= new SimVec3(weapon.FalloffEnd, default, default).LengthSquared

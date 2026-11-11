@@ -1,0 +1,72 @@
+# SpatialCellRegions
+# Surviving mutations of Assets/WarCore/Sim/SpatialCellRegions.cs. Test classes are named Mt072SpatialCellRegions*.
+
+[mt-072-01]
+file = Assets/WarCore/Sim/SpatialCellRegions.cs
+filter = FullyQualifiedName~Mt072SpatialCellRegions
+expect = WarCore.Tests.Mt072SpatialCellRegionsTests.TinyGridZSplitPrunesAnExcludedDescendant
+note = Skipping the Z split visits an excluded descendant during region traversal.
+original:
+| Select(cells, start, start + count - 1, middle, depth % 3);
+replacement:
+| Select(cells, start, start + count - 1, middle, depth % 2);
+
+[mt-072-02]
+file = Assets/WarCore/Sim/SpatialCellRegions.cs
+filter = FullyQualifiedName~Mt072SpatialCellRegions
+expect = WarCore.Tests.Mt072SpatialCellRegionsTests.TinyGridRegionBoundsRetainEachAxisExtreme
+note = Reversing lower X expansion prunes a matching cell at the minimum X edge.
+original:
+| if (b.X0 < a.X0)
+replacement:
+| if (b.X0 > a.X0)
+
+[mt-072-03]
+file = Assets/WarCore/Sim/SpatialCellRegions.cs
+filter = FullyQualifiedName~Mt072SpatialCellRegions
+expect = WarCore.Tests.Mt072SpatialCellRegionsTests.TinyGridRegionBoundsRetainEachAxisExtreme
+note = Reversing lower Y expansion prunes a matching cell at the minimum Y edge.
+original:
+| if (b.Y0 < a.Y0)
+replacement:
+| if (b.Y0 > a.Y0)
+
+[mt-072-04]
+file = Assets/WarCore/Sim/SpatialCellRegions.cs
+filter = FullyQualifiedName~Mt072SpatialCellRegions
+expect = WarCore.Tests.Mt072SpatialCellRegionsTests.TinyGridRegionBoundsRetainEachAxisExtreme
+note = Reversing lower Z expansion prunes a matching cell at the minimum Z edge.
+original:
+| if (b.Z0 < a.Z0)
+replacement:
+| if (b.Z0 > a.Z0)
+
+[mt-072-05]
+file = Assets/WarCore/Sim/SpatialCellRegions.cs
+filter = FullyQualifiedName~Mt072SpatialCellRegions
+expect = WarCore.Tests.Mt072SpatialCellRegionsTests.TinyGridRegionBoundsRetainEachAxisExtreme
+note = Reversing upper X expansion prunes a matching cell at the maximum X edge.
+original:
+| if (b.X1 > a.X1)
+replacement:
+| if (b.X1 < a.X1)
+
+[mt-072-06]
+file = Assets/WarCore/Sim/SpatialCellRegions.cs
+filter = FullyQualifiedName~Mt072SpatialCellRegions
+expect = WarCore.Tests.Mt072SpatialCellRegionsTests.TinyGridRegionBoundsRetainEachAxisExtreme
+note = Reversing upper Y expansion prunes a matching cell at the maximum Y edge.
+original:
+| if (b.Y1 > a.Y1)
+replacement:
+| if (b.Y1 < a.Y1)
+
+[mt-072-07]
+file = Assets/WarCore/Sim/SpatialCellRegions.cs
+filter = FullyQualifiedName~Mt072SpatialCellRegions
+expect = WarCore.Tests.Mt072SpatialCellRegionsTests.TinyGridRegionBoundsRetainEachAxisExtreme
+note = Reversing upper Z expansion prunes a matching cell at the maximum Z edge.
+original:
+| if (b.Z1 > a.Z1)
+replacement:
+| if (b.Z1 < a.Z1)

@@ -1,0 +1,52 @@
+# MoveIntent
+# Surviving mutations of Assets/WarCore/Interim/MoveIntent.cs. Test classes are named Mt031MoveIntent*.
+
+[mt-031-01]
+file = Assets/WarCore/Interim/MoveIntent.cs
+filter = FullyQualifiedName~Mt031MoveIntent
+expect = WarCore.Tests.Mt031MoveIntentTests.ConstructorRejectsTargetOutsideWorld
+note = Allows a target beyond the world coordinate limit.
+original:
+| target.ValidateWorld();
+replacement:
+| ;
+
+[mt-031-02]
+file = Assets/WarCore/Interim/MoveIntent.cs
+filter = FullyQualifiedName~Mt031MoveIntent
+expect = WarCore.Tests.Mt031MoveIntentTests.ConstructorAcceptsMinimumPositiveSpeed
+note = Rejects the minimum positive speed of one raw unit.
+original:
+| if (speedPerTick.Raw <= 0)
+replacement:
+| if (speedPerTick.Raw <= 1)
+
+[mt-031-03]
+file = Assets/WarCore/Interim/MoveIntent.cs
+filter = FullyQualifiedName~Mt031MoveIntent
+expect = WarCore.Tests.Mt031MoveIntentTests.ConstructorRejectsNegativeSpeed
+note = Allows negative speed.
+original:
+| if (speedPerTick.Raw <= 0)
+replacement:
+| if (speedPerTick.Raw == 0)
+
+[mt-031-04]
+file = Assets/WarCore/Interim/MoveIntent.cs
+filter = FullyQualifiedName~Mt031MoveIntent
+expect = WarCore.Tests.Mt031MoveIntentTests.ConstructorRejectsZeroSpeed
+note = Allows zero speed.
+original:
+| if (speedPerTick.Raw <= 0)
+replacement:
+| if (speedPerTick.Raw < 0)
+
+[mt-031-05]
+file = Assets/WarCore/Interim/MoveIntent.cs
+filter = FullyQualifiedName~Mt031MoveIntent
+expect = WarCore.Tests.Mt031MoveIntentTests.ConstructorRejectsZeroSpeed
+note = Allows zero speed.
+original:
+| if (speedPerTick.Raw <= 0)
+replacement:
+| if (speedPerTick.Raw <= -1)

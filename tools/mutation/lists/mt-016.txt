@@ -1,0 +1,12 @@
+# CombatSystem
+# Surviving mutations of Assets/WarCore/Combat/CombatSystem.cs. Test classes are named Mt016CombatSystem*.
+
+[mt-016-01]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Mt016CombatSystem
+expect = WarCore.Tests.Mt016CombatSystemTests.NewTickSubmissionClearsPendingShootersAfterSkippedCombatStep
+note = A new tick must clear pending shooters when the previous combat step was skipped.
+original:
+|             if (intentTick != tick) { ClearIntents(); intentTick = tick; }
+replacement:
+|             if (intentTick == tick) { ClearIntents(); intentTick = tick; }

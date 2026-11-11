@@ -1,0 +1,12 @@
+# MotionState
+# Surviving mutations of Assets/WarCore/Interim/MotionState.cs. Test classes are named Mt030MotionState*.
+
+[mt-030-01]
+file = Assets/WarCore/Interim/MotionState.cs
+filter = FullyQualifiedName~Mt030MotionState
+expect = WarCore.Tests.Motion.Mt030MotionStateTests.ComponentId_KeepsItsStableName
+note = Changing the motion state component identifier breaks its stable name contract.
+original:
+| public const string ComponentId = "interim.motion-state";
+replacement:
+| public const string ComponentId = "interim.motion-state-mutated";

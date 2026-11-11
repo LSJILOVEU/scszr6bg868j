@@ -1,0 +1,32 @@
+# GameplayStatusProtocol
+# Surviving mutations of Assets/WarCore/Sim/GameplayStatusProtocol.cs. Test classes are named Mt129GameplayStatusProtocol*.
+
+[mt-129-01]
+file = Assets/WarCore/Sim/GameplayStatusProtocol.cs
+filter = FullyQualifiedName~Mt129GameplayStatusProtocol
+expect = WarCore.Tests.Mt129GameplayStatusProtocolTests.GroupedStatusRestoresMaximumSourceGeneration
+note = Rejects a valid grouped status whose source generation equals the maximum unsigned 16-bit value.
+original:
+| SimStateReader.Require(generation <= ushort.MaxValue, "M0C_STATUS_GROUP_GENERATION");
+replacement:
+| SimStateReader.Require(generation < ushort.MaxValue, "M0C_STATUS_GROUP_GENERATION");
+
+[mt-129-02]
+file = Assets/WarCore/Sim/GameplayStatusProtocol.cs
+filter = FullyQualifiedName~Mt129GameplayStatusProtocol
+expect = WarCore.Tests.Mt129GameplayStatusProtocolTests.ExpiryAtCurrentTickReportsExpiryError
+note = Replaces the expiry error with a later validation error when expiry equals the current tick.
+original:
+| SimStateReader.Require(def.DurationTicks > 0 && expiry > tick && expiry <= long.MaxValue - 1, "M0C_STATUS_EXPIRY");
+replacement:
+| SimStateReader.Require(def.DurationTicks > 0 && expiry >= tick && expiry <= long.MaxValue - 1, "M0C_STATUS_EXPIRY");
+
+[mt-129-03]
+file = Assets/WarCore/Sim/GameplayStatusProtocol.cs
+filter = FullyQualifiedName~Mt129GameplayStatusProtocol
+expect = WarCore.Tests.Mt129GameplayStatusProtocolTests.SaturatedPulseRestoresLastLegalTick
+note = Rejects valid first and subsequent pulses saturated to the last legal tick.
+original:
+| long limit = long.MaxValue - 1;
+replacement:
+| long limit = long.MaxValue - 2;

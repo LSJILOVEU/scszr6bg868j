@@ -1,0 +1,32 @@
+# GameplayAbilityTargets
+# Surviving mutations of Assets/WarCore/Sim/GameplayAbilityTargets.cs. Test classes are named Mt114GameplayAbilityTargets*.
+
+[mt-114-01]
+file = Assets/WarCore/Sim/GameplayAbilityTargets.cs
+filter = FullyQualifiedName~Mt114GameplayAbilityTargets
+expect = WarCore.Tests.Mt114GameplayAbilityTargetsTests.NegativeXWorldLimitIsValidAimDirection
+note = Rejects valid ability input vectors at the negative X world limit.
+original:
+| return value.X.Raw >= -limit && value.X.Raw <= limit && value.Y.Raw >= -limit && value.Y.Raw <= limit && value.Z.Raw >= -limit && value.Z.Raw <= limit;
+replacement:
+| return value.X.Raw > -limit && value.X.Raw <= limit && value.Y.Raw >= -limit && value.Y.Raw <= limit && value.Z.Raw >= -limit && value.Z.Raw <= limit;
+
+[mt-114-02]
+file = Assets/WarCore/Sim/GameplayAbilityTargets.cs
+filter = FullyQualifiedName~Mt114GameplayAbilityTargets
+expect = WarCore.Tests.Mt114GameplayAbilityTargetsTests.ExplicitTargetAtExactRangeReceivesDamage
+note = Rejects an explicit target whose centre is exactly at the ability range.
+original:
+| if (delta.LengthSquared.Raw.Magnitude.CompareTo(FixedUInt128.Multiply((ulong)spec.RangeRaw, (ulong)spec.RangeRaw)) > 0)
+replacement:
+| if (delta.LengthSquared.Raw.Magnitude.CompareTo(FixedUInt128.Multiply((ulong)spec.RangeRaw, (ulong)spec.RangeRaw)) >= 0)
+
+[mt-114-03]
+file = Assets/WarCore/Sim/GameplayAbilityTargets.cs
+filter = FullyQualifiedName~Mt114GameplayAbilityTargets
+expect = WarCore.Tests.Mt114GameplayAbilityTargetsTests.RequiresAllAcceptsExactlyMaximumTargets
+note = Rejects a RequiresAll cast when every hit fits exactly within the target cap.
+original:
+| if (spec.RequiresAll && selectedAbilityTotal > selectedAbilityCount)
+replacement:
+| if (spec.RequiresAll && selectedAbilityTotal >= selectedAbilityCount)

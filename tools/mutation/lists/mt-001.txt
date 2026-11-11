@@ -1,0 +1,12 @@
+# ReactionFire
+# Surviving mutations of Assets/WarCore/Battle/Ai/ReactionFire.cs. Test classes are named Mt001ReactionFire*.
+
+[mt-001-01]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~Mt001ReactionFire
+expect = WarCore.Tests.Mt001ReactionFireStateTests.SingleShotBursts_UseVersionThree
+note = Single-shot bursts report an older state version instead of version 3.
+original:
+|         public int StateVersion => burstShots > 0 ? 3 : senseTicks > 1 ? 2 : 1;
+replacement:
+|         public int StateVersion => burstShots > 1 ? 3 : senseTicks > 1 ? 2 : 1;

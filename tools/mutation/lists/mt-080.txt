@@ -1,0 +1,22 @@
+# SpatialQuery
+# Surviving mutations of Assets/WarCore/Sim/SpatialQuery.cs. Test classes are named Mt080SpatialQuery*.
+
+[mt-080-01]
+file = Assets/WarCore/Sim/SpatialQuery.cs
+filter = FullyQualifiedName~Mt080SpatialQuery
+expect = WarCore.Tests.Mt080SpatialQueryTests.WithHeightAcceptsExactMinimum
+note = Rejects the valid minimum height for capsules and boxes.
+original:
+| if (height.Raw < minimum || height.Raw > 32768 * SimFix.Scale)
+replacement:
+| if (height.Raw <= minimum || height.Raw > 32768 * SimFix.Scale)
+
+[mt-080-02]
+file = Assets/WarCore/Sim/SpatialQuery.cs
+filter = FullyQualifiedName~Mt080SpatialQuery
+expect = WarCore.Tests.Mt080SpatialQueryTests.StableWorldFullRayOrdersHitsByIncreasingDistance
+note = Reverses distance ordering for full ray results in StableWorld.
+original:
+| => a.Distance.Raw < b.Distance.Raw || (a.Distance.Raw == b.Distance.Raw && aKey < bKey);
+replacement:
+| => a.Distance.Raw > b.Distance.Raw || (a.Distance.Raw == b.Distance.Raw && aKey < bKey);

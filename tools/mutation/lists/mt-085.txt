@@ -1,0 +1,42 @@
+# SpatialSector
+# Surviving mutations of Assets/WarCore/Sim/SpatialSector.cs. Test classes are named Mt085SpatialSector*.
+
+[mt-085-01]
+file = Assets/WarCore/Sim/SpatialSector.cs
+filter = FullyQualifiedName~Mt085SpatialSector
+expect = WarCore.Tests.Mt085SpatialSectorTests.ReachGuardIncludesLocalLimit
+note = Reducing the local limit sends supported reaches to the fallback.
+original:
+| private const long LocalLimit = 1L << 20;
+replacement:
+| private const long LocalLimit = 1L << 19;
+
+[mt-085-02]
+file = Assets/WarCore/Sim/SpatialSector.cs
+filter = FullyQualifiedName~Mt085SpatialSector
+expect = WarCore.Tests.Mt085SpatialSectorTests.ReachGuardIncludesLocalLimit
+note = A reach equal to the local limit must use the fast predicate.
+original:
+| if (reach > LocalLimit)
+replacement:
+| if (reach >= LocalLimit)
+
+[mt-085-03]
+file = Assets/WarCore/Sim/SpatialSector.cs
+filter = FullyQualifiedName~Mt085SpatialSector
+expect = WarCore.Tests.Mt085SpatialSectorTests.BackwardPointRequiresFullAngle
+note = A cosine of minus 999 must exclude a point directly behind the sector.
+original:
+| if (q.Cosine == -1000 || distance2 == 0)
+replacement:
+| if (q.Cosine == -999 || distance2 == 0)
+
+[mt-085-04]
+file = Assets/WarCore/Sim/SpatialSector.cs
+filter = FullyQualifiedName~Mt085SpatialSector
+expect = WarCore.Tests.Mt085SpatialSectorTests.HalfPlaneRejectsRearDiskBeforeEdgeDirectionGuard
+note = A half-plane must reject a separated rear disk before the edge direction guard.
+original:
+| if (q.Cosine >= 0 && dot < 0 && FixedUInt128.Multiply(Abs(dot), Abs(dot))
+replacement:
+| if (q.Cosine > 0 && dot < 0 && FixedUInt128.Multiply(Abs(dot), Abs(dot))

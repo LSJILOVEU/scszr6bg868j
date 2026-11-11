@@ -1,0 +1,12 @@
+# MatchMode
+# Surviving mutations of Assets/WarCore/Battle/MatchMode.cs. Test classes are named Mt007MatchMode*.
+
+[mt-007-01]
+file = Assets/WarCore/Battle/MatchMode.cs
+filter = FullyQualifiedName~Mt007MatchMode
+expect = WarCore.Tests.Mt007MatchModeTests.ConstructorRejectsNullPack
+note = Removing the null pack guard changes ArgumentNullException to NullReferenceException.
+original:
+|             if (pack == null) throw new ArgumentNullException(nameof(pack));
+replacement:
+|             if (false) throw new ArgumentNullException(nameof(pack));

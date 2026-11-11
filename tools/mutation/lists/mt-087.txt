@@ -1,0 +1,42 @@
+# StableActivations
+# Surviving mutations of Assets/WarCore/Sim/StableActivations.cs. Test classes are named Mt087StableActivations*.
+
+[mt-087-01]
+file = Assets/WarCore/Sim/StableActivations.cs
+filter = FullyQualifiedName~Mt087StableActivations
+expect = WarCore.Tests.Mt087StableActivationsTests.PlanRejectsAdvancedBoundary
+note = Allows an activation plan at the already advanced boundary.
+original:
+| if (tick <= advancedThrough)
+replacement:
+| if (tick < advancedThrough)
+
+[mt-087-02]
+file = Assets/WarCore/Sim/StableActivations.cs
+filter = FullyQualifiedName~Mt087StableActivations
+expect = WarCore.Tests.Mt087StableActivationsTests.PlanRejectsDuplicateTickAndChunk
+note = Allows duplicate tick and chunk plans and rejects repeated chunks at different ticks.
+original:
+| if (entries[i].Tick == tick && entries[i].Chunk == chunk)
+replacement:
+| if (entries[i].Tick != tick && entries[i].Chunk == chunk)
+
+[mt-087-03]
+file = Assets/WarCore/Sim/StableActivations.cs
+filter = FullyQualifiedName~Mt087StableActivations
+expect = WarCore.Tests.Mt087StableActivationsTests.SameTickChunksAreEncodedInAscendingOrder
+note = Encodes chunks in descending order within the same activation tick.
+original:
+| while (at > cursor && (entries[at-1].Tick > tick || (entries[at-1].Tick == tick && entries[at-1].Chunk > chunk)))
+replacement:
+| while (at > cursor && (entries[at-1].Tick > tick || (entries[at-1].Tick == tick && entries[at-1].Chunk < chunk)))
+
+[mt-087-04]
+file = Assets/WarCore/Sim/StableActivations.cs
+filter = FullyQualifiedName~Mt087StableActivations
+expect = WarCore.Tests.Mt087StableActivationsTests.ReadyForRejectsZero
+note = Accepts zero as a valid activation readiness boundary.
+original:
+| if (tick <= 0)
+replacement:
+| if (tick < 0)

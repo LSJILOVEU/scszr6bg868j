@@ -1,0 +1,42 @@
+# GameplayAbilityData
+# Surviving mutations of Assets/WarCore/Sim/GameplayAbilityData.cs. Test classes are named Mt110GameplayAbilityData*.
+
+[mt-110-01]
+file = Assets/WarCore/Sim/GameplayAbilityData.cs
+filter = FullyQualifiedName~Mt110GameplayAbilityData
+expect = WarCore.Tests.Mt110GameplayAbilityDataTests.ActionCapacityIncludes65535
+note = Rejects the valid action count of 65535.
+original:
+| if (actions == null || actions.Length > GameplayMath.MaxModifiers || costs != null && costs.Length > GameplayMath.MaxModifiers)
+replacement:
+| if (actions == null || actions.Length >= GameplayMath.MaxModifiers || costs != null && costs.Length > GameplayMath.MaxModifiers)
+
+[mt-110-02]
+file = Assets/WarCore/Sim/GameplayAbilityData.cs
+filter = FullyQualifiedName~Mt110GameplayAbilityData
+expect = WarCore.Tests.Mt110GameplayAbilityDataTests.CostCapacityIncludes65535
+note = Rejects the valid cost count of 65535.
+original:
+| if (actions == null || actions.Length > GameplayMath.MaxModifiers || costs != null && costs.Length > GameplayMath.MaxModifiers)
+replacement:
+| if (actions == null || actions.Length > GameplayMath.MaxModifiers || costs != null && costs.Length >= GameplayMath.MaxModifiers)
+
+[mt-110-03]
+file = Assets/WarCore/Sim/GameplayAbilityData.cs
+filter = FullyQualifiedName~Mt110GameplayAbilityData
+expect = WarCore.Tests.Mt110GameplayAbilityDataTests.ReversedActionsSortByOrdinal
+note = Leaves two reversed actions out of ordinal order.
+original:
+| for (int i = 1; i < this.actions.Length; i++)
+replacement:
+| for (int i = 2; i < this.actions.Length; i++)
+
+[mt-110-04]
+file = Assets/WarCore/Sim/GameplayAbilityData.cs
+filter = FullyQualifiedName~Mt110GameplayAbilityData
+expect = WarCore.Tests.Mt110GameplayAbilityDataTests.ReversedCostsSortByResourceKey
+note = Leaves two reversed costs out of resource key order.
+original:
+| for (int i = 1; i < this.costs.Length; i++)
+replacement:
+| for (int i = 2; i < this.costs.Length; i++)

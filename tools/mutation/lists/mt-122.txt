@@ -1,0 +1,22 @@
+# GameplayResources
+# Surviving mutations of Assets/WarCore/Sim/GameplayResources.cs. Test classes are named Mt122GameplayResources*.
+
+[mt-122-01]
+file = Assets/WarCore/Sim/GameplayResources.cs
+filter = FullyQualifiedName~Mt122GameplayResources
+expect = WarCore.Tests.Mt122GameplayResourcesTests.MaximumCostCountIsAcceptedAndDebited
+note = Rejects a valid cost list at the inclusive count limit.
+original:
+| if (costs.Length > GameplayMath.MaxModifiers)
+replacement:
+| if (costs.Length >= GameplayMath.MaxModifiers)
+
+[mt-122-02]
+file = Assets/WarCore/Sim/GameplayResources.cs
+filter = FullyQualifiedName~Mt122GameplayResources
+expect = WarCore.Tests.Mt122GameplayResourcesTests.CombinedCostsCanSpendExactlyToLowerBound
+note = Rejects combined costs equal to the balance above the lower bound.
+original:
+| if (total.CompareTo(new FixedUInt128((ulong)(values[row] - def.LowerRaw))) > 0)
+replacement:
+| if (total.CompareTo(new FixedUInt128((ulong)(values[row] - def.LowerRaw))) >= 0)

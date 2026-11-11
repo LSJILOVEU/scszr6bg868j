@@ -1,0 +1,42 @@
+# NavGrid
+# Surviving mutations of Assets/WarCore/Sim/NavGrid.cs. Test classes are named Mt049NavGrid*.
+
+[mt-049-01]
+file = Assets/WarCore/Sim/NavGrid.cs
+filter = FullyQualifiedName~Mt049NavGrid
+expect = WarCore.Tests.Mt049NavGridTests.IsPassable_XAtWidth_IsBlocked
+note = Accepts an out-of-bounds X coordinate as a passable cell in the next row.
+original:
+| if (x < 0 || z < 0 || x >= Width || z >= Depth) return false;
+replacement:
+| if (x < 0 || z < 0 || x > Width || z >= Depth) return false;
+
+[mt-049-02]
+file = Assets/WarCore/Sim/NavGrid.cs
+filter = FullyQualifiedName~Mt049NavGrid
+expect = WarCore.Tests.Mt049NavGridTests.TryCell_UpperEdge_IsRejected(2,1)
+note = Accepts the exclusive upper X boundary when Z is inside the grid.
+original:
+| if (point.X.Raw < OriginX.Raw || point.X.Raw >= OriginX.Raw + Width * SimFix.Scale
+replacement:
+| if (point.X.Raw < OriginX.Raw || point.X.Raw > OriginX.Raw + Width * SimFix.Scale
+
+[mt-049-03]
+file = Assets/WarCore/Sim/NavGrid.cs
+filter = FullyQualifiedName~Mt049NavGrid
+expect = WarCore.Tests.Mt049NavGridTests.TryCell_UpperEdge_IsRejected(1,2)
+note = Accepts the exclusive upper Z boundary when X is inside the grid.
+original:
+| || point.Z.Raw < OriginZ.Raw || point.Z.Raw >= OriginZ.Raw + Depth * SimFix.Scale) return false;
+replacement:
+| || point.Z.Raw < OriginZ.Raw || point.Z.Raw > OriginZ.Raw + Depth * SimFix.Scale) return false;
+
+[mt-049-04]
+file = Assets/WarCore/Sim/NavGrid.cs
+filter = FullyQualifiedName~Mt049NavGrid
+expect = WarCore.Tests.Mt049NavGridTests.Center_KeyAtCount_Throws
+note = Returns a center for a key equal to Count instead of rejecting the invalid key.
+original:
+| if (key < 0 || key >= Count) throw new ArgumentOutOfRangeException(nameof(key));
+replacement:
+| if (key < 0 || key > Count) throw new ArgumentOutOfRangeException(nameof(key));

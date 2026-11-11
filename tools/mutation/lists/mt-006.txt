@@ -1,0 +1,12 @@
+# GuardSlots
+# Surviving mutations of Assets/WarCore/Battle/GuardSlots.cs. Test classes are named Mt006GuardSlots*.
+
+[mt-006-01]
+file = Assets/WarCore/Battle/GuardSlots.cs
+filter = FullyQualifiedName~Mt006GuardSlots
+expect = WarCore.Tests.Mt006GuardSlotsTests.NearestIncludesTheSlotExactlyOneMetreAway
+note = Excludes the nearest slot at exactly one metre of horizontal distance.
+original:
+|                     if (distance <= oneSquared && (best < 0 || distance < bestDistance)) { best = s; bestDistance = distance; }
+replacement:
+|                     if (distance < oneSquared && (best < 0 || distance < bestDistance)) { best = s; bestDistance = distance; }

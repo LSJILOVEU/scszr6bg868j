@@ -1,0 +1,22 @@
+# StateHash
+# Surviving mutations of Assets/WarCore/Sim/StateHash.cs. Test classes are named Mt103StateHash*.
+
+[mt-103-01]
+file = Assets/WarCore/Sim/StateHash.cs
+filter = FullyQualifiedName~Mt103StateHash
+expect = WarCore.Tests.Mt103StateHashTests.FirstNonAsciiCharacterMatchesUtf8Vector
+note = Misclassifies U+0080 as ASCII, changing the encoded length and bytes.
+original:
+| if (item[i] > 127)
+replacement:
+| if (item[i] > 128)
+
+[mt-103-02]
+file = Assets/WarCore/Sim/StateHash.cs
+filter = FullyQualifiedName~Mt103StateHash
+expect = WarCore.Tests.Mt103StateHashTests.SurrogatePairAcrossChunkBoundaryMatchesUtf8Vector
+note = Splits a surrogate pair across chunks, hashing replacement characters instead of its UTF-8 bytes.
+original:
+| if (offset + count < item.Length && char.IsHighSurrogate(item[offset + count - 1]))
+replacement:
+| if (false)
