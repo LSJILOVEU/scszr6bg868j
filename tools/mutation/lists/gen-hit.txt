@@ -1,0 +1,61 @@
+# GEN-HIT: resolver omission is limited to gunless packs and preserves legacy policies.
+
+[gen-hit-01-require-resolver]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~WarCore.Tests.GenHitTests
+expect = WarCore.Tests.GenHitTests.MeleeOnlyPackWithoutResolverFightsFor300TicksDeterministically
+note = melee-only packs must name a resolver again
+original:
+|             string resolver = b.Weapons.Length == 0 ? cr.StrOrNull("resolver", out _) : cr.Str("resolver");
+replacement:
+|             string resolver = cr.Str("resolver");
+
+[gen-hit-02-ranged-omission]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~WarCore.Tests.GenHitTests
+expect = WarCore.Tests.GenHitTests.RangedWeaponStillRequiresResolver
+note = ranged packs can omit their resolver
+original:
+|             string resolver = b.Weapons.Length == 0 ? cr.StrOrNull("resolver", out _) : cr.Str("resolver");
+replacement:
+|             string resolver = cr.StrOrNull("resolver", out _);
+
+[gen-hit-03-ignore-explicit-resolver]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~WarCore.Tests.GenHitTests
+expect = WarCore.Tests.GenHitTests.ExplicitInvalidResolverIsRejectedWithoutRangedWeapons
+note = explicit resolver fields on gunless packs are ignored
+original:
+|             string resolver = b.Weapons.Length == 0 ? cr.StrOrNull("resolver", out _) : cr.Str("resolver");
+replacement:
+|             string resolver = b.Weapons.Length == 0 ? null : cr.Str("resolver");
+
+[gen-hit-04-map-absence-to-rwr]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~WarCore.Tests.GenHitTests
+expect = WarCore.Tests.GenHitTests.MeleeOnlyPackWithoutResolverFightsFor300TicksDeterministically
+note = resolver omission silently selects the RWR resolver
+original:
+|         public static IHitResolver Resolver(string id) => id == null ? null : new RwrHitResolver();
+replacement:
+|         public static IHitResolver Resolver(string id) => new RwrHitResolver();
+
+[gen-hit-05-alias-absent-policy]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~WarCore.Tests.GenHitTests
+expect = WarCore.Tests.GenHitTests.AbsentResolverHasDistinctPolicyDigest
+note = an absent resolver hashes as the RWR policy
+original:
+|             hash.Add(maxHealthRaw); hash.Add(resolver?.PolicyKey ?? 0UL); hash.Add(selector.PolicyKey);
+replacement:
+|             hash.Add(maxHealthRaw); hash.Add(resolver?.PolicyKey ?? 0x5257524849540001UL); hash.Add(selector.PolicyKey);
+
+[gen-hit-06-drop-legacy-policy]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~WarCore.Tests.GenHitTests
+expect = WarCore.Tests.GenHitTests.RwrPolicyDigestMatchesOriginalMain
+note = legacy resolver policy keys are omitted from the digest
+original:
+|             hash.Add(maxHealthRaw); hash.Add(resolver?.PolicyKey ?? 0UL); hash.Add(selector.PolicyKey);
+replacement:
+|             hash.Add(maxHealthRaw); hash.Add(0UL); hash.Add(selector.PolicyKey);
