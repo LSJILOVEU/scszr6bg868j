@@ -29,7 +29,7 @@ namespace WarCore.Battle
         {
             internal StableId Id;
             internal SimVec3 Destination;
-            internal int Kind, Slot, MemorySlot;
+            internal int Kind, Slot, MemorySlot, Standing;
         }
         private readonly bool fairDecisions;
         private readonly ulong seedSalt, policyDigest;
@@ -77,7 +77,7 @@ namespace WarCore.Battle
                 SimVec3 here = position.Value;
                 bool moving = moves.TryGetOrder(id, out SimVec3 target);
                 if (fairDecisions && moving && slots.TryFind(target, -1, out int retained))
-                { intents[current] = new Intent { Id = id, Kind = 3, Slot = retained }; }
+                { intents[current] = new Intent { Id = id, Kind = 3, Slot = retained, Standing = slots.Nearest(here) }; }
                 if (moving && Arrived(here, target) && slots.TryFind(target, -1, out _))
                 { StopUnit(id, here, target); moving = false; }
                 if ((c.Clock.Tick + (long)((fairDecisions ? Mix(id.Value ^ seedSalt) : id.Value) % (ulong)pack.ThinkInterval)) % pack.ThinkInterval != 0) continue;
@@ -206,7 +206,7 @@ namespace WarCore.Battle
             if (fairDecisions)
             {
                 intents[current] = new Intent { Id = id, Kind = 2, Destination = destination,
-                    Slot = slots.TryFind(destination, -1, out int proposed) ? proposed : -1, MemorySlot = memorySlot };
+                    Slot = slots.TryFind(destination, -1, out int proposed) ? proposed : -1, MemorySlot = memorySlot, Standing = slots.Nearest(here) };
                 return;
             }
             if (moving && slots.TryFind(oldTarget, -1, out int old)) Release(reservedHas, reservedBy, old, id);
@@ -232,10 +232,23 @@ namespace WarCore.Battle
             {
                 Intent proposal = intents[i];
                 if ((proposal.Kind != 2 && proposal.Kind != 3) || proposal.Slot < 0) continue;
+                if (proposal.Kind == 2 && proposal.MemorySlot == -1 && standingHas[proposal.Slot] && standingBy[proposal.Slot] != proposal.Id.Value) continue;
                 if (winners[proposal.Slot] < 0) continue;
                 int incumbent = winners[proposal.Slot] - 1;
                 if (incumbent < 0 || Precedes(proposal.Id.Value, intents[incumbent].Id.Value)) winners[proposal.Slot] = i + 1;
             }
+            bool changed;
+            do
+            {
+                changed = false;
+                for (int i = 0; i < intentCount; i++)
+                {
+                    Intent proposal = intents[i];
+                    if ((proposal.Kind != 2 && proposal.Kind != 3) || proposal.Slot < 0 || winners[proposal.Slot] == i + 1) continue;
+                    if (proposal.Standing < 0 || winners[proposal.Standing] < 0) continue;
+                    winners[proposal.Standing] = -1; changed = true;
+                }
+            } while (changed);
             for (int i = 0; i < intentCount; i++)
             {
                 Intent proposal = intents[i];
