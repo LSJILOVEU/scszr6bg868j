@@ -24,7 +24,7 @@ namespace WarCore.Battle
         public int StateVersion => 1;
 
         internal bool Paused(EntityId shooter, long tick) =>
-            shooters[shooter.Id].Equals(combat.Entities.StableOf(shooter)) && tick < deadlines[shooter.Id];
+            shooters[shooter.Id].Equals(combat.Entities.StableOf(shooter)) && unchecked(deadlines[shooter.Id] - tick) > 0;
 
         internal void Pause(EntityId shooter, long deadline)
         {

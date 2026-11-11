@@ -7,7 +7,7 @@ namespace WarCore.Tests
 {
     public sealed class Rai01CriticTimingTests
     {
-        [Category("Manual"), Test, Explicit("Reproduces a wrapped burst deadline after a target switch.")]
+        [Test]
         public void LongBound_TargetSwitchKeepsUnelapsedPause()
         {
             const long tick = long.MaxValue - 20;
