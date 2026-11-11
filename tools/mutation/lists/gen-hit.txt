@@ -1,0 +1,70 @@
+[gen-hit-require-resolver]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~GenHit
+expect = GenHit_MeleeOnlyPackWithoutResolverRuns300TicksDeterministically
+note = Removing the no-ranged-weapons admission rejects a standalone melee pack.
+original:
+|             string resolver = b.Weapons.Length == 0 ? cr.StrOrNull("resolver", out _) : cr.Str("resolver"), selector = cr.Str("selector");
+replacement:
+|             string resolver = cr.Str("resolver"), selector = cr.Str("selector");
+
+[gen-hit-ranged-without-resolver]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~GenHit
+expect = GenHit_RangedWeaponsStillRequireResolver
+note = A ranged weapon table must still require an explicit resolver.
+original:
+|             string resolver = b.Weapons.Length == 0 ? cr.StrOrNull("resolver", out _) : cr.Str("resolver"), selector = cr.Str("selector");
+replacement:
+|             string resolver = cr.StrOrNull("resolver", out _), selector = cr.Str("selector");
+
+[gen-hit-reject-absent-resolver]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~GenHit
+expect = GenHit_MeleeOnlyPackWithoutResolverRuns300TicksDeterministically
+note = Applying named-policy validation to an absent resolver rejects the melee pack.
+original:
+|             if (resolver != null && !ContentPolicies.IsResolver(resolver))
+replacement:
+|             if (!ContentPolicies.IsResolver(resolver))
+
+[gen-hit-accept-unknown-resolver]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~GenHit
+expect = GenHit_ExplicitInvalidResolverIsRejected
+note = An explicit unknown resolver remains invalid even without ranged weapons.
+original:
+|             if (resolver != null && !ContentPolicies.IsResolver(resolver))
+replacement:
+|             if (false && !ContentPolicies.IsResolver(resolver))
+
+[gen-hit-wrong-resolver]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~GenHit
+expect = GenHit_MeleeOnlyPackWithoutResolverRuns300TicksDeterministically
+expect = GenHit_AbsentResolverHasDistinctDigestFromExplicitRwr
+note = Mapping the generic no-resolver path to the RWR resolver must fail.
+original:
+|         public static IHitResolver Resolver(string id) => id == null ? null : new RwrHitResolver();
+replacement:
+|         public static IHitResolver Resolver(string id) => new RwrHitResolver();
+
+[gen-hit-collapse-policy-digest]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~GenHit
+expect = GenHit_AbsentResolverHasDistinctDigestFromExplicitRwr
+note = An absent resolver must not hash as an explicit RWR resolver.
+original:
+|             hash.Add(maxHealthRaw); hash.Add(resolver?.PolicyKey ?? 0UL); hash.Add(selector.PolicyKey);
+replacement:
+|             hash.Add(maxHealthRaw); hash.Add(resolver?.PolicyKey ?? 0x5257524849540001UL); hash.Add(selector.PolicyKey);
+
+[gen-hit-legacy-policy-digest]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~GenHit
+expect = GenHit_RwrPolicyDigestsMatchOriginMain
+note = Explicit resolvers retain their original policy-key bytes.
+original:
+|             hash.Add(maxHealthRaw); hash.Add(resolver?.PolicyKey ?? 0UL); hash.Add(selector.PolicyKey);
+replacement:
+|             hash.Add(maxHealthRaw); hash.Add(0UL); hash.Add(selector.PolicyKey);

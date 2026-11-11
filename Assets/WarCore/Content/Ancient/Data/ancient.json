@@ -1,0 +1,24 @@
+{
+  "id": "ancient",
+  "melee": [
+    { "id": "ancient.sword", "windupTicks": 6, "activeTicks": 2, "recoveryTicks": 9,
+      "radius": 2, "cosHalfAnglePermille": 500, "halfHeight": 1, "damage": 34, "maxTargets": 3, "engageRange": 1.8 }
+  ],
+  "block": [
+    { "id": "ancient.shield", "cosHalfAnglePermille": 500, "reductionPermille": 750, "aiRaisePermille": 500 }
+  ],
+  "unitTypes": [
+    { "id": "ancient.swordsman", "weapon": "", "melee": "ancient.sword", "speed": 3000 },
+    { "id": "ancient.guard", "weapon": "", "melee": "ancient.sword", "block": "ancient.shield", "speed": 3000 }
+  ],
+  "combat": { "maxHealth": 100, "selector": "nearest-visible", "friendlyFire": false,
+    "friendlyFireLocked": false, "allyCheckMissRate": 0, "allyHoldMilli": 30000 },
+  "match": {
+    "captureAdvantageNum": 2, "captureAdvantageDen": 1, "captureStrict": false,
+    "captureTicks": 100000, "interrupt": "reset", "decayPerTick": 1,
+    "intervalTicks": 90, "thinkInterval": 10, "maxTicks": 9000, "sight": 40,
+    "gridColumns": 4, "gridRows": 5, "gridSpacing": 1.5
+  },
+  "ai": { "meleeChaseRange": 40 },
+  "surfaces": [ { "id": "ancient.ground" } ]
+}
