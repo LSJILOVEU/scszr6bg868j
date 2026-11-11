@@ -133,3 +133,23 @@ original:
 |                 if (intents[i].Kind == 1 && intents[i].Slot >= 0) winners[intents[i].Slot] = -1;
 replacement:
 |                 if (intents[i].Kind == 1 && intents[i].Slot >= 0) winners[intents[i].Slot] = 0;
+
+[fair-e-14-omitted-loser-occupancy]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~FairECritic3_ReinforcementCannotExposeRetainedLosersStandingSlot
+expect = WarCore.Tests.FairECritic3LifecycleTests.FairECritic3_ReinforcementCannotExposeRetainedLosersStandingSlot
+note = arbitration losers no longer occupy their standing slots before final orders
+original:
+|                     winners[standing] = -1; changed = true;
+replacement:
+|                     changed = false;
+
+[fair-e-15-omitted-search-occupancy]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~FairECritic3_SearchRespectsStandingAlly
+expect = WarCore.Tests.FairECritic3OccupancyTests.FairECritic3_SearchRespectsStandingAlly
+note = search proposals ignore standing occupants of their destination slots
+original:
+|                 if (proposal.Kind == 2 && proposal.MemorySlot == -1 && standingHas[proposal.Slot]
+replacement:
+|                 if (false && proposal.Kind == 2 && proposal.MemorySlot == -1 && standingHas[proposal.Slot]
