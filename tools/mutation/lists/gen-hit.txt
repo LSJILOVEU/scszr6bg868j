@@ -1,0 +1,41 @@
+# GEN-HIT: one production line per mutation.
+
+[gen-hit-01-require-melee-resolver]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~GenHit
+expect = WarCore.Tests.GenHitTests.MeleeOnlyPackWithoutRwrIdsFightsFor300TicksDeterministically
+note = A melee-only pack can no longer omit its resolver
+original:
+|             string resolver = b.Weapons.Length == 0 && !cr.Has("resolver") ? null : cr.Str("resolver"), selector = cr.Str("selector");
+replacement:
+|             string resolver = cr.Str("resolver"), selector = cr.Str("selector");
+
+[gen-hit-02-map-omitted-to-rwr]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~GenHit
+expect = WarCore.Tests.GenHitTests.OmittedResolverDoesNoRangedDamageAndHasADistinctDigest
+note = The omitted resolver incorrectly uses the RWR lethal-hit policy
+original:
+|         public static IHitResolver Resolver(string id) => id == null ? new NoHitResolver() : new RwrHitResolver();
+replacement:
+|         public static IHitResolver Resolver(string id) => new RwrHitResolver();
+
+[gen-hit-03-omit-ranged-resolver]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~GenHit
+expect = WarCore.Tests.GenHitTests.ADeclaredRangedWeaponStillRequiresAResolver
+note = A pack declaring ranged weapons incorrectly accepts an omitted resolver
+original:
+|             string resolver = b.Weapons.Length == 0 && !cr.Has("resolver") ? null : cr.Str("resolver"), selector = cr.Str("selector");
+replacement:
+|             string resolver = !cr.Has("resolver") ? null : cr.Str("resolver"), selector = cr.Str("selector");
+
+[gen-hit-04-collide-policy-keys]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~GenHit
+expect = WarCore.Tests.GenHitTests.OmittedResolverDoesNoRangedDamageAndHasADistinctDigest
+note = Omitted and explicit RWR resolver policies incorrectly share a digest
+original:
+|             public ulong PolicyKey => 0x4E4F484954000001UL;
+replacement:
+|             public ulong PolicyKey => 0x5257524849540001UL;

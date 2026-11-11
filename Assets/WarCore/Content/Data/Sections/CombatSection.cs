@@ -14,8 +14,8 @@ namespace WarCore.Content
             var cr = new EntryReader(b.Pack, combat);
             SimFix maxHealth = cr.Fix("maxHealth");
             if (maxHealth.Raw <= 0) throw cr.Bad(cr.FieldOf("maxHealth"), "must be greater than 0");
-            string resolver = cr.Str("resolver"), selector = cr.Str("selector");
-            if (!ContentPolicies.IsResolver(resolver))
+            string resolver = b.Weapons.Length == 0 && !cr.Has("resolver") ? null : cr.Str("resolver"), selector = cr.Str("selector");
+            if (resolver != null && !ContentPolicies.IsResolver(resolver))
                 throw cr.Bad(cr.FieldOf("resolver"), "unknown policy '" + resolver + "', allowed: " + ContentPolicies.ResolverIds);
             if (!ContentPolicies.IsSelector(selector))
                 throw cr.Bad(cr.FieldOf("selector"), "unknown policy '" + selector + "', allowed: " + ContentPolicies.SelectorIds);

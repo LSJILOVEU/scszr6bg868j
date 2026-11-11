@@ -15,9 +15,15 @@ namespace WarCore.Content
 
         public static bool IsResolver(string id) => id == RwrHit;
         public static bool IsSelector(string id) => id == NearestVisible || id == SightLimitedNearest;
-        public static IHitResolver Resolver(string id) => new RwrHitResolver();
+        public static IHitResolver Resolver(string id) => id == null ? new NoHitResolver() : new RwrHitResolver();
         public static ITargetSelector Selector(string id, SimFix sight) => id == SightLimitedNearest
             ? new SightLimited(new NearestVisibleEnemy(), sight)
             : (ITargetSelector)new NearestVisibleEnemy();
+
+        private sealed class NoHitResolver : IHitResolver
+        {
+            public ulong PolicyKey => 0x4E4F484954000001UL;
+            public long DamageRaw(in WeaponDef weapon, long falloffRaw, int rollRaw, long maxHealthRaw) => 0;
+        }
     }
 }
