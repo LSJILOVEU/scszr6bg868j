@@ -14,6 +14,7 @@ namespace WarCore.Interim
             if (controlledStep != null && !crowd)
                 throw new ArgumentException("Controlled movement requires Crowd.", nameof(controlledStep));
             this.controlledStep = controlledStep;
+            provisional = new CrowdMember[entities.Capacity];
         }
         private readonly ICrowdPass pass;
 
