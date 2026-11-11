@@ -37,7 +37,8 @@ namespace WarCore.Sim
         {
             this.grid = grid ?? throw new ArgumentNullException(nameof(grid));
             costs = new long[grid.Count]; stamps = new uint[grid.Count]; parents = new int[grid.Count]; path = new int[grid.Count];
-            heap = new Entry[16];
+            // The consistent heuristic expands each cell once, with at most eight neighbour insertions.
+            heap = new Entry[grid.Count * 8];
         }
 
         // Weighted search over the final walkable cells: entering a cell costs (1000 or 1414) x CostAt(cell).
