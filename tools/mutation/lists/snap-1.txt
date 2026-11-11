@@ -1,0 +1,61 @@
+# SNAP-1 pending spawn snapshot capture.
+
+[snap-1-chunk-not-saved]
+file = Assets/WarCore/Sim/StableSpawns.cs
+filter = FullyQualifiedName~WarCore.Tests.Snap1SnapshotTests
+expect = WarCore.Tests.Snap1SnapshotTests.PendingSpawnAfterChunkChangeRestoresToTheSameRun
+note = the snapshot writes the default chunk instead of the captured chunk
+original:
+|                 writer.UInt64(requests[i].Chunk);
+replacement:
+|                 writer.UInt64(0);
+
+[snap-1-counter-recomputed]
+file = Assets/WarCore/Sim/StableSpawns.cs
+filter = FullyQualifiedName~WarCore.Tests.Snap1SnapshotTests
+expect = WarCore.Tests.Snap1SnapshotTests.CapturedPayloadAffectsPendingHashAndSurvivesRestore
+note = non-retained restore replaces the captured counter with the current counter
+original:
+|                 request.Counter = reader.UInt64();
+replacement:
+|                 request.Counter = reader.UInt64(); if (!entities.UsesRetainedProtocol && spawner.HasValue) request.Counter = entities.Read(entities.spawnSequences,entities.ResolveLogical(spawner)).Next;
+
+[snap-1-version-not-incremented]
+file = Assets/WarCore/Sim/StableSimState.cs
+filter = FullyQualifiedName~WarCore.Tests.Snap1SnapshotTests
+expect = WarCore.Tests.Snap1SnapshotTests.SnapshotVersionSixRejectsVersionFive
+note = the new snapshot layout retains version five
+original:
+|         public const int StableSnapshotVersion = 6;
+replacement:
+|         public const int StableSnapshotVersion = 5;
+
+[snap-1-counter-not-saved]
+file = Assets/WarCore/Sim/StableSpawns.cs
+filter = FullyQualifiedName~WarCore.Tests.Snap1SnapshotTests
+expect = WarCore.Tests.Snap1SnapshotTests.CapturedPayloadAffectsPendingHashAndSurvivesRestore
+note = the snapshot writes the default counter instead of the captured counter
+original:
+|                 writer.UInt64(requests[i].Counter);
+replacement:
+|                 writer.UInt64(0);
+
+[snap-1-values-not-saved]
+file = Assets/WarCore/Sim/StableSpawns.cs
+filter = FullyQualifiedName~WarCore.Tests.Snap1SnapshotTests
+expect = WarCore.Tests.Snap1SnapshotTests.CapturedPayloadAffectsPendingHashAndSurvivesRestore
+note = the snapshot writes default values instead of the captured values
+original:
+|                 requests[i].Values.Save(writer);
+replacement:
+|                 default(SpawnValues).Save(writer);
+
+[snap-1-values-recomputed]
+file = Assets/WarCore/Sim/StableSpawns.cs
+filter = FullyQualifiedName~WarCore.Tests.Snap1SnapshotTests
+expect = WarCore.Tests.Snap1SnapshotTests.CapturedPayloadAffectsPendingHashAndSurvivesRestore
+note = non-retained restore replaces captured values with the current source values
+original:
+|                 request.Values = SpawnValues.Read(reader);
+replacement:
+|                 request.Values = SpawnValues.Read(reader); if (!entities.UsesRetainedProtocol && spawner.HasValue) request.Values = entities.CaptureSpawnValues(entities.ResolveLogical(spawner));
