@@ -1,0 +1,32 @@
+# SimScheduler
+# Uncovered mutations of Assets/WarCore/Sim/SimScheduler.cs. Test classes are named Mt207SimScheduler*.
+
+[mt-207-01]
+file = Assets/WarCore/Sim/SimScheduler.cs
+filter = FullyQualifiedName~Mt207SimScheduler
+expect = WarCore.Tests.Mt207SimSchedulerTests.ReserveMakesEveryStableTaskSlotUsable
+note = Capacity growth must allow stable tasks to use every reserved slot.
+original:
+|                 Array.Resize(ref stableTasks, capacity);
+replacement:
+|                 Array.Resize(ref stableTasks, capacity - 1);
+
+[mt-207-02]
+file = Assets/WarCore/Sim/SimScheduler.cs
+filter = FullyQualifiedName~Mt207SimScheduler
+expect = WarCore.Tests.Mt207SimSchedulerTests.ReservePreservesEachPendingStableTaskLookup
+note = Capacity growth must retain lookup entries for live stable tasks.
+original:
+|                     if (taskStates[i] != 0)
+replacement:
+|                     if (taskStates[i] == 0)
+
+[mt-207-03]
+file = Assets/WarCore/Sim/SimScheduler.cs
+filter = FullyQualifiedName~Mt207SimScheduler
+expect = WarCore.Tests.Mt207SimSchedulerTests.ReservePreservesEachPendingStableTaskLookup
+note = Capacity growth must map each stable task key to its own task.
+original:
+|                         stableTaskLookup.Add(stableTasks[i].Key,i);
+replacement:
+|                         stableTaskLookup.Add(stableTasks[i].Key,0);

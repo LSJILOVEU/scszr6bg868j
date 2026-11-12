@@ -1,0 +1,32 @@
+# PostureSystem
+# Uncovered mutations of Assets/WarCore/Sim/PostureSystem.cs. Test classes are named Mt203PostureSystem*.
+
+[mt-203-01]
+file = Assets/WarCore/Sim/PostureSystem.cs
+filter = FullyQualifiedName~Mt203PostureSystem
+expect = WarCore.Tests.Mt203PostureSystemTests.CancellationRejectsAnotherSimulationContext
+note = Cancellation accepts a context from another simulation and clears the owning transition.
+original:
+|                 throw new ArgumentException("Posture context belongs to another simulation.");
+replacement:
+|                 { }
+
+[mt-203-02]
+file = Assets/WarCore/Sim/PostureSystem.cs
+filter = FullyQualifiedName~Mt203PostureSystem
+expect = WarCore.Tests.Mt203PostureSystemTests.StableCancellationRemovesThePendingTransitionTask
+note = Cancelling the default task key leaves the actual stable transition task pending.
+original:
+|                 context.Scheduler.CancelStable(posture.StableTask);
+replacement:
+|                 context.Scheduler.CancelStable(default(TaskKey));
+
+[mt-203-03]
+file = Assets/WarCore/Sim/PostureSystem.cs
+filter = FullyQualifiedName~Mt203PostureSystem
+expect = WarCore.Tests.Mt203PostureSystemTests.TransitionRejectsMismatchedDeadlineOrPayload
+note = A transition with a mismatched deadline or payload completes instead of being rejected.
+original:
+|                     throw new InvalidOperationException("Posture transition deadline or payload mismatch.");
+replacement:
+|                     { }

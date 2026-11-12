@@ -1,0 +1,32 @@
+# MoveIntent
+# Uncovered mutations of Assets/WarCore/Interim/MoveIntent.cs. Test classes are named Mt176MoveIntent*.
+
+[mt-176-01]
+file = Assets/WarCore/Interim/MoveIntent.cs
+filter = FullyQualifiedName~Mt176MoveIntent
+expect = WarCore.Tests.Mt176MoveIntentTests.WriteStateMatchesCanonicalFieldEncoding
+note = Replaces the movement speed in the state hash with zero.
+original:
+|             SpeedPerTick.WriteState(hash);
+replacement:
+|             hash.Add(0L);
+
+[mt-176-02]
+file = Assets/WarCore/Interim/MoveIntent.cs
+filter = FullyQualifiedName~Mt176MoveIntent
+expect = WarCore.Tests.Mt176MoveIntentTests.WriteStateMatchesCanonicalFieldEncoding
+note = Replaces the squad identifier in the state hash with zero.
+original:
+|             hash.Add(Squad);
+replacement:
+|             hash.Add(0);
+
+[mt-176-03]
+file = Assets/WarCore/Interim/MoveIntent.cs
+filter = FullyQualifiedName~Mt176MoveIntent
+expect = WarCore.Tests.Mt176MoveIntentTests.WriteStateMatchesCanonicalFieldEncoding
+note = Encodes the opposite active flag in the state hash.
+original:
+|             hash.Add(Active);
+replacement:
+|             hash.Add(!Active);

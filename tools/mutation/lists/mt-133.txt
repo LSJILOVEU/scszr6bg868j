@@ -1,0 +1,32 @@
+# ContentJson
+# Uncovered mutations of Assets/WarCore/Content/Data/ContentJson.cs. Test classes are named Mt133ContentJson*.
+
+[mt-133-01]
+file = Assets/WarCore/Content/Data/ContentJson.cs
+filter = FullyQualifiedName~Mt133ContentJson
+expect = WarCore.Tests.Mt133ContentJsonTests.NewlineEscapesDecodeAsLineFeeds
+note = Newline escapes decode as tabs instead of line feeds.
+original:
+|                         case 'n': sb.Append('\n'); break;
+replacement:
+|                         case 'n': sb.Append('\t'); break;
+
+[mt-133-02]
+file = Assets/WarCore/Content/Data/ContentJson.cs
+filter = FullyQualifiedName~Mt133ContentJson
+expect = WarCore.Tests.Mt133ContentJsonTests.ArrayItemsRequireCommas
+note = Array items without a separating comma are accepted.
+original:
+|                     throw Error("missing comma between array items");
+replacement:
+|                     continue;
+
+[mt-133-03]
+file = Assets/WarCore/Content/Data/ContentJson.cs
+filter = FullyQualifiedName~Mt133ContentJson
+expect = WarCore.Tests.Mt133ContentJsonTests.NewlineEscapesDecodeAsLineFeeds
+note = Newline escapes decode as carriage returns instead of line feeds.
+original:
+|                         case 'n': sb.Append('\n'); break;
+replacement:
+|                         case 'n': sb.Append('\r'); break;

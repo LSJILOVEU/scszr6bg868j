@@ -1,0 +1,32 @@
+# GameplayLife
+# Uncovered mutations of Assets/WarCore/Sim/GameplayLife.cs. Test classes are named Mt187GameplayLife*.
+
+[mt-187-01]
+file = Assets/WarCore/Sim/GameplayLife.cs
+filter = FullyQualifiedName~Mt187GameplayLife
+expect = WarCore.Tests.Mt187GameplayLifeTests.UnknownOwnerRejectsLifeQuery
+note = Unknown owners must reject life queries instead of returning an active view.
+original:
+|                 throw new SimBoundaryException("M0C_LIFE_OWNER");
+replacement:
+|                 return default;
+
+[mt-187-02]
+file = Assets/WarCore/Sim/GameplayLife.cs
+filter = FullyQualifiedName~Mt187GameplayLife
+expect = WarCore.Tests.Mt187GameplayLifeTests.DeathCancelsRegenerationAndSnapshotRestores
+note = Death must clear the regeneration task flag so its snapshot can restore.
+original:
+|                         hasTask[r] = false;
+replacement:
+|                         hasTask[r] = true;
+
+[mt-187-03]
+file = Assets/WarCore/Sim/GameplayLife.cs
+filter = FullyQualifiedName~Mt187GameplayLife
+expect = WarCore.Tests.Mt187GameplayLifeTests.TwoDownedOwnersRestoreAndExpireIndependently
+note = Distinct downed timer tokens must remain valid when multiple owners restore.
+original:
+|                         SimStateReader.Require(!hasDownedTask[i] || downedTasks[i].Kind != downedTasks[owner].Kind, "M0C_LIFE_TOKEN_ALIAS");
+replacement:
+|                         SimStateReader.Require(!hasDownedTask[i] || downedTasks[i].Kind == downedTasks[owner].Kind, "M0C_LIFE_TOKEN_ALIAS");

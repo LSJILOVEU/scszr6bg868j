@@ -1,0 +1,72 @@
+# MapDescReader
+# Surviving mutations of Assets/WarCore/Content/MapTools/MapDescReader.cs. Test classes are named Mt138MapDescReader*.
+
+[mt-138-01]
+file = Assets/WarCore/Content/MapTools/MapDescReader.cs
+filter = FullyQualifiedName~Mt138MapDescReader
+expect = WarCore.Tests.Mt138MapDescReaderTests.SignedHeightExtremesArePreserved
+note = Rejects the minimum signed 64-bit height.
+original:
+|                 if (Magnitude > 9223372036854775808UL) return false;
+replacement:
+|                 if (Magnitude >= 9223372036854775808UL) return false;
+
+[mt-138-02]
+file = Assets/WarCore/Content/MapTools/MapDescReader.cs
+filter = FullyQualifiedName~Mt138MapDescReader
+expect = WarCore.Tests.Mt138MapDescReaderTests.SignedHeightExtremesArePreserved
+note = Rejects the maximum signed 64-bit height.
+original:
+|             if (Magnitude > long.MaxValue) return false;
+replacement:
+|             if (Magnitude >= long.MaxValue) return false;
+
+[mt-138-03]
+file = Assets/WarCore/Content/MapTools/MapDescReader.cs
+filter = FullyQualifiedName~Mt138MapDescReader
+expect = WarCore.Tests.Mt138MapDescReaderTests.NegativeSeedIsRejected
+note = Accepts a negative unsigned seed as its positive magnitude.
+original:
+|             return !Huge && !Negative;
+replacement:
+|             return !Huge;
+
+[mt-138-04]
+file = Assets/WarCore/Content/MapTools/MapDescReader.cs
+filter = FullyQualifiedName~Mt138MapDescReader
+expect = WarCore.Tests.Mt138MapDescReaderTests.SurrogatePairAtEndOfIdIsPreserved
+note = Rejects a valid surrogate pair at the end of a string.
+original:
+|                     if (char.IsHighSurrogate(s[i]) && i + 1 < s.Length && char.IsLowSurrogate(s[i + 1])) { i++; continue; }
+replacement:
+|                     if (char.IsHighSurrogate(s[i]) && i + 1 < s.Length - 1 && char.IsLowSurrogate(s[i + 1])) { i++; continue; }
+
+[mt-138-05]
+file = Assets/WarCore/Content/MapTools/MapDescReader.cs
+filter = FullyQualifiedName~Mt138MapDescReader
+expect = WarCore.Tests.Mt138MapDescReaderTests.SixtyFourSurfaceNamesAreAccepted
+note = Rejects a surface table containing exactly 64 names.
+original:
+|                 if (names.Length > 64) throw Fail(Grid, namesNode.Line);
+replacement:
+|                 if (names.Length >= 64) throw Fail(Grid, namesNode.Line);
+
+[mt-138-06]
+file = Assets/WarCore/Content/MapTools/MapDescReader.cs
+filter = FullyQualifiedName~Mt138MapDescReader
+expect = WarCore.Tests.Mt138MapDescReaderTests.DuplicateSurfaceNamesAreRejected
+note = Accepts duplicate surface names.
+original:
+|                     if (string.CompareOrdinal(names[i - 1], names[i]) >= 0) throw Fail(Grid, namesNode.Items[i].Line);
+replacement:
+|                     if (string.CompareOrdinal(names[i - 1], names[i]) > 0) throw Fail(Grid, namesNode.Items[i].Line);
+
+[mt-138-07]
+file = Assets/WarCore/Content/MapTools/MapDescReader.cs
+filter = FullyQualifiedName~Mt138MapDescReader
+expect = WarCore.Tests.Mt138MapDescReaderTests.SixtyFourOwnersAreAccepted
+note = Rejects an owner table containing exactly 64 entries.
+original:
+|             if (owners.Length < 1 || owners.Length > 64) throw Fail(OwnerCode, ownersNode.Line);
+replacement:
+|             if (owners.Length < 1 || owners.Length >= 64) throw Fail(OwnerCode, ownersNode.Line);

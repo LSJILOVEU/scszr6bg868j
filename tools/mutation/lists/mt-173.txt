@@ -1,0 +1,12 @@
+# SimpleAiSystem
+# Surviving mutations of Assets/WarCore/Battle/SimpleAiSystem.cs. Test classes are named Mt173SimpleAiSystem*.
+
+[mt-173-01]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Mt173SimpleAiSystem
+expect = WarCore.Tests.Mt173SimpleAiSystemTests.EqualDistanceGuardSlotsPreferTheLowerSlotIndex
+note = Equal-distance guard slots must retain the lower slot index.
+original:
+|                 if (chosen >= 0 && distance >= best) continue;
+replacement:
+|                 if (chosen >= 0 && distance > best) continue;

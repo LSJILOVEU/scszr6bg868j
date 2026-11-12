@@ -1,0 +1,22 @@
+# InterimLocomotionCrowd
+# Surviving mutations of Assets/WarCore/Interim/InterimLocomotion.Crowd.cs. Test classes are named Mt174InterimLocomotionCrowd*.
+
+[mt-174-01]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~Mt174InterimLocomotionCrowd
+expect = WarCore.Tests.Mt174InterimLocomotionCrowdTests.IntermediateWaypoint_AdvancesUntilFinalTargetStopsOrder
+note = Stops the move order at an intermediate waypoint instead of the final target.
+original:
+|                 if (next.Equals(waypoint) && waypoint.Equals(intent.Target)) { Stop(unit); continue; }
+replacement:
+|                 if (next.Equals(waypoint) && !waypoint.Equals(intent.Target)) { Stop(unit); continue; }
+
+[mt-174-02]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~Mt174InterimLocomotionCrowd
+expect = WarCore.Tests.Mt174InterimLocomotionCrowdTests.IntermediateWaypoint_AdvancesUntilFinalTargetStopsOrder
+note = Keeps the previous waypoint when movement enters a new cell.
+original:
+|                 if (before == after) continue;
+replacement:
+|                 if (before != after) continue;

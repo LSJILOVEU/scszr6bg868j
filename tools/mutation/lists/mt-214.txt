@@ -1,0 +1,32 @@
+# SpatialMotion
+# Uncovered mutations of Assets/WarCore/Sim/SpatialMotion.cs. Test classes are named Mt214SpatialMotion*.
+
+[mt-214-01]
+file = Assets/WarCore/Sim/SpatialMotion.cs
+filter = FullyQualifiedName~Mt214SpatialMotion
+expect = WarCore.Tests.Mt214SpatialMotionTests.DetachStopsFollowingAndPreservesPendingPosition
+note = Detach must remove the attachment and preserve the pending position request.
+original:
+|             Entities.Remove(attachments, passenger);
+replacement:
+|             Entities.Remove(positionRequests, passenger);
+
+[mt-214-02]
+file = Assets/WarCore/Sim/SpatialMotion.cs
+filter = FullyQualifiedName~Mt214SpatialMotion
+expect = WarCore.Tests.Mt214SpatialMotionTests.StableWorldRejectsPositionRequestWithoutStableKey
+note = Stable worlds must reject legacy position requests without a stable request key.
+original:
+|                 throw new SimBoundaryException("StableWorld requires a stable motion request key.");
+replacement:
+|                 return;
+
+[mt-214-03]
+file = Assets/WarCore/Sim/SpatialMotion.cs
+filter = FullyQualifiedName~Mt214SpatialMotion
+expect = WarCore.Tests.Mt214SpatialMotionTests.PositionRequestRejectsLiveEntityWithoutPosition
+note = Position requests must reject live entities that have no Position component.
+original:
+|                 throw new SimBoundaryException("Spatial motion requires a configured index and a live entity with Position.");
+replacement:
+|                 return;

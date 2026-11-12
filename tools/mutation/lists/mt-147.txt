@@ -1,0 +1,12 @@
+# WcMap
+# Surviving mutations of Assets/WarCore/Content/WcMap.cs. Test classes are named Mt147WcMap*.
+
+[mt-147-01]
+file = Assets/WarCore/Content/WcMap.cs
+filter = FullyQualifiedName~Mt147WcMap
+expect = WarCore.Tests.Mt147WcMapTests.TryCell_UsesEachAxisOrigin
+note = Using the X origin for Z shifts the cell row when the axis origins differ.
+original:
+|             z = (int)((worldZ.Raw - Min.Z.Raw) / SimFix.Scale);
+replacement:
+|             z = (int)((worldZ.Raw - Min.X.Raw) / SimFix.Scale);

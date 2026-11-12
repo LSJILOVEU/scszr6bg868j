@@ -1,0 +1,22 @@
+# WorldRecipe
+# Surviving mutations of Assets/WarCore/Presentation/Bridge/WorldRecipe.cs. Test classes are named Mt166WorldRecipe*.
+
+[mt-166-01]
+file = Assets/WarCore/Presentation/Bridge/WorldRecipe.cs
+filter = FullyQualifiedName~Mt166WorldRecipe
+expect = WarCore.Tests.Mt166WorldRecipeTests.ZeroSpeedIsRejected
+note = Allows zero speed instead of rejecting it.
+original:
+|             if (speedMmPerSec <= 0)
+replacement:
+|             if (speedMmPerSec < 0)
+
+[mt-166-02]
+file = Assets/WarCore/Presentation/Bridge/WorldRecipe.cs
+filter = FullyQualifiedName~Mt166WorldRecipe
+expect = WarCore.Tests.Mt166WorldRecipeTests.UnitsAreOrderedByAscendingKey
+note = Reverses the required ascending unit key order.
+original:
+|             Array.Sort(this.units, (a, b) => a.Key.CompareTo(b.Key));
+replacement:
+|             Array.Sort(this.units, (a, b) => b.Key.CompareTo(a.Key));

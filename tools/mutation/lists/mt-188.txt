@@ -1,0 +1,32 @@
+# GameplayMath
+# Uncovered mutations of Assets/WarCore/Sim/GameplayMath.cs. Test classes are named Mt188GameplayMath*.
+
+[mt-188-01]
+file = Assets/WarCore/Sim/GameplayMath.cs
+filter = FullyQualifiedName~Mt188GameplayMath
+expect = WarCore.Tests.Mt188GameplayMathTests.ChangeResourceRejectsReversedBounds
+note = Invalid resource bounds are accepted instead of rejected.
+original:
+|                 throw new SimBoundaryException("M0C_GAMEPLAY_RESOURCE: Invalid resource bounds.");
+replacement:
+|                 return value;
+
+[mt-188-02]
+file = Assets/WarCore/Sim/GameplayMath.cs
+filter = FullyQualifiedName~Mt188GameplayMath
+expect = WarCore.Tests.Mt188GameplayMathTests.CanSpendRejectsValueBelowLowerBound
+note = A value below the lower bound returns false instead of being rejected.
+original:
+|                 throw new SimBoundaryException("M0C_GAMEPLAY_RESOURCE: Value is below lower bound.");
+replacement:
+|                 return false;
+
+[mt-188-03]
+file = Assets/WarCore/Sim/GameplayMath.cs
+filter = FullyQualifiedName~Mt188GameplayMath
+expect = WarCore.Tests.Mt188GameplayMathTests.SaturatingAddIncreasesValueForPositiveAddition
+note = A positive addition subtracts from the existing value.
+original:
+|                 new FixedInt128(new FixedUInt128(FixedInt128.Abs(addition)),addition<0),ref saturationCount);
+replacement:
+|                 new FixedInt128(new FixedUInt128(FixedInt128.Abs(addition)),addition>=0),ref saturationCount);

@@ -1,0 +1,32 @@
+# SpatialQueryModes
+# Surviving mutations of Assets/WarCore/Sim/SpatialQueryModes.cs. Test classes are named Mt215SpatialQueryModes*.
+
+[mt-215-01]
+file = Assets/WarCore/Sim/SpatialQueryModes.cs
+filter = FullyQualifiedName~Mt215SpatialQueryModes
+expect = WarCore.Tests.Mt215SpatialQueryModesTests.CylinderPreservesRadiusAndHalfHeight
+note = Swapping radius and half-height changes the cylinder dimensions.
+original:
+|             => new SpatialRequest(SpatialQueryKind.Cylinder, center, radius, default, default, halfHeight, 0, layerMask);
+replacement:
+|             => new SpatialRequest(SpatialQueryKind.Cylinder, center, halfHeight, default, default, radius, 0, layerMask);
+
+[mt-215-02]
+file = Assets/WarCore/Sim/SpatialQueryModes.cs
+filter = FullyQualifiedName~Mt215SpatialQueryModes
+expect = WarCore.Tests.Mt215SpatialQueryModesTests.SectorRejectsCosineBelowMinimum
+note = A sector cosine below -1000 must be rejected.
+original:
+|             if (cosineHalfAnglePermille < -1000 || cosineHalfAnglePermille > 1000)
+replacement:
+|             if (cosineHalfAnglePermille < -1001 || cosineHalfAnglePermille > 1000)
+
+[mt-215-03]
+file = Assets/WarCore/Sim/SpatialQueryModes.cs
+filter = FullyQualifiedName~Mt215SpatialQueryModes
+expect = WarCore.Tests.Mt215SpatialQueryModesTests.CapsuleDirectionRunsFromStartToEnd
+note = Reversing the sweep direction moves the capsule away from its endpoint.
+original:
+|             SimVec3 delta = end - start;
+replacement:
+|             SimVec3 delta = start - end;

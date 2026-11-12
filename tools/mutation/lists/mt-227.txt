@@ -1,0 +1,32 @@
+# Triggers
+# Uncovered mutations of Assets/WarCore/Sim/Triggers.cs. Test classes are named Mt227Triggers*.
+
+[mt-227-01]
+file = Assets/WarCore/Sim/Triggers.cs
+filter = FullyQualifiedName~Mt227Triggers
+expect = WarCore.Tests.Mt227TriggersTests.DefinitionRejectsNonPositiveIds
+note = Trigger and operation ids must reject zero and negative values.
+original:
+|                 throw new ArgumentOutOfRangeException(nameof(id), "Trigger and operation ids must be positive.");
+replacement:
+|                 _ = id;
+
+[mt-227-02]
+file = Assets/WarCore/Sim/Triggers.cs
+filter = FullyQualifiedName~Mt227Triggers
+expect = WarCore.Tests.Mt227TriggersTests.StableSerializationRejectsDefinitionsWithoutCapturedLinks
+note = Stable serialization must reject definitions without captured entity links.
+original:
+|                     throw new SimBoundaryException("Stable trigger definitions require captured entity links.");
+replacement:
+|                     _ = StableLinks;
+
+[mt-227-03]
+file = Assets/WarCore/Sim/Triggers.cs
+filter = FullyQualifiedName~Mt227Triggers
+expect = WarCore.Tests.Mt227TriggersTests.CountMatchesEmptyAndPopulatedDefinitions
+note = Trigger count must equal the number of stored definitions.
+original:
+|         public int Count => triggers.Length;
+replacement:
+|         public int Count => triggers.Length + 1;

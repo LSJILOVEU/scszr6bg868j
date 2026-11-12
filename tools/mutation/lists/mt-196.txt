@@ -1,0 +1,32 @@
+# GameplayStatusSchema
+# Uncovered mutations of Assets/WarCore/Sim/GameplayStatusSchema.cs. Test classes are named Mt196GameplayStatusSchema*.
+
+[mt-196-01]
+file = Assets/WarCore/Sim/GameplayStatusSchema.cs
+filter = FullyQualifiedName~Mt196GameplayStatusSchema
+expect = WarCore.Tests.Mt196GameplayStatusSchemaTests.StatusDefinitionsAndCapacityMustBothBePresentOrAbsent
+note = Status definitions and status capacity must both be present or both be absent.
+original:
+|                 throw new SimBoundaryException("M0C_STATUS_CAPACITY");
+replacement:
+|                 return;
+
+[mt-196-02]
+file = Assets/WarCore/Sim/GameplayStatusSchema.cs
+filter = FullyQualifiedName~Mt196GameplayStatusSchema
+expect = WarCore.Tests.Mt196GameplayStatusSchemaTests.DuplicateStatusNamesWithDistinctKeysAreRejected
+note = Distinct status keys must not allow duplicate status names.
+original:
+|                         throw new SimBoundaryException("M0C_STATUS_NAME");
+replacement:
+|                         continue;
+
+[mt-196-03]
+file = Assets/WarCore/Sim/GameplayStatusSchema.cs
+filter = FullyQualifiedName~Mt196GameplayStatusSchema
+expect = WarCore.Tests.Mt196GameplayStatusSchemaTests.UnsupportedStatusModifierStageIsRejected
+note = Status modifiers must reject unsupported stage values.
+original:
+|                             throw new SimBoundaryException("M0C_STATUS_MODIFIER_STAGE");
+replacement:
+|                             break;
