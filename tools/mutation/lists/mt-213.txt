@@ -1,0 +1,34 @@
+# SpatialGridScan
+# Uncovered mutations of Assets/WarCore/Sim/SpatialGridScan.cs. Test classes are named Mt213SpatialGridScan*.
+
+[mt-213-01]
+file = Assets/WarCore/Sim/SpatialGridScan.cs
+filter = FullyQualifiedName~Mt213SpatialGridScan
+expect = WarCore.Tests.Mt213SpatialGridScanTests.TinyGridSphereReturnsBothPartitionRootsAndCountsEachOnce
+note = Skipping the second partition root omits its only matching entity.
+original:
+|                 region = 0;
+replacement:
+|                 region = 1;
+
+[mt-213-02]
+file = Assets/WarCore/Sim/SpatialGridScan.cs
+filter = FullyQualifiedName~Mt213SpatialGridScan
+expect = WarCore.Tests.Mt213SpatialGridScanTests.TinyGridSphereReturnsBothPartitionRootsAndCountsEachOnce
+note = Each visited static region node must contribute exactly one to its diagnostic count.
+original:
+|                         context.Diagnostics.StaticRegionNodes++;
+replacement:
+|                         context.Diagnostics.StaticRegionNodes += 2;
+
+[mt-213-03]
+file = Assets/WarCore/Sim/SpatialGridScan.cs
+filter = FullyQualifiedName~Mt213SpatialGridScan
+expect = WarCore.Tests.Mt213SpatialGridScanTests.TinyGridSphereReturnsBothPartitionRootsAndCountsEachOnce
+note = Ending traversal at an in-bounds cell drops matching entities from the query.
+original:
+|                 if (cell.X >= x0 && cell.X <= x1 && cell.Y >= y0 && cell.Y <= y1 && cell.Z >= z0 && cell.Z <= z1)
+|                     return true;
+replacement:
+|                 if (cell.X >= x0 && cell.X <= x1 && cell.Y >= y0 && cell.Y <= y1 && cell.Z >= z0 && cell.Z <= z1)
+|                     return false;

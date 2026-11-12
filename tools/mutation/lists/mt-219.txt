@@ -1,0 +1,32 @@
+# StableActivations
+# Uncovered mutations of Assets/WarCore/Sim/StableActivations.cs. Test classes are named Mt219StableActivations*.
+
+[mt-219-01]
+file = Assets/WarCore/Sim/StableActivations.cs
+filter = FullyQualifiedName~Mt219StableActivations
+expect = WarCore.Tests.Mt219StableActivationsTests.DuplicateActivationPlanIsRejected
+note = Duplicate tick and chunk activation plans must be rejected.
+original:
+|                     throw new SimBoundaryException("Duplicate chunk activation.");
+replacement:
+|                     break;
+
+[mt-219-02]
+file = Assets/WarCore/Sim/StableActivations.cs
+filter = FullyQualifiedName~Mt219StableActivations
+expect = WarCore.Tests.Mt219StableActivationsTests.NonpositiveActivationBoundaryIsRejected
+note = Zero and negative activation boundaries must be rejected.
+original:
+|                 throw new SimBoundaryException("Activation boundary must be positive.");
+replacement:
+|                 return true;
+
+[mt-219-03]
+file = Assets/WarCore/Sim/StableActivations.cs
+filter = FullyQualifiedName~Mt219StableActivations
+expect = WarCore.Tests.Mt219StableActivationsTests.RestoreRejectsDuplicateTickAndChunkPairs
+note = Restored activation timelines must reject duplicate tick and chunk pairs.
+original:
+|                         && entries[i-1].Chunk < entries[i].Chunk)),"Invalid chunk activation timeline.");
+replacement:
+|                         && entries[i-1].Chunk <= entries[i].Chunk)),"Invalid chunk activation timeline.");

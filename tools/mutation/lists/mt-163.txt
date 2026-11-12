@@ -1,0 +1,62 @@
+# ViewMap
+# Surviving mutations of Assets/WarCore/Presentation/Bridge/ViewMap.cs. Test classes are named Mt163ViewMap*.
+
+[mt-163-01]
+file = Assets/WarCore/Presentation/Bridge/ViewMap.cs
+filter = FullyQualifiedName~Mt163ViewMap
+expect = WarCore.Tests.TerrainView.Mt163ViewMapTests.Origin_UsesSeparateAxesInMetres
+note = The rendered X origin must use the map X coordinate.
+original:
+|             MinX = Metres(map.Min.X.Raw);
+replacement:
+|             MinX = Metres(map.Min.Z.Raw);
+
+[mt-163-02]
+file = Assets/WarCore/Presentation/Bridge/ViewMap.cs
+filter = FullyQualifiedName~Mt163ViewMap
+expect = WarCore.Tests.TerrainView.Mt163ViewMapTests.Walls_UseZOriginAndFullWidth
+note = The rendered wall width must be twice its X half extent.
+original:
+|                     Metres(wall.HalfX.Raw * 2), Metres(wall.Height.Raw), Metres(wall.HalfZ.Raw * 2));
+replacement:
+|                     Metres(wall.HalfX.Raw), Metres(wall.Height.Raw), Metres(wall.HalfZ.Raw * 2));
+
+[mt-163-03]
+file = Assets/WarCore/Presentation/Bridge/ViewMap.cs
+filter = FullyQualifiedName~Mt163ViewMap
+expect = WarCore.Tests.TerrainView.Mt163ViewMapTests.Walls_UseZOriginAndFullWidth
+note = The rendered wall Z position must include the map Z origin.
+original:
+|                     Metres(map.Min.Z.Raw + wall.LocalCenter.Z.Raw),
+replacement:
+|                     Metres(map.Min.X.Raw + wall.LocalCenter.Z.Raw),
+
+[mt-163-04]
+file = Assets/WarCore/Presentation/Bridge/ViewMap.cs
+filter = FullyQualifiedName~Mt163ViewMap
+expect = WarCore.Tests.TerrainView.Mt163ViewMapTests.Passability_SetBitIsOpenAndClearBitIsBlocked
+note = Set passability bits must mark open cells and clear bits must mark blocked cells.
+original:
+|             return (passability[index >> 3] & (1 << (index & 7))) != 0;
+replacement:
+|             return (passability[index >> 3] & (1 << (index & 7))) == 0;
+
+[mt-163-05]
+file = Assets/WarCore/Presentation/Bridge/ViewMap.cs
+filter = FullyQualifiedName~Mt163ViewMap
+expect = WarCore.Tests.TerrainView.Mt163ViewMapTests.SurfaceIndex_UsesRowMajorCells
+note = Surface lookup must use row major cell order.
+original:
+|             return surfaceCells[z * Width + x];
+replacement:
+|             return surfaceCells[x * Depth + z];
+
+[mt-163-06]
+file = Assets/WarCore/Presentation/Bridge/ViewMap.cs
+filter = FullyQualifiedName~Mt163ViewMap
+expect = WarCore.Tests.TerrainView.Mt163ViewMapTests.Origin_UsesSeparateAxesInMetres
+note = Fixed point map coordinates must use 65536 raw units per metre.
+original:
+|         private static float Metres(long raw) => (float)raw / 65536f;
+replacement:
+|         private static float Metres(long raw) => (float)raw / 65535f;

@@ -1,0 +1,32 @@
+# GameplayResources
+# Uncovered mutations of Assets/WarCore/Sim/GameplayResources.cs. Test classes are named Mt189GameplayResources*.
+
+[mt-189-01]
+file = Assets/WarCore/Sim/GameplayResources.cs
+filter = FullyQualifiedName~Mt189GameplayResources
+expect = WarCore.Tests.Mt189GameplayResourcesTests.SpendingOnRetiredTargetReportsTargetGone
+note = Spending on a retired target reports success instead of TargetGone.
+original:
+|                 return failure;
+replacement:
+|                 return GameplayFailure.None;
+
+[mt-189-02]
+file = Assets/WarCore/Sim/GameplayResources.cs
+filter = FullyQualifiedName~Mt189GameplayResources
+expect = WarCore.Tests.Mt189GameplayResourcesTests.DisabledSpendingRejectsBeforeAnyDebit
+note = Disabled resource spending bypasses rejection and debits the resource.
+original:
+|                     throw new SimBoundaryException("M0C_COST_DISABLED");
+replacement:
+|                     continue;
+
+[mt-189-03]
+file = Assets/WarCore/Sim/GameplayResources.cs
+filter = FullyQualifiedName~Mt189GameplayResources
+expect = WarCore.Tests.Mt189GameplayResourcesTests.RetirementCancelsPendingDownedTimer
+note = Retirement leaves the owner's downed timer pending.
+original:
+|                     sim.Scheduler.CancelStable(downedTasks[owner]);
+replacement:
+|                     sim.Scheduler.CancelStable(default);

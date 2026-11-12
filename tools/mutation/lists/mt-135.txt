@@ -1,0 +1,22 @@
+# SlopeRuleSection
+# Surviving mutations of Assets/WarCore/Content/Data/Sections/SlopeRuleSection.cs. Test classes are named Mt135SlopeRuleSection*.
+
+[mt-135-01]
+file = Assets/WarCore/Content/Data/Sections/SlopeRuleSection.cs
+filter = FullyQualifiedName~Mt135SlopeRuleSection
+expect = WarCore.Tests.Mt135SlopeRuleSectionTests.SlopeRule_Build_MinimumDenominatorIsAccepted
+note = Rejects the legal minimum slope denominator of 1.
+original:
+|             int den = sr.Has("maxWalkableDen") ? sr.Int("maxWalkableDen", 1, HeightField.MaxWalkableDenominator) : b.SlopeDenominator;
+replacement:
+|             int den = sr.Has("maxWalkableDen") ? sr.Int("maxWalkableDen", 2, HeightField.MaxWalkableDenominator) : b.SlopeDenominator;
+
+[mt-135-02]
+file = Assets/WarCore/Content/Data/Sections/SlopeRuleSection.cs
+filter = FullyQualifiedName~Mt135SlopeRuleSection
+expect = WarCore.Tests.Mt135SlopeRuleSectionTests.SlopeRule_Build_UnknownFieldIsRejected
+note = Accepts unknown slope rule fields instead of rejecting them.
+original:
+|             sr.Done();
+replacement:
+|             _ = sr;

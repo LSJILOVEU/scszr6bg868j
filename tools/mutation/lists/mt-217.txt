@@ -1,0 +1,22 @@
+# SpatialSector
+# Surviving mutations of Assets/WarCore/Sim/SpatialSector.cs. Test classes are named Mt217SpatialSector*.
+
+[mt-217-01]
+file = Assets/WarCore/Sim/SpatialSector.cs
+filter = FullyQualifiedName~Mt217SpatialSector
+expect = WarCore.Tests.Mt217SpatialSectorTests.SectorIncludesVerticalSurfaceTangency
+note = Excludes collider surface tangency at the sector plane.
+original:
+|             if (y > radius || x < -reach || x > reach || z < -reach || z > reach)
+replacement:
+|             if (y >= radius || x < -reach || x > reach || z < -reach || z > reach)
+
+[mt-217-02]
+file = Assets/WarCore/Sim/SpatialSector.cs
+filter = FullyQualifiedName~Mt217SpatialSector
+expect = WarCore.Tests.Mt217SpatialSectorTests.SectorRejectsBodyBeyondReducedCrossSection
+note = Enlarges the collider cross-section away from its midplane and admits separated bodies.
+original:
+|             ulong disk2 = Square(radius) - Square(y);
+replacement:
+|             ulong disk2 = Square(radius) + Square(y);

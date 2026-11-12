@@ -1,0 +1,32 @@
+# MapProblem
+# Uncovered mutations of Assets/WarCore/Content/MapTools/MapProblem.cs. Test classes are named Mt142MapProblem*.
+
+[mt-142-01]
+file = Assets/WarCore/Content/MapTools/MapProblem.cs
+filter = FullyQualifiedName~Mt142MapProblem
+expect = WarCore.Tests.Mt142MapProblemTests.ObjectEqualsComparesProblemValues
+note = Object equality rejects equal problem values and accepts unequal values.
+original:
+|         public override bool Equals(object obj) => obj is MapProblem other && Equals(other);
+replacement:
+|         public override bool Equals(object obj) => obj is MapProblem other && !Equals(other);
+
+[mt-142-02]
+file = Assets/WarCore/Content/MapTools/MapProblem.cs
+filter = FullyQualifiedName~Mt142MapProblem
+expect = WarCore.Tests.Mt142MapProblemTests.ToStringIncludesCellOnlyWhenPresent
+note = Cell coordinates are omitted when present and added when absent.
+original:
+|                 + (HasCell ? " cell (" + CellX.ToString(c) + ", " + CellZ.ToString(c) + ")" : "")
+replacement:
+|                 + (!HasCell ? " cell (" + CellX.ToString(c) + ", " + CellZ.ToString(c) + ")" : "")
+
+[mt-142-03]
+file = Assets/WarCore/Content/MapTools/MapProblem.cs
+filter = FullyQualifiedName~Mt142MapProblem
+expect = WarCore.Tests.Mt142MapProblemTests.ToStringIncludesLineOnlyWhenPresent
+note = The source line is omitted when present and added as zero when absent.
+original:
+|                 + (HasLine ? " line " + Line.ToString(c) : "");
+replacement:
+|                 + (!HasLine ? " line " + Line.ToString(c) : "");

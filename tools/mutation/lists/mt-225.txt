@@ -1,0 +1,32 @@
+# StableSpawns
+# Uncovered mutations of Assets/WarCore/Sim/StableSpawns.cs. Test classes are named Mt225StableSpawns*.
+
+[mt-225-01]
+file = Assets/WarCore/Sim/StableSpawns.cs
+filter = FullyQualifiedName~Mt225StableSpawns
+expect = WarCore.Tests.Mt225StableSpawnsTests.SnapshotStoresWorldCursorsInSystemOrderWithNextOrdinals
+note = World cursors must be serialized in ascending system order.
+original:
+|             public int CompareTo(WorldCursor other) => System.CompareTo(other.System);
+replacement:
+|             public int CompareTo(WorldCursor other) => other.System.CompareTo(System);
+
+[mt-225-02]
+file = Assets/WarCore/Sim/StableSpawns.cs
+filter = FullyQualifiedName~Mt225StableSpawns
+expect = WarCore.Tests.Mt225StableSpawnsTests.SnapshotStoresWorldCursorsInSystemOrderWithNextOrdinals
+note = Snapshots must preserve the next world spawn ordinal for each system.
+original:
+|                 writer.UInt64(worlds[i].Next);
+replacement:
+|                 writer.UInt64(0UL);
+
+[mt-225-03]
+file = Assets/WarCore/Sim/StableSpawns.cs
+filter = FullyQualifiedName~Mt225StableSpawns
+expect = WarCore.Tests.Mt225StableSpawnsTests.TickZeroWorldCursorRestoresAndContinuesAtNextOrdinal
+note = World cursors created at tick zero must restore and continue spawning.
+original:
+|                 SimStateReader.Require(worlds[i].Tick >= 0 && (i == 0 || worlds[i-1].System < worlds[i].System),"Invalid world spawn cursor.");
+replacement:
+|                 SimStateReader.Require(worlds[i].Tick > 0 && (i == 0 || worlds[i-1].System < worlds[i].System),"Invalid world spawn cursor.");

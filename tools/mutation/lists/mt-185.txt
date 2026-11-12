@@ -1,0 +1,36 @@
+# GameplayInputRuntime
+# Uncovered mutations of Assets/WarCore/Sim/GameplayInputRuntime.cs. Test classes are named Mt185GameplayInputRuntime*.
+
+[mt-185-01]
+file = Assets/WarCore/Sim/GameplayInputRuntime.cs
+filter = FullyQualifiedName~Mt185GameplayInputRuntime
+expect = WarCore.Tests.Mt185GameplayInputRuntimeTests.DuplicateResultsUseAscendingActorGeneration
+note = Duplicate command results must be ordered by ascending actor generation.
+original:
+|             c = a.Actor.Generation.CompareTo(b.Actor.Generation);
+|             if (c != 0)
+|                 return c;
+replacement:
+|             c = a.Actor.Generation.CompareTo(b.Actor.Generation);
+|             if (c != 0)
+|                 return -c;
+
+[mt-185-02]
+file = Assets/WarCore/Sim/GameplayInputRuntime.cs
+filter = FullyQualifiedName~Mt185GameplayInputRuntime
+expect = WarCore.Tests.Mt185GameplayInputRuntimeTests.MalformedOrOversizedFrameRecordsOneInvalidInput
+note = A malformed or oversized command frame must increment the invalid input failure count once.
+original:
+|                 RecordAbilityFailure(GameplayAbilityFailure.InvalidInput);
+replacement:
+|                 RecordAbilityFailure(GameplayAbilityFailure.None);
+
+[mt-185-03]
+file = Assets/WarCore/Sim/GameplayInputRuntime.cs
+filter = FullyQualifiedName~Mt185GameplayInputRuntime
+expect = WarCore.Tests.Mt185GameplayInputRuntimeTests.DestroyedAuthorizedActorReportsActorGone
+note = An authorized actor that no longer exists must report ActorGone.
+original:
+|                 return GameplayAbilityFailure.ActorGone;
+replacement:
+|                 return GameplayAbilityFailure.ActorLifeMismatch;

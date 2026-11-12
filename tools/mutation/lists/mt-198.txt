@@ -1,0 +1,32 @@
+# GameplayWorld
+# Uncovered mutations of Assets/WarCore/Sim/GameplayWorld.cs. Test classes are named Mt198GameplayWorld*.
+
+[mt-198-01]
+file = Assets/WarCore/Sim/GameplayWorld.cs
+filter = FullyQualifiedName~Mt198GameplayWorld
+expect = WarCore.Tests.Mt198GameplayWorldTests.BindingAfterFirstStepRejectsInitializationOnlyOperation
+note = Binding after the first step must raise the initialization boundary error.
+original:
+|                 throw new SimBoundaryException("M0C_BIND_INITIALIZATION_ONLY");
+replacement:
+|                 return;
+
+[mt-198-02]
+file = Assets/WarCore/Sim/GameplayWorld.cs
+filter = FullyQualifiedName~Mt198GameplayWorld
+expect = WarCore.Tests.Mt198GameplayWorldTests.ResourceChangeOutsideQueryPhaseRejectsWrite
+note = Resource writes outside the query phase must raise the gameplay boundary error.
+original:
+|                 throw new SimBoundaryException("M0C_GAMEPLAY_QUERY_PHASE");
+replacement:
+|                 return gameplay;
+
+[mt-198-03]
+file = Assets/WarCore/Sim/GameplayWorld.cs
+filter = FullyQualifiedName~Mt198GameplayWorld
+expect = WarCore.Tests.Mt198GameplayWorldTests.ExplicitTargetWithoutPositionReportsInvalidTarget
+note = Explicit targets without a position must report invalid target before layer validation.
+original:
+|                 return false;
+replacement:
+|                 return true;

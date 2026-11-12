@@ -1,0 +1,32 @@
+# SpawnCapture
+# Uncovered mutations of Assets/WarCore/Sim/SpawnCapture.cs. Test classes are named Mt218SpawnCapture*.
+
+[mt-218-01]
+file = Assets/WarCore/Sim/SpawnCapture.cs
+filter = FullyQualifiedName~Mt218SpawnCapture
+expect = WarCore.Tests.Mt218SpawnCaptureTests.WorldCaptureHashIncludesPresenceOwnershipAndKind
+note = Reversing the spawner presence flag changes the capture hash.
+original:
+|             hash.Add(Spawner.HasValue);
+replacement:
+|             hash.Add(!Spawner.HasValue);
+
+[mt-218-02]
+file = Assets/WarCore/Sim/SpawnCapture.cs
+filter = FullyQualifiedName~Mt218SpawnCapture
+expect = WarCore.Tests.Mt218SpawnCaptureTests.WorldCaptureHashIncludesPresenceOwnershipAndKind
+note = Hashing the spawner identifier instead of ownership loses captured ownership.
+original:
+|             hash.Add(Values.Ownership);
+replacement:
+|             hash.Add(Spawner.Id.Value);
+
+[mt-218-03]
+file = Assets/WarCore/Sim/SpawnCapture.cs
+filter = FullyQualifiedName~Mt218SpawnCapture
+expect = WarCore.Tests.Mt218SpawnCaptureTests.WorldCaptureHashIncludesPresenceOwnershipAndKind
+note = Hashing the chunk identifier instead of kind loses the captured kind.
+original:
+|             hash.Add(Kind);
+replacement:
+|             hash.Add(Chunk);

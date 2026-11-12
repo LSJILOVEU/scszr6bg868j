@@ -1,0 +1,52 @@
+# MatchSection
+# Surviving mutations of Assets/WarCore/Content/Data/Sections/MatchSection.cs. Test classes are named Mt134MatchSection*.
+
+[mt-134-01]
+file = Assets/WarCore/Content/Data/Sections/MatchSection.cs
+filter = FullyQualifiedName~Mt134MatchSection
+expect = WarCore.Tests.Mt134MatchSectionTests.EqualCaptureAdvantageIsAccepted
+note = Rejects the valid minimum capture advantage numerator of one.
+original:
+|             int num = mr.Int("captureAdvantageNum", 1), den = mr.Int("captureAdvantageDen", 1);
+replacement:
+|             int num = mr.Int("captureAdvantageNum", 2), den = mr.Int("captureAdvantageDen", 1);
+
+[mt-134-02]
+file = Assets/WarCore/Content/Data/Sections/MatchSection.cs
+filter = FullyQualifiedName~Mt134MatchSection
+expect = WarCore.Tests.Mt134MatchSectionTests.OneTickCaptureIsAccepted
+note = Rejects a valid capture duration of one tick.
+original:
+|             int captureTicks = mr.Int("captureTicks", 1);
+replacement:
+|             int captureTicks = mr.Int("captureTicks", 2);
+
+[mt-134-03]
+file = Assets/WarCore/Content/Data/Sections/MatchSection.cs
+filter = FullyQualifiedName~Mt134MatchSection
+expect = WarCore.Tests.Mt134MatchSectionTests.OneTickThinkIntervalIsAccepted
+note = Rejects a valid think interval of one tick.
+original:
+|             int decay = mr.Int("decayPerTick", 1), interval = mr.Int("intervalTicks", 1), think = mr.Int("thinkInterval", 1), max = mr.Int("maxTicks", 1);
+replacement:
+|             int decay = mr.Int("decayPerTick", 1), interval = mr.Int("intervalTicks", 1), think = mr.Int("thinkInterval", 2), max = mr.Int("maxTicks", 1);
+
+[mt-134-04]
+file = Assets/WarCore/Content/Data/Sections/MatchSection.cs
+filter = FullyQualifiedName~Mt134MatchSection
+expect = WarCore.Tests.Mt134MatchSectionTests.MaximumGridColumnsIsAccepted
+note = Rejects the valid maximum grid column count of 4096.
+original:
+|             int columns = mr.Int("gridColumns", 1, 4096), rows = mr.Int("gridRows", 1, 4096);
+replacement:
+|             int columns = mr.Int("gridColumns", 1, 4095), rows = mr.Int("gridRows", 1, 4096);
+
+[mt-134-05]
+file = Assets/WarCore/Content/Data/Sections/MatchSection.cs
+filter = FullyQualifiedName~Mt134MatchSection
+expect = WarCore.Tests.Mt134MatchSectionTests.EqualCaptureAdvantageIsAccepted
+note = Rejects equal capture advantage numerator and denominator values.
+original:
+|             if (num < den) throw mr.Bad(mr.FieldOf("captureAdvantageNum"), "must be at least captureAdvantageDen");
+replacement:
+|             if (num <= den) throw mr.Bad(mr.FieldOf("captureAdvantageNum"), "must be at least captureAdvantageDen");

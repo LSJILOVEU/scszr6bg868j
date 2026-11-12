@@ -1,0 +1,32 @@
+# GameplaySettlement
+# Uncovered mutations of Assets/WarCore/Sim/GameplaySettlement.cs. Test classes are named Mt191GameplaySettlement*.
+
+[mt-191-01]
+file = Assets/WarCore/Sim/GameplaySettlement.cs
+filter = FullyQualifiedName~Mt191GameplaySettlement
+expect = WarCore.Tests.Mt191GameplaySettlementTests.StaleBatchOwnerReturnsLifeMismatch
+note = A stale batch owner is reported as admitted instead of returning the life generation mismatch.
+original:
+|                 return ownerFailure;
+replacement:
+|                 return GameplayFailure.None;
+
+[mt-191-02]
+file = Assets/WarCore/Sim/GameplaySettlement.cs
+filter = FullyQualifiedName~Mt191GameplaySettlement
+expect = WarCore.Tests.Mt191GameplaySettlementTests.StaleStatusTargetReturnsLifeMismatch
+note = A rejected status target is reported as admitted instead of returning the life generation mismatch.
+original:
+|                         return statusFailure;
+replacement:
+|                         return GameplayFailure.None;
+
+[mt-191-03]
+file = Assets/WarCore/Sim/GameplaySettlement.cs
+filter = FullyQualifiedName~Mt191GameplaySettlement
+expect = WarCore.Tests.Mt191GameplaySettlementTests.UnaffordableBatchReturnsInsufficientResource
+note = An unaffordable batch is reported as admitted instead of returning the insufficient resource failure.
+original:
+|                 return affordability;
+replacement:
+|                 return GameplayFailure.None;

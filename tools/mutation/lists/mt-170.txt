@@ -1,0 +1,12 @@
+# TargetMemory
+# Surviving mutations of Assets/WarCore/Battle/Ai/TargetMemory.cs. Test classes are named Mt170TargetMemory*.
+
+[mt-170-01]
+file = Assets/WarCore/Battle/Ai/TargetMemory.cs
+filter = FullyQualifiedName~Mt170TargetMemory
+expect = WarCore.Tests.Mt170TargetMemoryTests.Step_DeletesDeadObserverMemory
+note = Dead observers retain unexpired target memory after cleanup.
+original:
+|                 if (!Alive(new StableId(key)) || !Alive(e.Target) || tick - e.Seen >= ticks) drop.Add(key);
+replacement:
+|                 if (!Alive(e.Target) || tick - e.Seen >= ticks) drop.Add(key);

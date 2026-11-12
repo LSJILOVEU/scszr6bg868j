@@ -1,0 +1,33 @@
+# SimEvents
+# Uncovered mutations of Assets/WarCore/Sim/SimEvents.cs. Test classes are named Mt206SimEvents*.
+
+[mt-206-01]
+file = Assets/WarCore/Sim/SimEvents.cs
+filter = FullyQualifiedName~Mt206SimEvents
+expect = WarCore.Tests.Mt206SimEventsTests.EventTypeIdRejectsNonpositiveValue
+note = Nonpositive event type identifiers are accepted instead of rejected.
+original:
+|                 throw new ArgumentOutOfRangeException(nameof(value));
+replacement:
+|                 {}
+
+[mt-206-02]
+file = Assets/WarCore/Sim/SimEvents.cs
+filter = FullyQualifiedName~Mt206SimEvents
+expect = WarCore.Tests.Mt206SimEventsTests.WorldChangeRejectsNegativeHalfExtent
+note = Negative world-change half extents are accepted on every axis.
+original:
+|                 throw new ArgumentOutOfRangeException(nameof(halfExtents));
+replacement:
+|                 {}
+
+[mt-206-03]
+file = Assets/WarCore/Sim/SimEvents.cs
+filter = FullyQualifiedName~Mt206SimEvents
+expect = WarCore.Tests.Mt206SimEventsTests.BeginTickRejectsSkippedTickAfterClosing
+expect = WarCore.Tests.Mt206SimEventsTests.BeginTickRejectsNextTickWhileActive
+note = Event ticks can skip a tick or start before the active tick is closed.
+original:
+|                 throw new InvalidOperationException("Event ticks must be consecutive and closed.");
+replacement:
+|                 {}

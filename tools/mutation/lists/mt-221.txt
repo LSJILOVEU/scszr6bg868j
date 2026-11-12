@@ -1,0 +1,32 @@
+# StableEntityStore
+# Uncovered mutations of Assets/WarCore/Sim/StableEntityStore.cs. Test classes are named Mt221StableEntityStore*.
+
+[mt-221-01]
+file = Assets/WarCore/Sim/StableEntityStore.cs
+filter = FullyQualifiedName~Mt221StableEntityStore
+expect = WarCore.Tests.Mt221StableEntityStoreTests.ResolveRejectsEmptyOrUnknownLink
+note = Empty or unknown strong links must throw instead of returning an empty entity.
+original:
+|                 throw new SimBoundaryException("A strong entity link does not resolve to an active entity.");
+replacement:
+|                 return default;
+
+[mt-221-02]
+file = Assets/WarCore/Sim/StableEntityStore.cs
+filter = FullyQualifiedName~Mt221StableEntityStore
+expect = WarCore.Tests.Mt221StableEntityStoreTests.ReactivateRejectsUnknownOrActiveIdentity
+note = Reactivation must reject unknown or active identities instead of returning an empty reference.
+original:
+|                 throw new SimBoundaryException("Only a cold identity can be reactivated.");
+replacement:
+|                 return default;
+
+[mt-221-03]
+file = Assets/WarCore/Sim/StableEntityStore.cs
+filter = FullyQualifiedName~Mt221StableEntityStore
+expect = WarCore.Tests.Mt221StableEntityStoreTests.EmptyRequiredCarrierFailsBeforeComponentWrite
+note = An empty required carrier link must be rejected before the seat component is written.
+original:
+|                     throw new SimBoundaryException("A required stable reference is empty.");
+replacement:
+|                     return;

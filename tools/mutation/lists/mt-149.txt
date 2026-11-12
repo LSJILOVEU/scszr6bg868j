@@ -1,0 +1,42 @@
+# WcMapReader
+# Surviving mutations of Assets/WarCore/Content/WcMapReader.cs. Test classes are named Mt149WcMapReader*.
+
+[mt-149-02]
+file = Assets/WarCore/Content/WcMapReader.cs
+filter = FullyQualifiedName~Mt149WcMapReader
+expect = WarCore.Tests.Mt149WcMapReaderTests.IdentifierAt255Bytes_RoundTrips
+note = Rejects a valid identifier containing exactly 255 bytes.
+original:
+|             Require(length > 0 && length <= 255 && length <= r.BaseStream.Length - r.BaseStream.Position, "STRING_LENGTH");
+replacement:
+|             Require(length > 0 && length < 255 && length <= r.BaseStream.Length - r.BaseStream.Position, "STRING_LENGTH");
+
+[mt-149-03]
+file = Assets/WarCore/Content/WcMapReader.cs
+filter = FullyQualifiedName~Mt149WcMapReader
+expect = WarCore.Tests.Mt149WcMapReaderTests.All32Layers_RoundTrip
+note = Rejects a valid map containing all 32 collision layers.
+original:
+|             Require(count > 0 && count <= 32, "LAYERS");
+replacement:
+|             Require(count > 0 && count < 32, "LAYERS");
+
+[mt-149-04]
+file = Assets/WarCore/Content/WcMapReader.cs
+filter = FullyQualifiedName~Mt149WcMapReader
+expect = WarCore.Tests.Mt149WcMapReaderTests.WidthAt512_RoundTrips
+note = Rejects a valid map with a width of 512 cells.
+original:
+|             Require(width > 0 && width <= MaxSide && depth > 0 && depth <= MaxSide, "CAPACITY");
+replacement:
+|             Require(width > 0 && width < MaxSide && depth > 0 && depth <= MaxSide, "CAPACITY");
+
+[mt-149-05]
+file = Assets/WarCore/Content/WcMapReader.cs
+filter = FullyQualifiedName~Mt149WcMapReader
+expect = WarCore.Tests.Mt149WcMapReaderTests.All64SurfaceNames_RoundTrip
+note = Rejects a valid surface table containing all 64 names.
+original:
+|                 Require(nameCount >= 1 && nameCount <= MaxSurfaceNames, "SURFACE_COUNT");
+replacement:
+|                 Require(nameCount >= 1 && nameCount < MaxSurfaceNames, "SURFACE_COUNT");

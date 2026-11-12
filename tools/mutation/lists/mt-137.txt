@@ -1,0 +1,22 @@
+# MapDesc
+# Surviving mutations of Assets/WarCore/Content/MapTools/MapDesc.cs. Test classes are named Mt137MapDesc*.
+
+[mt-137-01]
+file = Assets/WarCore/Content/MapTools/MapDesc.cs
+filter = FullyQualifiedName~Mt137MapDesc
+expect = WarCore.Tests.Mt137MapDescEqualityTests.GridEqualityRequiresBothAxes
+note = Grid equality accepts coordinates with only one matching axis.
+original:
+|         public bool Equals(MapXZ other) => X == other.X && Z == other.Z;
+replacement:
+|         public bool Equals(MapXZ other) => X == other.X || Z == other.Z;
+
+[mt-137-02]
+file = Assets/WarCore/Content/MapTools/MapDesc.cs
+filter = FullyQualifiedName~Mt137MapDesc
+expect = WarCore.Tests.Mt137MapDescEqualityTests.MillimetreEqualityRequiresBothAxes
+note = Millimetre equality accepts coordinates with only one matching axis.
+original:
+|         public bool Equals(MapMm other) => X == other.X && Z == other.Z;
+replacement:
+|         public bool Equals(MapMm other) => X == other.X || Z == other.Z;

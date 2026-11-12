@@ -1,0 +1,34 @@
+# GridSpatialIndexStableOrder
+# Uncovered mutations of Assets/WarCore/Sim/GridSpatialIndex.StableOrder.cs. Test classes are named Mt199GridSpatialIndexStableOrder*.
+
+[mt-199-01]
+file = Assets/WarCore/Sim/GridSpatialIndex.StableOrder.cs
+filter = FullyQualifiedName~Mt199GridSpatialIndexStableOrder
+expect = WarCore.Tests.Mt199GridSpatialIndexStableOrderTests.LegacyAuditAcceptsMissingStableOrder
+note = Rejects a legacy index whose stable order is intentionally absent.
+original:
+|                 if (store.IdentityMode == IdentityMode.StableWorld)
+replacement:
+|                 if (store.IdentityMode != IdentityMode.StableWorld)
+
+[mt-199-02]
+file = Assets/WarCore/Sim/GridSpatialIndex.StableOrder.cs
+filter = FullyQualifiedName~Mt199GridSpatialIndexStableOrder
+expect = WarCore.Tests.Mt199GridSpatialIndexStableOrderTests.MixedPartitionAuditAcceptsUnmaintainedOrder
+note = Audits unmaintained bypass order in a mixed partition and rejects valid membership.
+original:
+|             if (partition.Table.Count != 0)
+|                 return;
+replacement:
+|             if (partition.Table.Count != 0)
+|                 { }
+
+[mt-199-03]
+file = Assets/WarCore/Sim/GridSpatialIndex.StableOrder.cs
+filter = FullyQualifiedName~Mt199GridSpatialIndexStableOrder
+expect = WarCore.Tests.Mt199GridSpatialIndexStableOrderTests.PureBypassAuditRejectsInvalidMember
+note = Accepts an invalid bypass member instead of reporting corrupt derived order.
+original:
+|                     throw new SimBoundaryException("Stable query order contains an invalid bypass member.");
+replacement:
+|                     return;

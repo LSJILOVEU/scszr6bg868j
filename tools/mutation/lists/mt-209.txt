@@ -1,0 +1,38 @@
+# SimStateIO
+# Uncovered mutations of Assets/WarCore/Sim/SimStateIO.cs. Test classes are named Mt209SimStateIO*.
+
+[mt-209-01]
+file = Assets/WarCore/Sim/SimStateIO.cs
+filter = FullyQualifiedName~Mt209SimStateIO
+expect = WarCore.Tests.Mt209SimStateIOTests.NullStringIsRejected
+note = Null strings must throw ArgumentNullException instead of silently omitting a field.
+original:
+|         public void String(string value)
+|         {
+|             if (value == null)
+|                 throw new ArgumentNullException(nameof(value));
+replacement:
+|         public void String(string value)
+|         {
+|             if (value == null)
+|                 return;
+
+[mt-209-02]
+file = Assets/WarCore/Sim/SimStateIO.cs
+filter = FullyQualifiedName~Mt209SimStateIO
+expect = WarCore.Tests.Mt209SimStateIOTests.StableByteBlockHasExactLengthAndPayload
+note = Stable byte blocks must encode the exact payload length in the eight-byte header.
+original:
+|                 UInt64((ulong)value.Length);
+replacement:
+|                 UInt64((ulong)value.Length + 1);
+
+[mt-209-03]
+file = Assets/WarCore/Sim/SimStateIO.cs
+filter = FullyQualifiedName~Mt209SimStateIO
+expect = WarCore.Tests.Mt209SimStateIOTests.StableByteBlockHasExactLengthAndPayload
+note = Stable byte blocks must preserve every payload byte without replacing it with zero.
+original:
+|                     Byte(item);
+replacement:
+|                     Byte(0);

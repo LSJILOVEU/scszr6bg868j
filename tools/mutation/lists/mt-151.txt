@@ -1,0 +1,12 @@
+# BridgeCommand
+# Surviving mutations of Assets/WarCore/Presentation/Bridge/BridgeCommand.cs. Test classes are named Mt151BridgeCommand*.
+
+[mt-151-01]
+file = Assets/WarCore/Presentation/Bridge/BridgeCommand.cs
+filter = FullyQualifiedName~Mt151BridgeCommand
+expect = WarCore.Tests.Mt151BridgeCommandTests.MoveTo_ZeroTick_ThrowsArgumentOutOfRangeException
+note = Allows a command at tick zero instead of rejecting it.
+original:
+|             if (atTick < 1)
+replacement:
+|             if (atTick < 0)
