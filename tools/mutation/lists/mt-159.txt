@@ -1,0 +1,12 @@
+# PlayerInput
+# Surviving mutations of Assets/WarCore/Presentation/Bridge/PlayerInput.cs. Test classes are named Mt159PlayerInput*.
+
+[mt-159-01]
+file = Assets/WarCore/Presentation/Bridge/PlayerInput.cs
+filter = FullyQualifiedName~Mt159PlayerInput
+expect = WarCore.Tests.Mt159PlayerInputTests.Constructor_PreservesIndependentMovementComponents
+note = Copies X movement into Z instead of preserving the supplied Z movement.
+original:
+|             MoveXMilli = moveXMilli; MoveZMilli = moveZMilli;
+replacement:
+|             MoveXMilli = moveXMilli; MoveZMilli = moveXMilli;

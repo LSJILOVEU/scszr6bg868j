@@ -1,0 +1,12 @@
+# MotionFeature
+# Surviving mutations of Assets/WarCore/Presentation/Bridge/Features/MotionFeature.cs. Test classes are named Mt156MotionFeature*.
+
+[mt-156-01]
+file = Assets/WarCore/Presentation/Bridge/Features/MotionFeature.cs
+filter = FullyQualifiedName~Mt156MotionFeature
+expect = WarCore.Tests.Mt156MotionFeatureTests.EachUnitStartsWithItsOwnSpeedLimit
+note = Motion limits must start with each unit's spawn speed per tick.
+original:
+|                 new MotionLimits(WorldAssembly.SpawnSpeed(a.Recipe.Units[index]), default, default, default));
+replacement:
+|                 new MotionLimits(default, default, default, default));

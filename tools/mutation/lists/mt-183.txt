@@ -1,0 +1,22 @@
+# GameplayBinding
+# Surviving mutations of Assets/WarCore/Sim/GameplayBinding.cs. Test classes are named Mt183GameplayBinding*.
+
+[mt-183-01]
+file = Assets/WarCore/Sim/GameplayBinding.cs
+filter = FullyQualifiedName~Mt183GameplayBinding
+expect = WarCore.Tests.Mt183GameplayBindingSerializerTests.SerializerTypeIdPreservesSnapshotContract
+note = Changes the gameplay binding component type identifier in snapshots from 21 to 22.
+original:
+|         public int TypeId => 21;
+replacement:
+|         public int TypeId => 22;
+
+[mt-183-02]
+file = Assets/WarCore/Sim/GameplayBinding.cs
+filter = FullyQualifiedName~Mt183GameplayBinding
+expect = WarCore.Tests.Mt183GameplayBindingSerializerTests.SerializerVersionPreservesSnapshotContract
+note = Changes the gameplay binding snapshot serializer version from 1 to 2.
+original:
+|         public int Version => 1;
+replacement:
+|         public int Version => 2;

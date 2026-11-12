@@ -1,0 +1,12 @@
+# ShotPlan
+# Surviving mutations of Assets/WarCore/Presentation/Camera/ShotPlan.cs. Test classes are named Mt168ShotPlan*.
+
+[mt-168-01]
+file = Assets/WarCore/Presentation/Camera/ShotPlan.cs
+filter = FullyQualifiedName~Mt168ShotPlan
+expect = WarCore.Tests.Mt168ShotPlanTests.FirstFireAtTickZeroDoesNotRepeatOnLaterShots
+note = A first shot at tick zero must not produce another first-fire anchor on later shots.
+original:
+|             if (firstFireTick < 0 && frame.Fires.Length > 0)
+replacement:
+|             if (firstFireTick <= 0 && frame.Fires.Length > 0)

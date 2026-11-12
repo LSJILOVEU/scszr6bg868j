@@ -1,0 +1,82 @@
+# TerrainRules
+# Surviving mutations of Assets/WarCore/Content/TerrainRules.cs. Test classes are named Mt144TerrainRules*.
+
+[mt-144-01]
+file = Assets/WarCore/Content/TerrainRules.cs
+filter = FullyQualifiedName~Mt144TerrainRules
+expect = WarCore.Tests.Mt144TerrainRulesTests.SurfaceSpeed_AcceptsInclusiveBounds(1)
+note = Rejects the minimum legal passable surface speed of 1.
+original:
+|             if (passable && (speedMilli < 1 || speedMilli > MaxSpeedMilli)) throw new ArgumentOutOfRangeException(nameof(speedMilli));
+replacement:
+|             if (passable && (speedMilli <= 1 || speedMilli > MaxSpeedMilli)) throw new ArgumentOutOfRangeException(nameof(speedMilli));
+
+[mt-144-02]
+file = Assets/WarCore/Content/TerrainRules.cs
+filter = FullyQualifiedName~Mt144TerrainRules
+expect = WarCore.Tests.Mt144TerrainRulesTests.SurfaceSpeed_AcceptsInclusiveBounds(2000)
+note = Rejects the maximum legal passable surface speed of 2000.
+original:
+|             if (passable && (speedMilli < 1 || speedMilli > MaxSpeedMilli)) throw new ArgumentOutOfRangeException(nameof(speedMilli));
+replacement:
+|             if (passable && (speedMilli < 1 || speedMilli >= MaxSpeedMilli)) throw new ArgumentOutOfRangeException(nameof(speedMilli));
+
+[mt-144-03]
+file = Assets/WarCore/Content/TerrainRules.cs
+filter = FullyQualifiedName~Mt144TerrainRules
+expect = WarCore.Tests.Mt144TerrainRulesTests.SlopeRule_AcceptsMinimumNumeratorAndDenominator(1,1)
+note = Rejects the minimum legal slope denominator of 1.
+original:
+|             if (maxWalkableDen < 1 || maxWalkableDen > HeightField.MaxWalkableDenominator
+replacement:
+|             if (maxWalkableDen <= 1 || maxWalkableDen > HeightField.MaxWalkableDenominator
+
+[mt-144-04]
+file = Assets/WarCore/Content/TerrainRules.cs
+filter = FullyQualifiedName~Mt144TerrainRules
+expect = WarCore.Tests.Mt144TerrainRulesTests.SlopeRule_AcceptsMinimumNumeratorAndDenominator(0,2)
+note = Rejects a flat-only slope rule with numerator 0.
+original:
+|                 || maxWalkableNum < 0 || maxWalkableNum > HeightField.MaxSlopeNumerator * maxWalkableDen)
+replacement:
+|                 || maxWalkableNum <= 0 || maxWalkableNum > HeightField.MaxSlopeNumerator * maxWalkableDen)
+
+[mt-144-05]
+file = Assets/WarCore/Content/TerrainRules.cs
+filter = FullyQualifiedName~Mt144TerrainRules
+expect = WarCore.Tests.Mt144TerrainRulesTests.Surfaces_AreInOrdinalOrder
+note = Reverses the required ordinal surface order.
+original:
+|             Array.Sort(this.surfaces, (a, b) => StringComparer.Ordinal.Compare(a.Id, b.Id));
+replacement:
+|             Array.Sort(this.surfaces, (a, b) => StringComparer.Ordinal.Compare(b.Id, a.Id));
+
+[mt-144-06]
+file = Assets/WarCore/Content/TerrainRules.cs
+filter = FullyQualifiedName~Mt144TerrainRules
+expect = WarCore.Tests.Mt144TerrainRulesTests.TryFind_RequiresExactCase
+note = Matches a surface identifier with different letter case.
+original:
+|                 if (string.Equals(s.Id, id, StringComparison.Ordinal)) { def = s; return true; }
+replacement:
+|                 if (string.Equals(s.Id, id, StringComparison.OrdinalIgnoreCase)) { def = s; return true; }
+
+[mt-144-07]
+file = Assets/WarCore/Content/TerrainRules.cs
+filter = FullyQualifiedName~Mt144TerrainRules
+expect = WarCore.Tests.Mt144TerrainRulesTests.Canonical_StoresSlopeAndOptionalConcealment
+note = Appends concealment bytes without cover and omits them when every surface has cover.
+original:
+|             get { foreach (SurfaceDef s in surfaces) if (s.ConcealMilli != SurfaceDef.MaxConcealMilli) return true; return false; }
+replacement:
+|             get { foreach (SurfaceDef s in surfaces) if (s.ConcealMilli == SurfaceDef.MaxConcealMilli) return true; return false; }
+
+[mt-144-08]
+file = Assets/WarCore/Content/TerrainRules.cs
+filter = FullyQualifiedName~Mt144TerrainRules
+expect = WarCore.Tests.Mt144TerrainRulesTests.Canonical_StoresSlopeAndOptionalConcealment
+note = Writes the slope denominator in place of the numerator in canonical bytes.
+original:
+|             w.Write(MaxWalkableNum); w.Write(MaxWalkableDen); w.Write(surfaces.Length);
+replacement:
+|             w.Write(MaxWalkableDen); w.Write(MaxWalkableDen); w.Write(surfaces.Length);

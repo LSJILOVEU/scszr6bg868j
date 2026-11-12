@@ -1,0 +1,32 @@
+# SpatialCellRegions
+# Surviving mutations of Assets/WarCore/Sim/SpatialCellRegions.cs. Test classes are named Mt211SpatialCellRegions*.
+
+[mt-211-01]
+file = Assets/WarCore/Sim/SpatialCellRegions.cs
+filter = FullyQualifiedName~Mt211SpatialCellRegions
+expect = WarCore.Tests.Mt211SpatialCellRegionsTests.SphereFindsBodyBeyondOtherTopCells
+note = Contracting the maximum X bound prunes a sphere hit in a higher X top cell.
+original:
+|             if (b.X1 > a.X1)
+replacement:
+|             if (b.X1 < a.X1)
+
+[mt-211-02]
+file = Assets/WarCore/Sim/SpatialCellRegions.cs
+filter = FullyQualifiedName~Mt211SpatialCellRegions
+expect = WarCore.Tests.Mt211SpatialCellRegionsTests.SphereFindsBodyBeyondOtherTopCells
+note = Contracting the maximum Y bound prunes a sphere hit in a higher Y top cell.
+original:
+|             if (b.Y1 > a.Y1)
+replacement:
+|             if (b.Y1 < a.Y1)
+
+[mt-211-03]
+file = Assets/WarCore/Sim/SpatialCellRegions.cs
+filter = FullyQualifiedName~Mt211SpatialCellRegions
+expect = WarCore.Tests.Mt211SpatialCellRegionsTests.SphereFindsBodyBeyondOtherTopCells
+note = Contracting the maximum Z bound prunes a sphere hit in a higher Z top cell.
+original:
+|             if (b.Z1 > a.Z1)
+replacement:
+|             if (b.Z1 < a.Z1)

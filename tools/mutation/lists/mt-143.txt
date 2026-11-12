@@ -1,0 +1,22 @@
+# MapSetup
+# Surviving mutations of Assets/WarCore/Content/MapTools/MapSetup.cs. Test classes are named Mt143MapSetup*.
+
+[mt-143-01]
+file = Assets/WarCore/Content/MapTools/MapSetup.cs
+filter = FullyQualifiedName~Mt143MapSetup
+expect = WarCore.Tests.Mt143MapSetupTests.ChangingReturnedControlPointsDoesNotChangeSetup
+note = Editing the returned control point array changes the stored control points.
+original:
+|         public ControlPointDef[] ControlPoints => (ControlPointDef[])points.Clone();
+replacement:
+|         public ControlPointDef[] ControlPoints => points;
+
+[mt-143-02]
+file = Assets/WarCore/Content/MapTools/MapSetup.cs
+filter = FullyQualifiedName~Mt143MapSetup
+expect = WarCore.Tests.Mt143MapSetupTests.ChangingReturnedBasesDoesNotChangeSetup
+note = Editing the returned base array changes the stored base anchors.
+original:
+|         public SpawnAnchor[] Bases => (SpawnAnchor[])bases.Clone();
+replacement:
+|         public SpawnAnchor[] Bases => bases;

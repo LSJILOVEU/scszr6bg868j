@@ -1,0 +1,32 @@
+# GameplayStatusAdmission
+# Uncovered mutations of Assets/WarCore/Sim/GameplayStatusAdmission.cs. Test classes are named Mt194GameplayStatusAdmission*.
+
+[mt-194-01]
+file = Assets/WarCore/Sim/GameplayStatusAdmission.cs
+filter = FullyQualifiedName~Mt194GameplayStatusAdmission
+expect = WarCore.Tests.Mt194GameplayStatusAdmissionTests.DispelRejectsOutOfRangeMaximum
+note = Dispel counts outside the allowed range must raise a boundary exception.
+original:
+|                     throw new SimBoundaryException("M0C_DISPEL_COUNT");
+replacement:
+|                     _ = item.Maximum;
+
+[mt-194-02]
+file = Assets/WarCore/Sim/GameplayStatusAdmission.cs
+filter = FullyQualifiedName~Mt194GameplayStatusAdmission
+expect = WarCore.Tests.Mt194GameplayStatusAdmissionTests.DuplicateApplyKeyIsRejectedWithDistinctAdmissionOrdinals
+note = Duplicate application keys must be rejected even when admission ordinals differ.
+original:
+|                     throw new SimBoundaryException("M0C_DUPLICATE_APPLY_KEY");
+replacement:
+|                     _ = item;
+
+[mt-194-03]
+file = Assets/WarCore/Sim/GameplayStatusAdmission.cs
+filter = FullyQualifiedName~Mt194GameplayStatusAdmission
+expect = WarCore.Tests.Mt194GameplayStatusAdmissionTests.StatusCapacityRejectionIncrementsOnlyCapacityDiagnostic
+note = Status capacity rejection must increment the capacity diagnostic without incrementing immunity rejections.
+original:
+|                 Count(ref statusCapacityRejections);
+replacement:
+|                 Count(ref immuneRejections);

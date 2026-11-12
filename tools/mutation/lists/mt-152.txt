@@ -1,0 +1,32 @@
+# AiFireFeature
+# Surviving mutations of Assets/WarCore/Presentation/Bridge/Features/AiFireFeature.cs. Test classes are named Mt152AiFireFeature*.
+
+[mt-152-01]
+file = Assets/WarCore/Presentation/Bridge/Features/AiFireFeature.cs
+filter = FullyQualifiedName~Mt152AiFireFeature
+expect = WarCore.Tests.Mt152AiFireFeatureTests.MinimumSetting_IsActive(1,1,0)
+note = Disables AI fire when reactionTicks is one and other settings are inactive.
+original:
+|             return ai.ReactionTicks > 0 || ai.SenseTicks > 1 || ai.BurstShots > 0;
+replacement:
+|             return ai.ReactionTicks > 1 || ai.SenseTicks > 1 || ai.BurstShots > 0;
+
+[mt-152-02]
+file = Assets/WarCore/Presentation/Bridge/Features/AiFireFeature.cs
+filter = FullyQualifiedName~Mt152AiFireFeature
+expect = WarCore.Tests.Mt152AiFireFeatureTests.MinimumSetting_IsActive(0,2,0)
+note = Disables AI fire when senseTicks is two and other settings are inactive.
+original:
+|             return ai.ReactionTicks > 0 || ai.SenseTicks > 1 || ai.BurstShots > 0;
+replacement:
+|             return ai.ReactionTicks > 0 || ai.SenseTicks > 2 || ai.BurstShots > 0;
+
+[mt-152-03]
+file = Assets/WarCore/Presentation/Bridge/Features/AiFireFeature.cs
+filter = FullyQualifiedName~Mt152AiFireFeature
+expect = WarCore.Tests.Mt152AiFireFeatureTests.MinimumSetting_IsActive(0,1,1)
+note = Disables AI fire when burstShots is one and other settings are inactive.
+original:
+|             return ai.ReactionTicks > 0 || ai.SenseTicks > 1 || ai.BurstShots > 0;
+replacement:
+|             return ai.ReactionTicks > 0 || ai.SenseTicks > 1 || ai.BurstShots > 1;

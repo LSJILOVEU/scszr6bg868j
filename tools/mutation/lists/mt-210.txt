@@ -1,0 +1,82 @@
+# SpatialCellRegions
+# Surviving mutations of Assets/WarCore/Sim/SpatialCellRegions.cs. Test classes are named Mt210SpatialCellRegions*.
+
+[mt-210-01]
+file = Assets/WarCore/Sim/SpatialCellRegions.cs
+filter = FullyQualifiedName~Mt210SpatialCellRegions
+expect = WarCore.Tests.Mt210SpatialCellRegionsTests.SingleTopCellRemainsQueryable
+note = Omitting the only top cell loses its entity from a region query.
+original:
+|             if (count != 0)
+replacement:
+|             if (count > 1)
+
+[mt-210-02]
+file = Assets/WarCore/Sim/SpatialCellRegions.cs
+filter = FullyQualifiedName~Mt210SpatialCellRegions
+expect = WarCore.Tests.Mt210SpatialCellRegionsTests.EachTopCellRemainsQueryableAfterPruning(1)
+note = Assigning the first partition slot loses the median cell entity.
+original:
+|             var node = new SpatialCellRegion { X0 = cell.X, X1 = cell.X, Y0 = cell.Y, Y1 = cell.Y, Z0 = cell.Z, Z1 = cell.Z, Slot = order[middle] };
+replacement:
+|             var node = new SpatialCellRegion { X0 = cell.X, X1 = cell.X, Y0 = cell.Y, Y1 = cell.Y, Z0 = cell.Z, Z1 = cell.Z, Slot = order[start] };
+
+[mt-210-03]
+file = Assets/WarCore/Sim/SpatialCellRegions.cs
+filter = FullyQualifiedName~Mt210SpatialCellRegions
+expect = WarCore.Tests.Mt210SpatialCellRegionsTests.EachTopCellRemainsQueryableAfterPruning(0)
+note = Omitting a singleton left subtree loses its cell entity.
+original:
+|             if (left != 0)
+replacement:
+|             if (left > 1)
+
+[mt-210-04]
+file = Assets/WarCore/Sim/SpatialCellRegions.cs
+filter = FullyQualifiedName~Mt210SpatialCellRegions
+expect = WarCore.Tests.Mt210SpatialCellRegionsTests.EachTopCellRemainsQueryableAfterPruning(2)
+note = Omitting a singleton right subtree loses its cell entity.
+original:
+|             if (right != 0)
+replacement:
+|             if (right > 1)
+
+[mt-210-05]
+file = Assets/WarCore/Sim/SpatialCellRegions.cs
+filter = FullyQualifiedName~Mt210SpatialCellRegions
+expect = WarCore.Tests.Mt210SpatialCellRegionsTests.EachTopCellRemainsQueryableAfterPruning(2)
+note = Pruning the left subtree skips the following right cell entity.
+original:
+|             node.End = Count;
+replacement:
+|             node.End = Count + 1;
+
+[mt-210-06]
+file = Assets/WarCore/Sim/SpatialCellRegions.cs
+filter = FullyQualifiedName~Mt210SpatialCellRegions
+expect = WarCore.Tests.Mt210SpatialCellRegionsTests.EachTopCellRemainsQueryableAfterPruning(0)
+note = Contracting the minimum X bound prunes an entity inside the query.
+original:
+|             if (b.X0 < a.X0)
+replacement:
+|             if (b.X0 > a.X0)
+
+[mt-210-07]
+file = Assets/WarCore/Sim/SpatialCellRegions.cs
+filter = FullyQualifiedName~Mt210SpatialCellRegions
+expect = WarCore.Tests.Mt210SpatialCellRegionsTests.EachTopCellRemainsQueryableAfterPruning(0)
+note = Contracting the minimum Y bound prunes an entity inside the query.
+original:
+|             if (b.Y0 < a.Y0)
+replacement:
+|             if (b.Y0 > a.Y0)
+
+[mt-210-08]
+file = Assets/WarCore/Sim/SpatialCellRegions.cs
+filter = FullyQualifiedName~Mt210SpatialCellRegions
+expect = WarCore.Tests.Mt210SpatialCellRegionsTests.EachTopCellRemainsQueryableAfterPruning(0)
+note = Contracting the minimum Z bound prunes an entity inside the query.
+original:
+|             if (b.Z0 < a.Z0)
+replacement:
+|             if (b.Z0 > a.Z0)

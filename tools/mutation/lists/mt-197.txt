@@ -1,0 +1,38 @@
+# GameplayStatuses
+# Uncovered mutations of Assets/WarCore/Sim/GameplayStatuses.cs. Test classes are named Mt197GameplayStatuses*.
+
+[mt-197-01]
+file = Assets/WarCore/Sim/GameplayStatuses.cs
+filter = FullyQualifiedName~Mt197GameplayStatuses
+expect = WarCore.Tests.Mt197GameplayStatusesTests.RetiringHigherOwnerRemovesItsFirstStatusAndTasks
+note = Cleanup skips the first status of a retired owner and leaves its scheduled tasks active.
+original:
+|         private void CleanupStatuses(StableId target, int noticePhase = -1)
+|         {
+|             // The canonical owner range avoids a separate scan for each owned instance.
+|             int lo = 0, hi = statusCount;
+|             while (lo < hi)
+|             {
+|                 int m = lo + (hi - lo) / 2;
+|                 if (statuses[m].Target.Id.CompareTo(target) < 0)
+|                     lo = m + 1;
+replacement:
+|         private void CleanupStatuses(StableId target, int noticePhase = -1)
+|         {
+|             // The canonical owner range avoids a separate scan for each owned instance.
+|             int lo = 0, hi = statusCount;
+|             while (lo < hi)
+|             {
+|                 int m = lo + (hi - lo) / 2;
+|                 if (statuses[m].Target.Id.CompareTo(target) < 0)
+|                     lo = m + 2;
+
+[mt-197-02]
+file = Assets/WarCore/Sim/GameplayStatuses.cs
+filter = FullyQualifiedName~Mt197GameplayStatuses
+expect = WarCore.Tests.Mt197GameplayStatusesTests.AbsorbMergeRespectsStackPolicy
+note = Refresh discards existing absorb while strongest replacement incorrectly retains it.
+original:
+|                     r.AbsorbRemainingRaw = GameplayMath.SaturatingAdd(replace ? 0 : r.AbsorbRemainingRaw, item.Amount, ref numericSaturations);
+replacement:
+|                     r.AbsorbRemainingRaw = GameplayMath.SaturatingAdd(!replace ? 0 : r.AbsorbRemainingRaw, item.Amount, ref numericSaturations);

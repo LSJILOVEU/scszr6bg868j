@@ -1,0 +1,33 @@
+# ControlTarget
+# Uncovered mutations of Assets/WarCore/Sim/ControlTarget.cs. Test classes are named Mt177ControlTarget*.
+
+[mt-177-01]
+file = Assets/WarCore/Sim/ControlTarget.cs
+filter = FullyQualifiedName~Mt177ControlTarget
+expect = WarCore.Tests.Mt177ControlTargetTests.ConstructorRejectsDefaultEventType
+note = Removing constructor validation accepts an unregistered default event type.
+original:
+|                 throw new ArgumentException("Control requires a live target, a versioned input handler and a registered event type.");
+replacement:
+|                 _ = initial;
+
+[mt-177-02]
+file = Assets/WarCore/Sim/ControlTarget.cs
+filter = FullyQualifiedName~Mt177ControlTarget
+expect = WarCore.Tests.Mt177ControlTargetTests.SwitchRejectsForeignSimulationEvenForCurrentTarget
+expect = WarCore.Tests.Mt177ControlTargetTests.SwitchRejectsDeadCurrentTarget
+note = Removing switch validation accepts a foreign simulation or a dead current target.
+original:
+|                 throw new ArgumentException("Control target must be alive in its owning simulation.");
+replacement:
+|                 _ = target;
+
+[mt-177-03]
+file = Assets/WarCore/Sim/ControlTarget.cs
+filter = FullyQualifiedName~Mt177ControlTarget
+expect = WarCore.Tests.Mt177ControlTargetTests.StepRejectsForeignSimulation
+note = Removing the ownership check applies control input in a foreign simulation.
+original:
+|                 throw new InvalidOperationException("Control system belongs to another simulation.");
+replacement:
+|                 _ = context;

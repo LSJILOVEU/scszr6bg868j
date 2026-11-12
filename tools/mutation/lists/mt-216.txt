@@ -1,0 +1,22 @@
+# SpatialRay
+# Surviving mutations of Assets/WarCore/Sim/SpatialRay.cs. Test classes are named Mt216SpatialRay*.
+
+[mt-216-01]
+file = Assets/WarCore/Sim/SpatialRay.cs
+filter = FullyQualifiedName~Mt216SpatialRay
+expect = WarCore.Tests.Mt216SpatialRayTests.DiagonalRayIncludesContactAtRangeEndpoint
+note = Rejects a diagonal ray contact exactly at the range endpoint.
+original:
+|                     if (left.CompareTo(right) > 0)
+replacement:
+|                     if (left.CompareTo(right) >= 0)
+
+[mt-216-02]
+file = Assets/WarCore/Sim/SpatialRay.cs
+filter = FullyQualifiedName~Mt216SpatialRay
+expect = WarCore.Tests.Mt216SpatialRayTests.DiagonalCapsuleIncludesContactAtSegmentEndpoint
+note = Rejects a diagonal capsule contact exactly at the segment endpoint.
+original:
+|                 return n.CompareTo(denominator) <= 0;
+replacement:
+|                 return n.CompareTo(denominator) < 0;

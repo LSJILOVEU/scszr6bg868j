@@ -1,0 +1,32 @@
+# FeatureTable
+# Surviving mutations of Assets/WarCore/Presentation/Bridge/Features/FeatureTable.cs. Test classes are named Mt154FeatureTable*.
+
+[mt-154-01]
+file = Assets/WarCore/Presentation/Bridge/Features/FeatureTable.cs
+filter = FullyQualifiedName~Mt154FeatureTable
+expect = WarCore.Tests.Mt154FeatureTableTests.MapWall_BlocksItsCell
+note = Omits wall collision bodies, leaving wall cells unblocked.
+original:
+|         internal static readonly IWorldFeature[] Walls = { MovementFeature.Instance };
+replacement:
+|         internal static readonly IWorldFeature[] Walls = { };
+
+[mt-154-02]
+file = Assets/WarCore/Presentation/Bridge/Features/FeatureTable.cs
+filter = FullyQualifiedName~Mt154FeatureTable
+expect = WarCore.Tests.Mt154FeatureTableTests.PlayerWithoutPrimaryInput_DoesNotAutoFire
+note = Constructs combat without player control, allowing automatic player fire.
+original:
+|         internal static readonly IWorldStageFeature[] Connect = { PlayerFeature.Instance, CombatFeature.Instance, CrowdPassFeature.Instance };
+replacement:
+|         internal static readonly IWorldStageFeature[] Connect = { CombatFeature.Instance, PlayerFeature.Instance, CrowdPassFeature.Instance };
+
+[mt-154-03]
+file = Assets/WarCore/Presentation/Bridge/Features/FeatureTable.cs
+filter = FullyQualifiedName~Mt154FeatureTable
+expect = WarCore.Tests.Mt154FeatureTableTests.InactiveStageExtension_DoesNotRegisterCombatComponents
+note = Runs inactive extension stage hooks and registers disabled combat components.
+original:
+|                 if (feature is IWorldStageFeature staged && staged.IsActive(assembly))
+replacement:
+|                 if (feature is IWorldStageFeature staged && !staged.IsActive(assembly))

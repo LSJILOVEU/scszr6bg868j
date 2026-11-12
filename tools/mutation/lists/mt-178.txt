@@ -1,0 +1,32 @@
+# EntityStore
+# Uncovered mutations of Assets/WarCore/Sim/EntityStore.cs. Test classes are named Mt178EntityStore*.
+
+[mt-178-01]
+file = Assets/WarCore/Sim/EntityStore.cs
+filter = FullyQualifiedName~Mt178EntityStore
+expect = WarCore.Tests.Mt178EntityStoreTests.RegisterRejectsMissingComponentId
+note = Allows component registration with a null or empty identifier.
+original:
+|                 throw new ArgumentException("A component id is required.", nameof(stableId));
+replacement:
+|                 { }
+
+[mt-178-02]
+file = Assets/WarCore/Sim/EntityStore.cs
+filter = FullyQualifiedName~Mt178EntityStore
+expect = WarCore.Tests.Mt178EntityStoreTests.ReserveRejectsStableWorldGrowth
+note = Allows StableWorld storage capacity to grow after construction.
+original:
+|                 throw new SimBoundaryException("StableWorld capacity must be reserved at construction.");
+replacement:
+|                 { }
+
+[mt-178-03]
+file = Assets/WarCore/Sim/EntityStore.cs
+filter = FullyQualifiedName~Mt178EntityStore
+expect = WarCore.Tests.Mt178EntityStoreTests.RefGetRejectsAbsentComponent
+note = Allows ref access to a component that is absent from a live entity.
+original:
+|                 throw new InvalidOperationException("Entity has no such component.");
+replacement:
+|                 { }

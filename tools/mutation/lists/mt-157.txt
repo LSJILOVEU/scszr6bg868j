@@ -1,0 +1,22 @@
+# MovementFeature
+# Surviving mutations of Assets/WarCore/Presentation/Bridge/Features/MovementFeature.cs. Test classes are named Mt157MovementFeature*.
+
+[mt-157-01]
+file = Assets/WarCore/Presentation/Bridge/Features/MovementFeature.cs
+filter = FullyQualifiedName~Mt157MovementFeature
+expect = WarCore.Tests.Mt157MovementFeatureTests.UnequalMapOriginAxes_PlaceWallInItsLocalCell
+note = Swapping unequal map origin axes moves wall collision away from its intended cell.
+original:
+|             var origin = new SimVec3(map.Min.X, map.FlatHeight, map.Min.Z);
+replacement:
+|             var origin = new SimVec3(map.Min.Z, map.FlatHeight, map.Min.X);
+
+[mt-157-02]
+file = Assets/WarCore/Presentation/Bridge/Features/MovementFeature.cs
+filter = FullyQualifiedName~Mt157MovementFeature
+expect = WarCore.Tests.Mt157MovementFeatureTests.InitialUnitRadius_AllowsThreeEighthsMetreWallClearance
+note = Doubling the initial unit radius blocks movement with three eighths of a metre of wall clearance.
+original:
+|             entities.Set(a.Colliders, unit, new Collider(SimFix.Ratio(1, 4), SimFix.FromInt(1)));
+replacement:
+|             entities.Set(a.Colliders, unit, new Collider(SimFix.Ratio(1, 2), SimFix.FromInt(1)));

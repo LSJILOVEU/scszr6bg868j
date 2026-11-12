@@ -1,0 +1,32 @@
+# GameplaySourceSnapshot
+# Uncovered mutations of Assets/WarCore/Sim/GameplaySourceSnapshot.cs. Test classes are named Mt192GameplaySourceSnapshot*.
+
+[mt-192-01]
+file = Assets/WarCore/Sim/GameplaySourceSnapshot.cs
+filter = FullyQualifiedName~Mt192GameplaySourceSnapshot
+expect = WarCore.Tests.Mt192GameplaySourceSnapshotTests.FourthAttributePreservesKeyAndRawValue
+note = Negating the fourth captured attribute changes its stored raw value.
+original:
+|                     copy.attribute3 = value;
+replacement:
+|                     copy.attribute3 = new GameplayCapturedAttribute(value.Key, -value.Raw);
+
+[mt-192-02]
+file = Assets/WarCore/Sim/GameplaySourceSnapshot.cs
+filter = FullyQualifiedName~Mt192GameplaySourceSnapshot
+expect = WarCore.Tests.Mt192GameplaySourceSnapshotTests.SixthActionPreservesCapturedFields
+note = Swapping the sixth action keys corrupts its definition and pipeline bindings.
+original:
+|                     copy.action5 = value;
+replacement:
+|                     copy.action5 = new GameplayCapturedAction(value.PipelineKey, value.Ordinal, value.DamageTypeKey, value.DefinitionKey);
+
+[mt-192-03]
+file = Assets/WarCore/Sim/GameplaySourceSnapshot.cs
+filter = FullyQualifiedName~Mt192GameplaySourceSnapshot
+expect = WarCore.Tests.Mt192GameplaySourceSnapshotTests.MissingAttributeReturnsFalseAndZero
+note = Reporting a missing attribute as found breaks lookup failure detection.
+original:
+|             return false;
+replacement:
+|             return true;

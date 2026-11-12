@@ -1,0 +1,32 @@
+# BlockAiSystem
+# Surviving mutations of Assets/WarCore/Battle/BlockAiSystem.cs. Test classes are named Mt172BlockAiSystem*.
+
+[mt-172-01]
+file = Assets/WarCore/Battle/BlockAiSystem.cs
+filter = FullyQualifiedName~Mt172BlockAiSystem
+expect = WarCore.Tests.Mt172BlockAiSystemTests.ChangingOnlyTheAttackerChangesTheChanceRoll
+note = Ignoring attacker identity removes attacker-specific block decisions.
+original:
+|                 ulong z = attacker.Value * 0x9E3779B97F4A7C15UL + victim.Value;
+replacement:
+|                 ulong z = attacker.Value * 0UL + victim.Value;
+
+[mt-172-02]
+file = Assets/WarCore/Battle/BlockAiSystem.cs
+filter = FullyQualifiedName~Mt172BlockAiSystem
+expect = WarCore.Tests.Mt172BlockAiSystemTests.TheDefenderUsesTheConfiguredChanceForTheIncomingAttacker
+note = Halving the configured chance prevents a block for an eligible swing.
+original:
+|                 int permille = combat.BlockSpecOf(unit).AiRaisePermille;
+replacement:
+|                 int permille = combat.BlockSpecOf(unit).AiRaisePermille / 2;
+
+[mt-172-03]
+file = Assets/WarCore/Battle/BlockAiSystem.cs
+filter = FullyQualifiedName~Mt172BlockAiSystem
+expect = WarCore.Tests.Mt172BlockAiSystemTests.TheDefenderUsesTheConfiguredChanceForTheIncomingAttacker
+note = Swapping attacker and defender identities changes the incoming swing's block decision.
+original:
+|                 bool raise = combat.TryMeleeThreat(unit, out StableId attacker, out long startTick) && Raises(attacker, self, startTick, permille);
+replacement:
+|                 bool raise = combat.TryMeleeThreat(unit, out StableId attacker, out long startTick) && Raises(self, attacker, startTick, permille);

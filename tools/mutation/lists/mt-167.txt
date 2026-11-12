@@ -1,0 +1,52 @@
+# AimPick
+# Surviving mutations of Assets/WarCore/Presentation/Camera/AimPick.cs. Test classes are named Mt167AimPick*.
+
+[mt-167-01]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Mt167AimPick
+expect = WarCore.Tests.Mt167AimPickTests.VerticalRayInsideOuterSnapRadius_SelectsEnemy
+note = Shrinking the snap radius misses a vertical ray 0.375 metres from the enemy axis.
+original:
+|         public const float SnapRadius = 0.5f; // PLACEHOLDER: the drawn body (0.5 x 1 x 0.5 m) widened for the mouse; tune after play.
+replacement:
+|         public const float SnapRadius = 0.25f; // PLACEHOLDER: the drawn body (0.5 x 1 x 0.5 m) widened for the mouse; tune after play.
+
+[mt-167-02]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Mt167AimPick
+expect = WarCore.Tests.Mt167AimPickTests.RayAboveOneMetreBody_DoesNotSelectEnemy
+note = Extending the body height selects an enemy when the ray passes above its one metre body.
+original:
+|         public const float BodyHeight = 1f;   // PLACEHOLDER: the drawn body height (EntityViews: bottom at Y, top at Y + 1).
+replacement:
+|         public const float BodyHeight = 2f;   // PLACEHOLDER: the drawn body height (EntityViews: bottom at Y, top at Y + 1).
+
+[mt-167-03]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Mt167AimPick
+expect = WarCore.Tests.Mt167AimPickTests.VerticalRayOnMinimumEdge_HitsGround
+note = Excluding the minimum slab edge turns a ground hit into a plane pick.
+original:
+|             if (d == 0) return o >= lo && o <= hi && ta <= tb;
+replacement:
+|             if (d == 0) return o > lo && o <= hi && ta <= tb;
+
+[mt-167-04]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Mt167AimPick
+expect = WarCore.Tests.Mt167AimPickTests.DescendingRay_StopsAtFirstRawPointBelowGround
+note = Incorrect negative interpolation rounding moves the first ground hit by two raw units.
+original:
+|         private static long FloorDiv(long a, long b) { long q = a / b; if (a % b != 0 && (a < 0) != (b < 0)) q--; return q; }
+replacement:
+|         private static long FloorDiv(long a, long b) { long q = a / b; if (a % b != 0 && (a < 0) != (b < 0)) q++; return q; }
+
+[mt-167-05]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Mt167AimPick
+expect = WarCore.Tests.Mt167AimPickTests.VerticalRayBetweenRawCoordinates_RoundsDown
+note = Rounding ray coordinates upward moves the ground pick to the next raw coordinate.
+original:
+|         private static long ToRaw(double metres) => (long)Math.Floor(metres * OneMetre);
+replacement:
+|         private static long ToRaw(double metres) => (long)Math.Ceiling(metres * OneMetre);
