@@ -4,7 +4,7 @@ namespace WarCore.Sim
 {
     public sealed partial class Sim
     {
-        public const int StableSnapshotVersion = 5;
+        public const int StableSnapshotVersion = 6;
         public const int StableHashVersion = 3;
         public StableSpawnService Spawns { get; private set; }
         public StableContentManifest StableContent { get; private set; }

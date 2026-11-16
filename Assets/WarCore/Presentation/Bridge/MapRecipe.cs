@@ -7,10 +7,10 @@ namespace WarCore.Presentation
     // A baked map description and its content pack -> the recipe of a runnable world.
     public static class MapRecipe
     {
-        // PLACEHOLDER: one speed for every unit until units are built from their unit type (same value as DemoRecipes.M6).
+        // Legacy maps omit unit-type speed; keep their spawn values unless explicitly enabled.
         private const long SpeedMmPerSec = 6000;
 
-        public static WorldRecipe From(MapBakeResult result, ContentPack pack)
+        public static WorldRecipe From(MapBakeResult result, ContentPack pack, bool useUnitTypes = false)
         {
             if (result == null) throw new ArgumentNullException(nameof(result));
             if (pack == null) throw new ArgumentNullException(nameof(pack));
@@ -21,7 +21,9 @@ namespace WarCore.Presentation
             for (int i = 0; i < units.Length; i++)
             {
                 MapSoldier s = setup.Soldiers[i];
-                units[i] = new UnitSpawn(s.Key, 0, s.Squad, s.XMm, s.ZMm, SpeedMmPerSec, s.Team,
+                units[i] = useUnitTypes
+                    ? UnitSpawn.OfType(s.Key, pack, s.Type, s.Squad, s.Team, s.XMm, s.ZMm, s.Reserve)
+                    : new UnitSpawn(s.Key, 0, s.Squad, s.XMm, s.ZMm, SpeedMmPerSec, s.Team,
                     pack.WeaponOfUnitType(s.Type), s.Reserve, pack.MeleeOfUnitType(s.Type));
             }
             WorldRecipe recipe = new WorldRecipe(setup.Seed, MoverKind.InterimCrowd, units, Array.Empty<BridgeCommand>())
