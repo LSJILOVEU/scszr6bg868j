@@ -1,0 +1,111 @@
+# R2 ordered match rule ids: one production line per mutation.
+
+[r2-01-swap-parts]
+file = Assets/WarCore/Battle/MatchMode.cs
+filter = FullyQualifiedName~WarCore.Tests.R2MatchRulesTests
+expect = WarCore.Tests.R2MatchRulesTests.R2_FirstSelectedRuleDecides
+note = swap the all-points and exhausted factories
+original:
+|             { "all-points", max => new AllPointsRule() }, { "exhausted", max => new ExhaustedRule() },
+replacement:
+|             { "all-points", max => new ExhaustedRule() }, { "exhausted", max => new AllPointsRule() },
+
+[r2-02-drop-default-time-limit]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~WarCore.Tests.R2MatchRulesTests
+expect = WarCore.Tests.R2MatchRulesTests.R2_DefaultIncludesTimeLimit
+note = omit the time limit from the default list
+original:
+|         private static readonly string[] DefaultRules = { "all-points", "exhausted", "time-limit" };
+replacement:
+|         private static readonly string[] DefaultRules = { "all-points", "exhausted" };
+
+[r2-03-allow-unknown-id]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~WarCore.Tests.R2MatchRulesTests
+expect = WarCore.Tests.R2MatchRulesTests.R2_InvalidRulesNamePackFieldAndId
+note = remove the unknown rule id check
+original:
+|                 if (!MatchMode.RuleFactories.ContainsKey(this.rules[i])) throw new ArgumentException("rules contains unknown id '" + this.rules[i] + "'.", nameof(rules));
+replacement:
+|                 _ = this.rules[i];
+
+[r2-04-reverse-parts]
+file = Assets/WarCore/Battle/MatchMode.cs
+filter = FullyQualifiedName~WarCore.Tests.R2MatchRulesTests
+expect = WarCore.Tests.R2MatchRulesTests.R2_FirstSelectedRuleDecides
+note = reverse rule construction order
+original:
+|             for (int i = 0; i < rules.Length; i++) rules[i] = RuleFactories[pack.Rules[i]](pack.MaxTicks);
+replacement:
+|             for (int i = 0; i < rules.Length; i++) rules[i] = RuleFactories[pack.Rules[rules.Length - 1 - i]](pack.MaxTicks);
+
+[r2-05-allow-empty-section]
+file = Assets/WarCore/Content/Data/Sections/RulesSection.cs
+filter = FullyQualifiedName~WarCore.Tests.R2MatchRulesTests
+expect = WarCore.Tests.R2MatchRulesTests.R2_InvalidRulesNamePackFieldAndId
+note = accept an empty rules section
+original:
+|             if (node.Items.Count == 0) throw new ContentException("content layer '" + layer + "' rules [] must not be empty");
+replacement:
+|             _ = node.Items.Count;
+
+[r2-06-drop-content-rules]
+file = Assets/WarCore/Content/Data/ContentPack.cs
+filter = FullyQualifiedName~WarCore.Tests.R2MatchRulesTests
+expect = WarCore.Tests.R2MatchRulesTests.R2_OnlyExhausted
+note = drop rule ids when building the match pack
+original:
+|                     m.RespawnTicks, m.RespawnGuardTicks, ruleIds);
+replacement:
+|                     m.RespawnTicks, m.RespawnGuardTicks);
+
+[r2-07-drop-section-rules]
+file = Assets/WarCore/Content/Data/Sections/RulesSection.cs
+filter = FullyQualifiedName~WarCore.Tests.R2MatchRulesTests
+expect = WarCore.Tests.R2MatchRulesTests.R2_OnlyExhausted
+note = drop parsed rule ids from the section build
+original:
+|             b.RuleIds = ids;
+replacement:
+|             b.RuleIds = null;
+
+[r2-08-drop-id-digest]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~WarCore.Tests.R2MatchRulesTests
+expect = WarCore.Tests.R2MatchRulesTests.R2_ChangedRulesRejectSnapshotWithoutChangingRuleSetId
+note = omit rule ids from the nondefault digest
+original:
+|             { hash.Add("battle.pack.rules.v1"); hash.Add(this.rules.Length); foreach (string id in this.rules) hash.Add(id); }
+replacement:
+|             { hash.Add("battle.pack.rules.v1"); hash.Add(this.rules.Length); }
+
+[r2-09-retain-mutable-ids]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~WarCore.Tests.R2MatchRulesTests
+expect = WarCore.Tests.R2MatchRulesTests.R2_PackCopiesRuleIds
+note = retain the caller array without copying it
+original:
+|             this.rules = rules == null ? DefaultRules : (string[])rules.Clone();
+replacement:
+|             this.rules = rules == null ? DefaultRules : rules;
+
+[r2-10-allow-extra-fields]
+file = Assets/WarCore/Content/Data/Sections/RulesSection.cs
+filter = FullyQualifiedName~WarCore.Tests.R2MatchRulesTests
+expect = WarCore.Tests.R2MatchRulesTests.R2_RuleEntriesOnlyAcceptId
+note = skip the id-only entry check
+original:
+|                 new EntryReader(b.Pack, entries[i]).Done();
+replacement:
+|                 _ = entries[i];
+
+[r2-11-drop-build-rules]
+file = Assets/WarCore/Content/Data/Sections/SectionBuild.cs
+filter = FullyQualifiedName~WarCore.Tests.R2MatchRulesTests
+expect = WarCore.Tests.R2MatchRulesTests.R2_OnlyExhausted
+note = drop rule ids when constructing the content pack
+original:
+|             MeleeIds, Melee, UnitMelee, Terrain, published.ToArray(), RuleIds);
+replacement:
+|             MeleeIds, Melee, UnitMelee, Terrain, published.ToArray());

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using WarCore.Sim;
 
 namespace WarCore.Battle
@@ -13,7 +14,6 @@ namespace WarCore.Battle
 
     // WP-19 A0: the single owner of the match result. Start and Step never judge; battle.match (Queries, Order 50)
     // calls Evaluate after this tick's capture and before damage settles, exactly where the old MatchSystem judged.
-    // The judging is done by the rule parts in MatchRules.cs, in the order of the old if/else.
     public sealed class MatchMode : IRetainedGameplayMode
     {
         public const string RwrRuleSetId = "rwr.m6-demo";
@@ -21,7 +21,11 @@ namespace WarCore.Battle
         // then never judges. A1 replaces it with an injected rule whose condition is never true.
         public const string TestNeverEndsId = "test.never-ends";
         private readonly MatchPack pack;
-        // First match decides: all points, then exhaustion, then the time limit.
+        internal static readonly Dictionary<string, Func<int, IMatchRule>> RuleFactories = new Dictionary<string, Func<int, IMatchRule>>
+        {
+            { "all-points", max => new AllPointsRule() }, { "exhausted", max => new ExhaustedRule() },
+            { "time-limit", max => new TimeLimitRule(max) },
+        };
         private readonly IMatchRule[] rules;
         private IMatchReader reader;
         public string RuleSetId { get; }
@@ -37,7 +41,8 @@ namespace WarCore.Battle
             if (pack == null) throw new ArgumentNullException(nameof(pack));
             if (string.IsNullOrEmpty(ruleSetId)) throw new ArgumentException("A rule set id is required.", nameof(ruleSetId));
             this.pack = pack; RuleSetId = ruleSetId;
-            rules = new IMatchRule[] { new AllPointsRule(), new ExhaustedRule(), new TimeLimitRule(pack.MaxTicks) };
+            rules = new IMatchRule[pack.Rules.Length];
+            for (int i = 0; i < rules.Length; i++) rules[i] = RuleFactories[pack.Rules[i]](pack.MaxTicks);
         }
 
         public void Bind(IMatchReader matchReader)
