@@ -15,7 +15,7 @@ namespace WarCore.Content
 
         public static bool IsResolver(string id) => id == RwrHit;
         public static bool IsSelector(string id) => id == NearestVisible || id == SightLimitedNearest;
-        public static IHitResolver Resolver(string id) => new RwrHitResolver();
+        public static IHitResolver Resolver(string id) => id == null ? null : new RwrHitResolver();
         public static ITargetSelector Selector(string id, SimFix sight) => id == SightLimitedNearest
             ? new SightLimited(new NearestVisibleEnemy(), sight)
             : (ITargetSelector)new NearestVisibleEnemy();
