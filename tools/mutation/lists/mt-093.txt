@@ -1,0 +1,12 @@
+# StableIdentity
+# Surviving mutations of Assets/WarCore/Sim/StableIdentity.cs. Test classes are named Mt093StableIdentity*.
+
+[mt-093-01]
+file = Assets/WarCore/Sim/StableIdentity.cs
+filter = FullyQualifiedName~Mt093StableIdentity
+expect = WarCore.Tests.Mt093StableIdentityTests.ConstructorRejectsZeroSourceDomain
+note = Allows source domain zero during stable key construction.
+original:
+| if (domain < 1 || domain > 3 || (domain == 1 && third != 0) || (domain == 3 && second > long.MaxValue))
+replacement:
+| if (domain < 0 || domain > 3 || (domain == 1 && third != 0) || (domain == 3 && second > long.MaxValue))

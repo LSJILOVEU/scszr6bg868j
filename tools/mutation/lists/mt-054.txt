@@ -1,0 +1,32 @@
+# PostureSystem
+# Surviving mutations of Assets/WarCore/Sim/PostureSystem.cs. Test classes are named Mt054PostureSystem*.
+
+[mt-054-01]
+file = Assets/WarCore/Sim/PostureSystem.cs
+filter = FullyQualifiedName~Mt054PostureSystem
+expect = WarCore.Tests.Mt054PostureSystemTests.StateVersionIsOne
+note = Changes the public posture state format version from one to two.
+original:
+| public int StateVersion => 1;
+replacement:
+| public int StateVersion => 2;
+
+[mt-054-02]
+file = Assets/WarCore/Sim/PostureSystem.cs
+filter = FullyQualifiedName~Mt054PostureSystem
+expect = WarCore.Tests.Mt054PostureSystemTests.ConstructorRejectsDefaultEventType
+note = Accepts an unregistered default event type with value zero.
+original:
+| || transitionType.Value <= 0 || (grid != null && grid.Postures != geometry))
+replacement:
+| || transitionType.Value < 0 || (grid != null && grid.Postures != geometry))
+
+[mt-054-03]
+file = Assets/WarCore/Sim/PostureSystem.cs
+filter = FullyQualifiedName~Mt054PostureSystem
+expect = WarCore.Tests.Mt054PostureSystemTests.RestoreValidationRejectsPendingTransitionAtCurrentTick
+note = Accepts a pending posture transition whose deadline equals the current tick.
+original:
+| && task.Event.Tick == posture.DueTick && task.Event.Tick > context.Clock.Tick
+replacement:
+| && task.Event.Tick == posture.DueTick && task.Event.Tick >= context.Clock.Tick

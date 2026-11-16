@@ -1,0 +1,12 @@
+# InterimLocomotion
+# Surviving mutations of Assets/WarCore/Interim/InterimLocomotion.cs. Test classes are named Mt028InterimLocomotion*.
+
+[mt-028-01]
+file = Assets/WarCore/Interim/InterimLocomotion.cs
+filter = FullyQualifiedName~Mt028InterimLocomotion
+expect = WarCore.Tests.Mt028InterimLocomotionTests.OneStepTarget_ClearsActiveOnArrivalTick
+note = A target exactly one step away leaves the move intent active on the arrival tick.
+original:
+| bool arrived = delta.LengthSquared <= stepSquared;
+replacement:
+| bool arrived = delta.LengthSquared < stepSquared;

@@ -1,0 +1,12 @@
+# TargetMemory
+# Surviving mutations of Assets/WarCore/Battle/Ai/TargetMemory.cs. Test classes are named Mt002TargetMemory*.
+
+[mt-002-01]
+file = Assets/WarCore/Battle/Ai/TargetMemory.cs
+filter = FullyQualifiedName~Mt002TargetMemory
+expect = WarCore.Tests.Mt002TargetMemoryTests.ObserverDestroyed_DeletesUnexpiredEntry
+note = Retains an unexpired target memory after its observer is destroyed.
+original:
+|                 if (!Alive(new StableId(key)) || !Alive(e.Target) || tick - e.Seen >= ticks) drop.Add(key);
+replacement:
+|                 if (!Alive(e.Target) || tick - e.Seen >= ticks) drop.Add(key);

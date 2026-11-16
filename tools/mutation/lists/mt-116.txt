@@ -1,0 +1,22 @@
+# GameplayCommands
+# Surviving mutations of Assets/WarCore/Sim/GameplayCommands.cs. Test classes are named Mt116GameplayCommands*.
+
+[mt-116-01]
+file = Assets/WarCore/Sim/GameplayCommands.cs
+filter = FullyQualifiedName~Mt116GameplayCommands
+expect = WarCore.Tests.Mt116GameplayCommandsTests.ApplyKeyRejectsProducerKindThree
+note = Producer kind 3 is accepted outside the supported range 0 through 2.
+original:
+| if (producerKind > 2)
+replacement:
+| if (producerKind > 3)
+
+[mt-116-02]
+file = Assets/WarCore/Sim/GameplayCommands.cs
+filter = FullyQualifiedName~Mt116GameplayCommands
+expect = WarCore.Tests.Mt116GameplayCommandsTests.DamageActionHasKindZero
+note = Damage actions use the resource command kind instead of kind 0.
+original:
+| Kind = damage ? 0 : 1;
+replacement:
+| Kind = damage ? 1 : 1;

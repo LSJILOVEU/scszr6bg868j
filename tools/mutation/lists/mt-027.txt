@@ -1,0 +1,43 @@
+# InterimLocomotion.Terrain
+# Surviving mutations of Assets/WarCore/Interim/InterimLocomotion.Terrain.cs. Test classes are named Mt027InterimLocomotionTerrain*.
+
+[mt-027-01]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~Mt027InterimLocomotionTerrain
+expect = WarCore.Tests.Mt027InterimLocomotionTerrainTests.Constructor_UsesTerrainNavigationWhenGridIsOmitted
+expect = WarCore.Tests.Mt027InterimLocomotionTerrainTests.Constructor_RejectsAnotherGridWithTheSameCells
+note = Navigation may be omitted, but a supplied grid must be the terrain's own instance.
+original:
+| if (navGrid != null && !ReferenceEquals(navGrid, terrain.Nav))
+replacement:
+| if (navGrid == null && !ReferenceEquals(navGrid, terrain.Nav))
+
+[mt-027-02]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~Mt027InterimLocomotionTerrain
+expect = WarCore.Tests.Mt027InterimLocomotionTerrainTests.MaximumBaseStep_MovesExactlyOneQuarterMetre
+note = A base step of exactly 16384 raw is valid for both path and crowd movement.
+original:
+| if (baseStep.Raw > MaxTerrainStepRaw) throw new InvalidOperationException("Terrain worlds cap a unit step at 0.25 m per tick.");
+replacement:
+| if (baseStep.Raw >= MaxTerrainStepRaw) throw new InvalidOperationException("Terrain worlds cap a unit step at 0.25 m per tick.");
+
+[mt-027-03]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~Mt027InterimLocomotionTerrain
+expect = WarCore.Tests.Mt027InterimLocomotionTerrainTests.MinimumSurfaceStep_ArrivesAndStopsInOneTick
+note = A surface-scaled step that truncates to zero must still complete a one-raw move in one tick.
+original:
+| if (scaled < 1) scaled = 1;
+replacement:
+| if (scaled < 0) scaled = 1;
+
+[mt-027-04]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~Mt027InterimLocomotionTerrain
+expect = WarCore.Tests.Mt027InterimLocomotionTerrainTests.ExactStepDistance_ArrivesAndStopsInOneTick
+note = A target exactly one step away must stop movement and clear its waypoint and progress in that tick.
+original:
+| bool arrived = delta.LengthSquared <= stepSquared;
+replacement:
+| bool arrived = delta.LengthSquared < stepSquared;

@@ -1,0 +1,72 @@
+# SpatialGridScan
+# Surviving mutations of Assets/WarCore/Sim/SpatialGridScan.cs. Test classes are named Mt076SpatialGridScan*.
+
+[mt-076-01]
+file = Assets/WarCore/Sim/SpatialGridScan.cs
+filter = FullyQualifiedName~Mt076SpatialGridScan
+expect = WarCore.Tests.Mt076SpatialGridScanRegionTests.TinyGridSphereIncludesBothPartitionsAndClosedLowerBoundary
+note = The selected query level must match top-cell region coordinates.
+original:
+| while (index < 4 && Size(baseSize, GridSpatialIndex.Level(index)) < width)
+replacement:
+| while (index < 3 && Size(baseSize, GridSpatialIndex.Level(index)) < width)
+
+[mt-076-02]
+file = Assets/WarCore/Sim/SpatialGridScan.cs
+filter = FullyQualifiedName~Mt076SpatialGridScan
+expect = WarCore.Tests.Mt076SpatialGridScanRegionTests.TinyGridSphereIncludesBothPartitionsAndClosedLowerBoundary
+note = Region traversal must visit both nonempty partitions.
+original:
+| if (second == null || table == second)
+replacement:
+| if (second == null || table != second)
+
+[mt-076-03]
+file = Assets/WarCore/Sim/SpatialGridScan.cs
+filter = FullyQualifiedName~Mt076SpatialGridScan
+expect = WarCore.Tests.Mt076SpatialGridScanBoundsTests.SphereExcludesCandidatesInAdjacentUpperCells
+note = Cell traversal must not visit candidates beyond the upper Z query cell.
+original:
+| if (z < z1)
+replacement:
+| if (z <= z1)
+
+[mt-076-04]
+file = Assets/WarCore/Sim/SpatialGridScan.cs
+filter = FullyQualifiedName~Mt076SpatialGridScan
+expect = WarCore.Tests.Mt076SpatialGridScanBoundsTests.SphereExcludesCandidatesInAdjacentUpperCells
+note = Cell traversal must not visit candidates beyond the upper Y query cell.
+original:
+| else if (y < y1)
+replacement:
+| else if (y <= y1)
+
+[mt-076-05]
+file = Assets/WarCore/Sim/SpatialGridScan.cs
+filter = FullyQualifiedName~Mt076SpatialGridScan
+expect = WarCore.Tests.Mt076SpatialGridScanBoundsTests.SphereExcludesCandidatesInAdjacentUpperCells
+note = Cell traversal must not visit candidates beyond the upper X query cell.
+original:
+| else if (x < x1)
+replacement:
+| else if (x <= x1)
+
+[mt-076-06]
+file = Assets/WarCore/Sim/SpatialGridScan.cs
+filter = FullyQualifiedName~Mt076SpatialGridScan
+expect = WarCore.Tests.Mt076SpatialGridScanRegionTests.TinyGridSphereIncludesBothPartitionsAndClosedLowerBoundary
+note = Region bounds touching the lower X query bound must remain eligible.
+original:
+| if (node.X1 < x0 || node.X0 > x1 || node.Y1 < y0 || node.Y0 > y1 || node.Z1 < z0 || node.Z0 > z1)
+replacement:
+| if (node.X1 <= x0 || node.X0 > x1 || node.Y1 < y0 || node.Y0 > y1 || node.Z1 < z0 || node.Z0 > z1)
+
+[mt-076-07]
+file = Assets/WarCore/Sim/SpatialGridScan.cs
+filter = FullyQualifiedName~Mt076SpatialGridScan
+expect = WarCore.Tests.Mt076SpatialGridScanRegionTests.TinyGridSphereIncludesBothPartitionsAndClosedLowerBoundary
+note = Cells on the lower X query bound must remain eligible.
+original:
+| if (cell.X >= x0 && cell.X <= x1 && cell.Y >= y0 && cell.Y <= y1 && cell.Z >= z0 && cell.Z <= z1)
+replacement:
+| if (cell.X > x0 && cell.X <= x1 && cell.Y >= y0 && cell.Y <= y1 && cell.Z >= z0 && cell.Z <= z1)

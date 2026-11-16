@@ -1,0 +1,62 @@
+# StableEventBatch
+# Surviving mutations of Assets/WarCore/Sim/StableEventBatch.cs. Test classes are named Mt091StableEventBatch*.
+
+[mt-091-01]
+file = Assets/WarCore/Sim/StableEventBatch.cs
+filter = FullyQualifiedName~Mt091StableEventBatch
+expect = WarCore.Tests.Mt091StableEventBatchTests.EmptyBatchOutsideTickIsRejected
+note = Empty event batches must require an active simulation tick.
+original:
+| RequireActive();
+replacement:
+| ;
+
+[mt-091-02]
+file = Assets/WarCore/Sim/StableEventBatch.cs
+filter = FullyQualifiedName~Mt091StableEventBatch
+expect = WarCore.Tests.Mt091StableEventBatchTests.EmptyBatchInActiveLegacyWorldIsRejected
+note = Empty stable event batches must reject legacy worlds.
+original:
+| Entities.RequireStableWorld();
+replacement:
+| ;
+
+[mt-091-03]
+file = Assets/WarCore/Sim/StableEventBatch.cs
+filter = FullyQualifiedName~Mt091StableEventBatch
+expect = WarCore.Tests.Mt091StableEventBatchTests.RetiredLinkIsPublishedUnchanged(True)
+note = Retired event sources remain valid weak references during batch publication.
+original:
+| Entities.ValidateLink(batch[i].Event.Source,false);
+replacement:
+| Entities.ValidateLink(batch[i].Event.Source,true);
+
+[mt-091-04]
+file = Assets/WarCore/Sim/StableEventBatch.cs
+filter = FullyQualifiedName~Mt091StableEventBatch
+expect = WarCore.Tests.Mt091StableEventBatchTests.UnknownLinkIsRejectedBeforePublication(True)
+note = Unknown event sources must be rejected in stable worlds without the retained protocol.
+original:
+| Entities.ValidateLink(batch[i].Event.Source,false);
+replacement:
+| ;
+
+[mt-091-05]
+file = Assets/WarCore/Sim/StableEventBatch.cs
+filter = FullyQualifiedName~Mt091StableEventBatch
+expect = WarCore.Tests.Mt091StableEventBatchTests.UnknownLinkIsRejectedBeforePublication(False)
+note = Unknown event targets must be rejected in stable worlds without the retained protocol.
+original:
+| Entities.ValidateLink(batch[i].Event.Target,false);
+replacement:
+| ;
+
+[mt-091-06]
+file = Assets/WarCore/Sim/StableEventBatch.cs
+filter = FullyQualifiedName~Mt091StableEventBatch
+expect = WarCore.Tests.Mt091StableEventBatchTests.RetiredLinkIsPublishedUnchanged(False)
+note = Retired event targets remain valid weak references during batch publication.
+original:
+| Entities.ValidateLink(batch[i].Event.Target,false);
+replacement:
+| Entities.ValidateLink(batch[i].Event.Target,true);

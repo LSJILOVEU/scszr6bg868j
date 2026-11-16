@@ -1,0 +1,12 @@
+# SimVec3
+# Surviving mutations of Assets/WarCore/Sim/SimVec3.cs. Test classes are named Mt068SimVec3*.
+
+[mt-068-01]
+file = Assets/WarCore/Sim/SimVec3.cs
+filter = FullyQualifiedName~Mt068SimVec3
+expect = WarCore.Tests.Mt068SimVec3HashTests.NonzeroVectorHashMatchesKnownValue
+note = Changes the hash code of a vector with a nonzero X component.
+original:
+| public override int GetHashCode() => SimInteger.Int32Bits(unchecked((uint)X.GetHashCode() * 397u ^ (uint)Y.GetHashCode() * 31u ^ (uint)Z.GetHashCode()));
+replacement:
+| public override int GetHashCode() => SimInteger.Int32Bits(unchecked((uint)X.GetHashCode() * 398u ^ (uint)Y.GetHashCode() * 31u ^ (uint)Z.GetHashCode()));

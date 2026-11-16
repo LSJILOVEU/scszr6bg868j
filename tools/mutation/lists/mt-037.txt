@@ -1,0 +1,13 @@
+# EntityStage
+# Surviving mutations of Assets/WarCore/Sim/EntityStage.cs. Test classes are named Mt037EntityStage*.
+
+[mt-037-01]
+file = Assets/WarCore/Sim/EntityStage.cs
+filter = FullyQualifiedName~Mt037EntityStage
+expect = WarCore.Tests.Mt037EntityStageTests.ConstructorRejectsNullStore
+note = The constructor accepts a null store instead of throwing ArgumentNullException.
+original:
+| this.store = store ?? throw new ArgumentNullException(nameof(store));
+replacement:
+| this.store = store;
+

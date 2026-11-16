@@ -1,0 +1,22 @@
+# BoundedLookup
+# Surviving mutations of Assets/WarCore/Sim/BoundedLookup.cs. Test classes are named Mt033BoundedLookup*.
+
+[mt-033-01]
+file = Assets/WarCore/Sim/BoundedLookup.cs
+filter = FullyQualifiedName~Mt033BoundedLookup
+expect = WarCore.Tests.Mt033BoundedLookupTests.ConstructorUsesMinimumPowerOfTwoStorage
+note = Power-of-two capacities allocate twice the required lookup storage.
+original:
+| while (length / 2 < capacity)
+replacement:
+| while (length / 2 <= capacity)
+
+[mt-033-02]
+file = Assets/WarCore/Sim/BoundedLookup.cs
+filter = FullyQualifiedName~Mt033BoundedLookup
+expect = WarCore.Tests.Mt033BoundedLookupTests.RemovingMissingKeyPreservesEntriesAndCapacity
+note = Removing a missing key incorrectly frees capacity and permits overflow.
+original:
+| if (!used[hole])
+replacement:
+| if (false)

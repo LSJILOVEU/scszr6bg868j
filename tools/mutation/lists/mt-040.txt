@@ -1,0 +1,62 @@
+# ExtensionContracts
+# Surviving mutations of Assets/WarCore/Sim/ExtensionContracts.cs. Test classes are named Mt040ExtensionContracts*.
+
+[mt-040-01]
+file = Assets/WarCore/Sim/ExtensionContracts.cs
+filter = FullyQualifiedName~Mt040ExtensionContracts
+expect = WarCore.Tests.Mt040ExtensionContractsTests.EmptyContainerAcceptsZeroCapacity
+note = Rejects an empty container with zero capacity.
+original:
+| if (capacity < 0 || count < 0 || count > capacity)
+replacement:
+| if (capacity <= 0 || count < 0 || count > capacity)
+
+[mt-040-02]
+file = Assets/WarCore/Sim/ExtensionContracts.cs
+filter = FullyQualifiedName~Mt040ExtensionContracts
+expect = WarCore.Tests.Mt040ExtensionContractsTests.ContainerAcceptsCountEqualToCapacity
+note = Rejects a container filled to capacity.
+original:
+| if (capacity < 0 || count < 0 || count > capacity)
+replacement:
+| if (capacity < 0 || count < 0 || count >= capacity)
+
+[mt-040-03]
+file = Assets/WarCore/Sim/ExtensionContracts.cs
+filter = FullyQualifiedName~Mt040ExtensionContracts
+expect = WarCore.Tests.Mt040ExtensionContractsTests.IntelAcceptsObservationAtTickZero
+note = Rejects observations recorded at tick zero.
+original:
+| if (observedTick < 0 || confidence.Raw < 0 || confidence.Raw > SimFix.Scale)
+replacement:
+| if (observedTick <= 0 || confidence.Raw < 0 || confidence.Raw > SimFix.Scale)
+
+[mt-040-04]
+file = Assets/WarCore/Sim/ExtensionContracts.cs
+filter = FullyQualifiedName~Mt040ExtensionContracts
+expect = WarCore.Tests.Mt040ExtensionContractsTests.IntelAcceptsFullConfidence
+note = Rejects observations with full confidence.
+original:
+| if (observedTick < 0 || confidence.Raw < 0 || confidence.Raw > SimFix.Scale)
+replacement:
+| if (observedTick < 0 || confidence.Raw < 0 || confidence.Raw >= SimFix.Scale)
+
+[mt-040-05]
+file = Assets/WarCore/Sim/ExtensionContracts.cs
+filter = FullyQualifiedName~Mt040ExtensionContracts
+expect = WarCore.Tests.Mt040ExtensionContractsTests.SoundAcceptsFactionZero
+note = Rejects sound events from faction zero.
+original:
+| if (sourceFaction < 0)
+replacement:
+| if (sourceFaction <= 0)
+
+[mt-040-06]
+file = Assets/WarCore/Sim/ExtensionContracts.cs
+filter = FullyQualifiedName~Mt040ExtensionContracts
+expect = WarCore.Tests.Mt040ExtensionContractsTests.SoundDecodeRejectsNonzeroAuxYWithZeroAuxZ
+note = Accepts sound payloads with a nonzero reserved Y component.
+original:
+| || item.Aux.Y.Raw != 0 || item.Aux.Z.Raw != 0)
+replacement:
+| || item.Aux.Z.Raw != 0)

@@ -1,0 +1,52 @@
+# CombatSystem.Block
+# Surviving mutations of Assets/WarCore/Combat/CombatSystem.Block.cs. Test classes are named Mt012CombatSystemBlock*.
+
+[mt-012-01]
+file = Assets/WarCore/Combat/CombatSystem.Block.cs
+filter = FullyQualifiedName~Mt012CombatSystemBlock
+expect = WarCore.Tests.Mt012CombatSystemBlockTests.ReleaseWithoutBlockDataLeavesTheUnitUnchanged
+note = Releasing a unit without block data must leave its state unchanged without throwing.
+original:
+|             if (!CanBlock(unit)) return;
+replacement:
+|             
+
+[mt-012-02]
+file = Assets/WarCore/Combat/CombatSystem.Block.cs
+filter = FullyQualifiedName~Mt012CombatSystemBlock
+expect = WarCore.Tests.Mt012CombatSystemBlockTests.AnAttackerBeyondTheSwingRadiusStillThreatensFromItsLockedOrigin
+note = A pending swing remains a threat after its attacker moves beyond the swing radius.
+original:
+|             var hits = Candidates(victim, widest + SimFix.FromInt(1));
+replacement:
+|             var hits = Candidates(victim, widest + SimFix.FromInt(0));
+
+[mt-012-03]
+file = Assets/WarCore/Combat/CombatSystem.Block.cs
+filter = FullyQualifiedName~Mt012CombatSystemBlock
+expect = WarCore.Tests.Mt012CombatSystemBlockTests.ATargetExactlyOnTheSwingRadiusIsThreatened
+note = The swing radius includes a target whose center lies exactly on its boundary.
+original:
+|                 if (Horizontal(state.Origin - here.Value).LengthSquared > Reach(pack.Melee[state.Spec].Radius)) continue;
+replacement:
+|                 if (Horizontal(state.Origin - here.Value).LengthSquared >= Reach(pack.Melee[state.Spec].Radius)) continue;
+
+[mt-012-04]
+file = Assets/WarCore/Combat/CombatSystem.Block.cs
+filter = FullyQualifiedName~Mt012CombatSystemBlock
+expect = WarCore.Tests.Mt012CombatSystemBlockTests.SimultaneousThreatsChooseTheLowerStableIdentity
+note = Threats that start on the same tick must select the lower stable identity.
+original:
+|                 if (found && (state.StartTick > startTick || (state.StartTick == startTick && id.CompareTo(attacker) >= 0))) continue;
+replacement:
+|                 if (found && (state.StartTick > startTick || (state.StartTick == startTick && id.CompareTo(attacker) <= 0))) continue;
+
+[mt-012-05]
+file = Assets/WarCore/Combat/CombatSystem.Block.cs
+filter = FullyQualifiedName~Mt012CombatSystemBlock
+expect = WarCore.Tests.Mt012CombatSystemBlockTests.ABlowExactlyOnTheBlockArcIsStopped
+note = A block stops a blow whose direction dot product equals the arc threshold.
+original:
+|             return SimVec3.DotFix(held, toward.Normalized).Raw * 1000 >= (long)spec.CosHalfAnglePermille * SimFix.Scale;
+replacement:
+|             return SimVec3.DotFix(held, toward.Normalized).Raw * 1000 > (long)spec.CosHalfAnglePermille * SimFix.Scale;

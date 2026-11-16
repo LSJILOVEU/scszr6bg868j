@@ -1,0 +1,22 @@
+# EntityStore
+# Surviving mutations of Assets/WarCore/Sim/EntityStore.cs. Test classes are named Mt038EntityStore*.
+
+[mt-038-01]
+file = Assets/WarCore/Sim/EntityStore.cs
+filter = FullyQualifiedName~Mt038EntityStore
+expect = WarCore.Tests.Mt038EntityStoreTests.ConstructorRejectsZeroCapacity
+note = Allows construction with zero entity capacity.
+original:
+| if (capacity < 1)
+replacement:
+| if (capacity < 0)
+
+[mt-038-02]
+file = Assets/WarCore/Sim/EntityStore.cs
+filter = FullyQualifiedName~Mt038EntityStore
+expect = WarCore.Tests.Mt038EntityStoreTests.ReserveCurrentCapacityIsNoOp
+note = Rejects reserving the current capacity after warmup or in a stable world.
+original:
+| if (capacity <= Capacity)
+replacement:
+| if (capacity < Capacity)

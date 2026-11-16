@@ -1,0 +1,32 @@
+# CombatSystem.Guard
+# Surviving mutations of Assets/WarCore/Combat/CombatSystem.Guard.cs. Test classes are named Mt013CombatSystemGuard*.
+
+[mt-013-01]
+file = Assets/WarCore/Combat/CombatSystem.Guard.cs
+filter = FullyQualifiedName~Mt013CombatSystemGuard
+expect = WarCore.Tests.Mt013CombatSystemGuardTests.NullGuard_ReportsValueParameter
+note = Null guard rejection reports the wrong parameter name.
+original:
+|             if (value == null) throw new ArgumentNullException(nameof(value));
+replacement:
+|             if (value == null) throw new ArgumentNullException("guard");
+
+[mt-013-02]
+file = Assets/WarCore/Combat/CombatSystem.Guard.cs
+filter = FullyQualifiedName~Mt013CombatSystemGuard
+expect = WarCore.Tests.Mt013CombatSystemGuardTests.SecondBinding_ReportsGuardAlreadySet
+note = Repeated guard binding changes the diagnostic message.
+original:
+|             if (guard != null) throw new InvalidOperationException("A damage guard is already set.");
+replacement:
+|             if (guard != null) throw new InvalidOperationException("A damage guard is already bound.");
+
+[mt-013-03]
+file = Assets/WarCore/Combat/CombatSystem.Guard.cs
+filter = FullyQualifiedName~Mt013CombatSystemGuard
+expect = WarCore.Tests.Mt013CombatSystemGuardTests.SecondBinding_ReportsGuardAlreadySet
+note = Repeated guard binding incorrectly reports that no guard is set.
+original:
+|             if (guard != null) throw new InvalidOperationException("A damage guard is already set.");
+replacement:
+|             if (guard != null) throw new InvalidOperationException("A damage guard is not set.");

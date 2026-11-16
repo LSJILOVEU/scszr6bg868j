@@ -1,0 +1,12 @@
+# GameplayState
+# Surviving mutations of Assets/WarCore/Sim/GameplayState.cs. Test classes are named Mt126GameplayState*.
+
+[mt-126-01]
+file = Assets/WarCore/Sim/GameplayState.cs
+filter = FullyQualifiedName~Mt126GameplayState
+expect = WarCore.Tests.Mt126GameplayStateTests.CaptureInputAcceptsInitialZeroTickAndPreservesSnapshot
+note = Rejects input capture at the initial zero tick.
+original:
+| if (tick < 0 || commandCount != 0 || s4NoticeCount != 0 || noticeCount != 0)
+replacement:
+| if (tick <= 0 || commandCount != 0 || s4NoticeCount != 0 || noticeCount != 0)

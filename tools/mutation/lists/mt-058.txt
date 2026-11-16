@@ -1,0 +1,12 @@
+# RetainedWorld
+# Surviving mutations of Assets/WarCore/Sim/RetainedWorld.cs. Test classes are named Mt058RetainedWorld*.
+
+[mt-058-01]
+file = Assets/WarCore/Sim/RetainedWorld.cs
+filter = FullyQualifiedName~Mt058RetainedWorld
+expect = WarCore.Tests.Mt058RetainedWorldOptionsTests.MaximumIdentityCapacityIsAccepted
+note = Rejects the maximum legal identity capacity when constructing retained world options.
+original:
+| if (retentionTicks < 0 || retentionTicks == long.MaxValue || identityCapacity < 0 || identityCapacity > (1 << 27))
+replacement:
+| if (retentionTicks < 0 || retentionTicks == long.MaxValue || identityCapacity < 0 || identityCapacity >= (1 << 27))

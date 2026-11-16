@@ -1,0 +1,42 @@
+# Triggers
+# Surviving mutations of Assets/WarCore/Sim/Triggers.cs. Test classes are named Mt108Triggers*.
+
+[mt-108-01]
+file = Assets/WarCore/Sim/Triggers.cs
+filter = FullyQualifiedName~Mt108Triggers
+expect = WarCore.Tests.Mt108TriggersTests.DefinitionRejectsZeroIds(0,1,1)
+note = Allows a zero trigger definition id.
+original:
+| if (id <= 0 || conditionType <= 0 || actionType <= 0)
+replacement:
+| if (id < 0 || conditionType <= 0 || actionType <= 0)
+
+[mt-108-02]
+file = Assets/WarCore/Sim/Triggers.cs
+filter = FullyQualifiedName~Mt108Triggers
+expect = WarCore.Tests.Mt108TriggersTests.DefinitionRejectsZeroIds(1,0,1)
+note = Allows a zero condition type in a trigger definition.
+original:
+| if (id <= 0 || conditionType <= 0 || actionType <= 0)
+replacement:
+| if (id <= 0 || conditionType < 0 || actionType <= 0)
+
+[mt-108-03]
+file = Assets/WarCore/Sim/Triggers.cs
+filter = FullyQualifiedName~Mt108Triggers
+expect = WarCore.Tests.Mt108TriggersTests.DefinitionRejectsZeroIds(1,1,0)
+note = Allows a zero action type in a trigger definition.
+original:
+| if (id <= 0 || conditionType <= 0 || actionType <= 0)
+replacement:
+| if (id <= 0 || conditionType <= 0 || actionType < 0)
+
+[mt-108-04]
+file = Assets/WarCore/Sim/Triggers.cs
+filter = FullyQualifiedName~Mt108Triggers
+expect = WarCore.Tests.Mt108TriggersTests.SystemRejectsDuplicateDefinitionIds
+note = Allows duplicate trigger definition ids in the same system.
+original:
+| if (definition.Id <= previous)
+replacement:
+| if (definition.Id < previous)

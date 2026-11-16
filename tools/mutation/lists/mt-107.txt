@@ -1,0 +1,22 @@
+# TriggerRegistry
+# Surviving mutations of Assets/WarCore/Sim/TriggerRegistry.cs. Test classes are named Mt107TriggerRegistry*.
+
+[mt-107-01]
+file = Assets/WarCore/Sim/TriggerRegistry.cs
+filter = FullyQualifiedName~Mt107TriggerRegistry
+expect = WarCore.Tests.Mt107TriggerRegistryTests.RegistryStateVersionIsOne
+note = Changes the registry serializer version from one to two.
+original:
+| public int StateVersion => 1;
+replacement:
+| public int StateVersion => 2;
+
+[mt-107-02]
+file = Assets/WarCore/Sim/TriggerRegistry.cs
+filter = FullyQualifiedName~Mt107TriggerRegistry
+expect = WarCore.Tests.Mt107TriggerRegistryTests.RegisterActionRejectsZeroStateVersion
+note = Allows action registration with a zero serializer version.
+original:
+| if (id <= 0 || operation == null || string.IsNullOrEmpty(operation.StateTypeId) || operation.StateVersion <= 0)
+replacement:
+| if (id <= 0 || operation == null || string.IsNullOrEmpty(operation.StateTypeId) || operation.StateVersion < 0)

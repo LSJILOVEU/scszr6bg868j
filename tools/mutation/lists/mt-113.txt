@@ -1,0 +1,22 @@
+# GameplayAbilitySchema
+# Surviving mutations of Assets/WarCore/Sim/GameplayAbilitySchema.cs. Test classes are named Mt113GameplayAbilitySchema*.
+
+[mt-113-02]
+file = Assets/WarCore/Sim/GameplayAbilitySchema.cs
+filter = FullyQualifiedName~Mt113GameplayAbilitySchema
+expect = WarCore.Tests.Mt113GameplayAbilitySchemaTests.ThirtyTwoSourceAttributesAreAccepted
+note = Rejects a valid ability source with exactly 32 attributes.
+original:
+| if (archetype.ResourceCount > GameplaySourceSnapshot.MaximumAttributes || d.ActionCount > GameplaySourceSnapshot.MaximumActions)
+replacement:
+| if (archetype.ResourceCount >= GameplaySourceSnapshot.MaximumAttributes || d.ActionCount > GameplaySourceSnapshot.MaximumActions)
+
+[mt-113-03]
+file = Assets/WarCore/Sim/GameplayAbilitySchema.cs
+filter = FullyQualifiedName~Mt113GameplayAbilitySchema
+expect = WarCore.Tests.Mt113GameplayAbilitySchemaTests.ThirtyOneDirectActionsAndOnePeriodicActionAreAccepted
+note = Rejects a valid combined capture budget of 31 direct actions and one periodic action.
+original:
+| if (captureBudget > GameplaySourceSnapshot.MaximumActions)
+replacement:
+| if (captureBudget >= GameplaySourceSnapshot.MaximumActions)

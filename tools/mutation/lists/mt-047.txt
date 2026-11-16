@@ -1,0 +1,52 @@
+# GridSpatialQuery
+# Surviving mutations of Assets/WarCore/Sim/GridSpatialQuery.cs. Test classes are named Mt047GridSpatialQuery*.
+
+[mt-047-01]
+file = Assets/WarCore/Sim/GridSpatialQuery.cs
+filter = FullyQualifiedName~Mt047GridSpatialQuery
+expect = WarCore.Tests.Mt047GridSpatialQueryTests.DefaultBudgetsReserve4096EntitiesAnd32768Memberships
+note = Reduces the default membership capacity below 32768.
+original:
+| SimFix cellSize, int maxEntities = 4096, int maxMemberships = 32768,
+replacement:
+| SimFix cellSize, int maxEntities = 4096, int maxMemberships = 32767,
+
+[mt-047-02]
+file = Assets/WarCore/Sim/GridSpatialQuery.cs
+filter = FullyQualifiedName~Mt047GridSpatialQuery
+expect = WarCore.Tests.Mt047GridSpatialQueryTests.DefaultBudgetsReserve4096EntitiesAnd32768Memberships
+note = Increases the default membership capacity above 32768.
+original:
+| SimFix cellSize, int maxEntities = 4096, int maxMemberships = 32768,
+replacement:
+| SimFix cellSize, int maxEntities = 4096, int maxMemberships = 32769,
+
+[mt-047-03]
+file = Assets/WarCore/Sim/GridSpatialQuery.cs
+filter = FullyQualifiedName~Mt047GridSpatialQuery
+expect = WarCore.Tests.Mt047GridSpatialQueryTests.DefaultBudgetsReserve4096EntitiesAnd32768Memberships
+note = Reduces the default entity capacity below 4096.
+original:
+| SimFix cellSize, int maxEntities = 4096, int maxMemberships = 32768,
+replacement:
+| SimFix cellSize, int maxEntities = 4095, int maxMemberships = 32768,
+
+[mt-047-04]
+file = Assets/WarCore/Sim/GridSpatialQuery.cs
+filter = FullyQualifiedName~Mt047GridSpatialQuery
+expect = WarCore.Tests.Mt047GridSpatialQueryTests.DefaultBudgetsReserve4096EntitiesAnd32768Memberships
+note = Increases the default entity capacity above 4096.
+original:
+| SimFix cellSize, int maxEntities = 4096, int maxMemberships = 32768,
+replacement:
+| SimFix cellSize, int maxEntities = 4097, int maxMemberships = 32768,
+
+[mt-047-05]
+file = Assets/WarCore/Sim/GridSpatialQuery.cs
+filter = FullyQualifiedName~Mt047GridSpatialQuery
+expect = WarCore.Tests.Mt047GridSpatialQueryTests.DefaultContextCapacityEqualsMaxEntities
+note = Allocates one extra context slot beyond the requested entity capacity.
+original:
+| queryContext ?? new GridQueryContext(maxEntities))
+replacement:
+| queryContext ?? new GridQueryContext(maxEntities + 1))

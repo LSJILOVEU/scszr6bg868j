@@ -1,0 +1,32 @@
+# SpatialGridState
+# Surviving mutations of Assets/WarCore/Sim/SpatialGridState.cs. Test classes are named Mt077SpatialGridState*.
+
+[mt-077-01]
+file = Assets/WarCore/Sim/SpatialGridState.cs
+filter = FullyQualifiedName~Mt077SpatialGridState
+expect = WarCore.Tests.Mt077SpatialGridStateTests.ZeroCoordinateBelongsToCellZero
+note = Zero coordinates are assigned to the negative cell instead of cell zero.
+original:
+| internal static long Floor(long raw, long size) => raw >= 0 ? raw / size : (raw + 1) / size - 1;
+replacement:
+| internal static long Floor(long raw, long size) => raw > 0 ? raw / size : (raw + 1) / size - 1;
+
+[mt-077-02]
+file = Assets/WarCore/Sim/SpatialGridState.cs
+filter = FullyQualifiedName~Mt077SpatialGridState
+expect = WarCore.Tests.Mt077SpatialGridStateTests.XWidthEqualToBudgetKeepsExactVolume
+note = A body spanning exactly the X cell budget is incorrectly classified as oversized.
+original:
+| if (x > limit || y > limit / x || z > limit / x / y)
+replacement:
+| if (x >= limit || y > limit / x || z > limit / x / y)
+
+[mt-077-03]
+file = Assets/WarCore/Sim/SpatialGridState.cs
+filter = FullyQualifiedName~Mt077SpatialGridState
+expect = WarCore.Tests.Mt077SpatialGridStateTests.ResetClearsLayerUnionBeforePublication
+note = Reset leaves a spurious layer bit in an empty partition.
+original:
+| LayerUnion = 0;
+replacement:
+| LayerUnion = 1;

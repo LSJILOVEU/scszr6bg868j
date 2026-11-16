@@ -1,0 +1,22 @@
+# PlacedCatalog
+# Surviving mutations of Assets/WarCore/Sim/PlacedCatalog.cs. Test classes are named Mt051PlacedCatalog*.
+
+[mt-051-01]
+file = Assets/WarCore/Sim/PlacedCatalog.cs
+filter = FullyQualifiedName~Mt051PlacedCatalog
+expect = WarCore.Tests.Mt051PlacedCatalogTests.MaximumCountIs16777216
+note = The public maximum catalog capacity is reduced from 16777216 to 8388608.
+original:
+| public const int MaximumCount = 1 << 24;
+replacement:
+| public const int MaximumCount = 1 << 23;
+
+[mt-051-02]
+file = Assets/WarCore/Sim/PlacedCatalog.cs
+filter = FullyQualifiedName~Mt051PlacedCatalog
+expect = WarCore.Tests.Mt051PlacedCatalogTests.EntryAtCountThrowsBoundaryException
+note = An index equal to Count throws an array exception instead of SimBoundaryException.
+original:
+| if (index < 0 || index >= Count)
+replacement:
+| if (index < 0 || index > Count)

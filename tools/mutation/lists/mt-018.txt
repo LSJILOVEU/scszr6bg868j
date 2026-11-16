@@ -1,0 +1,22 @@
+# FireIntent
+# Surviving mutations of Assets/WarCore/Combat/FireIntent.cs. Test classes are named Mt018FireIntent*.
+
+[mt-018-01]
+file = Assets/WarCore/Combat/FireIntent.cs
+filter = FullyQualifiedName~Mt018FireIntent
+expect = WarCore.Tests.Mt018FireIntentTests.AimedKind_IsOne
+note = Changes the public Aimed kind byte from 1 to 3.
+original:
+|     public enum FireIntentKind : byte { Aimed = 1, AtTarget = 2 }
+replacement:
+|     public enum FireIntentKind : byte { Aimed = 3, AtTarget = 2 }
+
+[mt-018-02]
+file = Assets/WarCore/Combat/FireIntent.cs
+filter = FullyQualifiedName~Mt018FireIntent
+expect = WarCore.Tests.Mt018FireIntentTests.AtTargetKind_IsTwo
+note = Changes the public AtTarget kind byte from 2 to 3.
+original:
+|     public enum FireIntentKind : byte { Aimed = 1, AtTarget = 2 }
+replacement:
+|     public enum FireIntentKind : byte { Aimed = 1, AtTarget = 3 }

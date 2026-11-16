@@ -1,0 +1,32 @@
+# SightLimited
+# Surviving mutations of Assets/WarCore/Battle/SightLimited.cs. Test classes are named Mt010SightLimited*.
+
+[mt-010-01]
+file = Assets/WarCore/Battle/SightLimited.cs
+filter = FullyQualifiedName~Mt010SightLimited
+expect = WarCore.Tests.Mt010SightLimitedTests.ConstructorRejectsNonPositiveSight
+note = Allows zero sight instead of rejecting it.
+original:
+|             if (sight.Raw <= 0) throw new ArgumentOutOfRangeException(nameof(sight));
+replacement:
+|             if (sight.Raw < 0) throw new ArgumentOutOfRangeException(nameof(sight));
+
+[mt-010-02]
+file = Assets/WarCore/Battle/SightLimited.cs
+filter = FullyQualifiedName~Mt010SightLimited
+expect = WarCore.Tests.Mt010SightLimitedTests.ConstructorAcceptsSmallestPositiveSight
+note = Rejects the smallest positive sight value.
+original:
+|             if (sight.Raw <= 0) throw new ArgumentOutOfRangeException(nameof(sight));
+replacement:
+|             if (sight.Raw <= 1) throw new ArgumentOutOfRangeException(nameof(sight));
+
+[mt-010-03]
+file = Assets/WarCore/Battle/SightLimited.cs
+filter = FullyQualifiedName~Mt010SightLimited
+expect = WarCore.Tests.Mt010SightLimitedTests.ConstructorRejectsNonPositiveSight
+note = Allows zero and negative sight instead of rejecting them.
+original:
+|             if (sight.Raw <= 0) throw new ArgumentOutOfRangeException(nameof(sight));
+replacement:
+|             if (false) throw new ArgumentOutOfRangeException(nameof(sight));

@@ -1,0 +1,12 @@
+# Posture
+# Surviving mutations of Assets/WarCore/Sim/Posture.cs. Test classes are named Mt052Posture*.
+
+[mt-052-01]
+file = Assets/WarCore/Sim/Posture.cs
+filter = FullyQualifiedName~Mt052Posture
+expect = WarCore.Tests.Mt052PostureTests.ZeroHeightDefinitionIsAccepted
+note = Rejects valid zero-height posture definitions.
+original:
+| if (id <= 0 || height.Raw < 0 || height.Raw > 32768 * SimFix.Scale
+replacement:
+| if (id <= 0 || height.Raw <= 0 || height.Raw > 32768 * SimFix.Scale

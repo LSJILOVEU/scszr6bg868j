@@ -1,0 +1,22 @@
+# GameplayInputRuntime
+# Surviving mutations of Assets/WarCore/Sim/GameplayInputRuntime.cs. Test classes are named Mt119GameplayInputRuntime*.
+
+[mt-119-01]
+file = Assets/WarCore/Sim/GameplayInputRuntime.cs
+filter = FullyQualifiedName~Mt119GameplayInputRuntime
+expect = WarCore.Tests.Mt119GameplayInputRuntimeTests.DuplicateVectorPayloadsAreSavedInLexicographicOrder
+note = Duplicate payloads must retain lexicographic order when only aim direction or target point differs.
+original:
+| return c != 0 ? c : CompareAbilityVector(a.TargetPoint, b.TargetPoint);
+replacement:
+| return c == 0 ? c : CompareAbilityVector(a.TargetPoint, b.TargetPoint);
+
+[mt-119-02]
+file = Assets/WarCore/Sim/GameplayInputRuntime.cs
+filter = FullyQualifiedName~Mt119GameplayInputRuntime
+expect = WarCore.Tests.Mt119GameplayInputRuntimeTests.FullInputCapacityAcceptsEveryCommand
+note = A frame with exactly the configured input command capacity must be accepted.
+original:
+| if (!input.HasValidSkillCommandShape || input.SkillCommandCount > abilityInput.Length)
+replacement:
+| if (!input.HasValidSkillCommandShape || input.SkillCommandCount >= abilityInput.Length)

@@ -1,0 +1,24 @@
+# GameplayData
+# Surviving mutations of Assets/WarCore/Sim/GameplayData.cs. Test classes are named Mt117GameplayData*.
+
+[mt-117-01]
+file = Assets/WarCore/Sim/GameplayData.cs
+filter = FullyQualifiedName~Mt117GameplayData
+expect = WarCore.Tests.Mt117GameplayDataTests.PipelineAcceptsMaximumModifierCount
+note = Rejects the legal maximum of 65535 pipeline modifiers.
+original:
+| if (modifiers != null && modifiers.Length > GameplayMath.MaxModifiers)
+replacement:
+| if (modifiers != null && modifiers.Length >= GameplayMath.MaxModifiers)
+
+[mt-117-02]
+file = Assets/WarCore/Sim/GameplayData.cs
+filter = FullyQualifiedName~Mt117GameplayData
+expect = WarCore.Tests.Mt117GameplayDataTests.PipelineSortsSameStageModifiersByKey
+expect = WarCore.Tests.Mt117GameplayDataTests.PipelineSortsByStageBeforeKey
+note = Ignores key order within a stage and gives keys priority over stage order.
+original:
+| return order == 0 ? left.Key.CompareTo(right.Key) : order;
+replacement:
+| return order != 0 ? left.Key.CompareTo(right.Key) : order;
+

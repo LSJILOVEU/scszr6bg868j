@@ -1,0 +1,22 @@
+# GameplayAbilityProtocol
+# Surviving mutations of Assets/WarCore/Sim/GameplayAbilityProtocol.cs. Test classes are named Mt111GameplayAbilityProtocol*.
+
+[mt-111-01]
+file = Assets/WarCore/Sim/GameplayAbilityProtocol.cs
+filter = FullyQualifiedName~Mt111GameplayAbilityProtocol
+expect = WarCore.Tests.Mt111GameplayAbilityProtocolTests.FirstPlacedOwnerRejectsCastNextFromAnotherGeneration
+note = The first placed catalog entry accepts a cast counter from the wrong generation.
+original:
+| private bool ValidCastNext(ulong next, GameplayStamp owner) => sim.Placed.Catalog.Find(owner.Id) < 0 || next >> 48 == owner.Generation;
+replacement:
+| private bool ValidCastNext(ulong next, GameplayStamp owner) => sim.Placed.Catalog.Find(owner.Id) <= 0 || next >> 48 == owner.Generation;
+
+[mt-111-02]
+file = Assets/WarCore/Sim/GameplayAbilityProtocol.cs
+filter = FullyQualifiedName~Mt111GameplayAbilityProtocol
+expect = WarCore.Tests.Mt111GameplayAbilityProtocolTests.NonPlacedOwnerRestoresAnActiveCast
+note = A valid active cast owned by a non-placed entity is rejected during snapshot restore.
+original:
+| private bool ValidCastToken(ulong token, GameplayStamp owner) => sim.Placed.Catalog.Find(owner.Id) < 0 ? token != ulong.MaxValue :
+replacement:
+| private bool ValidCastToken(ulong token, GameplayStamp owner) => sim.Placed.Catalog.Find(owner.Id) < 0 ? token == ulong.MaxValue :

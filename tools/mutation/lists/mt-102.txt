@@ -1,0 +1,32 @@
+# StableTimeline
+# Surviving mutations of Assets/WarCore/Sim/StableTimeline.cs. Test classes are named Mt102StableTimeline*.
+
+[mt-102-01]
+file = Assets/WarCore/Sim/StableTimeline.cs
+filter = FullyQualifiedName~Mt102StableTimeline
+expect = WarCore.Tests.Mt102StableTimelineTests.DormantSnapshotRestoresElapsedTime(0)
+note = Rejects a valid zero last-simulated tick when restoring a stable timeline.
+original:
+| SimStateReader.Require(link.HasValue && (i == 0 || link.Id.Value > previous) && tick >= 0
+replacement:
+| SimStateReader.Require(link.HasValue && (i == 0 || link.Id.Value > previous) && tick > 0
+
+[mt-102-02]
+file = Assets/WarCore/Sim/StableTimeline.cs
+filter = FullyQualifiedName~Mt102StableTimeline
+expect = WarCore.Tests.Mt102StableTimelineTests.DuplicateTimelineIdentityIsRejected
+note = Accepts duplicate stable identities and overwrites an earlier timeline record.
+original:
+| SimStateReader.Require(link.HasValue && (i == 0 || link.Id.Value > previous) && tick >= 0
+replacement:
+| SimStateReader.Require(link.HasValue && (i == 0 || link.Id.Value >= previous) && tick >= 0
+
+[mt-102-03]
+file = Assets/WarCore/Sim/StableTimeline.cs
+filter = FullyQualifiedName~Mt102StableTimeline
+expect = WarCore.Tests.Mt102StableTimelineTests.DormantSnapshotRestoresElapsedTime(1)
+note = Rejects a valid Dormant tier when restoring a stable timeline.
+original:
+| && level >= SimTierLevel.Full && level <= SimTierLevel.Dormant,"Invalid stable timeline.");
+replacement:
+| && level >= SimTierLevel.Full && level < SimTierLevel.Dormant,"Invalid stable timeline.");

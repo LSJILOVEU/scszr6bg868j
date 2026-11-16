@@ -1,0 +1,42 @@
+# StableStateIO
+# Surviving mutations of Assets/WarCore/Sim/StableStateIO.cs. Test classes are named Mt100StableStateIO*.
+
+[mt-100-01]
+file = Assets/WarCore/Sim/StableStateIO.cs
+filter = FullyQualifiedName~Mt100StableStateIO
+expect = WarCore.Tests.Mt100StableStateIOTests.StableTextWritesOneByteAtAsciiUpperBound
+note = Counts U+007F as two UTF-8 bytes and writes an incorrect length header.
+original:
+| if (current <= 0x7F)
+replacement:
+| if (current < 0x7F)
+
+[mt-100-02]
+file = Assets/WarCore/Sim/StableStateIO.cs
+filter = FullyQualifiedName~Mt100StableStateIO
+expect = WarCore.Tests.Mt100StableStateIOTests.StableTextWritesTwoBytesAtTwoByteUpperBound
+note = Counts U+07FF as three UTF-8 bytes and writes an incorrect length header.
+original:
+| else if (current <= 0x7FF)
+replacement:
+| else if (current < 0x7FF)
+
+[mt-100-03]
+file = Assets/WarCore/Sim/StableStateIO.cs
+filter = FullyQualifiedName~Mt100StableStateIO
+expect = WarCore.Tests.Mt100StableStateIOTests.StableTextRejectsStandaloneContinuationByte
+note = Accepts a standalone 0x80 continuation byte as a valid UTF-8 prefix.
+original:
+| if (first < 128)
+replacement:
+| if (first <= 128)
+
+[mt-100-04]
+file = Assets/WarCore/Sim/StableStateIO.cs
+filter = FullyQualifiedName~Mt100StableStateIO
+expect = WarCore.Tests.Mt100StableStateIOTests.StableTextReadsContinuationByteAtUpperBound
+note = Rejects the valid UTF-8 continuation byte 0xBF.
+original:
+| Require(next >= 0x80 && next <= 0xBF,"Invalid stable UTF-8 continuation.");
+replacement:
+| Require(next >= 0x80 && next < 0xBF,"Invalid stable UTF-8 continuation.");

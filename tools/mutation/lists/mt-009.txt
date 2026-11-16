@@ -1,0 +1,12 @@
+# RespawnSystem
+# Surviving mutations of Assets/WarCore/Battle/RespawnSystem.cs. Test classes are named Mt009RespawnSystem*.
+
+[mt-009-01]
+file = Assets/WarCore/Battle/RespawnSystem.cs
+filter = FullyQualifiedName~Mt009RespawnSystem
+expect = WarCore.Tests.Mt009RespawnSystemTests.SkipsReserveKilledBeforeDeployment
+note = A reserve killed before deployment is selected instead of the next living reserve.
+original:
+|                     && !combat.Entities.TryGet(positions, entity, out _) && !combat.IsDead(entity))
+replacement:
+|                     && !combat.Entities.TryGet(positions, entity, out _))

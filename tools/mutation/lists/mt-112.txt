@@ -1,0 +1,12 @@
+# GameplayAbilityRuntime
+# Surviving mutations of Assets/WarCore/Sim/GameplayAbilityRuntime.cs. Test classes are named Mt112GameplayAbilityRuntime*.
+
+[mt-112-01]
+file = Assets/WarCore/Sim/GameplayAbilityRuntime.cs
+filter = FullyQualifiedName~Mt112GameplayAbilityRuntime
+expect = WarCore.Tests.Mt112GameplayAbilityRuntimeTests.RetainedCooldownRowAllowsResourceCheckAtReadyTick
+note = Treats a retained cooldown as active at its ready tick and prevents the resource check.
+original:
+| if(AbilityCooldownReady(input.Actor.Id,definition.CooldownKey)>sim.Clock.Tick)return GameplayAbilityFailure.Cooldown; // S3_MUTATION:cooldown_boundary
+replacement:
+| if(AbilityCooldownReady(input.Actor.Id,definition.CooldownKey)>=sim.Clock.Tick)return GameplayAbilityFailure.Cooldown; // S3_MUTATION:cooldown_boundary

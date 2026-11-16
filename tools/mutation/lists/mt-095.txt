@@ -1,0 +1,22 @@
+# StableMotion
+# Surviving mutations of Assets/WarCore/Sim/StableMotion.cs. Test classes are named Mt095StableMotion*.
+
+[mt-095-01]
+file = Assets/WarCore/Sim/StableMotion.cs
+filter = FullyQualifiedName~Mt095StableMotion
+expect = WarCore.Tests.Mt095StableMotionTests.DuplicateFirstRequestReportsMotionKeyError
+note = A duplicate of the first motion request reports a lookup error instead of the motion key error.
+original:
+| if (motionKeys.Find(command) >= 0)
+replacement:
+| if (motionKeys.Find(command) > 0)
+
+[mt-095-02]
+file = Assets/WarCore/Sim/StableMotion.cs
+filter = FullyQualifiedName~Mt095StableMotion
+expect = WarCore.Tests.Mt095StableMotionTests.LastDetachSkipsRestoredEmptyHostAttachWithLiveZeroIdentity
+note = The final detach must skip an earlier restored attach with an empty host even when identity zero is active.
+original:
+| if (i+1 < stableMotionCount && item.Target.Equals(stableMotion[i+1].Target) && item.Kind == stableMotion[i+1].Kind)
+replacement:
+| if (i+2 < stableMotionCount && item.Target.Equals(stableMotion[i+1].Target) && item.Kind == stableMotion[i+1].Kind)

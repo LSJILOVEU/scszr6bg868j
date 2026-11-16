@@ -1,0 +1,22 @@
+# SpatialGeometry
+# Surviving mutations of Assets/WarCore/Sim/SpatialGeometry.cs. Test classes are named Mt074SpatialGeometry*.
+
+[mt-074-01]
+file = Assets/WarCore/Sim/SpatialGeometry.cs
+filter = FullyQualifiedName~Mt074SpatialGeometry
+expect = WarCore.Tests.Mt074SpatialGeometryTests.RayBoundsRejectAnExpandedHitBeyondTheRequestBounds
+note = Bypassing the bounds rejection admits an expanded ray hit outside the request bounds.
+original:
+| return enteredNarrowPhase && Ray(in body, in q, out distance);
+replacement:
+| return Ray(in body, in q, out distance);
+
+[mt-074-02]
+file = Assets/WarCore/Sim/SpatialGeometry.cs
+filter = FullyQualifiedName~Mt074SpatialGeometry
+expect = WarCore.Tests.Mt074SpatialGeometryTests.CylinderHitsBehindTheRequestDirectionRegardlessOfCosine
+note = Applying the sector angle check to a cylinder rejects a hit behind its direction.
+original:
+| if (q.Kind == SpatialQueryKind.Sector && SpatialSector.TryIntersects(in body, in q, out bool hit))
+replacement:
+| if (q.Kind != SpatialQueryKind.Sector && SpatialSector.TryIntersects(in body, in q, out bool hit))

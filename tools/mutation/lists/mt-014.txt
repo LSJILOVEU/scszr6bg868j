@@ -1,0 +1,12 @@
+# CombatSystem.Melee
+# Surviving mutations of Assets/WarCore/Combat/CombatSystem.Melee.cs. Test classes are named Mt014CombatSystemMelee*.
+
+[mt-014-01]
+file = Assets/WarCore/Combat/CombatSystem.Melee.cs
+filter = FullyQualifiedName~Mt014CombatSystemMelee
+expect = WarCore.Tests.Mt014CombatSystemMeleeTests.EqualDistanceEnemiesLockHeadingToSmallerStableId
+note = Equal-distance enemies must lock the starting heading toward the smaller StableId.
+original:
+|                 if (found && (distance > best || (distance == best && id.CompareTo(bestId) >= 0))) continue;
+replacement:
+|                 if (found && (distance > best || (distance == best && id.CompareTo(bestId) <= 0))) continue;

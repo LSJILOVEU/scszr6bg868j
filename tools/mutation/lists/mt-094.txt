@@ -1,0 +1,32 @@
+# StableInput
+# Surviving mutations of Assets/WarCore/Sim/StableInput.cs. Test classes are named Mt094StableInput*.
+
+[mt-094-01]
+file = Assets/WarCore/Sim/StableInput.cs
+filter = FullyQualifiedName~Mt094StableInput
+expect = WarCore.Tests.Mt094StableInputTests.BoundInputPreservesDistinctFields
+note = Binding swaps primary attack and block instead of preserving their values.
+original:
+| return new InputFrame(Payload.Move,Payload.Aim,Payload.PrimaryAttack,Payload.Block,Payload.Throw,Payload.SkillSlot,squad,Payload.GameplayTick,Payload.SkillCommandArray,Payload.SkillCommandCount);
+replacement:
+| return new InputFrame(Payload.Move,Payload.Aim,Payload.Block,Payload.PrimaryAttack,Payload.Throw,Payload.SkillSlot,squad,Payload.GameplayTick,Payload.SkillCommandArray,Payload.SkillCommandCount);
+
+[mt-094-02]
+file = Assets/WarCore/Sim/StableInput.cs
+filter = FullyQualifiedName~Mt094StableInput
+expect = WarCore.Tests.Mt094StableInputTests.BoundInputPreservesDistinctFields
+note = Binding swaps movement and aim instead of preserving their vectors.
+original:
+| return new InputFrame(Payload.Move,Payload.Aim,Payload.PrimaryAttack,Payload.Block,Payload.Throw,Payload.SkillSlot,squad,Payload.GameplayTick,Payload.SkillCommandArray,Payload.SkillCommandCount);
+replacement:
+| return new InputFrame(Payload.Aim,Payload.Move,Payload.PrimaryAttack,Payload.Block,Payload.Throw,Payload.SkillSlot,squad,Payload.GameplayTick,Payload.SkillCommandArray,Payload.SkillCommandCount);
+
+[mt-094-03]
+file = Assets/WarCore/Sim/StableInput.cs
+filter = FullyQualifiedName~Mt094StableInput
+expect = WarCore.Tests.Mt094StableInputTests.BoundInputPreservesDistinctFields
+note = Binding swaps block and throw instead of preserving their values.
+original:
+| return new InputFrame(Payload.Move,Payload.Aim,Payload.PrimaryAttack,Payload.Block,Payload.Throw,Payload.SkillSlot,squad,Payload.GameplayTick,Payload.SkillCommandArray,Payload.SkillCommandCount);
+replacement:
+| return new InputFrame(Payload.Move,Payload.Aim,Payload.PrimaryAttack,Payload.Throw,Payload.Block,Payload.SkillSlot,squad,Payload.GameplayTick,Payload.SkillCommandArray,Payload.SkillCommandCount);

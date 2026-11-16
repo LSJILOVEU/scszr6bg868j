@@ -1,0 +1,22 @@
+# GeometryUInt192
+# Surviving mutations of Assets/WarCore/Sim/GeometryUInt192.cs. Test classes are named Mt044GeometryUInt192*.
+
+[mt-044-01]
+file = Assets/WarCore/Sim/GeometryUInt192.cs
+filter = FullyQualifiedName~Mt044GeometryUInt192
+expect = WarCore.Tests.Mt044GeometryUInt192Tests.SquareOfMaximum96BitValueIsExact
+note = Rejects the valid maximum 96-bit square input.
+original:
+| if (value.High > uint.MaxValue)
+replacement:
+| if (value.High >= uint.MaxValue)
+
+[mt-044-02]
+file = Assets/WarCore/Sim/GeometryUInt192.cs
+filter = FullyQualifiedName~Mt044GeometryUInt192
+expect = WarCore.Tests.Mt044GeometryUInt192Tests.DivideWithEqualWordCountsReturnsNonzeroQuotient
+note = Returns zero for operands with equal word counts and a nonzero quotient.
+original:
+| if (na < nb)
+replacement:
+| if (na <= nb)

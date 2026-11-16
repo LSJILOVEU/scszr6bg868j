@@ -1,0 +1,22 @@
+# StableEvents
+# Surviving mutations of Assets/WarCore/Sim/StableEvents.cs. Test classes are named Mt092StableEvents*.
+
+[mt-092-01]
+file = Assets/WarCore/Sim/StableEvents.cs
+filter = FullyQualifiedName~Mt092StableEvents
+expect = WarCore.Tests.Mt092StableEventsTests.ReadStableRejectsIndexEqualToEventCount
+note = Reading at the event count no longer throws SimBoundaryException.
+original:
+| if (stableLinks == null || index < 0 || index >= values.Length)
+replacement:
+| if (stableLinks == null || index < 0 || index > values.Length)
+
+[mt-092-02]
+file = Assets/WarCore/Sim/StableEvents.cs
+filter = FullyQualifiedName~Mt092StableEvents
+expect = WarCore.Tests.Mt092StableEventsTests.LoadStableEventsRejectsZeroOrRepeatedSequences
+note = Zero and repeated event sequences are accepted during stable event restoration.
+original:
+| SimStateReader.Require(item.Tick == expectedTick && item.Sequence > previous && item.Sequence < next,"Invalid stable event sequence.");
+replacement:
+| SimStateReader.Require(item.Tick == expectedTick && item.Sequence >= previous && item.Sequence < next,"Invalid stable event sequence.");

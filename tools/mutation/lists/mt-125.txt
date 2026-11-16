@@ -1,0 +1,72 @@
+# GameplaySourceSnapshot
+# Surviving mutations of Assets/WarCore/Sim/GameplaySourceSnapshot.cs. Test classes are named Mt125GameplaySourceSnapshot*.
+
+[mt-125-01]
+file = Assets/WarCore/Sim/GameplaySourceSnapshot.cs
+filter = FullyQualifiedName~Mt125GameplaySourceSnapshot
+expect = WarCore.Tests.Mt125GameplaySourceSnapshotTests.MaximumActionsIsThirtyTwo
+note = Reduces the declared action capture limit below 32.
+original:
+| public const int MaximumAttributes = 32, MaximumActions = 32;
+replacement:
+| public const int MaximumAttributes = 32, MaximumActions = 31;
+
+[mt-125-02]
+file = Assets/WarCore/Sim/GameplaySourceSnapshot.cs
+filter = FullyQualifiedName~Mt125GameplaySourceSnapshot
+expect = WarCore.Tests.Mt125GameplaySourceSnapshotTests.MaximumActionsIsThirtyTwo
+note = Raises the declared action capture limit above 32.
+original:
+| public const int MaximumAttributes = 32, MaximumActions = 32;
+replacement:
+| public const int MaximumAttributes = 32, MaximumActions = 33;
+
+[mt-125-03]
+file = Assets/WarCore/Sim/GameplaySourceSnapshot.cs
+filter = FullyQualifiedName~Mt125GameplaySourceSnapshot
+expect = WarCore.Tests.Mt125GameplaySourceSnapshotTests.MaximumAttributesIsThirtyTwo
+note = Reduces the declared attribute capture limit below 32.
+original:
+| public const int MaximumAttributes = 32, MaximumActions = 32;
+replacement:
+| public const int MaximumAttributes = 31, MaximumActions = 32;
+
+[mt-125-04]
+file = Assets/WarCore/Sim/GameplaySourceSnapshot.cs
+filter = FullyQualifiedName~Mt125GameplaySourceSnapshot
+expect = WarCore.Tests.Mt125GameplaySourceSnapshotTests.MaximumAttributesIsThirtyTwo
+note = Raises the declared attribute capture limit above 32.
+original:
+| public const int MaximumAttributes = 32, MaximumActions = 32;
+replacement:
+| public const int MaximumAttributes = 33, MaximumActions = 32;
+
+[mt-125-05]
+file = Assets/WarCore/Sim/GameplaySourceSnapshot.cs
+filter = FullyQualifiedName~Mt125GameplaySourceSnapshot
+expect = WarCore.Tests.Mt125GameplaySourceSnapshotTests.TwoArgumentConstructorDefaultsAbilityKeyToZero
+note = Gives the two-argument constructor a nonzero default ability key.
+original:
+| public GameplaySourceSnapshot(GameplayStamp source, long capturedTick) : this(source, capturedTick, 0) { }
+replacement:
+| public GameplaySourceSnapshot(GameplayStamp source, long capturedTick) : this(source, capturedTick, 1) { }
+
+[mt-125-06]
+file = Assets/WarCore/Sim/GameplaySourceSnapshot.cs
+filter = FullyQualifiedName~Mt125GameplaySourceSnapshot
+expect = WarCore.Tests.Mt125GameplaySourceSnapshotTests.AttributeLookupFindsFirstKeyAndClearsMissingValue
+note = Skips the first captured attribute during lookup.
+original:
+| for (int i = 0; i < AttributeCount; i++)
+replacement:
+| for (int i = 1; i < AttributeCount; i++)
+
+[mt-125-07]
+file = Assets/WarCore/Sim/GameplaySourceSnapshot.cs
+filter = FullyQualifiedName~Mt125GameplaySourceSnapshot
+expect = WarCore.Tests.Mt125GameplaySourceSnapshotTests.AttributeLookupFindsFirstKeyAndClearsMissingValue
+note = Returns a nonzero output value when the attribute key is absent.
+original:
+| raw = 0;
+replacement:
+| raw = 1;

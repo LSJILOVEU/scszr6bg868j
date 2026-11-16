@@ -1,0 +1,12 @@
+# TerrainTables
+# Surviving mutations of Assets/WarCore/Sim/TerrainTables.cs. Test classes are named Mt105TerrainTables*.
+
+[mt-105-01]
+file = Assets/WarCore/Sim/TerrainTables.cs
+filter = FullyQualifiedName~Mt105TerrainTables
+expect = WarCore.Tests.Mt105TerrainTablesTests.Digest_PreservesVersionOneEncoding
+note = Changing the algorithm version changes the recorded terrain digest.
+original:
+| public const int AlgorithmVersion = 1;
+replacement:
+| public const int AlgorithmVersion = 2;

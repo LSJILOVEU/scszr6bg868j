@@ -1,0 +1,52 @@
+# RequestDiagnostics
+# Surviving mutations of Assets/WarCore/Sim/RequestDiagnostics.cs. Test classes are named Mt057RequestDiagnostics*.
+
+[mt-057-01]
+file = Assets/WarCore/Sim/RequestDiagnostics.cs
+filter = FullyQualifiedName~Mt057RequestDiagnostics
+expect = WarCore.Tests.Mt057RequestDiagnosticsTests.RestoredFollowHostCleanupIsCancelledWhenOwnerRetires
+note = Restored FollowHost cleanups must be cancelled when their owner retires.
+original:
+| private static bool CleanupKind(StableRequestKind kind) => kind >= StableRequestKind.FollowHost && kind <= StableRequestKind.OccupantSeat;
+replacement:
+| private static bool CleanupKind(StableRequestKind kind) => kind > StableRequestKind.FollowHost && kind <= StableRequestKind.OccupantSeat;
+
+[mt-057-02]
+file = Assets/WarCore/Sim/RequestDiagnostics.cs
+filter = FullyQualifiedName~Mt057RequestDiagnostics
+expect = WarCore.Tests.Mt057RequestDiagnosticsTests.RepeatedCleanupKeepsTheSmallestRelatedIdentity
+note = Repeated cleanups for one owner must retain the smallest related identity.
+original:
+| if (previous.Subject.Equals(subject) && previous.Related.Id.CompareTo(related.Id) < 0)
+replacement:
+| if (previous.Subject.Equals(subject) && previous.Related.Id.CompareTo(related.Id) > 0)
+
+[mt-057-03]
+file = Assets/WarCore/Sim/RequestDiagnostics.cs
+filter = FullyQualifiedName~Mt057RequestDiagnostics
+expect = WarCore.Tests.Mt057RequestDiagnosticsTests.SingleSlotKeepsOneRequestAndSuppressesOnlyTheOverflow
+note = The last request diagnostic slot must remain usable before suppression starts.
+original:
+| if (count == pending.Length)
+replacement:
+| if (count == pending.Length - 1)
+
+[mt-057-04]
+file = Assets/WarCore/Sim/RequestDiagnostics.cs
+filter = FullyQualifiedName~Mt057RequestDiagnostics
+expect = WarCore.Tests.Mt057RequestDiagnosticsTests.LoadRejectsTotalAboveTheSumOfKindCounts
+note = Diagnostic totals must equal the sum of all kind counts when loading.
+original:
+| SimStateReader.Require(sum == total,"Incomplete diagnostic kind counts.");
+replacement:
+| SimStateReader.Require(true,"Incomplete diagnostic kind counts.");
+
+[mt-057-05]
+file = Assets/WarCore/Sim/RequestDiagnostics.cs
+filter = FullyQualifiedName~Mt057RequestDiagnostics
+expect = WarCore.Tests.Mt057RequestDiagnosticsTests.PendingOrdinaryRequestRestoresAndPublishesOnce
+note = Pending ordinary diagnostics with unit amounts must restore and publish once.
+original:
+| SimStateReader.Require(count < pending.Length && item.Amount == 1,"Request diagnostic capacity exceeded.");
+replacement:
+| SimStateReader.Require(count < pending.Length && item.Amount == 2,"Request diagnostic capacity exceeded.");

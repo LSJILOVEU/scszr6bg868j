@@ -1,0 +1,22 @@
+# PlayerFallback
+# Surviving mutations of Assets/WarCore/Control/PlayerFallback.cs. Test classes are named Mt022PlayerFallback*.
+
+[mt-022-01]
+file = Assets/WarCore/Control/PlayerFallback.cs
+filter = FullyQualifiedName~Mt022PlayerFallback
+expect = WarCore.Tests.Mt022PlayerFallbackTests.FinishedMatch_DirectStepKeepsDeadPlayer
+note = Allows control to switch from a dead player after the match has ended.
+original:
+|             if (matchEnded() || !combat.Entities.IsAlive(previous) || !combat.IsDead(previous)) return;
+replacement:
+|             if (!combat.Entities.IsAlive(previous) || !combat.IsDead(previous)) return;
+
+[mt-022-02]
+file = Assets/WarCore/Control/PlayerFallback.cs
+filter = FullyQualifiedName~Mt022PlayerFallback
+expect = WarCore.Tests.Mt022PlayerFallbackTests.LivingPlayer_OverlappingLowerStableIdAllyDoesNotTakeControl
+note = Transfers control from a living player to an overlapping ally with a lower stable ID.
+original:
+|             if (matchEnded() || !combat.Entities.IsAlive(previous) || !combat.IsDead(previous)) return;
+replacement:
+|             if (matchEnded() || !combat.Entities.IsAlive(previous)) return;

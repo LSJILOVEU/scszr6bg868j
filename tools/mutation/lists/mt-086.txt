@@ -1,0 +1,42 @@
+# SpawnCapture
+# Surviving mutations of Assets/WarCore/Sim/SpawnCapture.cs. Test classes are named Mt086SpawnCapture*.
+
+[mt-086-01]
+file = Assets/WarCore/Sim/SpawnCapture.cs
+filter = FullyQualifiedName~Mt086SpawnCapture
+expect = WarCore.Tests.Mt086SpawnCaptureTests.SpawnValuesDefaultOwnershipIsZero
+note = Changes default spawn ownership from zero to one.
+original:
+| public SpawnValues(SimVec3 position, SimVec3 facing = default, ulong ownership = 0)
+replacement:
+| public SpawnValues(SimVec3 position, SimVec3 facing = default, ulong ownership = 1)
+
+[mt-086-02]
+file = Assets/WarCore/Sim/SpawnCapture.cs
+filter = FullyQualifiedName~Mt086SpawnCapture
+expect = WarCore.Tests.Mt086SpawnCaptureTests.SpawnValuesRejectsPositionOutsideWorld
+note = Accepts a spawn position outside the world bounds.
+original:
+| position.ValidateWorld();
+replacement:
+| ;
+
+[mt-086-03]
+file = Assets/WarCore/Sim/SpawnCapture.cs
+filter = FullyQualifiedName~Mt086SpawnCapture
+expect = WarCore.Tests.Mt086SpawnCaptureTests.SpawnValuesRejectsFacingOutsideWorld
+note = Accepts a spawn facing outside the world bounds.
+original:
+| facing.ValidateWorld();
+replacement:
+| ;
+
+[mt-086-04]
+file = Assets/WarCore/Sim/SpawnCapture.cs
+filter = FullyQualifiedName~Mt086SpawnCapture
+expect = WarCore.Tests.Mt086SpawnCaptureTests.CaptureIgnoresPositionRemovedDuringLegacyLoad
+note = Captures stale position data from an absent component slot.
+original:
+| if (positions.Present[entity.Id])
+replacement:
+| if (true)

@@ -1,0 +1,12 @@
+# SquadStanding
+# Surviving mutations of Assets/WarCore/Interim/SquadStanding.cs. Test classes are named Mt032SquadStanding*.
+
+[mt-032-01]
+file = Assets/WarCore/Interim/SquadStanding.cs
+filter = FullyQualifiedName~Mt032SquadStanding
+expect = WarCore.Tests.Mt032SquadStandingTests.Constructor_RejectsNegativeKind
+note = Negative standing kinds must be rejected.
+original:
+| if (kind < StandingKind.Move || kind > StandingKind.Follow) throw new System.ArgumentOutOfRangeException(nameof(kind));
+replacement:
+| if (kind > StandingKind.Follow) throw new System.ArgumentOutOfRangeException(nameof(kind));

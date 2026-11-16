@@ -1,0 +1,22 @@
+# GameplaySettlement
+# Surviving mutations of Assets/WarCore/Sim/GameplaySettlement.cs. Test classes are named Mt124GameplaySettlement*.
+
+[mt-124-02]
+file = Assets/WarCore/Sim/GameplaySettlement.cs
+filter = FullyQualifiedName~Mt124GameplaySettlement
+expect = WarCore.Tests.Mt124GameplaySettlementTests.SubmitAcceptsFirstResourceRow
+note = Rejects a valid action targeting the first resource row before charging its cost.
+original:
+| if (ResourceIndex(item.Target.Id, resource) < 0)
+replacement:
+| if (ResourceIndex(item.Target.Id, resource) <= 0)
+
+[mt-124-03]
+file = Assets/WarCore/Sim/GameplaySettlement.cs
+filter = FullyQualifiedName~Mt124GameplaySettlement
+expect = WarCore.Tests.Mt124GameplaySettlementTests.SubmitAtCommandCapacityPaysAndSettlesWholeBatch
+note = Rejects a batch that exactly fills the available command capacity.
+original:
+| if (actions.Length > commands.Length - commandCount - heldAbilityCommands || actions.Length > notices.Length - resourceCount - commandCount - heldAbilityCommands)
+replacement:
+| if (actions.Length >= commands.Length - commandCount - heldAbilityCommands || actions.Length > notices.Length - resourceCount - commandCount - heldAbilityCommands)

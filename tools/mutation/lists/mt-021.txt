@@ -1,0 +1,22 @@
+# WeaponDef
+# Surviving mutations of Assets/WarCore/Combat/WeaponDef.cs. Test classes are named Mt021WeaponDef*.
+
+[mt-021-01]
+file = Assets/WarCore/Combat/WeaponDef.cs
+filter = FullyQualifiedName~Mt021WeaponDef
+expect = WarCore.Tests.Mt021WeaponDefTests.SpreadSpecRejectsNegativeGrowth
+note = Accepts negative spread growth at -1 instead of rejecting it.
+original:
+|             if (growthMilli < 0 || growthMilli > MaxLegalMilliDegrees) throw new ArgumentOutOfRangeException(nameof(growthMilli));
+replacement:
+|             if (growthMilli < -1 || growthMilli > MaxLegalMilliDegrees) throw new ArgumentOutOfRangeException(nameof(growthMilli));
+
+[mt-021-02]
+file = Assets/WarCore/Combat/WeaponDef.cs
+filter = FullyQualifiedName~Mt021WeaponDef
+expect = WarCore.Tests.Mt021WeaponDefTests.SpreadSpecRejectsNegativeRecovery
+note = Accepts negative spread recovery at -1 instead of rejecting it.
+original:
+|             if (recoverPerSecMilli < 0 || recoverPerSecMilli > MaxLegalMilliDegrees) throw new ArgumentOutOfRangeException(nameof(recoverPerSecMilli));
+replacement:
+|             if (recoverPerSecMilli < -1 || recoverPerSecMilli > MaxLegalMilliDegrees) throw new ArgumentOutOfRangeException(nameof(recoverPerSecMilli));

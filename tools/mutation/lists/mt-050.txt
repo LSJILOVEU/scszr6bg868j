@@ -1,0 +1,22 @@
+# NavProviderRegistry
+# Surviving mutations of Assets/WarCore/Sim/NavProviderRegistry.cs. Test classes are named Mt050NavProviderRegistry*.
+
+[mt-050-01]
+file = Assets/WarCore/Sim/NavProviderRegistry.cs
+filter = FullyQualifiedName~Mt050NavProviderRegistry
+expect = WarCore.Tests.Mt050NavProviderRegistryTests.RegistryStateVersionIsOne
+note = Changes the registry state version from the established value of one.
+original:
+| public int StateVersion => 1;
+replacement:
+| public int StateVersion => 2;
+
+[mt-050-02]
+file = Assets/WarCore/Sim/NavProviderRegistry.cs
+filter = FullyQualifiedName~Mt050NavProviderRegistry
+expect = WarCore.Tests.Mt050NavProviderRegistryTests.RegistrationRejectsZeroProviderVersion
+note = Allows registration of a provider with state version zero.
+original:
+| if (provider == null || string.IsNullOrEmpty(provider.StateTypeId) || provider.StateVersion <= 0)
+replacement:
+| if (provider == null || string.IsNullOrEmpty(provider.StateTypeId) || provider.StateVersion < 0)

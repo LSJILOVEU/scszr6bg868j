@@ -1,0 +1,12 @@
+# GameplaySchema
+# Surviving mutations of Assets/WarCore/Sim/GameplaySchema.cs. Test classes are named Mt123GameplaySchema*.
+
+[mt-123-03]
+file = Assets/WarCore/Sim/GameplaySchema.cs
+filter = FullyQualifiedName~Mt123GameplaySchema
+expect = WarCore.Tests.Mt123GameplaySchemaTests.ConstantResourceRangeIsAcceptedAndPreserved
+note = Rejects a valid constant resource whose lower bound, upper bound and initial value are equal.
+original:
+| || resource.LowerRaw > resource.UpperRaw || resource.InitialRaw < resource.LowerRaw
+replacement:
+| || resource.LowerRaw >= resource.UpperRaw || resource.InitialRaw < resource.LowerRaw

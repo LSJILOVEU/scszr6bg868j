@@ -1,0 +1,12 @@
+# DefaultAutoFire
+# Surviving mutations of Assets/WarCore/Combat/DefaultAutoFire.cs. Test classes are named Mt017DefaultAutoFire*.
+
+[mt-017-01]
+file = Assets/WarCore/Combat/DefaultAutoFire.cs
+filter = FullyQualifiedName~Mt017DefaultAutoFire
+expect = WarCore.Tests.Mt017DefaultAutoFireTests.AimAt_AllyRollEqualsMissThreshold_HoldsFire
+note = An ally roll equal to the miss threshold must hold fire when a teammate blocks the shot.
+original:
+|             if (combat.AllyBlocks(shooter, origin, direction) && sim.Rng.NextInt(allyStream, 65536) >= combat.Pack.AllyCheckMissRaw)
+replacement:
+|             if (combat.AllyBlocks(shooter, origin, direction) && sim.Rng.NextInt(allyStream, 65536) > combat.Pack.AllyCheckMissRaw)

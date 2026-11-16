@@ -1,0 +1,52 @@
+# SimSpatial
+# Surviving mutations of Assets/WarCore/Sim/SimSpatial.cs. Test classes are named Mt065SimSpatial*.
+
+[mt-065-01]
+file = Assets/WarCore/Sim/SimSpatial.cs
+filter = FullyQualifiedName~Mt065SimSpatial
+expect = WarCore.Tests.Mt065SimSpatialRestoreTests.StartedRestoreRejectsSpatialConfigurationWithoutPublishingAQuery
+note = Configuration during started restore warmup publishes a query before rejection.
+original:
+| if (started || warmed || spatialIndex != null)
+replacement:
+| if (warmed || spatialIndex != null)
+
+[mt-065-02]
+file = Assets/WarCore/Sim/SimSpatial.cs
+filter = FullyQualifiedName~Mt065SimSpatial
+expect = WarCore.Tests.Mt065SimSpatialTests.ConfigurationAfterWarmupLeavesSpatialQueryUnbound
+note = Configuration after warmup publishes a query before rejection.
+original:
+| if (started || warmed || spatialIndex != null)
+replacement:
+| if (started || spatialIndex != null)
+
+[mt-065-03]
+file = Assets/WarCore/Sim/SimSpatial.cs
+filter = FullyQualifiedName~Mt065SimSpatial
+expect = WarCore.Tests.Mt065SimSpatialTests.BoundaryDuringRequestsPreservesPendingDestructionUntilPublication
+note = An in-tick boundary prematurely publishes destruction and recycles the entity.
+original:
+| if (stepping || faulted)
+replacement:
+| if (faulted)
+
+[mt-065-04]
+file = Assets/WarCore/Sim/SimSpatial.cs
+filter = FullyQualifiedName~Mt065SimSpatial
+expect = WarCore.Tests.Mt065SimSpatialTests.FailedLargerRestoreRejectsTheFirstEntityBeyondMovementCapacity
+note = The first entity beyond movement capacity raises an array exception instead of the boundary exception.
+original:
+| if (!Entities.IsAlive(entity) || entity.Id >= movementWritten.Length)
+replacement:
+| if (!Entities.IsAlive(entity) || entity.Id > movementWritten.Length)
+
+[mt-065-05]
+file = Assets/WarCore/Sim/SimSpatial.cs
+filter = FullyQualifiedName~Mt065SimSpatial
+expect = WarCore.Tests.Mt065SimSpatialTests.InvalidMovementLeavesBufferAvailableForValidRetry
+note = Out-of-world movement is buffered instead of rejected before consuming the entity result slot.
+original:
+| position.ValidateWorld();
+replacement:
+| ;

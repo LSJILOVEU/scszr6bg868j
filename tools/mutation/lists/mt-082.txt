@@ -1,0 +1,32 @@
+# SpatialQueryModes
+# Surviving mutations of Assets/WarCore/Sim/SpatialQueryModes.cs. Test classes are named Mt082SpatialQueryModes*.
+
+[mt-082-01]
+file = Assets/WarCore/Sim/SpatialQueryModes.cs
+filter = FullyQualifiedName~Mt082SpatialQueryModes
+expect = WarCore.Tests.Mt082SpatialQueryModesTests.SphereDefaultsCosineToZero
+note = Sphere requests no longer default Cosine to zero.
+original:
+| => new SpatialRequest(SpatialQueryKind.Sphere, center, radius, default, default, default, 0, layerMask);
+replacement:
+| => new SpatialRequest(SpatialQueryKind.Sphere, center, radius, default, default, default, 1, layerMask);
+
+[mt-082-02]
+file = Assets/WarCore/Sim/SpatialQueryModes.cs
+filter = FullyQualifiedName~Mt082SpatialQueryModes
+expect = WarCore.Tests.Mt082SpatialQueryModesTests.SectorAcceptsCosineAtPositiveLimit
+note = Sector requests reject the valid cosine endpoint of 1000.
+original:
+| if (cosineHalfAnglePermille < -1000 || cosineHalfAnglePermille > 1000)
+replacement:
+| if (cosineHalfAnglePermille < -1000 || cosineHalfAnglePermille >= 1000)
+
+[mt-082-03]
+file = Assets/WarCore/Sim/SpatialQueryModes.cs
+filter = FullyQualifiedName~Mt082SpatialQueryModes
+expect = WarCore.Tests.Mt082SpatialQueryModesTests.CapsuleAcceptsSweepAtLengthLimit
+note = Capsule requests reject a valid sweep of exactly 16384 metres.
+original:
+| if (delta.LengthSquared.Raw.Magnitude.CompareTo(FixedUInt128.Multiply(limit, limit)) > 0)
+replacement:
+| if (delta.LengthSquared.Raw.Magnitude.CompareTo(FixedUInt128.Multiply(limit, limit)) >= 0)

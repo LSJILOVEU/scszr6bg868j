@@ -1,0 +1,32 @@
+# SimRandom
+# Surviving mutations of Assets/WarCore/Sim/SimRandom.cs. Test classes are named Mt064SimRandom*.
+
+[mt-064-01]
+file = Assets/WarCore/Sim/SimRandom.cs
+filter = FullyQualifiedName~Mt064SimRandom
+expect = WarCore.Tests.Mt064SimRandomTests.SampleAtRejectionThresholdConsumesExactlyOneDraw
+note = Rejects the sample at the threshold and advances the stream an extra time.
+original:
+| while (sample < threshold);
+replacement:
+| while (sample <= threshold);
+
+[mt-064-02]
+file = Assets/WarCore/Sim/SimRandom.cs
+filter = FullyQualifiedName~Mt064SimRandom
+expect = WarCore.Tests.Mt064SimRandomTests.ShortManifestReportsEmptyStreamName
+note = Rejects a short manifest at the count check before reporting its empty stream name.
+original:
+| int count = reader.Count(reader.Remaining / 12);
+replacement:
+| int count = reader.Count(reader.Remaining / 13);
+
+[mt-064-03]
+file = Assets/WarCore/Sim/SimRandom.cs
+filter = FullyQualifiedName~Mt064SimRandom
+expect = WarCore.Tests.Mt064SimRandomTests.DuplicateStreamNamesThrowSnapshotException
+note = Allows duplicate stream names past manifest validation and leaks ArgumentException.
+original:
+| SimStateReader.Require(!string.IsNullOrEmpty(name) && (previous == null || StringComparer.Ordinal.Compare(previous, name) < 0), "Invalid RNG stream manifest.");
+replacement:
+| SimStateReader.Require(!string.IsNullOrEmpty(name) && (previous == null || StringComparer.Ordinal.Compare(previous, name) <= 0), "Invalid RNG stream manifest.");

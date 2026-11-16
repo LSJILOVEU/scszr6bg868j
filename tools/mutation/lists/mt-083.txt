@@ -1,0 +1,42 @@
+# SpatialQueryView
+# Surviving mutations of Assets/WarCore/Sim/SpatialQueryView.cs. Test classes are named Mt083SpatialQueryView*.
+
+[mt-083-01]
+file = Assets/WarCore/Sim/SpatialQueryView.cs
+filter = FullyQualifiedName~Mt083SpatialQueryView
+expect = WarCore.Tests.Mt083SpatialQueryViewTests.ConstructorRejectsNullIndex
+note = A null index must raise ArgumentNullException during construction.
+original:
+| Index = index ?? throw new ArgumentNullException(nameof(index));
+replacement:
+| Index = index;
+
+[mt-083-02]
+file = Assets/WarCore/Sim/SpatialQueryView.cs
+filter = FullyQualifiedName~Mt083SpatialQueryView
+expect = WarCore.Tests.Mt083SpatialQueryViewTests.BindRejectsNullContext
+note = Binding a null context must raise ArgumentNullException.
+original:
+| QueryContext = context ?? throw new ArgumentNullException(nameof(context));
+replacement:
+| QueryContext = context;
+
+[mt-083-03]
+file = Assets/WarCore/Sim/SpatialQueryView.cs
+filter = FullyQualifiedName~Mt083SpatialQueryView
+expect = WarCore.Tests.Mt083SpatialQueryViewTests.BindRejectsContextOneSlotBelowIndexCapacity
+note = A context one slot smaller than the index must be rejected.
+original:
+| if (context.Capacity < index.Capacity)
+replacement:
+| if (context.Capacity < index.Capacity - 1)
+
+[mt-083-04]
+file = Assets/WarCore/Sim/SpatialQueryView.cs
+filter = FullyQualifiedName~Mt083SpatialQueryView
+expect = WarCore.Tests.Mt083SpatialQueryViewTests.QueryRejectsPositionChangedThroughRetainedReference
+note = Queries must reject position changes through retained references after publication.
+original:
+| Index.ValidateRead();
+replacement:
+| ;

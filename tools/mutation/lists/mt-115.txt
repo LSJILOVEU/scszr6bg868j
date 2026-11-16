@@ -1,0 +1,82 @@
+# GameplayBinding
+# Surviving mutations of Assets/WarCore/Sim/GameplayBinding.cs. Test classes are named Mt115GameplayBinding*.
+
+[mt-115-01]
+file = Assets/WarCore/Sim/GameplayBinding.cs
+filter = FullyQualifiedName~Mt115GameplayBinding
+expect = WarCore.Tests.Mt115GameplayBindingSerializerTests.SerializerTypeIdIs21
+note = Changes the stable binding component type identifier from 21 to 1021.
+original:
+| public int TypeId => 21;
+replacement:
+| public int TypeId => 1021;
+
+[mt-115-02]
+file = Assets/WarCore/Sim/GameplayBinding.cs
+filter = FullyQualifiedName~Mt115GameplayBinding
+expect = WarCore.Tests.Mt115GameplayBindingSerializerTests.SerializerTypeIdIs21
+note = Changes the stable binding component type identifier from 21 to 2021.
+original:
+| public int TypeId => 21;
+replacement:
+| public int TypeId => 2021;
+
+[mt-115-03]
+file = Assets/WarCore/Sim/GameplayBinding.cs
+filter = FullyQualifiedName~Mt115GameplayBinding
+expect = WarCore.Tests.Mt115GameplayBindingSerializerTests.SerializerTypeIdIs21
+note = Changes the stable binding component type identifier from 21 to 3021.
+original:
+| public int TypeId => 21;
+replacement:
+| public int TypeId => 3021;
+
+[mt-115-04]
+file = Assets/WarCore/Sim/GameplayBinding.cs
+filter = FullyQualifiedName~Mt115GameplayBinding
+expect = WarCore.Tests.Mt115GameplayBindingSerializerTests.SerializerTypeIdIs21
+note = Changes the stable binding component type identifier from 21 to 4021.
+original:
+| public int TypeId => 21;
+replacement:
+| public int TypeId => 4021;
+
+[mt-115-05]
+file = Assets/WarCore/Sim/GameplayBinding.cs
+filter = FullyQualifiedName~Mt115GameplayBinding
+expect = WarCore.Tests.Mt115GameplayBindingSerializerTests.SerializerVersionIs1
+note = Changes the binding component serialization version from 1 to 2.
+original:
+| public int Version => 1;
+replacement:
+| public int Version => 2;
+
+[mt-115-06]
+file = Assets/WarCore/Sim/GameplayBinding.cs
+filter = FullyQualifiedName~Mt115GameplayBinding
+expect = WarCore.Tests.Mt115GameplayBindingSerializerTests.SerializerVersionIs1
+note = Changes the binding component serialization version from 1 to 3.
+original:
+| public int Version => 1;
+replacement:
+| public int Version => 3;
+
+[mt-115-07]
+file = Assets/WarCore/Sim/GameplayBinding.cs
+filter = FullyQualifiedName~Mt115GameplayBinding
+expect = WarCore.Tests.Mt115GameplayBindingSerializerTests.SerializerVersionIs1
+note = Changes the binding component serialization version from 1 to 4.
+original:
+| public int Version => 1;
+replacement:
+| public int Version => 4;
+
+[mt-115-08]
+file = Assets/WarCore/Sim/GameplayBinding.cs
+filter = FullyQualifiedName~Mt115GameplayBinding
+expect = WarCore.Tests.Mt115GameplayBindingSerializerTests.SerializerVersionIs1
+note = Changes the binding component serialization version from 1 to 5.
+original:
+| public int Version => 1;
+replacement:
+| public int Version => 5;

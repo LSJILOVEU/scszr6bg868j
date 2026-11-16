@@ -1,0 +1,32 @@
+# CombatPack
+# Surviving mutations of Assets/WarCore/Combat/CombatPack.cs. Test classes are named Mt011CombatPack*.
+
+[mt-011-01]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~Mt011CombatPack
+expect = WarCore.Tests.Mt011CombatPackTests.Constructor_RejectsAllyCheckMissRawAboveOne
+note = Allows an ally check miss probability above one.
+original:
+|             if (allyCheckMissRaw < 0 || allyCheckMissRaw > SimFix.Scale) throw new ArgumentOutOfRangeException(nameof(allyCheckMissRaw));
+replacement:
+|             if (allyCheckMissRaw < 0 || allyCheckMissRaw > SimFix.Scale + 1) throw new ArgumentOutOfRangeException(nameof(allyCheckMissRaw));
+
+[mt-011-02]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~Mt011CombatPack
+expect = WarCore.Tests.Mt011CombatPackTests.Constructor_RejectsAllyHoldMilliBelowMinimum
+note = Allows an ally hold duration below 1000 thousandths of a tick.
+original:
+|             if (allyHoldMilli < 1000 || allyHoldMilli > 1_000_000_000_000L) throw new ArgumentOutOfRangeException(nameof(allyHoldMilli));
+replacement:
+|             if (allyHoldMilli < 999 || allyHoldMilli > 1_000_000_000_000L) throw new ArgumentOutOfRangeException(nameof(allyHoldMilli));
+
+[mt-011-03]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~Mt011CombatPack
+expect = WarCore.Tests.Mt011CombatPackTests.WithSelector_PreservesDistinctFriendlyFireFlags
+note = Swaps the friendly fire flag and its lock when replacing the selector.
+original:
+|             FriendlyFire, FriendlyFireLocked, AllyCheckMissRaw, AllyHoldMilli, melee.Length == 0 ? null : melee, block.Length == 0 ? null : block);
+replacement:
+|             FriendlyFireLocked, FriendlyFire, AllyCheckMissRaw, AllyHoldMilli, melee.Length == 0 ? null : melee, block.Length == 0 ? null : block);

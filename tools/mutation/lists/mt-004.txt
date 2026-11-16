@@ -1,0 +1,52 @@
+# BlockAiSystem
+# Surviving mutations of Assets/WarCore/Battle/BlockAiSystem.cs. Test classes are named Mt004BlockAiSystem*.
+
+[mt-004-01]
+file = Assets/WarCore/Battle/BlockAiSystem.cs
+filter = FullyQualifiedName~Mt004BlockAiSystem
+expect = WarCore.Tests.Mt004BlockAiSystemTests.AMiddleChance_MatchesTheFixedSwingRoll
+note = Changing the first mixing shift changes the fixed swing roll at an intermediate chance.
+original:
+|                 z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9UL + (ulong)startTick;
+replacement:
+|                 z = (z ^ (z >> 29)) * 0xBF58476D1CE4E5B9UL + (ulong)startTick;
+
+[mt-004-02]
+file = Assets/WarCore/Battle/BlockAiSystem.cs
+filter = FullyQualifiedName~Mt004BlockAiSystem
+expect = WarCore.Tests.Mt004BlockAiSystemTests.AMiddleChance_MatchesTheFixedSwingRoll
+note = Changing the second mixing shift changes the fixed swing roll at an intermediate chance.
+original:
+|                 z = (z ^ (z >> 27)) * 0x94D049BB133111EBUL;
+replacement:
+|                 z = (z ^ (z >> 26)) * 0x94D049BB133111EBUL;
+
+[mt-004-03]
+file = Assets/WarCore/Battle/BlockAiSystem.cs
+filter = FullyQualifiedName~Mt004BlockAiSystem
+expect = WarCore.Tests.Mt004BlockAiSystemTests.AMiddleChance_MatchesTheFixedSwingRoll
+note = Changing the final mixing shift changes the fixed swing roll at an intermediate chance.
+original:
+|                 z ^= z >> 31;
+replacement:
+|                 z ^= z >> 30;
+
+[mt-004-04]
+file = Assets/WarCore/Battle/BlockAiSystem.cs
+filter = FullyQualifiedName~Mt004BlockAiSystem
+expect = WarCore.Tests.Mt004BlockAiSystemTests.TheControlledUnit_KeepsItsHoldWithoutAThreat
+note = Removing the controlled unit exemption releases a player hold when no swing threatens it.
+original:
+|                 if (controlled != null && unit.Equals(controlled.Current)) continue;
+replacement:
+|                 
+
+[mt-004-05]
+file = Assets/WarCore/Battle/BlockAiSystem.cs
+filter = FullyQualifiedName~Mt004BlockAiSystem
+expect = WarCore.Tests.Mt004BlockAiSystemTests.TheIncomingSwing_RollsAttackerBeforeDefender
+note = Swapping attacker and defender changes which incoming swings raise the block.
+original:
+|                 bool raise = combat.TryMeleeThreat(unit, out StableId attacker, out long startTick) && Raises(attacker, self, startTick, permille);
+replacement:
+|                 bool raise = combat.TryMeleeThreat(unit, out StableId attacker, out long startTick) && Raises(self, attacker, startTick, permille);

@@ -1,0 +1,32 @@
+# SpatialMotion
+# Surviving mutations of Assets/WarCore/Sim/SpatialMotion.cs. Test classes are named Mt078SpatialMotion*.
+
+[mt-078-01]
+file = Assets/WarCore/Sim/SpatialMotion.cs
+filter = FullyQualifiedName~Mt078SpatialMotion
+expect = WarCore.Tests.Mt078SpatialMotionTests.PositionRequestSerializerKeepsSnapshotTypeId
+note = Changes the position request snapshot type identifier from 12.
+original:
+| public int TypeId => 12;
+replacement:
+| public int TypeId => 14;
+
+[mt-078-02]
+file = Assets/WarCore/Sim/SpatialMotion.cs
+filter = FullyQualifiedName~Mt078SpatialMotion
+expect = WarCore.Tests.Mt078SpatialMotionTests.AttachmentSerializerKeepsSnapshotTypeId
+note = Changes the attachment snapshot type identifier from 13.
+original:
+| public int TypeId => 13;
+replacement:
+| public int TypeId => 14;
+
+[mt-078-03]
+file = Assets/WarCore/Sim/SpatialMotion.cs
+filter = FullyQualifiedName~Mt078SpatialMotion
+expect = WarCore.Tests.Mt078SpatialMotionTests.LastSlotPassengerFollowsHostOnSuccessiveTicks
+note = Leaves the last slot marked as visited so its passenger stops following the host after the first tick.
+original:
+| Array.Clear(attachmentState, 0, attachmentState.Length);
+replacement:
+| Array.Clear(attachmentState, 0, attachmentState.Length - 1);

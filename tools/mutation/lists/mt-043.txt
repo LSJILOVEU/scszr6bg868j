@@ -1,0 +1,12 @@
+# GeometryInt288
+# Surviving mutations of Assets/WarCore/Sim/GeometryInt288.cs. Test classes are named Mt043GeometryInt288*.
+
+[mt-043-01]
+file = Assets/WarCore/Sim/GeometryInt288.cs
+filter = FullyQualifiedName~Mt043GeometryInt288
+expect = WarCore.Tests.Mt043GeometryInt288Tests.Magnitude128PreservesFourWordValues
+note = Rejects valid magnitudes requiring four 32-bit words.
+original:
+| if (length > 4)
+replacement:
+| if (length >= 4)

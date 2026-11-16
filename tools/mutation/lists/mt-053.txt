@@ -1,0 +1,12 @@
+# PostureGeometry
+# Surviving mutations of Assets/WarCore/Sim/PostureGeometry.cs. Test classes are named Mt053PostureGeometry*.
+
+[mt-053-01]
+file = Assets/WarCore/Sim/PostureGeometry.cs
+filter = FullyQualifiedName~Mt053PostureGeometry
+expect = WarCore.Tests.Mt053PostureGeometryTests.ZeroBaselineReturnsZero
+note = Rejects a valid zero baseline detection distance.
+original:
+| if (baseline.Raw < 0)
+replacement:
+| if (baseline.Raw <= 0)

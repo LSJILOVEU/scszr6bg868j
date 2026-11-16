@@ -1,0 +1,22 @@
+# InertiaMotion
+# Surviving mutations of Assets/WarCore/Interim/InertiaMotion.cs. Test classes are named Mt025InertiaMotion*.
+
+[mt-025-01]
+file = Assets/WarCore/Interim/InertiaMotion.cs
+filter = FullyQualifiedName~Mt025InertiaMotion
+expect = WarCore.Tests.Motion.Mt025InertiaMotionTests.NullClock_IsRejected
+note = A null clock is accepted instead of raising ArgumentNullException at construction.
+original:
+| this.clock = clock ?? throw new ArgumentNullException(nameof(clock));
+replacement:
+| this.clock = clock;
+
+[mt-025-02]
+file = Assets/WarCore/Interim/InertiaMotion.cs
+filter = FullyQualifiedName~Mt025InertiaMotion
+expect = WarCore.Tests.Motion.Mt025InertiaMotionTests.ZeroMaxSpeed_ReturnsTheWantedSpeed
+note = A zero maximum speed stops the unit instead of leaving its requested speed uncapped.
+original:
+| if (limit.MaxSpeed.Raw > 0) cap = SimFix.Min(cap, limit.MaxSpeed);
+replacement:
+| if (limit.MaxSpeed.Raw >= 0) cap = SimFix.Min(cap, limit.MaxSpeed);

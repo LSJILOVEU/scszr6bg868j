@@ -1,0 +1,12 @@
+# StructureHealth
+# Surviving mutations of Assets/WarCore/Sim/StructureHealth.cs. Test classes are named Mt104StructureHealth*.
+
+[mt-104-01]
+file = Assets/WarCore/Sim/StructureHealth.cs
+filter = FullyQualifiedName~Mt104StructureHealth
+expect = WarCore.Tests.Mt104StructureHealthTests.StateVersionRemainsOne
+note = Changes the public structure state version from 1 to 2, breaking snapshot compatibility.
+original:
+| public int StateVersion => 1;
+replacement:
+| public int StateVersion => 2;

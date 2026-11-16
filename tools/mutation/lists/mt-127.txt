@@ -1,0 +1,32 @@
+# GameplayStatusAdmission
+# Surviving mutations of Assets/WarCore/Sim/GameplayStatusAdmission.cs. Test classes are named Mt127GameplayStatusAdmission*.
+
+[mt-127-01]
+file = Assets/WarCore/Sim/GameplayStatusAdmission.cs
+filter = FullyQualifiedName~Mt127GameplayStatusAdmission
+expect = WarCore.Tests.Mt127GameplayStatusAdmissionTests.ZeroMaximumDispelPreservesTheMatchingStatus
+note = Rejects a valid zero-maximum dispel that must leave matching statuses intact.
+original:
+| if (item.Maximum < 0 || item.Maximum > GameplayMath.MaxPackets)
+replacement:
+| if (item.Maximum <= 0 || item.Maximum > GameplayMath.MaxPackets)
+
+[mt-127-02]
+file = Assets/WarCore/Sim/GameplayStatusAdmission.cs
+filter = FullyQualifiedName~Mt127GameplayStatusAdmission
+expect = WarCore.Tests.Mt127GameplayStatusAdmissionTests.LastAvailableEffectTokenCanCreateAStatus
+note = Rejects status creation when exactly one effect token remains available.
+original:
+| if ((ulong)creates > ulong.MaxValue - effectNext)
+replacement:
+| if ((ulong)creates >= ulong.MaxValue - effectNext)
+
+[mt-127-03]
+file = Assets/WarCore/Sim/GameplayStatusAdmission.cs
+filter = FullyQualifiedName~Mt127GameplayStatusAdmission
+expect = WarCore.Tests.Mt127GameplayStatusAdmissionTests.FullCommandBufferRejectsDirectStatusAdmissionWithBoundaryException
+note = Replaces the required capacity boundary exception with an array bounds exception when the command buffer is full.
+original:
+| if (commandCount >= commands.Length - heldAbilityCommands || commandCount >= notices.Length - resourceCount - heldAbilityCommands)
+replacement:
+| if (commandCount > commands.Length - heldAbilityCommands || commandCount >= notices.Length - resourceCount - heldAbilityCommands)

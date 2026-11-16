@@ -1,0 +1,12 @@
+# GameplayLifeData
+# Surviving mutations of Assets/WarCore/Sim/GameplayLifeData.cs. Test classes are named Mt120GameplayLifeData*.
+
+[mt-120-01]
+file = Assets/WarCore/Sim/GameplayLifeData.cs
+filter = FullyQualifiedName~Mt120GameplayLifeData
+expect = WarCore.Tests.Mt120GameplayLifeDataTests.NoticeStagingCapacityAcceptsPacketLimit
+note = Rejects a valid life rule schema whose notice staging capacity equals the packet limit.
+original:
+| if (lifeRules.Length != 0 && staging > GameplayMath.MaxPackets)
+replacement:
+| if (lifeRules.Length != 0 && staging >= GameplayMath.MaxPackets)

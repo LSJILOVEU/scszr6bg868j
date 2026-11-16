@@ -1,0 +1,32 @@
+# EntitySnapshots
+# Surviving mutations of Assets/WarCore/Sim/EntitySnapshots.cs. Test classes are named Mt036EntitySnapshots*.
+
+[mt-036-01]
+file = Assets/WarCore/Sim/EntitySnapshots.cs
+filter = FullyQualifiedName~Mt036EntitySnapshots
+expect = WarCore.Tests.Mt036EntitySnapshotsTests.DeadSlotWithComponentIsRejected
+note = Allows a dead entity slot to retain a serialized component.
+original:
+| SimStateReader.Require(!Present[i] || alive[i], "A dead entity cannot own a component.");
+replacement:
+| SimStateReader.Require(true, "A dead entity cannot own a component.");
+
+[mt-036-02]
+file = Assets/WarCore/Sim/EntitySnapshots.cs
+filter = FullyQualifiedName~Mt036EntitySnapshots
+expect = WarCore.Tests.Mt036EntitySnapshotsTests.ZeroCapacityPayloadIsRejected
+note = Accepts an entity payload with zero capacity.
+original:
+| SimStateReader.Require(capacity > 0, "Invalid entity capacity.");
+replacement:
+| SimStateReader.Require(capacity >= 0, "Invalid entity capacity.");
+
+[mt-036-03]
+file = Assets/WarCore/Sim/EntitySnapshots.cs
+filter = FullyQualifiedName~Mt036EntitySnapshots
+expect = WarCore.Tests.Mt036EntitySnapshotsTests.DuplicateFreeSlotWithValidCountAndHeapIsRejected
+note = Accepts duplicate free slots when the dead count and heap order are valid.
+original:
+| SimStateReader.Require(id >= 0 && id < savedAllocated && !savedAlive[id] && !seen[id], "Invalid free entity slot.");
+replacement:
+| SimStateReader.Require(id >= 0 && id < savedAllocated && !savedAlive[id] , "Invalid free entity slot.");

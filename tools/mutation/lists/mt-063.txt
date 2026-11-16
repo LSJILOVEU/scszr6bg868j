@@ -1,0 +1,12 @@
+# SimInteger
+# Surviving mutations of Assets/WarCore/Sim/SimInteger.cs. Test classes are named Mt063SimInteger*.
+
+[mt-063-01]
+file = Assets/WarCore/Sim/SimInteger.cs
+filter = FullyQualifiedName~Mt063SimInteger
+expect = WarCore.Tests.Mt063SimIntegerTests.AddRetainsMaximumResult
+note = Rejects a valid addition whose result equals long.MaxValue.
+original:
+| if ((b > 0 && a > long.MaxValue - b) || (b < 0 && a < long.MinValue - b))
+replacement:
+| if ((b > 0 && a >= long.MaxValue - b) || (b < 0 && a < long.MinValue - b))

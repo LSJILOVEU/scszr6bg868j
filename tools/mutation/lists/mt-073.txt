@@ -1,0 +1,42 @@
+# SpatialCellTable
+# Surviving mutations of Assets/WarCore/Sim/SpatialCellTable.cs. Test classes are named Mt073SpatialCellTable*.
+
+[mt-073-01]
+file = Assets/WarCore/Sim/SpatialCellTable.cs
+filter = FullyQualifiedName~Mt073SpatialCellTable
+expect = WarCore.Tests.Mt073SpatialCellTableTests.RejectsNewCellAtHalfCapacityWithSpareMembers
+note = Allows a new cell beyond the half-capacity load limit when membership capacity remains.
+original:
+| Occupied = new int[cells / 2];
+replacement:
+| Occupied = new int[cells / 2 + 1];
+
+[mt-073-02]
+file = Assets/WarCore/Sim/SpatialCellTable.cs
+filter = FullyQualifiedName~Mt073SpatialCellTable
+expect = WarCore.Tests.Mt073SpatialCellTableTests.LookupCountsFirstProbeAndOnlyMissesAsEmpty
+note = Omits the first hash slot from each lookup probe count.
+original:
+| int probes = 1;
+replacement:
+| int probes = 0;
+
+[mt-073-03]
+file = Assets/WarCore/Sim/SpatialCellTable.cs
+filter = FullyQualifiedName~Mt073SpatialCellTable
+expect = WarCore.Tests.Mt073SpatialCellTableTests.LookupCountsFirstProbeAndOnlyMissesAsEmpty
+note = Counts successful lookups as empty and misses as occupied.
+original:
+| if (Cells[slot].Count == 0)
+replacement:
+| if (Cells[slot].Count != 0)
+
+[mt-073-04]
+file = Assets/WarCore/Sim/SpatialCellTable.cs
+filter = FullyQualifiedName~Mt073SpatialCellTable
+expect = WarCore.Tests.Mt073SpatialCellTableTests.UsedBytesCountsOccupiedCellsAndMembers
+note = Overstates used payload by one byte per occupied cell.
+original:
+| internal long UsedBytes => (long)Count * 52 + (long)MemberCount * 4 + (Regions == null ? 0 : Regions.UsedBytes);
+replacement:
+| internal long UsedBytes => (long)Count * 53 + (long)MemberCount * 4 + (Regions == null ? 0 : Regions.UsedBytes);

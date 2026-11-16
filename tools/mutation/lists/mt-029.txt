@@ -1,0 +1,32 @@
+# InterimOrders
+# Surviving mutations of Assets/WarCore/Interim/InterimOrders.cs. Test classes are named Mt029InterimOrders*.
+
+[mt-029-01]
+file = Assets/WarCore/Interim/InterimOrders.cs
+filter = FullyQualifiedName~Mt029InterimOrders
+expect = WarCore.Tests.Mt029InterimOrdersTests.Follow_RetargetsAfterOneAndAHalfMetres
+note = A follow target that moves one and a half metres no longer updates the active movement target.
+original:
+| private readonly SimWide followRetargetSquared = new SimVec3(SimFix.FromInt(1), default, default).LengthSquared;
+replacement:
+| private readonly SimWide followRetargetSquared = new SimVec3(SimFix.FromInt(2), default, default).LengthSquared;
+
+[mt-029-02]
+file = Assets/WarCore/Interim/InterimOrders.cs
+filter = FullyQualifiedName~Mt029InterimOrders
+expect = WarCore.Tests.Mt029InterimOrdersTests.Follow_StopsAtExactlyThreeMetres
+note = An active follower keeps moving when its distance to the target is exactly three metres.
+original:
+| if (new SimVec3(gap.X, default, gap.Z).LengthSquared <= followStopSquared)
+replacement:
+| if (new SimVec3(gap.X, default, gap.Z).LengthSquared < followStopSquared)
+
+[mt-029-03]
+file = Assets/WarCore/Interim/InterimOrders.cs
+filter = FullyQualifiedName~Mt029InterimOrders
+expect = WarCore.Tests.Mt029InterimOrdersTests.Follow_KeepsTargetAfterExactlyOneMetre
+note = A follow target that moves exactly one metre incorrectly replaces the active movement target.
+original:
+| if (intent.Active && new SimVec3(moved.X, default, moved.Z).LengthSquared <= followRetargetSquared) continue;
+replacement:
+| if (intent.Active && new SimVec3(moved.X, default, moved.Z).LengthSquared < followRetargetSquared) continue;

@@ -1,0 +1,22 @@
+# SpatialQueryDiagnostics
+# Surviving mutations of Assets/WarCore/Sim/SpatialQueryDiagnostics.cs. Test classes are named Mt081SpatialQueryDiagnostics*.
+
+[mt-081-01]
+file = Assets/WarCore/Sim/SpatialQueryDiagnostics.cs
+filter = FullyQualifiedName~Mt081SpatialQueryDiagnostics
+expect = WarCore.Tests.Diagnostics.Mt081SpatialQueryDiagnosticsTests.ResetClearsEmptyLookups
+note = Reset leaves an empty lookup count of one instead of zero.
+original:
+| EmptyLookups = 0;
+replacement:
+| EmptyLookups = 1;
+
+[mt-081-02]
+file = Assets/WarCore/Sim/SpatialQueryDiagnostics.cs
+filter = FullyQualifiedName~Mt081SpatialQueryDiagnostics
+expect = WarCore.Tests.Diagnostics.Mt081SpatialQueryDiagnosticsTests.ResetClearsHashProbes
+note = Reset leaves a hash probe count of one instead of zero.
+original:
+| HashProbes = 0;
+replacement:
+| HashProbes = 1;

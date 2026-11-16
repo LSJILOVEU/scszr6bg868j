@@ -1,0 +1,22 @@
+# GameplayAbilities
+# Surviving mutations of Assets/WarCore/Sim/GameplayAbilities.cs. Test classes are named Mt109GameplayAbilities*.
+
+[mt-109-02]
+file = Assets/WarCore/Sim/GameplayAbilities.cs
+filter = FullyQualifiedName~Mt109GameplayAbilities
+expect = WarCore.Tests.Mt109GameplayAbilitiesTests.UnboundGameplayHasNoCasts
+note = Unbound gameplay must report zero active casts.
+original:
+| public int GameplayCastCount => gameplay == null ? 0 : gameplay.AbilityCastCount;
+replacement:
+| public int GameplayCastCount => gameplay == null ? 1 : gameplay.AbilityCastCount;
+
+[mt-109-03]
+file = Assets/WarCore/Sim/GameplayAbilities.cs
+filter = FullyQualifiedName~Mt109GameplayAbilities
+expect = WarCore.Tests.Mt109GameplayAbilitiesTests.UnboundGameplayHasNoInputResults
+note = Unbound gameplay must report zero input results.
+original:
+| public int GameplayInputResultCount => gameplay == null ? 0 : gameplay.AbilityInputResultCount;
+replacement:
+| public int GameplayInputResultCount => gameplay == null ? 1 : gameplay.AbilityInputResultCount;

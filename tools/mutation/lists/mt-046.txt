@@ -1,0 +1,22 @@
+# GridSpatialIndex
+# Surviving mutations of Assets/WarCore/Sim/GridSpatialIndex.cs. Test classes are named Mt046GridSpatialIndex*.
+
+[mt-046-01]
+file = Assets/WarCore/Sim/GridSpatialIndex.cs
+filter = FullyQualifiedName~Mt046GridSpatialIndex
+expect = WarCore.Tests.Mt046GridSpatialIndexTests.ConstructorRejectsZeroCellSize
+note = Zero cell size is accepted instead of rejected with ArgumentOutOfRangeException.
+original:
+| if (cellSize.Raw <= 0 || maxEntities < 1 || maxMemberships < 1 || maxCellsPerBody < 1)
+replacement:
+| if (cellSize.Raw < 0 || maxEntities < 1 || maxMemberships < 1 || maxCellsPerBody < 1)
+
+[mt-046-02]
+file = Assets/WarCore/Sim/GridSpatialIndex.cs
+filter = FullyQualifiedName~Mt046GridSpatialIndex
+expect = WarCore.Tests.Mt046GridSpatialIndexTests.RebuildRejectsBodyAtEntityCapacity
+note = A body at the entity capacity bypasses the SimBoundaryException guard.
+original:
+| if (entity.Id >= Capacity)
+replacement:
+| if (entity.Id > Capacity)

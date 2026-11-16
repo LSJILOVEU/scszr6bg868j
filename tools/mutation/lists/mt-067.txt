@@ -1,0 +1,22 @@
+# SimTier
+# Surviving mutations of Assets/WarCore/Sim/SimTier.cs. Test classes are named Mt067SimTier*.
+
+[mt-067-01]
+file = Assets/WarCore/Sim/SimTier.cs
+filter = FullyQualifiedName~Mt067SimTier
+expect = WarCore.Tests.Mt067SimTierVersionTests.ComponentSerializerVersionIsOne
+note = Changes the component serialization contract from version 1 to version 2.
+original:
+| public int Version => 1;
+replacement:
+| public int Version => 2;
+
+[mt-067-02]
+file = Assets/WarCore/Sim/SimTier.cs
+filter = FullyQualifiedName~Mt067SimTier
+expect = WarCore.Tests.Mt067SimTierVersionTests.ElapsedWrapperStateVersionIsTwo
+note = Changes the elapsed wrapper serialization contract from version 2 to version 3.
+original:
+| public int StateVersion => elapsedSystem == null ? Serializer.StateVersion : 2;
+replacement:
+| public int StateVersion => elapsedSystem == null ? Serializer.StateVersion : 3;
