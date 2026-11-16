@@ -79,6 +79,7 @@ namespace WarCore.Presentation
         public bool BlockAi { get; private set; }
         // The rules a map with terrain is derived under; null for flat maps. Not part of the recipe's seed or rule-set id.
         public ContentPack TerrainPack { get; private set; }
+        public ContentPack AiPack { get; private set; }
         // Opaque rule-set identity: hashed from tick 0 and checked on restore. Never derived from the rule contents.
         public string RuleSetId { get; private set; } = MatchMode.RwrRuleSetId;
         public ulong Seed { get; }
@@ -108,6 +109,7 @@ namespace WarCore.Presentation
         {
             var copy = new WorldRecipe(Seed, Mover, units, script);
             copy.Combat = Combat; copy.Match = Match; copy.PlayerKey = PlayerKey; copy.RuleSetId = RuleSetId; copy.CrowdPass = CrowdPass; copy.TerrainPack = TerrainPack; copy.BlockAi = BlockAi; copy.options.AddRange(options);
+            copy.AiPack = AiPack;
             return copy;
         }
 
@@ -143,6 +145,13 @@ namespace WarCore.Presentation
         {
             if (pack == null) throw new ArgumentNullException(nameof(pack));
             var copy = Copy(); copy.TerrainPack = pack;
+            return copy;
+        }
+
+        // Flat maps opt in; terrain maps keep using their terrain pack's AI rules.
+        public WorldRecipe WithAiRules(ContentPack pack)
+        {
+            var copy = Copy(); copy.AiPack = pack;
             return copy;
         }
 
