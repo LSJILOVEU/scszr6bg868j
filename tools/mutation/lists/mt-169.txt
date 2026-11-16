@@ -1,0 +1,22 @@
+# PresentationRandom
+# Surviving mutations of Assets/WarCore/Presentation/PresentationRandom.cs. Test classes are named Mt169PresentationRandom*.
+
+[mt-169-01]
+file = Assets/WarCore/Presentation/PresentationRandom.cs
+filter = FullyQualifiedName~Mt169PresentationRandom
+expect = WarCore.Tests.Mt169PresentationRandomTests.NextUnitMatchesSuppliedSeedSequence
+note = Shifting the supplied seed changes the unit sample sequence.
+original:
+|         public PresentationRandom(int seed) { random = new System.Random(seed); }
+replacement:
+|         public PresentationRandom(int seed) { random = new System.Random(unchecked(seed + 1)); }
+
+[mt-169-02]
+file = Assets/WarCore/Presentation/PresentationRandom.cs
+filter = FullyQualifiedName~Mt169PresentationRandom
+expect = WarCore.Tests.Mt169PresentationRandomTests.NextUnitMatchesSuppliedSeedSequence
+note = Adding one changes unit sample values and moves them outside the unit interval.
+original:
+|         public double NextUnit() => random.NextDouble();
+replacement:
+|         public double NextUnit() => random.NextDouble() + 1.0;

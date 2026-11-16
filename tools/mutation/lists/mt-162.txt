@@ -1,0 +1,12 @@
+# ViewFire
+# Surviving mutations of Assets/WarCore/Presentation/Bridge/ViewFire.cs. Test classes are named Mt162ViewFire*.
+
+[mt-162-01]
+file = Assets/WarCore/Presentation/Bridge/ViewFire.cs
+filter = FullyQualifiedName~Mt162ViewFire
+expect = WarCore.Tests.Mt162ViewFireTests.ConstructorPreservesLethalFlag
+note = Inverts the supplied shot lethality flag.
+original:
+|             X0 = x0; Z0 = z0; X1 = x1; Z1 = z1; Team = team; Lethal = lethal;
+replacement:
+|             X0 = x0; Z0 = z0; X1 = x1; Z1 = z1; Team = team; Lethal = !lethal;

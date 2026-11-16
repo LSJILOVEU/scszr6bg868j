@@ -1,0 +1,12 @@
+# TerrainRules
+# Surviving mutations of Assets/WarCore/Content/TerrainRules.cs. Test classes are named Mt145TerrainRules*.
+
+[mt-145-01]
+file = Assets/WarCore/Content/TerrainRules.cs
+filter = FullyQualifiedName~Mt145TerrainRules
+expect = WarCore.Tests.Mt145TerrainRulesTests.Canonical_PreservesSurfaceSpeedAndCost
+note = Canonical terrain bytes replace surface speed with path cost.
+original:
+|                 w.Write(s.Passable); w.Write(s.SpeedMilli); w.Write(s.Cost);
+replacement:
+|                 w.Write(s.Passable); w.Write(s.Cost); w.Write(s.Cost);

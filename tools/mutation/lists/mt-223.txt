@@ -1,0 +1,32 @@
+# StableIdentity
+# Uncovered mutations of Assets/WarCore/Sim/StableIdentity.cs. Test classes are named Mt223StableIdentity*.
+
+[mt-223-01]
+file = Assets/WarCore/Sim/StableIdentity.cs
+filter = FullyQualifiedName~Mt223StableIdentity
+expect = WarCore.Tests.Mt223StableIdentityTests.BoxedEntityReferenceEqualityUsesSlotAndGeneration
+note = Boxed entity references report inverted equality for matching and distinct fields.
+original:
+|         public override bool Equals(object other) => other is EntityRef value && Equals(value);
+replacement:
+|         public override bool Equals(object other) => other is EntityRef value && !Equals(value);
+
+[mt-223-02]
+file = Assets/WarCore/Sim/StableIdentity.cs
+filter = FullyQualifiedName~Mt223StableIdentity
+expect = WarCore.Tests.Mt223StableIdentityTests.InvalidStableSourceFieldsAreRejected
+note = Invalid domains, placed key fields, and world tick fields are accepted.
+original:
+|                 throw new SimBoundaryException("Invalid stable source key.");
+replacement:
+|                 _ = domain;
+
+[mt-223-03]
+file = Assets/WarCore/Sim/StableIdentity.cs
+filter = FullyQualifiedName~Mt223StableIdentity
+expect = WarCore.Tests.Mt223StableIdentityTests.BoxedPlacedKeyEqualityUsesChunkAndPlacement
+note = Boxed stable source keys report inverted equality for matching and distinct fields.
+original:
+|         public override bool Equals(object other) => other is StableEntityKey key && Equals(key);
+replacement:
+|         public override bool Equals(object other) => other is StableEntityKey key && !Equals(key);

@@ -1,0 +1,32 @@
+# ExtensionContracts
+# Uncovered mutations of Assets/WarCore/Sim/ExtensionContracts.cs. Test classes are named Mt179ExtensionContracts*.
+
+[mt-179-01]
+file = Assets/WarCore/Sim/ExtensionContracts.cs
+filter = FullyQualifiedName~Mt179ExtensionContracts
+expect = WarCore.Tests.Mt179ExtensionContractsTests.ContainerRejectsInvalidCapacityOrCount
+note = Invalid container capacity or count is accepted.
+original:
+|                 throw new ArgumentOutOfRangeException(nameof(count));
+replacement:
+|                 _ = count;
+
+[mt-179-02]
+file = Assets/WarCore/Sim/ExtensionContracts.cs
+filter = FullyQualifiedName~Mt179ExtensionContracts
+expect = WarCore.Tests.Mt179ExtensionContractsTests.ObservationRejectsInvalidTickOrConfidence
+note = Negative observation ticks or confidence outside zero through one are accepted.
+original:
+|                 throw new ArgumentOutOfRangeException(nameof(confidence));
+replacement:
+|                 _ = confidence;
+
+[mt-179-03]
+file = Assets/WarCore/Sim/ExtensionContracts.cs
+filter = FullyQualifiedName~Mt179ExtensionContracts
+expect = WarCore.Tests.Mt179ExtensionContractsTests.SoundWithoutCapturedIdentityRejectsStableConversion
+note = Sounds without captured source identity can convert to stable events.
+original:
+|                 throw new SimBoundaryException("Stable sounds require a captured source identity.");
+replacement:
+|                 _ = UsesStableIdentity;

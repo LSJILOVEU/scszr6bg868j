@@ -1,0 +1,22 @@
+# InterimLocomotionTerrain
+# Uncovered mutations of Assets/WarCore/Interim/InterimLocomotion.Terrain.cs. Test classes are named Mt175InterimLocomotionTerrain*.
+
+[mt-175-01]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~Mt175InterimLocomotionTerrain
+expect = WarCore.Tests.Mt175InterimLocomotionTerrainTests.ConstructorRejectsAnotherNavigationGrid
+note = Accepts a navigation grid that is not the terrain's own grid.
+original:
+|                 throw new ArgumentException("Navigation must be the terrain's own grid.", nameof(navGrid));
+replacement:
+|                 _ = navGrid;
+
+[mt-175-02]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~Mt175InterimLocomotionTerrain
+expect = WarCore.Tests.Mt175InterimLocomotionTerrainTests.TerrainPathRejectsAMoverWithoutACollider
+note = Allows terrain movement without the required mover collider.
+original:
+|                 throw new InvalidOperationException("Blocked locomotion requires a capsule on a separate mover layer.");
+replacement:
+|                 return false;

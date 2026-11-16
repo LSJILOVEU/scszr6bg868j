@@ -1,0 +1,22 @@
+# GameplayData
+# Uncovered mutations of Assets/WarCore/Sim/GameplayData.cs. Test classes are named Mt184GameplayData*.
+
+[mt-184-01]
+file = Assets/WarCore/Sim/GameplayData.cs
+filter = FullyQualifiedName~Mt184GameplayData
+expect = WarCore.Tests.Mt184GameplayDataTests.PipelineRejectsModifierCountAboveCapacity
+note = Allows modifier arrays above the constructor capacity limit.
+original:
+|                 throw new SimBoundaryException("M0C_MODIFIER_CAPACITY: Too many modifiers.");
+replacement:
+|                 _ = modifiers;
+
+[mt-184-03]
+file = Assets/WarCore/Sim/GameplayData.cs
+filter = FullyQualifiedName~Mt184GameplayData
+expect = WarCore.Tests.Mt184GameplayDataTests.FindDefenseReturnsEntryBelowMidpoint
+note = Skips an existing defense immediately below the search midpoint.
+original:
+|                     high = middle - 1;
+replacement:
+|                     high = middle - 2;

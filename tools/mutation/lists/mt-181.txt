@@ -1,0 +1,32 @@
+# GameplayAbilitySchema
+# Uncovered mutations of Assets/WarCore/Sim/GameplayAbilitySchema.cs. Test classes are named Mt181GameplayAbilitySchema*.
+
+[mt-181-01]
+file = Assets/WarCore/Sim/GameplayAbilitySchema.cs
+filter = FullyQualifiedName~Mt181GameplayAbilitySchema
+expect = WarCore.Tests.Mt181GameplayAbilitySchemaTests.InvalidTargetSpecIsRejected
+note = Invalid target modes, negative ranges and excessive target counts are accepted.
+original:
+|                     throw new SimBoundaryException("M0C_TARGET_SPEC");
+replacement:
+|                     _ = t;
+
+[mt-181-02]
+file = Assets/WarCore/Sim/GameplayAbilitySchema.cs
+filter = FullyQualifiedName~Mt181GameplayAbilitySchema
+expect = WarCore.Tests.Mt181GameplayAbilitySchemaTests.DamageAmountAttributeWithNegativeLowerBoundIsRejected
+note = Damage accepts an amount attribute whose lower bound is negative.
+original:
+|                                     throw new SimBoundaryException("M0C_ABILITY_ATTRIBUTE_RANGE");
+replacement:
+|                                     _ = resource;
+
+[mt-181-03]
+file = Assets/WarCore/Sim/GameplayAbilitySchema.cs
+filter = FullyQualifiedName~Mt181GameplayAbilitySchema
+expect = WarCore.Tests.Mt181GameplayAbilitySchemaTests.PulsePeriodMustMatchActionTrigger
+note = Active pulses accept a zero period and non-pulse actions accept a nonzero period.
+original:
+|                     throw new SimBoundaryException("M0C_ABILITY_PERIOD");
+replacement:
+|                     _ = pulse;

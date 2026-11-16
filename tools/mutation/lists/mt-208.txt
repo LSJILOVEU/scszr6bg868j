@@ -1,0 +1,33 @@
+# SimSpatial
+# Uncovered mutations of Assets/WarCore/Sim/SimSpatial.cs. Test classes are named Mt208SimSpatial*.
+
+[mt-208-01]
+file = Assets/WarCore/Sim/SimSpatial.cs
+filter = FullyQualifiedName~Mt208SimSpatial
+expect = WarCore.Tests.Mt208SimSpatialTests.RepeatedConfigurationRejectsBeforeReplacingPublishedBodies
+note = Rejected spatial configuration must preserve the published bodies before and after warmup.
+original:
+|                 throw new InvalidOperationException("Configure the simulation spatial index once before warmup.");
+replacement:
+|                 _ = spatialIndex;
+
+[mt-208-02]
+file = Assets/WarCore/Sim/SimSpatial.cs
+filter = FullyQualifiedName~Mt208SimSpatial
+expect = WarCore.Tests.Mt208SimSpatialTests.SpatialBoundaryRejectsDuringRunningTick
+expect = WarCore.Tests.Mt208SimSpatialTests.SpatialBoundaryRejectsAfterFaultedTick
+note = Spatial boundary cleanup must reject running and faulted ticks.
+original:
+|                 throw new InvalidOperationException("Spatial boundaries require a completed simulation tick.");
+replacement:
+|                 _ = stepping;
+
+[mt-208-03]
+file = Assets/WarCore/Sim/SimSpatial.cs
+filter = FullyQualifiedName~Mt208SimSpatial
+expect = WarCore.Tests.Mt208SimSpatialTests.DuplicateMovementRejectsAndCommitsFirstResult
+note = Duplicate movement results must be rejected without replacing the first result in a tick.
+original:
+|                 throw new SimBoundaryException("Each entity may have only one movement result per tick.");
+replacement:
+|                 _ = entity;

@@ -1,0 +1,82 @@
+# WcMap
+# Surviving mutations of Assets/WarCore/Content/WcMap.cs. Test classes are named Mt146WcMap*.
+
+[mt-146-01]
+file = Assets/WarCore/Content/WcMap.cs
+filter = FullyQualifiedName~Mt146WcMap
+expect = WarCore.Tests.Mt146WcMapTests.HasTerrain_WithOneComponent_IsTrue
+note = A height field or surface table alone must count as terrain.
+original:
+|         public bool HasTerrain => HasHeightField || HasSurfaceTable;
+replacement:
+|         public bool HasTerrain => HasHeightField && HasSurfaceTable;
+
+[mt-146-02]
+file = Assets/WarCore/Content/WcMap.cs
+filter = FullyQualifiedName~Mt146WcMap
+expect = WarCore.Tests.Mt146WcMapTests.Constructor_CopiesTerrainArrays
+note = Caller changes to height points must not change the map.
+original:
+|             if (heightPoints != null) this.heightPoints = new ReadOnlyCollection<int>((int[])heightPoints.Clone());
+replacement:
+|             if (heightPoints != null) this.heightPoints = new ReadOnlyCollection<int>(heightPoints);
+
+[mt-146-03]
+file = Assets/WarCore/Content/WcMap.cs
+filter = FullyQualifiedName~Mt146WcMap
+expect = WarCore.Tests.Mt146WcMapTests.Constructor_CopiesTerrainArrays
+note = Caller changes to surface names must not change the map.
+original:
+|                 this.surfaceNames = new ReadOnlyCollection<string>((string[])surfaceNames.Clone());
+replacement:
+|                 this.surfaceNames = new ReadOnlyCollection<string>(surfaceNames);
+
+[mt-146-04]
+file = Assets/WarCore/Content/WcMap.cs
+filter = FullyQualifiedName~Mt146WcMap
+expect = WarCore.Tests.Mt146WcMapTests.Constructor_CopiesTerrainArrays
+note = Caller changes to surface cells must not change the map.
+original:
+|                 this.surfaceCells = new ReadOnlyCollection<byte>((byte[])surfaceCells.Clone());
+replacement:
+|                 this.surfaceCells = new ReadOnlyCollection<byte>(surfaceCells);
+
+[mt-146-05]
+file = Assets/WarCore/Content/WcMap.cs
+filter = FullyQualifiedName~Mt146WcMap
+expect = WarCore.Tests.Mt146WcMapTests.LayerMask_RejectsDifferentCase
+note = Layer lookup must reject names with different letter case.
+original:
+|                 if (string.Equals(layer.Name, name, StringComparison.Ordinal)) return layer.Mask;
+replacement:
+|                 if (string.Equals(layer.Name, name, StringComparison.OrdinalIgnoreCase)) return layer.Mask;
+
+[mt-146-06]
+file = Assets/WarCore/Content/WcMap.cs
+filter = FullyQualifiedName~Mt146WcMap
+expect = WarCore.Tests.Mt146WcMapTests.IsPassable_RejectsXAtWidth
+note = A cell at the exclusive X limit must throw an argument range exception.
+original:
+|             if (x < 0 || z < 0 || x >= Width || z >= Depth) throw new ArgumentOutOfRangeException(nameof(x));
+replacement:
+|             if (x < 0 || z < 0 || x > Width || z >= Depth) throw new ArgumentOutOfRangeException(nameof(x));
+
+[mt-146-07]
+file = Assets/WarCore/Content/WcMap.cs
+filter = FullyQualifiedName~Mt146WcMap
+expect = WarCore.Tests.Mt146WcMapTests.IsPassable_MatchesStoredBit
+note = Set passability bits must allow cells and clear bits must block them.
+original:
+|             return (Passability[index >> 3] & (1 << (index & 7))) != 0;
+replacement:
+|             return (Passability[index >> 3] & (1 << (index & 7))) == 0;
+
+[mt-146-08]
+file = Assets/WarCore/Content/WcMap.cs
+filter = FullyQualifiedName~Mt146WcMap
+expect = WarCore.Tests.Mt146WcMapTests.TryCell_ExcludesMaximumX
+note = The maximum world X coordinate must stay outside the map.
+original:
+|             if (worldX < Min.X || worldX >= Max.X || worldZ < Min.Z || worldZ >= Max.Z) return false;
+replacement:
+|             if (worldX < Min.X || worldX > Max.X || worldZ < Min.Z || worldZ >= Max.Z) return false;

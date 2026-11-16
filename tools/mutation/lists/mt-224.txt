@@ -1,0 +1,22 @@
+# StableInput
+# Surviving mutations of Assets/WarCore/Sim/StableInput.cs. Test classes are named Mt224StableInput*.
+
+[mt-224-01]
+file = Assets/WarCore/Sim/StableInput.cs
+filter = FullyQualifiedName~Mt224StableInput
+expect = WarCore.Tests.Mt224StableInputTests.StepStablePreservesSquadNumber
+note = Binding changes the squad number instead of preserving the command.
+original:
+|                 squad = new SquadCommand(value.Kind,value.Squad,value.TargetPoint,target);
+replacement:
+|                 squad = new SquadCommand(value.Kind,value.Squad+1,value.TargetPoint,target);
+
+[mt-224-02]
+file = Assets/WarCore/Sim/StableInput.cs
+filter = FullyQualifiedName~Mt224StableInput
+expect = WarCore.Tests.Mt224StableInputTests.StepStablePreservesMovementAndAim
+note = Binding swaps the movement and aim vectors.
+original:
+|             return new InputFrame(Payload.Move,Payload.Aim,Payload.PrimaryAttack,Payload.Block,Payload.Throw,Payload.SkillSlot,squad,Payload.GameplayTick,Payload.SkillCommandArray,Payload.SkillCommandCount);
+replacement:
+|             return new InputFrame(Payload.Aim,Payload.Move,Payload.PrimaryAttack,Payload.Block,Payload.Throw,Payload.SkillSlot,squad,Payload.GameplayTick,Payload.SkillCommandArray,Payload.SkillCommandCount);

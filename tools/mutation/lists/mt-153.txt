@@ -1,0 +1,22 @@
+# CrowdPassFeature
+# Surviving mutations of Assets/WarCore/Presentation/Bridge/Features/CrowdPassFeature.cs. Test classes are named Mt153CrowdPassFeature*.
+
+[mt-153-01]
+file = Assets/WarCore/Presentation/Bridge/Features/CrowdPassFeature.cs
+filter = FullyQualifiedName~Mt153CrowdPassFeature
+expect = WarCore.Tests.Mt153CrowdPassFeatureTests.RejectsMissingSubsystem
+note = A crowd pass rule must reject recipes missing either crowd movement or combat.
+original:
+|             if (!a.Crowd || recipe.Combat == null)
+replacement:
+|             if (!a.Crowd && recipe.Combat == null)
+
+[mt-153-02]
+file = Assets/WarCore/Presentation/Bridge/Features/CrowdPassFeature.cs
+filter = FullyQualifiedName~Mt153CrowdPassFeature
+expect = WarCore.Tests.Mt153CrowdPassFeatureTests.RecentShotBlocksUntilWindowExpires
+note = A recent shot keeps either unit engaged until the sixty-tick blocking window expires.
+original:
+|             if (state.DueMilli > 0 && state.DueMilli > (tick - EngagedTicks) * 1000) return true;
+replacement:
+|             if (state.DueMilli > 0 && state.DueMilli > (tick + EngagedTicks) * 1000) return true;

@@ -1,0 +1,32 @@
+# GridSpatialIndex
+# Uncovered mutations of Assets/WarCore/Sim/GridSpatialIndex.cs. Test classes are named Mt200GridSpatialIndex*.
+
+[mt-200-01]
+file = Assets/WarCore/Sim/GridSpatialIndex.cs
+filter = FullyQualifiedName~Mt200GridSpatialIndex
+expect = WarCore.Tests.Mt200GridSpatialIndexTests.ConstructorRejectsForeignComponentHandles
+note = Constructor accepts component handles owned by another store.
+original:
+|                 throw new ArgumentException("Handles must belong to the grid store.");
+replacement:
+|                 _ = store;
+
+[mt-200-02]
+file = Assets/WarCore/Sim/GridSpatialIndex.cs
+filter = FullyQualifiedName~Mt200GridSpatialIndex
+expect = WarCore.Tests.Mt200GridSpatialIndexTests.RebuildRejectsBodyAtEntityCapacity
+note = Rebuild silently skips bodies with entity IDs at or above the index capacity.
+original:
+|                 throw new SimBoundaryException(entityError);
+replacement:
+|                 return false;
+
+[mt-200-03]
+file = Assets/WarCore/Sim/GridSpatialIndex.cs
+filter = FullyQualifiedName~Mt200GridSpatialIndex
+expect = WarCore.Tests.Mt200GridSpatialIndexTests.UpsertRejectsEntityOutsideCapacity
+note = Upsert silently accepts negative entity IDs and IDs beyond the index capacity.
+original:
+|                 throw new ArgumentOutOfRangeException(nameof(entity));
+replacement:
+|                 return;

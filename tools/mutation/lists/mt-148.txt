@@ -1,0 +1,22 @@
+# WcMapNavigation
+# Surviving mutations of Assets/WarCore/Content/WcMapNavigation.cs. Test classes are named Mt148WcMapNavigation*.
+
+[mt-148-01]
+file = Assets/WarCore/Content/WcMapNavigation.cs
+filter = FullyQualifiedName~Mt148WcMapNavigation
+expect = WarCore.Tests.Mt148WcMapNavigationTests.Create_PreservesLastPassabilityByte
+note = Omitting the last passability byte blocks passable cells at the end of the grid.
+original:
+|             for (int i = 0; i < bits.Length; i++) bits[i] = map.Passability[i];
+replacement:
+|             for (int i = 0; i < bits.Length - 1; i++) bits[i] = map.Passability[i];
+
+[mt-148-02]
+file = Assets/WarCore/Content/WcMapNavigation.cs
+filter = FullyQualifiedName~Mt148WcMapNavigation
+expect = WarCore.Tests.Mt148WcMapNavigationTests.Create_PreservesOriginAxes
+note = Swapping the origin axes places the navigation grid at the wrong world coordinates.
+original:
+|             return new NavGrid((int)map.Width, (int)map.Depth, map.Min.X, map.Min.Z, bits);
+replacement:
+|             return new NavGrid((int)map.Width, (int)map.Depth, map.Min.Z, map.Min.X, bits);

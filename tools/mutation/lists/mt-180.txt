@@ -1,0 +1,22 @@
+# GameplayAbilityData
+# Uncovered mutations of Assets/WarCore/Sim/GameplayAbilityData.cs. Test classes are named Mt180GameplayAbilityData*.
+
+[mt-180-01]
+file = Assets/WarCore/Sim/GameplayAbilityData.cs
+filter = FullyQualifiedName~Mt180GameplayAbilityData
+expect = WarCore.Tests.Mt180GameplayAbilityDataTests.ActionsRetainEveryOrdinalWhenSorted
+note = Sorting actions duplicates an earlier action and loses the shifted ordinal.
+original:
+|                     this.actions[j] = this.actions[j - 1];
+replacement:
+|                     this.actions[j] = this.actions[j - 2];
+
+[mt-180-02]
+file = Assets/WarCore/Sim/GameplayAbilityData.cs
+filter = FullyQualifiedName~Mt180GameplayAbilityData
+expect = WarCore.Tests.Mt180GameplayAbilityDataTests.CostsRetainEveryResourceWhenSorted
+note = Sorting costs duplicates an earlier cost and loses the shifted resource.
+original:
+|                     this.costs[j] = this.costs[j - 1];
+replacement:
+|                     this.costs[j] = this.costs[j - 2];

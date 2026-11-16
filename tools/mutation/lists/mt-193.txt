@@ -1,0 +1,22 @@
+# GameplayStatusAdmission
+# Surviving mutations of Assets/WarCore/Sim/GameplayStatusAdmission.cs. Test classes are named Mt193GameplayStatusAdmission*.
+
+[mt-193-01]
+file = Assets/WarCore/Sim/GameplayStatusAdmission.cs
+filter = FullyQualifiedName~Mt193GameplayStatusAdmission
+expect = WarCore.Tests.Mt193GameplayStatusAdmissionTests.MaximumDispelCountIsAcceptedAndRemovesMatchingStatus
+note = Rejects the maximum permitted dispel count.
+original:
+|                 if (item.Maximum < 0 || item.Maximum > GameplayMath.MaxPackets)
+replacement:
+|                 if (item.Maximum < 0 || item.Maximum >= GameplayMath.MaxPackets)
+
+[mt-193-02]
+file = Assets/WarCore/Sim/GameplayStatusAdmission.cs
+filter = FullyQualifiedName~Mt193GameplayStatusAdmission
+expect = WarCore.Tests.Mt193GameplayStatusAdmissionTests.StatusStrengthAboveMaximumMagnitudeIsRejected
+note = Accepts status strength above the maximum magnitude.
+original:
+|                 if (item.Amount != -1)
+replacement:
+|                 if (item.Amount < -1)

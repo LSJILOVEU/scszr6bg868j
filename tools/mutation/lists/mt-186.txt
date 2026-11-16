@@ -1,0 +1,22 @@
+# GameplayLife
+# Surviving mutations of Assets/WarCore/Sim/GameplayLife.cs. Test classes are named Mt186GameplayLife*.
+
+[mt-186-01]
+file = Assets/WarCore/Sim/GameplayLife.cs
+filter = FullyQualifiedName~Mt186GameplayLife
+expect = WarCore.Tests.Mt186GameplayLifeTests.ActiveOwnersReserveFutureDownedTimers
+note = Active owners lose reserved capacity for future downed timers.
+original:
+|                 if (rule >= 0 && schema.LifeRuleAt(rule).AllowDowned && !IsDead(i) && !hasDownedTask[i])
+replacement:
+|                 if (rule >= 0 && schema.LifeRuleAt(rule).AllowDowned && !IsDead(i) && hasDownedTask[i])
+
+[mt-186-02]
+file = Assets/WarCore/Sim/GameplayLife.cs
+filter = FullyQualifiedName~Mt186GameplayLife
+expect = WarCore.Tests.Mt186GameplayLifeTests.ActiveOwnerTransitionsAtLifeThreshold
+note = Active owners remain active when health equals the life threshold.
+original:
+|                 else if (values[resource] <= threshold)
+replacement:
+|                 else if (values[resource] < threshold)

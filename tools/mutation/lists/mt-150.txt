@@ -1,0 +1,62 @@
+# WcMapValidation
+# Surviving mutations of Assets/WarCore/Content/WcMapValidation.cs. Test classes are named Mt150WcMapValidation*.
+
+[mt-150-01]
+file = Assets/WarCore/Content/WcMapValidation.cs
+filter = FullyQualifiedName~Mt150WcMapValidation
+expect = WarCore.Tests.Mt150WcMapValidationTests.MaximumLengthMapId_RoundTrips
+note = Rejects a valid map identifier at the 255-byte limit.
+original:
+|             Require(bytes.Length <= 255 && value.IndexOf('\0') < 0, "STRING");
+replacement:
+|             Require(bytes.Length < 255 && value.IndexOf('\0') < 0, "STRING");
+
+[mt-150-02]
+file = Assets/WarCore/Content/WcMapValidation.cs
+filter = FullyQualifiedName~Mt150WcMapValidation
+expect = WarCore.Tests.Mt150WcMapValidationTests.MinimumWorldCoordinate_RoundTrips
+note = Rejects a valid world coordinate at the lower bound.
+original:
+|                 Require(coordinate >= -limit && coordinate <= limit, "BOUNDS");
+replacement:
+|                 Require(coordinate > -limit && coordinate <= limit, "BOUNDS");
+
+[mt-150-03]
+file = Assets/WarCore/Content/WcMapValidation.cs
+filter = FullyQualifiedName~Mt150WcMapValidation
+expect = WarCore.Tests.Mt150WcMapValidationTests.MaximumMapWidth_RoundTrips
+note = Rejects a valid map at the maximum width of 512 cells.
+original:
+|             Require(map.Width > 0 && map.Width <= MaxSide && map.Depth > 0 && map.Depth <= MaxSide, "CAPACITY");
+replacement:
+|             Require(map.Width > 0 && map.Width < MaxSide && map.Depth > 0 && map.Depth <= MaxSide, "CAPACITY");
+
+[mt-150-04]
+file = Assets/WarCore/Content/WcMapValidation.cs
+filter = FullyQualifiedName~Mt150WcMapValidation
+expect = WarCore.Tests.Mt150WcMapValidationTests.FullLayerTable_RoundTrips
+note = Rejects a valid collision table containing all 32 layers.
+original:
+|             Require(map.Layers.Count > 0 && map.Layers.Count <= 32, "LAYERS");
+replacement:
+|             Require(map.Layers.Count > 0 && map.Layers.Count < 32, "LAYERS");
+
+[mt-150-05]
+file = Assets/WarCore/Content/WcMapValidation.cs
+filter = FullyQualifiedName~Mt150WcMapValidation
+expect = WarCore.Tests.Mt150WcMapValidationTests.FarEdgeTerrainVertex_RejectsInsufficientWallClearance
+note = Ignores far-edge terrain vertices and accepts insufficient wall clearance.
+original:
+|                 for (int iz = z0; iz <= z1; iz++)
+replacement:
+|                 for (int iz = z0; iz < z1; iz++)
+
+[mt-150-06]
+file = Assets/WarCore/Content/WcMapValidation.cs
+filter = FullyQualifiedName~Mt150WcMapValidation
+expect = WarCore.Tests.Mt150WcMapValidationTests.ExactWallClearance_RoundTrips
+note = Rejects a wall standing exactly one metre above the highest terrain vertex.
+original:
+|                 Require(map.FlatHeight.Raw + wall.Height.Raw >= highest + WallClearanceRaw, "WALL_TERRAIN");
+replacement:
+|                 Require(map.FlatHeight.Raw + wall.Height.Raw > highest + WallClearanceRaw, "WALL_TERRAIN");

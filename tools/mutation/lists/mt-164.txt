@@ -1,0 +1,22 @@
+# ViewPoint
+# Surviving mutations of Assets/WarCore/Presentation/Bridge/ViewPoint.cs. Test classes are named Mt164ViewPoint*.
+
+[mt-164-01]
+file = Assets/WarCore/Presentation/Bridge/ViewPoint.cs
+filter = FullyQualifiedName~Mt164ViewPoint
+expect = WarCore.Tests.Mt164ViewPointTests.PointKeepsOwnerSeparateFromCapturingTeam
+note = Replaces the point owner with the capturing team.
+original:
+|         { Id = id; X = x; Z = z; Radius = radius; Owner = owner; Capturing = capturing; Progress = progress; }
+replacement:
+|         { Id = id; X = x; Z = z; Radius = radius; Owner = capturing; Capturing = capturing; Progress = progress; }
+
+[mt-164-02]
+file = Assets/WarCore/Presentation/Bridge/ViewPoint.cs
+filter = FullyQualifiedName~Mt164ViewPoint
+expect = WarCore.Tests.Mt164ViewPointTests.MatchDefaultsFinishedStateFromWinner
+note = Reverses the finished state inferred from the winner when no explicit state is supplied.
+original:
+|         { Winner = winner; EndTick = endTick; EndReason = endReason; AliveOne = aliveOne; AliveTwo = aliveTwo; ReserveOne = reserveOne; ReserveTwo = reserveTwo; IsFinished = isFinished ?? winner != 0; }
+replacement:
+|         { Winner = winner; EndTick = endTick; EndReason = endReason; AliveOne = aliveOne; AliveTwo = aliveTwo; ReserveOne = reserveOne; ReserveTwo = reserveTwo; IsFinished = isFinished ?? winner == 0; }

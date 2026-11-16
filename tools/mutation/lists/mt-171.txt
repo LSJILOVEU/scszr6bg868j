@@ -1,0 +1,32 @@
+# TargetMemory
+# Uncovered mutations of Assets/WarCore/Battle/Ai/TargetMemory.cs. Test classes are named Mt171TargetMemory*.
+
+[mt-171-01]
+file = Assets/WarCore/Battle/Ai/TargetMemory.cs
+filter = FullyQualifiedName~Mt171TargetMemory
+expect = WarCore.Tests.Mt171TargetMemoryHashTests.WriteState_EmptyMemoryIncludesSchemaVersion
+note = Replaces the target memory schema version with zero in the state hash.
+original:
+|             hash.Add(StateTypeId); hash.Add(StateVersion); hash.Add(ticks); hash.Add(entries.Count);
+replacement:
+|             hash.Add(StateTypeId); hash.Add(0); hash.Add(ticks); hash.Add(entries.Count);
+
+[mt-171-02]
+file = Assets/WarCore/Battle/Ai/TargetMemory.cs
+filter = FullyQualifiedName~Mt171TargetMemory
+expect = WarCore.Tests.Mt171TargetMemoryHashTests.WriteState_RememberedPositionAndSightingTickMatchFieldOrder
+note = Swaps remembered X and Z coordinates in the state hash.
+original:
+|                 hash.Add(pair.Key); hash.Add(e.Target.Value); hash.Add(e.At.X.Raw); hash.Add(e.At.Y.Raw); hash.Add(e.At.Z.Raw); hash.Add(e.Seen);
+replacement:
+|                 hash.Add(pair.Key); hash.Add(e.Target.Value); hash.Add(e.At.Z.Raw); hash.Add(e.At.Y.Raw); hash.Add(e.At.X.Raw); hash.Add(e.Seen);
+
+[mt-171-03]
+file = Assets/WarCore/Battle/Ai/TargetMemory.cs
+filter = FullyQualifiedName~Mt171TargetMemory
+expect = WarCore.Tests.Mt171TargetMemoryHashTests.WriteState_RememberedPositionAndSightingTickMatchFieldOrder
+note = Replaces the remembered sighting tick with zero in the state hash.
+original:
+|                 hash.Add(pair.Key); hash.Add(e.Target.Value); hash.Add(e.At.X.Raw); hash.Add(e.At.Y.Raw); hash.Add(e.At.Z.Raw); hash.Add(e.Seen);
+replacement:
+|                 hash.Add(pair.Key); hash.Add(e.Target.Value); hash.Add(e.At.X.Raw); hash.Add(e.At.Y.Raw); hash.Add(e.At.Z.Raw); hash.Add(0L);

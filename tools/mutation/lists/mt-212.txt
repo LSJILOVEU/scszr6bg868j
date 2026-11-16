@@ -1,0 +1,12 @@
+# SpatialGridScan
+# Surviving mutations of Assets/WarCore/Sim/SpatialGridScan.cs. Test classes are named Mt212SpatialGridScan*.
+
+[mt-212-01]
+file = Assets/WarCore/Sim/SpatialGridScan.cs
+filter = FullyQualifiedName~Mt212SpatialGridScan
+expect = WarCore.Tests.Mt212SpatialGridScanTests.SphereCandidatesApplyBoundsFilterOnlyForCoarseCells
+note = Inverting the coarse-cell flag applies bounds filtering to fine cells and skips it for coarse cells.
+original:
+|         internal bool Coarse => level != 0;
+replacement:
+|         internal bool Coarse => level == 0;

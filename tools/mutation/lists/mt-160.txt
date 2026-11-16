@@ -1,0 +1,22 @@
+# SimSession
+# Surviving mutations of Assets/WarCore/Presentation/Bridge/SimSession.cs. Test classes are named Mt160SimSession*.
+
+[mt-160-01]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Mt160SimSession
+expect = WarCore.Tests.Mt160SimSessionTests.RefreshView_DropsPartialTickBeforeNextAdvance
+note = Refreshing the view retains a partial tick and advances the next tick too early.
+original:
+|             Current = Capture(); Previous = Current; remainder = 0;
+replacement:
+|             Current = Capture(); Previous = Current; remainder = MicrosPerSecond - 1;
+
+[mt-160-02]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Mt160SimSession
+expect = WarCore.Tests.Mt160SimSessionTests.MoveTo_PositiveXWorldBoundary_IsAcceptedAndExecuted
+note = Move commands at the inclusive positive X world boundary are rejected.
+original:
+|             if (xMm < -limitMm || xMm > limitMm || zMm < -limitMm || zMm > limitMm)
+replacement:
+|             if (xMm < -limitMm || xMm >= limitMm || zMm < -limitMm || zMm > limitMm)

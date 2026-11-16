@@ -1,0 +1,32 @@
+# RequestDiagnostics
+# Uncovered mutations of Assets/WarCore/Sim/RequestDiagnostics.cs. Test classes are named Mt204RequestDiagnostics*.
+
+[mt-204-01]
+file = Assets/WarCore/Sim/RequestDiagnostics.cs
+filter = FullyQualifiedName~Mt204RequestDiagnostics
+expect = WarCore.Tests.Mt204RequestDiagnosticsTests.SuppressedRequestsAccumulateAndPublishAnAggregateEachTick
+note = Each suppressed request must increment the cumulative suppressed count by one.
+original:
+|                 SuppressedTotal = SimChecked.Add(SuppressedTotal,1);
+replacement:
+|                 SuppressedTotal = SimChecked.Add(SuppressedTotal,2);
+
+[mt-204-02]
+file = Assets/WarCore/Sim/RequestDiagnostics.cs
+filter = FullyQualifiedName~Mt204RequestDiagnostics
+expect = WarCore.Tests.Mt204RequestDiagnosticsTests.SuppressedRequestsAccumulateAndPublishAnAggregateEachTick
+note = Suppression summaries must use aggregate tag zero.
+original:
+|                 events.PublishStable(new StableSimEvent(new EventTypeId(EventType),magnitude:SimFix.FromRaw(suppressedPending),tag:0));
+replacement:
+|                 events.PublishStable(new StableSimEvent(new EventTypeId(EventType),magnitude:SimFix.FromRaw(suppressedPending),tag:1));
+
+[mt-204-03]
+file = Assets/WarCore/Sim/RequestDiagnostics.cs
+filter = FullyQualifiedName~Mt204RequestDiagnostics
+expect = WarCore.Tests.Mt204RequestDiagnosticsTests.SnapshotRejectsAnOrdinaryPendingDiagnosticAmountGreaterThanOne
+note = Snapshot loading must reject ordinary pending diagnostic amounts greater than one.
+original:
+|                     SimStateReader.Require(count < pending.Length && item.Amount == 1,"Request diagnostic capacity exceeded.");
+replacement:
+|                     SimStateReader.Require(count < pending.Length,"Request diagnostic capacity exceeded.");

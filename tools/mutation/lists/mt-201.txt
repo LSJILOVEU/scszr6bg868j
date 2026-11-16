@@ -1,0 +1,32 @@
+# NavProviderRegistry
+# Uncovered mutations of Assets/WarCore/Sim/NavProviderRegistry.cs. Test classes are named Mt201NavProviderRegistry*.
+
+[mt-201-01]
+file = Assets/WarCore/Sim/NavProviderRegistry.cs
+filter = FullyQualifiedName~Mt201NavProviderRegistry
+expect = WarCore.Tests.Mt201NavProviderRegistryTests.StateTypeIdIdentifiesNavigation
+note = Changes the public navigation state type identifier.
+original:
+|         public string StateTypeId => "warcore.navigation";
+replacement:
+|         public string StateTypeId => "warcore.navigation.v2";
+
+[mt-201-02]
+file = Assets/WarCore/Sim/NavProviderRegistry.cs
+filter = FullyQualifiedName~Mt201NavProviderRegistry
+expect = WarCore.Tests.Mt201NavProviderRegistryTests.StateVersionIsOne
+note = Changes the public navigation state schema version.
+original:
+|         public int StateVersion => 1;
+replacement:
+|         public int StateVersion => 2;
+
+[mt-201-03]
+file = Assets/WarCore/Sim/NavProviderRegistry.cs
+filter = FullyQualifiedName~Mt201NavProviderRegistry
+expect = WarCore.Tests.Mt201NavProviderRegistryTests.NullProviderReportsProviderParameter
+note = Reports the exception message as the invalid provider parameter name.
+original:
+|                 throw new ArgumentException("A versioned navigation provider is required.", nameof(provider));
+replacement:
+|                 throw new ArgumentException(nameof(provider), "A versioned navigation provider is required.");

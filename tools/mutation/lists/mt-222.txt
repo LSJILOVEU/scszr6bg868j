@@ -1,0 +1,74 @@
+# StableEventBatch
+# Surviving mutations of Assets/WarCore/Sim/StableEventBatch.cs. Test classes are named Mt222StableEventBatch*.
+
+[mt-222-01]
+file = Assets/WarCore/Sim/StableEventBatch.cs
+filter = FullyQualifiedName~Mt222StableEventBatch
+expect = WarCore.Tests.Mt222StableEventBatchTests.BatchPublishesInAscendingKeyOrder
+note = Reverses publication order and sequence assignment across production keys.
+original:
+|         public int CompareTo(StableProducedEvent other) => Key.CompareTo(other.Key);
+replacement:
+|         public int CompareTo(StableProducedEvent other) => other.Key.CompareTo(Key);
+
+[mt-222-02]
+file = Assets/WarCore/Sim/StableEventBatch.cs
+filter = FullyQualifiedName~Mt222StableEventBatch
+expect = WarCore.Tests.Mt222StableEventBatchTests.ProducedEventPreservesSourceAndTarget
+note = Exchanges the source and target links of the produced event.
+original:
+|             Event = item;
+replacement:
+|             Event = new StableSimEvent(item.Payload,item.Target,item.Source);
+
+[mt-222-03]
+file = Assets/WarCore/Sim/StableEventBatch.cs
+filter = FullyQualifiedName~Mt222StableEventBatch
+expect = WarCore.Tests.Mt222StableEventBatchTests.EmptyBatchRequiresActiveContext
+note = Accepts an empty batch outside an active simulation tick.
+original:
+|             RequireActive();
+replacement:
+|             _ = batch.Length;
+
+[mt-222-04]
+file = Assets/WarCore/Sim/StableEventBatch.cs
+filter = FullyQualifiedName~Mt222StableEventBatch
+expect = WarCore.Tests.Mt222StableEventBatchTests.EmptyBatchRequiresStableWorld
+note = Accepts an empty stable event batch in a legacy world.
+original:
+|             Entities.RequireStableWorld();
+replacement:
+|             _ = batch.Length;
+
+[mt-222-05]
+file = Assets/WarCore/Sim/StableEventBatch.cs
+filter = FullyQualifiedName~Mt222StableEventBatch
+expect = WarCore.Tests.Mt222StableEventBatchTests.FirstEventRejectsUnknownLinkBeforePublishing
+note = Publishes the first event without rejecting its unknown source or target link.
+original:
+|             for (int i = 0; i < batch.Length; i++)
+|             {
+replacement:
+|             for (int i = 1; i < batch.Length; i++)
+|             {
+
+[mt-222-06]
+file = Assets/WarCore/Sim/StableEventBatch.cs
+filter = FullyQualifiedName~Mt222StableEventBatch
+expect = WarCore.Tests.Mt222StableEventBatchTests.BatchPreservesRetiredWeakLink(True)
+note = Rejects a retired source identity that remains valid as a weak event link.
+original:
+|                 Entities.ValidateLink(batch[i].Event.Source,false);
+replacement:
+|                 Entities.ValidateLink(batch[i].Event.Source,true);
+
+[mt-222-07]
+file = Assets/WarCore/Sim/StableEventBatch.cs
+filter = FullyQualifiedName~Mt222StableEventBatch
+expect = WarCore.Tests.Mt222StableEventBatchTests.BatchPreservesRetiredWeakLink(False)
+note = Rejects a retired target identity that remains valid as a weak event link.
+original:
+|                 Entities.ValidateLink(batch[i].Event.Target,false);
+replacement:
+|                 Entities.ValidateLink(batch[i].Event.Target,true);

@@ -1,0 +1,52 @@
+# MatchFeature
+# Surviving mutations of Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs. Test classes are named Mt155MatchFeature*.
+
+[mt-155-01]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Mt155MatchFeature
+expect = WarCore.Tests.Mt155MatchFeatureTests.OneTickRespawnSwitchesToReserveOnNextTick
+note = A one-tick respawn delay must switch control to a reserve on the next tick after death.
+original:
+|             if (recipe.Match.RespawnTicks > 0 && a.Controlled != null)
+replacement:
+|             if (recipe.Match.RespawnTicks > 1 && a.Controlled != null)
+
+[mt-155-02]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Mt155MatchFeature
+expect = WarCore.Tests.Mt155MatchFeatureTests.OneTickFailedSlotMemoryChangesSnapshotManifest
+note = A one-tick failed-slot memory must add its system to the snapshot manifest.
+original:
+|             if (failedTicks > 0)
+replacement:
+|             if (failedTicks > 1)
+
+[mt-155-03]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Mt155MatchFeature
+expect = WarCore.Tests.Mt155MatchFeatureTests.OneTickTargetMemoryChangesSnapshotManifest
+note = A one-tick target memory must add its system to the snapshot manifest.
+original:
+|             if (memoryTicks > 0)
+replacement:
+|             if (memoryTicks > 1)
+
+[mt-155-04]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Mt155MatchFeature
+expect = WarCore.Tests.Mt155MatchFeatureTests.OneTickTargetSearchChangesSnapshotManifest
+note = A one-tick target search with target memory enabled must add its system to the snapshot manifest.
+original:
+|             if (searchTicks > 0)
+replacement:
+|             if (searchTicks > 1)
+
+[mt-155-05]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Mt155MatchFeature
+expect = WarCore.Tests.Mt155MatchFeatureTests.OneTickSuppressiveFireChangesSnapshotManifest
+note = One-tick suppressive fire with target memory enabled must add its system to the snapshot manifest.
+original:
+|             if (suppressTicks > 0)
+replacement:
+|             if (suppressTicks > 1)

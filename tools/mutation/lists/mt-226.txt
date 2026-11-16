@@ -1,0 +1,32 @@
+# StableStateIO
+# Uncovered mutations of Assets/WarCore/Sim/StableStateIO.cs. Test classes are named Mt226StableStateIO*.
+
+[mt-226-01]
+file = Assets/WarCore/Sim/StableStateIO.cs
+filter = FullyQualifiedName~Mt226StableStateIO
+expect = WarCore.Tests.Mt226StableStateIOTests.StableByteRejectsWritesAfterTheLastAvailableByte
+note = Stable records accept another byte after reaching their byte capacity.
+original:
+|                 throw new SimBoundaryException("Stable record exceeds its byte capacity.");
+replacement:
+|                 _ = value;
+
+[mt-226-02]
+file = Assets/WarCore/Sim/StableStateIO.cs
+filter = FullyQualifiedName~Mt226StableStateIO
+expect = WarCore.Tests.Mt226StableStateIOTests.ThreeByteUnicodeCharacterHasTheExactUtf8LengthAndPayload
+note = A three-byte Unicode character is serialized with an incorrect UTF-8 byte count.
+original:
+|                     byteCount += 3;
+replacement:
+|                     byteCount += 2;
+
+[mt-226-03]
+file = Assets/WarCore/Sim/StableStateIO.cs
+filter = FullyQualifiedName~Mt226StableStateIO
+expect = WarCore.Tests.Mt226StableStateIOTests.StableTriggerSerializationRejectsAnExtensionWithoutAStableSchema
+note = Stable serialization accepts an extension without an explicit stable schema.
+original:
+|                 throw new SimBoundaryException("An explicit stable extension schema is required.");
+replacement:
+|                 _ = serializer;

@@ -1,0 +1,22 @@
+# SurfacesSection
+# Surviving mutations of Assets/WarCore/Content/Data/Sections/SurfacesSection.cs. Test classes are named Mt136SurfacesSection*.
+
+[mt-136-01]
+file = Assets/WarCore/Content/Data/Sections/SurfacesSection.cs
+filter = FullyQualifiedName~Mt136SurfacesSection
+expect = WarCore.Tests.Mt136SurfacesSectionTests.Accepts255ByteSurfaceId
+note = Rejects a valid surface id at the 255-byte limit.
+original:
+|                 if (e.Id.Length == 0 || System.Text.Encoding.UTF8.GetByteCount(e.Id) > 255)
+replacement:
+|                 if (e.Id.Length == 0 || System.Text.Encoding.UTF8.GetByteCount(e.Id) >= 255)
+
+[mt-136-02]
+file = Assets/WarCore/Content/Data/Sections/SurfacesSection.cs
+filter = FullyQualifiedName~Mt136SurfacesSection
+expect = WarCore.Tests.Mt136SurfacesSectionTests.MissingConcealMilliDefaultsTo1000
+note = Reduces default surface concealment from 1000 to 999.
+original:
+|                 int conceal = r.Has("concealMilli") ? r.Int("concealMilli", 1, SurfaceDef.MaxConcealMilli) : SurfaceDef.MaxConcealMilli;
+replacement:
+|                 int conceal = r.Has("concealMilli") ? r.Int("concealMilli", 1, SurfaceDef.MaxConcealMilli) : SurfaceDef.MaxConcealMilli - 1;

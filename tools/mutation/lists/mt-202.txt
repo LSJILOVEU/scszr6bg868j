@@ -1,0 +1,23 @@
+# Posture
+# Uncovered mutations of Assets/WarCore/Sim/Posture.cs. Test classes are named Mt202Posture*.
+
+[mt-202-01]
+file = Assets/WarCore/Sim/Posture.cs
+filter = FullyQualifiedName~Mt202Posture
+expect = WarCore.Tests.Mt202PostureBoundaryTests.StableTransitionRejectsInvalidPostureIds
+expect = WarCore.Tests.Mt202PostureBoundaryTests.StableTransitionRejectsDefaultTask
+note = Removing validation accepts invalid posture ids or a stable task without a positive deadline.
+original:
+|                 throw new SimBoundaryException("Invalid stable posture task.");
+replacement:
+|                 { }
+
+[mt-202-02]
+file = Assets/WarCore/Sim/Posture.cs
+filter = FullyQualifiedName~Mt202Posture
+expect = WarCore.Tests.Mt202PostureBoundaryTests.StableWriterRejectsLegacyTransition
+note = Stable serialization silently drops a legacy posture transition instead of rejecting it.
+original:
+|                     throw new SimBoundaryException("Stable posture cannot encode a legacy task id.");
+replacement:
+|                     { }

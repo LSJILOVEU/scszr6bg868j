@@ -1,0 +1,44 @@
+# GameplaySchema
+# Uncovered mutations of Assets/WarCore/Sim/GameplaySchema.cs. Test classes are named Mt190GameplaySchema*.
+
+[mt-190-01]
+file = Assets/WarCore/Sim/GameplaySchema.cs
+filter = FullyQualifiedName~Mt190GameplaySchema
+expect = WarCore.Tests.Mt190GameplaySchemaTests.DuplicatePipelineKeysAreRejected
+note = Duplicate pipeline keys bypass schema validation.
+original:
+|                     throw new SimBoundaryException("M0C_PIPELINE_KEY: Duplicate pipeline key.");
+replacement:
+|                     { }
+
+[mt-190-02]
+file = Assets/WarCore/Sim/GameplaySchema.cs
+filter = FullyQualifiedName~Mt190GameplaySchema
+expect = WarCore.Tests.Mt190GameplaySchemaTests.NoticeCapacityBelowResourceCapacityIsRejected
+note = Notice capacity below resource capacity bypasses schema validation.
+original:
+|                 throw new SimBoundaryException("M0C_GAMEPLAY_CAPACITY: Notices must cover all final resource facts.");
+replacement:
+|                 { }
+
+[mt-190-03]
+file = Assets/WarCore/Sim/GameplaySchema.cs
+filter = FullyQualifiedName~Mt190GameplaySchema
+expect = WarCore.Tests.Mt190GameplaySchemaTests.FindDamageTypeFindsFirstOfThreeKeys
+note = Damage type lookup skips the candidate immediately below the midpoint.
+original:
+|                 ulong value = damageTypes[middle].Key;
+|                 if (value == key)
+|                     return middle;
+|                 if (value < key)
+|                     low = middle + 1;
+|                 else
+|                     high = middle - 1;
+replacement:
+|                 ulong value = damageTypes[middle].Key;
+|                 if (value == key)
+|                     return middle;
+|                 if (value < key)
+|                     low = middle + 1;
+|                 else
+|                     high = middle - 2;

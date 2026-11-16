@@ -1,0 +1,42 @@
+# MapProblem
+# Surviving mutations of Assets/WarCore/Content/MapTools/MapProblem.cs. Test classes are named Mt141MapProblem*.
+
+[mt-141-01]
+file = Assets/WarCore/Content/MapTools/MapProblem.cs
+filter = FullyQualifiedName~Mt141MapProblem
+expect = WarCore.Tests.Mt141MapProblemTests.ConstructorPreservesMillimetres
+note = Inverts whether millimetre coordinates are present.
+original:
+|             HasMm = mm.HasValue;
+replacement:
+|             HasMm = !mm.HasValue;
+
+[mt-141-02]
+file = Assets/WarCore/Content/MapTools/MapProblem.cs
+filter = FullyQualifiedName~Mt141MapProblem
+expect = WarCore.Tests.Mt141MapProblemTests.ConstructorPreservesMillimetres
+note = Copies the Z coordinate into the X millimetre coordinate.
+original:
+|             if (mm.HasValue) { XMm = mm.Value.X; ZMm = mm.Value.Z; }
+replacement:
+|             if (mm.HasValue) { XMm = mm.Value.Z; ZMm = mm.Value.Z; }
+
+[mt-141-03]
+file = Assets/WarCore/Content/MapTools/MapProblem.cs
+filter = FullyQualifiedName~Mt141MapProblem
+expect = WarCore.Tests.Mt141MapProblemTests.ConstructorPreservesLine
+note = Inverts whether a line number is present.
+original:
+|             HasLine = line.HasValue;
+replacement:
+|             HasLine = !line.HasValue;
+
+[mt-141-04]
+file = Assets/WarCore/Content/MapTools/MapProblem.cs
+filter = FullyQualifiedName~Mt141MapProblem
+expect = WarCore.Tests.Mt141MapProblemTests.ConstructorPreservesLine
+note = Increments the supplied line number instead of preserving it.
+original:
+|             if (line.HasValue) Line = line.Value;
+replacement:
+|             if (line.HasValue) Line = line.Value + 1;

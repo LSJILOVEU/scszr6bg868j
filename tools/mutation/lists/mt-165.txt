@@ -1,0 +1,22 @@
+# WorldBuilder
+# Surviving mutations of Assets/WarCore/Presentation/Bridge/WorldBuilder.cs. Test classes are named Mt165WorldBuilder*.
+
+[mt-165-01]
+file = Assets/WarCore/Presentation/Bridge/WorldBuilder.cs
+filter = FullyQualifiedName~Mt165WorldBuilder
+expect = WarCore.Tests.Mt165WorldBuilderTests.CrowdMove_ArrivesAtTwoMetreSlots
+note = Crowd movement must place adjacent formation slots two metres apart.
+original:
+|         internal static readonly SimFix CrowdSlotSpacing = SimFix.FromInt(2);
+replacement:
+|         internal static readonly SimFix CrowdSlotSpacing = SimFix.FromInt(1);
+
+[mt-165-02]
+file = Assets/WarCore/Presentation/Bridge/WorldBuilder.cs
+filter = FullyQualifiedName~Mt165WorldBuilder
+expect = WarCore.Tests.Mt165WorldBuilderTests.DemoFormation_FirstSlotUsesOneMetreSpacing
+note = Demo spawn coordinates must use one metre formation spacing.
+original:
+|             SimVec3 offset = InterimOrders.SlotOffset(rank, count, SimFix.FromInt(1));
+replacement:
+|             SimVec3 offset = InterimOrders.SlotOffset(rank, count, SimFix.FromInt(2));

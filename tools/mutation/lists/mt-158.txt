@@ -1,0 +1,12 @@
+# WorldAssembly
+# Surviving mutations of Assets/WarCore/Presentation/Bridge/Features/WorldAssembly.cs. Test classes are named Mt158WorldAssembly*.
+
+[mt-158-01]
+file = Assets/WarCore/Presentation/Bridge/Features/WorldAssembly.cs
+filter = FullyQualifiedName~Mt158WorldAssembly
+expect = WarCore.Tests.Mt158WorldAssemblyTests.UnitHooksRunInOptionOrder
+note = Extension hooks run in reverse option order.
+original:
+|                     Extensions.Add(feature);
+replacement:
+|                     Extensions.Insert(0, feature);

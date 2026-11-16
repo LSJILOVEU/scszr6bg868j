@@ -1,0 +1,36 @@
+# GameplayStatusData
+# Uncovered mutations of Assets/WarCore/Sim/GameplayStatusData.cs. Test classes are named Mt195GameplayStatusData*.
+
+[mt-195-01]
+file = Assets/WarCore/Sim/GameplayStatusData.cs
+filter = FullyQualifiedName~Mt195GameplayStatusData
+expect = WarCore.Tests.Mt195GameplayStatusDataTests.DescendingModifiersPreserveBothEntriesInKeyOrder
+note = Sorting descending modifier keys loses the displaced modifier.
+original:
+|                     this.modifiers[j] = this.modifiers[j - 1];
+replacement:
+|                     this.modifiers[j] = this.modifiers[j - 0];
+
+[mt-195-02]
+file = Assets/WarCore/Sim/GameplayStatusData.cs
+filter = FullyQualifiedName~Mt195GameplayStatusData
+expect = WarCore.Tests.Mt195GameplayStatusDataTests.DescendingPeriodicActionsPreserveBothEntriesInOrdinalOrder
+note = Sorting descending action ordinals loses the displaced periodic action.
+original:
+|                     this.periodicActions[j] = this.periodicActions[j - 1];
+replacement:
+|                     this.periodicActions[j] = this.periodicActions[j - 0];
+
+[mt-195-03]
+file = Assets/WarCore/Sim/GameplayStatusData.cs
+filter = FullyQualifiedName~Mt195GameplayStatusData
+expect = WarCore.Tests.Mt195GameplayStatusDataTests.InstanceKeyWithoutGroupSourceSortsBeforeKeyWithGroupSource
+note = Group source presence reverses the ordering of otherwise equal instance keys.
+original:
+|             c = HasGroupSource.CompareTo(b.HasGroupSource);
+|             if (c != 0)
+|                 return c;
+replacement:
+|             c = HasGroupSource.CompareTo(b.HasGroupSource);
+|             if (c != 0)
+|                 return -c;

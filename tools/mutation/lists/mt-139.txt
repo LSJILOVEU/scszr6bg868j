@@ -1,0 +1,12 @@
+# MapEdit
+# Surviving mutations of Assets/WarCore/Content/MapTools/MapEdit.cs. Test classes are named Mt139MapEdit*.
+
+[mt-139-01]
+file = Assets/WarCore/Content/MapTools/MapEdit.cs
+filter = FullyQualifiedName~Mt139MapEdit
+expect = WarCore.Tests.Mt139MapEditLinkTests.StampIdEqualToNextIsRefused
+note = Accepts a stamp ID equal to the next counter instead of rejecting the invalid link.
+original:
+|                 if (row.Id >= next) throw Link(kind.Name, "stamps id not below next");
+replacement:
+|                 if (row.Id > next) throw Link(kind.Name, "stamps id not below next");

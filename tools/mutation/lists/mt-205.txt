@@ -1,0 +1,32 @@
+# Sim
+# Uncovered mutations of Assets/WarCore/Sim/Sim.cs. Test classes are named Mt205Sim*.
+
+[mt-205-01]
+file = Assets/WarCore/Sim/Sim.cs
+filter = FullyQualifiedName~Mt205Sim
+expect = WarCore.Tests.Mt205SimBoundaryTests.ExhaustedClockRejectsAdvanceWithoutWrapping
+note = Advancing an exhausted clock must reject the operation without wrapping the tick.
+original:
+|                 throw new SimBoundaryException("Simulation clock exhausted.");
+replacement:
+|                 _ = Tick;
+
+[mt-205-02]
+file = Assets/WarCore/Sim/Sim.cs
+filter = FullyQualifiedName~Mt205Sim
+expect = WarCore.Tests.Mt205SimBoundaryTests.MovementSubmissionOutsideMovementPhaseIsRejected
+note = Movement submissions outside the movement phase must be rejected.
+original:
+|                 throw new InvalidOperationException("Movement output requires the movement advance phase.");
+replacement:
+|                 _ = entity;
+
+[mt-205-03]
+file = Assets/WarCore/Sim/Sim.cs
+filter = FullyQualifiedName~Mt205Sim
+expect = WarCore.Tests.Mt205SimBoundaryTests.StateHashDuringTickIsRejected
+note = Authoritative state hashing must be rejected while a tick is running.
+original:
+|                 throw new InvalidOperationException("Hash only at tick boundaries.");
+replacement:
+|                 _ = hash;

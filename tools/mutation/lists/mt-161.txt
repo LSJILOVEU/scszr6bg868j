@@ -1,0 +1,22 @@
+# ViewEntity
+# Surviving mutations of Assets/WarCore/Presentation/Bridge/ViewEntity.cs. Test classes are named Mt161ViewEntity*.
+
+[mt-161-01]
+file = Assets/WarCore/Presentation/Bridge/ViewEntity.cs
+filter = FullyQualifiedName~Mt161ViewEntity
+expect = WarCore.Tests.Mt161ViewEntityTests.ConstructorPreservesAlive
+note = The constructor inverts the supplied life state.
+original:
+|             Alive = alive;
+replacement:
+|             Alive = !alive;
+
+[mt-161-02]
+file = Assets/WarCore/Presentation/Bridge/ViewEntity.cs
+filter = FullyQualifiedName~Mt161ViewEntity
+expect = WarCore.Tests.Mt161ViewEntityTests.ConstructorPreservesSquadWithDifferentTeam
+note = The constructor replaces the supplied squad with the team.
+original:
+|             Squad = squad;
+replacement:
+|             Squad = team;

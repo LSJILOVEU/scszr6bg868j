@@ -1,0 +1,40 @@
+# GameplayAbilityTargets
+# Uncovered mutations of Assets/WarCore/Sim/GameplayAbilityTargets.cs. Test classes are named Mt182GameplayAbilityTargets*.
+
+[mt-182-01]
+file = Assets/WarCore/Sim/GameplayAbilityTargets.cs
+filter = FullyQualifiedName~Mt182GameplayAbilityTargets
+expect = WarCore.Tests.Mt182GameplayAbilityTargetsTests.ColocatedExplicitTargetIsNotOccluded
+note = Zero-distance occlusion rejects a colocated explicit target.
+original:
+|             if (range == 0)
+|                 return false;
+replacement:
+|             if (range == 0)
+|                 return true;
+
+[mt-182-02]
+file = Assets/WarCore/Sim/GameplayAbilityTargets.cs
+filter = FullyQualifiedName~Mt182GameplayAbilityTargets
+expect = WarCore.Tests.Mt182GameplayAbilityTargetsTests.ExplicitTargetOnRejectedLayerDoesNotSpendOrDealDamage
+note = Explicit target selection accepts a target outside the allowed layer mask.
+original:
+|             if ((layer & spec.LayerMask) == 0)
+|                 return GameplayAbilityFailure.LayerRejected;
+replacement:
+|             if ((layer & spec.LayerMask) == 0)
+|                 return GameplayAbilityFailure.None;
+
+[mt-182-03]
+file = Assets/WarCore/Sim/GameplayAbilityTargets.cs
+filter = FullyQualifiedName~Mt182GameplayAbilityTargets
+expect = WarCore.Tests.Mt182GameplayAbilityTargetsTests.ExplicitTargetLeavingRangeDuringWindupFailsReleaseWithoutDamage
+note = Failed release refresh reports success and applies damage to a stale target outside range.
+original:
+|                 var failure = SelectAbilityTargets(row.Owner, definition, command);
+|                 if (failure != GameplayAbilityFailure.None)
+|                     return failure;
+replacement:
+|                 var failure = SelectAbilityTargets(row.Owner, definition, command);
+|                 if (failure != GameplayAbilityFailure.None)
+|                     return GameplayAbilityFailure.None;

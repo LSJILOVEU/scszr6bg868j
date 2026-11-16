@@ -1,0 +1,36 @@
+# MapEdit
+# Uncovered mutations of Assets/WarCore/Content/MapTools/MapEdit.cs. Test classes are named Mt140MapEdit*.
+
+[mt-140-01]
+file = Assets/WarCore/Content/MapTools/MapEdit.cs
+filter = FullyQualifiedName~Mt140MapEdit
+expect = WarCore.Tests.Mt140MapEditTests.UnknownEntryKindIsRejected
+note = Unknown entry kinds return no owner instead of throwing ArgumentException.
+original:
+|                 case "unit": owner = Find(MapEditKinds.Unit, Current.Units, id).Owner; break;
+|                 default: throw new ArgumentException("unknown entry kind: " + kind);
+replacement:
+|                 case "unit": owner = Find(MapEditKinds.Unit, Current.Units, id).Owner; break;
+|                 default: return null;
+
+[mt-140-02]
+file = Assets/WarCore/Content/MapTools/MapEdit.cs
+filter = FullyQualifiedName~Mt140MapEdit
+expect = WarCore.Tests.Mt140MapEditTests.RemovingPointKeepsBaseWithSameId
+note = Removing a point deletes the base with the same id and leaves the point intact.
+original:
+|                 case "point": Remove(MapEditKinds.Point, id); break;
+replacement:
+|                 case "point": Remove(MapEditKinds.Base, id); break;
+
+[mt-140-03]
+file = Assets/WarCore/Content/MapTools/MapEdit.cs
+filter = FullyQualifiedName~Mt140MapEdit
+expect = WarCore.Tests.Mt140MapEditTests.RemovingMissingIdIsRejected
+note = Removing a missing id deletes the first entry instead of throwing ArgumentException.
+original:
+|                 if (kind.Id(items[n]) == id) return n;
+|             throw new ArgumentException("no " + kind.Name + " with id " + id);
+replacement:
+|                 if (kind.Id(items[n]) == id) return n;
+|             return 0;
