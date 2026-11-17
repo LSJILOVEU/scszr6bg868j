@@ -1,0 +1,16 @@
+{
+  "id": "rwr-m7-playtest",
+  "extends": "rwr-m6",
+  "ai": {
+    "failedSlotTicks": 90,
+    "targetMemoryTicks": 300,
+    "searchTicks": 90,
+    "reactionTicks": 15,
+    "senseTicks": 6,
+    "burstShots": 3,
+    "burstPauseTicks": 30,
+    "suppressTicks": 90,
+    "meleeChaseRange": 12,
+    "holdSharePermille": 300
+  }
+}

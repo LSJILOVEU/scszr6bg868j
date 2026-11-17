@@ -1,0 +1,32 @@
+# PF1: the MP playtest recipe carries the AI rules of content layer rwr-m7-playtest.
+
+[pf1-01-no-ai-rules]
+file = Assets/WarCore/Presentation/Bridge/DemoRecipes.cs
+filter = FullyQualifiedName~PF1PlaytestTests
+expect = WarCore.Tests.PF1PlaytestTests.PF1Recipe_AiPackCarriesTheTenLayerValues
+note = the playtest recipe is the respawn demo with no AI pack
+original:
+| public static WorldRecipe MpPlaytest() => MpRespawnDemo().WithAiRules(WarCore.Content.Rwr.RwrPack.Load(PlaytestLayer));
+replacement:
+| public static WorldRecipe MpPlaytest() => MpRespawnDemo();
+
+[pf1-02-wrong-base]
+file = Assets/WarCore/Presentation/Bridge/DemoRecipes.cs
+filter = FullyQualifiedName~PF1PlaytestTests
+expect = WarCore.Tests.PF1PlaytestTests.PF1Recipe_RestIsTheRespawnDemo
+note = the playtest recipe loses the respawn delay and guard
+original:
+| public static WorldRecipe MpPlaytest() => MpRespawnDemo().WithAiRules(
+replacement:
+| public static WorldRecipe MpPlaytest() => MpBlockDemo().WithAiRules(
+
+[pf1-03-old-layer]
+file = Assets/WarCore/Presentation/Bridge/DemoRecipes.cs
+filter = FullyQualifiedName~PF1PlaytestTests
+expect = WarCore.Tests.PF1PlaytestTests.PF1Recipe_AiPackCarriesTheTenLayerValues
+expect = WarCore.Tests.PF1PlaytestTests.PF1Split_EachTeamTargetsAtLeastTwoPoints
+note = the playtest takes the AI layer without the split
+original:
+| public const string PlaytestLayer = "rwr-m7-playtest";
+replacement:
+| public const string PlaytestLayer = "rwr-ai-playtest";
