@@ -35,13 +35,13 @@ namespace WarCore.Battle
         private readonly ulong seedSalt, policyDigest;
         private readonly Intent[] intents;
         private readonly int[] winners;
-        private readonly int holdSharePermille;
+        private readonly int holdSharePermille, attackSpreadPoints;
         private int intentCount, current, frontline1, frontline2;
         private long decisionTick;
         public SimpleAiSystem(CombatSystem combat, CombatPack weapons, MatchPack pack, CaptureSystem capture, IMoveOrders moves,
             IControlTarget controlled = null, FailedSlotMemory memory = null, TargetMemory contacts = null,
             TargetSearch search = null, TargetSuppress suppress = null, int meleeChaseRange = 0,
-            bool fairDecisions = false, ulong decisionSeed = 0, int holdSharePermille = 0)
+            bool fairDecisions = false, ulong decisionSeed = 0, int holdSharePermille = 0, int attackSpreadPoints = 1)
         {
             this.combat = combat; this.weapons = weapons; this.pack = pack; this.capture = capture; this.moves = moves;
             this.controlled = controlled; this.memory = memory; this.contacts = contacts; this.search = search; this.suppress = suppress;
@@ -58,6 +58,12 @@ namespace WarCore.Battle
             if (holdSharePermille > 0)
             {
                 var hash = new StateHash(); hash.Add("battle.ai.hold-share.v1"); hash.Add(policyDigest); hash.Add(holdSharePermille);
+                policyDigest = hash.Value;
+            }
+            this.attackSpreadPoints = attackSpreadPoints;
+            if (attackSpreadPoints > 1)
+            {
+                var hash = new StateHash(); hash.Add("battle.ai.attack-spread.v1"); hash.Add(policyDigest); hash.Add(attackSpreadPoints);
                 policyDigest = hash.Value;
             }
             reservedHas = new bool[slots.Total]; standingHas = new bool[slots.Total];
@@ -121,6 +127,7 @@ namespace WarCore.Battle
                 // A holder goes to its team's front-line point; without one it attacks like the rest.
                 int nearest = holdSharePermille > 0 && Holds(id.Value, holdSharePermille) ? (unit.Team == 1 ? frontline1 : frontline2) : -1;
                 bool attack = nearest < 0; SimWide best = default;
+                if (attack && attackSpreadPoints > 1) { nearest = SpreadTarget(unit.Team, here, id.Value); attack = false; }
                 for (int i = 0; attack && i < pack.Points.Length; i++)
                 {
                     if (capture.Points[i].Owner == unit.Team) continue;
@@ -304,6 +311,30 @@ namespace WarCore.Battle
                 }
             }
             return front;
+        }
+        // Stateless spread by unit key: rank k = Mix(key ^ salt) % min(spread, points not owned); the k-th nearest such point
+        // (0 = nearest; equal distances to the lower point index); -1 when the team owns every point.
+        private const ulong SpreadSalt = 0x3c6ef372fe94f82bUL;
+        private int SpreadTarget(int team, SimVec3 here, ulong key)
+        {
+            int count = 0;
+            for (int i = 0; i < pack.Points.Length; i++) if (capture.Points[i].Owner != team) count++;
+            if (count == 0) return -1;
+            int rank = (int)(Mix(key ^ SpreadSalt) % (ulong)Math.Min(attackSpreadPoints, count));
+            int last = -1; SimWide lastDistance = default;
+            for (int r = 0; r <= rank; r++)
+            {
+                int pick = -1; SimWide best = default;
+                for (int i = 0; i < pack.Points.Length; i++)
+                {
+                    if (capture.Points[i].Owner == team) continue;
+                    SimWide distance = CombatSystem.Horizontal(here - pack.Points[i].Center).LengthSquared;
+                    if (last >= 0 && (distance < lastDistance || (distance == lastDistance && i <= last))) continue;
+                    if (pick < 0 || distance < best) { pick = i; best = distance; }
+                }
+                last = pick; lastDistance = best;
+            }
+            return last;
         }
         private ulong Priority(ulong id) => Mix(id ^ seedSalt ^ unchecked((ulong)decisionTick * 0x9e3779b97f4a7c15UL));
         private static ulong Mix(ulong x)
