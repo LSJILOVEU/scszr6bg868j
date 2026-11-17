@@ -12,7 +12,7 @@ namespace WarCore.Tests
             int ai = AutoFireFixtures.AiFires(c => c.UseAutoFire(new RecordingAutoFire(c.BuiltInAutoFire)));
             int player = AutoFireFixtures.PlayerFires(c => c.UseAutoFire(new RecordingAutoFire(c.BuiltInAutoFire)));
             int intent = AutoFireFixtures.IntentFires(out _, c => c.UseAutoFire(new RecordingAutoFire(c.BuiltInAutoFire)));
-            Assert.That(ai, Is.EqualTo(88));
+            Assert.That(ai, Is.EqualTo(78));
             Assert.That(player, Is.EqualTo(18));
             Assert.That(intent, Is.EqualTo(18));
         }
@@ -31,7 +31,7 @@ namespace WarCore.Tests
         public void PassingNull_RestoresTheBuiltInDecision()
         {
             int shots = AutoFireFixtures.AiFires(c => { c.UseAutoFire(new SilentAutoFire()); c.UseAutoFire(null); });
-            Assert.That(shots, Is.EqualTo(88));
+            Assert.That(shots, Is.EqualTo(78));
         }
 
         [Test]

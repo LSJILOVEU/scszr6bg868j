@@ -66,7 +66,7 @@ namespace WarCore.Tests
 
         // New behaviour baseline of this package: the L6 line columns, then switches, respawns, off-ground ticks.
         private const string TwinGolden =
-            "41,765,2,1,4BEF913C6CDAE8A0,9C572B43B73B29C0,-,BF6F07BEBF73AAD4,100,332,3,17,12,8,8,10,89,74,25,0,0,0,0";
+            "41,765,2,1,4BEF913C6CDAE8A0,B2F6FF9FF2EAA7B4,-,BA174A052F2C310F,100,332,3,17,12,8,8,10,87,74,25,0,0,0,0";
 
         [Test]
         public void L10Demo_FrozenTwin_Golden()

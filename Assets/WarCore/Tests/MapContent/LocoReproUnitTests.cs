@@ -9,7 +9,7 @@ namespace WarCore.Tests
 {
     public sealed class LocoReproUnitTests
     {
-        [Category("Manual"), Test, Explicit("Reproduces crowd penetration; run by name.")]
+        [Test]
         public void FastShortChord_DoesNotPassThroughAStationaryUnit()
         {
             var session = SimSession.Create(new WorldRecipe(41, MoverKind.InterimCrowd,

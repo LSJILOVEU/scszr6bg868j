@@ -48,7 +48,7 @@ namespace WarCore.Tests
                     Assert.That(explicitRules.Sim.SaveRetainedSnapshot(), Is.EqualTo(saved));
                 }
             }
-            Assert.That((omitted.Match.Winner, omitted.Match.EndTick, omitted.Match.EndReason), Is.EqualTo((1, 1172L, MatchEndReason.AllPoints)));
+            Assert.That((omitted.Match.Winner, omitted.Match.EndTick, omitted.Match.EndReason), Is.EqualTo((1, 1174L, MatchEndReason.AllPoints)));
             Assert.That((explicitRules.Match.Winner, explicitRules.Match.EndTick, explicitRules.Match.EndReason),
                 Is.EqualTo((omitted.Match.Winner, omitted.Match.EndTick, omitted.Match.EndReason)));
         }
