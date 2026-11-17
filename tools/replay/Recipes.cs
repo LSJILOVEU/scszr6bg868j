@@ -19,8 +19,10 @@ namespace WarCore.Replay
         public static readonly IReadOnlyDictionary<string, Entry> All = new Dictionary<string, Entry>
         {
             ["base"] = new Entry("M7, default AI", () => DemoRecipes.M7(), DemoRecipes.M7MapBytes),
-            ["playtest"] = new Entry("M7, rwr-ai-playtest AI values",
-                () => DemoRecipes.M7().WithAiRules(RwrPack.Load("rwr-ai-playtest")), DemoRecipes.M7MapBytes),
+            ["playtest"] = new Entry("M7, rwr-m7-playtest AI rules",
+                () => DemoRecipes.M7().WithAiRules(RwrPack.Load(DemoRecipes.PlaytestLayer)), DemoRecipes.M7MapBytes),
+            // The recipe the MP playtest scene runs, with the player unit left idle (no input).
+            ["mp-playtest"] = new Entry("MP playtest recipe, idle player", () => DemoRecipes.MpPlaytest(), DemoRecipes.M7MapBytes),
         };
     }
 }

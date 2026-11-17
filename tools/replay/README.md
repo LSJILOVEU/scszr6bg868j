@@ -7,6 +7,7 @@ shared timeline. Game code is only referenced, never changed.
 ```sh
 sudo apt-get install -y dotnet-sdk-8.0      # once (run apt-get update first in a fresh container)
 tools/replay/run.sh                         # builds, runs base + playtest into tools/replay/out/
+tools/replay/run.sh mp-playtest             # any setups listed by --list
 tools/replay/run.sh base                    # one setup; TICKS=3000 EVERY=6 to change length / frame step
 cd tools/replay/out && python3 -m http.server   # then open /battle-replay.html (fetch needs http, not file://)
 ```
@@ -34,11 +35,12 @@ over the match, `m` on each frame holds `[share1, share2, nn1, nn2, spread1, spr
   above 1 while the main body stood on the lattice.
 - Thresholds belong to the task that uses them; do not tune game values to pass a metric.
 
-## Reference values (main, d70fc7e)
+## Reference values (main, e345a62)
 
 | Setup | End | Hash | share mean 1/2 | nn mean 1/2 | spread mean 1/2 |
 |---|---|---|---|---|---|
 | base | team 2 wins at tick 2050 | 349ABBEB3EBBED0D | 0.754 / 0.685 | 0.311 / 0.328 | 0.606 / 0.343 |
-| playtest | undecided at 2400 | 77B5F399C8596E86 | 0.538 / 0.553 | 0.356 / 0.362 | 0.590 / 0.284 |
+| playtest | undecided at 2400 | 1B5A952895358459 | 0.726 / 0.634 | 0.408 / 0.278 | 0.513 / 0.250 |
+| mp-playtest | undecided at 2400 | 6BA883C992F6F598 | 0.661 / 0.641 | 0.470 / 0.249 | 0.509 / 0.258 |
 
 At tick 750 (25 s) team 1 in `base` has 81 of 108 units in one circle (share 0.75).
