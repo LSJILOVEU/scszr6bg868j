@@ -86,9 +86,9 @@ filter = FullyQualifiedName~AiSplitTests
 expect = WarCore.Tests.AiSplitTests.Split_NoOwnedPointMeansNoHolders
 note = holders without an owned point stand still instead of attacking
 original:
-| for (int i = 0; nearest < 0 && i < pack.Points.Length; i++)
+| bool attack = nearest < 0; SimWide best = default;
 replacement:
-| for (int i = 0; nearest < 0 && !Holds(id.Value, holdSharePermille) && i < pack.Points.Length; i++)
+| bool attack = !Holds(id.Value, holdSharePermille); SimWide best = default;
 
 [ai-split-1-10-digest]
 file = Assets/WarCore/Battle/SimpleAiSystem.cs

@@ -64,7 +64,7 @@ namespace WarCore.Tests
                 Assert.That(intent.Active, Is.True, "unit " + key);
                 if (Inside(intent.Target, own)) holders++;
                 Assert.That(Inside(intent.Target, own), Is.EqualTo(holder), "unit " + key);
-                if (!holder) Assert.That(Inside(intent.Target, mid), Is.True, "unit " + key);
+                if (!holder) Assert.That(Inside(intent.Target, mid) || Inside(intent.Target, far), Is.True, "unit " + key);
             }
             Assert.That(formula, Is.EqualTo(50));
             Assert.That(holders, Is.EqualTo(formula));

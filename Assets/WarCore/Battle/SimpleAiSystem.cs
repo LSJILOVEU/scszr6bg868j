@@ -120,8 +120,8 @@ namespace WarCore.Battle
                 }
                 // A holder goes to its team's front-line point; without one it attacks like the rest.
                 int nearest = holdSharePermille > 0 && Holds(id.Value, holdSharePermille) ? (unit.Team == 1 ? frontline1 : frontline2) : -1;
-                SimWide best = default;
-                for (int i = 0; nearest < 0 && i < pack.Points.Length; i++)
+                bool attack = nearest < 0; SimWide best = default;
+                for (int i = 0; attack && i < pack.Points.Length; i++)
                 {
                     if (capture.Points[i].Owner == unit.Team) continue;
                     SimWide distance = CombatSystem.Horizontal(here - pack.Points[i].Center).LengthSquared;
