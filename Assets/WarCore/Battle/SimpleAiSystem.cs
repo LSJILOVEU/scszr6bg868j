@@ -77,7 +77,7 @@ namespace WarCore.Battle
         public void Step(SimContext c)
         {
             decisionTick = c.Clock.Tick; intentCount = 0;
-            if (holdSharePermille > 0) { frontline1 = Frontline(1); frontline2 = Frontline(2); }
+            if (holdSharePermille > 0 || attackSpreadPoints > 1) { frontline1 = Frontline(1); frontline2 = Frontline(2); }
             Rebuild();
             foreach (EntityId entity in stage.Capture())
             {
@@ -313,10 +313,14 @@ namespace WarCore.Battle
             return front;
         }
         // Stateless spread by unit key: rank k = Mix(key ^ salt) % min(spread, points not owned); the k-th nearest such point
-        // (0 = nearest; equal distances to the lower point index); -1 when the team owns every point.
+        // (0 = nearest; equal distances to the lower point index); -1 when the team owns every point. Distances are measured
+        // from the team's front-line point, so the choice holds while the unit walks and changes only when a point flips;
+        // a team without a front line measures from the unit itself.
         private const ulong SpreadSalt = 0x3c6ef372fe94f82bUL;
         private int SpreadTarget(int team, SimVec3 here, ulong key)
         {
+            int front = team == 1 ? frontline1 : frontline2;
+            SimVec3 from = front >= 0 ? pack.Points[front].Center : here;
             int count = 0;
             for (int i = 0; i < pack.Points.Length; i++) if (capture.Points[i].Owner != team) count++;
             if (count == 0) return -1;
@@ -328,7 +332,7 @@ namespace WarCore.Battle
                 for (int i = 0; i < pack.Points.Length; i++)
                 {
                     if (capture.Points[i].Owner == team) continue;
-                    SimWide distance = CombatSystem.Horizontal(here - pack.Points[i].Center).LengthSquared;
+                    SimWide distance = CombatSystem.Horizontal(from - pack.Points[i].Center).LengthSquared;
                     if (last >= 0 && (distance < lastDistance || (distance == lastDistance && i <= last))) continue;
                     if (pick < 0 || distance < best) { pick = i; best = distance; }
                 }

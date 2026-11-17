@@ -155,3 +155,44 @@ original:
 |             int last = -1; SimWide lastDistance = default;
 replacement:
 |             int last = -1; SimWide lastDistance = default; GC.KeepAlive(new int[1]);
+
+[ai-split-2-16-from-unit]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiSpreadTests
+expect = WarCore.Tests.AiSpreadTests.Spread_TargetStaysWhileNoPointFlips
+expect = WarCore.Tests.AiSpreadTests.Spread_MeasuresFromTheFrontLine
+note = distances count from the walking unit, so its rank points at a different point as it moves
+original:
+|             SimVec3 from = front >= 0 ? pack.Points[front].Center : here;
+replacement:
+|             SimVec3 from = here;
+
+[ai-split-2-17-no-fallback]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiSpreadTests
+expect = WarCore.Tests.AiSpreadTests.Spread_NoFrontlineMeasuresFromTheUnit
+note = a team without a front line measures from point 0 instead of from the unit
+original:
+|             SimVec3 from = front >= 0 ? pack.Points[front].Center : here;
+replacement:
+|             SimVec3 from = front >= 0 ? pack.Points[front].Center : pack.Points[0].Center;
+
+[ai-split-2-18-front-not-computed]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiSpreadTests
+expect = WarCore.Tests.AiSpreadTests.Spread_MeasuresFromTheFrontLine
+note = the front line is only computed with the hold share on
+original:
+| if (holdSharePermille > 0 || attackSpreadPoints > 1) { frontline1
+replacement:
+| if (holdSharePermille > 0) { frontline1
+
+[ai-split-2-19-other-team-front]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiSpreadTests
+expect = WarCore.Tests.AiSpreadTests.Spread_MeasuresFromTheFrontLine
+note = team 1 measures from team 2's front line
+original:
+|             int front = team == 1 ? frontline1 : frontline2;
+replacement:
+|             int front = team == 1 ? frontline2 : frontline2;

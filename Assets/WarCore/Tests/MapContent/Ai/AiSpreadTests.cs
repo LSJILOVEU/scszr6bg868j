@@ -23,12 +23,12 @@ namespace WarCore.Tests
         private static ControlPointDef Point(int id, int x, int owner) => new ControlPointDef(id, SimVec3.Metres(x, 0, 20), SimFix.FromInt(6), owner);
 
         // Unweaponed team-1 units; every unit thinks every tick. column: all units on x = 40 (z 26, 28, ...), else a 20 x 5 grid.
-        private static M6World World(string ai, bool column, params ControlPointDef[] points)
+        private static M6World World(string ai, bool column, ControlPointDef[] points, long speed = 1, int captureTicks = 3)
         {
             var units = new UnitSpawn[Units];
             for (int i = 0; i < Units; i++)
-                units[i] = column ? M6World.U((ulong)i + 1, 1, 40, 26 + i * 2) : M6World.U((ulong)i + 1, 1, 21 + i % 20 * 2, 30 + i / 20 * 2);
-            WorldRecipe recipe = M6World.RecipeOf(units, M6World.Pack(points, think: 1)).WithRuleSet(MatchMode.TestNeverEndsId);
+                units[i] = column ? M6World.U((ulong)i + 1, 1, 40, 26 + i * 2, speed: speed) : M6World.U((ulong)i + 1, 1, 21 + i % 20 * 2, 30 + i / 20 * 2, speed: speed);
+            WorldRecipe recipe = M6World.RecipeOf(units, M6World.Pack(points, ticks: captureTicks, think: 1)).WithRuleSet(MatchMode.TestNeverEndsId);
             if (ai != null) recipe = recipe.WithAiRules(Pack(ai));
             return new M6World(recipe, WcMapWriter.Write(Wp23.Make(160, column ? 240 : 40, 0, 4 * SimFix.Scale,
                 Array.Empty<(int, int, int, int)>(), 2 * SimFix.Scale, null)));
@@ -51,7 +51,7 @@ namespace WarCore.Tests
         private static bool Inside(SimVec3 at, ControlPointDef p) =>
             CombatSystem.Horizontal(at - p.Center).LengthSquared <= new SimVec3(p.Radius, default, default).LengthSquared;
 
-        // Team 1 owns index 0. Seen from every unit (all west of x = 60) the points it does not own rank by distance as 2, 3, 1,
+        // Team 1 owns index 0 (its front line, x = 5). From there the points it does not own rank by distance as 2, 3, 1,
         // which is neither the index order nor its reverse.
         private static ControlPointDef[] Four() => new[] { Point(1, 5, 1), Point(2, 150, 2), Point(3, 80, 0), Point(4, 115, 2) };
         private static readonly int[] ByDistance = { 2, 3, 1 };
@@ -82,17 +82,61 @@ namespace WarCore.Tests
             TestContext.Out.WriteLine("spread " + spread + ": per point " + string.Join(", ", expected));
         }
 
-        // Every unit stands on x = 40, exactly between the two enemy points: rank 0 takes the lower index, rank 1 the other.
+        // The front line is not point 0 here. From it (x = 60) the enemy points rank 0, 2, 3; from point 0 or from any unit
+        // of the grid (x 21 to 59) they would rank 0, 3, 2.
+        [Test]
+        public void Spread_MeasuresFromTheFrontLine()
+        {
+            ControlPointDef[] points = { Point(1, 20, 2), Point(2, 60, 1), Point(3, 110, 2), Point(4, 5, 2) };
+            int[] order = { 0, 2, 3 };
+            M6World w = World("{ \"attackSpreadPoints\": 3 }", false, points);
+            w.Step();
+            var expected = new int[points.Length];
+            for (ulong key = 1; key <= Units; key++)
+            {
+                int want = order[Rank(w, key, 3, 3)];
+                expected[want]++;
+                MoveIntent intent = w.Read<MoveIntent>(key);
+                Assert.That(intent.Active, Is.True, "unit " + key);
+                Assert.That(Inside(intent.Target, points[want]), Is.True, "unit " + key);
+            }
+            Assert.That(expected[2], Is.GreaterThan(0));
+            Assert.That(expected[3], Is.GreaterThan(0));
+        }
+
+        // Distances count from the front line (team 1's only point, x = 40), exactly between the two enemy points: rank 0 takes
+        // the lower index and rank 1 the other, wherever the unit stands (the grid spans both sides of x = 40).
         [Test]
         public void Spread_EqualDistancesGoToTheLowerIndex()
         {
-            ControlPointDef[] points = { Point(1, 120, 1), Point(2, 60, 2), Point(3, 20, 2) };
-            M6World w = World("{ \"attackSpreadPoints\": 2 }", true, points);
+            ControlPointDef[] points = { Point(1, 40, 1), Point(2, 70, 2), Point(3, 10, 2) };
+            M6World w = World("{ \"attackSpreadPoints\": 2 }", false, points);
             w.Step();
             int[] count = new int[2];
             for (ulong key = 1; key <= Units; key++)
             {
                 int rank = Rank(w, key, 2, 2);
+                count[rank]++;
+                MoveIntent intent = w.Read<MoveIntent>(key);
+                Assert.That(intent.Active, Is.True, "unit " + key);
+                Assert.That(Inside(intent.Target, points[rank == 0 ? 1 : 2]), Is.True, "unit " + key);
+            }
+            Assert.That(count[0], Is.GreaterThan(0));
+            Assert.That(count[1], Is.GreaterThan(0));
+        }
+
+        // No front line (team 1 owns nothing): distances count from the unit. Every unit stands on x = 40, exactly between
+        // two enemy points, so rank 0 takes the lower index and rank 1 the other; the far point at x = 120 is never taken.
+        [Test]
+        public void Spread_NoFrontlineMeasuresFromTheUnit()
+        {
+            ControlPointDef[] points = { Point(1, 120, 2), Point(2, 60, 2), Point(3, 20, 0) };
+            M6World w = World("{ \"attackSpreadPoints\": 2 }", true, points);
+            w.Step();
+            int[] count = new int[2];
+            for (ulong key = 1; key <= Units; key++)
+            {
+                int rank = Rank(w, key, 2, 3);
                 count[rank]++;
                 MoveIntent intent = w.Read<MoveIntent>(key);
                 Assert.That(intent.Active, Is.True, "unit " + key);
@@ -231,6 +275,38 @@ namespace WarCore.Tests
                 Assert.That(with.Hash, Is.EqualTo(plain.Hash), "tick " + plain.Sim.Clock.Tick);
             }
             Assert.That(Pack(ai).Section<AiRules>().AttackSpreadPoints, Is.EqualTo(1));
+        }
+
+        // No point changes owner (capture is made too slow to finish): every unit keeps the point it was sent to, also after
+        // a unit bound for the far point has walked past the near one.
+        [Test]
+        public void Spread_TargetStaysWhileNoPointFlips()
+        {
+            ControlPointDef[] points = { Point(1, 5, 1), Point(2, 50, 2), Point(3, 100, 2) };
+            M6World w = World("{ \"attackSpreadPoints\": 2 }", false, points, speed: 6000, captureTicks: 1000000);
+            var first = new int[Units + 1];
+            bool crossed = false;
+            int ticks = 0;
+            for (; ticks < 600; ticks++)
+            {
+                w.Step();
+                bool flipped = false;
+                for (int i = 0; i < points.Length; i++) flipped |= w.Capture.Points[i].Owner != points[i].InitialOwner;
+                if (flipped) break;
+                for (ulong key = 1; key <= Units; key++)
+                {
+                    MoveIntent intent = w.Read<MoveIntent>(key);
+                    if (!intent.Active) continue;
+                    int at = -1;
+                    for (int i = 0; i < points.Length; i++) if (Inside(intent.Target, points[i])) at = i;
+                    Assert.That(at, Is.GreaterThan(0), "unit " + key + " tick " + w.Sim.Clock.Tick);
+                    if (first[key] == 0) first[key] = at;
+                    Assert.That(at, Is.EqualTo(first[key]), "unit " + key + " tick " + w.Sim.Clock.Tick);
+                    if (at == 2 && w.Read<Position>(key).Value.X > SimFix.FromInt(76)) crossed = true;
+                }
+            }
+            TestContext.Out.WriteLine("ticks without a flip: " + ticks);
+            Assert.That(crossed, Is.True);
         }
 
         [TestCase(0)]
