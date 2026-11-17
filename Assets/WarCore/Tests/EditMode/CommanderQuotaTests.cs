@@ -270,19 +270,21 @@ namespace WarCore.Tests
             CommanderQuotaRules rules = CommanderQuotaRules.Default;
             CommanderQuota.Adjacency(Centers, N, adjacent);
             CommanderQuota.Plan(Blue, N, owners, Centers, enemies, adjacent, 40, BlueHome, previous, rules, desired, attack);
-            long beforeControl = GC.GetAllocatedBytesForCurrentThread();
-            var control = new byte[32768];
-            long controlBytes = GC.GetAllocatedBytesForCurrentThread() - beforeControl;
-            long before = GC.GetAllocatedBytesForCurrentThread();
+            // Unity's Mono has no direct per-thread byte counter: there the test is inconclusive (pattern of
+            // CachedManifestRegressionTests); CoreCLR headless runs the strict direct check.
+            var meter = new AllocationMeter();
+            if (meter.Basis != AllocationBasis.Direct)
+                Assert.Inconclusive("Strict zero needs a passing direct positive control.");
+            Assert.That(meter.DirectControlDelta.Bytes, Is.GreaterThanOrEqualTo(32768));
+            AllocationSample before = meter.Read();
             for (int i = 0; i < 100; i++)
             {
                 CommanderQuota.Adjacency(Centers, N, adjacent);
                 CommanderQuota.Plan(Blue, N, owners, Centers, enemies, adjacent, 40, BlueHome, previous, rules, desired, attack);
             }
-            long bytes = GC.GetAllocatedBytesForCurrentThread() - before;
-            GC.KeepAlive(control);
-            Assert.That(controlBytes, Is.GreaterThanOrEqualTo(32768), "Direct byte counter positive control.");
-            Assert.That(bytes, Is.Zero);
+            AllocationSample sample = meter.Difference(before);
+            TestContext.WriteLine("AI-P3 commander quota: control_bytes={0}; {1}", meter.DirectControlDelta.Bytes, sample.Describe());
+            AllocationAssertions.Zero(sample);
             // Own3's garrisons (2, 13, pool 25); 3 targets allowed, 2 and 3 are candidates, previous {2}:
             // 2: 326-600 = -274, 3: 526 -> order 2, 3 -> 13, 12.
             Assert.That(desired, Is.EqualTo(new[] { 2, 13, 13, 12, 0 }));
