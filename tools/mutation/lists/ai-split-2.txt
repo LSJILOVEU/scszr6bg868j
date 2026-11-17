@@ -154,4 +154,4 @@ note = the spread choice allocates a ranking buffer on every think
 original:
 |             int last = -1; SimWide lastDistance = default;
 replacement:
-|             int last = new int[1].Length - 2; SimWide lastDistance = default;
+|             int last = -1; SimWide lastDistance = default; GC.KeepAlive(new int[1]);
