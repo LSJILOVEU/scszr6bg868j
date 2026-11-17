@@ -22,14 +22,18 @@ namespace WarCore.Content
         public int SuppressTicks { get; }
         public int MeleeChaseRange { get; }
         public bool FairDecisions { get; }
+        // Share, in thousandths, of each team's AI units that hold the team's front-line point instead of attacking; 0 turns it off.
+        public int HoldSharePermille { get; }
         internal AiRules(int failedSlotTicks, int targetMemoryTicks = 0, int searchTicks = 0, int reactionTicks = 0, int senseTicks = 1,
-            int burstShots = 0, int burstPauseTicks = 0, int suppressTicks = 0, int meleeChaseRange = 0, bool fairDecisions = false, bool burstPauseFollowsShooter = false)
+            int burstShots = 0, int burstPauseTicks = 0, int suppressTicks = 0, int meleeChaseRange = 0, bool fairDecisions = false, bool burstPauseFollowsShooter = false,
+            int holdSharePermille = 0)
         {
             FailedSlotTicks = failedSlotTicks; TargetMemoryTicks = targetMemoryTicks; SearchTicks = searchTicks; ReactionTicks = reactionTicks;
             SenseTicks = senseTicks; BurstShots = burstShots; BurstPauseTicks = burstPauseTicks; SuppressTicks = suppressTicks;
             MeleeChaseRange = meleeChaseRange;
             FairDecisions = fairDecisions;
             BurstPauseFollowsShooter = burstPauseFollowsShooter;
+            HoldSharePermille = holdSharePermille;
         }
     }
 
@@ -45,12 +49,13 @@ namespace WarCore.Content
         internal const int MaxBurstPauseTicks = 1000000;
         internal const int MaxSuppressTicks = 1000000;
         internal const int MaxMeleeChaseRange = 512; // PLACEHOLDER: maximum map side length in metres.
+        internal const int MaxHoldSharePermille = 1000;
         internal AiSection() : base(SectionKey) { }
 
         public override void Build(SectionBuild b)
         {
             ContentEntry entry = b.Single(Key);
-            int failed = 0, memory = 0, search = 0, reaction = 0, sense = 1, burst = 0, pause = 0, suppress = 0, chase = 0;
+            int failed = 0, memory = 0, search = 0, reaction = 0, sense = 1, burst = 0, pause = 0, suppress = 0, chase = 0, hold = 0;
             bool follows = false;
             bool fair = false;
             if (entry != null)
@@ -67,9 +72,10 @@ namespace WarCore.Content
                 if (r.Has("suppressTicks")) suppress = r.Int("suppressTicks", 0, MaxSuppressTicks);
                 if (r.Has("meleeChaseRange")) chase = r.Int("meleeChaseRange", 0, MaxMeleeChaseRange);
                 if (r.Has("fairDecisions")) fair = r.Bool("fairDecisions");
+                if (r.Has("holdSharePermille")) hold = r.Int("holdSharePermille", 0, MaxHoldSharePermille);
                 r.Done();
             }
-            b.Publish(new AiRules(failed, memory, search, reaction, sense, burst, pause, suppress, chase, fair, follows));
+            b.Publish(new AiRules(failed, memory, search, reaction, sense, burst, pause, suppress, chase, fair, follows, hold));
         }
     }
 }
