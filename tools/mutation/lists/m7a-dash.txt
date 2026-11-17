@@ -95,8 +95,8 @@ replacement:
 [m7a-10-state-not-hashed]
 file = Assets/WarCore/Interim/Dash.cs
 filter = FullyQualifiedName~WarCore.Tests.Dash
-expect = WarCore.Tests.Dash.DashStateTests.Request_ChangesTheHash
-note = the dash state is left out of the state hash
+expect = WarCore.Tests.Dash.DashStateTests.ComponentHashes_CoverEveryField
+note = the dash state is left out of its component hash
 original:
 |             hash.Add(TotalX.Raw); hash.Add(TotalZ.Raw); hash.Add(Start); hash.Add(Ticks); hash.Add(Ready);
 replacement:

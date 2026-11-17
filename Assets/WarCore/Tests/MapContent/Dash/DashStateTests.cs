@@ -72,6 +72,26 @@ namespace WarCore.Tests.Dash
             Assert.That(a.StateHash, Is.Not.EqualTo(b.StateHash));
         }
 
+        // The component hashes (IStateHash, used by the legacy state hash) see every field of the spec and the state.
+        [Test]
+        public void ComponentHashes_CoverEveryField()
+        {
+            ulong Of(IStateHash value) { var hash = new StateHash(); value.WriteState(hash); return hash.Value; }
+            var state = new DashState(SimFix.FromInt(3), SimFix.FromInt(4), 7, 10, 67);
+            var states = new[]
+            {
+                state, new DashState(SimFix.FromInt(2), SimFix.FromInt(4), 7, 10, 67), new DashState(SimFix.FromInt(3), SimFix.FromInt(5), 7, 10, 67),
+                new DashState(SimFix.FromInt(3), SimFix.FromInt(4), 8, 10, 67), new DashState(SimFix.FromInt(3), SimFix.FromInt(4), 7, 9, 67),
+                new DashState(SimFix.FromInt(3), SimFix.FromInt(4), 7, 10, 68),
+            };
+            var specs = new[] { new DashSpec(SimFix.FromInt(20), 10, 60), new DashSpec(SimFix.FromInt(19), 10, 60),
+                new DashSpec(SimFix.FromInt(20), 11, 60), new DashSpec(SimFix.FromInt(20), 10, 61) };
+            var seen = new HashSet<ulong>();
+            foreach (DashState s in states) Assert.That(seen.Add(Of(s)), Is.True, "state " + s.TotalX + "," + s.TotalZ + "," + s.Start + "," + s.Ticks + "," + s.Ready);
+            foreach (DashSpec s in specs) Assert.That(seen.Add(Of(s)), Is.True, "spec " + s.Distance + "," + s.Ticks + "," + s.Cooldown);
+            Assert.That(Of(state), Is.EqualTo(Of(new DashState(SimFix.FromInt(3), SimFix.FromInt(4), 7, 10, 67))));
+        }
+
         // A dash world's snapshot is refused by a world built without dash (its components are not registered there).
         [Test]
         public void DashSnapshot_IsRefusedByAWorldWithoutDash()
