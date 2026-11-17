@@ -129,6 +129,9 @@ namespace WarCore.Tests.Dash
             while (s.ControlledKey == first || s.ControlledKey == null) { s.StepOnce(); Assert.That(++guard, Is.LessThan(400)); }
             ulong next = s.ControlledKey.Value;
             Assert.That(w.Dead(first), Is.True);
+            Assert.That(s.TryUnitStatus(first, out UnitStatus dead), Is.True);
+            Assert.That(dead.HasDash, Is.True);
+            Assert.That(HudLines.Build(s.Current, s.StateHash, first, dead, null), Does.Not.Contain("Dash"), "no dash line for a dead unit");
             long now = s.Tick;
             s.SetPlayerInput(now + 1, In(0, -1000, true));
             s.StepOnce();

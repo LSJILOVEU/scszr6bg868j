@@ -43,8 +43,8 @@ namespace WarCore.Presentation
                 text.Append(FormattableString.Invariant($"Follow #{followKey.Value}  HP {status.Value.Health:F0}/{status.Value.MaxHealth:F0}  Ammo {status.Value.Ammo}\n"));
                 if (status.Value.Blocking)
                     text.Append("Blocking\n");
-                // M7b: no line for a unit without a dash.
-                if (status.Value.HasDash)
+                // M7b: no line for a unit without a dash or a dead one.
+                if (status.Value.HasDash && status.Value.Alive)
                     text.Append(status.Value.DashTicksLeft > 0
                         ? FormattableString.Invariant($"Dash in {status.Value.DashTicksLeft} ticks\n") : "Dash ready\n");
             }
