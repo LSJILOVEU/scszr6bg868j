@@ -1,0 +1,227 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>战场回放</title>
+<style>
+/* Layout: one column of stacked battle maps sharing a single transport bar, like two monitors on one tape deck. */
+:root {
+  --bg: #eef0ec; --panel: #f8f9f6; --field: #e3e7df; --line: #c9cfc4; --fg: #1d2420; --muted: #5d675f;
+  --blue: #2463d6; --red: #d2481f; --neutral: #8b948c; --wall: #4b554d; --accent: #0f766e; --shot: #1d2420;
+  --font: "Inter", "PingFang SC", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121614; --panel: #1a201d; --field: #222a26; --line: #37423c; --fg: #e6ebe7; --muted: #9aa69d;
+  --blue: #6ea2ff; --red: #ff8a5c; --neutral: #76817a; --wall: #aab5ad; --accent: #4fd1c5; --shot: #e6ebe7; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #121614; --panel: #1a201d; --field: #222a26; --line: #37423c; --fg: #e6ebe7; --muted: #9aa69d;
+  --blue: #6ea2ff; --red: #ff8a5c; --neutral: #76817a; --wall: #aab5ad; --accent: #4fd1c5; --shot: #e6ebe7; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font-family: var(--font); line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 32px; }
+.wrap { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+h1 { font-size: 1.5rem; margin: 0; letter-spacing: .02em; text-wrap: balance; }
+.lede { margin: 4px 0 0; color: var(--muted); max-width: 46em; }
+.battle { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.battle h2 { font-size: 1rem; margin: 0; display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+.battle h2 small { font-weight: 400; color: var(--muted); font-size: .85rem; }
+canvas { width: 100%; aspect-ratio: 160 / 100; max-width: 100%; display: block; background: var(--field); border-radius: 3px; }
+.stats { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: .85rem; font-variant-numeric: tabular-nums; color: var(--muted); }
+.stats b { font-weight: 600; }
+.t1 { color: var(--blue); } .t2 { color: var(--red); }
+.deck { position: sticky; bottom: env(safe-area-inset-bottom, 0px); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px;
+  display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+.deck button { font: inherit; color: var(--fg); background: transparent; border: 1px solid var(--line); border-radius: 4px; padding: 6px 12px; cursor: pointer; min-height: 36px; }
+.deck button[aria-pressed="true"], #play { background: var(--accent); border-color: var(--accent); color: var(--bg); font-weight: 600; }
+.deck button:focus-visible, #seek:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#seek { flex: 1 1 220px; min-width: 0; accent-color: var(--accent); }
+#clock { font-family: var(--mono); font-size: .85rem; font-variant-numeric: tabular-nums; min-width: 9.5em; }
+.speeds { display: flex; gap: 4px; }
+.notes { color: var(--muted); font-size: .9rem; max-width: 46em; }
+.notes ul { margin: 6px 0 0; padding-left: 1.2em; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: .85rem; color: var(--muted); }
+.dot { display: inline-block; width: .7em; height: .7em; border-radius: 50%; margin-right: 4px; vertical-align: baseline; }
+#status { color: var(--muted); font-size: .9rem; }
+.metrics { font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; display: flex; flex-wrap: wrap; gap: 2px 18px; }
+.metrics b { font-weight: 600; color: var(--fg); }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>战场回放</h1>
+    <p class="lede">无头导出器算出的整局，从正上方看。地址后加 <code>?files=a.json,b.json</code> 换成别的回放文件，默认读同目录的 replay-base.json 和 replay-playtest.json。</p>
+  </header>
+
+  <div id="battles" class="wrap" style="padding:0"></div>
+
+  <div class="deck" role="group" aria-label="播放控制">
+    <button id="play" type="button">播放</button>
+    <div class="speeds" role="group" aria-label="速度">
+      <button type="button" data-speed="1" aria-pressed="false">1×</button>
+      <button type="button" data-speed="4" aria-pressed="true">4×</button>
+      <button type="button" data-speed="12" aria-pressed="false">12×</button>
+    </div>
+    <input id="seek" type="range" min="0" max="100" value="0" step="1" aria-label="时间">
+    <span id="clock">0:00 / 0:00</span>
+  </div>
+  <p id="status">正在载入回放…</p>
+
+  <div class="legend">
+    <span><span class="dot" style="background:var(--blue)"></span>一队</span>
+    <span><span class="dot" style="background:var(--red)"></span>二队</span>
+    <span>圆圈是据点，颜色是归属，圈边的两个数字是圈内两队人数</span>
+    <span>细线是开火</span>
+  </div>
+
+  <div class="notes">
+    <strong>四个整齐度数字</strong>
+    <ul>
+      <li>单圈最大占比：一队场上的兵，同一个据点圈里最多占几成。越高越扎堆。</li>
+      <li>最近邻离散：每个兵到最近队友的距离，四分位距 ÷ 中位数。蜂窝格接近 0，越高站位越参差。</li>
+      <li>进攻方位分散：正在攻的那个圈（攻方人数最多的非己方圈，25 米内），攻方各兵方位的圆方差。0 是全从一侧来，1 是四面都有。</li>
+      <li>分胜负 tick：哪一 tick 结束；没打完写“未分”。</li>
+      <li>每行“当前”是此刻的值，“全局”是整局平均（括号里是峰值）。场上不到 10 人或攻方不到 5 人时记为“—”。</li>
+    </ul>
+  </div>
+</div>
+<script>
+(function () {
+  const query = new URLSearchParams(location.search).get("files");
+  const files = query ? query.split(",").map(s => s.trim()).filter(Boolean) : ["replay-base.json", "replay-playtest.json"];
+  const host = document.getElementById("battles");
+  const canvases = [], stats = [], metrics = [], titles = [];
+  for (let i = 0; i < files.length; i++) {
+    const section = document.createElement("section"); section.className = "battle";
+    const h2 = document.createElement("h2"); h2.textContent = files[i];
+    const cv = document.createElement("canvas"); cv.width = 960; cv.height = 600; cv.setAttribute("aria-label", "战场俯视图");
+    const st = document.createElement("div"); st.className = "stats";
+    const me = document.createElement("div"); me.className = "metrics";
+    section.append(h2, cv, st, me); host.append(section);
+    titles.push(h2); canvases.push(cv); stats.push(st); metrics.push(me);
+  }
+  const playButton = document.getElementById("play"), seek = document.getElementById("seek");
+  const clock = document.getElementById("clock"), status = document.getElementById("status");
+  let replays = [], time = 0, duration = 1, speed = 4, playing = false, last = 0;
+
+  function token(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  function fmt(seconds) { const s = Math.floor(seconds); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); }
+  function num(v) { return v === null || v === undefined ? "—" : v.toFixed(2); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]); }
+
+  function metricLine(r, frame) {
+    const m = frame.m || [], g = r.metrics || {}, t1 = g.team1 || {}, t2 = g.team2 || {};
+    const pair = (name, i, key) => '<span><b>' + name + '</b> 当前 <span class="t1">' + num(m[i]) + '</span> / <span class="t2">' + num(m[i + 1]) + '</span>　全局 <span class="t1">' +
+      num((t1[key] || {}).mean) + '(' + num((t1[key] || {}).peak) + ')</span> / <span class="t2">' + num((t2[key] || {}).mean) + '(' + num((t2[key] || {}).peak) + ')</span></span>';
+    return pair("单圈最大占比", 0, "maxPointShare") + pair("最近邻离散", 2, "nnSpread") + pair("进攻方位分散", 4, "attackSpread") +
+      '<span><b>分胜负 tick</b> ' + (g.decidedTick === null || g.decidedTick === undefined ? "未分" : g.decidedTick) + '</span>';
+  }
+
+  function draw(index) {
+    const r = replays[index], cv = canvases[index], ctx = cv.getContext("2d");
+    const ratio = Math.min(window.devicePixelRatio || 1, 2), width = cv.clientWidth, height = cv.clientHeight;
+    if (cv.width !== Math.round(width * ratio)) { cv.width = Math.round(width * ratio); cv.height = Math.round(height * ratio); }
+    const scale = cv.width / r.map.w;
+    const X = x => (x - r.map.minX) * scale, Z = z => (z - r.map.minZ) * scale;
+    const colors = [token("--neutral"), token("--blue"), token("--red")];
+    ctx.clearRect(0, 0, cv.width, cv.height);
+
+    const step = r.every / r.tickRate, position = Math.min(time / step, r.frames.length - 1);
+    const i0 = Math.floor(position), i1 = Math.min(i0 + 1, r.frames.length - 1), blend = position - i0;
+    const a = r.frames[i0], b = r.frames[i1];
+    ctx.fillStyle = token("--wall");
+    for (const w of r.map.walls) ctx.fillRect(X(w[0] - w[2] / 2), Z(w[1] - w[3] / 2), w[2] * scale, w[3] * scale);
+
+    const inside = r.points.map(() => [0, 0, 0]);
+    const units = [];
+    for (let u = 0; u < r.teams.length; u++) {
+      const s0 = a.u[u * 3 + 2], s1 = b.u[u * 3 + 2];
+      if (s0 === 0) continue;
+      let x = a.u[u * 3] / 10, z = a.u[u * 3 + 1] / 10;
+      if (s0 === 1 && s1 === 1) { x += (b.u[u * 3] / 10 - x) * blend; z += (b.u[u * 3 + 1] / 10 - z) * blend; }
+      units.push([x, z, r.teams[u], s0]);
+      if (s0 !== 1) continue;
+      for (let p = 0; p < r.points.length; p++) {
+        const dx = x - r.points[p][0], dz = z - r.points[p][1];
+        if (dx * dx + dz * dz <= r.points[p][2] * r.points[p][2]) inside[p][r.teams[u]]++;
+      }
+    }
+
+    ctx.lineWidth = 2 * ratio; ctx.font = (11 * ratio) + "px " + token("--mono"); ctx.textAlign = "center";
+    for (let p = 0; p < r.points.length; p++) {
+      const pt = r.points[p], owner = a.o[p];
+      ctx.strokeStyle = colors[owner] || colors[0]; ctx.globalAlpha = 0.9;
+      ctx.beginPath(); ctx.arc(X(pt[0]), Z(pt[1]), pt[2] * scale, 0, Math.PI * 2); ctx.stroke();
+      ctx.globalAlpha = 0.08; ctx.fillStyle = colors[owner] || colors[0]; ctx.fill(); ctx.globalAlpha = 1;
+      ctx.fillStyle = colors[1]; ctx.fillText(String(inside[p][1]), X(pt[0]) - 12 * ratio, Z(pt[1] - pt[2]) - 5 * ratio);
+      ctx.fillStyle = colors[2]; ctx.fillText(String(inside[p][2]), X(pt[0]) + 12 * ratio, Z(pt[1] - pt[2]) - 5 * ratio);
+    }
+
+    ctx.lineWidth = 1 * ratio;
+    for (let s = 0; s + 5 < b.s.length; s += 6) {
+      ctx.strokeStyle = colors[b.s[s + 4]] || token("--shot"); ctx.globalAlpha = b.s[s + 5] ? 0.55 : 0.22;
+      ctx.beginPath(); ctx.moveTo(X(b.s[s] / 10), Z(b.s[s + 1] / 10)); ctx.lineTo(X(b.s[s + 2] / 10), Z(b.s[s + 3] / 10)); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    const radius = Math.max(1.6 * ratio, 0.45 * scale);
+    for (const unit of units) {
+      ctx.fillStyle = colors[unit[2]];
+      if (unit[3] === 2) { ctx.globalAlpha = 0.25; ctx.fillRect(X(unit[0]) - radius * 0.6, Z(unit[1]) - radius * 0.6, radius * 1.2, radius * 1.2); ctx.globalAlpha = 1; continue; }
+      ctx.beginPath(); ctx.arc(X(unit[0]), Z(unit[1]), radius, 0, Math.PI * 2); ctx.fill();
+    }
+
+    const owned = [0, 0, 0]; for (const o of a.o) owned[o] = (owned[o] || 0) + 1;
+    const ended = position >= r.frames.length - 1 && r.winner !== 0;
+    stats[index].innerHTML =
+      '<span class="t1"><b>一队</b> 场上 ' + a.a[0] + '　预备 ' + a.a[2] + '　据点 ' + owned[1] + '</span>' +
+      '<span class="t2"><b>二队</b> 场上 ' + a.a[1] + '　预备 ' + a.a[3] + '　据点 ' + owned[2] + '</span>' +
+      (ended ? '<span><b>' + (r.winner === 1 ? "一队" : "二队") + '获胜</b>，用时 ' + fmt(r.endTick / r.tickRate) + '</span>'
+             : position >= r.frames.length - 1 ? '<span>到 ' + fmt(r.frames[r.frames.length - 1].t / r.tickRate) + ' 仍未分胜负</span>' : '');
+    metrics[index].innerHTML = metricLine(r, a);
+  }
+  function render() {
+    for (let i = 0; i < replays.length; i++) draw(i);
+    seek.value = String(Math.round(time * 10));
+    clock.textContent = fmt(time) + " / " + fmt(duration);
+  }
+
+  function frame(now) {
+    if (!playing) return;
+    time += Math.min((now - last) / 1000, 0.1) * speed; last = now;
+    if (time >= duration) { time = duration; setPlaying(false); }
+    render();
+    if (playing) requestAnimationFrame(frame);
+  }
+
+  function setPlaying(value) {
+    playing = value; playButton.textContent = playing ? "暂停" : (time >= duration ? "重播" : "播放");
+    if (playing) { last = performance.now(); requestAnimationFrame(frame); }
+  }
+
+  playButton.addEventListener("click", function () {
+    if (!replays.length) return;
+    if (!playing && time >= duration) time = 0;
+    setPlaying(!playing);
+  });
+  seek.addEventListener("input", function () { time = Number(seek.value) / 10; render(); });
+  for (const button of document.querySelectorAll("[data-speed]")) {
+    button.addEventListener("click", function () {
+      speed = Number(button.dataset.speed);
+      for (const other of document.querySelectorAll("[data-speed]")) other.setAttribute("aria-pressed", String(other === button));
+    });
+  }
+  window.addEventListener("resize", function () { if (replays.length) render(); });
+  if (window.matchMedia) window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (replays.length) render(); });
+
+  Promise.all(files.map(name => fetch(name).then(response => { if (!response.ok) throw new Error(name); return response.json(); })))
+    .then(function (loaded) {
+      replays = loaded;
+      for (let i = 0; i < replays.length; i++) {
+        titles[i].innerHTML = esc(replays[i].label || replays[i].config) + ' <small>' + esc(replays[i].config) + '　哈希 ' + esc(replays[i].hash) + '</small>';
+      }
+      duration = Math.max.apply(null, replays.map(r => r.frames[r.frames.length - 1].t / r.tickRate));
+      seek.max = String(Math.round(duration * 10));
+      status.hidden = true;
+      render();
+    })
+    .catch(function () { status.textContent = "回放数据没有载入成功：" + files.join(", "); });
+})();
+</script>

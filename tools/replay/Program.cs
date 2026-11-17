@@ -1,0 +1,137 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Text;
+using WarCore.Presentation;
+
+namespace WarCore.Replay
+{
+    // Runs one named setup without Unity and writes a compact replay: unit positions every N ticks,
+    // point owners, shots, and the four layout metrics (see README.md).
+    public static class Program
+    {
+        public static int Main(string[] args)
+        {
+            if (args.Length == 1 && args[0] == "--list")
+            {
+                foreach (var pair in Recipes.All) Console.WriteLine($"{pair.Key}\t{pair.Value.Label}");
+                return 0;
+            }
+            if (args.Length == 1 && args[0] == "--selftest") { UseProjectRoot(); return SelfTest.Run(); }
+            if (args.Length != 4 || !Recipes.All.ContainsKey(args[0]))
+            {
+                Console.Error.WriteLine("usage: WarCore.Replay <setup> <maxTicks> <every> <output.json> | --list | --selftest");
+                return 2;
+            }
+            string output = Path.GetFullPath(args[3]);
+            UseProjectRoot();
+            string json = Export(args[0], int.Parse(args[1], CultureInfo.InvariantCulture), int.Parse(args[2], CultureInfo.InvariantCulture), out string summary);
+            File.WriteAllText(output, json);
+            Console.WriteLine(summary);
+            return 0;
+        }
+
+        // Content packs are read relative to the Unity project root, as in the editor.
+        private static void UseProjectRoot()
+        {
+            var directory = new DirectoryInfo(AppContext.BaseDirectory);
+            while (directory != null && !Directory.Exists(Path.Combine(directory.FullName, "Assets", "WarCore"))) directory = directory.Parent;
+            if (directory == null) throw new DirectoryNotFoundException("Cannot locate the Unity project root above the binary.");
+            Directory.SetCurrentDirectory(directory.FullName);
+        }
+
+        public static string Export(string setup, int maxTicks, int every, out string summary)
+        {
+            if (maxTicks < 0 || every < 1) throw new ArgumentOutOfRangeException(nameof(every));
+            Recipes.Entry entry = Recipes.All[setup];
+            WorldRecipe recipe = entry.Recipe();
+            SimSession session = SimSession.Create(recipe, entry.Map());
+            var keys = new List<ulong>(); var teams = new List<int>();
+            foreach (UnitSpawn unit in recipe.Units) { keys.Add(unit.Key); teams.Add(unit.Team); }
+
+            var points = new List<(double x, double z, double r)>();
+            foreach (ViewPoint point in session.Current.Points) points.Add((point.X, point.Z, point.Radius));
+            var stats = new Metrics.Series[2, 3];
+            for (int t = 0; t < 2; t++) for (int m = 0; m < 3; m++) stats[t, m] = new Metrics.Series();
+            var side = new[] { new List<(double x, double z)>(), new List<(double x, double z)>() };
+            var owners = new List<int>();
+
+            var sb = new StringBuilder(4 << 20);
+            ViewMap map = session.Map;
+            sb.Append("{\"config\":\"").Append(setup).Append("\",\"label\":\"").Append(entry.Label).Append("\",\"tickRate\":").Append(SimSession.TickRate).Append(",\"every\":").Append(every);
+            sb.Append(",\"map\":{\"minX\":").Append(F(map.MinX)).Append(",\"minZ\":").Append(F(map.MinZ)).Append(",\"w\":").Append(map.Width).Append(",\"d\":").Append(map.Depth).Append(",\"walls\":[");
+            bool first = true;
+            foreach (ViewWall wall in map.Walls)
+            { if (!first) sb.Append(','); first = false; sb.Append('[').Append(F(wall.CenterX)).Append(',').Append(F(wall.CenterZ)).Append(',').Append(F(wall.SizeX)).Append(',').Append(F(wall.SizeZ)).Append(']'); }
+            sb.Append("]},\"teams\":[").Append(string.Join(",", teams)).Append("],\"points\":[");
+            first = true;
+            foreach (var p in points) { if (!first) sb.Append(','); first = false; sb.Append('[').Append(F((float)p.x)).Append(',').Append(F((float)p.z)).Append(',').Append(F((float)p.r)).Append(']'); }
+            sb.Append("],\"frames\":[");
+            var shots = new List<int>(); first = true;
+            for (int tick = 0; tick <= maxTicks; tick++)
+            {
+                if (tick > 0) { if (session.IsFinished) break; session.StepOnce(); }
+                FrameView frame = session.Current;
+                foreach (ViewFire fire in frame.Fires)
+                { shots.Add(D(fire.X0)); shots.Add(D(fire.Z0)); shots.Add(D(fire.X1)); shots.Add(D(fire.Z1)); shots.Add(fire.Team); shots.Add(fire.Lethal ? 1 : 0); }
+                if (tick % every != 0 && !session.IsFinished) continue;
+                if (!first) sb.Append(','); first = false;
+                sb.Append("{\"t\":").Append(frame.Tick).Append(",\"o\":[");
+                owners.Clear();
+                bool f2 = true;
+                foreach (ViewPoint point in frame.Points) { if (!f2) sb.Append(','); f2 = false; sb.Append(point.Owner); owners.Add(point.Owner); }
+                sb.Append("],\"u\":[");
+                side[0].Clear(); side[1].Clear();
+                // Per unit: x, z in decimetres, state (0 = not on the field, 1 = alive, 2 = dead).
+                for (int i = 0; i < keys.Count; i++)
+                {
+                    if (i > 0) sb.Append(',');
+                    if (frame.TryGet(keys[i], out ViewEntity e))
+                    {
+                        sb.Append(D(e.X)).Append(',').Append(D(e.Z)).Append(',').Append(e.Alive ? 1 : 2);
+                        if (e.Alive && teams[i] >= 1 && teams[i] <= 2) side[teams[i] - 1].Add((e.X, e.Z));
+                    }
+                    else sb.Append("0,0,0");
+                }
+                // Per frame metrics: [share1, share2, nnSpread1, nnSpread2, spread1, spread2]; null when undefined.
+                var values = new double[6];
+                for (int t = 0; t < 2; t++)
+                {
+                    values[t] = Metrics.MaxPointShare(side[t], points);
+                    values[2 + t] = Metrics.NearestNeighbourSpread(side[t]);
+                    values[4 + t] = Metrics.AttackBearingSpread(side[t], t + 1, points, owners);
+                    for (int m = 0; m < 3; m++) stats[t, m].Add(values[m * 2 + t]);
+                }
+                sb.Append("],\"m\":[");
+                for (int v = 0; v < values.Length; v++) { if (v > 0) sb.Append(','); sb.Append(N(values[v])); }
+                sb.Append("],\"s\":[").Append(string.Join(",", shots)).Append("],\"a\":[").Append(frame.Match.AliveOne).Append(',').Append(frame.Match.AliveTwo)
+                  .Append(',').Append(frame.Match.ReserveOne).Append(',').Append(frame.Match.ReserveTwo).Append("]}");
+                shots.Clear();
+            }
+            bool decided = session.IsFinished && session.Winner != 0;
+            sb.Append("],\"metrics\":{\"attackRange\":").Append(N(Metrics.AttackRange)).Append(",\"decidedTick\":").Append(decided ? session.EndTick.ToString(CultureInfo.InvariantCulture) : "null");
+            string[] names = { "maxPointShare", "nnSpread", "attackSpread" };
+            var line = new StringBuilder();
+            for (int t = 0; t < 2; t++)
+            {
+                sb.Append(",\"team").Append(t + 1).Append("\":{");
+                for (int m = 0; m < 3; m++)
+                {
+                    if (m > 0) sb.Append(',');
+                    Metrics.Series s = stats[t, m];
+                    sb.Append('"').Append(names[m]).Append("\":{\"mean\":").Append(N(s.Mean)).Append(",\"peak\":").Append(N(s.Peak)).Append(",\"frames\":").Append(s.Count).Append('}');
+                    line.Append(' ').Append(names[m]).Append(t + 1).Append('=').Append(N(s.Mean)).Append('/').Append(N(s.Peak));
+                }
+                sb.Append('}');
+            }
+            sb.Append("},\"winner\":").Append(session.Winner).Append(",\"endTick\":").Append(session.EndTick).Append(",\"hash\":\"").Append(session.StateHash.ToString("X16")).Append("\"}");
+            summary = $"{setup}: ticks={session.Tick} winner={session.Winner} decidedTick={(decided ? session.EndTick.ToString(CultureInfo.InvariantCulture) : "none")} hash={session.StateHash:X16} bytes={sb.Length} mean/peak:{line}";
+            return sb.ToString();
+        }
+
+        private static string F(float value) => value.ToString("0.##", CultureInfo.InvariantCulture);
+        private static string N(double value) => double.IsNaN(value) ? "null" : value.ToString("0.###", CultureInfo.InvariantCulture);
+        private static int D(float metres) => (int)Math.Round(metres * 10f);
+    }
+}
