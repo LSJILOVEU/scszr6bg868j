@@ -42,7 +42,7 @@ namespace WarCore.Unity
             UnityEditor.SessionState.EraseBool(ModeKey);
 #endif
             byte[] bytes = File.ReadAllBytes(Path.Combine(Application.streamingAssetsPath, M2Host.M7MapPath));
-            session = SimSession.Create(DemoRecipes.MpRespawnDemo(), bytes);
+            session = SimSession.Create(DemoRecipes.MpPlaytest(), bytes);
             try { keys = new PlayerKeyPoller(PlayerKeys.Default, GetKey); }
             catch (ArgumentException e)
             {

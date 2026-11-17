@@ -70,6 +70,11 @@ namespace WarCore.Presentation
         // C1c: the new unit takes no combat damage for 90 ticks after the switch.
         public static WorldRecipe MpRespawnDemo() => WithRespawnGuard(WithRespawn(MpBlockDemo(), 300), 90); // PLACEHOLDER: 10 s and 3 s at 30 Hz.
 
+        // PF1: the playtest recipe, the MP respawn demo with the AI rules of content layer rwr-m7-playtest. WithAiRules comes last:
+        // WithPlayerBlock rebuilds the recipe without the AI pack.
+        public const string PlaytestLayer = "rwr-m7-playtest";
+        public static WorldRecipe MpPlaytest() => MpRespawnDemo().WithAiRules(WarCore.Content.Rwr.RwrPack.Load(PlaytestLayer));
+
         // The recipe with its match rules rebuilt from every field of the old ones and only the respawn delay replaced.
         internal static WorldRecipe WithRespawn(WorldRecipe source, int ticks)
         {
