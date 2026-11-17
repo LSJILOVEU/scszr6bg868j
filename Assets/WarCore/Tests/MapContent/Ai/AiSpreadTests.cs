@@ -23,12 +23,12 @@ namespace WarCore.Tests
         private static ControlPointDef Point(int id, int x, int owner) => new ControlPointDef(id, SimVec3.Metres(x, 0, 20), SimFix.FromInt(6), owner);
 
         // Unweaponed team-1 units; every unit thinks every tick. column: all units on x = 40 (z 26, 28, ...), else a 20 x 5 grid.
-        private static M6World World(string ai, bool column, ControlPointDef[] points, long speed = 1, int captureTicks = 3)
+        private static M6World World(string ai, bool column, ControlPointDef[] points, long speed = 1, int captureTicks = 3, SpawnAnchor[] bases = null)
         {
             var units = new UnitSpawn[Units];
             for (int i = 0; i < Units; i++)
                 units[i] = column ? M6World.U((ulong)i + 1, 1, 40, 26 + i * 2, speed: speed) : M6World.U((ulong)i + 1, 1, 21 + i % 20 * 2, 30 + i / 20 * 2, speed: speed);
-            WorldRecipe recipe = M6World.RecipeOf(units, M6World.Pack(points, ticks: captureTicks, think: 1)).WithRuleSet(MatchMode.TestNeverEndsId);
+            WorldRecipe recipe = M6World.RecipeOf(units, M6World.Pack(points, ticks: captureTicks, think: 1, bases: bases)).WithRuleSet(MatchMode.TestNeverEndsId);
             if (ai != null) recipe = recipe.WithAiRules(Pack(ai));
             return new M6World(recipe, WcMapWriter.Write(Wp23.Make(160, column ? 240 : 40, 0, 4 * SimFix.Scale,
                 Array.Empty<(int, int, int, int)>(), 2 * SimFix.Scale, null)));
@@ -125,13 +125,21 @@ namespace WarCore.Tests
             Assert.That(count[1], Is.GreaterThan(0));
         }
 
-        // No front line (team 1 owns nothing): distances count from the unit. Every unit stands on x = 40, exactly between
-        // two enemy points, so rank 0 takes the lower index and rank 1 the other; the far point at x = 120 is never taken.
-        [Test]
-        public void Spread_NoFrontlineMeasuresFromTheUnit()
+        // No front line (team 1 owns nothing): distances count from team 1's first spawn anchor, else from the unit. Every unit
+        // stands on x = 40, exactly between the points at x = 20 and x = 60.
+        //   base: anchor at x = 6 ranks 2, 1.  two: team 2's anchor comes first, then team 1's at x = 6 and x = 150; the first
+        //   of team 1 counts, so again 2, 1.  none: no team-1 anchor, so from the unit: the tie goes to the lower index, 1, 2.
+        [TestCase("base")]
+        [TestCase("two")]
+        [TestCase("none")]
+        public void Spread_NoFrontlineMeasuresFromTheBase(string anchors)
         {
             ControlPointDef[] points = { Point(1, 120, 2), Point(2, 60, 2), Point(3, 20, 0) };
-            M6World w = World("{ \"attackSpreadPoints\": 2 }", true, points);
+            SpawnAnchor[] bases = anchors == "base" ? new[] { new SpawnAnchor(1, M6World.P(6)), new SpawnAnchor(2, M6World.P(74)) }
+                : anchors == "two" ? new[] { new SpawnAnchor(2, M6World.P(74)), new SpawnAnchor(1, M6World.P(6)), new SpawnAnchor(1, M6World.P(150)) }
+                : new[] { new SpawnAnchor(2, M6World.P(74)) };
+            int[] order = anchors == "none" ? new[] { 1, 2 } : new[] { 2, 1 };
+            M6World w = World("{ \"attackSpreadPoints\": 2 }", true, points, bases: bases);
             w.Step();
             int[] count = new int[2];
             for (ulong key = 1; key <= Units; key++)
@@ -140,7 +148,7 @@ namespace WarCore.Tests
                 count[rank]++;
                 MoveIntent intent = w.Read<MoveIntent>(key);
                 Assert.That(intent.Active, Is.True, "unit " + key);
-                Assert.That(Inside(intent.Target, points[rank == 0 ? 1 : 2]), Is.True, "unit " + key);
+                Assert.That(Inside(intent.Target, points[order[rank]]), Is.True, "unit " + key);
             }
             Assert.That(count[0], Is.GreaterThan(0));
             Assert.That(count[1], Is.GreaterThan(0));
@@ -278,13 +286,16 @@ namespace WarCore.Tests
         }
 
         // No point changes owner (capture is made too slow to finish): every unit keeps the point it was sent to, also after
-        // a unit bound for the far point has walked past the near one.
-        [Test]
-        public void Spread_TargetStaysWhileNoPointFlips()
+        // a unit bound for the far point has walked past the near one. owned: team 1 holds x = 5 (front line); else it holds
+        // nothing and ranks from its spawn anchor (x = 6).
+        [TestCase(true)]
+        [TestCase(false)]
+        public void Spread_TargetStaysWhileNoPointFlips(bool owned)
         {
-            ControlPointDef[] points = { Point(1, 5, 1), Point(2, 50, 2), Point(3, 100, 2) };
+            ControlPointDef[] points = owned ? new[] { Point(1, 5, 1), Point(2, 50, 2), Point(3, 100, 2) } : new[] { Point(2, 50, 2), Point(3, 100, 2) };
             M6World w = World("{ \"attackSpreadPoints\": 2 }", false, points, speed: 6000, captureTicks: 1000000);
             var first = new int[Units + 1];
+            for (ulong key = 1; key <= Units; key++) first[key] = -1;
             bool crossed = false;
             int ticks = 0;
             for (; ticks < 600; ticks++)
@@ -299,10 +310,10 @@ namespace WarCore.Tests
                     if (!intent.Active) continue;
                     int at = -1;
                     for (int i = 0; i < points.Length; i++) if (Inside(intent.Target, points[i])) at = i;
-                    Assert.That(at, Is.GreaterThan(0), "unit " + key + " tick " + w.Sim.Clock.Tick);
-                    if (first[key] == 0) first[key] = at;
+                    Assert.That(at, Is.GreaterThanOrEqualTo(owned ? 1 : 0), "unit " + key + " tick " + w.Sim.Clock.Tick);
+                    if (first[key] < 0) first[key] = at;
                     Assert.That(at, Is.EqualTo(first[key]), "unit " + key + " tick " + w.Sim.Clock.Tick);
-                    if (at == 2 && w.Read<Position>(key).Value.X > SimFix.FromInt(76)) crossed = true;
+                    if (at == points.Length - 1 && w.Read<Position>(key).Value.X > SimFix.FromInt(76)) crossed = true;
                 }
             }
             TestContext.Out.WriteLine("ticks without a flip: " + ticks);

@@ -37,6 +37,9 @@ namespace WarCore.Battle
         private readonly int[] winners;
         private readonly int holdSharePermille, attackSpreadPoints;
         private int intentCount, current, frontline1, frontline2;
+        // Each team's first spawn anchor, the spread's reference when the team has no front line.
+        private readonly bool hasBase1, hasBase2;
+        private readonly SimVec3 base1, base2;
         private long decisionTick;
         public SimpleAiSystem(CombatSystem combat, CombatPack weapons, MatchPack pack, CaptureSystem capture, IMoveOrders moves,
             IControlTarget controlled = null, FailedSlotMemory memory = null, TargetMemory contacts = null,
@@ -61,6 +64,11 @@ namespace WarCore.Battle
                 policyDigest = hash.Value;
             }
             this.attackSpreadPoints = attackSpreadPoints;
+            foreach (SpawnAnchor anchor in pack.Bases)
+            {
+                if (anchor.Team == 1 && !hasBase1) { hasBase1 = true; base1 = anchor.Point; }
+                if (anchor.Team == 2 && !hasBase2) { hasBase2 = true; base2 = anchor.Point; }
+            }
             if (attackSpreadPoints > 1)
             {
                 var hash = new StateHash(); hash.Add("battle.ai.attack-spread.v1"); hash.Add(policyDigest); hash.Add(attackSpreadPoints);
@@ -315,12 +323,12 @@ namespace WarCore.Battle
         // Stateless spread by unit key: rank k = Mix(key ^ salt) % min(spread, points not owned); the k-th nearest such point
         // (0 = nearest; equal distances to the lower point index); -1 when the team owns every point. Distances are measured
         // from the team's front-line point, so the choice holds while the unit walks and changes only when a point flips;
-        // a team without a front line measures from the unit itself.
+        // a team without a front line measures from its first spawn anchor, and without one from the unit itself.
         private const ulong SpreadSalt = 0x3c6ef372fe94f82bUL;
         private int SpreadTarget(int team, SimVec3 here, ulong key)
         {
             int front = team == 1 ? frontline1 : frontline2;
-            SimVec3 from = front >= 0 ? pack.Points[front].Center : here;
+            SimVec3 from = front >= 0 ? pack.Points[front].Center : team == 1 ? (hasBase1 ? base1 : here) : (hasBase2 ? base2 : here);
             int count = 0;
             for (int i = 0; i < pack.Points.Length; i++) if (capture.Points[i].Owner != team) count++;
             if (count == 0) return -1;

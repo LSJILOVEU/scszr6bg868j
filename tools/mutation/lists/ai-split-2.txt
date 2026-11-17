@@ -163,21 +163,52 @@ expect = WarCore.Tests.AiSpreadTests.Spread_TargetStaysWhileNoPointFlips
 expect = WarCore.Tests.AiSpreadTests.Spread_MeasuresFromTheFrontLine
 note = distances count from the walking unit, so its rank points at a different point as it moves
 original:
-|             SimVec3 from = front >= 0 ? pack.Points[front].Center : here;
+|             SimVec3 from = front >= 0 ? pack.Points[front].Center : team == 1 ? (hasBase1 ? base1 : here) : (hasBase2 ? base2 : here);
 replacement:
 |             SimVec3 from = here;
 
-[ai-split-2-17-no-fallback]
+[ai-split-2-17-no-base]
 file = Assets/WarCore/Battle/SimpleAiSystem.cs
 filter = FullyQualifiedName~AiSpreadTests
-expect = WarCore.Tests.AiSpreadTests.Spread_NoFrontlineMeasuresFromTheUnit
-note = a team without a front line measures from point 0 instead of from the unit
+expect = WarCore.Tests.AiSpreadTests.Spread_NoFrontlineMeasuresFromTheBase("base")
+expect = WarCore.Tests.AiSpreadTests.Spread_TargetStaysWhileNoPointFlips(False)
+note = a team without a front line measures from the walking unit, not from its spawn anchor
 original:
-|             SimVec3 from = front >= 0 ? pack.Points[front].Center : here;
+|             SimVec3 from = front >= 0 ? pack.Points[front].Center : team == 1 ? (hasBase1 ? base1 : here) : (hasBase2 ? base2 : here);
 replacement:
-|             SimVec3 from = front >= 0 ? pack.Points[front].Center : pack.Points[0].Center;
+|             SimVec3 from = front >= 0 ? pack.Points[front].Center : here;
 
-[ai-split-2-18-front-not-computed]
+[ai-split-2-18-last-base]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiSpreadTests
+expect = WarCore.Tests.AiSpreadTests.Spread_NoFrontlineMeasuresFromTheBase("two")
+note = the team's last spawn anchor counts instead of its first
+original:
+|                 if (anchor.Team == 1 && !hasBase1) { hasBase1 = true; base1 = anchor.Point; }
+replacement:
+|                 if (anchor.Team == 1) { hasBase1 = true; base1 = anchor.Point; }
+
+[ai-split-2-19-any-base]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiSpreadTests
+expect = WarCore.Tests.AiSpreadTests.Spread_NoFrontlineMeasuresFromTheBase("two")
+note = team 1 takes the first anchor of either team
+original:
+|                 if (anchor.Team == 1 && !hasBase1) { hasBase1 = true; base1 = anchor.Point; }
+replacement:
+|                 if (!hasBase1) { hasBase1 = true; base1 = anchor.Point; }
+
+[ai-split-2-20-no-unit-fallback]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiSpreadTests
+expect = WarCore.Tests.AiSpreadTests.Spread_NoFrontlineMeasuresFromTheBase("none")
+note = without a front line or an anchor the team measures from point 0 instead of from the unit
+original:
+| team == 1 ? (hasBase1 ? base1 : here) :
+replacement:
+| team == 1 ? (hasBase1 ? base1 : pack.Points[0].Center) :
+
+[ai-split-2-21-front-not-computed]
 file = Assets/WarCore/Battle/SimpleAiSystem.cs
 filter = FullyQualifiedName~AiSpreadTests
 expect = WarCore.Tests.AiSpreadTests.Spread_MeasuresFromTheFrontLine
@@ -187,7 +218,7 @@ original:
 replacement:
 | if (holdSharePermille > 0) { frontline1
 
-[ai-split-2-19-other-team-front]
+[ai-split-2-22-other-team-front]
 file = Assets/WarCore/Battle/SimpleAiSystem.cs
 filter = FullyQualifiedName~AiSpreadTests
 expect = WarCore.Tests.AiSpreadTests.Spread_MeasuresFromTheFrontLine
