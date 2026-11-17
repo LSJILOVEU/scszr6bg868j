@@ -11,23 +11,24 @@ namespace WarCore.Presentation
     // hooks of IWorldStageFeature: an extension that does not implement it is not visited by them at all.
     internal static class FeatureTable
     {
-        internal static readonly IWorldFeature[] Validate = { MovementFeature.Instance };
+        internal static readonly IWorldFeature[] Validate = { MovementFeature.Instance, DashFeature.Instance };
         internal static readonly IWorldFeature[] Prepare = { TerrainFeature.Instance, MatchFeature.Instance };
         internal static readonly IWorldFeature[] Components =
         {
             MovementFeature.Instance, TerrainFeature.Instance, FacingFeature.Instance, MotionFeature.Instance, StandingFeature.Instance,
+            DashFeature.Instance,
         };
         // After every RegisterComponents, extensions included: the combat component, as the builder always registered it last.
         internal static readonly IWorldStageFeature[] CompleteComponents = { CombatFeature.Instance };
         internal static readonly IWorldFeature[] Walls = { MovementFeature.Instance };
         // Facing and motion are written before the terrain check, the body after it, as the unit loop always did.
         internal static readonly IWorldFeature[] Units =
-            { FacingFeature.Instance, MotionFeature.Instance, TerrainFeature.Instance, MovementFeature.Instance };
+            { FacingFeature.Instance, MotionFeature.Instance, TerrainFeature.Instance, MovementFeature.Instance, DashFeature.Instance };
         // After every PlaceUnit, extensions included: combat binds the unit and writes its combatant state.
         internal static readonly IWorldStageFeature[] CompleteUnits = { CombatFeature.Instance };
         // The player control first (combat keeps it), then combat, then the crowd pass rule (it reads both).
         internal static readonly IWorldStageFeature[] Connect = { PlayerFeature.Instance, CombatFeature.Instance, CrowdPassFeature.Instance };
-        internal static readonly IWorldFeature[] Systems = { MovementFeature.Instance, FacingFeature.Instance };
+        internal static readonly IWorldFeature[] Systems = { MovementFeature.Instance, FacingFeature.Instance, DashFeature.Instance };
         // After the movement systems: the match needs the locomotion; the player systems need it and the mode.
         internal static readonly IWorldStageFeature[] Rules = { MatchFeature.Instance, AiFireFeature.Instance, BlockAiFeature.Instance, PlayerFeature.Instance };
 

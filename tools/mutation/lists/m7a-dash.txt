@@ -1,0 +1,143 @@
+# M7a dash (Sim side): cooldown, floor split, sweep, early end, player wait, rejoin, snapshot, hash, content, feature switch.
+
+[m7a-01-no-cooldown]
+file = Assets/WarCore/Interim/InterimLocomotion.Dash.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.Dash.DashStepTests.Cooldown_RefusesUntilTheReadyTickThenAccepts
+note = a request inside the cooldown is accepted
+original:
+|             if (now < state.Ready) return false;
+replacement:
+|             if (false) return false;
+
+[m7a-02-cooldown-from-ticks]
+file = Assets/WarCore/Interim/InterimLocomotion.Dash.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.Dash.DashStepTests.Cooldown_RefusesUntilTheReadyTickThenAccepts
+note = the ready tick counts the dash length instead of the cooldown
+original:
+|             entities.Set(dashStates, unit, new DashState(total.X, total.Z, now, spec.Ticks, now + spec.Cooldown));
+replacement:
+|             entities.Set(dashStates, unit, new DashState(total.X, total.Z, now, spec.Ticks, now + spec.Ticks));
+
+[m7a-03-truncate-toward-zero]
+file = Assets/WarCore/Interim/InterimLocomotion.Dash.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.Dash.DashStepTests.Distance_SplitsByFloorAndAddsUpExactly
+note = the split truncates toward zero instead of flooring, which changes the negative steps
+original:
+|             return (a % b != 0 && (a < 0) != (b < 0)) ? q - 1 : q;
+replacement:
+|             return q;
+
+[m7a-04-no-sweep]
+file = Assets/WarCore/Interim/InterimLocomotion.Dash.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.Dash.DashSweepTests.TenTimesSpeed_DoesNotPassAThinWall
+expect = WarCore.Tests.Dash.DashSweepTests.TenTimesSpeed_DoesNotPassAUnit
+note = the dash step is submitted without the controlled-step checks
+original:
+|             StepControlled(context, i, step);
+replacement:
+|             { SimVec3 n = provisional[i].Point + step; context.SubmitMovement(unit, n); provisional[i].Point = n; }
+
+[m7a-05-blocked-does-not-end]
+file = Assets/WarCore/Interim/InterimLocomotion.Dash.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.Dash.DashSweepTests.TenTimesSpeed_DoesNotPassAThinWall
+expect = WarCore.Tests.Dash.DashSweepTests.TenTimesSpeed_DoesNotPassAUnit
+note = a step that cannot move keeps the dash going
+original:
+|             if (blocked) entities.Set(dashStates, unit, state.EndedAfter(k - 1));
+replacement:
+|             if (false) entities.Set(dashStates, unit, state.EndedAfter(k - 1));
+
+[m7a-06-player-input-during-dash]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.Dash.DashStepTests.Player_InputWaitsDuringTheDash
+note = the player's input step replaces the dash step
+original:
+|                         if (DashesNow(i)) break;
+replacement:
+|                         if (false) break;
+
+[m7a-07-no-rejoin]
+file = Assets/WarCore/Interim/InterimLocomotion.Dash.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.Dash.DashStepTests.Order_WaitsDuringTheDashThenResumes
+note = after a dash the unit follows the waypoint planned before it
+original:
+|             if (blocked || k == state.Ticks) Rejoin(unit, provisional[i].Point);
+replacement:
+|             if (false) Rejoin(unit, provisional[i].Point);
+
+[m7a-08-last-step-dropped]
+file = Assets/WarCore/Interim/Dash.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.Dash.DashSweepTests.OpenGround_CoversTheWholeDistance
+note = the dash window stops one step early
+original:
+|         public int StepAt(long tick) => tick > Start && tick - Start <= Ticks ? (int)(tick - Start) : 0;
+replacement:
+|         public int StepAt(long tick) => tick > Start && tick - Start < Ticks ? (int)(tick - Start) : 0;
+
+[m7a-09-snapshot-drops-ready]
+file = Assets/WarCore/Interim/Dash.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.Dash.DashStateTests.MidDashSnapshot_RoundTrips
+note = the saved dash state loses its ready tick
+original:
+|             writer.Int64(value.TotalX.Raw); writer.Int64(value.TotalZ.Raw); writer.Int64(value.Start); writer.Int32(value.Ticks); writer.Int64(value.Ready);
+replacement:
+|             writer.Int64(value.TotalX.Raw); writer.Int64(value.TotalZ.Raw); writer.Int64(value.Start); writer.Int32(value.Ticks); writer.Int64(0);
+
+[m7a-10-state-not-hashed]
+file = Assets/WarCore/Interim/Dash.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.Dash.DashStateTests.ComponentHashes_CoverEveryField
+note = the dash state is left out of its component hash
+original:
+|             hash.Add(TotalX.Raw); hash.Add(TotalZ.Raw); hash.Add(Start); hash.Add(Ticks); hash.Add(Ready);
+replacement:
+|             hash.Add(0L);
+
+[m7a-11-direction-not-normalised]
+file = Assets/WarCore/Interim/InterimLocomotion.Dash.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.Dash.DashStepTests.Distance_SplitsByFloorAndAddsUpExactly
+note = the request's direction length scales the dash
+original:
+|             SimVec3 total = flat.Normalized * spec.Distance;
+replacement:
+|             SimVec3 total = flat * spec.Distance;
+
+[m7a-12-feature-always-on]
+file = Assets/WarCore/Presentation/Bridge/Features/DashFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.Dash.DashStateTests.NoDash_WorldIsUnchanged
+note = a world without any dash registers the dash components
+original:
+|             return false;
+replacement:
+|             return true;
+
+[m7a-13-content-dropped]
+file = Assets/WarCore/Content/Data/Sections/UnitTypesSection.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.Dash.DashContentTests.Fields_ReachTheUnitAndTheWorld
+note = the unit type's dash fields are read but not handed out
+original:
+|             b.Publish(new UnitDashes(unitIds, unitDashes));
+replacement:
+|             b.Publish(new UnitDashes(unitIds, new UnitDash?[unitIds.Length]));
+
+[m7a-14-player-spawn-ignores-type-dash]
+file = Assets/WarCore/Presentation/Bridge/WorldRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.Dash.DashContentTests.Fields_ReachTheUnitAndTheWorld
+note = OfType drops the unit type's dash
+original:
+|             return dash.HasValue ? spawn.WithDash(dash.Value.DistanceMm, dash.Value.Ticks, dash.Value.CooldownTicks) : spawn;
+replacement:
+|             return spawn;

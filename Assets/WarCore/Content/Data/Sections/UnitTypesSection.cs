@@ -17,6 +17,7 @@ namespace WarCore.Content
             var unitBlock = new int[entries.Count];
             var unitArchetypes = new int[entries.Count];
             var unitSpeeds = new long?[entries.Count];
+            var unitDashes = new UnitDash?[entries.Count];
             for (int i = 0; i < unitIds.Length; i++)
             {
                 ContentEntry e = entries[i];
@@ -28,6 +29,7 @@ namespace WarCore.Content
                 string blockId = r.StrOrNull("block", out ContentField blockField);
                 unitSpeeds[i] = r.Has("speed") ? r.Long("speed", 1, ContentPack.MaxUnitSpeedMmPerSec) : (long?)null;
                 unitArchetypes[i] = r.Has("archetype") ? r.Int("archetype") : 0;
+                unitDashes[i] = ReadDash(r);
                 r.Done();
                 // An empty weapon id means no gun; such a unit type must carry a melee spec.
                 int index = weaponId.Length == 0 ? -1 : Array.IndexOf(b.WeaponIds, weaponId);
@@ -46,6 +48,23 @@ namespace WarCore.Content
             }
             b.UnitIds = unitIds; b.UnitWeapons = unitWeapons; b.UnitMelee = unitMelee;
             b.UnitBlock = unitBlock; b.UnitArchetypes = unitArchetypes; b.UnitSpeeds = unitSpeeds;
+            b.Publish(new UnitDashes(unitIds, unitDashes));
+        }
+
+        // The three dash fields come together or not at all.
+        private static UnitDash? ReadDash(EntryReader r)
+        {
+            bool distance = r.Has("dashDistance"), ticks = r.Has("dashTicks"), cooldown = r.Has("dashCooldown");
+            if (!distance && !ticks && !cooldown) return null;
+            if (!distance || !ticks || !cooldown)
+            {
+                ContentField written = r.FieldOf(distance ? "dashDistance" : ticks ? "dashTicks" : "dashCooldown");
+                throw r.Bad(written, "dashDistance, dashTicks and dashCooldown must be written together");
+            }
+            int t = r.Int("dashTicks", 1, UnitDash.MaxTicks);
+            long d = r.Long("dashDistance", 1, Math.Min(UnitDash.MaxDistanceMm, t * UnitDash.MaxStepMm));
+            int c = r.Int("dashCooldown", t, UnitDash.MaxCooldownTicks);
+            return new UnitDash(d, t, c);
         }
     }
 }

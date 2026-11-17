@@ -26,6 +26,11 @@ namespace WarCore.Presentation
         public long SpeedMmPerSec { get; }
         // Index into CombatPack.Block, or -1 for a unit that cannot block.
         public int Block { get; }
+        // The unit's dash (see UnitDash for the bounds); DashTicks 0 means the unit has none.
+        public long DashDistanceMm { get; }
+        public int DashTicks { get; }
+        public int DashCooldownTicks { get; }
+        public bool HasDash => DashTicks > 0;
 
         // Placeholder bound: ten metres per tick at 30 ticks per second. A step this long is still swept in full by the movers.
         public const long MaxSpeedMmPerSec = ContentPack.MaxUnitSpeedMmPerSec;
@@ -33,7 +38,28 @@ namespace WarCore.Presentation
         public static UnitSpawn OfType(ulong key, ContentPack pack, string unitTypeId, int squad, int team, long xMm, long zMm, bool reserve = false)
         {
             var type = pack.SpawnOfUnitType(unitTypeId);
-            return new UnitSpawn(key, type.Archetype, squad, xMm, zMm, type.SpeedMmPerSec, team, type.Weapon, reserve, type.Melee, type.Block);
+            var spawn = new UnitSpawn(key, type.Archetype, squad, xMm, zMm, type.SpeedMmPerSec, team, type.Weapon, reserve, type.Melee, type.Block);
+            UnitDash? dash = pack.Section<UnitDashes>().Of(unitTypeId);
+            return dash.HasValue ? spawn.WithDash(dash.Value.DistanceMm, dash.Value.Ticks, dash.Value.CooldownTicks) : spawn;
+        }
+
+        // The same unit with a dash: distanceMm over ticks steps, a new dash accepted cooldownTicks after a request.
+        public UnitSpawn WithDash(long distanceMm, int ticks, int cooldownTicks)
+        {
+            if (ticks < 1 || ticks > UnitDash.MaxTicks)
+                throw new ArgumentOutOfRangeException(nameof(ticks), "Unit " + Key + " dash ticks are 1 to " + UnitDash.MaxTicks + ".");
+            if (distanceMm < 1 || distanceMm > UnitDash.MaxDistanceMm || distanceMm > ticks * UnitDash.MaxStepMm)
+                throw new ArgumentOutOfRangeException(nameof(distanceMm), "Unit " + Key + " dash distance is 1 to " + UnitDash.MaxDistanceMm
+                    + " mm and at most " + UnitDash.MaxStepMm + " mm per tick.");
+            if (cooldownTicks < ticks || cooldownTicks > UnitDash.MaxCooldownTicks)
+                throw new ArgumentOutOfRangeException(nameof(cooldownTicks), "Unit " + Key + " dash cooldown is the dash ticks to " + UnitDash.MaxCooldownTicks + ".");
+            return new UnitSpawn(this, distanceMm, ticks, cooldownTicks);
+        }
+
+        private UnitSpawn(in UnitSpawn source, long dashDistanceMm, int dashTicks, int dashCooldownTicks)
+        {
+            this = source;
+            DashDistanceMm = dashDistanceMm; DashTicks = dashTicks; DashCooldownTicks = dashCooldownTicks;
         }
 
         public UnitSpawn(ulong key, int archetype, int squad, long xMm, long zMm, long speedMmPerSec, int team = 0, int weapon = -1, bool reserve = false, int melee = -1, int block = -1)
@@ -56,6 +82,7 @@ namespace WarCore.Presentation
             XMm = xMm;
             ZMm = zMm;
             SpeedMmPerSec = speedMmPerSec;
+            DashDistanceMm = 0; DashTicks = 0; DashCooldownTicks = 0;
         }
     }
 
