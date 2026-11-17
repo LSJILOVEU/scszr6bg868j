@@ -93,6 +93,7 @@ namespace WarCore.Presentation
             FeatureTable.RunRules(assembly);
             sim.CompleteSpatialBoundary();
             ComponentType<UnitFacing>? facings = recipe.Facing ? assembly.Facings : (ComponentType<UnitFacing>?)null;
+            bool dash = DashFeature.Instance.IsActive(assembly);
             var session = new SimSession(new SessionParts
             {
                 Sim = sim, Units = units, Spawns = recipe.Units.ToArray(), Positions = assembly.Positions, GroundRaw = groundRaw, Map = map,
@@ -100,6 +101,7 @@ namespace WarCore.Presentation
                 MatchPack = recipe.Match, Capture = assembly.Capture, Reinforce = assembly.Reinforce, Match = assembly.Match,
                 MaxHealthRaw = recipe.Combat?.MaxHealthRaw ?? 0, Controlled = assembly.Controlled, CombatPack = recipe.Combat,
                 Facings = facings, Terrain = assembly.Terrain, TerrainRules = recipe.TerrainPack?.Terrain,
+                Dash = dash ? assembly.Locomotion : null, DashStates = dash ? sim.Entities.Resolve<DashState>() : (ComponentType<DashState>?)null,
             });
             foreach (BridgeCommand command in recipe.Script)
                 session.Enqueue(command);

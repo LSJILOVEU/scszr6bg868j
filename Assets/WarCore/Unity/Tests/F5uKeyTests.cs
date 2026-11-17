@@ -35,7 +35,7 @@ namespace WarCore.Unity.Tests
                 Assert.That(Enum.TryParse(binding.Key, false, out KeyCode code), Is.True, binding.Key);
                 Assert.That(seen.Add(code), Is.True, binding.Key);
             }
-            Assert.That(seen.Count, Is.EqualTo(7));
+            Assert.That(seen.Count, Is.EqualTo(8));
         }
 
         [Test]

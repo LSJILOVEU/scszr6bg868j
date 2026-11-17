@@ -16,10 +16,12 @@ namespace WarCore.Presentation
         public int SkillSlot { get; }
         /// <summary>Height of the aim point in millimetres; null = no height (the map's ground height is used).</summary>
         public long? AimYMm { get; }
+        /// <summary>The dash key is held. The bridge asks for a dash on the tick it goes down (held -> no repeat).</summary>
+        public bool Dash { get; }
 
         // Parameters may only be appended at the end.
         public PlayerInput(int moveXMilli, int moveZMilli, long aimXMm = 0, long aimZMm = 0, bool primary = false,
-            bool block = false, bool @throw = false, int skillSlot = 0, long? aimYMm = null)
+            bool block = false, bool @throw = false, int skillSlot = 0, long? aimYMm = null, bool dash = false)
         {
             if (moveXMilli < -1000 || moveXMilli > 1000)
                 throw new ArgumentOutOfRangeException(nameof(moveXMilli));
@@ -31,12 +33,13 @@ namespace WarCore.Presentation
             if (aimYMm.HasValue) SimSession.CheckAimY(aimYMm.Value);
             MoveXMilli = moveXMilli; MoveZMilli = moveZMilli;
             AimXMm = aimXMm; AimZMm = aimZMm; Primary = primary;
-            Block = block; Throw = @throw; SkillSlot = skillSlot; AimYMm = aimYMm;
+            Block = block; Throw = @throw; SkillSlot = skillSlot; AimYMm = aimYMm; Dash = dash;
         }
 
         public bool Equals(PlayerInput other) => MoveXMilli == other.MoveXMilli && MoveZMilli == other.MoveZMilli
             && AimXMm == other.AimXMm && AimZMm == other.AimZMm && Primary == other.Primary
-            && Block == other.Block && Throw == other.Throw && SkillSlot == other.SkillSlot && AimYMm == other.AimYMm;
+            && Block == other.Block && Throw == other.Throw && SkillSlot == other.SkillSlot && AimYMm == other.AimYMm
+            && Dash == other.Dash;
         public override bool Equals(object obj) => obj is PlayerInput other && Equals(other);
         public override int GetHashCode()
         {
@@ -50,7 +53,8 @@ namespace WarCore.Presentation
                 hash = hash * 397 ^ Block.GetHashCode();
                 hash = hash * 397 ^ Throw.GetHashCode();
                 hash = hash * 397 ^ SkillSlot;
-                return hash * 397 ^ AimYMm.GetHashCode();
+                hash = hash * 397 ^ AimYMm.GetHashCode();
+                return hash * 397 ^ Dash.GetHashCode();
             }
         }
     }

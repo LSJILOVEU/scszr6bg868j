@@ -1,6 +1,10 @@
 {
   "id": "rwr-m7-playtest",
   "extends": "rwr-m6",
+  "unitTypes": [
+    { "id": "rwr.soldier-1", "dashDistance": 4000, "dashTicks": 6, "dashCooldown": 90 },
+    { "id": "rwr.soldier-2", "dashDistance": 4000, "dashTicks": 6, "dashCooldown": 90 }
+  ],
   "ai": {
     "failedSlotTicks": 90,
     "targetMemoryTicks": 300,

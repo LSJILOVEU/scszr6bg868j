@@ -16,6 +16,7 @@ namespace WarCore.Tests
             ("Alpha2", PlayerKeyAction.Skill, 2),
             ("Alpha3", PlayerKeyAction.Skill, 3),
             ("Alpha4", PlayerKeyAction.Skill, 4),
+            ("LeftShift", PlayerKeyAction.Dash, 0),
         };
 
         // Move, primary attack and camera keys (MpHost.cs, IsoCameraInput.cs).
@@ -25,7 +26,7 @@ namespace WarCore.Tests
         public void F5uDefault_IsTheSevenBindingsInOrder()
         {
             IReadOnlyList<PlayerKeyBinding> table = PlayerKeys.Default;
-            Assert.That(table.Count, Is.EqualTo(7));
+            Assert.That(table.Count, Is.EqualTo(8));
             for (int i = 0; i < Expected.Length; i++)
             {
                 Assert.That(table[i].Key, Is.EqualTo(Expected[i].Key), $"key {i}");
@@ -43,7 +44,7 @@ namespace WarCore.Tests
                 Assert.That(seen.Add(binding.Key), Is.True, binding.Key);
                 Assert.That(Taken, Does.Not.Contain(binding.Key));
             }
-            Assert.That(seen.Count, Is.EqualTo(7));
+            Assert.That(seen.Count, Is.EqualTo(8));
         }
 
         [Test]

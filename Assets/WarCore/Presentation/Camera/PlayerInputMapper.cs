@@ -3,7 +3,8 @@ using System.Collections.Generic;
 
 namespace WarCore.Presentation
 {
-    public enum PlayerKeyAction { Block = 0, Throw = 1, Skill = 2 }
+    // 3 is left unassigned: the F5 binding tests use it as an unknown action.
+    public enum PlayerKeyAction { Block = 0, Throw = 1, Skill = 2, Dash = 4 }
 
     // One key -> one held action. Key names are host-defined (e.g. the host's key enum names).
     public sealed class PlayerKeyBinding
@@ -20,7 +21,7 @@ namespace WarCore.Presentation
             {
                 if (skillSlot < 1) throw new ArgumentException("A skill binding needs a slot >= 1.", nameof(skillSlot));
             }
-            else if (action == PlayerKeyAction.Block || action == PlayerKeyAction.Throw)
+            else if (action == PlayerKeyAction.Block || action == PlayerKeyAction.Throw || action == PlayerKeyAction.Dash)
             {
                 if (skillSlot != 0) throw new ArgumentException("Only a skill binding carries a slot.", nameof(skillSlot));
             }
@@ -55,7 +56,7 @@ namespace WarCore.Presentation
             float w, float h, bool mouseInWindow, bool primary) =>
             Map(camera, ix, iy, x, y, w, h, mouseInWindow, primary, null);
 
-        // Block / throw: any bound key held. Skill: the first skill binding in table order whose
+        // Block / throw / dash: any bound key held. Skill: the first skill binding in table order whose
         // key is held, else 0. A null isKeyDown means no key is held.
         public PlayerInput Map(IsoCamera camera, float ix, float iy, float x, float y,
             float w, float h, bool mouseInWindow, bool primary, Func<string, bool> isKeyDown)
@@ -69,7 +70,7 @@ namespace WarCore.Presentation
             }
             GroundPick aim = hasAim ? lastAim : new GroundPick(camera.FocusX, camera.FocusZ);
             var move = camera.MoveAxes(ix, iy);
-            bool block = false, @throw = false;
+            bool block = false, @throw = false, dash = false;
             int skillSlot = 0;
             if (isKeyDown != null)
             {
@@ -78,10 +79,11 @@ namespace WarCore.Presentation
                     if (!isKeyDown(binding.Key)) continue;
                     if (binding.Action == PlayerKeyAction.Block) block = true;
                     else if (binding.Action == PlayerKeyAction.Throw) @throw = true;
+                    else if (binding.Action == PlayerKeyAction.Dash) dash = true;
                     else if (skillSlot == 0) skillSlot = binding.SkillSlot;
                 }
             }
-            return new PlayerInput(Milli(move.X), Milli(move.Z), aim.XMm, aim.ZMm, primary, block, @throw, skillSlot);
+            return new PlayerInput(Milli(move.X), Milli(move.Z), aim.XMm, aim.ZMm, primary, block, @throw, skillSlot, null, dash);
         }
 
         // A4: as above, but a valid pick inside the window takes aim (AimPick's result) when it is given, with its height.
@@ -102,7 +104,7 @@ namespace WarCore.Presentation
             }
             if (!hasAim) return flat;
             return new PlayerInput(flat.MoveXMilli, flat.MoveZMilli, lastAim.XMm, lastAim.ZMm, flat.Primary,
-                flat.Block, flat.Throw, flat.SkillSlot, lastAimYMm);
+                flat.Block, flat.Throw, flat.SkillSlot, lastAimYMm, flat.Dash);
         }
 
         // Scale then truncate toward zero. Clamp before the cast to keep the conversion bounded.

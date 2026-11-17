@@ -49,7 +49,15 @@ namespace WarCore.Tests
         public void PF1Recipe_RestIsTheRespawnDemo()
         {
             WorldRecipe demo = DemoRecipes.MpRespawnDemo(), play = DemoRecipes.MpPlaytest();
-            Assert.That(play.Units.ToArray(), Is.EqualTo(demo.Units.ToArray()));
+            // M7b: team 1 (the player's team) also carries a dash; every other field of every unit is the respawn demo's.
+            UnitSpawn[] playUnits = play.Units.ToArray(), demoUnits = demo.Units.ToArray();
+            Assert.That(playUnits.Length, Is.EqualTo(demoUnits.Length));
+            for (int i = 0; i < playUnits.Length; i++)
+            {
+                if (playUnits[i].Team != 1) { Assert.That(playUnits[i], Is.EqualTo(demoUnits[i])); continue; }
+                Assert.That(playUnits[i].HasDash, Is.True);
+                Assert.That(playUnits[i], Is.EqualTo(demoUnits[i].WithDash(playUnits[i].DashDistanceMm, playUnits[i].DashTicks, playUnits[i].DashCooldownTicks)));
+            }
             Assert.That(play.PlayerKey, Is.EqualTo(demo.PlayerKey));
             Assert.That(play.Seed, Is.EqualTo(demo.Seed));
             Assert.That(play.Mover, Is.EqualTo(demo.Mover));
