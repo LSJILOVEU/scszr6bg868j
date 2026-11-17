@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Headless replay exporter: runs a recipe without Unity and writes a replay JSON plus layout metrics. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <AssemblyName>WarCore.Replay</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../headless/Presentation/WarCore.Presentation.csproj" />
+    <ProjectReference Include="../headless/Content/WarCore.Content.csproj" />
+  </ItemGroup>
+</Project>
