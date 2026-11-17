@@ -70,15 +70,15 @@ original:
 replacement:
 | combat.IsHolding(unit), false, dashWait);
 
-[m7b-08-hud-no-line]
+[m7b-08-hud-dead-line]
 file = Assets/WarCore/Presentation/Camera/HudLines.cs
 filter = FullyQualifiedName~M7b|FullyQualifiedName~PF1|FullyQualifiedName~F5uKeyTable
-expect = WarCore.Tests.Dash.M7bDashInputTests.M7bHud_CooldownLine
-note = no dash line on the HUD
+expect = WarCore.Tests.Dash.M7bDashInputTests.M7bRespawn_TheNewUnitDashes
+note = the dash line also shows for a dead unit
 original:
-| if (status.Value.HasDash)
+| if (status.Value.HasDash && status.Value.Alive)
 replacement:
-| if (false)
+| if (status.Value.HasDash)
 
 [m7b-09-hud-ready-text]
 file = Assets/WarCore/Presentation/Camera/HudLines.cs
@@ -195,4 +195,14 @@ original:
 | if (units[i].Team == team) units[i]
 replacement:
 | if (units[i].Key == player) units[i]
+
+[m7b-21-hud-no-line]
+file = Assets/WarCore/Presentation/Camera/HudLines.cs
+filter = FullyQualifiedName~M7b|FullyQualifiedName~PF1|FullyQualifiedName~F5uKeyTable
+expect = WarCore.Tests.Dash.M7bDashInputTests.M7bHud_CooldownLine
+note = no dash line on the HUD
+original:
+| if (status.Value.HasDash && status.Value.Alive)
+replacement:
+| if (false)
 
