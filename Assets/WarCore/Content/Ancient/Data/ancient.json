@@ -19,6 +19,7 @@
     "intervalTicks": 90, "thinkInterval": 10, "maxTicks": 9000, "sight": 40,
     "gridColumns": 4, "gridRows": 5, "gridSpacing": 1.5
   },
+  "rules": [ { "id": "exhausted" }, { "id": "time-limit" } ],
   "ai": { "meleeChaseRange": 40 },
   "surfaces": [ { "id": "ancient.ground" } ]
 }
