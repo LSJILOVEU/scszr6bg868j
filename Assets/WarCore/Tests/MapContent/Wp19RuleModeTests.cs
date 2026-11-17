@@ -159,7 +159,7 @@ namespace WarCore.Tests
             Assert.That(w.Session.IsFinished, Is.EqualTo(w.Sim.IsFinished));
         }
 
-        // Replaces the 174 M7-real golden rows after the end: the baseline end tick is 747 and Sim refuses tick 748.
+        // Replaces the 174 M7-real golden rows after the end: the baseline end tick is 756 and Sim refuses tick 757.
         [Test]
         public void RealMatchEndsOnTheBaselineTick_AndTheNextStepIsRefused()
         {

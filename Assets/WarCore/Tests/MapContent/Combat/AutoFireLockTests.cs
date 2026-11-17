@@ -5,7 +5,7 @@ namespace WarCore.Tests
     // Recorded on the unchanged code before the auto-fire seam existed; the seam must leave every number as it was.
     public sealed class AutoFireLockTests
     {
-        private const int Ai = 88, Player = 18, Intent = 18, Pair = 60;
+        private const int Ai = 78, Player = 18, Intent = 18, Pair = 60;
 
         [Test]
         public void AiShotsOverSixHundredTicks_AreTheRecordedCount()

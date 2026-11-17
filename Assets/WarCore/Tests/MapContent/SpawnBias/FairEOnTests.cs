@@ -32,11 +32,11 @@ namespace WarCore.Tests
             Assert.That(after.ToArray(), Is.EqualTo(before.ToArray()));
         }
 
-        [TestCase(41UL, 1, 2068L)]
-        [TestCase(42UL, 1, 2430L)]
-        [TestCase(43UL, 2, 2077L)]
-        [TestCase(44UL, 1, 2130L)]
-        [TestCase(45UL, 2, 2111L)]
+        [TestCase(41UL, 1, 2100L)]
+        [TestCase(42UL, 2, 2146L)]
+        [TestCase(43UL, 2, 2112L)]
+        [TestCase(44UL, 1, 2088L)]
+        [TestCase(45UL, 2, 2083L)]
         public void FairE_OnFixedOutcomesAndRepeat(ulong seed, int winner, long endTick)
         {
             M6World first = FairEFixture.Create("control", seed, true), repeat = FairEFixture.Create("control", seed, true);

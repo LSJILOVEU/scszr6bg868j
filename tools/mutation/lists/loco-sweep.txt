@@ -1,0 +1,21 @@
+# Unit clearance along short steps.
+
+[loco-sweep-01-no-unit-sweep]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~WarCore.Tests.LocoReproUnitTests|FullyQualifiedName~WarCore.Tests.UnitSweepTests
+expect = WarCore.Tests.LocoReproUnitTests.FastShortChord_DoesNotPassThroughAStationaryUnit
+note = skipping the swept check lets a step cut through a unit between two clear end points
+original:
+|                     && SweepsThrough(provisional[i].Point, next, provisional[j].Point, threshold))
+replacement:
+|                     && false)
+
+[loco-sweep-02-long-steps-only]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~WarCore.Tests.LocoReproUnitTests|FullyQualifiedName~WarCore.Tests.UnitSweepTests
+expect = WarCore.Tests.LocoReproUnitTests.FastShortChord_DoesNotPassThroughAStationaryUnit
+note = restoring the step-length gate skips the swept check for steps shorter than the two radii
+original:
+|                 if (clear && oldDistance >= threshold && newDistance >= threshold
+replacement:
+|                 if (clear && oldDistance >= threshold && newDistance >= threshold && Planar(next - provisional[i].Point).LengthSquared >= threshold

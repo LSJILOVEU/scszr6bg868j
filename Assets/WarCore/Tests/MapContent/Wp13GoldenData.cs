@@ -18,7 +18,7 @@ namespace WarCore.Tests
             "# snapshot columns: snap:<scenario>:<tick>, SHA256(SaveRetainedSnapshot bytes)",
             "# M5: DemoRecipes.M5 + M2bMapBytes; SimSession.StepOnce with recipe script; ticks 0..1800 or Winner, inclusive.",
             "# M6/M6-reverse: DemoRecipes.M6 seed 41 + M6MapBytes; M6World forward/reverse; ticks 0..Winner or 9000, inclusive.",
-            "# M7-real: M7BehaviorLockTests.Real(41); M6World.Step through the end tick 747 (Sim refuses any later step).",
+            "# M7-real: M7BehaviorLockTests.Real(41); M6World.Step through the end tick 756 (Sim refuses any later step).",
             "# M6-narrow: M7BehaviorLockTests.Demo(41) + NarrowMap; forward; ticks 0..Winner or 9000, inclusive.",
             "# Fires: StateHash starts with record count, then each record in original order (never sorted).",
             "# FireRecord fields: Shooter.Value, Target.Value, Origin XYZ raw, End XYZ raw, Distance raw, DamageRaw, ShooterTeam.",
@@ -43,7 +43,7 @@ namespace WarCore.Tests
         }
 
         // End tick of M7BehaviorLockTests.Real(41), taken from the WP-19 A0 baseline; the code never derives it.
-        internal const long RealEndTick = 747;
+        internal const long RealEndTick = 756;
 
         internal static void Capture(Action<Row> emit)
         {

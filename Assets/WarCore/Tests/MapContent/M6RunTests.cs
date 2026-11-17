@@ -53,10 +53,10 @@ namespace WarCore.Tests
             TestContext.Out.WriteLine($"M6 seed41 end={a.Match.EndTick} winner={a.Match.Winner} reason={a.Match.EndReason} hash={a.Hash:X16}");
             Assert.That(a.Match.Winner, Is.InRange(1, 2)); Assert.That(a.Match.EndTick, Is.InRange(1, 9000));
             // Pinned recorded outcome, re-recorded by WP-21 (PLACEHOLDER numbers): a behaviour change in any M6 system moves one of these.
-            Assert.That(tick600, Is.EqualTo(0x18B64BDC0A0113ABUL), "tick 600 state hash");
-            Assert.That(a.Match.EndTick, Is.EqualTo(1172)); Assert.That(a.Match.Winner, Is.EqualTo(1));
+            Assert.That(tick600, Is.EqualTo(0xDC0FBAA9C333F9E9UL), "tick 600 state hash");
+            Assert.That(a.Match.EndTick, Is.EqualTo(1174)); Assert.That(a.Match.Winner, Is.EqualTo(1));
             Assert.That(a.Match.EndReason, Is.EqualTo(WarCore.Battle.MatchEndReason.AllPoints));
-            Assert.That(a.Hash, Is.EqualTo(0x1CCED776D43DD0D4UL), "end state hash");
+            Assert.That(a.Hash, Is.EqualTo(0x332F6CE935438FB2UL), "end state hash");
         }
 
         [TestCase(false)]

@@ -52,9 +52,9 @@ namespace WarCore.Tests
             return session;
         }
 
-        private const string FollowedText = "Tick 600\nStateHash 8D7460197CEA0D74\nFollow #1  HP 100/100  Ammo 30\n"
+        private const string FollowedText = "Tick 600\nStateHash 9A46F97A543EC8E0\nFollow #1  HP 100/100  Ammo 30\n"
             + "Points  P1 T1  P2 -  P3 -  P4 -  P5 T2\nGround (12.3, 56.8)";
-        private const string NothingText = "Tick 600\nStateHash 8D7460197CEA0D74\nFollow -\n"
+        private const string NothingText = "Tick 600\nStateHash 9A46F97A543EC8E0\nFollow -\n"
             + "Points  P1 T1  P2 -  P3 -  P4 -  P5 T2\nGround -";
 
         [Test]

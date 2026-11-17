@@ -216,7 +216,6 @@ namespace WarCore.Interim
         {
             blocker = -1;
             SimWide nearest = default;
-            SimWide stepSquared = Planar(next - provisional[i].Point).LengthSquared;
             long px = provisional[i].Point.X.Raw, pz = provisional[i].Point.Z.Raw;
             long lowX = MinRaw(px, next.X.Raw), highX = MaxRaw(px, next.X.Raw);
             long lowZ = MinRaw(pz, next.Z.Raw), highZ = MaxRaw(pz, next.Z.Raw);
@@ -237,8 +236,9 @@ namespace WarCore.Interim
                 SimFix radius = provisional[i].Radius + provisional[j].Radius;
                 SimWide threshold = new SimVec3(radius, default, default).LengthSquared;
                 bool clear = newDistance >= threshold || (oldDistance < threshold && newDistance > oldDistance);
-                // A step shorter than the two radii cannot jump a unit, so only longer steps are checked along their path.
-                if (clear && oldDistance >= threshold && newDistance >= threshold && stepSquared >= threshold
+                // Both end points can be clear while the middle of the step cuts through the other unit, for short
+                // steps as well as long ones, so every step is checked along its path.
+                if (clear && oldDistance >= threshold && newDistance >= threshold
                     && SweepsThrough(provisional[i].Point, next, provisional[j].Point, threshold))
                     clear = false;
                 if (clear) continue;

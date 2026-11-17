@@ -42,7 +42,7 @@ namespace WarCore.Tests
             Assert.That(string.IsNullOrEmpty(path), Is.False); Assert.That(File.Exists(path), Is.False);
             var lines = new List<string> { "# scenario, tick, winner, endTick, endReason, aliveOne, aliveTwo, reserveOne, reserveTwo, points(owner:capturing:progress;)" };
             Run(lines, "M6", new M6World(DemoRecipes.M6(), DemoRecipes.M6MapBytes()), 9000, true);
-            // The real match ends on tick 747 (726 before WP-21) and Sim refuses to step after that, so the rows stop at the end (the pre-A0 file went on to 900).
+            // The real match ends on tick 756 (747 before LOCO-SWEEP, 726 before WP-21) and Sim refuses to step after that, so the rows stop at the end (the pre-A0 file went on to 900).
             Run(lines, "M7-real", M7BehaviorLockTests.Real(41), 900, true);
             Run(lines, "M6-narrow", new M6World(M7BehaviorLockTests.Demo(41), M7BehaviorLockTests.NarrowMap()), 9000, true);
             File.WriteAllLines(path, lines, new UTF8Encoding(false));

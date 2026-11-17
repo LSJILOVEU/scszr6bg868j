@@ -88,10 +88,10 @@ namespace WarCore.Tests
             // export PATH="/Applications/Unity/Hub/Editor/6000.6.0f1/Unity.app/Contents/Resources/Scripting/DotNetSdk:$PATH"
             // dotnet test tools/headless/WarCore.Headless.Tests.csproj -c Release --disable-build-servers
             //   --filter 'FullyQualifiedName~M7DemoTests.Seed41' --logger 'console;verbosity=normal'
-            Assert.That(hash600, Is.EqualTo(0x8D7460197CEA0D74UL));
-            Assert.That(a.Match.EndTick, Is.EqualTo(2030)); Assert.That(a.Match.Winner, Is.EqualTo(2));
+            Assert.That(hash600, Is.EqualTo(0x9A46F97A543EC8E0UL));
+            Assert.That(a.Match.EndTick, Is.EqualTo(2050)); Assert.That(a.Match.Winner, Is.EqualTo(2));
             Assert.That(a.Match.EndReason, Is.EqualTo(MatchEndReason.AllPoints));
-            Assert.That(a.Hash, Is.EqualTo(0xD7C576E0318B4FE5UL));
+            Assert.That(a.Hash, Is.EqualTo(0x349ABBEB3EBBED0DUL));
         }
 
         [Test]
