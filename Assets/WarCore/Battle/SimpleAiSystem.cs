@@ -35,12 +35,13 @@ namespace WarCore.Battle
         private readonly ulong seedSalt, policyDigest;
         private readonly Intent[] intents;
         private readonly int[] winners;
-        private int intentCount, current;
+        private readonly int holdSharePermille;
+        private int intentCount, current, frontline1, frontline2;
         private long decisionTick;
         public SimpleAiSystem(CombatSystem combat, CombatPack weapons, MatchPack pack, CaptureSystem capture, IMoveOrders moves,
             IControlTarget controlled = null, FailedSlotMemory memory = null, TargetMemory contacts = null,
             TargetSearch search = null, TargetSuppress suppress = null, int meleeChaseRange = 0,
-            bool fairDecisions = false, ulong decisionSeed = 0)
+            bool fairDecisions = false, ulong decisionSeed = 0, int holdSharePermille = 0)
         {
             this.combat = combat; this.weapons = weapons; this.pack = pack; this.capture = capture; this.moves = moves;
             this.controlled = controlled; this.memory = memory; this.contacts = contacts; this.search = search; this.suppress = suppress;
@@ -51,6 +52,12 @@ namespace WarCore.Battle
             {
                 intents = new Intent[combat.Entities.Capacity]; winners = new int[slots.Total];
                 var hash = new StateHash(); hash.Add("battle.ai.fair-decisions.v1"); hash.Add(policyDigest); hash.Add(fairDecisions); hash.Add(decisionSeed);
+                policyDigest = hash.Value;
+            }
+            this.holdSharePermille = holdSharePermille;
+            if (holdSharePermille > 0)
+            {
+                var hash = new StateHash(); hash.Add("battle.ai.hold-share.v1"); hash.Add(policyDigest); hash.Add(holdSharePermille);
                 policyDigest = hash.Value;
             }
             reservedHas = new bool[slots.Total]; standingHas = new bool[slots.Total];
@@ -64,6 +71,7 @@ namespace WarCore.Battle
         public void Step(SimContext c)
         {
             decisionTick = c.Clock.Tick; intentCount = 0;
+            if (holdSharePermille > 0) { frontline1 = Frontline(1); frontline2 = Frontline(2); }
             Rebuild();
             foreach (EntityId entity in stage.Capture())
             {
@@ -110,8 +118,10 @@ namespace WarCore.Battle
                     if (hunt == TargetSearch.Hunt.Hold)
                     { if (moving) StopUnit(id, here, target); continue; }
                 }
-                int nearest = -1; SimWide best = default;
-                for (int i = 0; i < pack.Points.Length; i++)
+                // A holder goes to its team's front-line point; without one it attacks like the rest.
+                int nearest = holdSharePermille > 0 && Holds(id.Value, holdSharePermille) ? (unit.Team == 1 ? frontline1 : frontline2) : -1;
+                SimWide best = default;
+                for (int i = 0; nearest < 0 && i < pack.Points.Length; i++)
                 {
                     if (capture.Points[i].Owner == unit.Team) continue;
                     SimWide distance = CombatSystem.Horizontal(here - pack.Points[i].Center).LengthSquared;
@@ -275,6 +285,25 @@ namespace WarCore.Battle
             if (!fairDecisions) return a < b;
             ulong x = Priority(a), y = Priority(b);
             return x < y || (x == y && a < b);
+        }
+        // Stateless split by unit key: the same unit is a holder on every tick and after a restore.
+        private const ulong HoldSalt = 0x5a17c0de0b5e55edUL;
+        private static bool Holds(ulong id, int permille) => Mix(id ^ HoldSalt) % 1000UL < (ulong)permille;
+        // The team's owned point closest to any point it does not own (ties to the lower point index); -1 when it owns none or all.
+        private int Frontline(int team)
+        {
+            int front = -1; SimWide best = default;
+            for (int i = 0; i < pack.Points.Length; i++)
+            {
+                if (capture.Points[i].Owner != team) continue;
+                for (int j = 0; j < pack.Points.Length; j++)
+                {
+                    if (capture.Points[j].Owner == team) continue;
+                    SimWide distance = CombatSystem.Horizontal(pack.Points[i].Center - pack.Points[j].Center).LengthSquared;
+                    if (front < 0 || distance < best) { front = i; best = distance; }
+                }
+            }
+            return front;
         }
         private ulong Priority(ulong id) => Mix(id ^ seedSalt ^ unchecked((ulong)decisionTick * 0x9e3779b97f4a7c15UL));
         private static ulong Mix(ulong x)
