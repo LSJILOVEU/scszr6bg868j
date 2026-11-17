@@ -1,0 +1,198 @@
+# M7b dash input and HUD: required mutations. New tests are WarCore.Tests.Dash.M7bDashInputTests.
+
+[m7b-01-edge-off]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~M7b|FullyQualifiedName~PF1|FullyQualifiedName~F5uKeyTable
+expect = WarCore.Tests.Dash.M7bDashInputTests.M7bHeld_DoesNotRepeat
+note = held key repeats: the edge check is dropped
+original:
+| if (dash != null && nextPlayerInput.Dash && !heldPlayerInput.Dash)
+replacement:
+| if (dash != null && nextPlayerInput.Dash)
+
+[m7b-02-never-trigger]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~M7b|FullyQualifiedName~PF1|FullyQualifiedName~F5uKeyTable
+expect = WarCore.Tests.Dash.M7bDashInputTests.M7bPress_StepsFromTheNextTickAsDashPart
+note = the press never asks for a dash
+original:
+| if (dash != null && nextPlayerInput.Dash && !heldPlayerInput.Dash)
+replacement:
+| if (dash != null && false && !heldPlayerInput.Dash)
+
+[m7b-03-dir-always-aim]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~M7b|FullyQualifiedName~PF1|FullyQualifiedName~F5uKeyTable
+expect = WarCore.Tests.Dash.M7bDashInputTests.M7bPress_StepsFromTheNextTickAsDashPart
+note = direction always toward the aim point
+original:
+| dash.TryDash(unit, move.X.Raw != 0 || move.Z.Raw != 0 ? move : aim - at.Value);
+replacement:
+| dash.TryDash(unit, aim - at.Value);
+
+[m7b-04-dir-always-move]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~M7b|FullyQualifiedName~PF1|FullyQualifiedName~F5uKeyTable
+expect = WarCore.Tests.Dash.M7bDashInputTests.M7bDirection_AimWhenNoMoveElseNothing
+note = direction always the move input
+original:
+| dash.TryDash(unit, move.X.Raw != 0 || move.Z.Raw != 0 ? move : aim - at.Value);
+replacement:
+| dash.TryDash(unit, move);
+
+[m7b-05-dir-x-only]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~M7b|FullyQualifiedName~PF1|FullyQualifiedName~F5uKeyTable
+expect = WarCore.Tests.Dash.M7bDashInputTests.M7bPress_StepsFromTheNextTickAsDashPart
+note = only the X move counts as a move
+original:
+| dash.TryDash(unit, move.X.Raw != 0 || move.Z.Raw != 0 ? move : aim - at.Value);
+replacement:
+| dash.TryDash(unit, move.X.Raw != 0 ? move : aim - at.Value);
+
+[m7b-06-hud-wait-short]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~M7b|FullyQualifiedName~PF1|FullyQualifiedName~F5uKeyTable
+expect = WarCore.Tests.Dash.M7bDashInputTests.M7bHud_CooldownLine
+note = cooldown left one short
+original:
+| long dashWait = hasDash ? Math.Max(0, dashState.Ready - Tick) : 0;
+replacement:
+| long dashWait = hasDash ? Math.Max(0, dashState.Ready - Tick - 1) : 0;
+
+[m7b-07-hud-status-nodash]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~M7b|FullyQualifiedName~PF1|FullyQualifiedName~F5uKeyTable
+expect = WarCore.Tests.Dash.M7bDashInputTests.M7bHud_CooldownLine
+note = status never reports a dash
+original:
+| combat.IsHolding(unit), hasDash, dashWait);
+replacement:
+| combat.IsHolding(unit), false, dashWait);
+
+[m7b-08-hud-no-line]
+file = Assets/WarCore/Presentation/Camera/HudLines.cs
+filter = FullyQualifiedName~M7b|FullyQualifiedName~PF1|FullyQualifiedName~F5uKeyTable
+expect = WarCore.Tests.Dash.M7bDashInputTests.M7bHud_CooldownLine
+note = no dash line on the HUD
+original:
+| if (status.Value.HasDash)
+replacement:
+| if (false)
+
+[m7b-09-hud-ready-text]
+file = Assets/WarCore/Presentation/Camera/HudLines.cs
+filter = FullyQualifiedName~M7b|FullyQualifiedName~PF1|FullyQualifiedName~F5uKeyTable
+expect = WarCore.Tests.Dash.M7bDashInputTests.M7bHud_CooldownLine
+note = ready shown as a countdown
+original:
+| status.Value.DashTicksLeft > 0
+replacement:
+| status.Value.DashTicksLeft >= 0
+
+[m7b-10-map-no-dash]
+file = Assets/WarCore/Presentation/Camera/PlayerInputMapper.cs
+filter = FullyQualifiedName~M7b|FullyQualifiedName~PF1|FullyQualifiedName~F5uKeyTable
+expect = WarCore.Tests.Dash.M7bDashInputTests.M7bInput_KeyEqualityAndLiveCopy
+note = the mapper ignores the dash binding
+original:
+| else if (binding.Action == PlayerKeyAction.Dash) dash = true;
+replacement:
+
+[m7b-11-map-aim-drops]
+file = Assets/WarCore/Presentation/Camera/PlayerInputMapper.cs
+filter = FullyQualifiedName~M7b|FullyQualifiedName~PF1|FullyQualifiedName~F5uKeyTable
+expect = WarCore.Tests.Dash.M7bDashInputTests.M7bInput_KeyEqualityAndLiveCopy
+note = the aim overload drops dash
+original:
+| flat.Block, flat.Throw, flat.SkillSlot, lastAimYMm, flat.Dash);
+replacement:
+| flat.Block, flat.Throw, flat.SkillSlot, lastAimYMm);
+
+[m7b-12-equals-ignores]
+file = Assets/WarCore/Presentation/Bridge/PlayerInput.cs
+filter = FullyQualifiedName~M7b|FullyQualifiedName~PF1|FullyQualifiedName~F5uKeyTable
+expect = WarCore.Tests.Dash.M7bDashInputTests.M7bInput_KeyEqualityAndLiveCopy
+note = Equals ignores Dash
+original:
+|             && Dash == other.Dash;
+replacement:
+|             ;
+
+[m7b-13-hash-ignores]
+file = Assets/WarCore/Presentation/Bridge/PlayerInput.cs
+filter = FullyQualifiedName~M7b|FullyQualifiedName~PF1|FullyQualifiedName~F5uKeyTable
+expect = WarCore.Tests.Dash.M7bDashInputTests.M7bInput_KeyEqualityAndLiveCopy
+note = GetHashCode ignores Dash
+original:
+| return hash * 397 ^ Dash.GetHashCode();
+replacement:
+| return hash;
+
+[m7b-14-ctor-drops]
+file = Assets/WarCore/Presentation/Bridge/PlayerInput.cs
+filter = FullyQualifiedName~M7b|FullyQualifiedName~PF1|FullyQualifiedName~F5uKeyTable
+expect = WarCore.Tests.Dash.M7bDashInputTests.M7bInput_KeyEqualityAndLiveCopy
+note = the constructor drops dash
+original:
+| SkillSlot = skillSlot; AimYMm = aimYMm; Dash = dash;
+replacement:
+| SkillSlot = skillSlot; AimYMm = aimYMm;
+
+[m7b-15-live-drops]
+file = Assets/WarCore/Presentation/Bridge/LivePlayerInput.cs
+filter = FullyQualifiedName~M7b|FullyQualifiedName~PF1|FullyQualifiedName~F5uKeyTable
+expect = WarCore.Tests.Dash.M7bDashInputTests.M7bInput_KeyEqualityAndLiveCopy
+note = the click copy drops dash
+original:
+| input.AimXMm, input.AimZMm, true, input.Block, input.Throw, input.SkillSlot, input.AimYMm, input.Dash));
+replacement:
+| input.AimXMm, input.AimZMm, true, input.Block, input.Throw, input.SkillSlot, input.AimYMm));
+
+[m7b-16-key-missing]
+file = Assets/WarCore/Presentation/Camera/PlayerKeys.cs
+filter = FullyQualifiedName~M7b|FullyQualifiedName~PF1|FullyQualifiedName~F5uKeyTable
+expect = WarCore.Tests.Dash.M7bDashInputTests.M7bInput_KeyEqualityAndLiveCopy
+note = no LeftShift binding
+original:
+| new PlayerKeyBinding("LeftShift", PlayerKeyAction.Dash),
+replacement:
+
+[m7b-17-recipe-no-dash]
+file = Assets/WarCore/Presentation/Bridge/DemoRecipes.cs
+filter = FullyQualifiedName~M7b|FullyQualifiedName~PF1|FullyQualifiedName~F5uKeyTable
+expect = WarCore.Tests.Dash.M7bDashInputTests.M7bRecipes_OnlyThePlaytestPlayerTeamHasADash
+note = the playtest team gets no dash
+original:
+| return WithPlayerTeamDash(MpRespawnDemo().WithAiRules(layer), layer);
+replacement:
+| return MpRespawnDemo().WithAiRules(layer);
+
+[m7b-18-recipe-drops-ai]
+file = Assets/WarCore/Presentation/Bridge/DemoRecipes.cs
+filter = FullyQualifiedName~M7b|FullyQualifiedName~PF1|FullyQualifiedName~F5uKeyTable
+expect = WarCore.Tests.PF1PlaytestTests.PF1Recipe_AiPackCarriesTheTenLayerValues
+note = the dash rebuild drops the AI pack
+original:
+| if (source.AiPack != null) recipe = recipe.WithAiRules(source.AiPack);
+replacement:
+
+[m7b-19-builder-no-loco]
+file = Assets/WarCore/Presentation/Bridge/WorldBuilder.cs
+filter = FullyQualifiedName~M7b|FullyQualifiedName~PF1|FullyQualifiedName~F5uKeyTable
+expect = WarCore.Tests.Dash.M7bDashInputTests.M7bPress_StepsFromTheNextTickAsDashPart
+note = the session gets no locomotion for dash
+original:
+| Dash = dash ? assembly.Locomotion : null,
+replacement:
+| Dash = null,
+[m7b-20-player-only]
+file = Assets/WarCore/Presentation/Bridge/DemoRecipes.cs
+filter = FullyQualifiedName~M7b|FullyQualifiedName~PF1|FullyQualifiedName~F5uKeyTable
+expect = WarCore.Tests.Dash.M7bDashInputTests.M7bRecipes_OnlyThePlaytestPlayerTeamHasADash
+note = only the player's own unit gets the dash, not its team
+original:
+| if (units[i].Team == team) units[i]
+replacement:
+| if (units[i].Key == player) units[i]
+
