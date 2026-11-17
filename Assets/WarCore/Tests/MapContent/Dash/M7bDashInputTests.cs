@@ -53,7 +53,8 @@ namespace WarCore.Tests.Dash
         {
             SimSession s = Playtest();
             ulong key = Player(s);
-            s.SetPlayerInput(1, In(0, -1000, true));
+            // The aim point lies off the -Z line, so a dash toward it would show in x.
+            s.SetPlayerInput(1, In(0, -1000, true, 60000, 30000));
             SimVec3 start = M3TestWorld.Position(s, key);
             long total = -DistanceMm * SimFix.Scale / 1000;
             for (int k = 1; k <= Ticks; k++)

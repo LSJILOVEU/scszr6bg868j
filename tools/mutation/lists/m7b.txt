@@ -137,7 +137,7 @@ note = the constructor drops dash
 original:
 | SkillSlot = skillSlot; AimYMm = aimYMm; Dash = dash;
 replacement:
-| SkillSlot = skillSlot; AimYMm = aimYMm;
+| SkillSlot = skillSlot; AimYMm = aimYMm; Dash = false;
 
 [m7b-15-live-drops]
 file = Assets/WarCore/Presentation/Bridge/LivePlayerInput.cs
