@@ -23,7 +23,7 @@ namespace WarCore.Content
             bool strict = mr.Bool("captureStrict");
             int captureTicks = mr.Int("captureTicks", 1);
             string interruptName = mr.Str("interrupt");
-            int decay = mr.Int("decayPerTick", 1), interval = mr.Int("intervalTicks", 1), think = mr.Int("thinkInterval", 1), max = mr.Int("maxTicks", 1);
+            int decay = mr.Int("decayPerTick", interruptName == "decay" ? 1 : 0), interval = mr.Int("intervalTicks", 1), think = mr.Int("thinkInterval", 1), max = mr.Int("maxTicks", 1);
             SimFix sight = mr.Fix("sight");
             int columns = mr.Int("gridColumns", 1, 4096), rows = mr.Int("gridRows", 1, 4096);
             SimFix spacing = mr.Fix("gridSpacing");

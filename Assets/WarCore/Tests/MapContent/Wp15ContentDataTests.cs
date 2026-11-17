@@ -361,7 +361,18 @@ namespace WarCore.Tests
             Names(Fail("c4", Layer("c4", "\"match\": { \"captureAdvantageNum\": 1, \"captureAdvantageDen\": 2 }")), "'c4'", "'captureAdvantageNum'");
             Names(Fail("c5", Layer("c5", "\"match\": { \"sight\": 0 }")), "'c5'", "'sight'");
             Names(Fail("c6", Layer("c6", "\"match\": { \"gridSpacing\": 0 }")), "'c6'", "'gridSpacing'");
-            Names(Fail("c7", Layer("c7", "\"match\": { \"decayPerTick\": 0 }")), "'c7'", "'decayPerTick'");
+            Names(Fail("c7", Layer("c7", "\"match\": { \"interrupt\": \"decay\", \"decayPerTick\": 0 }")), "'c7'", "'decayPerTick'");
+        }
+
+        // decayPerTick is only read when interrupt is decay, so the loader accepts 0 for reset and pause, as MatchPack does.
+        [TestCase("reset")]
+        [TestCase("pause")]
+        public void ZeroDecayIsLegalWhenInterruptDoesNotDecay(string interrupt)
+        {
+            var pack = OnRwr("z", Layer("z", "\"match\": { \"interrupt\": \"" + interrupt + "\", \"decayPerTick\": 0 }"));
+            Assert.That(pack.Match.DecayPerTick, Is.EqualTo(0));
+            Assert.That(Match(pack).DecayPerTick, Is.EqualTo(0));
+            Names(Fail("n", Layer("n", "\"match\": { \"interrupt\": \"" + interrupt + "\", \"decayPerTick\": -1 }")), "'n'", "'decayPerTick'", "[0, ");
         }
 
         [Test]

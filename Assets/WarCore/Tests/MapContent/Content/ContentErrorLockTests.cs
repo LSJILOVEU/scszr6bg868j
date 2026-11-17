@@ -128,7 +128,7 @@ namespace WarCore.Tests
                 "\"match\": { \"captureAdvantageNum\": 1, \"captureAdvantageDen\": 2 }", "content pack 'c4' layer 'c4' match field 'captureAdvantageNum': must be at least captureAdvantageDen");
             One(W + "IllegalMatchRulesFailAtLoadNamingTheFieldThatIsWrong", "c5", "sight 0", "c5", "\"match\": { \"sight\": 0 }", "content pack 'c5' layer 'c5' match field 'sight': must be greater than 0");
             One(W + "IllegalMatchRulesFailAtLoadNamingTheFieldThatIsWrong", "c6", "gridSpacing 0", "c6", "\"match\": { \"gridSpacing\": 0 }", "content pack 'c6' layer 'c6' match field 'gridSpacing': must be greater than 0");
-            One(W + "IllegalMatchRulesFailAtLoadNamingTheFieldThatIsWrong", "c7", "decayPerTick 0", "c7", "\"match\": { \"decayPerTick\": 0 }", "content pack 'c7' layer 'c7' match field 'decayPerTick': out of range [1, 2147483647]");
+            One(W + "IllegalMatchRulesFailAtLoadNamingTheFieldThatIsWrong", "c7", "decayPerTick 0 with decay", "c7", "\"match\": { \"interrupt\": \"decay\", \"decayPerTick\": 0 }", "content pack 'c7' layer 'c7' match field 'decayPerTick': out of range [1, 2147483647]");
 
             // ---- Wp17CombatTests.BadCombatAndSpreadValuesNameTheField (fixture: layer 'bad' extends rwr) ----
             const string C = "Wp17CombatTests.BadCombatAndSpreadValuesNameTheField";

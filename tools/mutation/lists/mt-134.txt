@@ -27,9 +27,9 @@ filter = FullyQualifiedName~Mt134MatchSection
 expect = WarCore.Tests.Mt134MatchSectionTests.OneTickThinkIntervalIsAccepted
 note = Rejects a valid think interval of one tick.
 original:
-|             int decay = mr.Int("decayPerTick", 1), interval = mr.Int("intervalTicks", 1), think = mr.Int("thinkInterval", 1), max = mr.Int("maxTicks", 1);
+|             int decay = mr.Int("decayPerTick", interruptName == "decay" ? 1 : 0), interval = mr.Int("intervalTicks", 1), think = mr.Int("thinkInterval", 1), max = mr.Int("maxTicks", 1);
 replacement:
-|             int decay = mr.Int("decayPerTick", 1), interval = mr.Int("intervalTicks", 1), think = mr.Int("thinkInterval", 2), max = mr.Int("maxTicks", 1);
+|             int decay = mr.Int("decayPerTick", interruptName == "decay" ? 1 : 0), interval = mr.Int("intervalTicks", 1), think = mr.Int("thinkInterval", 2), max = mr.Int("maxTicks", 1);
 
 [mt-134-04]
 file = Assets/WarCore/Content/Data/Sections/MatchSection.cs
