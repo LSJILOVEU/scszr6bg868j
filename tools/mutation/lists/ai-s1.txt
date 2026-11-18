@@ -1,0 +1,202 @@
+# AI-S1: the engage part (ai.engage: hold, bound), the scheduler cell that asks it, its content fields and the
+# thinkInterval check. Filters run only the AI-S1 tests; the default battles are held by the locked suites listed in the PR.
+
+[ai-s1-01-engage-not-folded]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS1Tests.Battle_PolicyDigestAndSnapshots
+expect = WarCore.Tests.AiS1Tests.Battle_PolicyDigestAndSnapshots
+note = the engage part is left out of the policy digest
+original:
+|             policyDigest = engage.Fold(policyDigest);
+replacement:
+|             policyDigest = policyDigest + 0;
+
+[ai-s1-02-advance-runs-suppress]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS1Tests.Bound_AdvanceSkipsSuppressionAndSearch
+expect = WarCore.Tests.AiS1Tests.Bound_AdvanceSkipsSuppressionAndSearch
+note = an Advance think still starts suppression
+original:
+|                 if (!advance && suppress != null && unit.Weapon >= 0) suppress.Decide(id, c.Clock.Tick);
+replacement:
+|                 if (suppress != null && unit.Weapon >= 0) suppress.Decide(id, c.Clock.Tick);
+
+[ai-s1-03-advance-runs-search]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS1Tests.Bound_AdvanceSkipsSuppressionAndSearch
+expect = WarCore.Tests.AiS1Tests.Bound_AdvanceSkipsSuppressionAndSearch
+note = an Advance think still asks the search (goes to the enemy)
+original:
+|                 if (!advance && search != null && unit.Weapon >= 0)
+replacement:
+|                 if (search != null && unit.Weapon >= 0)
+
+[ai-s1-04-advance-ignored]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS1Tests.Bound_MinimumRangeInTheScheduler
+expect = WarCore.Tests.AiS1Tests.Bound_MinimumRangeInTheScheduler
+note = Advance stands like Hold
+original:
+|                     if (engage.Decide(in thinker, combat.Point(seen), field) == AiEngage.Hold) { if (moving) StopUnit(id, here, target); continue; }
+replacement:
+|                     if (engage.Decide(in thinker, combat.Point(seen), field) != (AiEngage)7) { if (moving) StopUnit(id, here, target); continue; }
+
+[ai-s1-05-enemy-is-self]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS1Tests.Bound_MinimumRangeInTheScheduler
+expect = WarCore.Tests.AiS1Tests.Bound_MinimumRangeInTheScheduler
+note = the part is asked with the unit's own point instead of the enemy's
+original:
+|                     if (engage.Decide(in thinker, combat.Point(seen), field) == AiEngage.Hold) { if (moving) StopUnit(id, here, target); continue; }
+replacement:
+|                     if (engage.Decide(in thinker, here, field) == AiEngage.Hold) { if (moving) StopUnit(id, here, target); continue; }
+
+[ai-s1-06-share-edge]
+file = Assets/WarCore/Battle/Ai/BoundEngage.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS1Tests.Bound_DecideAtTheEdges
+expect = WarCore.Tests.AiS1Tests.Bound_DecideAtTheEdges
+note = a unit whose trait equals the share advances
+original:
+|             if (AiParts.Permille(key, ShareSalt) >= sharePermille) return AiEngage.Hold;
+replacement:
+|             if (AiParts.Permille(key, ShareSalt) > sharePermille) return AiEngage.Hold;
+
+[ai-s1-07-window-edge]
+file = Assets/WarCore/Battle/Ai/BoundEngage.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS1Tests.Bound_DecideAtTheEdges
+expect = WarCore.Tests.AiS1Tests.Bound_DecideAtTheEdges
+note = the move window is one tick longer
+original:
+|             if ((field.Tick + phase) % cycle >= moveTicks) return AiEngage.Hold;
+replacement:
+|             if ((field.Tick + phase) % cycle > moveTicks) return AiEngage.Hold;
+
+[ai-s1-08-phase-salt]
+file = Assets/WarCore/Battle/Ai/BoundEngage.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS1Tests.Bound_AdvancersMoveInTheirWindowOnly
+expect = WarCore.Tests.AiS1Tests.Bound_AdvancersMoveInTheirWindowOnly
+note = the phase uses the share salt
+original:
+|             long phase = (long)(AiParts.Mix(key ^ PhaseSalt) % (ulong)cycle);
+replacement:
+|             long phase = (long)(AiParts.Mix(key ^ ShareSalt) % (ulong)cycle);
+
+[ai-s1-09-cycle-length]
+file = Assets/WarCore/Battle/Ai/BoundEngage.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS1Tests.Bound_DecideAtTheEdges
+expect = WarCore.Tests.AiS1Tests.Bound_DecideAtTheEdges
+note = the cycle ignores the fire window
+original:
+|             cycle = (long)moveTicks + fireTicks;
+replacement:
+|             cycle = (long)moveTicks + moveTicks;
+
+[ai-s1-10-range-edge]
+file = Assets/WarCore/Battle/Ai/BoundEngage.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS1Tests.Bound_DecideAtTheEdges
+expect = WarCore.Tests.AiS1Tests.Bound_DecideAtTheEdges
+note = a unit exactly at the minimum range holds
+original:
+|             if (CombatSystem.Horizontal(enemy - unit.Here).LengthSquared < minRangeSquared) return AiEngage.Hold;
+replacement:
+|             if (CombatSystem.Horizontal(enemy - unit.Here).LengthSquared <= minRangeSquared) return AiEngage.Hold;
+
+[ai-s1-11-range-3d]
+file = Assets/WarCore/Battle/Ai/BoundEngage.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS1Tests.Bound_DecideAtTheEdges
+expect = WarCore.Tests.AiS1Tests.Bound_DecideAtTheEdges
+note = the minimum range counts height
+original:
+|             if (CombatSystem.Horizontal(enemy - unit.Here).LengthSquared < minRangeSquared) return AiEngage.Hold;
+replacement:
+|             if ((enemy - unit.Here).LengthSquared < minRangeSquared) return AiEngage.Hold;
+
+[ai-s1-12-fold-drops-range]
+file = Assets/WarCore/Battle/Ai/BoundEngage.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS1Tests.Battle_PolicyDigestAndSnapshots
+expect = WarCore.Tests.AiS1Tests.Battle_PolicyDigestAndSnapshots
+note = the digest leaves out the minimum range
+original:
+|             hash.Add(moveTicks); hash.Add(fireTicks); hash.Add(sharePermille); hash.Add(minRangeMm);
+replacement:
+|             hash.Add(moveTicks); hash.Add(fireTicks); hash.Add(sharePermille);
+
+[ai-s1-13-permille-modulus]
+file = Assets/WarCore/Battle/Ai/AiParts.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS1Tests.Permille_IsTheFinalizerModuloAThousand
+expect = WarCore.Tests.AiS1Tests.Permille_IsTheFinalizerModuloAThousand
+note = traits taken modulo 999
+original:
+|         public static int Permille(ulong key, ulong salt) => (int)(Mix(key ^ salt) % 1000UL);
+replacement:
+|         public static int Permille(ulong key, ulong salt) => (int)(Mix(key ^ salt) % 999UL);
+
+[ai-s1-14-default-not-hold]
+file = Assets/WarCore/Battle/Ai/AiParts.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS1Tests.Parts_DefaultEngageIsHold
+expect = WarCore.Tests.AiS1Tests.Parts_DefaultEngageIsHold
+note = the default engage is bound
+original:
+|             SlotSpacingRaw = slotSpacingRaw; SlotRingRaw = slotRingRaw; Engage = engage ?? new HoldEngage();
+replacement:
+|             SlotSpacingRaw = slotSpacingRaw; SlotRingRaw = slotRingRaw; Engage = engage ?? new BoundEngage(60, 90, 700, 0);
+
+[ai-s1-15-fire-not-checked]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS1Tests.Content_WindowsMustBeWholeThinks
+expect = WarCore.Tests.AiS1Tests.Content_WindowsMustBeWholeThinks
+note = the fire window is not checked against thinkInterval
+original:
+|                 CheckThinks(ai, "boundFireTicks", ai.BoundFireTicks, thinkInterval);
+replacement:
+|
+
+[ai-s1-16-bound-not-built]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS1Tests.Content_FieldsAreReadAndBuildThePart
+expect = WarCore.Tests.AiS1Tests.Content_FieldsAreReadAndBuildThePart
+note = engage bound builds the hold part
+original:
+|                 engage = new BoundEngage(ai.BoundMoveTicks, ai.BoundFireTicks, ai.BoundSharePermille, ai.BoundMinRangeMm);
+replacement:
+|
+
+[ai-s1-17-owner-kind]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS1Tests.Content_BadFieldNamesPackEntryAndField
+expect = WarCore.Tests.AiS1Tests.Content_BadFieldNamesPackEntryAndField
+note = boundMoveTicks is registered as a placement parameter
+original:
+|             ("boundMoveTicks", PartKind.Engage, ContentPolicies.BoundEngage),
+replacement:
+|             ("boundMoveTicks", PartKind.Placement, ContentPolicies.BoundEngage),
+
+[ai-s1-18-share-range]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS1Tests.Content_BadFieldNamesPackEntryAndField
+expect = WarCore.Tests.AiS1Tests.Content_BadFieldNamesPackEntryAndField
+note = boundSharePermille accepts 1001
+original:
+|                     boundShare = r.Int("boundSharePermille", 0, 1000);
+replacement:
+|                     boundShare = r.Int("boundSharePermille", 0, 1001);
+
+[ai-s1-19-engage-id-unchecked]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS1Tests.Content_BadFieldNamesPackEntryAndField
+expect = WarCore.Tests.AiS1Tests.Content_BadFieldNamesPackEntryAndField
+note = unknown engage ids load
+original:
+|                     if (!ContentPolicies.IsEngage(engage))
+replacement:
+|                     if (false)
+
+[ai-s1-20-battle-interval-unused]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS1Tests.Content_WindowsMustBeWholeThinks
+expect = WarCore.Tests.AiS1Tests.Content_WindowsMustBeWholeThinks
+note = the battle does not pass its thinkInterval
+original:
+|             sim.RegisterGameplay("battle.ai", new SimpleAiSystem(combat, recipe.Combat, recipe.Match, capture, adapter, a.Controlled, memory, contacts, search, suppress, meleeChaseRange, fair, recipe.Seed, ContentPolicies.Parts(ai, recipe.Match.Points, recipe.Match.ThinkInterval)), SimSystemPhase.Requests);
+replacement:
+|             sim.RegisterGameplay("battle.ai", new SimpleAiSystem(combat, recipe.Combat, recipe.Match, capture, adapter, a.Controlled, memory, contacts, search, suppress, meleeChaseRange, fair, recipe.Seed, ContentPolicies.Parts(ai, recipe.Match.Points)), SimSystemPhase.Requests);

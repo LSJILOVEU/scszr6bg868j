@@ -38,11 +38,22 @@ namespace WarCore.Content
         public int SlotRingMm { get; }
         // Builds the load error for slotRingMm (pack, layer, entry, field); null when the field is not written.
         internal System.Func<string, ContentException> SlotRingError { get; set; }
+        // Engage part id (ContentPolicies.EngageIds): what a unit that sees an enemy does.
+        public string Engage { get; }
+        // Engage "bound": ticks of the move and fire windows (whole multiples of the battle's thinkInterval), share in
+        // thousandths of the units that advance at all, and the horizontal enemy distance (millimetres) below which none advances.
+        public int BoundMoveTicks { get; }
+        public int BoundFireTicks { get; }
+        public int BoundSharePermille { get; }
+        public int BoundMinRangeMm { get; }
+        // Builds the load error for a written field (pack, layer, entry, field); null when the section is not written.
+        internal System.Func<string, string, ContentException> FieldError { get; set; }
         internal AiRules(int failedSlotTicks, int targetMemoryTicks = 0, int searchTicks = 0, int reactionTicks = 0, int senseTicks = 1,
             int burstShots = 0, int burstPauseTicks = 0, int suppressTicks = 0, int meleeChaseRange = 0, bool fairDecisions = false, bool burstPauseFollowsShooter = false,
             int holdSharePermille = 0, int attackSpreadPoints = 1,
             string dispatch = ContentPolicies.NearestDispatch, string placement = ContentPolicies.NearestSlot,
-            int slotSpacingMm = DefaultSlotSpacingMm, int scatterMm = 0, int slotRingMm = 0)
+            int slotSpacingMm = DefaultSlotSpacingMm, int scatterMm = 0, int slotRingMm = 0,
+            string engage = ContentPolicies.HoldEngage, int boundMoveTicks = 0, int boundFireTicks = 0, int boundSharePermille = 0, int boundMinRangeMm = 0)
         {
             FailedSlotTicks = failedSlotTicks; TargetMemoryTicks = targetMemoryTicks; SearchTicks = searchTicks; ReactionTicks = reactionTicks;
             SenseTicks = senseTicks; BurstShots = burstShots; BurstPauseTicks = burstPauseTicks; SuppressTicks = suppressTicks;
@@ -53,6 +64,8 @@ namespace WarCore.Content
             AttackSpreadPoints = attackSpreadPoints;
             Dispatch = dispatch; Placement = placement;
             SlotSpacingMm = slotSpacingMm; ScatterMm = scatterMm; SlotRingMm = slotRingMm;
+            Engage = engage; BoundMoveTicks = boundMoveTicks; BoundFireTicks = boundFireTicks;
+            BoundSharePermille = boundSharePermille; BoundMinRangeMm = boundMinRangeMm;
         }
     }
 
@@ -73,19 +86,29 @@ namespace WarCore.Content
         internal const int MinSlotSpacingMm = 500, MaxSlotSpacingMm = 5000;
         internal const int MaxScatterMm = 50000;
         internal const int MaxSlotRingMm = 50000;
-        // Which part each part parameter belongs to (false = dispatch, true = placement). A parameter written while its part
-        // is not selected is an error. New parts register their parameters here.
-        internal static readonly (string field, bool placement, string part)[] Owners =
+        internal const int MaxBoundTicks = 100000;
+        internal const int MaxBoundMinRangeMm = 512000; // PLACEHOLDER: maximum map side length.
+        // The kinds of part a parameter can belong to.
+        internal enum PartKind { Dispatch, Placement, Engage }
+        // Which part each part parameter belongs to. A parameter written while its part is not selected is an error.
+        // New parts register their parameters here.
+        internal static readonly (string field, PartKind kind, string part)[] Owners =
         {
-            ("holdSharePermille", false, ContentPolicies.NearestDispatch),
-            ("attackSpreadPoints", false, ContentPolicies.NearestDispatch),
-            ("scatterMm", true, ContentPolicies.Scatter),
+            ("holdSharePermille", PartKind.Dispatch, ContentPolicies.NearestDispatch),
+            ("attackSpreadPoints", PartKind.Dispatch, ContentPolicies.NearestDispatch),
+            ("scatterMm", PartKind.Placement, ContentPolicies.Scatter),
+            ("boundMoveTicks", PartKind.Engage, ContentPolicies.BoundEngage),
+            ("boundFireTicks", PartKind.Engage, ContentPolicies.BoundEngage),
+            ("boundSharePermille", PartKind.Engage, ContentPolicies.BoundEngage),
+            ("boundMinRangeMm", PartKind.Engage, ContentPolicies.BoundEngage),
         };
+        private static string Selected(PartKind kind, string dispatch, string placement, string engage) =>
+            kind == PartKind.Dispatch ? dispatch : kind == PartKind.Placement ? placement : engage;
         // Index in Owners of the first parameter written for a part that is not selected; -1 when there is none.
-        internal static int Misplaced(System.Func<string, bool> has, string dispatch, string placement)
+        internal static int Misplaced(System.Func<string, bool> has, string dispatch, string placement, string engage = ContentPolicies.HoldEngage)
         {
             for (int i = 0; i < Owners.Length; i++)
-                if (has(Owners[i].field) && (Owners[i].placement ? placement : dispatch) != Owners[i].part) return i;
+                if (has(Owners[i].field) && Selected(Owners[i].kind, dispatch, placement, engage) != Owners[i].part) return i;
             return -1;
         }
         internal AiSection() : base(SectionKey) { }
@@ -98,7 +121,9 @@ namespace WarCore.Content
             System.Func<string, ContentException> ringError = null;
             bool follows = false;
             bool fair = false;
-            string dispatch = ContentPolicies.NearestDispatch, placement = ContentPolicies.NearestSlot;
+            string dispatch = ContentPolicies.NearestDispatch, placement = ContentPolicies.NearestSlot, engage = ContentPolicies.HoldEngage;
+            int boundMove = 0, boundFire = 0, boundShare = 0, boundMinRange = 0;
+            System.Func<string, string, ContentException> fieldError = null;
             if (entry != null)
             {
                 var r = new EntryReader(b.Pack, entry);
@@ -127,6 +152,12 @@ namespace WarCore.Content
                     if (!ContentPolicies.IsPlacement(placement))
                         throw r.Bad(r.FieldOf("placement"), "unknown policy '" + placement + "', allowed: " + ContentPolicies.PlacementIds);
                 }
+                if (r.Has("engage"))
+                {
+                    engage = r.Str("engage");
+                    if (!ContentPolicies.IsEngage(engage))
+                        throw r.Bad(r.FieldOf("engage"), "unknown policy '" + engage + "', allowed: " + ContentPolicies.EngageIds);
+                }
                 if (r.Has("slotSpacingMm")) spacing = r.Int("slotSpacingMm", MinSlotSpacingMm, MaxSlotSpacingMm);
                 if (r.Has("slotRingMm"))
                 {
@@ -134,18 +165,28 @@ namespace WarCore.Content
                     ContentField field = r.FieldOf("slotRingMm");
                     ringError = why => r.Bad(field, why);
                 }
-                int misplaced = Misplaced(r.Has, dispatch, placement);
+                int misplaced = Misplaced(r.Has, dispatch, placement, engage);
                 if (misplaced >= 0)
                 {
-                    var (field, isPlacement, part) = Owners[misplaced];
-                    string kind = isPlacement ? "placement" : "dispatch";
-                    throw r.Bad(r.FieldOf(field), "belongs to " + kind + " '" + part + "', but " + kind + " is '" + (isPlacement ? placement : dispatch) + "'");
+                    var (field, partKind, part) = Owners[misplaced];
+                    string kind = partKind == PartKind.Dispatch ? "dispatch" : partKind == PartKind.Placement ? "placement" : "engage";
+                    throw r.Bad(r.FieldOf(field), "belongs to " + kind + " '" + part + "', but " + kind + " is '" + Selected(partKind, dispatch, placement, engage) + "'");
                 }
                 // Required when scatter is selected: a missing field throws "is missing field 'scatterMm'".
                 if (placement == ContentPolicies.Scatter) scatter = r.Int("scatterMm", 1, MaxScatterMm);
+                // Required when bound is selected, all four. Whole multiples of thinkInterval are checked with the battle.
+                if (engage == ContentPolicies.BoundEngage)
+                {
+                    boundMove = r.Int("boundMoveTicks", 1, MaxBoundTicks);
+                    boundFire = r.Int("boundFireTicks", 1, MaxBoundTicks);
+                    boundShare = r.Int("boundSharePermille", 0, 1000);
+                    boundMinRange = r.Int("boundMinRangeMm", 0, MaxBoundMinRangeMm);
+                }
+                fieldError = (field, why) => r.Bad(r.FieldOf(field), why);
                 r.Done();
             }
-            b.Publish(new AiRules(failed, memory, search, reaction, sense, burst, pause, suppress, chase, fair, follows, hold, spread, dispatch, placement, spacing, scatter, ring) { SlotRingError = ringError });
+            b.Publish(new AiRules(failed, memory, search, reaction, sense, burst, pause, suppress, chase, fair, follows, hold, spread, dispatch, placement, spacing, scatter, ring,
+                engage, boundMove, boundFire, boundShare, boundMinRange) { SlotRingError = ringError, FieldError = fieldError });
         }
     }
 }
