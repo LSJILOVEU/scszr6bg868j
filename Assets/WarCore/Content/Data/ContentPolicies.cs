@@ -14,9 +14,9 @@ namespace WarCore.Content
         public const string ResolverIds = RwrHit;
         public const string SelectorIds = NearestVisible + ", " + SightLimitedNearest;
         // AI parts (ai section): dispatch picks the point a unit goes for, placement where at it the unit wants to stand.
-        public const string NearestDispatch = "nearest", NearestSlot = "nearest-slot", Scatter = "scatter";
+        public const string NearestDispatch = "nearest", NearestSlot = "nearest-slot", Scatter = "scatter", AssaultRoles = "assault-roles";
         public const string DispatchIds = NearestDispatch;
-        public const string PlacementIds = NearestSlot + ", " + Scatter;
+        public const string PlacementIds = NearestSlot + ", " + Scatter + ", " + AssaultRoles;
         // Engage: what a unit that sees an enemy does (stand and fire, or go on).
         public const string HoldEngage = "hold", BoundEngage = "bound";
         public const string EngageIds = HoldEngage + ", " + BoundEngage;
@@ -24,7 +24,7 @@ namespace WarCore.Content
         public static bool IsResolver(string id) => id == RwrHit;
         public static bool IsSelector(string id) => id == NearestVisible || id == SightLimitedNearest;
         public static bool IsDispatch(string id) => id == NearestDispatch;
-        public static bool IsPlacement(string id) => id == NearestSlot || id == Scatter;
+        public static bool IsPlacement(string id) => id == NearestSlot || id == Scatter || id == AssaultRoles;
         public static bool IsEngage(string id) => id == HoldEngage || id == BoundEngage;
         public static IHitResolver Resolver(string id) => id == null ? null : new RwrHitResolver();
         public static ITargetSelector Selector(string id, SimFix sight) => id == SightLimitedNearest
@@ -49,8 +49,7 @@ namespace WarCore.Content
             }
             return new AiParts(
                 new NearestDispatch(ai?.HoldSharePermille ?? 0, ai?.AttackSpreadPoints ?? 1),
-                ai?.Placement == Scatter ? new ScatterPlacement(ai.ScatterMm) : (IAiPlacement)new NearestSlotPlacement(),
-                spacing, ring, engage);
+                Placement(ai), spacing, ring, engage);
         }
 
         private static void CheckThinks(AiRules ai, string field, int ticks, int thinkInterval)
@@ -59,6 +58,11 @@ namespace WarCore.Content
             if (ticks % thinkInterval != 0)
                 throw ai.FieldError(field, "must be a whole multiple of the battle's thinkInterval (" + thinkInterval + ")");
         }
+        private static IAiPlacement Placement(AiRules ai) =>
+            ai?.Placement == Scatter ? new ScatterPlacement(ai.ScatterMm)
+            : ai?.Placement == AssaultRoles ? new AssaultRolesPlacement(ai.FrontPermille, ai.FlankPermille, ai.RearPermille,
+                ai.FrontArcMm, ai.FlankSideMm, ai.RearOutMm, ai.FlankMinMm, ai.AnchorMm, ai.ArriveMm)
+            : (IAiPlacement)new NearestSlotPlacement();
 
         // Zones touch when the horizontal centre distance is below (radius_i + ring) + (radius_j + ring) + spacing.
         private static void CheckZones(AiRules ai, ReadOnlySpan<ControlPointDef> points, long spacing, long ring)
