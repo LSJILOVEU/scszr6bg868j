@@ -39,6 +39,8 @@ namespace WarCore.Battle
         private readonly AiField field;
         private readonly IAiDispatch dispatch;
         private readonly IAiPlacement placement;
+        // The placement's waypoint face, when it has one (found once here, not per think).
+        private readonly IAiWaypoint waypoints;
         private readonly IAiEngage engage;
         private int intentCount, current;
         private long decisionTick;
@@ -60,6 +62,7 @@ namespace WarCore.Battle
                 policyDigest = hash.Value;
             }
             field = new AiField(pack, capture); dispatch = parts.Dispatch; placement = parts.Placement; engage = parts.Engage;
+            waypoints = placement as IAiWaypoint;
             // Fold order is fixed: fair decisions, dispatch, placement, then a slot spacing other than the default, then a slot ring,
             // then engage.
             policyDigest = placement.Fold(dispatch.Fold(policyDigest));
@@ -142,6 +145,13 @@ namespace WarCore.Battle
                 int point = dispatch.Pick(in thinker, field);
                 if (point < 0)
                 { if (moving) StopUnit(id, here, target); continue; }
+                // A waypoint first: walk there without a slot, ordered like a search (only X and Z tell the order).
+                if (waypoints != null && waypoints.TryWaypoint(in thinker, point, field, out SimVec3 via) && GoesVia(here, via, point))
+                {
+                    if (!moving || target.X.Raw != via.X.Raw || target.Z.Raw != via.Z.Raw)
+                    { OrderUnit(id, here, moving, target, via, -1); }
+                    continue;
+                }
                 if (moving && KeepsSlot(id, target, point)) continue;
                 int slot = Choose(id, placement.Anchor(in thinker, point, field), point, c.Clock.Tick);
                 if (slot < 0)
@@ -204,6 +214,14 @@ namespace WarCore.Battle
         {
             int record = slots.Canonical(slot);
             return (!reservedHas[record] || reservedBy[record] == id.Value) && (!standingHas[record] || standingBy[record] == id.Value);
+        }
+        // Stateless: the unit goes via the waypoint while it is farther from the centre than the waypoint is. A waypoint
+        // that is not standable, or that falls on a slot coordinate (it would read as a slot order), is skipped.
+        private bool GoesVia(SimVec3 here, SimVec3 via, int point)
+        {
+            SimVec3 center = pack.Points[point].Center;
+            return CombatSystem.Horizontal(here - center).LengthSquared > CombatSystem.Horizontal(via - center).LengthSquared
+                && !slots.TryFind(via, -1, out _) && moves.CanStandAt(via);
         }
         private bool KeepsSlot(StableId id, SimVec3 target, int point) =>
             slots.TryFind(target, point, out int slot) && Available(slot, id) && moves.CanStandAt(target);

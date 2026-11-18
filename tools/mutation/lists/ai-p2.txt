@@ -1,0 +1,203 @@
+# AI-P2: the assault-roles placement (front arc, left and right flanks, rear) and the IAiWaypoint face the scheduler
+# asks before it picks a slot.
+
+[ai-p2-01-no-waypoint-face]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AssaultRolesTests
+expect = WarCore.Tests.AssaultRolesTests.Roles_FarFlankerPassesItsWaypoint
+note = the scheduler never asks for a waypoint
+original:
+|             waypoints = placement as IAiWaypoint;
+replacement:
+|             waypoints = null;
+
+[ai-p2-02-no-continue]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AssaultRolesTests
+expect = WarCore.Tests.AssaultRolesTests.Roles_FarFlankerPassesItsWaypoint
+note = the waypoint order is overwritten by a slot order in the same think
+original:
+|                     { OrderUnit(id, here, moving, target, via, -1); }
+|                     continue;
+replacement:
+|                     { OrderUnit(id, here, moving, target, via, -1); }
+
+[ai-p2-03-progress-reversed]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AssaultRolesTests
+expect = WarCore.Tests.AssaultRolesTests.Roles_FarFlankerPassesItsWaypoint
+note = units closer to the centre than the waypoint go to it, farther ones do not
+original:
+|             return CombatSystem.Horizontal(here - center).LengthSquared > CombatSystem.Horizontal(via - center).LengthSquared
+replacement:
+|             return CombatSystem.Horizontal(here - center).LengthSquared < CombatSystem.Horizontal(via - center).LengthSquared
+
+[ai-p2-04-slot-coordinate]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AssaultRolesTests
+expect = WarCore.Tests.AssaultRolesTests.Roles_WaypointOnASlotIsSkipped
+note = a waypoint on a slot coordinate is ordered and reads as a slot order
+original:
+|                 && !slots.TryFind(via, -1, out _) && moves.CanStandAt(via);
+replacement:
+|                 && moves.CanStandAt(via);
+
+[ai-p2-05-standable]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AssaultRolesTests
+expect = WarCore.Tests.AssaultRolesTests.Roles_WaypointInAWallIsSkipped
+note = a waypoint inside a wall is ordered
+original:
+|                 && !slots.TryFind(via, -1, out _) && moves.CanStandAt(via);
+replacement:
+|                 && !slots.TryFind(via, -1, out _);
+
+[ai-p2-06-salt]
+file = Assets/WarCore/Battle/Ai/AssaultRolesPlacement.cs
+filter = FullyQualifiedName~AssaultRolesTests
+expect = WarCore.Tests.AssaultRolesTests.Roles_CountsAndSidesAfterArrival
+note = a different split of units into roles
+original:
+|         private const ulong RoleSalt = 0x7f4a7c159e3779b9UL;
+replacement:
+|         private const ulong RoleSalt = 0x7f4a7c159e3779baUL;
+
+[ai-p2-07-left-right-bit]
+file = Assets/WarCore/Battle/Ai/AssaultRolesPlacement.cs
+filter = FullyQualifiedName~AssaultRolesTests
+expect = WarCore.Tests.AssaultRolesTests.Roles_CountsAndSidesAfterArrival
+note = left and right flankers are split by another bit
+original:
+|             if (roll < frontPermille + flankPermille) return ((mix >> 20) & 1UL) == 0 ? Role.Left : Role.Right;
+replacement:
+|             if (roll < frontPermille + flankPermille) return ((mix >> 21) & 1UL) == 0 ? Role.Left : Role.Right;
+
+[ai-p2-08-shares-order]
+file = Assets/WarCore/Battle/Ai/AssaultRolesPlacement.cs
+filter = FullyQualifiedName~AssaultRolesTests
+expect = WarCore.Tests.AssaultRolesTests.Roles_CountsAndSidesAfterArrival
+note = the flank share is read as the front share
+original:
+|             if (roll < frontPermille) return Role.Front;
+replacement:
+|             if (roll < flankPermille) return Role.Front;
+
+[ai-p2-09-left-sign]
+file = Assets/WarCore/Battle/Ai/AssaultRolesPlacement.cs
+filter = FullyQualifiedName~AssaultRolesTests
+expect = WarCore.Tests.AssaultRolesTests.Roles_AnchorsAndWaypointsByHand
+note = left is to the right of the axis
+original:
+|         private static SimVec3 Left(SimVec3 axis) => new SimVec3(-axis.Z, default, axis.X);
+replacement:
+|         private static SimVec3 Left(SimVec3 axis) => new SimVec3(axis.Z, default, -axis.X);
+
+[ai-p2-10-arc-centred]
+file = Assets/WarCore/Battle/Ai/AssaultRolesPlacement.cs
+filter = FullyQualifiedName~AssaultRolesTests
+expect = WarCore.Tests.AssaultRolesTests.Roles_AnchorsAndWaypointsByHand
+note = the frontal arc is not centred on the axis
+original:
+|                     long offset = (long)((mix >> 32) % (ulong)(frontArcMm + 1)) - frontArcMm / 2;
+replacement:
+|                     long offset = (long)((mix >> 32) % (ulong)(frontArcMm + 1));
+
+[ai-p2-11-rear-waypoint]
+file = Assets/WarCore/Battle/Ai/AssaultRolesPlacement.cs
+filter = FullyQualifiedName~AssaultRolesTests
+expect = WarCore.Tests.AssaultRolesTests.Roles_AnchorsAndWaypointsByHand
+note = the rear waypoint uses the anchor distance
+original:
+|                 case Role.Rear: at = center + axis * rearOut; break;
+replacement:
+|                 case Role.Rear: at = center + axis * anchor; break;
+
+[ai-p2-12-flank-min]
+file = Assets/WarCore/Battle/Ai/AssaultRolesPlacement.cs
+filter = FullyQualifiedName~AssaultRolesTests
+expect = WarCore.Tests.AssaultRolesTests.Roles_NearAttackDoesNotDetour
+note = a short attack still detours
+original:
+|             if (!TryAxis(unit.Team, point, field, out SimVec3 axis, out SimWide originSquared) || originSquared < flankMinSquared) return false;
+replacement:
+|             if (!TryAxis(unit.Team, point, field, out SimVec3 axis, out SimWide originSquared)) return false;
+
+[ai-p2-13-arrive-boundary]
+file = Assets/WarCore/Battle/Ai/AssaultRolesPlacement.cs
+filter = FullyQualifiedName~AssaultRolesTests
+expect = WarCore.Tests.AssaultRolesTests.Roles_AnchorsAndWaypointsByHand
+note = a unit exactly arriveMm from the waypoint still goes to it
+original:
+|             return CombatSystem.Horizontal(unit.Here - at).LengthSquared > arriveSquared;
+replacement:
+|             return CombatSystem.Horizontal(unit.Here - at).LengthSquared >= arriveSquared;
+
+[ai-p2-14-own-point]
+file = Assets/WarCore/Battle/Ai/AssaultRolesPlacement.cs
+filter = FullyQualifiedName~AssaultRolesTests
+expect = WarCore.Tests.AssaultRolesTests.Roles_AnchorsAndWaypointsByHand
+note = the team's own point (a zero axis) gets an assault anchor
+original:
+|             return axis.X.Raw != 0 || axis.Z.Raw != 0;
+replacement:
+|             return true;
+
+[ai-p2-15-no-base]
+file = Assets/WarCore/Battle/Ai/AssaultRolesPlacement.cs
+filter = FullyQualifiedName~AssaultRolesTests
+expect = WarCore.Tests.AssaultRolesTests.Roles_AxisFromTheSpawnAnchorElseDefault
+note = a team without a point ignores its spawn anchor
+original:
+|                 if (!field.TryBase(team, out origin)) return false;
+replacement:
+|                 return false;
+
+[ai-p2-16-fold-param]
+file = Assets/WarCore/Battle/Ai/AssaultRolesPlacement.cs
+filter = FullyQualifiedName~AssaultRolesTests
+expect = WarCore.Tests.AssaultRolesTests.Roles_PolicyDigestAndSnapshots
+note = one parameter is left out of the digest
+original:
+|             hash.Add(rearOutMm); hash.Add(flankMinMm); hash.Add(anchorMm); hash.Add(arriveMm);
+replacement:
+|             hash.Add(rearOutMm); hash.Add(flankMinMm); hash.Add(anchorMm);
+
+[ai-p2-17-not-built]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~AssaultRolesTests
+expect = WarCore.Tests.AssaultRolesTests.Roles_FarFlankerPassesItsWaypoint
+note = the content id never builds the part
+original:
+|             : ai?.Placement == AssaultRoles ? new AssaultRolesPlacement(ai.FrontPermille, ai.FlankPermille, ai.RearPermille,
+replacement:
+|             : ai?.Placement == "never" ? new AssaultRolesPlacement(ai.FrontPermille, ai.FlankPermille, ai.RearPermille,
+
+[ai-p2-18-sum]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AssaultRolesTests
+expect = WarCore.Tests.AssaultRolesTests.Roles_SharesMustAddUpTo1000
+note = shares that do not add up to 1000 load
+original:
+|                     if (assault[0] + assault[1] + assault[2] != 1000)
+replacement:
+|                     if (assault[0] + assault[1] + assault[2] == -1)
+
+[ai-p2-19-wrong-part]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AssaultRolesTests
+expect = WarCore.Tests.AssaultRolesTests.Roles_ParametersBelongToThePart
+note = one assault-roles parameter is not registered with its part
+original:
+|             ("arriveMm", PartKind.Placement, ContentPolicies.AssaultRoles),
+replacement:
+|             ("arriveMm", PartKind.Placement, ContentPolicies.Scatter),
+
+[ai-p2-20-range]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AssaultRolesTests
+expect = WarCore.Tests.AssaultRolesTests.Roles_ParameterOutOfRangeIsNamed
+note = an arrival distance below a quarter metre loads
+original:
+|         private static readonly int[] AssaultMin = { 0, 0, 0, 0, 1000, 1000, 0, 1000, 250 };
+replacement:
+|         private static readonly int[] AssaultMin = { 0, 0, 0, 0, 1000, 1000, 0, 1000, 0 };
