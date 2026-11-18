@@ -320,14 +320,14 @@ namespace WarCore.Tests
             Assert.That(rules.Dispatch, Is.EqualTo("nearest"));
             Assert.That(rules.Placement, Is.EqualTo("nearest-slot"));
             Assert.That(ContentPolicies.DispatchIds, Is.EqualTo("nearest"));
-            Assert.That(ContentPolicies.PlacementIds, Is.EqualTo("nearest-slot, scatter"));
+            Assert.That(ContentPolicies.PlacementIds, Is.EqualTo("nearest-slot, scatter, assault-roles"));
         }
 
         [TestCase("dispatch", "\"nearest-slot\"", "unknown policy 'nearest-slot', allowed: nearest")]
         [TestCase("dispatch", "\"\"", "unknown policy '', allowed: nearest")]
         [TestCase("dispatch", "1", "must be a string")]
-        [TestCase("placement", "\"nearest\"", "unknown policy 'nearest', allowed: nearest-slot, scatter")]
-        [TestCase("placement", "\"Nearest-Slot\"", "unknown policy 'Nearest-Slot', allowed: nearest-slot, scatter")]
+        [TestCase("placement", "\"nearest\"", "unknown policy 'nearest', allowed: nearest-slot, scatter, assault-roles")]
+        [TestCase("placement", "\"Nearest-Slot\"", "unknown policy 'Nearest-Slot', allowed: nearest-slot, scatter, assault-roles")]
         [TestCase("placement", "true", "must be a string")]
         public void Parts_UnknownIdNamesPackEntryAndField(string field, string value, string why)
         {

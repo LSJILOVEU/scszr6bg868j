@@ -38,11 +38,21 @@ namespace WarCore.Content
         public int SlotRingMm { get; }
         // Builds the load error for slotRingMm (pack, layer, entry, field); null when the field is not written.
         internal System.Func<string, ContentException> SlotRingError { get; set; }
+        // Placement "assault-roles" (all required when it is chosen; the three shares add up to 1000).
+        public int FrontPermille { get; }
+        public int FlankPermille { get; }
+        public int RearPermille { get; }
+        public int FrontArcMm { get; }
+        public int FlankSideMm { get; }
+        public int RearOutMm { get; }
+        public int FlankMinMm { get; }
+        public int AnchorMm { get; }
+        public int ArriveMm { get; }
         internal AiRules(int failedSlotTicks, int targetMemoryTicks = 0, int searchTicks = 0, int reactionTicks = 0, int senseTicks = 1,
             int burstShots = 0, int burstPauseTicks = 0, int suppressTicks = 0, int meleeChaseRange = 0, bool fairDecisions = false, bool burstPauseFollowsShooter = false,
             int holdSharePermille = 0, int attackSpreadPoints = 1,
             string dispatch = ContentPolicies.NearestDispatch, string placement = ContentPolicies.NearestSlot,
-            int slotSpacingMm = DefaultSlotSpacingMm, int scatterMm = 0, int slotRingMm = 0)
+            int slotSpacingMm = DefaultSlotSpacingMm, int scatterMm = 0, int slotRingMm = 0, int[] assault = null)
         {
             FailedSlotTicks = failedSlotTicks; TargetMemoryTicks = targetMemoryTicks; SearchTicks = searchTicks; ReactionTicks = reactionTicks;
             SenseTicks = senseTicks; BurstShots = burstShots; BurstPauseTicks = burstPauseTicks; SuppressTicks = suppressTicks;
@@ -53,6 +63,11 @@ namespace WarCore.Content
             AttackSpreadPoints = attackSpreadPoints;
             Dispatch = dispatch; Placement = placement;
             SlotSpacingMm = slotSpacingMm; ScatterMm = scatterMm; SlotRingMm = slotRingMm;
+            if (assault != null)
+            {
+                FrontPermille = assault[0]; FlankPermille = assault[1]; RearPermille = assault[2]; FrontArcMm = assault[3]; FlankSideMm = assault[4];
+                RearOutMm = assault[5]; FlankMinMm = assault[6]; AnchorMm = assault[7]; ArriveMm = assault[8];
+            }
         }
     }
 
@@ -80,7 +95,17 @@ namespace WarCore.Content
             ("holdSharePermille", false, ContentPolicies.NearestDispatch),
             ("attackSpreadPoints", false, ContentPolicies.NearestDispatch),
             ("scatterMm", true, ContentPolicies.Scatter),
+            ("frontPermille", true, ContentPolicies.AssaultRoles), ("flankPermille", true, ContentPolicies.AssaultRoles),
+            ("rearPermille", true, ContentPolicies.AssaultRoles), ("frontArcMm", true, ContentPolicies.AssaultRoles),
+            ("flankSideMm", true, ContentPolicies.AssaultRoles), ("rearOutMm", true, ContentPolicies.AssaultRoles),
+            ("flankMinMm", true, ContentPolicies.AssaultRoles), ("anchorMm", true, ContentPolicies.AssaultRoles),
+            ("arriveMm", true, ContentPolicies.AssaultRoles),
         };
+        // assault-roles parameters in AssaultRolesPlacement's constructor order, with their ranges (PLACEHOLDER bounds).
+        internal static readonly string[] AssaultFields =
+            { "frontPermille", "flankPermille", "rearPermille", "frontArcMm", "flankSideMm", "rearOutMm", "flankMinMm", "anchorMm", "arriveMm" };
+        private static readonly int[] AssaultMin = { 0, 0, 0, 0, 1000, 1000, 0, 1000, 250 };
+        private static readonly int[] AssaultMax = { 1000, 1000, 1000, 50000, 100000, 100000, 512000, 50000, 20000 };
         // Index in Owners of the first parameter written for a part that is not selected; -1 when there is none.
         internal static int Misplaced(System.Func<string, bool> has, string dispatch, string placement)
         {
@@ -99,6 +124,7 @@ namespace WarCore.Content
             bool follows = false;
             bool fair = false;
             string dispatch = ContentPolicies.NearestDispatch, placement = ContentPolicies.NearestSlot;
+            int[] assault = null;
             if (entry != null)
             {
                 var r = new EntryReader(b.Pack, entry);
@@ -143,9 +169,17 @@ namespace WarCore.Content
                 }
                 // Required when scatter is selected: a missing field throws "is missing field 'scatterMm'".
                 if (placement == ContentPolicies.Scatter) scatter = r.Int("scatterMm", 1, MaxScatterMm);
+                // Required when assault-roles is selected, like scatterMm above.
+                if (placement == ContentPolicies.AssaultRoles)
+                {
+                    assault = new int[AssaultFields.Length];
+                    for (int i = 0; i < assault.Length; i++) assault[i] = r.Int(AssaultFields[i], AssaultMin[i], AssaultMax[i]);
+                    if (assault[0] + assault[1] + assault[2] != 1000)
+                        throw r.Bad(r.FieldOf("rearPermille"), "frontPermille + flankPermille + rearPermille must be 1000, got " + (assault[0] + assault[1] + assault[2]));
+                }
                 r.Done();
             }
-            b.Publish(new AiRules(failed, memory, search, reaction, sense, burst, pause, suppress, chase, fair, follows, hold, spread, dispatch, placement, spacing, scatter, ring) { SlotRingError = ringError });
+            b.Publish(new AiRules(failed, memory, search, reaction, sense, burst, pause, suppress, chase, fair, follows, hold, spread, dispatch, placement, spacing, scatter, ring, assault) { SlotRingError = ringError });
         }
     }
 }

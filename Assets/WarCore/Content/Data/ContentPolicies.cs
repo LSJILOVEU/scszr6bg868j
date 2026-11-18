@@ -14,14 +14,14 @@ namespace WarCore.Content
         public const string ResolverIds = RwrHit;
         public const string SelectorIds = NearestVisible + ", " + SightLimitedNearest;
         // AI parts (ai section): dispatch picks the point a unit goes for, placement where at it the unit wants to stand.
-        public const string NearestDispatch = "nearest", NearestSlot = "nearest-slot", Scatter = "scatter";
+        public const string NearestDispatch = "nearest", NearestSlot = "nearest-slot", Scatter = "scatter", AssaultRoles = "assault-roles";
         public const string DispatchIds = NearestDispatch;
-        public const string PlacementIds = NearestSlot + ", " + Scatter;
+        public const string PlacementIds = NearestSlot + ", " + Scatter + ", " + AssaultRoles;
 
         public static bool IsResolver(string id) => id == RwrHit;
         public static bool IsSelector(string id) => id == NearestVisible || id == SightLimitedNearest;
         public static bool IsDispatch(string id) => id == NearestDispatch;
-        public static bool IsPlacement(string id) => id == NearestSlot || id == Scatter;
+        public static bool IsPlacement(string id) => id == NearestSlot || id == Scatter || id == AssaultRoles;
         public static IHitResolver Resolver(string id) => id == null ? null : new RwrHitResolver();
         public static ITargetSelector Selector(string id, SimFix sight) => id == SightLimitedNearest
             ? new SightLimited(new NearestVisibleEnemy(), sight)
@@ -36,9 +36,13 @@ namespace WarCore.Content
             if (ring > 0) CheckZones(ai, points, spacing, ring);
             return new AiParts(
                 new NearestDispatch(ai?.HoldSharePermille ?? 0, ai?.AttackSpreadPoints ?? 1),
-                ai?.Placement == Scatter ? new ScatterPlacement(ai.ScatterMm) : (IAiPlacement)new NearestSlotPlacement(),
-                spacing, ring);
+                Placement(ai), spacing, ring);
         }
+        private static IAiPlacement Placement(AiRules ai) =>
+            ai?.Placement == Scatter ? new ScatterPlacement(ai.ScatterMm)
+            : ai?.Placement == AssaultRoles ? new AssaultRolesPlacement(ai.FrontPermille, ai.FlankPermille, ai.RearPermille,
+                ai.FrontArcMm, ai.FlankSideMm, ai.RearOutMm, ai.FlankMinMm, ai.AnchorMm, ai.ArriveMm)
+            : (IAiPlacement)new NearestSlotPlacement();
 
         // Zones touch when the horizontal centre distance is below (radius_i + ring) + (radius_j + ring) + spacing.
         private static void CheckZones(AiRules ai, ReadOnlySpan<ControlPointDef> points, long spacing, long ring)
