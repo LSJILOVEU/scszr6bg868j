@@ -168,9 +168,9 @@ filter = FullyQualifiedName~AssaultRolesTests
 expect = WarCore.Tests.AssaultRolesTests.Roles_FarFlankerPassesItsWaypoint
 note = the content id never builds the part
 original:
-|         private static IAiPlacement Placement(AiRules ai) => ai?.Placement == AssaultRoles
+|             : ai?.Placement == AssaultRoles ? new AssaultRolesPlacement(ai.FrontPermille, ai.FlankPermille, ai.RearPermille,
 replacement:
-|         private static IAiPlacement Placement(AiRules ai) => ai?.Placement == "never"
+|             : ai?.Placement == "never" ? new AssaultRolesPlacement(ai.FrontPermille, ai.FlankPermille, ai.RearPermille,
 
 [ai-p2-18-sum]
 file = Assets/WarCore/Content/Data/Sections/AiSection.cs
@@ -186,8 +186,18 @@ replacement:
 file = Assets/WarCore/Content/Data/Sections/AiSection.cs
 filter = FullyQualifiedName~AssaultRolesTests
 expect = WarCore.Tests.AssaultRolesTests.Roles_ParametersBelongToThePart
-note = assault-roles parameters under another placement are accepted
+note = one assault-roles parameter is not registered with its part
 original:
-|                         if (r.Has(field)) throw r.Bad(r.FieldOf(field), "belongs to placement '" + ContentPolicies.AssaultRoles + "', not '" + placement + "'");
+|             ("arriveMm", true, ContentPolicies.AssaultRoles),
 replacement:
-|                         if (r.Has(field)) r.Int(field, 0, int.MaxValue);
+|             ("arriveMm", true, ContentPolicies.Scatter),
+
+[ai-p2-20-range]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AssaultRolesTests
+expect = WarCore.Tests.AssaultRolesTests.Roles_ParameterOutOfRangeIsNamed
+note = an arrival distance below a quarter metre loads
+original:
+|         private static readonly int[] AssaultMin = { 0, 0, 0, 0, 1000, 1000, 0, 1000, 250 };
+replacement:
+|         private static readonly int[] AssaultMin = { 0, 0, 0, 0, 1000, 1000, 0, 1000, 0 };
