@@ -1,0 +1,203 @@
+# AI-S2: each AI shooter's own reaction time, burst length and pause (ai.traitSpreadPermille), ReactionFire version 4,
+# the content field and its assembly. Filters run only the AI-S2 tests; the default battles are held by the locked
+# suites listed in the PR.
+
+[ai-s2-01-reaction-team-value]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS2Tests.Line_Spread_EachOnItsOwnValues
+expect = WarCore.Tests.AiS2Tests.Line_Spread_EachOnItsOwnValues
+note = the reaction check uses the team value
+original:
+|                 || lasts[slot] != tick || tick - firsts[slot] < ReactionOf(shooters[slot])
+replacement:
+|                 || lasts[slot] != tick || tick - firsts[slot] < ticks
+
+[ai-s2-02-burst-team-value]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS2Tests.Line_Spread_EachOnItsOwnValues
+expect = WarCore.Tests.AiS2Tests.Line_Spread_EachOnItsOwnValues
+note = the burst count uses the team value
+original:
+|             int burst = BurstOf(shooters[slot]);
+replacement:
+|             int burst = burstShots;
+
+[ai-s2-03-pause-team-value]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS2Tests.Line_Spread_EachOnItsOwnValues
+expect = WarCore.Tests.AiS2Tests.Line_Spread_EachOnItsOwnValues
+note = the pause check uses the team value
+original:
+|                 if (tick - lastShots[slot] < PauseOf(shooters[slot]))
+replacement:
+|                 if (tick - lastShots[slot] < burstPauseTicks)
+
+[ai-s2-04-cadence-team-pause]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS2Tests.With_PauseFollowsShooter
+expect = WarCore.Tests.AiS2Tests.With_PauseFollowsShooter
+note = the pause that follows the shooter uses the team value
+original:
+|                 if (cadence != null && shots[slot] == burst) cadence.Pause(shooter, tick + PauseOf(shooters[slot]));
+replacement:
+|                 if (cadence != null && shots[slot] == burst) cadence.Pause(shooter, tick + burstPauseTicks);
+
+[ai-s2-05-burst-may-be-zero]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS2Tests.Traits_BurstStaysAtLeastOne
+expect = WarCore.Tests.AiS2Tests.Traits_BurstStaysAtLeastOne
+note = a burst can round down to 0 (continuous fire)
+original:
+|         public int BurstOf(StableId shooter) => burstShots == 0 ? 0 : Math.Max(1, Trait(burstShots, traitSpread, shooter.Value, BurstSalt));
+replacement:
+|         public int BurstOf(StableId shooter) => burstShots == 0 ? 0 : Math.Max(0, Trait(burstShots, traitSpread, shooter.Value, BurstSalt));
+
+[ai-s2-06-d-range]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS2Tests.Traits_HundredShooters
+expect = WarCore.Tests.AiS2Tests.Traits_HundredShooters
+note = d spans [-s, s - 1] instead of [-s, s]
+original:
+|             int d = AiParts.Permille(key, salt) * (2 * spread + 1) / 1000 - spread;
+replacement:
+|             int d = AiParts.Permille(key, salt) * (2 * spread) / 1000 - spread;
+
+[ai-s2-07-round-up]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS2Tests.Traits_ThreeKeysByHand
+expect = WarCore.Tests.AiS2Tests.Traits_ThreeKeysByHand
+note = the scaled value is rounded up
+original:
+|             return (int)((long)value * (1000 + d) / 1000);
+replacement:
+|             return (int)(((long)value * (1000 + d) + 999) / 1000);
+
+[ai-s2-08-burst-salt]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS2Tests.Traits_HundredShooters
+expect = WarCore.Tests.AiS2Tests.Traits_HundredShooters
+note = the burst trait reuses the reaction salt
+original:
+|         public int BurstOf(StableId shooter) => burstShots == 0 ? 0 : Math.Max(1, Trait(burstShots, traitSpread, shooter.Value, BurstSalt));
+replacement:
+|         public int BurstOf(StableId shooter) => burstShots == 0 ? 0 : Math.Max(1, Trait(burstShots, traitSpread, shooter.Value, ReactionSalt));
+
+[ai-s2-09-version-stays-3]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS2Tests.Versions_AndRefusals
+expect = WarCore.Tests.AiS2Tests.Versions_AndRefusals
+note = a spread does not raise the state version
+original:
+|         public int StateVersion => traitSpread > 0 ? 4 : burstShots > 0 ? 3 : senseTicks > 1 ? 2 : 1;
+replacement:
+|         public int StateVersion => traitSpread > 0 ? 3 : burstShots > 0 ? 3 : senseTicks > 1 ? 2 : 1;
+
+[ai-s2-10-spread-not-saved]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS2Tests.Version4_WithoutBurst_Payload
+expect = WarCore.Tests.AiS2Tests.Version4_WithoutBurst_Payload
+note = the spread is left out of the payload
+original:
+|             if (StateVersion >= 4) writer.Int32(traitSpread);
+replacement:
+|             if (StateVersion >= 5) writer.Int32(traitSpread);
+
+[ai-s2-11-spread-not-compared]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS2Tests.Versions_AndRefusals
+expect = WarCore.Tests.AiS2Tests.Versions_AndRefusals
+note = a snapshot with another spread is accepted
+original:
+|             if (StateVersion >= 4) SimStateReader.Require(reader.Int32() == traitSpread, "AI trait spread differs.");
+replacement:
+|             if (StateVersion >= 4) SimStateReader.Require(reader.Int32() >= 0, "AI trait spread differs.");
+
+[ai-s2-12-spread-not-hashed]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS2Tests.Versions_AndRefusals
+expect = WarCore.Tests.AiS2Tests.Versions_AndRefusals
+note = the spread is left out of the state hash
+original:
+|             if (StateVersion >= 4) hash.Add(traitSpread);
+replacement:
+|             if (StateVersion >= 5) hash.Add(traitSpread);
+
+[ai-s2-13-load-team-burst]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS2Tests.Load_CountAgainstTheShootersOwnBurst
+expect = WarCore.Tests.AiS2Tests.Load_CountAgainstTheShootersOwnBurst
+note = a loaded count is checked against the team burst
+original:
+|                 SimStateReader.Require(fired >= 0 && fired <= BurstOf(shooters[slot]), "AI burst shot count is out of range.");
+replacement:
+|                 SimStateReader.Require(fired >= 0 && fired <= burstShots, "AI burst shot count is out of range.");
+
+[ai-s2-14-save-no-burst-block]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS2Tests.Version4_WithoutBurst_Payload
+expect = WarCore.Tests.AiS2Tests.Version4_WithoutBurst_Payload
+note = version 4 without a burst skips the burst block on save
+original:
+|             SaveBursts(writer);
+replacement:
+|             if (burstShots > 0) SaveBursts(writer);
+
+[ai-s2-15-load-no-burst-block]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS2Tests.Version4_WithoutBurst_Payload
+expect = WarCore.Tests.AiS2Tests.Version4_WithoutBurst_Payload
+note = version 4 without a burst skips the burst block on load
+original:
+|             LoadBursts(reader);
+replacement:
+|             if (burstShots > 0) LoadBursts(reader);
+
+[ai-s2-16-ctor-upper-bound]
+file = Assets/WarCore/Battle/Ai/ReactionFire.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS2Tests.Constructor_RefusesOutOfRange
+expect = WarCore.Tests.AiS2Tests.Constructor_RefusesOutOfRange(501)
+note = the constructor accepts 501
+original:
+|             if (traitSpreadPermille < 0 || traitSpreadPermille > MaxTraitSpread) throw new ArgumentOutOfRangeException(nameof(traitSpreadPermille));
+replacement:
+|             if (traitSpreadPermille < 0 || traitSpreadPermille > MaxTraitSpread + 1) throw new ArgumentOutOfRangeException(nameof(traitSpreadPermille));
+
+[ai-s2-17-not-passed]
+file = Assets/WarCore/Presentation/Bridge/Features/AiFireFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS2Tests.Assembly_PassesTheSpread
+expect = WarCore.Tests.AiS2Tests.Assembly_PassesTheSpread
+note = the pack's spread does not reach the decision
+original:
+|                 ai.TraitSpreadPermille);
+replacement:
+|                 0);
+
+[ai-s2-18-content-max]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS2Tests.Content_Errors
+expect = WarCore.Tests.AiS2Tests.Content_Errors
+note = the content field accepts 501
+original:
+|         internal const int MaxTraitSpreadPermille = 500;
+replacement:
+|         internal const int MaxTraitSpreadPermille = 501;
+
+[ai-s2-19-content-min]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS2Tests.Content_Errors
+expect = WarCore.Tests.AiS2Tests.Content_Errors
+note = the content field accepts -1
+original:
+|                 if (r.Has("traitSpreadPermille")) traits = r.Int("traitSpreadPermille", 0, MaxTraitSpreadPermille);
+replacement:
+|                 if (r.Has("traitSpreadPermille")) traits = r.Int("traitSpreadPermille", -1, MaxTraitSpreadPermille);
+
+[ai-s2-20-content-not-published]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS2Tests.Content_ValuesAndDefaults
+expect = WarCore.Tests.AiS2Tests.Content_ValuesAndDefaults
+note = the field is read but not published
+original:
+|                 engage, boundMove, boundFire, boundShare, boundMinRange, traits) {
+replacement:
+|                 engage, boundMove, boundFire, boundShare, boundMinRange, 0) {

@@ -30,15 +30,26 @@ namespace WarCore.Battle
     // belongs to the entry: a new entry starts at zero, so another target inherits no pause. B = 0 is continuous fire,
     // byte for byte the pre-burst behaviour; with B above 0 the state is version 3: the version 2 payload (K written even
     // when it is 1) followed by B, Q and, per entry in entry order, the count and the tick of the latest shot.
+    //
+    // AI trait spread s (thousandths, 0..500): each shooter has its own reaction time, burst length and pause, the team
+    // value v scaled to v * (1000 + d) / 1000, rounded down (every term is non-negative, so this is the floor), with
+    // d = Permille(key, salt) * (2s + 1) / 1000 - s, an integer in [-s, s]; key = the shooter's stable identity, one salt
+    // per trait (AiParts.Permille, nothing saved). A burst above 0 stays at least 1 round, so it never turns into continuous
+    // fire. s = 0 is every shooter on the team value, byte for byte the pre-spread behaviour; with s above 0 the state is
+    // version 4: the version 3 payload (B, Q and the burst records written even when B is 0) followed by s.
     public sealed class ReactionFire : IAutoFire, IRetainedGameplaySystem
     {
         // Same bound as the content field (Content/Data/Sections/AiSection.cs MaxReactionTicks); Battle cannot see Content.
         internal const int MaxTicks = 1000000;
+        // Same bound as the content field (AiSection.cs MaxTraitSpreadPermille).
+        internal const int MaxTraitSpread = 500;
+        // One salt per trait for AiParts.Permille.
+        private const ulong ReactionSalt = 0x510e527fade682d1UL, BurstSalt = 0x9b05688c2b3e6c1fUL, PauseSalt = 0x1f83d9abfb41bd6bUL;
 
         private readonly CombatSystem combat;
         private readonly IAutoFire inner;
         private readonly DefaultAutoFire builtIn;
-        private readonly int ticks, senseTicks, burstShots, burstPauseTicks;
+        private readonly int ticks, senseTicks, burstShots, burstPauseTicks, traitSpread;
         private readonly EntityStage stage;
         private readonly bool[] has;
         private readonly StableId[] shooters, targets;
@@ -48,7 +59,7 @@ namespace WarCore.Battle
         private readonly BurstCadence cadence;
 
         public ReactionFire(CombatSystem combat, IAutoFire inner, int ticks, int senseTicks = 1, int burstShots = 0, int burstPauseTicks = 0,
-            BurstCadence cadence = null)
+            BurstCadence cadence = null, int traitSpreadPermille = 0)
         {
             if (ticks < 0 || ticks > MaxTicks) throw new ArgumentOutOfRangeException(nameof(ticks));
             this.combat = combat ?? throw new ArgumentNullException(nameof(combat));
@@ -58,12 +69,14 @@ namespace WarCore.Battle
                 throw new ArgumentException("The AI fire decision wraps only its own combat system's built-in decision.", nameof(inner));
             if (burstShots < 0 || burstShots > MaxTicks) throw new ArgumentOutOfRangeException(nameof(burstShots));
             if (burstPauseTicks < 0 || burstPauseTicks > MaxTicks) throw new ArgumentOutOfRangeException(nameof(burstPauseTicks));
+            if (traitSpreadPermille < 0 || traitSpreadPermille > MaxTraitSpread) throw new ArgumentOutOfRangeException(nameof(traitSpreadPermille));
             builtIn = (DefaultAutoFire)inner;
             this.ticks = ticks;
             this.senseTicks = senseTicks;
             this.burstShots = burstShots;
             this.burstPauseTicks = burstPauseTicks;
             this.cadence = cadence;
+            traitSpread = traitSpreadPermille;
             stage = new EntityStage(combat.Entities);
             int capacity = combat.Entities.Capacity;
             has = new bool[capacity];
@@ -74,7 +87,19 @@ namespace WarCore.Battle
 
         public int Order => 14;
         public string StateTypeId => "battle.ai-fire";
-        public int StateVersion => burstShots > 0 ? 3 : senseTicks > 1 ? 2 : 1;
+        public int StateVersion => traitSpread > 0 ? 4 : burstShots > 0 ? 3 : senseTicks > 1 ? 2 : 1;
+
+        // The team value scaled for one shooter (see the trait spread above).
+        private static int Trait(int value, int spread, ulong key, ulong salt)
+        {
+            if (spread == 0) return value;
+            int d = AiParts.Permille(key, salt) * (2 * spread + 1) / 1000 - spread;
+            return (int)((long)value * (1000 + d) / 1000);
+        }
+        // This shooter's reaction time, burst length (0 = continuous fire, else at least 1) and pause.
+        public int ReactionOf(StableId shooter) => Trait(ticks, traitSpread, shooter.Value, ReactionSalt);
+        public int BurstOf(StableId shooter) => burstShots == 0 ? 0 : Math.Max(1, Trait(burstShots, traitSpread, shooter.Value, BurstSalt));
+        public int PauseOf(StableId shooter) => Trait(burstPauseTicks, traitSpread, shooter.Value, PauseSalt);
 
         // The number of entries a save or hash would write now.
         internal int Count
@@ -130,16 +155,17 @@ namespace WarCore.Battle
         {
             int slot = shooter.Id;
             if ((uint)slot >= (uint)has.Length || !has[slot] || !shooters[slot].Equals(combat.Entities.StableOf(shooter))
-                || lasts[slot] != tick || tick - firsts[slot] < ticks
+                || lasts[slot] != tick || tick - firsts[slot] < ReactionOf(shooters[slot])
                 || (cadence != null && cadence.Paused(shooter, tick))
                 || !combat.Entities.TryResolve(targets[slot], out EntityRef target))
             {
                 direction = default;
                 return AutoFireAction.Pass;
             }
-            if (burstShots > 0 && shots[slot] == burstShots)
+            int burst = BurstOf(shooters[slot]);
+            if (burst > 0 && shots[slot] == burst)
             {
-                if (tick - lastShots[slot] < burstPauseTicks)
+                if (tick - lastShots[slot] < PauseOf(shooters[slot]))
                 {
                     direction = default;
                     return AutoFireAction.Pass;
@@ -147,11 +173,11 @@ namespace WarCore.Battle
                 shots[slot] = 0;   // the pause is over: the next burst starts with this aim
             }
             AutoFireAction action = builtIn.AimAt(combat, shooter, in position, (EntityId)target, out direction);
-            if (action == AutoFireAction.Fire && burstShots > 0)
+            if (action == AutoFireAction.Fire && burst > 0)
             {
                 lastShots[slot] = tick;
                 shots[slot] = unit.Ammo == 1 ? 0 : shots[slot] + 1;
-                if (cadence != null && shots[slot] == burstShots) cadence.Pause(shooter, tick + burstPauseTicks);
+                if (cadence != null && shots[slot] == burst) cadence.Pause(shooter, tick + PauseOf(shooters[slot]));
             }
             return action;
         }
@@ -179,7 +205,9 @@ namespace WarCore.Battle
             }
             if (StateVersion < 2) return;
             writer.Int32(senseTicks);
-            if (burstShots > 0) SaveBursts(writer);
+            if (StateVersion < 3) return;
+            SaveBursts(writer);
+            if (StateVersion >= 4) writer.Int32(traitSpread);
         }
 
         private void SaveBursts(SimStateWriter writer)
@@ -215,11 +243,13 @@ namespace WarCore.Battle
             }
             if (StateVersion < 2) return;
             SimStateReader.Require(reader.Int32() == senseTicks, "AI sense interval differs.");
-            if (burstShots > 0) LoadBursts(reader);
+            if (StateVersion < 3) return;
+            LoadBursts(reader);
+            if (StateVersion >= 4) SimStateReader.Require(reader.Int32() == traitSpread, "AI trait spread differs.");
         }
 
         // The entries were loaded in strictly increasing key order, which is the stage's capture order, so the burst
-        // records follow the same order as the save wrote them.
+        // records follow the same order as the save wrote them. A count is checked against its own shooter's burst length.
         private void LoadBursts(SimStateReader reader)
         {
             SimStateReader.Require(reader.Int32() == burstShots, "AI burst length differs.");
@@ -230,7 +260,7 @@ namespace WarCore.Battle
                 int slot = entity.Id;
                 int fired = reader.Int32();
                 long last = reader.Int64();
-                SimStateReader.Require(fired >= 0 && fired <= burstShots, "AI burst shot count is out of range.");
+                SimStateReader.Require(fired >= 0 && fired <= BurstOf(shooters[slot]), "AI burst shot count is out of range.");
                 SimStateReader.Require((fired == 0 && last == 0) || (last > 0 && firsts[slot] <= last && last <= lasts[slot]), "AI burst last shot is outside its entry.");
                 shots[slot] = fired; lastShots[slot] = last;
             }
@@ -247,7 +277,9 @@ namespace WarCore.Battle
             }
             if (StateVersion < 2) return;
             hash.Add(senseTicks);
-            if (burstShots > 0) HashBursts(hash);
+            if (StateVersion < 3) return;
+            HashBursts(hash);
+            if (StateVersion >= 4) hash.Add(traitSpread);
         }
 
         private void HashBursts(StateHash hash)

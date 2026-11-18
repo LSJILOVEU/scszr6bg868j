@@ -67,3 +67,11 @@ AI-S1 (engage part, values PLACEHOLDER: `boundMoveTicks` 60, `boundFireTicks` 90
 | playtest-s1 | undecided at 2400 | 1348046939DEA9F2 | 0.042 / 0.039 | 0.007 / 0.015 | 0.078 / 0.149 | 0.837 / 0.882 |
 | lanes | team 1 wins at tick 2245 | 0392AC1519D79015 | 0 / 0 | 0.018 / 0.019 | 0.022 / 0.019 | 0.832 / 0.824 |
 | lanes-s1 | team 1 wins at tick 1845 | ECBA9D4FE6B0524C | 0 / 0 | 0.013 / 0.019 | 0.017 / 0.019 | 0.811 / 0.850 |
+
+AI-S2 (each shooter's own reaction, burst and pause, `traitSpreadPermille` 300, PLACEHOLDER; the setup adds only this
+field to `playtest`). The replay cannot show who fired when; the per-shooter timing is held by `AiS2Tests`.
+
+| Setup | End | Hash | share 1/2 | nn 1/2 | close 1/2 | idle 1/2 | closeNear 1/2 | idleNoEnemy 1/2 |
+|---|---|---|---|---|---|---|---|---|
+| playtest | undecided at 2400 | 1B5A952895358459 | 0.726 / 0.634 | 0.408 / 0.278 | 0.874 / 0.870 | 0.085 / 0.106 | 0.884 / 0.880 | 0.009 / 0.016 |
+| playtest-s2 | undecided at 2400 | 7531D3A423B34B4C | 0.692 / 0.657 | 0.591 / 0.268 | 0.823 / 0.874 | 0.092 / 0.093 | 0.834 / 0.886 | 0.009 / 0.017 |

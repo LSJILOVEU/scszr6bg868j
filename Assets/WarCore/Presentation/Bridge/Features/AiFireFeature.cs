@@ -32,7 +32,8 @@ namespace WarCore.Presentation
                 cadence = new BurstCadence(a.Combat);
                 a.Sim.RegisterGameplay("battle.burst-cadence", cadence, SimSystemPhase.Requests);
             }
-            var fire = new ReactionFire(a.Combat, a.Combat.BuiltInAutoFire, ai.ReactionTicks, ai.SenseTicks, ai.BurstShots, ai.BurstPauseTicks, cadence);
+            var fire = new ReactionFire(a.Combat, a.Combat.BuiltInAutoFire, ai.ReactionTicks, ai.SenseTicks, ai.BurstShots, ai.BurstPauseTicks, cadence,
+                ai.TraitSpreadPermille);
             a.Combat.UseAutoFire(fire);
             a.Sim.RegisterGameplay("battle.ai-fire", fire, SimSystemPhase.Requests);
         }
