@@ -40,8 +40,14 @@ namespace WarCore.Replay
                 () => DemoRecipes.M7().WithAiRules(Layer("replay-playtest-p1", DemoRecipes.PlaytestLayer, P1Ai(6000))), DemoRecipes.M7MapBytes, P1RingMm),
             ["playtest-p1w"] = new Entry("M7, rwr-m7-playtest AI rules + 2 m slots + 6 m ring + scatter 12 m",
                 () => DemoRecipes.M7().WithAiRules(Layer("replay-playtest-p1w", DemoRecipes.PlaytestLayer, P1Ai(12000))), DemoRecipes.M7MapBytes, P1RingMm),
+            // AI-S1 (values fixed by the task, PLACEHOLDER): the engage part "bound" on top of the setup's own AI rules.
+            ["playtest-s1"] = new Entry("M7, rwr-m7-playtest AI rules + engage bound",
+                () => DemoRecipes.M7().WithAiRules(Layer("replay-playtest-s1", DemoRecipes.PlaytestLayer, S1Ai)), DemoRecipes.M7MapBytes),
+            ["lanes-s1"] = new Entry("Three-lane map, default AI + engage bound",
+                () => Lanes(Layer("replay-lanes-s1", LanesBake().PackId, S1Ai)), () => LanesBake().WcMapBytes),
         };
 
+        private const string S1Ai = "{ \"engage\": \"bound\", \"boundMoveTicks\": 60, \"boundFireTicks\": 90, \"boundSharePermille\": 700, \"boundMinRangeMm\": 12000 }";
         private const string LanesPath = "Assets/WarCore/Maps/lanes-playtest.map.json";
         private const int P1RingMm = 6000;
         private static string P1Ai(int scatterMm) =>

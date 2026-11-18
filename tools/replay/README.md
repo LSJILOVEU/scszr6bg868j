@@ -21,7 +21,7 @@ folder, or the files named in `?files=a.json,b.json`.
 
 Computed on every recorded frame for each team's alive, deployed units; `metrics` in the JSON holds the mean and peak
 over the match, `m` on each frame holds `[share1, share2, nn1, nn2, spread1, spread2, close1, close2, idle1, idle2,
-closeNear1, closeNear2]` (`null` = undefined).
+closeNear1, closeNear2, enemy20_1, enemy20_2, idleNoEnemy1, idleNoEnemy2]` (`null` = undefined).
 
 | Key | Meaning | Reads |
 |---|---|---|
@@ -31,9 +31,11 @@ closeNear1, closeNear2]` (`null` = undefined).
 | `closeShare` | Share of the team whose nearest teammate is closer than 1.2 m | high = shoulder to shoulder |
 | `idleOutside` | Share of the team whose position has not changed for 60 ticks and that stands farther than radius + slot ring from every point centre | high = units idle away from the points |
 | `closeShareNearPoints` | `closeShare` among units within 2 x radius of a point centre (nearest teammate searched in the whole team); the range depends on the map only | high = shoulder to shoulder at the points |
+| `enemyWithin20` | Share of the team with an enemy (alive, on the field) within 20 m | 0 = the two sides never come close |
+| `idleNoEnemy` | `idleOutside` restricted to units with no enemy within 45 m | high = units idle away from the points with nobody to fight |
 | `decidedTick` | Tick the match was won; `null` if not decided within `maxTicks` | |
 
-- Undefined when fewer than 10 units are on the field (share, nn, close, idle), fewer than 10 units near points
+- Undefined when fewer than 10 units are on the field (share, nn, close, idle, enemy20, idleNoEnemy), fewer than 10 units near points
   (closeNear) or fewer than 5 attackers (spread).
 - The slot ring of `idleOutside` is the setup's `ai.slotRingMm` (the `RingMm` of its `Recipes.cs` entry), 0 by default.
 - An attacker is a unit whose nearest point is not owned by its team and lies within 25 m of that point's centre.
@@ -55,3 +57,13 @@ closeNear1, closeNear2]` (`null` = undefined).
 | lanes-p1w | undecided at 2400 | E5CB1C7783233FD6 | 0.102 / 0.067 | 1.327 / 0.817 | 0.376 / 0.402 | 0.230 / 0.400 | 0.004 / 0.003 | 0.134 / 0.165 |
 
 Means over the match. At tick 750 (25 s) team 1 in `base` has 81 of 108 units in one circle (share 0.75).
+
+AI-S1 (engage part, values PLACEHOLDER: `boundMoveTicks` 60, `boundFireTicks` 90, `boundSharePermille` 700,
+`boundMinRangeMm` 12000; the setups add only these to `playtest` and `lanes`):
+
+| Setup | End | Hash | enemy20 1/2 | idleNoEnemy 1/2 | idle 1/2 | closeNear 1/2 |
+|---|---|---|---|---|---|---|
+| playtest | undecided at 2400 | 1B5A952895358459 | 0 / 0 | 0.009 / 0.016 | 0.085 / 0.106 | 0.884 / 0.880 |
+| playtest-s1 | undecided at 2400 | 1348046939DEA9F2 | 0.042 / 0.039 | 0.007 / 0.015 | 0.078 / 0.149 | 0.837 / 0.882 |
+| lanes | team 1 wins at tick 2245 | 0392AC1519D79015 | 0 / 0 | 0.018 / 0.019 | 0.022 / 0.019 | 0.832 / 0.824 |
+| lanes-s1 | team 1 wins at tick 1845 | ECBA9D4FE6B0524C | 0 / 0 | 0.013 / 0.019 | 0.017 / 0.019 | 0.811 / 0.850 |

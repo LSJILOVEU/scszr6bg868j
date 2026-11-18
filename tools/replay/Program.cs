@@ -52,7 +52,7 @@ namespace WarCore.Replay
 
             var points = new List<(double x, double z, double r)>();
             foreach (ViewPoint point in session.Current.Points) points.Add((point.X, point.Z, point.Radius));
-            const int metricCount = 6;
+            const int metricCount = 8;
             var stats = new Metrics.Series[2, metricCount];
             for (int t = 0; t < 2; t++) for (int m = 0; m < metricCount; m++) stats[t, m] = new Metrics.Series();
             var side = new[] { new List<(double x, double z)>(), new List<(double x, double z)>() };
@@ -106,7 +106,8 @@ namespace WarCore.Replay
                     }
                     else sb.Append("0,0,0");
                 }
-                // Per frame metrics: [share1, share2, nnSpread1, nnSpread2, spread1, spread2, close1, close2, idle1, idle2, closeNear1, closeNear2]; null when undefined.
+                // Per frame metrics: [share1, share2, nnSpread1, nnSpread2, spread1, spread2, close1, close2, idle1, idle2, closeNear1, closeNear2,
+                // enemy20_1, enemy20_2, idleNoEnemy1, idleNoEnemy2]; null when undefined.
                 var values = new double[2 * metricCount];
                 for (int t = 0; t < 2; t++)
                 {
@@ -116,6 +117,8 @@ namespace WarCore.Replay
                     values[6 + t] = Metrics.CloseShare(side[t]);
                     values[8 + t] = Metrics.IdleOutside(side[t], idleSide[t], points, ring);
                     values[10 + t] = Metrics.CloseShareNearPoints(side[t], points);
+                    values[12 + t] = Metrics.EnemyWithin(side[t], side[1 - t]);
+                    values[14 + t] = Metrics.IdleNoEnemy(side[t], idleSide[t], side[1 - t], points, ring);
                     for (int m = 0; m < metricCount; m++) stats[t, m].Add(values[m * 2 + t]);
                 }
                 sb.Append("],\"m\":[");
@@ -126,7 +129,7 @@ namespace WarCore.Replay
             }
             bool decided = session.IsFinished && session.Winner != 0;
             sb.Append("],\"metrics\":{\"attackRange\":").Append(N(Metrics.AttackRange)).Append(",\"slotRing\":").Append(N(ring)).Append(",\"decidedTick\":").Append(decided ? session.EndTick.ToString(CultureInfo.InvariantCulture) : "null");
-            string[] names = { "maxPointShare", "nnSpread", "attackSpread", "closeShare", "idleOutside", "closeShareNearPoints" };
+            string[] names = { "maxPointShare", "nnSpread", "attackSpread", "closeShare", "idleOutside", "closeShareNearPoints", "enemyWithin20", "idleNoEnemy" };
             var line = new StringBuilder();
             for (int t = 0; t < 2; t++)
             {
