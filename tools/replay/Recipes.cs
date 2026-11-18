@@ -40,7 +40,8 @@ namespace WarCore.Replay
                 () => DemoRecipes.M7().WithAiRules(Layer("replay-playtest-p1", DemoRecipes.PlaytestLayer, P1Ai(6000))), DemoRecipes.M7MapBytes, P1RingMm),
             ["playtest-p1w"] = new Entry("M7, rwr-m7-playtest AI rules + 2 m slots + 6 m ring + scatter 12 m",
                 () => DemoRecipes.M7().WithAiRules(Layer("replay-playtest-p1w", DemoRecipes.PlaytestLayer, P1Ai(12000))), DemoRecipes.M7MapBytes, P1RingMm),
-            // AI-P2 (PLACEHOLDER values of the task): 2 m slots, 6 m ring and the assault-roles placement.
+            // AI-P2 (PLACEHOLDER values of the task): 2 m slots, 6 m ring and the assault-roles placement. The anchor sits on the
+            // capture circle (6 m): at 10 m every role's slots lay in the ring outside the circle and no point was ever taken.
             ["lanes-p2"] = new Entry("Three-lane map, 2 m slots + 6 m ring + assault-roles",
                 () => Lanes(Layer("replay-lanes-p2", "rwr-m6", P2Ai)), () => LanesBake().WcMapBytes, P1RingMm),
         };
@@ -51,7 +52,7 @@ namespace WarCore.Replay
             "{ \"slotSpacingMm\": 2000, \"slotRingMm\": " + P1RingMm + ", \"placement\": \"scatter\", \"scatterMm\": " + scatterMm + " }";
         private const string P2Ai = "{ \"slotSpacingMm\": 2000, \"slotRingMm\": 6000, \"placement\": \"assault-roles\", "
             + "\"frontPermille\": 425, \"flankPermille\": 375, \"rearPermille\": 200, \"frontArcMm\": 14000, \"flankSideMm\": 35000, "
-            + "\"rearOutMm\": 12000, \"flankMinMm\": 60000, \"anchorMm\": 10000, \"arriveMm\": 3000 }";
+            + "\"rearOutMm\": 12000, \"flankMinMm\": 60000, \"anchorMm\": 6000, \"arriveMm\": 3000 }";
         private static MapBakeResult LanesBake() => MapBake.Run(File.ReadAllBytes(LanesPath));
         private static WorldRecipe Lanes(ContentPack ai)
         {
