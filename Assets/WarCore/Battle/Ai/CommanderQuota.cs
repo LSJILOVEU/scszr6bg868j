@@ -4,7 +4,7 @@ using WarCore.Sim;
 namespace WarCore.Battle
 {
     // Commander tuning. All ratios are permille, all score weights are integers in one score unit.
-    // PLACEHOLDER: Default is the starting point of the older prototype, not tuned for this game.
+    // PLACEHOLDER: Default holds starting values, not tuned yet.
     public readonly struct CommanderQuotaRules
     {
         // Garrison of an own point with E enemies near it: ceil(E * DefenseRatioPermille / 1000) + 1.

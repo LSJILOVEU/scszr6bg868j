@@ -75,7 +75,7 @@ replacement:
 [ai-p3-08-no-frontier]
 file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
 filter = FullyQualifiedName~CommanderQuotaTests
-expect = WarCore.Tests.CommanderQuotaTests.Ported1_FirstTargetIsTheSofterOne
+expect = WarCore.Tests.CommanderQuotaTests.Scenario1_FirstTargetIsTheSofterOne
 note = frontier points keep no garrison
 original:
 | desiredOut[i] = rules.FrontierGarrison;
@@ -85,7 +85,7 @@ replacement:
 [ai-p3-09-frontier-inverted]
 file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
 filter = FullyQualifiedName~CommanderQuotaTests
-expect = WarCore.Tests.CommanderQuotaTests.Ported1_FirstTargetIsTheSofterOne
+expect = WarCore.Tests.CommanderQuotaTests.Scenario1_FirstTargetIsTheSofterOne
 note = a point with an own neighbour counts as frontier
 original:
 | Touches(i, team, false, count
@@ -145,7 +145,7 @@ replacement:
 [ai-p3-15-targets-fixed]
 file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
 filter = FullyQualifiedName~CommanderQuotaTests
-expect = WarCore.Tests.CommanderQuotaTests.Ported1_FirstTargetIsTheSofterOne
+expect = WarCore.Tests.CommanderQuotaTests.Scenario1_FirstTargetIsTheSofterOne
 note = the target limit is ignored
 original:
 | Math.Max(1, rules.MaxAttackTargets)
@@ -185,7 +185,7 @@ replacement:
 [ai-p3-19-no-stickiness]
 file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
 filter = FullyQualifiedName~CommanderQuotaTests
-expect = WarCore.Tests.CommanderQuotaTests.Ported2_TargetHoldsWhenThreatWobbles
+expect = WarCore.Tests.CommanderQuotaTests.Scenario2_TargetHoldsWhenThreatWobbles
 note = the last target gets no bonus
 original:
 | - (previous ? rules.Stickiness : 0)

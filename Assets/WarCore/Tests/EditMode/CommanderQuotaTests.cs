@@ -53,7 +53,7 @@ namespace WarCore.Tests
         [Test]
         public void Adjacency_BoardFollowsTheDiameterCircleRule()
         {
-            // As the prototype's hand-written table, plus 2-3: their diameter circle (centre (0,0), r 40) holds no point.
+            // 0-1, 1-2, 1-3, 2-4, 3-4, and 2-3: their diameter circle (centre (0,0), r 40) holds no point.
             bool[] a = Table();
             var expected = new bool[N * N];
             foreach ((int i, int j) in new[] { (0, 1), (1, 2), (1, 3), (2, 3), (2, 4), (3, 4) }) expected[i * N + j] = expected[j * N + i] = true;
@@ -100,50 +100,50 @@ namespace WarCore.Tests
             Assert.Throws<ArgumentOutOfRangeException>(() => CommanderQuota.Adjacency(c, 2, new bool[4]));
         }
 
-        // Prototype CommandTests.cs:36-49, first call. Blue, 40 soldiers, one target, enemies left 1 / right 2.
+        // Scenario 1. Blue, 40 soldiers, one target, enemies left 1 / right 2.
         // Own: 0 has only own neighbours -> 0; 1 borders neutral 2, 3 -> frontier 2. Defense 2 <= cap 40*400/1000 = 16.
         // Candidates 2, 3 (4 has no blue neighbour). Scores 2: 200+126 = 326, 3: 400+126 = 526 -> 2. Pool 40-2 = 38.
         [Test]
-        public void Ported1_FirstTargetIsTheSofterOne()
+        public void Scenario1_FirstTargetIsTheSofterOne()
         {
             var (desired, attack) = Plan(Blue, Owners(), new[] { 0, 0, 1, 2, 6 }, 40, BlueHome, null, OneTarget);
             Assert.That(attack, Is.EqualTo(Only(2)));
             Assert.That(desired, Is.EqualTo(new[] { 0, 2, 38, 0, 0 }));
         }
 
-        // CommandTests.cs:45-48. Left now has 4, right 2, left was attacked: 800+126-600 = 326 < 526 -> stay on 2.
+        // Scenario 2. Left now has 4, right 2, left was attacked: 800+126-600 = 326 < 526 -> stay on 2.
         [Test]
-        public void Ported2_TargetHoldsWhenThreatWobbles()
+        public void Scenario2_TargetHoldsWhenThreatWobbles()
         {
             var (desired, attack) = Plan(Blue, Owners(), new[] { 0, 0, 4, 2, 6 }, 40, BlueHome, Only(2), OneTarget);
             Assert.That(attack, Is.EqualTo(Only(2)));
             Assert.That(desired, Is.EqualTo(new[] { 0, 2, 38, 0, 0 }));
         }
 
-        // CommandTests.cs:57-58: same as Ported1 with an empty previous set.
+        // Scenario 3: same as scenario 1 with an empty (not null) previous set.
         [Test]
-        public void Ported3_FirstTargetAgain()
+        public void Scenario3_FirstTargetAgain()
         {
             var (desired, attack) = Plan(Blue, Owners(), new[] { 0, 0, 1, 2, 6 }, 40, BlueHome, new bool[N], OneTarget);
             Assert.That(attack, Is.EqualTo(Only(2)));
             Assert.That(desired, Is.EqualTo(new[] { 0, 2, 38, 0, 0 }));
         }
 
-        // CommandTests.cs:60-63. Left taken (blue, 0 enemies), previous {2}. Own: 0 -> 0; 1 borders 3 -> 2;
+        // Scenario 4. Left taken (blue, 0 enemies), previous {2}. Own: 0 -> 0; 1 borders 3 -> 2;
         // 2 borders 3, 4 -> 2. Defense 4. Candidates 3 (borders 1, 2), 4 (borders 2). 3: 400+126 = 526,
         // 4: 1200+240 = 1440 -> 3. Pool 36.
         [Test]
-        public void Ported4_TakenTargetIsDroppedForTheNext()
+        public void Scenario4_TakenTargetIsDroppedForTheNext()
         {
             var (desired, attack) = Plan(Blue, Owners(Blue), new[] { 0, 0, 0, 2, 6 }, 40, BlueHome, Only(2), OneTarget);
             Assert.That(attack, Is.EqualTo(Only(3)));
             Assert.That(desired, Is.EqualTo(new[] { 0, 2, 2, 36, 0 }));
         }
 
-        // CommandTests.cs:65-67, previous carried from Ported4 = {3}. Left neutral with 9: 1800+126 = 1926;
+        // Scenario 5, previous carried from scenario 4 = {3}. Left neutral with 9: 1800+126 = 1926;
         // right 400+126-600 = -74 -> 3. Pool 38.
         [Test]
-        public void Ported5_HeavyDefenceKeepsTheArmyAway()
+        public void Scenario5_HeavyDefenceKeepsTheArmyAway()
         {
             var (desired, attack) = Plan(Blue, Owners(), new[] { 0, 0, 9, 2, 6 }, 40, BlueHome, Only(3), OneTarget);
             Assert.That(attack, Is.EqualTo(Only(3)));
@@ -151,7 +151,7 @@ namespace WarCore.Tests
         }
 
         // Stickiness edge, previous {2}, right fixed at 526. Left 5: 1000+126-600 = 526, a tie -> lower index 2.
-        // Left 6: 726 > 526 -> switch to 3. Left 9: 1326 -> 3 (the case the prototype test meant: hopeless, switch).
+        // Left 6: 726 > 526 -> switch to 3. Left 9: 1326 -> 3 (hopeless, switch).
         [TestCase(5, 2)]
         [TestCase(6, 3)]
         [TestCase(9, 3)]
