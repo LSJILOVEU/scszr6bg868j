@@ -95,6 +95,121 @@ namespace WarCore.Replay
             return 1 - resultant;
         }
 
+        // A unit is close to a teammate below this horizontal distance (metres): shoulder to shoulder.
+        public const double CloseDistance = 1.2;
+        // A unit idles once its position has not changed for this many ticks.
+        public const int IdleTicks = 60;
+
+        // (4) Share of the team whose nearest teammate is closer than CloseDistance. 0..1; NaN below MinUnits.
+        public static double CloseShare(IReadOnlyList<(double x, double z)> units)
+        {
+            int n = units.Count;
+            if (n < MinUnits) return double.NaN;
+            int close = 0;
+            for (int i = 0; i < n; i++)
+                for (int j = 0; j < n; j++)
+                {
+                    if (i == j) continue;
+                    double dx = units[i].x - units[j].x, dz = units[i].z - units[j].z;
+                    if (dx * dx + dz * dz < CloseDistance * CloseDistance) { close++; break; }
+                }
+            return (double)close / n;
+        }
+
+        // (6) CloseShare restricted to units near a point: among units within 2 x radius of some point's centre (the range
+        // depends on the map only), the share whose nearest teammate in the whole team is closer than CloseDistance.
+        // 0..1; NaN when fewer than MinUnits units are near a point.
+        public static double CloseShareNearPoints(IReadOnlyList<(double x, double z)> units, IReadOnlyList<(double x, double z, double r)> points)
+        {
+            int n = units.Count, near = 0, close = 0;
+            for (int i = 0; i < n; i++)
+            {
+                bool isNear = false;
+                foreach (var p in points)
+                {
+                    double dx = units[i].x - p.x, dz = units[i].z - p.z;
+                    if (dx * dx + dz * dz <= 4 * p.r * p.r) { isNear = true; break; }
+                }
+                if (!isNear) continue;
+                near++;
+                for (int j = 0; j < n; j++)
+                {
+                    if (i == j) continue;
+                    double dx = units[i].x - units[j].x, dz = units[i].z - units[j].z;
+                    if (dx * dx + dz * dz < CloseDistance * CloseDistance) { close++; break; }
+                }
+            }
+            return near < MinUnits ? double.NaN : (double)close / near;
+        }
+
+        // (5) Share of the team that idles (idle[i]: position unchanged for IdleTicks) outside every slot zone, i.e. farther
+        // than radius + ring from every point's centre. 0..1; NaN below MinUnits.
+        public static double IdleOutside(IReadOnlyList<(double x, double z)> units, IReadOnlyList<bool> idle,
+            IReadOnlyList<(double x, double z, double r)> points, double ring)
+        {
+            int n = units.Count;
+            if (n < MinUnits) return double.NaN;
+            int count = 0;
+            for (int i = 0; i < n; i++)
+            {
+                if (!idle[i]) continue;
+                bool outside = true;
+                foreach (var p in points)
+                {
+                    double dx = units[i].x - p.x, dz = units[i].z - p.z, zone = p.r + ring;
+                    if (dx * dx + dz * dz <= zone * zone) { outside = false; break; }
+                }
+                if (outside) count++;
+            }
+            return (double)count / n;
+        }
+
+        // An enemy counts as near within this horizontal distance (metres); idleNoEnemy looks for enemies within IdleEnemyRange.
+        public const double NearEnemyRange = 20.0, IdleEnemyRange = 45.0;
+
+        // True when some enemy stands within range (horizontal, inclusive) of u.
+        private static bool AnyWithin((double x, double z) u, IReadOnlyList<(double x, double z)> enemies, double range)
+        {
+            foreach (var e in enemies)
+            {
+                double dx = u.x - e.x, dz = u.z - e.z;
+                if (dx * dx + dz * dz <= range * range) return true;
+            }
+            return false;
+        }
+
+        // (7) Share of the team with an enemy (alive, on the field) within NearEnemyRange. 0..1; NaN below MinUnits.
+        public static double EnemyWithin(IReadOnlyList<(double x, double z)> units, IReadOnlyList<(double x, double z)> enemies, double range = NearEnemyRange)
+        {
+            int n = units.Count;
+            if (n < MinUnits) return double.NaN;
+            int count = 0;
+            foreach (var u in units) if (AnyWithin(u, enemies, range)) count++;
+            return (double)count / n;
+        }
+
+        // (8) IdleOutside restricted to units with no enemy within IdleEnemyRange: idle, beyond radius + ring of every point
+        // and nobody to fight. 0..1; NaN below MinUnits.
+        public static double IdleNoEnemy(IReadOnlyList<(double x, double z)> units, IReadOnlyList<bool> idle, IReadOnlyList<(double x, double z)> enemies,
+            IReadOnlyList<(double x, double z, double r)> points, double ring)
+        {
+            int n = units.Count;
+            if (n < MinUnits) return double.NaN;
+            int count = 0;
+            for (int i = 0; i < n; i++)
+            {
+                if (!idle[i] || AnyWithin(units[i], enemies, IdleEnemyRange)) continue;
+                bool outside = true;
+                foreach (var p in points)
+                {
+                    double dx = units[i].x - p.x, dz = units[i].z - p.z, zone = p.r + ring;
+                    if (dx * dx + dz * dz <= zone * zone) { outside = false; break; }
+                }
+                if (outside) count++;
+            }
+            return (double)count / n;
+        }
+
         // Running mean and peak of one per-frame series, skipping NaN frames.
         public sealed class Series
         {

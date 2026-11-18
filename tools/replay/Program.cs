@@ -52,9 +52,15 @@ namespace WarCore.Replay
 
             var points = new List<(double x, double z, double r)>();
             foreach (ViewPoint point in session.Current.Points) points.Add((point.X, point.Z, point.Radius));
-            var stats = new Metrics.Series[2, 3];
-            for (int t = 0; t < 2; t++) for (int m = 0; m < 3; m++) stats[t, m] = new Metrics.Series();
+            const int metricCount = 8;
+            var stats = new Metrics.Series[2, metricCount];
+            for (int t = 0; t < 2; t++) for (int m = 0; m < metricCount; m++) stats[t, m] = new Metrics.Series();
             var side = new[] { new List<(double x, double z)>(), new List<(double x, double z)>() };
+            var idleSide = new[] { new List<bool>(), new List<bool>() };
+            // Per unit: last seen position and the tick since which it has not changed (idleOutside).
+            var lastX = new float[keys.Count]; var lastZ = new float[keys.Count]; var since = new long[keys.Count];
+            for (int i = 0; i < keys.Count; i++) since[i] = -1;
+            double ring = entry.RingMm / 1000.0;
             var owners = new List<int>();
 
             var sb = new StringBuilder(4 << 20);
@@ -73,6 +79,11 @@ namespace WarCore.Replay
             {
                 if (tick > 0) { if (session.IsFinished) break; session.StepOnce(); }
                 FrameView frame = session.Current;
+                for (int i = 0; i < keys.Count; i++)
+                {
+                    if (!frame.TryGet(keys[i], out ViewEntity seen)) { since[i] = -1; continue; }
+                    if (since[i] < 0 || seen.X != lastX[i] || seen.Z != lastZ[i]) { lastX[i] = seen.X; lastZ[i] = seen.Z; since[i] = frame.Tick; }
+                }
                 foreach (ViewFire fire in frame.Fires)
                 { shots.Add(D(fire.X0)); shots.Add(D(fire.Z0)); shots.Add(D(fire.X1)); shots.Add(D(fire.Z1)); shots.Add(fire.Team); shots.Add(fire.Lethal ? 1 : 0); }
                 if (tick % every != 0 && !session.IsFinished) continue;
@@ -82,7 +93,7 @@ namespace WarCore.Replay
                 bool f2 = true;
                 foreach (ViewPoint point in frame.Points) { if (!f2) sb.Append(','); f2 = false; sb.Append(point.Owner); owners.Add(point.Owner); }
                 sb.Append("],\"u\":[");
-                side[0].Clear(); side[1].Clear();
+                side[0].Clear(); side[1].Clear(); idleSide[0].Clear(); idleSide[1].Clear();
                 // Per unit: x, z in decimetres, state (0 = not on the field, 1 = alive, 2 = dead).
                 for (int i = 0; i < keys.Count; i++)
                 {
@@ -90,18 +101,25 @@ namespace WarCore.Replay
                     if (frame.TryGet(keys[i], out ViewEntity e))
                     {
                         sb.Append(D(e.X)).Append(',').Append(D(e.Z)).Append(',').Append(e.Alive ? 1 : 2);
-                        if (e.Alive && teams[i] >= 1 && teams[i] <= 2) side[teams[i] - 1].Add((e.X, e.Z));
+                        if (e.Alive && teams[i] >= 1 && teams[i] <= 2)
+                        { side[teams[i] - 1].Add((e.X, e.Z)); idleSide[teams[i] - 1].Add(frame.Tick - since[i] >= Metrics.IdleTicks); }
                     }
                     else sb.Append("0,0,0");
                 }
-                // Per frame metrics: [share1, share2, nnSpread1, nnSpread2, spread1, spread2]; null when undefined.
-                var values = new double[6];
+                // Per frame metrics: [share1, share2, nnSpread1, nnSpread2, spread1, spread2, close1, close2, idle1, idle2, closeNear1, closeNear2,
+                // enemy20_1, enemy20_2, idleNoEnemy1, idleNoEnemy2]; null when undefined.
+                var values = new double[2 * metricCount];
                 for (int t = 0; t < 2; t++)
                 {
                     values[t] = Metrics.MaxPointShare(side[t], points);
                     values[2 + t] = Metrics.NearestNeighbourSpread(side[t]);
                     values[4 + t] = Metrics.AttackBearingSpread(side[t], t + 1, points, owners);
-                    for (int m = 0; m < 3; m++) stats[t, m].Add(values[m * 2 + t]);
+                    values[6 + t] = Metrics.CloseShare(side[t]);
+                    values[8 + t] = Metrics.IdleOutside(side[t], idleSide[t], points, ring);
+                    values[10 + t] = Metrics.CloseShareNearPoints(side[t], points);
+                    values[12 + t] = Metrics.EnemyWithin(side[t], side[1 - t]);
+                    values[14 + t] = Metrics.IdleNoEnemy(side[t], idleSide[t], side[1 - t], points, ring);
+                    for (int m = 0; m < metricCount; m++) stats[t, m].Add(values[m * 2 + t]);
                 }
                 sb.Append("],\"m\":[");
                 for (int v = 0; v < values.Length; v++) { if (v > 0) sb.Append(','); sb.Append(N(values[v])); }
@@ -110,13 +128,13 @@ namespace WarCore.Replay
                 shots.Clear();
             }
             bool decided = session.IsFinished && session.Winner != 0;
-            sb.Append("],\"metrics\":{\"attackRange\":").Append(N(Metrics.AttackRange)).Append(",\"decidedTick\":").Append(decided ? session.EndTick.ToString(CultureInfo.InvariantCulture) : "null");
-            string[] names = { "maxPointShare", "nnSpread", "attackSpread" };
+            sb.Append("],\"metrics\":{\"attackRange\":").Append(N(Metrics.AttackRange)).Append(",\"slotRing\":").Append(N(ring)).Append(",\"decidedTick\":").Append(decided ? session.EndTick.ToString(CultureInfo.InvariantCulture) : "null");
+            string[] names = { "maxPointShare", "nnSpread", "attackSpread", "closeShare", "idleOutside", "closeShareNearPoints", "enemyWithin20", "idleNoEnemy" };
             var line = new StringBuilder();
             for (int t = 0; t < 2; t++)
             {
                 sb.Append(",\"team").Append(t + 1).Append("\":{");
-                for (int m = 0; m < 3; m++)
+                for (int m = 0; m < metricCount; m++)
                 {
                     if (m > 0) sb.Append(',');
                     Metrics.Series s = stats[t, m];

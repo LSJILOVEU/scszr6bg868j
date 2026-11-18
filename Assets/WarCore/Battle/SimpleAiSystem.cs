@@ -39,6 +39,7 @@ namespace WarCore.Battle
         private readonly AiField field;
         private readonly IAiDispatch dispatch;
         private readonly IAiPlacement placement;
+        private readonly IAiEngage engage;
         private int intentCount, current;
         private long decisionTick;
         public SimpleAiSystem(CombatSystem combat, CombatPack weapons, MatchPack pack, CaptureSystem capture, IMoveOrders moves,
@@ -50,17 +51,29 @@ namespace WarCore.Battle
             this.controlled = controlled; this.memory = memory; this.contacts = contacts; this.search = search; this.suppress = suppress;
             this.meleeChaseRange = SimFix.FromInt(meleeChaseRange);
             this.fairDecisions = fairDecisions; seedSalt = AiParts.Mix(decisionSeed); policyDigest = pack.PolicyDigest;
-            slots = new GuardSlots(pack.Points);
+            parts = parts ?? new AiParts();
+            slots = new GuardSlots(pack.Points, parts.SlotSpacingRaw, parts.SlotRingRaw);
             if (fairDecisions)
             {
                 intents = new Intent[combat.Entities.Capacity]; winners = new int[slots.Total];
                 var hash = new StateHash(); hash.Add("battle.ai.fair-decisions.v1"); hash.Add(policyDigest); hash.Add(fairDecisions); hash.Add(decisionSeed);
                 policyDigest = hash.Value;
             }
-            parts = parts ?? new AiParts();
-            field = new AiField(pack, capture); dispatch = parts.Dispatch; placement = parts.Placement;
-            // Fold order is fixed: fair decisions, dispatch, placement.
+            field = new AiField(pack, capture); dispatch = parts.Dispatch; placement = parts.Placement; engage = parts.Engage;
+            // Fold order is fixed: fair decisions, dispatch, placement, then a slot spacing other than the default, then a slot ring,
+            // then engage.
             policyDigest = placement.Fold(dispatch.Fold(policyDigest));
+            if (parts.SlotSpacingRaw != GuardSlots.SpacingRaw)
+            {
+                var hash = new StateHash(); hash.Add("battle.ai.slot-spacing.v1"); hash.Add(policyDigest); hash.Add(parts.SlotSpacingRaw);
+                policyDigest = hash.Value;
+            }
+            if (parts.SlotRingRaw != 0)
+            {
+                var hash = new StateHash(); hash.Add("battle.ai.slot-ring.v1"); hash.Add(policyDigest); hash.Add(parts.SlotRingRaw);
+                policyDigest = hash.Value;
+            }
+            policyDigest = engage.Fold(policyDigest);
             reservedHas = new bool[slots.Total]; standingHas = new bool[slots.Total];
             reservedBy = new ulong[slots.Total]; standingBy = new ulong[slots.Total];
             stage = new EntityStage(combat.Entities); positions = combat.Entities.Resolve<Position>(); combatants = combat.Entities.Resolve<Combatant>();
@@ -101,12 +114,19 @@ namespace WarCore.Battle
                     { OrderUnit(id, here, moving, target, enemy, -2); }
                     continue;
                 }
+                var thinker = new AiUnit(id, unit.Team, here);
+                // An enemy in sight: the engage part says stand (Hold) or go on to the point below (Advance).
+                bool advance = false;
                 if (unit.Weapon >= 0 && combat.Pack.Selector.TrySelect(combat, entity, weapons.Weapons[unit.Weapon].FalloffEnd, out EntityId seen))
-                { contacts?.Saw(id, seen, c.Clock.Tick); if (moving) StopUnit(id, here, target); continue; }
+                {
+                    contacts?.Saw(id, seen, c.Clock.Tick);
+                    if (engage.Decide(in thinker, combat.Point(seen), field) == AiEngage.Hold) { if (moving) StopUnit(id, here, target); continue; }
+                    advance = true;
+                }
                 // Nothing in sight: a remembered target may be suppressed (fire at where it was last seen) from this tick on.
-                if (suppress != null && unit.Weapon >= 0) suppress.Decide(id, c.Clock.Tick);
+                if (!advance && suppress != null && unit.Weapon >= 0) suppress.Decide(id, c.Clock.Tick);
                 // Nothing in sight: a remembered target comes before the points (go to where it was last seen, stand, give up).
-                if (search != null && unit.Weapon >= 0)
+                if (!advance && search != null && unit.Weapon >= 0)
                 {
                     TargetSearch.Hunt hunt = search.Decide(id, here, c.Clock.Tick, out SimVec3 lastKnown);
                     if (hunt == TargetSearch.Hunt.Go)
@@ -119,7 +139,6 @@ namespace WarCore.Battle
                     if (hunt == TargetSearch.Hunt.Hold)
                     { if (moving) StopUnit(id, here, target); continue; }
                 }
-                var thinker = new AiUnit(id, unit.Team, here);
                 int point = dispatch.Pick(in thinker, field);
                 if (point < 0)
                 { if (moving) StopUnit(id, here, target); continue; }
