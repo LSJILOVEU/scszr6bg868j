@@ -50,17 +50,27 @@ namespace WarCore.Battle
             this.controlled = controlled; this.memory = memory; this.contacts = contacts; this.search = search; this.suppress = suppress;
             this.meleeChaseRange = SimFix.FromInt(meleeChaseRange);
             this.fairDecisions = fairDecisions; seedSalt = AiParts.Mix(decisionSeed); policyDigest = pack.PolicyDigest;
-            slots = new GuardSlots(pack.Points);
+            parts = parts ?? new AiParts();
+            slots = new GuardSlots(pack.Points, parts.SlotSpacingRaw, parts.SlotRingRaw);
             if (fairDecisions)
             {
                 intents = new Intent[combat.Entities.Capacity]; winners = new int[slots.Total];
                 var hash = new StateHash(); hash.Add("battle.ai.fair-decisions.v1"); hash.Add(policyDigest); hash.Add(fairDecisions); hash.Add(decisionSeed);
                 policyDigest = hash.Value;
             }
-            parts = parts ?? new AiParts();
             field = new AiField(pack, capture); dispatch = parts.Dispatch; placement = parts.Placement;
-            // Fold order is fixed: fair decisions, dispatch, placement.
+            // Fold order is fixed: fair decisions, dispatch, placement, then a slot spacing other than the default, then a slot ring.
             policyDigest = placement.Fold(dispatch.Fold(policyDigest));
+            if (parts.SlotSpacingRaw != GuardSlots.SpacingRaw)
+            {
+                var hash = new StateHash(); hash.Add("battle.ai.slot-spacing.v1"); hash.Add(policyDigest); hash.Add(parts.SlotSpacingRaw);
+                policyDigest = hash.Value;
+            }
+            if (parts.SlotRingRaw != 0)
+            {
+                var hash = new StateHash(); hash.Add("battle.ai.slot-ring.v1"); hash.Add(policyDigest); hash.Add(parts.SlotRingRaw);
+                policyDigest = hash.Value;
+            }
             reservedHas = new bool[slots.Total]; standingHas = new bool[slots.Total];
             reservedBy = new ulong[slots.Total]; standingBy = new ulong[slots.Total];
             stage = new EntityStage(combat.Entities); positions = combat.Entities.Resolve<Position>(); combatants = combat.Entities.Resolve<Combatant>();

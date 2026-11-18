@@ -29,10 +29,20 @@ namespace WarCore.Content
         // Ids of the AI parts (ContentPolicies.DispatchIds, PlacementIds): which point a unit goes for, and where at it the unit wants to stand.
         public string Dispatch { get; }
         public string Placement { get; }
+        // Guard-slot lattice spacing in millimetres; a property of the scheduler, valid under every part.
+        public const int DefaultSlotSpacingMm = 1000;
+        public int SlotSpacingMm { get; }
+        // Placement "scatter": half the side of the square around a point's centre that each unit's spot falls in (millimetres).
+        public int ScatterMm { get; }
+        // Width in millimetres of the ring of guard slots outside each capture circle; a scheduler property like the spacing. 0 = none.
+        public int SlotRingMm { get; }
+        // Builds the load error for slotRingMm (pack, layer, entry, field); null when the field is not written.
+        internal System.Func<string, ContentException> SlotRingError { get; set; }
         internal AiRules(int failedSlotTicks, int targetMemoryTicks = 0, int searchTicks = 0, int reactionTicks = 0, int senseTicks = 1,
             int burstShots = 0, int burstPauseTicks = 0, int suppressTicks = 0, int meleeChaseRange = 0, bool fairDecisions = false, bool burstPauseFollowsShooter = false,
             int holdSharePermille = 0, int attackSpreadPoints = 1,
-            string dispatch = ContentPolicies.NearestDispatch, string placement = ContentPolicies.NearestSlot)
+            string dispatch = ContentPolicies.NearestDispatch, string placement = ContentPolicies.NearestSlot,
+            int slotSpacingMm = DefaultSlotSpacingMm, int scatterMm = 0, int slotRingMm = 0)
         {
             FailedSlotTicks = failedSlotTicks; TargetMemoryTicks = targetMemoryTicks; SearchTicks = searchTicks; ReactionTicks = reactionTicks;
             SenseTicks = senseTicks; BurstShots = burstShots; BurstPauseTicks = burstPauseTicks; SuppressTicks = suppressTicks;
@@ -42,6 +52,7 @@ namespace WarCore.Content
             HoldSharePermille = holdSharePermille;
             AttackSpreadPoints = attackSpreadPoints;
             Dispatch = dispatch; Placement = placement;
+            SlotSpacingMm = slotSpacingMm; ScatterMm = scatterMm; SlotRingMm = slotRingMm;
         }
     }
 
@@ -59,12 +70,32 @@ namespace WarCore.Content
         internal const int MaxMeleeChaseRange = 512; // PLACEHOLDER: maximum map side length in metres.
         internal const int MaxHoldSharePermille = 1000;
         internal const int MaxAttackSpreadPoints = 8;
+        internal const int MinSlotSpacingMm = 500, MaxSlotSpacingMm = 5000;
+        internal const int MaxScatterMm = 50000;
+        internal const int MaxSlotRingMm = 50000;
+        // Which part each part parameter belongs to (false = dispatch, true = placement). A parameter written while its part
+        // is not selected is an error. New parts register their parameters here.
+        internal static readonly (string field, bool placement, string part)[] Owners =
+        {
+            ("holdSharePermille", false, ContentPolicies.NearestDispatch),
+            ("attackSpreadPoints", false, ContentPolicies.NearestDispatch),
+            ("scatterMm", true, ContentPolicies.Scatter),
+        };
+        // Index in Owners of the first parameter written for a part that is not selected; -1 when there is none.
+        internal static int Misplaced(System.Func<string, bool> has, string dispatch, string placement)
+        {
+            for (int i = 0; i < Owners.Length; i++)
+                if (has(Owners[i].field) && (Owners[i].placement ? placement : dispatch) != Owners[i].part) return i;
+            return -1;
+        }
         internal AiSection() : base(SectionKey) { }
 
         public override void Build(SectionBuild b)
         {
             ContentEntry entry = b.Single(Key);
             int failed = 0, memory = 0, search = 0, reaction = 0, sense = 1, burst = 0, pause = 0, suppress = 0, chase = 0, hold = 0, spread = 1;
+            int spacing = AiRules.DefaultSlotSpacingMm, scatter = 0, ring = 0;
+            System.Func<string, ContentException> ringError = null;
             bool follows = false;
             bool fair = false;
             string dispatch = ContentPolicies.NearestDispatch, placement = ContentPolicies.NearestSlot;
@@ -96,9 +127,25 @@ namespace WarCore.Content
                     if (!ContentPolicies.IsPlacement(placement))
                         throw r.Bad(r.FieldOf("placement"), "unknown policy '" + placement + "', allowed: " + ContentPolicies.PlacementIds);
                 }
+                if (r.Has("slotSpacingMm")) spacing = r.Int("slotSpacingMm", MinSlotSpacingMm, MaxSlotSpacingMm);
+                if (r.Has("slotRingMm"))
+                {
+                    ring = r.Int("slotRingMm", 0, MaxSlotRingMm);
+                    ContentField field = r.FieldOf("slotRingMm");
+                    ringError = why => r.Bad(field, why);
+                }
+                int misplaced = Misplaced(r.Has, dispatch, placement);
+                if (misplaced >= 0)
+                {
+                    var (field, isPlacement, part) = Owners[misplaced];
+                    string kind = isPlacement ? "placement" : "dispatch";
+                    throw r.Bad(r.FieldOf(field), "belongs to " + kind + " '" + part + "', but " + kind + " is '" + (isPlacement ? placement : dispatch) + "'");
+                }
+                // Required when scatter is selected: a missing field throws "is missing field 'scatterMm'".
+                if (placement == ContentPolicies.Scatter) scatter = r.Int("scatterMm", 1, MaxScatterMm);
                 r.Done();
             }
-            b.Publish(new AiRules(failed, memory, search, reaction, sense, burst, pause, suppress, chase, fair, follows, hold, spread, dispatch, placement));
+            b.Publish(new AiRules(failed, memory, search, reaction, sense, burst, pause, suppress, chase, fair, follows, hold, spread, dispatch, placement, spacing, scatter, ring) { SlotRingError = ringError });
         }
     }
 }

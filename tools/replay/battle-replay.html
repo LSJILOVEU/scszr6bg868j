@@ -111,6 +111,7 @@ canvas { width: 100%; aspect-ratio: 160 / 100; max-width: 100%; display: block; 
     const pair = (name, i, key) => '<span><b>' + name + '</b> 当前 <span class="t1">' + num(m[i]) + '</span> / <span class="t2">' + num(m[i + 1]) + '</span>　全局 <span class="t1">' +
       num((t1[key] || {}).mean) + '(' + num((t1[key] || {}).peak) + ')</span> / <span class="t2">' + num((t2[key] || {}).mean) + '(' + num((t2[key] || {}).peak) + ')</span></span>';
     return pair("单圈最大占比", 0, "maxPointShare") + pair("最近邻离散", 2, "nnSpread") + pair("进攻方位分散", 4, "attackSpread") +
+      pair("贴身占比", 6, "closeShare") + pair("圈外发呆", 8, "idleOutside") + pair("据点附近贴身", 10, "closeShareNearPoints") +
       '<span><b>分胜负 tick</b> ' + (g.decidedTick === null || g.decidedTick === undefined ? "未分" : g.decidedTick) + '</span>';
   }
 

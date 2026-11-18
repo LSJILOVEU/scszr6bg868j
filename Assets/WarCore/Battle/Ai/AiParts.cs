@@ -92,8 +92,18 @@ namespace WarCore.Battle
     {
         public IAiDispatch Dispatch { get; }
         public IAiPlacement Placement { get; }
-        public AiParts(IAiDispatch dispatch = null, IAiPlacement placement = null)
-        { Dispatch = dispatch ?? new NearestDispatch(); Placement = placement ?? new NearestSlotPlacement(); }
+        // Guard-slot lattice spacing in raw units, a property of the scheduler rather than of a part: every placement picks
+        // from the same lattice. The default (GuardSlots.SpacingRaw, 1 m) leaves the battle as it was.
+        public long SlotSpacingRaw { get; }
+        // Width in raw units of the ring of guard slots outside each capture circle (also a scheduler property); 0 = none.
+        public long SlotRingRaw { get; }
+        public AiParts(IAiDispatch dispatch = null, IAiPlacement placement = null, long slotSpacingRaw = GuardSlots.SpacingRaw, long slotRingRaw = 0)
+        {
+            if (slotSpacingRaw <= 0) throw new ArgumentOutOfRangeException(nameof(slotSpacingRaw));
+            if (slotRingRaw < 0) throw new ArgumentOutOfRangeException(nameof(slotRingRaw));
+            Dispatch = dispatch ?? new NearestDispatch(); Placement = placement ?? new NearestSlotPlacement();
+            SlotSpacingRaw = slotSpacingRaw; SlotRingRaw = slotRingRaw;
+        }
 
         // The only source of variation a part may use: Mix(unit key ^ a constant of the part). Stateless, so the same
         // unit decides the same way on every tick and after a restore.
