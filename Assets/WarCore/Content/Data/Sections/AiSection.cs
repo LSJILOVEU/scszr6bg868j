@@ -26,9 +26,13 @@ namespace WarCore.Content
         public int HoldSharePermille { get; }
         // Number of nearest points an attacker spreads over (each takes the k-th nearest point its team does not own); 1 sends all to the nearest.
         public int AttackSpreadPoints { get; }
+        // Ids of the AI parts (ContentPolicies.DispatchIds, PlacementIds): which point a unit goes for, and where at it the unit wants to stand.
+        public string Dispatch { get; }
+        public string Placement { get; }
         internal AiRules(int failedSlotTicks, int targetMemoryTicks = 0, int searchTicks = 0, int reactionTicks = 0, int senseTicks = 1,
             int burstShots = 0, int burstPauseTicks = 0, int suppressTicks = 0, int meleeChaseRange = 0, bool fairDecisions = false, bool burstPauseFollowsShooter = false,
-            int holdSharePermille = 0, int attackSpreadPoints = 1)
+            int holdSharePermille = 0, int attackSpreadPoints = 1,
+            string dispatch = ContentPolicies.NearestDispatch, string placement = ContentPolicies.NearestSlot)
         {
             FailedSlotTicks = failedSlotTicks; TargetMemoryTicks = targetMemoryTicks; SearchTicks = searchTicks; ReactionTicks = reactionTicks;
             SenseTicks = senseTicks; BurstShots = burstShots; BurstPauseTicks = burstPauseTicks; SuppressTicks = suppressTicks;
@@ -37,6 +41,7 @@ namespace WarCore.Content
             BurstPauseFollowsShooter = burstPauseFollowsShooter;
             HoldSharePermille = holdSharePermille;
             AttackSpreadPoints = attackSpreadPoints;
+            Dispatch = dispatch; Placement = placement;
         }
     }
 
@@ -62,6 +67,7 @@ namespace WarCore.Content
             int failed = 0, memory = 0, search = 0, reaction = 0, sense = 1, burst = 0, pause = 0, suppress = 0, chase = 0, hold = 0, spread = 1;
             bool follows = false;
             bool fair = false;
+            string dispatch = ContentPolicies.NearestDispatch, placement = ContentPolicies.NearestSlot;
             if (entry != null)
             {
                 var r = new EntryReader(b.Pack, entry);
@@ -78,9 +84,21 @@ namespace WarCore.Content
                 if (r.Has("fairDecisions")) fair = r.Bool("fairDecisions");
                 if (r.Has("holdSharePermille")) hold = r.Int("holdSharePermille", 0, MaxHoldSharePermille);
                 if (r.Has("attackSpreadPoints")) spread = r.Int("attackSpreadPoints", 1, MaxAttackSpreadPoints);
+                if (r.Has("dispatch"))
+                {
+                    dispatch = r.Str("dispatch");
+                    if (!ContentPolicies.IsDispatch(dispatch))
+                        throw r.Bad(r.FieldOf("dispatch"), "unknown policy '" + dispatch + "', allowed: " + ContentPolicies.DispatchIds);
+                }
+                if (r.Has("placement"))
+                {
+                    placement = r.Str("placement");
+                    if (!ContentPolicies.IsPlacement(placement))
+                        throw r.Bad(r.FieldOf("placement"), "unknown policy '" + placement + "', allowed: " + ContentPolicies.PlacementIds);
+                }
                 r.Done();
             }
-            b.Publish(new AiRules(failed, memory, search, reaction, sense, burst, pause, suppress, chase, fair, follows, hold, spread));
+            b.Publish(new AiRules(failed, memory, search, reaction, sense, burst, pause, suppress, chase, fair, follows, hold, spread, dispatch, placement));
         }
     }
 }
