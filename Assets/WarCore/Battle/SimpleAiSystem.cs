@@ -21,6 +21,7 @@ namespace WarCore.Battle
         private readonly TargetMemory contacts;
         private readonly TargetSearch search;
         private readonly TargetSuppress suppress;
+        private readonly Pressure pressure;
         private readonly GuardSlots slots;
         // Rebuilt every Step, never persisted: who reserves a slot (active order to it) and who stands at it.
         private readonly bool[] reservedHas, standingHas;
@@ -45,10 +46,11 @@ namespace WarCore.Battle
         public SimpleAiSystem(CombatSystem combat, CombatPack weapons, MatchPack pack, CaptureSystem capture, IMoveOrders moves,
             IControlTarget controlled = null, FailedSlotMemory memory = null, TargetMemory contacts = null,
             TargetSearch search = null, TargetSuppress suppress = null, int meleeChaseRange = 0,
-            bool fairDecisions = false, ulong decisionSeed = 0, AiParts parts = null)
+            bool fairDecisions = false, ulong decisionSeed = 0, AiParts parts = null, Pressure pressure = null)
         {
             this.combat = combat; this.weapons = weapons; this.pack = pack; this.capture = capture; this.moves = moves;
             this.controlled = controlled; this.memory = memory; this.contacts = contacts; this.search = search; this.suppress = suppress;
+            this.pressure = pressure;
             this.meleeChaseRange = SimFix.FromInt(meleeChaseRange);
             this.fairDecisions = fairDecisions; seedSalt = AiParts.Mix(decisionSeed); policyDigest = pack.PolicyDigest;
             parts = parts ?? new AiParts();
@@ -114,19 +116,27 @@ namespace WarCore.Battle
                     { OrderUnit(id, here, moving, target, enemy, -2); }
                     continue;
                 }
-                var thinker = new AiUnit(id, unit.Team, here);
-                // An enemy in sight: the engage part says stand (Hold) or go on to the point below (Advance).
-                bool advance = false;
+                var thinker = new AiUnit(id, unit.Team, here, pressure != null ? pressure.Level(id) : AiNerve.Calm);
+                // An enemy in sight: the engage part says stand (Hold), go on to the point below (Advance) or fall back.
+                // No enemy in sight: the part is asked only about a unit that is pressed.
+                bool advance = false, fallback = false, stand = false;
                 if (unit.Weapon >= 0 && combat.Pack.Selector.TrySelect(combat, entity, weapons.Weapons[unit.Weapon].FalloffEnd, out EntityId seen))
                 {
                     contacts?.Saw(id, seen, c.Clock.Tick);
-                    if (engage.Decide(in thinker, combat.Point(seen), field) == AiEngage.Hold) { if (moving) StopUnit(id, here, target); continue; }
-                    advance = true;
+                    AiEngage answer = engage.Decide(in thinker, combat.Point(seen), field);
+                    if (answer == AiEngage.Hold) { if (moving) StopUnit(id, here, target); continue; }
+                    if (answer == AiEngage.Fallback) fallback = true; else advance = true;
+                }
+                else if (thinker.Nerve != AiNerve.Calm)
+                {
+                    AiEngage answer = engage.Unseen(in thinker, field);
+                    if (answer == AiEngage.Fallback) fallback = true; else stand = answer == AiEngage.Hold;
                 }
                 // Nothing in sight: a remembered target may be suppressed (fire at where it was last seen) from this tick on.
-                if (!advance && suppress != null && unit.Weapon >= 0) suppress.Decide(id, c.Clock.Tick);
+                if (!advance && !fallback && suppress != null && unit.Weapon >= 0) suppress.Decide(id, c.Clock.Tick);
+                if (stand) { if (moving) StopUnit(id, here, target); continue; }
                 // Nothing in sight: a remembered target comes before the points (go to where it was last seen, stand, give up).
-                if (!advance && search != null && unit.Weapon >= 0)
+                if (!advance && !fallback && search != null && unit.Weapon >= 0)
                 {
                     TargetSearch.Hunt hunt = search.Decide(id, here, c.Clock.Tick, out SimVec3 lastKnown);
                     if (hunt == TargetSearch.Hunt.Go)
@@ -139,7 +149,14 @@ namespace WarCore.Battle
                     if (hunt == TargetSearch.Hunt.Hold)
                     { if (moving) StopUnit(id, here, target); continue; }
                 }
-                int point = dispatch.Pick(in thinker, field);
+                if (fallback && Refuge(unit.Team, here) < 0)
+                {
+                    // The team owns no point: back to its base, or stand when it has none.
+                    if (!field.TryBase(unit.Team, out SimVec3 home) || Arrived(here, home)) { if (moving) StopUnit(id, here, target); }
+                    else if (!moving || target.X.Raw != home.X.Raw || target.Z.Raw != home.Z.Raw) OrderUnit(id, here, moving, target, home, -1);
+                    continue;
+                }
+                int point = fallback ? Refuge(unit.Team, here) : dispatch.Pick(in thinker, field);
                 if (point < 0)
                 { if (moving) StopUnit(id, here, target); continue; }
                 if (moving && KeepsSlot(id, target, point)) continue;
@@ -153,6 +170,18 @@ namespace WarCore.Battle
                 { OrderUnit(id, here, moving, target, destination, slots.Canonical(slot)); }
             }
             if (fairDecisions) ApplyIntents();
+        }
+        // Where a unit falls back to: the point its team owns that is horizontally nearest (ties to the lower index); -1 when it owns none.
+        private int Refuge(int team, SimVec3 here)
+        {
+            int nearest = -1; SimWide best = default;
+            for (int i = 0; i < field.PointCount; i++)
+            {
+                if (field.Owner(i) != team) continue;
+                SimWide distance = CombatSystem.Horizontal(field.Center(i) - here).LengthSquared;
+                if (nearest < 0 || distance < best) { nearest = i; best = distance; }
+            }
+            return nearest;
         }
         private bool TryMeleeTarget(EntityId entity, SimVec3 here, out SimVec3 target)
         {

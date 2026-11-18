@@ -5,16 +5,16 @@
 /* Layout: one column of stacked battle maps sharing a single transport bar, like two monitors on one tape deck. */
 :root {
   --bg: #eef0ec; --panel: #f8f9f6; --field: #e3e7df; --line: #c9cfc4; --fg: #1d2420; --muted: #5d675f;
-  --blue: #2463d6; --red: #d2481f; --neutral: #8b948c; --wall: #4b554d; --accent: #0f766e; --shot: #1d2420;
+  --blue: #2463d6; --red: #d2481f; --neutral: #8b948c; --wall: #4b554d; --accent: #0f766e; --shot: #1d2420; --broken: #b7791f;
   --font: "Inter", "PingFang SC", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #121614; --panel: #1a201d; --field: #222a26; --line: #37423c; --fg: #e6ebe7; --muted: #9aa69d;
-  --blue: #6ea2ff; --red: #ff8a5c; --neutral: #76817a; --wall: #aab5ad; --accent: #4fd1c5; --shot: #e6ebe7; color-scheme: dark } }
+  --blue: #6ea2ff; --red: #ff8a5c; --neutral: #76817a; --wall: #aab5ad; --accent: #4fd1c5; --shot: #e6ebe7; --broken: #f6c453; color-scheme: dark } }
 :root[data-theme="dark"] {
   --bg: #121614; --panel: #1a201d; --field: #222a26; --line: #37423c; --fg: #e6ebe7; --muted: #9aa69d;
-  --blue: #6ea2ff; --red: #ff8a5c; --neutral: #76817a; --wall: #aab5ad; --accent: #4fd1c5; --shot: #e6ebe7; color-scheme: dark }
+  --blue: #6ea2ff; --red: #ff8a5c; --neutral: #76817a; --wall: #aab5ad; --accent: #4fd1c5; --shot: #e6ebe7; --broken: #f6c453; color-scheme: dark }
 body { background: var(--bg); color: var(--fg); font-family: var(--font); line-height: 1.55;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 32px; }
 .wrap { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
@@ -69,6 +69,7 @@ canvas { width: 100%; aspect-ratio: 160 / 100; max-width: 100%; display: block; 
     <span><span class="dot" style="background:var(--red)"></span>二队</span>
     <span>圆圈是据点，颜色是归属，圈边的两个数字是圈内两队人数</span>
     <span>细线是开火</span>
+    <span>细圈是被压住的兵，黄色粗圈是在后撤的兵（开了压力系统才有）</span>
   </div>
 
   <div class="notes">
@@ -131,6 +132,7 @@ canvas { width: 100%; aspect-ratio: 160 / 100; max-width: 100%; display: block; 
     ctx.fillStyle = token("--wall");
     for (const w of r.map.walls) ctx.fillRect(X(w[0] - w[2] / 2), Z(w[1] - w[3] / 2), w[2] * scale, w[3] * scale);
 
+    const pinned = new Set(a.n || []), broken = new Set(a.b || []);
     const inside = r.points.map(() => [0, 0, 0]);
     const units = [];
     for (let u = 0; u < r.teams.length; u++) {
@@ -138,7 +140,7 @@ canvas { width: 100%; aspect-ratio: 160 / 100; max-width: 100%; display: block; 
       if (s0 === 0) continue;
       let x = a.u[u * 3] / 10, z = a.u[u * 3 + 1] / 10;
       if (s0 === 1 && s1 === 1) { x += (b.u[u * 3] / 10 - x) * blend; z += (b.u[u * 3 + 1] / 10 - z) * blend; }
-      units.push([x, z, r.teams[u], s0]);
+      units.push([x, z, r.teams[u], s0, broken.has(u) ? 2 : pinned.has(u) ? 1 : 0]);
       if (s0 !== 1) continue;
       for (let p = 0; p < r.points.length; p++) {
         const dx = x - r.points[p][0], dz = z - r.points[p][1];
@@ -168,6 +170,10 @@ canvas { width: 100%; aspect-ratio: 160 / 100; max-width: 100%; display: block; 
       ctx.fillStyle = colors[unit[2]];
       if (unit[3] === 2) { ctx.globalAlpha = 0.25; ctx.fillRect(X(unit[0]) - radius * 0.6, Z(unit[1]) - radius * 0.6, radius * 1.2, radius * 1.2); ctx.globalAlpha = 1; continue; }
       ctx.beginPath(); ctx.arc(X(unit[0]), Z(unit[1]), radius, 0, Math.PI * 2); ctx.fill();
+      if (unit[4] === 0) continue;
+      // Pinned: a thin ring. Broken: a thick ring in the warning colour.
+      ctx.strokeStyle = unit[4] === 2 ? token("--broken") : token("--fg"); ctx.lineWidth = (unit[4] === 2 ? 2 : 1) * ratio;
+      ctx.beginPath(); ctx.arc(X(unit[0]), Z(unit[1]), radius + 2 * ratio, 0, Math.PI * 2); ctx.stroke();
     }
 
     const owned = [0, 0, 0]; for (const o of a.o) owned[o] = (owned[o] || 0) + 1;

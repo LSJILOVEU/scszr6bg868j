@@ -46,6 +46,8 @@ namespace WarCore.Content
         public int BoundFireTicks { get; }
         public int BoundSharePermille { get; }
         public int BoundMinRangeMm { get; }
+        // The pressure system's numbers (the ten pressure* fields, all or none); null leaves the system out of the battle.
+        public WarCore.Battle.PressureRules? Pressure { get; internal set; }
         // Builds the load error for a written field (pack, layer, entry, field); null when the section is not written.
         internal System.Func<string, string, ContentException> FieldError { get; set; }
         internal AiRules(int failedSlotTicks, int targetMemoryTicks = 0, int searchTicks = 0, int reactionTicks = 0, int senseTicks = 1,
@@ -88,6 +90,13 @@ namespace WarCore.Content
         internal const int MaxSlotRingMm = 50000;
         internal const int MaxBoundTicks = 100000;
         internal const int MaxBoundMinRangeMm = 512000; // PLACEHOLDER: maximum map side length.
+        internal const int MaxPressureRadiusMm = 512000; // PLACEHOLDER: maximum map side length.
+        // The pressure system's fields: written all ten or none.
+        internal static readonly string[] PressureFields =
+        {
+            "pressureDeathRadiusMm", "pressureDeathShock", "pressureNearRadiusMm", "pressureNearShock", "pressureDecayPermille",
+            "pressureBrokenAt", "pressureRecoverAt", "pressurePinnedAt", "pressureSpreadPermille", "pressureBreakSharePermille",
+        };
         // The kinds of part a parameter can belong to.
         internal enum PartKind { Dispatch, Placement, Engage }
         // Which part each part parameter belongs to. A parameter written while its part is not selected is an error.
@@ -124,6 +133,7 @@ namespace WarCore.Content
             string dispatch = ContentPolicies.NearestDispatch, placement = ContentPolicies.NearestSlot, engage = ContentPolicies.HoldEngage;
             int boundMove = 0, boundFire = 0, boundShare = 0, boundMinRange = 0;
             System.Func<string, string, ContentException> fieldError = null;
+            WarCore.Battle.PressureRules? pressure = null;
             if (entry != null)
             {
                 var r = new EntryReader(b.Pack, entry);
@@ -182,11 +192,25 @@ namespace WarCore.Content
                     boundShare = r.Int("boundSharePermille", 0, 1000);
                     boundMinRange = r.Int("boundMinRangeMm", 0, MaxBoundMinRangeMm);
                 }
+                bool pressed = false;
+                foreach (string field in PressureFields) pressed |= r.Has(field);
+                // Any of the ten written makes all ten required: a missing one throws "is missing field".
+                if (pressed)
+                {
+                    int max = WarCore.Battle.Pressure.Max;
+                    int deathRadius = r.Int("pressureDeathRadiusMm", 0, MaxPressureRadiusMm), deathShock = r.Int("pressureDeathShock", 0, max);
+                    int nearRadius = r.Int("pressureNearRadiusMm", 0, MaxPressureRadiusMm), nearShock = r.Int("pressureNearShock", 0, max);
+                    int decay = r.Int("pressureDecayPermille", 1, 1000), brokenAt = r.Int("pressureBrokenAt", 1, max);
+                    int recoverAt = r.Int("pressureRecoverAt", 0, max), pinnedAt = r.Int("pressurePinnedAt", 1, max);
+                    int courage = r.Int("pressureSpreadPermille", 0, 1000), breakShare = r.Int("pressureBreakSharePermille", 0, 1000);
+                    if (recoverAt >= brokenAt) throw r.Bad(r.FieldOf("pressureRecoverAt"), "must be below pressureBrokenAt (" + brokenAt + ")");
+                    pressure = new WarCore.Battle.PressureRules(deathRadius, deathShock, nearRadius, nearShock, decay, brokenAt, recoverAt, pinnedAt, courage, breakShare);
+                }
                 fieldError = (field, why) => r.Bad(r.FieldOf(field), why);
                 r.Done();
             }
             b.Publish(new AiRules(failed, memory, search, reaction, sense, burst, pause, suppress, chase, fair, follows, hold, spread, dispatch, placement, spacing, scatter, ring,
-                engage, boundMove, boundFire, boundShare, boundMinRange) { SlotRingError = ringError, FieldError = fieldError });
+                engage, boundMove, boundFire, boundShare, boundMinRange) { SlotRingError = ringError, FieldError = fieldError, Pressure = pressure });
         }
     }
 }

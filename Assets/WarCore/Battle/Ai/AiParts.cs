@@ -10,8 +10,14 @@ namespace WarCore.Battle
         public readonly StableId Id;
         public readonly int Team;
         public readonly SimVec3 Here;
-        public AiUnit(StableId id, int team, SimVec3 here) { Id = id; Team = team; Here = here; }
+        // How hard the unit is pressed (Pressure); Calm when the battle runs without that system.
+        public readonly AiNerve Nerve;
+        public AiUnit(StableId id, int team, SimVec3 here, AiNerve nerve = AiNerve.Calm) { Id = id; Team = team; Here = here; Nerve = nerve; }
     }
+
+    // What the pressure system (Pressure) says about one unit: Pinned at or above the pinned line; Broken from the
+    // broken line until the pressure has fallen back to the recover line.
+    public enum AiNerve { Calm, Pinned, Broken }
 
     // Read-only battlefield facts for AI parts. The scheduler owns it and calls Begin once per Step; nothing a part
     // reads here changes during a Step.
@@ -86,16 +92,22 @@ namespace WarCore.Battle
         SimVec3 Anchor(in AiUnit unit, int point, AiField field);
     }
 
-    // What a unit that sees an enemy does at this think: Hold stands and fires (the behaviour before parts); Advance
-    // goes on to its point as if it saw nothing (dispatch and placement), skipping suppression and search.
-    public enum AiEngage { Hold, Advance }
+    // What the engage part answers at a think. Hold: stand where it is (it still fires). Advance: go on as a unit that
+    // is left alone would. Fallback: go to the team's nearest owned point and stand there (to the team's base when it
+    // owns none, stand when it has neither).
+    public enum AiEngage { Hold, Advance, Fallback }
 
-    // Engage: asked only when the unit sees an enemy, at the enemy's point. The answer may depend only on the unit, the
-    // enemy's point, the field and the part's own parameters (no state), like the other parts.
+    // Engage: what a unit that sees an enemy, or is pressed, does. The answers may depend only on the unit, the enemy's
+    // point, the field and the part's own parameters (no state), like the other parts.
     public interface IAiEngage
     {
         ulong Fold(ulong digest);
+        // An enemy is in sight, at this point. Advance goes on to the unit's point (dispatch and placement), skipping
+        // suppression and search.
         AiEngage Decide(in AiUnit unit, SimVec3 enemy, AiField field);
+        // No enemy is in sight. Asked only for a unit that is not Calm. Advance leaves the think as it was before parts
+        // (suppression, search, then the point); Hold keeps suppression and skips the rest.
+        AiEngage Unseen(in AiUnit unit, AiField field);
     }
 
     // The parts one battle's AI runs with. Missing parts are the defaults, which leave the battle as it was before
