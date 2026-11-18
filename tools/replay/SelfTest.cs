@@ -40,6 +40,33 @@ namespace WarCore.Replay
             for (int i = 0; i < 8; i++) far.Add((-40, i));
             Expect("beyond attack range undefined", double.IsNaN(Metrics.AttackBearingSpread(far, 1, points, owners)));
 
+            // Close share: 12 units, pairs 1 m apart (close) and singles 5 m from everyone.
+            var pairs = new List<(double x, double z)>();
+            for (int i = 0; i < 4; i++) { pairs.Add((i * 10, 0)); pairs.Add((i * 10 + 1, 0)); }
+            for (int i = 0; i < 4; i++) pairs.Add((i * 10 + 5, 20));
+            Expect("closeShare 8 of 12", Math.Abs(Metrics.CloseShare(pairs) - 8.0 / 12) < 1e-12);
+            var apart = new List<(double x, double z)>();
+            for (int i = 0; i < 6; i++) { apart.Add((i * 10, 0)); apart.Add((i * 10, 1.2)); }
+            Expect("closeShare at exactly 1.2 m is not close", Metrics.CloseShare(apart) == 0);
+            Expect("closeShare undefined below MinUnits", double.IsNaN(Metrics.CloseShare(pairs.GetRange(0, Metrics.MinUnits - 1))));
+
+            // Near points: only units within 2 x radius (12 m) of a point count; nearest teammate from the whole team.
+            var near = new List<(double x, double z)>();
+            for (int i = 0; i < 10; i++) near.Add((i * 0.5 - 2.25, 11));  // within 12 m of (0, 0), 0.5 m apart: all close
+            for (int i = 0; i < 10; i++)                                  // 11 m around (100, 0), 6.8 m apart: none close
+                near.Add((100 + 11 * Math.Cos(i * Math.PI / 5), 11 * Math.Sin(i * Math.PI / 5)));
+            near.Add((50, 50)); near.Add((50.5, 50));                   // far from both points, close to each other
+            Expect("closeShareNearPoints 10 of 20", Math.Abs(Metrics.CloseShareNearPoints(near, points) - 0.5) < 1e-12);
+            Expect("closeShareNearPoints undefined below MinUnits", double.IsNaN(Metrics.CloseShareNearPoints(near.GetRange(11, 11), points)));
+
+            // Idle outside: idle and beyond radius + ring of every point.
+            var idleUnits = new List<(double x, double z)>(); var idle = new List<bool>();
+            for (int i = 0; i < 10; i++) { idleUnits.Add((0, i < 5 ? 3 : 9)); idle.Add(true); }   // 5 inside 6 m, 5 at 9 m
+            idleUnits.Add((50, 50)); idle.Add(false);                                              // outside but walking
+            idleUnits.Add((50, 50)); idle.Add(true);                                               // outside and idle
+            Expect("idleOutside 6 of 12 without a ring", Math.Abs(Metrics.IdleOutside(idleUnits, idle, points, 0) - 0.5) < 1e-12);
+            Expect("idleOutside 1 of 12 with a 6 m ring", Math.Abs(Metrics.IdleOutside(idleUnits, idle, points, 6) - 1.0 / 12) < 1e-12);
+
             string a = Program.Export("base", 300, 3, out _), b = Program.Export("base", 300, 3, out _);
             Expect("export repeats byte for byte", a == b);
 

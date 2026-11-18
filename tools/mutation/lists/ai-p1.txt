@@ -1,0 +1,336 @@
+# AI-P1: ai.slotSpacingMm and ai.slotRingMm (scheduler lattice: spacing and an outer ring of slots) and the placement part
+# "scatter". Filters run only the AI-P1 tests; the default battles are held by the locked suites listed in the PR.
+
+[ai-p1-01-spacing-not-built]
+file = Assets/WarCore/Battle/GuardSlots.cs
+filter = FullyQualifiedName~AiP1Tests
+expect = WarCore.Tests.AiP1Tests.Slots_TwoMetreSpacingByHand
+note = the lattice ignores the spacing
+original:
+|                         long dx = spacingRaw * (2 * q + r) / 2;
+replacement:
+|                         long dx = SpacingRaw * (2 * q + r) / 2;
+
+[ai-p1-02-row-height]
+file = Assets/WarCore/Battle/GuardSlots.cs
+filter = FullyQualifiedName~AiP1Tests
+expect = WarCore.Tests.AiP1Tests.Slots_TwoMetreSpacingByHand
+note = rows keep the 1 m height
+original:
+|                         long dz = spacingRaw * r * RowHeightNumerator / RowHeightDenominator;
+replacement:
+|                         long dz = SpacingRaw * r * RowHeightNumerator / RowHeightDenominator;
+
+[ai-p1-03-table-spacing]
+file = Assets/WarCore/Battle/GuardSlots.cs
+filter = FullyQualifiedName~AiP1Tests
+expect = WarCore.Tests.AiP1Tests.Slots_RingWidensTheTable
+note = the slot tables are built at 1 m
+original:
+|                 SimVec3[] table = Build(points[p].Center, zone, spacingRaw);
+replacement:
+|                 SimVec3[] table = Build(points[p].Center, zone);
+
+[ai-p1-04-ring-ignored]
+file = Assets/WarCore/Battle/GuardSlots.cs
+filter = FullyQualifiedName~AiP1Tests
+expect = WarCore.Tests.AiP1Tests.Slots_RingWidensTheTable
+note = the ring does not widen the table
+original:
+|                 SimFix zone = points[p].Radius + SimFix.FromRaw(ringRaw);
+replacement:
+|                 SimFix zone = points[p].Radius;
+
+[ai-p1-05-reach-one-metre]
+file = Assets/WarCore/Battle/GuardSlots.cs
+filter = FullyQualifiedName~AiP1Tests
+expect = WarCore.Tests.AiP1Tests.Slots_NearestReachesOneSpacingPastTheEdge
+note = the point filter keeps the 1 m margin
+original:
+|                 SimFix reach = zone + SimFix.FromRaw(spacingRaw);
+replacement:
+|                 SimFix reach = zone + SimFix.FromInt(1);
+
+[ai-p1-06-nearest-one-metre]
+file = Assets/WarCore/Battle/GuardSlots.cs
+filter = FullyQualifiedName~AiP1Tests
+expect = WarCore.Tests.AiP1Tests.Slots_NearestReachesOneSpacingPastTheEdge
+note = nearest searches 1 m around a slot
+original:
+|             adjacentSquared = spacingRaw * spacingRaw;
+replacement:
+|             adjacentSquared = SimFix.Scale * SimFix.Scale;
+
+[ai-p1-07-ring-not-passed]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiP1Tests
+expect = WarCore.Tests.AiP1Tests.Battle_SixtyUnitsAtOnePoint(6000
+note = the scheduler builds no ring
+original:
+|             slots = new GuardSlots(pack.Points, parts.SlotSpacingRaw, parts.SlotRingRaw);
+replacement:
+|             slots = new GuardSlots(pack.Points, parts.SlotSpacingRaw);
+
+[ai-p1-08-spacing-not-passed]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiP1Tests
+expect = WarCore.Tests.AiP1Tests.Battle_SixtyUnitsAtOnePoint
+note = the scheduler keeps the 1 m lattice
+original:
+|             slots = new GuardSlots(pack.Points, parts.SlotSpacingRaw, parts.SlotRingRaw);
+replacement:
+|             slots = new GuardSlots(pack.Points, GuardSlots.SpacingRaw, parts.SlotRingRaw);
+
+[ai-p1-09-spacing-not-folded]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiP1Tests
+expect = WarCore.Tests.AiP1Tests.Battle_PolicyDigestAndSnapshots
+note = a 2 m battle shares the default digest
+original:
+|             if (parts.SlotSpacingRaw != GuardSlots.SpacingRaw)
+replacement:
+|             if (false)
+
+[ai-p1-10-ring-tag]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiP1Tests
+expect = WarCore.Tests.AiP1Tests.Battle_PolicyDigestAndSnapshots
+note = the ring folds under another tag
+original:
+| hash.Add("battle.ai.slot-ring.v1");
+replacement:
+| hash.Add("battle.ai.slot-ring.v2");
+
+[ai-p1-11-ring-not-folded]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiP1Tests
+expect = WarCore.Tests.AiP1Tests.Battle_PolicyDigestAndSnapshots
+note = a ring battle shares the default digest
+original:
+|             if (parts.SlotRingRaw != 0)
+replacement:
+|             if (false)
+
+[ai-p1-12-parts-ring]
+file = Assets/WarCore/Battle/Ai/AiParts.cs
+filter = FullyQualifiedName~AiP1Tests
+expect = WarCore.Tests.AiP1Tests.Content_FieldsAreReadAndBuildTheParts
+note = the parts drop the ring
+original:
+|             SlotSpacingRaw = slotSpacingRaw; SlotRingRaw = slotRingRaw;
+replacement:
+|             SlotSpacingRaw = slotSpacingRaw; SlotRingRaw = 0;
+
+[ai-p1-13-scatter-salt]
+file = Assets/WarCore/Battle/Ai/ScatterPlacement.cs
+filter = FullyQualifiedName~AiP1Tests
+expect = WarCore.Tests.AiP1Tests.Scatter_AnchorsByHand
+expect = WarCore.Tests.AiP1Tests.Scatter_QuadrantsOfAHundredUnits
+note = another salt
+original:
+|         private const ulong Salt = 0x6a09e667bb67ae85UL;
+replacement:
+|         private const ulong Salt = 0x6a09e667bb67ae84UL;
+
+[ai-p1-14-scatter-no-point]
+file = Assets/WarCore/Battle/Ai/ScatterPlacement.cs
+filter = FullyQualifiedName~AiP1Tests
+expect = WarCore.Tests.AiP1Tests.Scatter_AnchorsByHand
+note = the spot does not depend on the point
+original:
+|             ulong m = AiParts.Mix(unit.Id.Value ^ Salt ^ (ulong)point);
+replacement:
+|             ulong m = AiParts.Mix(unit.Id.Value ^ Salt);
+
+[ai-p1-15-scatter-span]
+file = Assets/WarCore/Battle/Ai/ScatterPlacement.cs
+filter = FullyQualifiedName~AiP1Tests
+expect = WarCore.Tests.AiP1Tests.Scatter_AnchorsByHand
+note = the offsets never reach +scatterMm
+original:
+|             ulong span = 2UL * (ulong)scatterMm + 1UL;
+replacement:
+|             ulong span = 2UL * (ulong)scatterMm;
+
+[ai-p1-16-scatter-z-bits]
+file = Assets/WarCore/Battle/Ai/ScatterPlacement.cs
+filter = FullyQualifiedName~AiP1Tests
+expect = WarCore.Tests.AiP1Tests.Scatter_AnchorsByHand
+note = x and z use the same bits
+original:
+|             long v = (long)((m >> 32) % span) - scatterMm;
+replacement:
+|             long v = (long)((m & 0xFFFFFFFFUL) % span) - scatterMm;
+
+[ai-p1-17-scatter-z-axis]
+file = Assets/WarCore/Battle/Ai/ScatterPlacement.cs
+filter = FullyQualifiedName~AiP1Tests
+expect = WarCore.Tests.AiP1Tests.Scatter_AnchorsByHand
+note = the z offset goes to x
+original:
+| center.Z + SimFix.Ratio(v, 1000)
+replacement:
+| center.Z + SimFix.Ratio(u, 1000)
+
+[ai-p1-18-scatter-not-chosen]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~AiP1Tests
+expect = WarCore.Tests.AiP1Tests.Content_FieldsAreReadAndBuildTheParts
+expect = WarCore.Tests.AiP1Tests.Battle_PolicyDigestAndSnapshots
+note = scatter builds the default placement
+original:
+| ai?.Placement == Scatter ? new ScatterPlacement(ai.ScatterMm)
+replacement:
+| ai?.Placement == "none" ? new ScatterPlacement(ai.ScatterMm)
+
+[ai-p1-19-zones-edge]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~AiP1Tests
+expect = WarCore.Tests.AiP1Tests.Content_TouchingSlotZonesAreAnError
+note = zones exactly one spacing apart are refused
+original:
+|                     if (distance < new SimVec3(gap, default, default).LengthSquared)
+replacement:
+|                     if (distance <= new SimVec3(gap, default, default).LengthSquared)
+
+[ai-p1-20-zones-one-ring]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~AiP1Tests
+expect = WarCore.Tests.AiP1Tests.Content_TouchingSlotZonesAreAnError
+note = only one ring is counted
+original:
+| SimFix.FromRaw(2 * ring + spacing)
+replacement:
+| SimFix.FromRaw(ring + spacing)
+
+[ai-p1-21-zones-unchecked]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~AiP1Tests
+expect = WarCore.Tests.AiP1Tests.Content_TouchingSlotZonesAreAnError
+note = touching zones load
+original:
+|             if (ring > 0) CheckZones(ai, points, spacing, ring);
+replacement:
+|             if (ring < 0) CheckZones(ai, points, spacing, ring);
+
+[ai-p1-22-zones-not-passed]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~AiP1Tests
+expect = WarCore.Tests.AiP1Tests.Content_TouchingSlotZonesAreAnError
+note = the battle never checks its points
+original:
+| ContentPolicies.Parts(ai, recipe.Match.Points)
+replacement:
+| ContentPolicies.Parts(ai)
+
+[ai-p1-23-spacing-low]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP1Tests
+expect = WarCore.Tests.AiP1Tests.Content_BadFieldNamesPackEntryAndField
+note = 499 mm is accepted
+original:
+|         internal const int MinSlotSpacingMm = 500, MaxSlotSpacingMm = 5000;
+replacement:
+|         internal const int MinSlotSpacingMm = 499, MaxSlotSpacingMm = 5000;
+
+[ai-p1-24-spacing-high]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP1Tests
+expect = WarCore.Tests.AiP1Tests.Content_BadFieldNamesPackEntryAndField
+note = 5001 mm is accepted
+original:
+|         internal const int MinSlotSpacingMm = 500, MaxSlotSpacingMm = 5000;
+replacement:
+|         internal const int MinSlotSpacingMm = 500, MaxSlotSpacingMm = 5001;
+
+[ai-p1-25-ring-high]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP1Tests
+expect = WarCore.Tests.AiP1Tests.Content_BadFieldNamesPackEntryAndField
+note = 50001 mm is accepted
+original:
+|         internal const int MaxSlotRingMm = 50000;
+replacement:
+|         internal const int MaxSlotRingMm = 50001;
+
+[ai-p1-26-ring-low]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP1Tests
+expect = WarCore.Tests.AiP1Tests.Content_BadFieldNamesPackEntryAndField
+note = a negative ring is accepted
+original:
+|                     ring = r.Int("slotRingMm", 0, MaxSlotRingMm);
+replacement:
+|                     ring = r.Int("slotRingMm", -1, MaxSlotRingMm);
+
+[ai-p1-27-scatter-low]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP1Tests
+expect = WarCore.Tests.AiP1Tests.Content_BadFieldNamesPackEntryAndField
+note = scatterMm 0 is accepted
+original:
+| scatter = r.Int("scatterMm", 1, MaxScatterMm);
+replacement:
+| scatter = r.Int("scatterMm", 0, MaxScatterMm);
+
+[ai-p1-28-scatter-optional]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP1Tests
+expect = WarCore.Tests.AiP1Tests.Content_ScatterWithoutItsFieldIsAnError
+note = scatter runs without scatterMm
+original:
+| if (placement == ContentPolicies.Scatter) scatter = r.Int(
+replacement:
+| if (placement == ContentPolicies.Scatter && r.Has("scatterMm")) scatter = r.Int(
+
+[ai-p1-29-owner-scatter]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP1Tests
+expect = WarCore.Tests.AiP1Tests.Content_BadFieldNamesPackEntryAndField
+expect = WarCore.Tests.AiP1Tests.Content_ParametersOfAnUnselectedDispatchAreFound
+note = scatterMm has no owner
+original:
+|             ("scatterMm", true, ContentPolicies.Scatter),
+replacement:
+|
+
+[ai-p1-30-owner-hold]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP1Tests
+expect = WarCore.Tests.AiP1Tests.Content_ParametersOfAnUnselectedDispatchAreFound
+note = holdSharePermille has no owner
+original:
+|             ("holdSharePermille", false, ContentPolicies.NearestDispatch),
+replacement:
+|
+
+[ai-p1-31-owner-kind]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP1Tests
+expect = WarCore.Tests.AiP1Tests.Content_BadFieldNamesPackEntryAndField
+expect = WarCore.Tests.AiP1Tests.Content_ParametersOfAnUnselectedDispatchAreFound
+note = placement parameters are checked against the dispatch
+original:
+| (Owners[i].placement ? placement : dispatch) != Owners[i].part
+replacement:
+| (Owners[i].placement ? dispatch : placement) != Owners[i].part
+
+[ai-p1-32-ring-not-kept]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP1Tests
+expect = WarCore.Tests.AiP1Tests.Content_FieldsAreReadAndBuildTheParts
+note = the ring is read but not kept
+original:
+| dispatch, placement, spacing, scatter, ring) {
+replacement:
+| dispatch, placement, spacing, scatter, 0) {
+
+[ai-p1-33-spacing-mm]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~AiP1Tests
+expect = WarCore.Tests.AiP1Tests.Content_FieldsAreReadAndBuildTheParts
+note = spacing read as centimetres
+original:
+| long spacing = SimFix.Ratio(ai?.SlotSpacingMm ?? AiRules.DefaultSlotSpacingMm, 1000).Raw;
+replacement:
+| long spacing = SimFix.Ratio(ai?.SlotSpacingMm ?? AiRules.DefaultSlotSpacingMm, 100).Raw;

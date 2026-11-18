@@ -493,7 +493,7 @@ filter = FullyQualifiedName~AiPartsTests
 expect = WarCore.Tests.AiPartsTests.Parts_FrontlineFollowsTheOwners
 note = the content parts never reach the AI system
 original:
-| recipe.Seed, ContentPolicies.Parts(ai))
+| recipe.Seed, ContentPolicies.Parts(ai, recipe.Match.Points))
 replacement:
 | recipe.Seed, null)
 
