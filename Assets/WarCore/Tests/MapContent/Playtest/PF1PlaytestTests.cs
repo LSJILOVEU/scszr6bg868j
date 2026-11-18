@@ -65,7 +65,7 @@ namespace WarCore.Tests
         {
             M6World w = World(DemoRecipes.MpPlaytest());
             SimpleAiSystem ai = w.System<SimpleAiSystem>();
-            Assert.That(AiPlaytest.Field(ai, "holdSharePermille"), Is.EqualTo(300));
+            Assert.That(AiPlaytest.Field(AiPlaytest.Field(ai, "dispatch"), "holdSharePermille"), Is.EqualTo(300));
             Assert.That(AiPlaytest.Field(ai, "fairDecisions"), Is.EqualTo(false));
             Assert.That(AiPlaytest.Field(w.System<FailedSlotMemory>(), "ticks"), Is.EqualTo(90));
             Assert.That(AiPlaytest.Field(w.System<TargetMemory>(), "ticks"), Is.EqualTo(300));
