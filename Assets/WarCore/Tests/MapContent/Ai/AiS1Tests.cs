@@ -134,8 +134,10 @@ namespace WarCore.Tests
                 // 12 m - 1 mm holds, exactly 12 m advances.
                 Assert.That(bound.Decide(in unit, At(11999), field), Is.EqualTo(AiEngage.Hold), "tick " + tick);
                 Assert.That(bound.Decide(in unit, At(12000), field), Is.EqualTo(AiEngage.Advance), "tick " + tick);
-                // Horizontal only: height does not count.
-                SimVec3 above = At(12000); above = new SimVec3(above.X, above.Y + SimFix.FromInt(50), above.Z);
+                // Horizontal only: height does not count (50 m up, 1 mm inside the range still holds).
+                SimVec3 above = At(11999); above = new SimVec3(above.X, above.Y + SimFix.FromInt(50), above.Z);
+                Assert.That(bound.Decide(in unit, above, field), Is.EqualTo(AiEngage.Hold), "tick " + tick);
+                above = At(12000); above = new SimVec3(above.X, above.Y + SimFix.FromInt(50), above.Z);
                 Assert.That(bound.Decide(in unit, above, field), Is.EqualTo(AiEngage.Advance), "tick " + tick);
             }
             Assert.That((checkedMove, checkedFire), Is.EqualTo((2 * Move, 2 * Fire)));
