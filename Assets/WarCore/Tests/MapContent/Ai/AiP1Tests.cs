@@ -203,6 +203,8 @@ namespace WarCore.Tests
         {
             AiRules rules = Pack(P1).Section<AiRules>();
             ControlPointDef[] apart = { new ControlPointDef(4, SimVec3.Metres(50, 0, 20), SimFix.FromInt(6)), new ControlPointDef(9, SimVec3.Metres(76, 0, 20), SimFix.FromInt(6)) };
+            // Exactly one spacing apart loads.
+            Assert.That(() => ContentPolicies.Parts(rules, apart), Throws.Nothing);
             Assert.That(ContentPolicies.Parts(rules, apart).SlotRingRaw, Is.EqualTo(393216L));
             ControlPointDef[] close = { apart[0], new ControlPointDef(9, new SimVec3(SimFix.FromInt(76) - SimFix.FromRaw(1), default, SimFix.FromInt(20)), SimFix.FromInt(6)) };
             var e = Assert.Throws<ContentException>(() => ContentPolicies.Parts(rules, close));
