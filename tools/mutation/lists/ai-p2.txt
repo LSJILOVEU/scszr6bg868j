@@ -65,7 +65,7 @@ replacement:
 [ai-p2-07-left-right-bit]
 file = Assets/WarCore/Battle/Ai/AssaultRolesPlacement.cs
 filter = FullyQualifiedName~AssaultRolesTests
-expect = WarCore.Tests.AssaultRolesTests.Roles_AnchorsAndWaypointsByHand
+expect = WarCore.Tests.AssaultRolesTests.Roles_CountsAndSidesAfterArrival
 note = left and right flankers are split by another bit
 original:
 |             if (roll < frontPermille + flankPermille) return ((mix >> 20) & 1UL) == 0 ? Role.Left : Role.Right;
@@ -165,7 +165,7 @@ replacement:
 [ai-p2-17-not-built]
 file = Assets/WarCore/Content/Data/ContentPolicies.cs
 filter = FullyQualifiedName~AssaultRolesTests
-expect = WarCore.Tests.AssaultRolesTests.Roles_ChangesTheBattle
+expect = WarCore.Tests.AssaultRolesTests.Roles_FarFlankerPassesItsWaypoint
 note = the content id never builds the part
 original:
 |         private static IAiPlacement Placement(AiRules ai) => ai?.Placement == AssaultRoles
