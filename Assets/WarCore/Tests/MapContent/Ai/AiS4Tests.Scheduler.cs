@@ -72,10 +72,10 @@ namespace WarCore.Tests
         private static bool SameXz(SimVec3 a, SimVec3 b) => a.X.Raw == b.X.Raw && a.Z.Raw == b.Z.Raw;
 
         // Every attacker is kept pinned for four thinks, from the east on the first tick and from the north afterwards (which
-        // must not change where it hides from). At each of its thinks a unit does exactly one of four things, each checked
-        // against the rule above from where everybody stood before the tick: it stands in cover; it keeps an order whose
-        // target still is free cover; it is ordered to the nearest spot; or it finds none and stands. Off its think
-        // nothing is ordered.
+        // must not change where it hides from). At each of its thinks a unit does exactly one of three things, each checked
+        // against the rule above from where everybody stood before the tick: it stands in cover; it is ordered to the
+        // nearest spot (also when it was walking already: again counts those); or it finds none and stands. Off its
+        // think nothing is ordered.
         [TestCase(6000, 1000, 2000, 60)]
         [TestCase(9000, 1000, 2000, 60)]
         [TestCase(9000, 700, 1200, 60)]
@@ -87,7 +87,7 @@ namespace WarCore.Tests
             Assert.That(p.StateVersion, Is.EqualTo(2));
             AiField field = FieldOf(w); IMoveOrders moves = MovesOf(w);
             SimFix reach = SimFix.Ratio(depth, 1000);
-            int covered = 0, kept = 0, ordered = 0, stood = 0, blocked = 0, taken = 0, unsure = 0;
+            int covered = 0, again = 0, ordered = 0, stood = 0, blocked = 0, taken = 0, unsure = 0;
             var shots = new FireRecord[Attackers];
             var before = new SimVec3[Attackers]; var orders = new MoveIntent[Attackers];
             w.Step();
@@ -113,37 +113,30 @@ namespace WarCore.Tests
                     if (w.Combat.WallWithin(before[i], East, reach))
                     { Assert.That(now.Active, Is.False, what + " stands in cover"); covered++; continue; }
                     bool open = false;
-                    bool keeps = orders[i].Active && Horizontal2(orders[i].Target, before[i]) <= Raw2(radius) && w.Combat.WallWithin(orders[i].Target, East, reach)
-                        && w.Combat.Sees(before[i], orders[i].Target) && Clear(before, i, before[i], orders[i].Target, ref open);
                     bool finds = Spot(w, moves, before, i, East, radius, step, depth, out SimVec3 spot, ref blocked, ref taken, ref open);
                     if (open) { unsure++; continue; }
-                    if (keeps)
-                    {
-                        if (now.Active) Assert.That(now.Target, Is.EqualTo(orders[i].Target), what + " keeps its order");
-                        else Assert.That(Horizontal2(At(w, key), orders[i].Target), Is.LessThanOrEqualTo(Raw2(500)), what + " arrived");
-                        kept++; continue;
-                    }
                     if (finds)
                     {
                         Assert.That(Horizontal2(spot, before[i]), Is.LessThanOrEqualTo(Raw2(radius)), what);
                         if (now.Active) Assert.That(SameXz(now.Target, spot), Is.True, what + " ordered to " + now.Target + ", the rule says " + spot);
                         else Assert.That(Horizontal2(At(w, key), spot), Is.LessThanOrEqualTo(Raw2(500)), what + " arrived at once");
-                        ordered++; continue;
+                        ordered++; if (orders[i].Active) again++;
+                        continue;
                     }
                     Assert.That(now.Active, Is.False, what + " finds no spot and stands");
                     stood++;
                 }
             }
-            // Every branch is taken. The far wall (54, 5) is in sight only within 9 m; orders outlive a think only when the
-            // attackers start 8 m from the wall (x 56).
-            string counts = $"covered {covered} kept {kept} ordered {ordered} stood {stood} blocked {blocked} taken {taken} unsure {unsure}";
+            // Every branch is taken. The far wall (54, 5) is in sight only within 9 m; a unit is still walking at its next
+            // think only when the attackers start 8 m from the wall (x 56).
+            string counts = $"covered {covered} again {again} ordered {ordered} stood {stood} blocked {blocked} taken {taken} unsure {unsure}";
             Assert.That(covered, Is.GreaterThanOrEqualTo(30), counts);
             Assert.That(ordered, Is.GreaterThanOrEqualTo(12), counts);
             Assert.That(stood, Is.GreaterThanOrEqualTo(3), counts);
             Assert.That(taken, Is.GreaterThanOrEqualTo(40), counts);
             Assert.That(unsure, Is.LessThanOrEqualTo(6), counts);
             if (radius == 9000) Assert.That(blocked, Is.GreaterThanOrEqualTo(30), counts);
-            if (x == 56) Assert.That(kept, Is.GreaterThanOrEqualTo(5), counts);
+            if (x == 56) Assert.That(again, Is.GreaterThanOrEqualTo(5), counts);
         }
 
         // The plain picture: the attackers stand 1 m west of the wall's line. Those right behind the wall (z 17.5 .. 22.5)
@@ -196,15 +189,15 @@ namespace WarCore.Tests
             Assert.That(taken, Is.GreaterThan(0), "those left in the open were kept out by teammates");
         }
 
-        // An order under way is kept only while its target is cover within the radius. The attackers start 13 m from the
-        // wall (no spot within 9 m): key 10 is on its way to a spot right behind the wall, key 12 to a point in the open
+        // A pinned unit that finds no spot drops the order it had, wherever it led. The attackers start 13 m from the wall
+        // (no spot within 9 m): key 10 is on its way to a spot right behind the wall, key 12 to a point in the open
         // 8 m ahead. Each stands at its next think.
         [Test]
-        public void Pinned_DropsAnOrderThatIsNotCoverWithinTheRadius()
+        public void Pinned_WithoutASpotDropsTheOrderItHad()
         {
             M6World w = Yard(S4(), new[] { (64, 17, 1, 6) }, attackersX: 50);
             Pressure p = w.System<Pressure>(); IMoveOrders moves = MovesOf(w); AiField field = FieldOf(w);
-            SimVec3 far = Mm(63000, 19500), open = Mm(58000, 21500), near = Mm(63000, 20500);
+            SimVec3 far = Mm(63000, 19500), open = Mm(58000, 21500);
             Assert.That(w.Combat.WallWithin(far, East, SimFix.FromInt(2)) && w.Combat.Sees(At(w, 10), far), Is.True);
             Assert.That(w.Combat.WallWithin(open, East, SimFix.FromInt(2)), Is.False);
             moves.Order(Id(w, 10), far); moves.Order(Id(w, 12), open);
@@ -227,21 +220,6 @@ namespace WarCore.Tests
                 }
             }
             Assert.That(thought, Is.EqualTo(2));
-            Assert.That(Horizontal2(At(w, 10), far), Is.GreaterThan(Raw2(9000)), "the spot behind the wall was beyond the radius");
-            Assert.That(Horizontal2(At(w, 12), open), Is.LessThan(Raw2(9000)), "the point in the open was within it");
-            // The same order from within the radius is kept to the end.
-            M6World v = Yard(S4(), new[] { (64, 17, 1, 6) }, attackersX: 55);
-            Pressure q = v.System<Pressure>();
-            MovesOf(v).Order(Id(v, 11), near);
-            for (int t = 0; t < 2 * Think; t++)
-            {
-                for (int i = 0; i < Attackers; i++) shots[i] = Near(v, East, At(v, (ulong)i + 1));
-                q.Advance(shots);
-                v.Step();
-                MoveIntent order = v.Read<MoveIntent>(11);
-                if (order.Active) Assert.That(order.Target, Is.EqualTo(near), "tick " + t);
-            }
-            Assert.That(At(v, 11), Is.EqualTo(near));
         }
 
         // Once it is calm again a unit leaves its cover and goes for the enemy point as before.
@@ -341,6 +319,8 @@ namespace WarCore.Tests
                 Assert.That(w.System<TargetMemory>().TryRecall(id, w.Sim.Clock.Tick, out _, out _, out _), Is.EqualTo(key < 8 || key > 13), "key " + key + " saw an enemy");
                 Assert.That(From(p, id), Is.EqualTo(East), "key " + key);
                 Assert.That(w.Read<MoveIntent>(key).Active, Is.False, "key " + key);
+                // Nobody went on toward the enemy: all are west of the wall's far face.
+                Assert.That(here.X.Raw, Is.LessThan(85L * SimFix.Scale), "key " + key);
                 if (w.Combat.WallWithin(here, East, SimFix.FromInt(2))) { covered++; continue; }
                 bool unsure = false;
                 Assert.That(Spot(w, moves, team, (int)key - 1, East, 9000, 1000, 2000, out _, ref blocked, ref taken, ref unsure) && !unsure, Is.False,

@@ -15,7 +15,8 @@ namespace WarCore.Battle
     // walked to in a straight line: the sight line from the unit to the spot is clear, and the unit's own body moved
     // along the last Approach of that line would touch no living teammate (nobody stands on the spot or right in front
     // of it; teammates farther back on the way are walked round). Ties go to the lower z, then the lower x. A unit that
-    // cannot get into any spot stands where it is rather than push at the others.
+    // cannot get into any spot stands where it is rather than push at the others. The spot is looked for again at
+    // every think, also while the unit walks: when its spot is taken meanwhile it goes for another or stands.
     // Stateless: nothing is saved.
     //
     // Flat maps only: a spot takes the unit's own height.
@@ -58,11 +59,6 @@ namespace WarCore.Battle
             SimVec3 walk = CombatSystem.Horizontal(at - here);
             return !combat.FriendOnWalk(unit, walk.Length <= Approach ? here : at - walk.Normalized * Approach, at);
         }
-
-        // An order already under way is kept while its target is within the radius, still is cover and can still be
-        // walked to.
-        internal bool Keeps(EntityId unit, SimVec3 here, SimVec3 target, SimVec3 threat) =>
-            CombatSystem.Horizontal(target - here).LengthSquared <= radiusSquared && Covered(threat, target) && Walkable(unit, here, target);
 
         internal bool TryFind(EntityId unit, ulong key, SimVec3 here, SimVec3 threat, out SimVec3 spot)
         {

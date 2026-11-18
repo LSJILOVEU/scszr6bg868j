@@ -12,8 +12,9 @@ tools/replay/run.sh base                    # one setup; TICKS=3000 EVERY=6 to c
 cd tools/replay/out && python3 -m http.server   # then open /battle-replay.html (fetch needs http, not file://)
 ```
 
-Direct use: `WarCore.Replay <setup> <maxTicks> <every> <out.json>`, `--list` (setups), `--selftest` (metric checks
-and a byte-identical repeat export). The binary finds the Unity project root itself; any working directory works.
+Direct use: `WarCore.Replay <setup> <maxTicks> <every> <out.json> [lanesSeed]`, `--list` (setups), `--selftest`
+(metric checks and a byte-identical repeat export). `lanesSeed` replaces the seed of the three-lane map's battle
+(41 when left out), to compare several matches of one setup. The binary finds the Unity project root itself; any working directory works.
 Setups live in `Recipes.cs`, one line each. The page reads `replay-base.json` and `replay-playtest.json` from its own
 folder, or the files named in `?files=a.json,b.json`.
 
@@ -21,7 +22,8 @@ folder, or the files named in `?files=a.json,b.json`.
 
 Computed on every recorded frame for each team's alive, deployed units; `metrics` in the JSON holds the mean and peak
 over the match, `m` on each frame holds `[share1, share2, nn1, nn2, spread1, spread2, close1, close2, idle1, idle2,
-closeNear1, closeNear2, enemy20_1, enemy20_2, idleNoEnemy1, idleNoEnemy2, pinned1, pinned2, broken1, broken2]` (`null` = undefined).
+closeNear1, closeNear2, enemy20_1, enemy20_2, idleNoEnemy1, idleNoEnemy2, pinned1, pinned2, broken1, broken2,
+pinnedHidden1, pinnedHidden2, pinnedMoving1, pinnedMoving2, pinnedAtWall1, pinnedAtWall2]` (`null` = undefined).
 A frame also lists the indices of the pinned (`n`) and broken (`b`) units when there are any; the page draws a thin
 ring round a pinned unit and a thick yellow one round a broken unit.
 
@@ -37,8 +39,12 @@ ring round a pinned unit and a thick yellow one round a broken unit.
 | `idleNoEnemy` | `idleOutside` restricted to units with no enemy within 45 m | high = units idle away from the points with nobody to fight |
 | `pinnedShare` | Share of the team the pressure system reports as pinned (read from the system, not from positions) | 0 without the system |
 | `brokenShare` | Share of the team the pressure system reports as broken | high = a large part of the team is falling back at once |
+| `pinnedHidden` | Share of the team's pinned units that no enemy (alive, on the field) within 68 m has a wall-free line to (walls only, from above) | high = pinned units are out of the enemy's sight |
+| `pinnedMoving` | Share of the team's pinned units whose position differs from the previous recorded frame | walking to cover and pushing at each other both count |
+| `pinnedAtWall` | Share of the team's pinned units within 2.5 m of a wall | high = pinned units stand at walls |
 | `decidedTick` | Tick the match was won; `null` if not decided within `maxTicks` | |
 
+- `pinnedHidden`, `pinnedMoving` and `pinnedAtWall` are undefined on a frame with fewer than 5 pinned units of the team.
 - Undefined when fewer than 10 units are on the field (share, nn, close, idle, enemy20, idleNoEnemy, pinned, broken), fewer than 10 units near points
   (closeNear) or fewer than 5 attackers (spread).
 - The slot ring of `idleOutside` is the setup's `ai.slotRingMm` (the `RingMm` of its `Recipes.cs` entry), 0 by default.
@@ -86,3 +92,18 @@ only these to `playtest-s1` and `lanes-s1`; 3600 ticks, every 3):
 The broken peak of team 2 in `lanes-s3` (0.556) is ticks 1179-1206: the team is down to 18-19 units on the field and
 10 of them are broken. The most units of one team broken at once: 15 of 84 on the field (team 1, `lanes-s3`, tick
 963), 12 for team 2 there, 7 and 9 in `playtest-s3`.
+
+AI-S4 (cover, values PLACEHOLDER: `coverRadiusMm` 9000, `coverStepMm` 1000, `coverDepthMm` 2000; the setups add only
+these to `playtest-s3` and `lanes-s3`; 3600 ticks, every 3):
+
+| Setup | End | Hash | pinnedHidden 1/2 | pinnedMoving 1/2 | pinnedAtWall 1/2 | idleNoEnemy 1/2 |
+|---|---|---|---|---|---|---|
+| playtest-s3 | undecided at 3600 | DE8842816C51B043 | 0 / 0 | 0.058 / 0.019 | 0 / 0 | 0.005 / 0.011 |
+| playtest-s4 | undecided at 3600 | EEA41851F348FCD0 | 0 / 0 | 0.058 / 0.019 | 0 / 0 | 0.005 / 0.011 |
+| lanes-s3 | team 1 wins at tick 2676 | 33330F89BD530D84 | 0.212 / 0.001 | 0.105 / 0.252 | 0.003 / 0.206 | 0.014 / 0.013 |
+| lanes-s4 | undecided at 3600 | AA0D6ED6EFED997F | 0.211 / 0.149 | 0.246 / 0.411 | 0.552 / 0.322 | 0.009 / 0.033 |
+
+`playtest-s4` differs from `playtest-s3` in the hash only: no pinned unit on that map has a wall within reach. Over
+the seeds 41-46 of the three-lane map the means are, before and after: `pinnedHidden` 0.108 / 0.004 and 0.260 / 0.185,
+`pinnedMoving` 0.127 / 0.215 and 0.216 / 0.388; three matches of six are undecided at 3600 either way (42, 44, 45
+before; 41, 42, 44 after).

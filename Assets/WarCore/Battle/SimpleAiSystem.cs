@@ -204,12 +204,11 @@ namespace WarCore.Battle
             }
             return nearest;
         }
-        // True when the unit is now walking to cover from where it was pressed from: it keeps an order whose target still
-        // is free cover, or gets a new one. False (the unit stands) without cover rules, when it stands in cover, or when no spot is found.
+        // True when the unit is now walking to cover from where it was pressed from (the spot is found anew at every think).
+        // False (the unit stands) without cover rules, when it stands in cover, or when no spot is found.
         private bool TakesCover(EntityId entity, StableId id, SimVec3 here, bool moving, SimVec3 target)
         {
             if (cover == null || !pressure.TryPressedFrom(id, out SimVec3 threat) || cover.Covered(threat, here)) return false;
-            if (moving && cover.Keeps(entity, here, target, threat)) return true;
             if (!cover.TryFind(entity, id.Value, here, threat, out SimVec3 spot)) return false;
             OrderUnit(id, here, moving, target, spot, -1);
             return true;
