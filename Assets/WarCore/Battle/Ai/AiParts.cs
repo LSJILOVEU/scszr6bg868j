@@ -92,6 +92,16 @@ namespace WarCore.Battle
         SimVec3 Anchor(in AiUnit unit, int point, AiField field);
     }
 
+    // Optional second face of a placement: a point to walk to before the unit goes for its slot. The scheduler asks it
+    // once per think, after the dispatch, and walks the unit there (no slot reserved) only while the unit is farther
+    // from the point's centre than the waypoint is, the waypoint is standable and is not a slot coordinate; otherwise
+    // the unit takes its slot as usual. Stateless like the anchor: the part answers from the unit, the field and its
+    // own parameters, and returns false once the unit is close enough to the waypoint.
+    public interface IAiWaypoint
+    {
+        bool TryWaypoint(in AiUnit unit, int point, AiField field, out SimVec3 at);
+    }
+
     // What the engage part answers at a think. Hold: stand where it is (it still fires). Advance: go on as a unit that
     // is left alone would. Fallback: go to the team's nearest owned point and stand there (to the team's base when it
     // owns none, stand when it has neither).

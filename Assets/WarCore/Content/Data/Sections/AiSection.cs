@@ -38,6 +38,16 @@ namespace WarCore.Content
         public int SlotRingMm { get; }
         // Builds the load error for slotRingMm (pack, layer, entry, field); null when the field is not written.
         internal System.Func<string, ContentException> SlotRingError { get; set; }
+        // Placement "assault-roles" (all required when it is chosen; the three shares add up to 1000).
+        public int FrontPermille { get; }
+        public int FlankPermille { get; }
+        public int RearPermille { get; }
+        public int FrontArcMm { get; }
+        public int FlankSideMm { get; }
+        public int RearOutMm { get; }
+        public int FlankMinMm { get; }
+        public int AnchorMm { get; }
+        public int ArriveMm { get; }
         // Engage part id (ContentPolicies.EngageIds): what a unit that sees an enemy does.
         public string Engage { get; }
         // Engage "bound": ticks of the move and fire windows (whole multiples of the battle's thinkInterval), share in
@@ -55,7 +65,8 @@ namespace WarCore.Content
             int holdSharePermille = 0, int attackSpreadPoints = 1,
             string dispatch = ContentPolicies.NearestDispatch, string placement = ContentPolicies.NearestSlot,
             int slotSpacingMm = DefaultSlotSpacingMm, int scatterMm = 0, int slotRingMm = 0,
-            string engage = ContentPolicies.HoldEngage, int boundMoveTicks = 0, int boundFireTicks = 0, int boundSharePermille = 0, int boundMinRangeMm = 0)
+            string engage = ContentPolicies.HoldEngage, int boundMoveTicks = 0, int boundFireTicks = 0, int boundSharePermille = 0, int boundMinRangeMm = 0,
+            int[] assault = null)
         {
             FailedSlotTicks = failedSlotTicks; TargetMemoryTicks = targetMemoryTicks; SearchTicks = searchTicks; ReactionTicks = reactionTicks;
             SenseTicks = senseTicks; BurstShots = burstShots; BurstPauseTicks = burstPauseTicks; SuppressTicks = suppressTicks;
@@ -68,6 +79,11 @@ namespace WarCore.Content
             SlotSpacingMm = slotSpacingMm; ScatterMm = scatterMm; SlotRingMm = slotRingMm;
             Engage = engage; BoundMoveTicks = boundMoveTicks; BoundFireTicks = boundFireTicks;
             BoundSharePermille = boundSharePermille; BoundMinRangeMm = boundMinRangeMm;
+            if (assault != null)
+            {
+                FrontPermille = assault[0]; FlankPermille = assault[1]; RearPermille = assault[2]; FrontArcMm = assault[3]; FlankSideMm = assault[4];
+                RearOutMm = assault[5]; FlankMinMm = assault[6]; AnchorMm = assault[7]; ArriveMm = assault[8];
+            }
         }
     }
 
@@ -110,7 +126,17 @@ namespace WarCore.Content
             ("boundFireTicks", PartKind.Engage, ContentPolicies.BoundEngage),
             ("boundSharePermille", PartKind.Engage, ContentPolicies.BoundEngage),
             ("boundMinRangeMm", PartKind.Engage, ContentPolicies.BoundEngage),
+            ("frontPermille", PartKind.Placement, ContentPolicies.AssaultRoles), ("flankPermille", PartKind.Placement, ContentPolicies.AssaultRoles),
+            ("rearPermille", PartKind.Placement, ContentPolicies.AssaultRoles), ("frontArcMm", PartKind.Placement, ContentPolicies.AssaultRoles),
+            ("flankSideMm", PartKind.Placement, ContentPolicies.AssaultRoles), ("rearOutMm", PartKind.Placement, ContentPolicies.AssaultRoles),
+            ("flankMinMm", PartKind.Placement, ContentPolicies.AssaultRoles), ("anchorMm", PartKind.Placement, ContentPolicies.AssaultRoles),
+            ("arriveMm", PartKind.Placement, ContentPolicies.AssaultRoles),
         };
+        // assault-roles parameters in AssaultRolesPlacement's constructor order, with their ranges (PLACEHOLDER bounds).
+        internal static readonly string[] AssaultFields =
+            { "frontPermille", "flankPermille", "rearPermille", "frontArcMm", "flankSideMm", "rearOutMm", "flankMinMm", "anchorMm", "arriveMm" };
+        private static readonly int[] AssaultMin = { 0, 0, 0, 0, 1000, 1000, 0, 1000, 250 };
+        private static readonly int[] AssaultMax = { 1000, 1000, 1000, 50000, 100000, 100000, 512000, 50000, 20000 };
         private static string Selected(PartKind kind, string dispatch, string placement, string engage) =>
             kind == PartKind.Dispatch ? dispatch : kind == PartKind.Placement ? placement : engage;
         // Index in Owners of the first parameter written for a part that is not selected; -1 when there is none.
@@ -133,6 +159,7 @@ namespace WarCore.Content
             string dispatch = ContentPolicies.NearestDispatch, placement = ContentPolicies.NearestSlot, engage = ContentPolicies.HoldEngage;
             int boundMove = 0, boundFire = 0, boundShare = 0, boundMinRange = 0;
             System.Func<string, string, ContentException> fieldError = null;
+            int[] assault = null;
             WarCore.Battle.PressureRules? pressure = null;
             if (entry != null)
             {
@@ -192,6 +219,14 @@ namespace WarCore.Content
                     boundShare = r.Int("boundSharePermille", 0, 1000);
                     boundMinRange = r.Int("boundMinRangeMm", 0, MaxBoundMinRangeMm);
                 }
+                // Required when assault-roles is selected, like scatterMm above.
+                if (placement == ContentPolicies.AssaultRoles)
+                {
+                    assault = new int[AssaultFields.Length];
+                    for (int i = 0; i < assault.Length; i++) assault[i] = r.Int(AssaultFields[i], AssaultMin[i], AssaultMax[i]);
+                    if (assault[0] + assault[1] + assault[2] != 1000)
+                        throw r.Bad(r.FieldOf("rearPermille"), "frontPermille + flankPermille + rearPermille must be 1000, got " + (assault[0] + assault[1] + assault[2]));
+                }
                 bool pressed = false;
                 foreach (string field in PressureFields) pressed |= r.Has(field);
                 // Any of the ten written makes all ten required: a missing one throws "is missing field".
@@ -210,7 +245,7 @@ namespace WarCore.Content
                 r.Done();
             }
             b.Publish(new AiRules(failed, memory, search, reaction, sense, burst, pause, suppress, chase, fair, follows, hold, spread, dispatch, placement, spacing, scatter, ring,
-                engage, boundMove, boundFire, boundShare, boundMinRange) { SlotRingError = ringError, FieldError = fieldError, Pressure = pressure });
+                engage, boundMove, boundFire, boundShare, boundMinRange, assault) { SlotRingError = ringError, FieldError = fieldError, Pressure = pressure });
         }
     }
 }
