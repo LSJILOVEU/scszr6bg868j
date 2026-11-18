@@ -86,6 +86,18 @@ namespace WarCore.Battle
         SimVec3 Anchor(in AiUnit unit, int point, AiField field);
     }
 
+    // What a unit that sees an enemy does at this think: Hold stands and fires (the behaviour before parts); Advance
+    // goes on to its point as if it saw nothing (dispatch and placement), skipping suppression and search.
+    public enum AiEngage { Hold, Advance }
+
+    // Engage: asked only when the unit sees an enemy, at the enemy's point. The answer may depend only on the unit, the
+    // enemy's point, the field and the part's own parameters (no state), like the other parts.
+    public interface IAiEngage
+    {
+        ulong Fold(ulong digest);
+        AiEngage Decide(in AiUnit unit, SimVec3 enemy, AiField field);
+    }
+
     // The parts one battle's AI runs with. Missing parts are the defaults, which leave the battle as it was before
     // parts existed.
     public sealed class AiParts
@@ -97,12 +109,14 @@ namespace WarCore.Battle
         public long SlotSpacingRaw { get; }
         // Width in raw units of the ring of guard slots outside each capture circle (also a scheduler property); 0 = none.
         public long SlotRingRaw { get; }
-        public AiParts(IAiDispatch dispatch = null, IAiPlacement placement = null, long slotSpacingRaw = GuardSlots.SpacingRaw, long slotRingRaw = 0)
+        public IAiEngage Engage { get; }
+        public AiParts(IAiDispatch dispatch = null, IAiPlacement placement = null, long slotSpacingRaw = GuardSlots.SpacingRaw, long slotRingRaw = 0,
+            IAiEngage engage = null)
         {
             if (slotSpacingRaw <= 0) throw new ArgumentOutOfRangeException(nameof(slotSpacingRaw));
             if (slotRingRaw < 0) throw new ArgumentOutOfRangeException(nameof(slotRingRaw));
             Dispatch = dispatch ?? new NearestDispatch(); Placement = placement ?? new NearestSlotPlacement();
-            SlotSpacingRaw = slotSpacingRaw; SlotRingRaw = slotRingRaw;
+            SlotSpacingRaw = slotSpacingRaw; SlotRingRaw = slotRingRaw; Engage = engage ?? new HoldEngage();
         }
 
         // The only source of variation a part may use: Mix(unit key ^ a constant of the part). Stateless, so the same
@@ -116,5 +130,9 @@ namespace WarCore.Battle
                 return x ^ (x >> 31);
             }
         }
+
+        // A trait of one unit in thousandths (0..999): Mix(unit key ^ salt) % 1000, one salt per trait. The same unit
+        // always gets the same value; nothing is saved.
+        public static int Permille(ulong key, ulong salt) => (int)(Mix(key ^ salt) % 1000UL);
     }
 }

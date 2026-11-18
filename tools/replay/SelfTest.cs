@@ -67,6 +67,18 @@ namespace WarCore.Replay
             Expect("idleOutside 6 of 12 without a ring", Math.Abs(Metrics.IdleOutside(idleUnits, idle, points, 0) - 0.5) < 1e-12);
             Expect("idleOutside 1 of 12 with a 6 m ring", Math.Abs(Metrics.IdleOutside(idleUnits, idle, points, 6) - 1.0 / 12) < 1e-12);
 
+            // Enemy within 20 m (inclusive) and idle with no enemy within 45 m (inclusive).
+            var foes = new List<(double x, double z)> { (0, 20), (200, 0) };
+            var watch = new List<(double x, double z)>();
+            for (int i = 0; i < 12; i++) watch.Add((0, i < 3 ? 0 : -1 - i));   // 3 at exactly 20 m, the rest 22 m and further
+            Expect("enemyWithin20 3 of 12", Math.Abs(Metrics.EnemyWithin(watch, foes) - 3.0 / 12) < 1e-12);
+            Expect("enemyWithin20 undefined below MinUnits", double.IsNaN(Metrics.EnemyWithin(watch.GetRange(0, Metrics.MinUnits - 1), foes)));
+            var lone = new List<(double x, double z)> { (50, 95.01) };   // just beyond 45 m of (50, 50)
+            var near45 = new List<(double x, double z)> { (50, 95) };       // exactly 45 m from (50, 50)
+            Expect("idleNoEnemy 1 of 12 with nobody near", Math.Abs(Metrics.IdleNoEnemy(idleUnits, idle, lone, points, 6) - 1.0 / 12) < 1e-12);
+            Expect("idleNoEnemy 0 with an enemy at 45 m", Metrics.IdleNoEnemy(idleUnits, idle, near45, points, 6) == 0);
+            Expect("idleNoEnemy 6 of 12 without a ring and no enemy", Math.Abs(Metrics.IdleNoEnemy(idleUnits, idle, new List<(double x, double z)>(), points, 0) - 0.5) < 1e-12);
+
             string a = Program.Export("base", 300, 3, out _), b = Program.Export("base", 300, 3, out _);
             Expect("export repeats byte for byte", a == b);
 
