@@ -52,7 +52,7 @@ namespace WarCore.Replay
 
             var points = new List<(double x, double z, double r)>();
             foreach (ViewPoint point in session.Current.Points) points.Add((point.X, point.Z, point.Radius));
-            const int metricCount = 8;
+            const int metricCount = 10;
             var stats = new Metrics.Series[2, metricCount];
             for (int t = 0; t < 2; t++) for (int m = 0; m < metricCount; m++) stats[t, m] = new Metrics.Series();
             var side = new[] { new List<(double x, double z)>(), new List<(double x, double z)>() };
@@ -62,6 +62,7 @@ namespace WarCore.Replay
             for (int i = 0; i < keys.Count; i++) since[i] = -1;
             double ring = entry.RingMm / 1000.0;
             var owners = new List<int>();
+            var pinned = new List<int>(); var broken = new List<int>(); var pressed = new int[2, 2];
 
             var sb = new StringBuilder(4 << 20);
             ViewMap map = session.Map;
@@ -94,6 +95,7 @@ namespace WarCore.Replay
                 foreach (ViewPoint point in frame.Points) { if (!f2) sb.Append(','); f2 = false; sb.Append(point.Owner); owners.Add(point.Owner); }
                 sb.Append("],\"u\":[");
                 side[0].Clear(); side[1].Clear(); idleSide[0].Clear(); idleSide[1].Clear();
+                pinned.Clear(); broken.Clear(); Array.Clear(pressed, 0, pressed.Length);
                 // Per unit: x, z in decimetres, state (0 = not on the field, 1 = alive, 2 = dead).
                 for (int i = 0; i < keys.Count; i++)
                 {
@@ -102,12 +104,15 @@ namespace WarCore.Replay
                     {
                         sb.Append(D(e.X)).Append(',').Append(D(e.Z)).Append(',').Append(e.Alive ? 1 : 2);
                         if (e.Alive && teams[i] >= 1 && teams[i] <= 2)
-                        { side[teams[i] - 1].Add((e.X, e.Z)); idleSide[teams[i] - 1].Add(frame.Tick - since[i] >= Metrics.IdleTicks); }
+                        {
+                            side[teams[i] - 1].Add((e.X, e.Z)); idleSide[teams[i] - 1].Add(frame.Tick - since[i] >= Metrics.IdleTicks);
+                            if (e.Nerve == 1) { pinned.Add(i); pressed[teams[i] - 1, 0]++; } else if (e.Nerve == 2) { broken.Add(i); pressed[teams[i] - 1, 1]++; }
+                        }
                     }
                     else sb.Append("0,0,0");
                 }
                 // Per frame metrics: [share1, share2, nnSpread1, nnSpread2, spread1, spread2, close1, close2, idle1, idle2, closeNear1, closeNear2,
-                // enemy20_1, enemy20_2, idleNoEnemy1, idleNoEnemy2]; null when undefined.
+                // enemy20_1, enemy20_2, idleNoEnemy1, idleNoEnemy2, pinned1, pinned2, broken1, broken2]; null when undefined.
                 var values = new double[2 * metricCount];
                 for (int t = 0; t < 2; t++)
                 {
@@ -119,17 +124,22 @@ namespace WarCore.Replay
                     values[10 + t] = Metrics.CloseShareNearPoints(side[t], points);
                     values[12 + t] = Metrics.EnemyWithin(side[t], side[1 - t]);
                     values[14 + t] = Metrics.IdleNoEnemy(side[t], idleSide[t], side[1 - t], points, ring);
+                    values[16 + t] = Metrics.Share(pressed[t, 0], side[t].Count);
+                    values[18 + t] = Metrics.Share(pressed[t, 1], side[t].Count);
                     for (int m = 0; m < metricCount; m++) stats[t, m].Add(values[m * 2 + t]);
                 }
                 sb.Append("],\"m\":[");
                 for (int v = 0; v < values.Length; v++) { if (v > 0) sb.Append(','); sb.Append(N(values[v])); }
+                // Unit indices that are pinned (n) and broken (b); written only when there are any, so a setup without the pressure system keeps its frames.
+                if (pinned.Count > 0) sb.Append("],\"n\":[").Append(string.Join(",", pinned));
+                if (broken.Count > 0) sb.Append("],\"b\":[").Append(string.Join(",", broken));
                 sb.Append("],\"s\":[").Append(string.Join(",", shots)).Append("],\"a\":[").Append(frame.Match.AliveOne).Append(',').Append(frame.Match.AliveTwo)
                   .Append(',').Append(frame.Match.ReserveOne).Append(',').Append(frame.Match.ReserveTwo).Append("]}");
                 shots.Clear();
             }
             bool decided = session.IsFinished && session.Winner != 0;
             sb.Append("],\"metrics\":{\"attackRange\":").Append(N(Metrics.AttackRange)).Append(",\"slotRing\":").Append(N(ring)).Append(",\"decidedTick\":").Append(decided ? session.EndTick.ToString(CultureInfo.InvariantCulture) : "null");
-            string[] names = { "maxPointShare", "nnSpread", "attackSpread", "closeShare", "idleOutside", "closeShareNearPoints", "enemyWithin20", "idleNoEnemy" };
+            string[] names = { "maxPointShare", "nnSpread", "attackSpread", "closeShare", "idleOutside", "closeShareNearPoints", "enemyWithin20", "idleNoEnemy", "pinnedShare", "brokenShare" };
             var line = new StringBuilder();
             for (int t = 0; t < 2; t++)
             {

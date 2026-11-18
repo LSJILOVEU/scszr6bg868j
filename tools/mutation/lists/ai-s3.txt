@@ -1,0 +1,423 @@
+# AI-S3: the pressure system (Pressure), the nerve the scheduler hands to the engage part, falling back and standing in
+# the scheduler, the ten content fields, the saved state and the view. Filters run only the AI-S3 tests; the default
+# battles are held by the locked suites listed in the PR.
+
+[ai-s3-01-decay-floor]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Decay_TakesAShareAndDrainsToNothing
+expect = WarCore.Tests.AiS3Tests.Decay_TakesAShareAndDrainsToNothing
+note = a small number stops decaying and never reaches zero
+original:
+|                 e.Value -= Math.Max(1, (int)((long)e.Value * rules.DecayPermille / 1000));
+replacement:
+|                 e.Value -= Math.Max(0, (int)((long)e.Value * rules.DecayPermille / 1000));
+
+[ai-s3-02-decay-constant]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Decay_TakesAShareAndDrainsToNothing
+expect = WarCore.Tests.AiS3Tests.Decay_TakesAShareAndDrainsToNothing
+note = the loss is a fixed amount instead of a share
+original:
+|                 e.Value -= Math.Max(1, (int)((long)e.Value * rules.DecayPermille / 1000));
+replacement:
+|                 e.Value -= Math.Max(1, rules.DecayPermille);
+
+[ai-s3-03-near-every-shot]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Near_EnemyShotWithinTheRadiusOnceATick
+expect = WarCore.Tests.AiS3Tests.Near_EnemyShotWithinTheRadiusOnceATick
+note = every near shot of a tick adds a shock
+original:
+|                         shock = rules.NearShock; break;
+replacement:
+|                         shock += rules.NearShock;
+
+[ai-s3-04-near-own-team]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Near_EnemyShotWithinTheRadiusOnceATick
+expect = WarCore.Tests.AiS3Tests.Near_EnemyShotWithinTheRadiusOnceATick
+note = own shots press, enemy shots do not
+original:
+|                         if (fire.ShooterTeam == unit.Team || CombatSystem.Horizontal(fire.End - here).LengthSquared > nearSquared) continue;
+replacement:
+|                         if (fire.ShooterTeam != unit.Team || CombatSystem.Horizontal(fire.End - here).LengthSquared > nearSquared) continue;
+
+[ai-s3-05-near-edge]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Near_EnemyShotWithinTheRadiusOnceATick
+expect = WarCore.Tests.AiS3Tests.Near_EnemyShotWithinTheRadiusOnceATick
+note = a shot exactly on the radius does not count
+original:
+|                         if (fire.ShooterTeam == unit.Team || CombatSystem.Horizontal(fire.End - here).LengthSquared > nearSquared) continue;
+replacement:
+|                         if (fire.ShooterTeam == unit.Team || CombatSystem.Horizontal(fire.End - here).LengthSquared >= nearSquared) continue;
+
+[ai-s3-06-death-twice]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Death_TeammateWithinTheRadiusOncePerFallen
+expect = WarCore.Tests.AiS3Tests.Death_TeammateWithinTheRadiusOncePerFallen
+note = a unit named by two records falls twice
+original:
+|                 if (!counted) fallen[fallenCount++] = new Fallen { Key = fire.Target.Value, Team = victim.Team, At = at.Value };
+replacement:
+|                 if (!counted || true) fallen[fallenCount++] = new Fallen { Key = fire.Target.Value, Team = victim.Team, At = at.Value };
+
+[ai-s3-07-death-self]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Death_TeammateWithinTheRadiusOncePerFallen
+expect = WarCore.Tests.AiS3Tests.Death_TeammateWithinTheRadiusOncePerFallen
+note = the fallen unit feels its own fall
+original:
+|                         if (fallen[i].Team != unit.Team || fallen[i].Key == key
+replacement:
+|                         if (fallen[i].Team != unit.Team
+
+[ai-s3-08-death-any-team]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Death_TeammateWithinTheRadiusOncePerFallen
+expect = WarCore.Tests.AiS3Tests.Death_TeammateWithinTheRadiusOncePerFallen
+note = an enemy falling presses, a teammate falling does not
+original:
+|                         if (fallen[i].Team != unit.Team || fallen[i].Key == key
+replacement:
+|                         if (fallen[i].Team == unit.Team || fallen[i].Key == key
+
+[ai-s3-09-death-no-damage]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Death_TeammateWithinTheRadiusOncePerFallen
+expect = WarCore.Tests.AiS3Tests.Death_TeammateWithinTheRadiusOncePerFallen
+note = a record without damage counts as a fall
+original:
+|                 if (fire.DamageRaw <= 0 || !store.TryResolve(fire.Target, out EntityRef target)
+replacement:
+|                 if (fire.DamageRaw < 0 || !store.TryResolve(fire.Target, out EntityRef target)
+
+[ai-s3-10-death-edge]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Death_TeammateWithinTheRadiusOncePerFallen
+expect = WarCore.Tests.AiS3Tests.Death_TeammateWithinTheRadiusOncePerFallen
+note = a teammate exactly on the radius does not count
+original:
+|                             || CombatSystem.Horizontal(fallen[i].At - here).LengthSquared > deathSquared) continue;
+replacement:
+|                             || CombatSystem.Horizontal(fallen[i].At - here).LengthSquared >= deathSquared) continue;
+
+[ai-s3-11-courage-flat]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Courage_ScalesTheRiseByKey
+expect = WarCore.Tests.AiS3Tests.Courage_ScalesTheRiseByKey
+note = every unit rises by the same amount
+original:
+|                     long rise = (long)shock * Courage(key, rules.SpreadPermille) / 1000;
+replacement:
+|                     long rise = (long)shock * 1000 / 1000;
+
+[ai-s3-12-courage-salt]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Courage_ScalesTheRiseByKey
+expect = WarCore.Tests.AiS3Tests.Courage_ScalesTheRiseByKey
+note = courage and the break share read the same trait
+original:
+|         public static int Courage(ulong key, int spreadPermille) => 1000 + (AiParts.Permille(key, CourageSalt) - 500) * spreadPermille / 500;
+replacement:
+|         public static int Courage(ulong key, int spreadPermille) => 1000 + (AiParts.Permille(key, BreakSalt) - 500) * spreadPermille / 500;
+
+[ai-s3-13-no-cap]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Decay_TakesAShareAndDrainsToNothing
+expect = WarCore.Tests.AiS3Tests.Decay_TakesAShareAndDrainsToNothing
+note = the number is not capped at the top
+original:
+|                     e.Value = (int)Math.Min(Max, e.Value + rise);
+replacement:
+|                     e.Value = (int)(e.Value + rise);
+
+[ai-s3-14-broken-edge]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Level_PinnedAndBrokenAtTheLines
+expect = WarCore.Tests.AiS3Tests.Level_PinnedAndBrokenAtTheLines
+note = exactly at the broken line is not broken
+original:
+|                 bool broken = e.Broken ? e.Value > rules.RecoverAt : e.Value >= rules.BrokenAt && Breaks(keys[i], rules.BreakSharePermille);
+replacement:
+|                 bool broken = e.Broken ? e.Value > rules.RecoverAt : e.Value > rules.BrokenAt && Breaks(keys[i], rules.BreakSharePermille);
+
+[ai-s3-15-recover-edge]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Level_BrokenLastsDownToTheRecoverLine
+expect = WarCore.Tests.AiS3Tests.Level_BrokenLastsDownToTheRecoverLine
+note = broken lasts one step below the recover line
+original:
+|                 bool broken = e.Broken ? e.Value > rules.RecoverAt : e.Value >= rules.BrokenAt && Breaks(keys[i], rules.BreakSharePermille);
+replacement:
+|                 bool broken = e.Broken ? e.Value >= rules.RecoverAt : e.Value >= rules.BrokenAt && Breaks(keys[i], rules.BreakSharePermille);
+
+[ai-s3-16-no-hysteresis]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Level_BrokenLastsDownToTheRecoverLine
+expect = WarCore.Tests.AiS3Tests.Level_BrokenLastsDownToTheRecoverLine
+note = broken ends as soon as the number is below the broken line
+original:
+|                 bool broken = e.Broken ? e.Value > rules.RecoverAt : e.Value >= rules.BrokenAt && Breaks(keys[i], rules.BreakSharePermille);
+replacement:
+|                 bool broken = e.Value >= rules.BrokenAt && Breaks(keys[i], rules.BreakSharePermille);
+
+[ai-s3-17-all-break]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Level_OnlyTheBreakShareBreaks
+expect = WarCore.Tests.AiS3Tests.Level_OnlyTheBreakShareBreaks
+note = every unit can break
+original:
+|                 bool broken = e.Broken ? e.Value > rules.RecoverAt : e.Value >= rules.BrokenAt && Breaks(keys[i], rules.BreakSharePermille);
+replacement:
+|                 bool broken = e.Broken ? e.Value > rules.RecoverAt : e.Value >= rules.BrokenAt;
+
+[ai-s3-18-pinned-edge]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Level_PinnedAndBrokenAtTheLines
+expect = WarCore.Tests.AiS3Tests.Level_PinnedAndBrokenAtTheLines
+note = exactly at the pinned line is calm
+original:
+|             return e.Broken ? AiNerve.Broken : e.Value >= rules.PinnedAt ? AiNerve.Pinned : AiNerve.Calm;
+replacement:
+|             return e.Broken ? AiNerve.Broken : e.Value > rules.PinnedAt ? AiNerve.Pinned : AiNerve.Calm;
+
+[ai-s3-19-broken-reads-pinned]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Level_PinnedAndBrokenAtTheLines
+expect = WarCore.Tests.AiS3Tests.Level_PinnedAndBrokenAtTheLines
+note = a broken unit is reported as pinned
+original:
+|             return e.Broken ? AiNerve.Broken : e.Value >= rules.PinnedAt ? AiNerve.Pinned : AiNerve.Calm;
+replacement:
+|             return e.Broken ? AiNerve.Pinned : e.Value >= rules.PinnedAt ? AiNerve.Pinned : AiNerve.Calm;
+
+[ai-s3-20-rule-not-checked]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.State_EveryRuleIsSavedAndChecked
+expect = WarCore.Tests.AiS3Tests.State_EveryRuleIsSavedAndChecked
+note = the last rule is read but not compared on load
+original:
+|             same &= reader.Int32() == rules.SpreadPermille; same &= reader.Int32() == rules.BreakSharePermille;
+replacement:
+|             same &= reader.Int32() == rules.SpreadPermille; reader.Int32();
+
+[ai-s3-21-rule-not-hashed]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.State_EveryRuleIsSavedAndChecked
+expect = WarCore.Tests.AiS3Tests.State_EveryRuleIsSavedAndChecked
+note = the decay rule is left out of the state hash
+original:
+|             hash.Add(rules.DecayPermille); hash.Add(rules.BrokenAt); hash.Add(rules.RecoverAt); hash.Add(rules.PinnedAt); hash.Add(rules.SpreadPermille); hash.Add(rules.BreakSharePermille);
+replacement:
+|             hash.Add(rules.BrokenAt); hash.Add(rules.RecoverAt); hash.Add(rules.PinnedAt); hash.Add(rules.SpreadPermille); hash.Add(rules.BreakSharePermille);
+
+[ai-s3-22-load-recover]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.State_LoadRejectsWhatStepCannotLeave
+expect = WarCore.Tests.AiS3Tests.State_LoadRejectsWhatStepCannotLeave
+note = load accepts a broken unit at the recover line
+original:
+|                 SimStateReader.Require(!broken || value > rules.RecoverAt, "AI pressure is broken at or below the recover line.");
+replacement:
+|                 SimStateReader.Require(!broken || value >= rules.RecoverAt, "AI pressure is broken at or below the recover line.");
+
+[ai-s3-23-load-order]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.State_LoadRejectsWhatStepCannotLeave
+expect = WarCore.Tests.AiS3Tests.State_LoadRejectsWhatStepCannotLeave
+note = load accepts a repeated key
+original:
+|                 SimStateReader.Require(i == 0 || key > previous, "AI pressure units are not in strictly increasing order.");
+replacement:
+|                 SimStateReader.Require(i == 0 || key >= previous, "AI pressure units are not in strictly increasing order.");
+
+[ai-s3-24-load-flag]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.State_LoadRejectsWhatStepCannotLeave
+expect = WarCore.Tests.AiS3Tests.State_LoadRejectsWhatStepCannotLeave
+note = load accepts a unit at the broken line that is not broken
+original:
+|                 SimStateReader.Require(broken ? Breaks(key, rules.BreakSharePermille) : value < rules.BrokenAt || !Breaks(key, rules.BreakSharePermille),
+replacement:
+|                 SimStateReader.Require(broken ? Breaks(key, rules.BreakSharePermille) : true,
+
+[ai-s3-25-flag-not-hashed]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.State_LoadRejectsWhatStepCannotLeave
+expect = WarCore.Tests.AiS3Tests.State_LoadRejectsWhatStepCannotLeave
+note = the broken flag is left out of the state hash
+original:
+|             foreach (KeyValuePair<ulong, Entry> pair in entries) { hash.Add(pair.Key); hash.Add(pair.Value.Value); hash.Add(pair.Value.Broken); }
+replacement:
+|             foreach (KeyValuePair<ulong, Entry> pair in entries) { hash.Add(pair.Key); hash.Add(pair.Value.Value); hash.Add(false); }
+
+[ai-s3-26-bound-broken-seen]
+file = Assets/WarCore/Battle/Ai/BoundEngage.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Parts_AnswerTheNerve
+expect = WarCore.Tests.AiS3Tests.Parts_AnswerTheNerve
+note = a broken unit in sight is treated as calm
+original:
+|             if (unit.Nerve == AiNerve.Broken) return AiEngage.Fallback;
+replacement:
+|             if (unit.Nerve == (AiNerve)7) return AiEngage.Fallback;
+
+[ai-s3-27-bound-pinned-seen]
+file = Assets/WarCore/Battle/Ai/BoundEngage.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Pinned_InSightDoesNotAdvance
+expect = WarCore.Tests.AiS3Tests.Pinned_InSightDoesNotAdvance
+note = a pinned unit in sight is treated as calm
+original:
+|             if (unit.Nerve == AiNerve.Pinned) return AiEngage.Hold;
+replacement:
+|             if (unit.Nerve == (AiNerve)7) return AiEngage.Hold;
+
+[ai-s3-28-bound-pinned-unseen]
+file = Assets/WarCore/Battle/Ai/BoundEngage.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Pinned_StandsWhileItLasts
+expect = WarCore.Tests.AiS3Tests.Pinned_StandsWhileItLasts
+note = a pinned unit that sees nobody walks on
+original:
+|             unit.Nerve == AiNerve.Broken ? AiEngage.Fallback : unit.Nerve == AiNerve.Pinned ? AiEngage.Hold : AiEngage.Advance;
+replacement:
+|             unit.Nerve == AiNerve.Broken ? AiEngage.Fallback : unit.Nerve == AiNerve.Pinned ? AiEngage.Advance : AiEngage.Advance;
+
+[ai-s3-29-hold-reads-nerve]
+file = Assets/WarCore/Battle/Ai/HoldEngage.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Parts_AnswerTheNerve
+expect = WarCore.Tests.AiS3Tests.Parts_AnswerTheNerve
+note = the hold part stops a pressed unit that sees nobody
+original:
+|         public AiEngage Unseen(in AiUnit unit, AiField field) => AiEngage.Advance;
+replacement:
+|         public AiEngage Unseen(in AiUnit unit, AiField field) => AiEngage.Hold;
+
+[ai-s3-30-level-not-passed]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Broken_FallsBackToTheNearestOwnPointAndReturns
+expect = WarCore.Tests.AiS3Tests.Broken_FallsBackToTheNearestOwnPointAndReturns
+note = the scheduler never tells the part the nerve
+original:
+|                 var thinker = new AiUnit(id, unit.Team, here, pressure != null ? pressure.Level(id) : AiNerve.Calm);
+replacement:
+|                 var thinker = new AiUnit(id, unit.Team, here, AiNerve.Calm);
+
+[ai-s3-31-fallback-seen-advances]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Broken_InSightFallsBackAndStays
+expect = WarCore.Tests.AiS3Tests.Broken_InSightFallsBackAndStays
+note = a fallback answer in sight goes on to the dispatched point
+original:
+|                     if (answer == AiEngage.Fallback) fallback = true; else advance = true;
+replacement:
+|                     advance = true;
+
+[ai-s3-32-fallback-searches]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Broken_InSightFallsBackAndStays
+expect = WarCore.Tests.AiS3Tests.Broken_InSightFallsBackAndStays
+note = a unit falling back still goes to search for the enemy it saw
+original:
+|                 if (!advance && !fallback && search != null && unit.Weapon >= 0)
+replacement:
+|                 if (!advance && search != null && unit.Weapon >= 0)
+
+[ai-s3-33-fallback-suppresses]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Broken_InSightFallsBackAndStays
+expect = WarCore.Tests.AiS3Tests.Broken_InSightFallsBackAndStays
+note = a unit falling back still starts suppression
+original:
+|                 if (!advance && !fallback && suppress != null && unit.Weapon >= 0) suppress.Decide(id, c.Clock.Tick);
+replacement:
+|                 if (!advance && suppress != null && unit.Weapon >= 0) suppress.Decide(id, c.Clock.Tick);
+
+[ai-s3-34-stand-ignored]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Pinned_StandsWhileItLasts
+expect = WarCore.Tests.AiS3Tests.Pinned_StandsWhileItLasts
+note = a Hold answer out of sight does not stop the unit
+original:
+|                 if (stand) { if (moving) StopUnit(id, here, target); continue; }
+replacement:
+|                 if (stand && false) { if (moving) StopUnit(id, here, target); continue; }
+
+[ai-s3-35-fallback-dispatch]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Broken_FallsBackToTheNearestOwnPointAndReturns
+expect = WarCore.Tests.AiS3Tests.Broken_FallsBackToTheNearestOwnPointAndReturns
+note = a unit falling back takes the dispatched point
+original:
+|                 int point = fallback ? Refuge(unit.Team, here) : dispatch.Pick(in thinker, field);
+replacement:
+|                 int point = dispatch.Pick(in thinker, field);
+
+[ai-s3-36-refuge-enemy-point]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Broken_FallsBackToTheNearestOwnPointAndReturns
+expect = WarCore.Tests.AiS3Tests.Broken_FallsBackToTheNearestOwnPointAndReturns
+note = the refuge is a point the team does not own
+original:
+|                 if (field.Owner(i) != team) continue;
+replacement:
+|                 if (field.Owner(i) == team) continue;
+
+[ai-s3-37-refuge-no-base]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Broken_WithoutAPointGoesToTheBaseOrStands
+expect = WarCore.Tests.AiS3Tests.Broken_WithoutAPointGoesToTheBaseOrStands
+note = without a point the unit stands although it has a base
+original:
+|                     else if (!moving || target.X.Raw != home.X.Raw || target.Z.Raw != home.Z.Raw) OrderUnit(id, here, moving, target, home, -1);
+replacement:
+|                     else if (!moving || target.X.Raw != home.X.Raw || target.Z.Raw != home.Z.Raw) { if (moving) StopUnit(id, here, target); }
+
+[ai-s3-38-content-one-missing]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Content_AnyFieldWrittenNeedsAllTen
+expect = WarCore.Tests.AiS3Tests.Content_AnyFieldWrittenNeedsAllTen
+note = the last field falls back to zero when it is not written
+original:
+|                     int courage = r.Int("pressureSpreadPermille", 0, 1000), breakShare = r.Int("pressureBreakSharePermille", 0, 1000);
+replacement:
+|                     int courage = r.Int("pressureSpreadPermille", 0, 1000), breakShare = r.Has("pressureBreakSharePermille") ? r.Int("pressureBreakSharePermille", 0, 1000) : 0;
+
+[ai-s3-39-content-recover]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Content_RecoverMustBeBelowBroken
+expect = WarCore.Tests.AiS3Tests.Content_RecoverMustBeBelowBroken
+note = recoverAt equal to brokenAt passes the content check
+original:
+|                     if (recoverAt >= brokenAt) throw r.Bad(r.FieldOf("pressureRecoverAt"), "must be below pressureBrokenAt (" + brokenAt + ")");
+replacement:
+|                     if (recoverAt > brokenAt) throw r.Bad(r.FieldOf("pressureRecoverAt"), "must be below pressureBrokenAt (" + brokenAt + ")");
+
+[ai-s3-40-content-range]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Content_OutOfRangeNamesTheField
+expect = WarCore.Tests.AiS3Tests.Content_OutOfRangeNamesTheField
+note = pinnedAt accepts zero
+original:
+|                     int recoverAt = r.Int("pressureRecoverAt", 0, max), pinnedAt = r.Int("pressurePinnedAt", 1, max);
+replacement:
+|                     int recoverAt = r.Int("pressureRecoverAt", 0, max), pinnedAt = r.Int("pressurePinnedAt", 0, max);
+
+[ai-s3-41-not-registered]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Content_FieldsAreReadAllOrNone
+expect = WarCore.Tests.AiS3Tests.Content_FieldsAreReadAllOrNone
+note = the system is handed to the AI but not registered, so it never steps and is not saved
+original:
+|                 sim.RegisterGameplay("battle.ai-pressure", pressure, SimSystemPhase.Queries);
+replacement:
+|                 _ = pressure;
+
+[ai-s3-42-view-no-nerve]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.View_CarriesTheNerve
+expect = WarCore.Tests.AiS3Tests.View_CarriesTheNerve
+note = the view always reads calm
+original:
+|                     team, alive, pressure != null && alive ? (int)pressure.Level(sim.Entities.StableOf(unit)) : 0));
+replacement:
+|                     team, alive, 0));

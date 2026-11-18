@@ -73,6 +73,7 @@ namespace WarCore.Presentation
         internal CaptureSystem Capture { get; set; }
         internal ReinforceSystem Reinforce { get; set; }
         internal MatchSystem Match { get; set; }
+        internal Pressure Pressure { get; set; }
 
         // Where a unit stands when it is placed: the map's flat floor, or the terrain surface where the map has a height field.
         internal SimVec3 SpawnPoint(in UnitSpawn spawn)

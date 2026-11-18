@@ -97,7 +97,7 @@ namespace WarCore.Presentation
             {
                 Sim = sim, Units = units, Spawns = recipe.Units.ToArray(), Positions = assembly.Positions, GroundRaw = groundRaw, Map = map,
                 WallMask = wallMask, View = mapBytes == null ? null : ViewMap.Parse(mapBytes), Combat = assembly.Combat,
-                MatchPack = recipe.Match, Capture = assembly.Capture, Reinforce = assembly.Reinforce, Match = assembly.Match,
+                MatchPack = recipe.Match, Capture = assembly.Capture, Reinforce = assembly.Reinforce, Match = assembly.Match, Pressure = assembly.Pressure,
                 MaxHealthRaw = recipe.Combat?.MaxHealthRaw ?? 0, Controlled = assembly.Controlled, CombatPack = recipe.Combat,
                 Facings = facings, Terrain = assembly.Terrain, TerrainRules = recipe.TerrainPack?.Terrain,
             });

@@ -1,7 +1,7 @@
 # Battle replay (headless)
 
 Runs a whole match without Unity (about 2 s for M7, 150 vs 150) and writes a replay JSON: unit positions every N
-ticks, point owners, shots, and four layout metrics. `battle-replay.html` plays one or more replays from above on a
+ticks, point owners, shots, and layout metrics. `battle-replay.html` plays one or more replays from above on a
 shared timeline. Game code is only referenced, never changed.
 
 ```sh
@@ -21,7 +21,9 @@ folder, or the files named in `?files=a.json,b.json`.
 
 Computed on every recorded frame for each team's alive, deployed units; `metrics` in the JSON holds the mean and peak
 over the match, `m` on each frame holds `[share1, share2, nn1, nn2, spread1, spread2, close1, close2, idle1, idle2,
-closeNear1, closeNear2, enemy20_1, enemy20_2, idleNoEnemy1, idleNoEnemy2]` (`null` = undefined).
+closeNear1, closeNear2, enemy20_1, enemy20_2, idleNoEnemy1, idleNoEnemy2, pinned1, pinned2, broken1, broken2]` (`null` = undefined).
+A frame also lists the indices of the pinned (`n`) and broken (`b`) units when there are any; the page draws a thin
+ring round a pinned unit and a thick yellow one round a broken unit.
 
 | Key | Meaning | Reads |
 |---|---|---|
@@ -33,9 +35,11 @@ closeNear1, closeNear2, enemy20_1, enemy20_2, idleNoEnemy1, idleNoEnemy2]` (`nul
 | `closeShareNearPoints` | `closeShare` among units within 2 x radius of a point centre (nearest teammate searched in the whole team); the range depends on the map only | high = shoulder to shoulder at the points |
 | `enemyWithin20` | Share of the team with an enemy (alive, on the field) within 20 m | 0 = the two sides never come close |
 | `idleNoEnemy` | `idleOutside` restricted to units with no enemy within 45 m | high = units idle away from the points with nobody to fight |
+| `pinnedShare` | Share of the team the pressure system reports as pinned (read from the system, not from positions) | 0 without the system |
+| `brokenShare` | Share of the team the pressure system reports as broken | high = a large part of the team is falling back at once |
 | `decidedTick` | Tick the match was won; `null` if not decided within `maxTicks` | |
 
-- Undefined when fewer than 10 units are on the field (share, nn, close, idle, enemy20, idleNoEnemy), fewer than 10 units near points
+- Undefined when fewer than 10 units are on the field (share, nn, close, idle, enemy20, idleNoEnemy, pinned, broken), fewer than 10 units near points
   (closeNear) or fewer than 5 attackers (spread).
 - The slot ring of `idleOutside` is the setup's `ai.slotRingMm` (the `RingMm` of its `Recipes.cs` entry), 0 by default.
 - An attacker is a unit whose nearest point is not owned by its team and lies within 25 m of that point's centre.
@@ -67,3 +71,18 @@ AI-S1 (engage part, values PLACEHOLDER: `boundMoveTicks` 60, `boundFireTicks` 90
 | playtest-s1 | undecided at 2400 | 1348046939DEA9F2 | 0.042 / 0.039 | 0.007 / 0.015 | 0.078 / 0.149 | 0.837 / 0.882 |
 | lanes | team 1 wins at tick 2245 | 0392AC1519D79015 | 0 / 0 | 0.018 / 0.019 | 0.022 / 0.019 | 0.832 / 0.824 |
 | lanes-s1 | team 1 wins at tick 1845 | ECBA9D4FE6B0524C | 0 / 0 | 0.013 / 0.019 | 0.017 / 0.019 | 0.811 / 0.850 |
+
+AI-S3 (pressure system, values PLACEHOLDER: death and near radius 3000 mm, death shock 2000, near shock 1000, decay
+12 thousandths a tick, broken at 7000, recover at 1000, pinned at 2000, spread 500, break share 300; the setups add
+only these to `playtest-s1` and `lanes-s1`; 3600 ticks, every 3):
+
+| Setup | End | Hash | pinned 1/2 | pinned peak 1/2 | broken 1/2 | broken peak 1/2 | idleNoEnemy 1/2 | idle 1/2 | enemy20 1/2 |
+|---|---|---|---|---|---|---|---|---|---|
+| playtest-s1 | undecided at 3600 | 9D77B681FA745C17 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0.009 / 0.015 | 0.067 / 0.149 | 0.028 / 0.039 |
+| playtest-s3 | undecided at 3600 | DE8842816C51B043 | 0.173 / 0.165 | 0.867 / 0.615 | 0.056 / 0.065 | 0.313 / 0.450 | 0.005 / 0.011 | 0.074 / 0.089 | 0.013 / 0.010 |
+| lanes-s1 | team 1 wins at tick 1845 | ECBA9D4FE6B0524C | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0.013 / 0.019 | 0.017 / 0.019 | 0 / 0 |
+| lanes-s3 | team 1 wins at tick 2676 | 33330F89BD530D84 | 0.157 / 0.113 | 0.614 / 0.657 | 0.045 / 0.077 | 0.303 / 0.556 | 0.014 / 0.013 | 0.067 / 0.082 | 0 / 0 |
+
+The broken peak of team 2 in `lanes-s3` (0.556) is ticks 1179-1206: the team is down to 18-19 units on the field and
+10 of them are broken. The most units of one team broken at once: 15 of 84 on the field (team 1, `lanes-s3`, tick
+963), 12 for team 2 there, 7 and 9 in `playtest-s3`.

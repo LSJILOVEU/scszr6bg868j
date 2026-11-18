@@ -36,6 +36,7 @@ namespace WarCore.Presentation
         internal CaptureSystem Capture;
         internal ReinforceSystem Reinforce;
         internal MatchSystem Match;
+        internal Pressure Pressure;
         internal long MaxHealthRaw;
         internal IControlTarget Controlled;
         internal CombatPack CombatPack;
@@ -59,6 +60,7 @@ namespace WarCore.Presentation
         private const long MicrosPerSecond = 1000000;
         private readonly Simulation sim;
         private readonly CombatSystem combat;
+        private readonly Pressure pressure;
         private readonly CombatPack combatPack;
         private readonly IControlTarget controlled;
         private readonly StableId[] units;
@@ -115,7 +117,7 @@ namespace WarCore.Presentation
             controlled = parts.Controlled;
             maxHealthRaw = parts.MaxHealthRaw;
             combat = parts.Combat;
-            matchPack = parts.MatchPack; capture = parts.Capture; reinforce = parts.Reinforce; match = parts.Match;
+            matchPack = parts.MatchPack; capture = parts.Capture; reinforce = parts.Reinforce; match = parts.Match; pressure = parts.Pressure;
             groundRaw = parts.GroundRaw;
             map = parts.Map;
             wallMask = parts.WallMask;
@@ -378,7 +380,7 @@ namespace WarCore.Presentation
                 views.Add(new ViewEntity(spawns[i].Key, spawns[i].Archetype,
                     (float)point.X.Raw / SimFix.Scale, (float)point.Y.Raw / SimFix.Scale,
                     (float)point.Z.Raw / SimFix.Scale, spawns[i].Squad,
-                    team, alive));
+                    team, alive, pressure != null && alive ? (int)pressure.Level(sim.Entities.StableOf(unit)) : 0));
             }
             var fires = new ViewFire[combat == null ? 0 : combat.Fires.Length];
             for (int i = 0; i < fires.Length; i++)

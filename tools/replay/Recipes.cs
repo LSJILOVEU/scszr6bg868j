@@ -49,8 +49,16 @@ namespace WarCore.Replay
                 () => DemoRecipes.M7().WithAiRules(Layer("replay-playtest-s1", DemoRecipes.PlaytestLayer, S1Ai)), DemoRecipes.M7MapBytes),
             ["lanes-s1"] = new Entry("Three-lane map, default AI + engage bound",
                 () => Lanes(Layer("replay-lanes-s1", LanesBake().PackId, S1Ai)), () => LanesBake().WcMapBytes),
+            // AI-S3 (values fixed by the task, PLACEHOLDER): the pressure system on top of the S1 setups.
+            ["playtest-s3"] = new Entry("M7, rwr-m7-playtest AI rules + engage bound + pressure",
+                () => DemoRecipes.M7().WithAiRules(Layer("replay-playtest-s3", DemoRecipes.PlaytestLayer, S3Ai)), DemoRecipes.M7MapBytes),
+            ["lanes-s3"] = new Entry("Three-lane map, default AI + engage bound + pressure",
+                () => Lanes(Layer("replay-lanes-s3", LanesBake().PackId, S3Ai)), () => LanesBake().WcMapBytes),
         };
 
+        private const string S3Ai = "{ \"engage\": \"bound\", \"boundMoveTicks\": 60, \"boundFireTicks\": 90, \"boundSharePermille\": 700, \"boundMinRangeMm\": 12000, "
+            + "\"pressureDeathRadiusMm\": 3000, \"pressureDeathShock\": 2000, \"pressureNearRadiusMm\": 3000, \"pressureNearShock\": 1000, \"pressureDecayPermille\": 12, "
+            + "\"pressureBrokenAt\": 7000, \"pressureRecoverAt\": 1000, \"pressurePinnedAt\": 2000, \"pressureSpreadPermille\": 500, \"pressureBreakSharePermille\": 300 }";
         private const string S1Ai = "{ \"engage\": \"bound\", \"boundMoveTicks\": 60, \"boundFireTicks\": 90, \"boundSharePermille\": 700, \"boundMinRangeMm\": 12000 }";
         private const string LanesPath = "Assets/WarCore/Maps/lanes-playtest.map.json";
         private const int P1RingMm = 6000;

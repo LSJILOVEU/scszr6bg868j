@@ -9,6 +9,7 @@ namespace WarCore.Battle
     // - its cycle is in the move window: (tick + Mix(key ^ PhaseSalt) % cycle) % cycle < moveTicks, cycle = move + fire;
     // - the enemy is at least minRangeMm away horizontally.
     // Stateless: the phase comes from the key, so every unit has its own and a restore changes nothing.
+    // A pressed unit (only with the pressure system on) comes first: Broken falls back, Pinned stands, seen or not.
     public sealed class BoundEngage : IAiEngage
     {
         private const ulong ShareSalt = 0x3c6ef372fe94f82bUL, PhaseSalt = 0xa54ff53a5f1d36f1UL;
@@ -37,6 +38,8 @@ namespace WarCore.Battle
 
         public AiEngage Decide(in AiUnit unit, SimVec3 enemy, AiField field)
         {
+            if (unit.Nerve == AiNerve.Broken) return AiEngage.Fallback;
+            if (unit.Nerve == AiNerve.Pinned) return AiEngage.Hold;
             ulong key = unit.Id.Value;
             if (AiParts.Permille(key, ShareSalt) >= sharePermille) return AiEngage.Hold;
             long phase = (long)(AiParts.Mix(key ^ PhaseSalt) % (ulong)cycle);
@@ -44,5 +47,8 @@ namespace WarCore.Battle
             if (CombatSystem.Horizontal(enemy - unit.Here).LengthSquared < minRangeSquared) return AiEngage.Hold;
             return AiEngage.Advance;
         }
+
+        public AiEngage Unseen(in AiUnit unit, AiField field) =>
+            unit.Nerve == AiNerve.Broken ? AiEngage.Fallback : unit.Nerve == AiNerve.Pinned ? AiEngage.Hold : AiEngage.Advance;
     }
 }

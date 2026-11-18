@@ -178,6 +178,9 @@ namespace WarCore.Replay
             return false;
         }
 
+        // (9, 10) A counted share of the team (pinned, broken). 0..1; NaN below MinUnits.
+        public static double Share(int count, int units) => units < MinUnits ? double.NaN : (double)count / units;
+
         // (7) Share of the team with an enemy (alive, on the field) within NearEnemyRange. 0..1; NaN below MinUnits.
         public static double EnemyWithin(IReadOnlyList<(double x, double z)> units, IReadOnlyList<(double x, double z)> enemies, double range = NearEnemyRange)
         {
