@@ -26,6 +26,10 @@ namespace WarCore.Replay
             ["base"] = new Entry("M7, default AI", () => DemoRecipes.M7(), DemoRecipes.M7MapBytes),
             ["playtest"] = new Entry("M7, rwr-m7-playtest AI rules",
                 () => DemoRecipes.M7().WithAiRules(RwrPack.Load(DemoRecipes.PlaytestLayer)), DemoRecipes.M7MapBytes),
+            // AI-N1: the same AI rules with the playtest layer's weapons too (the combat pack the MP playtest recipe now runs).
+            // "playtest" keeps the M6 weapons so that the -p1, -s1 setups and their reference values stay comparable.
+            ["playtest-n1"] = new Entry("M7, rwr-m7-playtest weapons and AI rules",
+                () => DemoRecipes.M7(RwrPack.Load(DemoRecipes.PlaytestLayer)).WithAiRules(RwrPack.Load(DemoRecipes.PlaytestLayer)), DemoRecipes.M7MapBytes),
             // The recipe the MP playtest scene runs, with the player unit left idle (no input).
             ["mp-playtest"] = new Entry("MP playtest recipe, idle player", () => DemoRecipes.MpPlaytest(), DemoRecipes.M7MapBytes),
             // MAP-P1 three-lane map, seed and AI rules as baked (default AI).
