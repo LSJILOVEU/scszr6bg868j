@@ -1,0 +1,223 @@
+# AI-P3 commander quota: adjacency circle rule, garrison rounding and cap, frontier, targets, stickiness, score, pool split.
+
+[ai-p3-01-strict-circle]
+file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
+filter = FullyQualifiedName~CommanderQuotaTests
+expect = WarCore.Tests.CommanderQuotaTests.Adjacency_MapCornersDoNotOverflow
+note = a point on the diameter circle blocks the pair
+original:
+| ax * bx + az * bz >= 0
+replacement:
+| ax * bx + az * bz > 0
+
+[ai-p3-02-no-z]
+file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
+filter = FullyQualifiedName~CommanderQuotaTests
+expect = WarCore.Tests.CommanderQuotaTests.Adjacency_EquilateralTriangleIsFullyConnected
+note = the circle test ignores the Z axis
+original:
+| ax * bx + az * bz >= 0
+replacement:
+| ax * bx >= 0
+
+[ai-p3-03-one-sided]
+file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
+filter = FullyQualifiedName~CommanderQuotaTests
+expect = WarCore.Tests.CommanderQuotaTests.Adjacency_CollinearMiddleBlocksTheEnds
+expect = WarCore.Tests.CommanderQuotaTests.Adjacency_BoardFollowsTheDiameterCircleRule
+note = the table is filled on one side only
+original:
+| adjacentOut[j * count + i] = open;
+replacement:
+|
+
+[ai-p3-04-no-bounds]
+file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
+filter = FullyQualifiedName~CommanderQuotaTests
+expect = WarCore.Tests.CommanderQuotaTests.Adjacency_RejectsPointsBeyondTheLimit
+note = a point past the X limit is accepted
+original:
+| if (at.X.Raw > CoordinateLimitRaw ||
+replacement:
+| if (false ||
+
+[ai-p3-05-no-alias-check]
+file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
+filter = FullyQualifiedName~CommanderQuotaTests
+expect = WarCore.Tests.CommanderQuotaTests.Plan_RejectsPreviousAliasingTheOutput
+note = previous flags may alias the output
+original:
+| if (ReferenceEquals(previousAttack, attackOut)) throw new ArgumentException("previousAttack must not be attackOut.", nameof(attackOut));
+replacement:
+|
+
+[ai-p3-06-floor-garrison]
+file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
+filter = FullyQualifiedName~CommanderQuotaTests
+expect = WarCore.Tests.CommanderQuotaTests.Own2_GarrisonRoundsUp
+note = the garrison rounds down
+original:
+| + 999) / 1000 + 1
+replacement:
+| + 0) / 1000 + 1
+
+[ai-p3-07-no-plus-one]
+file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
+filter = FullyQualifiedName~CommanderQuotaTests
+expect = WarCore.Tests.CommanderQuotaTests.Own2_GarrisonRoundsUp
+expect = WarCore.Tests.CommanderQuotaTests.Own3_GarrisonsAreCappedAtFortyPercent
+note = the garrison drops the extra soldier
+original:
+| / 1000 + 1));
+replacement:
+| / 1000));
+
+[ai-p3-08-no-frontier]
+file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
+filter = FullyQualifiedName~CommanderQuotaTests
+expect = WarCore.Tests.CommanderQuotaTests.Scenario1_FirstTargetIsTheSofterOne
+note = frontier points keep no garrison
+original:
+| desiredOut[i] = rules.FrontierGarrison;
+replacement:
+| desiredOut[i] = 0;
+
+[ai-p3-09-frontier-inverted]
+file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
+filter = FullyQualifiedName~CommanderQuotaTests
+expect = WarCore.Tests.CommanderQuotaTests.Scenario1_FirstTargetIsTheSofterOne
+note = a point with an own neighbour counts as frontier
+original:
+| Touches(i, team, false, count
+replacement:
+| Touches(i, team, true, count
+
+[ai-p3-10-no-fallback]
+file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
+filter = FullyQualifiedName~CommanderQuotaTests
+expect = WarCore.Tests.CommanderQuotaTests.Own5_NoOwnPointsAttacksTheThreeBestByScore
+note = a team with no points attacks nothing
+original:
+| bool fallback = candidates == 0;
+replacement:
+| bool fallback = false;
+
+[ai-p3-11-no-cap]
+file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
+filter = FullyQualifiedName~CommanderQuotaTests
+expect = WarCore.Tests.CommanderQuotaTests.Own3_GarrisonsAreCappedAtFortyPercent
+note = garrisons are not capped
+original:
+| if (defense > maxDefense)
+replacement:
+| if (false)
+
+[ai-p3-12-cap-share]
+file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
+filter = FullyQualifiedName~CommanderQuotaTests
+expect = WarCore.Tests.CommanderQuotaTests.Own3_GarrisonsAreCappedAtFortyPercent
+note = the cap reads the share in percent
+original:
+| rules.MaxDefenseSharePermille / 1000
+replacement:
+| rules.MaxDefenseSharePermille / 100
+
+[ai-p3-13-cap-no-min]
+file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
+filter = FullyQualifiedName~CommanderQuotaTests
+expect = WarCore.Tests.CommanderQuotaTests.Own4_CapNeverLeavesAThreatenedPointEmpty
+note = the cap can empty a garrison
+original:
+| Math.Max(1, (int)((long)desiredOut[i] * maxDefense / wanted))
+replacement:
+| (int)((long)desiredOut[i] * maxDefense / wanted)
+
+[ai-p3-14-cap-no-recount]
+file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
+filter = FullyQualifiedName~CommanderQuotaTests
+expect = WarCore.Tests.CommanderQuotaTests.Own3_GarrisonsAreCappedAtFortyPercent
+note = the attack pool ignores capped garrisons
+original:
+| defense += desiredOut[i];
+replacement:
+|
+
+[ai-p3-15-targets-fixed]
+file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
+filter = FullyQualifiedName~CommanderQuotaTests
+expect = WarCore.Tests.CommanderQuotaTests.Scenario1_FirstTargetIsTheSofterOne
+note = the target limit is ignored
+original:
+| Math.Max(1, rules.MaxAttackTargets)
+replacement:
+| 3
+
+[ai-p3-16-pool-no-floor]
+file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
+filter = FullyQualifiedName~CommanderQuotaTests
+expect = WarCore.Tests.CommanderQuotaTests.Own4_CapNeverLeavesAThreatenedPointEmpty
+note = a target can get zero soldiers
+original:
+| Math.Max(targets, soldiers - defense)
+replacement:
+| soldiers - defense
+
+[ai-p3-17-remainder-last]
+file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
+filter = FullyQualifiedName~CommanderQuotaTests
+expect = WarCore.Tests.CommanderQuotaTests.Own5_NoOwnPointsAttacksTheThreeBestByScore
+note = the extra soldiers go to the worst targets
+original:
+| (k < pool % targets ? 1 : 0)
+replacement:
+| (k >= targets - pool % targets ? 1 : 0)
+
+[ai-p3-18-tie-higher]
+file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
+filter = FullyQualifiedName~CommanderQuotaTests
+expect = WarCore.Tests.CommanderQuotaTests.Own1_StickinessHoldsUpToThreeExtraEnemies
+note = a tie goes to the higher index
+original:
+| score < bestScore
+replacement:
+| score <= bestScore
+
+[ai-p3-19-no-stickiness]
+file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
+filter = FullyQualifiedName~CommanderQuotaTests
+expect = WarCore.Tests.CommanderQuotaTests.Scenario2_TargetHoldsWhenThreatWobbles
+note = the last target gets no bonus
+original:
+| - (previous ? rules.Stickiness : 0)
+replacement:
+|
+
+[ai-p3-20-no-distance]
+file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
+filter = FullyQualifiedName~CommanderQuotaTests
+expect = WarCore.Tests.CommanderQuotaTests.Own5_NoOwnPointsAttacksTheThreeBestByScore
+note = distance to the anchor is ignored
+original:
+| metres * rules.DistanceWeightPerMetre
+replacement:
+| 0
+
+[ai-p3-21-no-enemies]
+file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
+filter = FullyQualifiedName~CommanderQuotaTests
+expect = WarCore.Tests.CommanderQuotaTests.Own8_AnyOtherTeamIsTheEnemy
+note = defenders at a target are ignored
+original:
+| (long)enemies * rules.EnemyWeight + 
+replacement:
+|
+
+[ai-p3-22-no-border-check]
+file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
+filter = FullyQualifiedName~CommanderQuotaTests
+expect = WarCore.Tests.CommanderQuotaTests.Own8_AnyOtherTeamIsTheEnemy
+note = points without an own neighbour can be picked
+original:
+| !(fallback || Touches(i, team, true, count, owners, adjacent))
+replacement:
+| false
