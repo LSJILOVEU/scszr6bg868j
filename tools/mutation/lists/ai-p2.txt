@@ -188,9 +188,9 @@ filter = FullyQualifiedName~AssaultRolesTests
 expect = WarCore.Tests.AssaultRolesTests.Roles_ParametersBelongToThePart
 note = one assault-roles parameter is not registered with its part
 original:
-|             ("arriveMm", true, ContentPolicies.AssaultRoles),
+|             ("arriveMm", PartKind.Placement, ContentPolicies.AssaultRoles),
 replacement:
-|             ("arriveMm", true, ContentPolicies.Scatter),
+|             ("arriveMm", PartKind.Placement, ContentPolicies.Scatter),
 
 [ai-p2-20-range]
 file = Assets/WarCore/Content/Data/Sections/AiSection.cs

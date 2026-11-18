@@ -41,6 +41,7 @@ namespace WarCore.Battle
         private readonly IAiPlacement placement;
         // The placement's waypoint face, when it has one (found once here, not per think).
         private readonly IAiWaypoint waypoints;
+        private readonly IAiEngage engage;
         private int intentCount, current;
         private long decisionTick;
         public SimpleAiSystem(CombatSystem combat, CombatPack weapons, MatchPack pack, CaptureSystem capture, IMoveOrders moves,
@@ -60,9 +61,10 @@ namespace WarCore.Battle
                 var hash = new StateHash(); hash.Add("battle.ai.fair-decisions.v1"); hash.Add(policyDigest); hash.Add(fairDecisions); hash.Add(decisionSeed);
                 policyDigest = hash.Value;
             }
-            field = new AiField(pack, capture); dispatch = parts.Dispatch; placement = parts.Placement;
+            field = new AiField(pack, capture); dispatch = parts.Dispatch; placement = parts.Placement; engage = parts.Engage;
             waypoints = placement as IAiWaypoint;
-            // Fold order is fixed: fair decisions, dispatch, placement, then a slot spacing other than the default, then a slot ring.
+            // Fold order is fixed: fair decisions, dispatch, placement, then a slot spacing other than the default, then a slot ring,
+            // then engage.
             policyDigest = placement.Fold(dispatch.Fold(policyDigest));
             if (parts.SlotSpacingRaw != GuardSlots.SpacingRaw)
             {
@@ -74,6 +76,7 @@ namespace WarCore.Battle
                 var hash = new StateHash(); hash.Add("battle.ai.slot-ring.v1"); hash.Add(policyDigest); hash.Add(parts.SlotRingRaw);
                 policyDigest = hash.Value;
             }
+            policyDigest = engage.Fold(policyDigest);
             reservedHas = new bool[slots.Total]; standingHas = new bool[slots.Total];
             reservedBy = new ulong[slots.Total]; standingBy = new ulong[slots.Total];
             stage = new EntityStage(combat.Entities); positions = combat.Entities.Resolve<Position>(); combatants = combat.Entities.Resolve<Combatant>();
@@ -114,12 +117,19 @@ namespace WarCore.Battle
                     { OrderUnit(id, here, moving, target, enemy, -2); }
                     continue;
                 }
+                var thinker = new AiUnit(id, unit.Team, here);
+                // An enemy in sight: the engage part says stand (Hold) or go on to the point below (Advance).
+                bool advance = false;
                 if (unit.Weapon >= 0 && combat.Pack.Selector.TrySelect(combat, entity, weapons.Weapons[unit.Weapon].FalloffEnd, out EntityId seen))
-                { contacts?.Saw(id, seen, c.Clock.Tick); if (moving) StopUnit(id, here, target); continue; }
+                {
+                    contacts?.Saw(id, seen, c.Clock.Tick);
+                    if (engage.Decide(in thinker, combat.Point(seen), field) == AiEngage.Hold) { if (moving) StopUnit(id, here, target); continue; }
+                    advance = true;
+                }
                 // Nothing in sight: a remembered target may be suppressed (fire at where it was last seen) from this tick on.
-                if (suppress != null && unit.Weapon >= 0) suppress.Decide(id, c.Clock.Tick);
+                if (!advance && suppress != null && unit.Weapon >= 0) suppress.Decide(id, c.Clock.Tick);
                 // Nothing in sight: a remembered target comes before the points (go to where it was last seen, stand, give up).
-                if (search != null && unit.Weapon >= 0)
+                if (!advance && search != null && unit.Weapon >= 0)
                 {
                     TargetSearch.Hunt hunt = search.Decide(id, here, c.Clock.Tick, out SimVec3 lastKnown);
                     if (hunt == TargetSearch.Hunt.Go)
@@ -132,7 +142,6 @@ namespace WarCore.Battle
                     if (hunt == TargetSearch.Hunt.Hold)
                     { if (moving) StopUnit(id, here, target); continue; }
                 }
-                var thinker = new AiUnit(id, unit.Team, here);
                 int point = dispatch.Pick(in thinker, field);
                 if (point < 0)
                 { if (moving) StopUnit(id, here, target); continue; }
