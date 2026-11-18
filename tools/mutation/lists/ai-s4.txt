@@ -1,8 +1,8 @@
 # AI-S4: cover. The source the pressure system keeps, the Cover answer of engage "bound", what the scheduler does with
 # it, the spot rule (Cover), the three combat ports, the three content fields and the saved state. Filters run only
 # the AI-S4 tests named; the default battles are held by the locked suites listed in the PR.
-# Not in the list: the tie rule of equally near spots (lower z, then lower x). A tie needs a unit that stands exactly
-# on a point of its own lattice, which no fixture places.
+# The reach of the search, a spot exactly on the radius and the tie rule are asked of the rule directly, from a
+# chosen point (entries 46-48). Not in the list: a tie between two spots that differ in both z and x.
 
 [ai-s4-01-source-shot-end]
 file = Assets/WarCore/Battle/Ai/Pressure.cs
@@ -458,3 +458,33 @@ original:
 |             if (coverRadiusRaw > 0 ? coverDepthRaw <= 0 : coverDepthRaw != 0) throw new ArgumentOutOfRangeException(nameof(coverDepthRaw));
 |
 replacement:
+
+[ai-s4-46-spot-reach-rounded-down]
+file = Assets/WarCore/Battle/Ai/Cover.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Spot_IsLookedForAsFarAsTheRadius
+expect = WarCore.Tests.AiS4Tests.Spot_IsLookedForAsFarAsTheRadius
+note = with a radius that is no whole number of steps the outermost columns and rows are not looked at
+original:
+|             reach = (radiusRaw + stepRaw - 1) / stepRaw;
+replacement:
+|             reach = radiusRaw / stepRaw;
+
+[ai-s4-47-spot-on-the-radius]
+file = Assets/WarCore/Battle/Ai/Cover.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Spot_IsLookedForAsFarAsTheRadius
+expect = WarCore.Tests.AiS4Tests.Spot_IsLookedForAsFarAsTheRadius
+note = a spot exactly on the radius does not count
+original:
+|                     if (distance > radiusSquared || (found && distance >= best)) continue;
+replacement:
+|                     if (distance >= radiusSquared || (found && distance >= best)) continue;
+
+[ai-s4-48-spot-tie-later]
+file = Assets/WarCore/Battle/Ai/Cover.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Spot_OfTwoEquallyNearIsTheLowerOne
+expect = WarCore.Tests.AiS4Tests.Spot_OfTwoEquallyNearIsTheLowerOne
+note = of two equally near spots the later one is taken
+original:
+|                     if (distance > radiusSquared || (found && distance >= best)) continue;
+replacement:
+|                     if (distance > radiusSquared || (found && distance > best)) continue;

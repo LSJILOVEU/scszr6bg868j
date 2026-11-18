@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using NUnit.Framework;
 using WarCore.Battle;
 using WarCore.Combat;
@@ -137,6 +138,56 @@ namespace WarCore.Tests
             Assert.That(unsure, Is.LessThanOrEqualTo(6), counts);
             if (radius == 9000) Assert.That(blocked, Is.GreaterThanOrEqualTo(30), counts);
             if (x == 56) Assert.That(again, Is.GreaterThanOrEqualTo(5), counts);
+        }
+
+        // The rule itself, asked from a chosen point for unit 1 (its teammates stand 20 m away). The lattice is the unit's
+        // own, in steps of 1 m: Column is the lattice coordinate at or below a raw coordinate.
+        private static bool Find(M6World w, SimVec3 here, SimVec3 threat, out SimVec3 spot)
+        {
+            object cover = Private<object>(w.System<SimpleAiSystem>(), "cover");
+            var arguments = new object[] { w.Unit(1), Id(w, 1).Value, here, threat, null };
+            bool found = (bool)cover.GetType().GetMethod("TryFind", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(cover, arguments);
+            spot = found ? (SimVec3)arguments[4] : default;
+            return found;
+        }
+        private static long Column(long raw, long shift) => (raw - shift) / SimFix.Scale * SimFix.Scale + shift;
+        private static SimVec3 Raw(long x, long z) => new SimVec3(SimFix.FromRaw(x), default, SimFix.FromRaw(z));
+
+        // How far the search reaches. The only covered points of the lattice are the column less than 1 m west of the wall
+        // (depth 1 m). From a point on the lattice three columns west of it the spot is 3 m away, exactly the radius, and
+        // counts. With a radius of 2.5 m the spot is three columns away as well: found from 2.4 m, not from 2.6 m.
+        [TestCase(3000, 0, true)]
+        [TestCase(2500, 600, true)]
+        [TestCase(2500, 400, false)]
+        public void Spot_IsLookedForAsFarAsTheRadius(int radius, int intoTheCellMm, bool finds)
+        {
+            M6World w = Yard(S4(radius, 1000, 1000), new[] { (64, 17, 1, 6) }, attackersX: 40);
+            ulong stable = Id(w, 1).Value; long step = SimFix.Scale;
+            long x = Column(64 * step - 1, (long)(Finalize(stable ^ SaltX) % (ulong)step)), z = Column(20 * step, (long)(Finalize(stable ^ SaltZ) % (ulong)step));
+            Assert.That(w.Combat.WallWithin(Raw(x, z), East, SimFix.FromInt(1)), Is.True);
+            Assert.That(w.Combat.WallWithin(Raw(x - step, z), East, SimFix.FromInt(1)), Is.False);
+            Assert.That(Find(w, Raw(x - 3 * step + SimFix.Ratio(intoTheCellMm, 1000).Raw, z), East, out SimVec3 spot), Is.EqualTo(finds));
+            if (finds) Assert.That(SameXz(spot, Raw(x, z)), Is.True, "found " + spot + ", the spot is " + Raw(x, z));
+        }
+
+        // Of two spots equally near, the one with the lower z; in one row, the one with the lower x. Asked from the middle
+        // between two rows, 2 m west of the covered column behind the east wall; and from the middle between two columns,
+        // 2 m south of the covered row behind a wall to the north.
+        [TestCase(true)]
+        [TestCase(false)]
+        public void Spot_OfTwoEquallyNearIsTheLowerOne(bool rows)
+        {
+            M6World w = Yard(S4(3000, 1000, 1000), new[] { (64, 17, 1, 6), (58, 30, 8, 1) }, attackersX: 40);
+            ulong stable = Id(w, 1).Value; long step = SimFix.Scale;
+            long shiftX = (long)(Finalize(stable ^ SaltX) % (ulong)step), shiftZ = (long)(Finalize(stable ^ SaltZ) % (ulong)step);
+            SimVec3 threat = rows ? East : North;
+            long x = Column(rows ? 64 * step - 1 : 62 * step, shiftX), z = Column(rows ? 20 * step : 30 * step - 1, shiftZ);
+            SimVec3 lower = Raw(x, z), other = rows ? Raw(x, z + step) : Raw(x + step, z);
+            SimVec3 here = rows ? Raw(x - 2 * step, z + step / 2) : Raw(x + step / 2, z - 2 * step);
+            Assert.That(w.Combat.WallWithin(lower, threat, SimFix.FromInt(1)) && w.Combat.WallWithin(other, threat, SimFix.FromInt(1)), Is.True);
+            Assert.That(Horizontal2(here, lower), Is.EqualTo(Horizontal2(here, other)));
+            Assert.That(Find(w, here, threat, out SimVec3 spot), Is.True);
+            Assert.That(SameXz(spot, lower), Is.True, "found " + spot + ", the lower one is " + lower);
         }
 
         // The plain picture: the attackers stand 1 m west of the wall's line. Those right behind the wall (z 17.5 .. 22.5)
