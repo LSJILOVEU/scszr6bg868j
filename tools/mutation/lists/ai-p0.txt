@@ -81,7 +81,7 @@ note = holders without an owned point stand still instead of attacking
 original:
 | bool attack = nearest < 0; SimWide best = default;
 replacement:
-| bool attack = !Holds(id.Value, holdSharePermille); SimWide best = default;
+| bool attack = !Holds(unit.Id.Value, holdSharePermille); SimWide best = default;
 
 [ai-p0-c-ai-split-1-10-digest]
 file = Assets/WarCore/Battle/Ai/NearestDispatch.cs
