@@ -198,6 +198,6 @@ filter = FullyQualifiedName~WarCore.Tests.AiS2Tests.Content_ValuesAndDefaults
 expect = WarCore.Tests.AiS2Tests.Content_ValuesAndDefaults
 note = the field is read but not published
 original:
-|                 engage, boundMove, boundFire, boundShare, boundMinRange, traits) {
+|                 engage, boundMove, boundFire, boundShare, boundMinRange, assault, traits) {
 replacement:
-|                 engage, boundMove, boundFire, boundShare, boundMinRange, 0) {
+|                 engage, boundMove, boundFire, boundShare, boundMinRange, assault, 0) {
