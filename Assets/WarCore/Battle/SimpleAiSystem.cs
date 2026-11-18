@@ -35,13 +35,16 @@ namespace WarCore.Battle
         private readonly ulong seedSalt, policyDigest;
         private readonly Intent[] intents;
         private readonly int[] winners;
-        private readonly int holdSharePermille;
+        private readonly int holdSharePermille, attackSpreadPoints;
         private int intentCount, current, frontline1, frontline2;
+        // Each team's first spawn anchor, the spread's reference when the team has no front line.
+        private readonly bool hasBase1, hasBase2;
+        private readonly SimVec3 base1, base2;
         private long decisionTick;
         public SimpleAiSystem(CombatSystem combat, CombatPack weapons, MatchPack pack, CaptureSystem capture, IMoveOrders moves,
             IControlTarget controlled = null, FailedSlotMemory memory = null, TargetMemory contacts = null,
             TargetSearch search = null, TargetSuppress suppress = null, int meleeChaseRange = 0,
-            bool fairDecisions = false, ulong decisionSeed = 0, int holdSharePermille = 0)
+            bool fairDecisions = false, ulong decisionSeed = 0, int holdSharePermille = 0, int attackSpreadPoints = 1)
         {
             this.combat = combat; this.weapons = weapons; this.pack = pack; this.capture = capture; this.moves = moves;
             this.controlled = controlled; this.memory = memory; this.contacts = contacts; this.search = search; this.suppress = suppress;
@@ -60,6 +63,17 @@ namespace WarCore.Battle
                 var hash = new StateHash(); hash.Add("battle.ai.hold-share.v1"); hash.Add(policyDigest); hash.Add(holdSharePermille);
                 policyDigest = hash.Value;
             }
+            this.attackSpreadPoints = attackSpreadPoints;
+            foreach (SpawnAnchor anchor in pack.Bases)
+            {
+                if (anchor.Team == 1 && !hasBase1) { hasBase1 = true; base1 = anchor.Point; }
+                if (anchor.Team == 2 && !hasBase2) { hasBase2 = true; base2 = anchor.Point; }
+            }
+            if (attackSpreadPoints > 1)
+            {
+                var hash = new StateHash(); hash.Add("battle.ai.attack-spread.v1"); hash.Add(policyDigest); hash.Add(attackSpreadPoints);
+                policyDigest = hash.Value;
+            }
             reservedHas = new bool[slots.Total]; standingHas = new bool[slots.Total];
             reservedBy = new ulong[slots.Total]; standingBy = new ulong[slots.Total];
             stage = new EntityStage(combat.Entities); positions = combat.Entities.Resolve<Position>(); combatants = combat.Entities.Resolve<Combatant>();
@@ -71,7 +85,7 @@ namespace WarCore.Battle
         public void Step(SimContext c)
         {
             decisionTick = c.Clock.Tick; intentCount = 0;
-            if (holdSharePermille > 0) { frontline1 = Frontline(1); frontline2 = Frontline(2); }
+            if (holdSharePermille > 0 || attackSpreadPoints > 1) { frontline1 = Frontline(1); frontline2 = Frontline(2); }
             Rebuild();
             foreach (EntityId entity in stage.Capture())
             {
@@ -121,6 +135,7 @@ namespace WarCore.Battle
                 // A holder goes to its team's front-line point; without one it attacks like the rest.
                 int nearest = holdSharePermille > 0 && Holds(id.Value, holdSharePermille) ? (unit.Team == 1 ? frontline1 : frontline2) : -1;
                 bool attack = nearest < 0; SimWide best = default;
+                if (attack && attackSpreadPoints > 1) { nearest = SpreadTarget(unit.Team, here, id.Value); attack = false; }
                 for (int i = 0; attack && i < pack.Points.Length; i++)
                 {
                     if (capture.Points[i].Owner == unit.Team) continue;
@@ -304,6 +319,34 @@ namespace WarCore.Battle
                 }
             }
             return front;
+        }
+        // Stateless spread by unit key: rank k = Mix(key ^ salt) % min(spread, points not owned); the k-th nearest such point
+        // (0 = nearest; equal distances to the lower point index); -1 when the team owns every point. Distances are measured
+        // from the team's front-line point, so the choice holds while the unit walks and changes only when a point flips;
+        // a team without a front line measures from its first spawn anchor, and without one from the unit itself.
+        private const ulong SpreadSalt = 0x3c6ef372fe94f82bUL;
+        private int SpreadTarget(int team, SimVec3 here, ulong key)
+        {
+            int front = team == 1 ? frontline1 : frontline2;
+            SimVec3 from = front >= 0 ? pack.Points[front].Center : team == 1 ? (hasBase1 ? base1 : here) : (hasBase2 ? base2 : here);
+            int count = 0;
+            for (int i = 0; i < pack.Points.Length; i++) if (capture.Points[i].Owner != team) count++;
+            if (count == 0) return -1;
+            int rank = (int)(Mix(key ^ SpreadSalt) % (ulong)Math.Min(attackSpreadPoints, count));
+            int last = -1; SimWide lastDistance = default;
+            for (int r = 0; r <= rank; r++)
+            {
+                int pick = -1; SimWide best = default;
+                for (int i = 0; i < pack.Points.Length; i++)
+                {
+                    if (capture.Points[i].Owner == team) continue;
+                    SimWide distance = CombatSystem.Horizontal(from - pack.Points[i].Center).LengthSquared;
+                    if (last >= 0 && (distance < lastDistance || (distance == lastDistance && i <= last))) continue;
+                    if (pick < 0 || distance < best) { pick = i; best = distance; }
+                }
+                last = pick; lastDistance = best;
+            }
+            return last;
         }
         private ulong Priority(ulong id) => Mix(id ^ seedSalt ^ unchecked((ulong)decisionTick * 0x9e3779b97f4a7c15UL));
         private static ulong Mix(ulong x)
