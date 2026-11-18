@@ -97,6 +97,17 @@ namespace WarCore.Tests
             Assert.That(ContentPolicies.Parts(null, default, 1, false).CoverRadiusRaw, Is.EqualTo(0));
         }
 
+        // A battle on a terrain map (the L4 fixture: its rules come from the terrain pack) builds with the pressure fields
+        // and fails to build with the cover fields.
+        [Test]
+        public void Content_ATerrainBattleRefusesCover()
+        {
+            SimSession Build(string ai) => SimSession.Create(L4.Recipe(L4.APoint, L4.AStart, Think, ai), WcMapWriter.Write(L4.Map(L4.AWalls)));
+            Assert.DoesNotThrow(() => Build(S3()));
+            var e = Assert.Throws<ContentException>(() => Build(S4()));
+            Assert.That(e.Message, Is.EqualTo("content pack 'l4-test' layer 'l4-test' ai field 'coverRadiusMm': is not supported on a terrain map"));
+        }
+
         // ---- Saved state ----
 
         // With sources the entry's source is saved and hashed (version 2); without, the state is what it was (version 1).
@@ -143,27 +154,36 @@ namespace WarCore.Tests
             Assert.That(Hash(loaded), Is.EqualTo(Hash(without)));
         }
 
-        // Each cover number is part of the battle's policy: battles that differ in one have different hashes and refuse
-        // each other's snapshots, and so do a battle with cover and one without.
+        // Cover folds into the battle's policy last, with its tag and the three numbers in raw units: battles that differ in
+        // one refuse each other's snapshots, and so do a battle with cover and one without.
         [Test]
-        public void State_EveryCoverNumberIsInTheBattle()
+        public void State_EveryCoverNumberIsInThePolicy()
         {
-            string[] variants = { S4(), S4(radius: 8999), S4(step: 999), S4(depth: 1999), S3() };
-            var worlds = new M6World[variants.Length]; var saved = new byte[variants.Length][];
-            var hashes = new HashSet<ulong>();
-            for (int i = 0; i < variants.Length; i++)
+            (int radius, int step, int depth)[] numbers = { (9000, 1000, 2000), (8999, 1000, 2000), (9000, 999, 2000), (9000, 1000, 1999) };
+            var worlds = new M6World[numbers.Length + 1]; var digests = new ulong[worlds.Length]; var saved = new byte[worlds.Length][];
+            for (int i = 0; i < worlds.Length; i++)
             {
-                worlds[i] = Yard(variants[i], Walls);
+                worlds[i] = Yard(i < numbers.Length ? S4(numbers[i].radius, numbers[i].step, numbers[i].depth) : S3(), Walls);
+                digests[i] = Private<ulong>(worlds[i].System<SimpleAiSystem>(), "policyDigest");
                 worlds[i].Step();
                 saved[i] = worlds[i].Sim.SaveRetainedSnapshot();
-                hashes.Add(worlds[i].Hash);
             }
-            Assert.That(hashes.Count, Is.EqualTo(variants.Length));
-            for (int i = 0; i < variants.Length; i++)
-                for (int j = 0; j < variants.Length; j++)
+            ulong plain = digests[numbers.Length];
+            for (int i = 0; i < numbers.Length; i++)
+            {
+                var hash = new StateHash(); hash.Add("battle.ai.cover.v1"); hash.Add(plain);
+                hash.Add(SimFix.Ratio(numbers[i].radius, 1000).Raw); hash.Add(SimFix.Ratio(numbers[i].step, 1000).Raw); hash.Add(SimFix.Ratio(numbers[i].depth, 1000).Raw);
+                Assert.That(digests[i], Is.EqualTo(hash.Value), "variant " + i);
+            }
+            for (int i = 0; i < worlds.Length; i++)
+                for (int j = 0; j < worlds.Length; j++)
                 {
-                    if (i == j) Assert.DoesNotThrow(() => worlds[j].Sim.RestoreRetainedSnapshot(saved[i]));
-                    else Assert.Catch(() => worlds[j].Sim.RestoreRetainedSnapshot(saved[i]), i + " into " + j);
+                    if (i == j) { Assert.DoesNotThrow(() => worlds[j].Sim.RestoreRetainedSnapshot(saved[i])); continue; }
+                    Assert.That(digests[i], Is.Not.EqualTo(digests[j]), i + " and " + j);
+                    var writer = new SimStateWriter(); worlds[i].System<SimpleAiSystem>().SaveState(writer);
+                    var e = Assert.Throws<InvalidOperationException>(() => worlds[j].System<SimpleAiSystem>().LoadState(new SimStateReader(writer.ToArray())));
+                    Assert.That(e.Message, Is.EqualTo("Battle configuration differs from snapshot."));
+                    Assert.Catch(() => worlds[j].Sim.RestoreRetainedSnapshot(saved[i]), i + " into " + j);
                 }
         }
 

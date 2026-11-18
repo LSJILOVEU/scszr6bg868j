@@ -1,0 +1,512 @@
+# AI-S4: cover. The source the pressure system keeps, the Cover answer of engage "bound", what the scheduler does with
+# it, the spot rule (Cover), the three combat ports, the three content fields and the saved state. Filters run only
+# the AI-S4 tests named; the default battles are held by the locked suites listed in the PR.
+# Not in the list: the tie rule of equally near spots (lower z, then lower x). A tie needs a unit that stands exactly
+# on a point of its own lattice, which no fixture places.
+
+[ai-s4-01-source-shot-end]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Source_IsWhereTheShotThatPinnedCameFrom
+expect = WarCore.Tests.AiS4Tests.Source_IsWhereTheShotThatPinnedCameFrom
+note = the source is where the shot ended, not where it was fired from
+original:
+|                         shock = rules.NearShock; from = fire.Origin; sourced = true; break;
+replacement:
+|                         shock = rules.NearShock; from = fire.End; sourced = true; break;
+
+[ai-s4-02-source-fall-wins]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Source_ANearShotComesBeforeAFall
+expect = WarCore.Tests.AiS4Tests.Source_ANearShotComesBeforeAFall
+note = a fall replaces the source of a near shot of the same tick
+original:
+|                         if (!sourced) { from = fallen[i].From; sourced = true; }
+replacement:
+|                         from = fallen[i].From; sourced = true;
+
+[ai-s4-03-source-fall-place]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Source_ANearShotComesBeforeAFall
+expect = WarCore.Tests.AiS4Tests.Source_ANearShotComesBeforeAFall
+note = a fall is remembered from where the teammate fell, not from where it was shot
+original:
+| At = at.Value, From = fire.Origin };
+replacement:
+| At = at.Value, From = at.Value };
+
+[ai-s4-04-source-every-shot]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Source_IsKeptFromThePinningShotUntilCalm
+expect = WarCore.Tests.AiS4Tests.Source_IsKeptFromThePinningShotUntilCalm
+note = every pressing shot replaces the source, pinned or not
+original:
+|                     if (sources && e.Value < rules.PinnedAt) e.From = from;
+replacement:
+|                     if (sources) e.From = from;
+
+[ai-s4-05-source-pinned-line]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Source_IsKeptFromThePinningShotUntilCalm
+expect = WarCore.Tests.AiS4Tests.Source_IsKeptFromThePinningShotUntilCalm
+note = the source is still replaced at the pinned line itself
+original:
+|                     if (sources && e.Value < rules.PinnedAt) e.From = from;
+replacement:
+|                     if (sources && e.Value <= rules.PinnedAt) e.From = from;
+
+[ai-s4-06-source-version]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.State_TheSourceIsSavedOnlyWithSources
+expect = WarCore.Tests.AiS4Tests.State_TheSourceIsSavedOnlyWithSources
+note = the state with sources claims version 1
+original:
+|         public int StateVersion => sources ? 2 : 1;
+replacement:
+|         public int StateVersion => 1;
+
+[ai-s4-07-source-read-without]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.State_TheSourceIsSavedOnlyWithSources
+expect = WarCore.Tests.AiS4Tests.State_TheSourceIsSavedOnlyWithSources
+note = a system without sources answers a source
+original:
+|             bool found = entries.TryGetValue(unit.Value, out Entry e) && sources;
+replacement:
+|             bool found = entries.TryGetValue(unit.Value, out Entry e);
+
+[ai-s4-08-source-save-z]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.State_TheSourceIsSavedOnlyWithSources
+expect = WarCore.Tests.AiS4Tests.State_TheSourceIsSavedOnlyWithSources
+note = the saved source has x in place of z
+original:
+| writer.Int64(pair.Value.From.Y.Raw); writer.Int64(pair.Value.From.Z.Raw); }
+replacement:
+| writer.Int64(pair.Value.From.Y.Raw); writer.Int64(pair.Value.From.X.Raw); }
+
+[ai-s4-09-source-hash-y]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.State_TheSourceIsSavedOnlyWithSources
+expect = WarCore.Tests.AiS4Tests.State_TheSourceIsSavedOnlyWithSources
+note = the height of the source is not hashed
+original:
+| hash.Add(pair.Value.From.X.Raw); hash.Add(pair.Value.From.Y.Raw); hash.Add(pair.Value.From.Z.Raw); }
+replacement:
+| hash.Add(pair.Value.From.X.Raw); hash.Add(pair.Value.From.Z.Raw); }
+
+[ai-s4-10-bound-seen-holds]
+file = Assets/WarCore/Battle/Ai/BoundEngage.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Pinned_InSightTakesCoverToo
+expect = WarCore.Tests.AiS4Tests.Pinned_InSightTakesCoverToo
+note = a pinned unit that sees an enemy holds instead of taking cover
+original:
+|             if (unit.Nerve == AiNerve.Pinned) return AiEngage.Cover;
+replacement:
+|             if (unit.Nerve == AiNerve.Pinned) return AiEngage.Hold;
+
+[ai-s4-11-bound-unseen-holds]
+file = Assets/WarCore/Battle/Ai/BoundEngage.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Pinned_GoesBehindTheWallAndStaysThere
+expect = WarCore.Tests.AiS4Tests.Pinned_GoesBehindTheWallAndStaysThere
+note = a pinned unit that sees nobody holds instead of taking cover
+original:
+| unit.Nerve == AiNerve.Pinned ? AiEngage.Cover : AiEngage.Advance;
+replacement:
+| unit.Nerve == AiNerve.Pinned ? AiEngage.Hold : AiEngage.Advance;
+
+[ai-s4-12-think-seen-no-cover]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Pinned_InSightTakesCoverToo
+expect = WarCore.Tests.AiS4Tests.Pinned_InSightTakesCoverToo
+note = the scheduler reads Cover as Hold when an enemy is in sight
+original:
+|                     if (answer == AiEngage.Cover && TakesCover(entity, id, here, moving, target)) continue;
+|                     if (answer == AiEngage.Hold || answer == AiEngage.Cover) { if (moving) StopUnit(id, here, target); continue; }
+replacement:
+|                     if (answer == AiEngage.Hold || answer == AiEngage.Cover) { if (moving) StopUnit(id, here, target); continue; }
+
+[ai-s4-13-think-seen-no-spot-advances]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Pinned_InSightTakesCoverToo
+expect = WarCore.Tests.AiS4Tests.Pinned_InSightTakesCoverToo
+note = in sight, a unit that finds no spot goes on instead of standing
+original:
+|                     if (answer == AiEngage.Hold || answer == AiEngage.Cover) { if (moving) StopUnit(id, here, target); continue; }
+replacement:
+|                     if (answer == AiEngage.Hold) { if (moving) StopUnit(id, here, target); continue; }
+
+[ai-s4-14-think-unseen-no-cover]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Pinned_GoesBehindTheWallAndStaysThere
+expect = WarCore.Tests.AiS4Tests.Pinned_GoesBehindTheWallAndStaysThere
+note = the scheduler reads Cover as Hold when nobody is in sight
+original:
+|                     if (answer == AiEngage.Cover && TakesCover(entity, id, here, moving, target)) continue;
+|                     if (answer == AiEngage.Fallback) fallback = true; else stand = answer == AiEngage.Hold || answer == AiEngage.Cover;
+replacement:
+|                     if (answer == AiEngage.Fallback) fallback = true; else stand = answer == AiEngage.Hold || answer == AiEngage.Cover;
+
+[ai-s4-15-think-unseen-no-spot-advances]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Pinned_GoesBehindTheWallAndStaysThere|FullyQualifiedName~WarCore.Tests.AiS4Tests.Pinned_DoesWhatTheRuleSaysAtEveryThink
+expect = WarCore.Tests.AiS4Tests.Pinned_GoesBehindTheWallAndStaysThere
+expect = WarCore.Tests.AiS4Tests.Pinned_DoesWhatTheRuleSaysAtEveryThink
+note = out of sight, a unit that finds no spot goes on instead of standing
+original:
+| else stand = answer == AiEngage.Hold || answer == AiEngage.Cover;
+replacement:
+| else stand = answer == AiEngage.Hold;
+
+[ai-s4-16-cover-leaves-cover]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Pinned_DoesWhatTheRuleSaysAtEveryThink
+expect = WarCore.Tests.AiS4Tests.Pinned_DoesWhatTheRuleSaysAtEveryThink
+note = a unit that stands in cover looks for a spot all the same
+original:
+| !pressure.TryPressedFrom(id, out SimVec3 threat) || cover.Covered(threat, here)) return false;
+replacement:
+| !pressure.TryPressedFrom(id, out SimVec3 threat)) return false;
+
+[ai-s4-17-cover-never-keeps]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Pinned_DoesWhatTheRuleSaysAtEveryThink
+expect = WarCore.Tests.AiS4Tests.Pinned_DoesWhatTheRuleSaysAtEveryThink
+note = an order to cover is replaced at every think
+original:
+|             if (moving && cover.Keeps(entity, here, target, threat)) return true;
+|
+replacement:
+
+[ai-s4-18-cover-keeps-any]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Pinned_DropsAnOrderThatIsNotCoverWithinTheRadius
+expect = WarCore.Tests.AiS4Tests.Pinned_DropsAnOrderThatIsNotCoverWithinTheRadius
+note = any order under way is kept
+original:
+|             if (moving && cover.Keeps(entity, here, target, threat)) return true;
+replacement:
+|             if (moving) return true;
+
+[ai-s4-19-cover-without-sources]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Parts_CoverNeedsThePressureSources
+expect = WarCore.Tests.AiS4Tests.Parts_CoverNeedsThePressureSources
+note = cover is accepted with a pressure system that keeps no sources
+original:
+|                 if (pressure == null || !pressure.Sources) throw
+replacement:
+|                 if (pressure == null) throw
+
+[ai-s4-20-cover-not-folded]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.State_EveryCoverNumberIsInThePolicy
+expect = WarCore.Tests.AiS4Tests.State_EveryCoverNumberIsInThePolicy
+note = cover is not folded into the policy digest
+original:
+| parts.CoverDepthRaw); policyDigest = cover.Fold(policyDigest);
+replacement:
+| parts.CoverDepthRaw);
+
+[ai-s4-21-fold-radius]
+file = Assets/WarCore/Battle/Ai/Cover.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.State_EveryCoverNumberIsInThePolicy
+expect = WarCore.Tests.AiS4Tests.State_EveryCoverNumberIsInThePolicy
+note = the radius is not in the digest
+original:
+| hash.Add(digest); hash.Add(radius); hash.Add(step);
+replacement:
+| hash.Add(digest); hash.Add(step);
+
+[ai-s4-22-fold-step]
+file = Assets/WarCore/Battle/Ai/Cover.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.State_EveryCoverNumberIsInThePolicy
+expect = WarCore.Tests.AiS4Tests.State_EveryCoverNumberIsInThePolicy
+note = the step is not in the digest
+original:
+| hash.Add(radius); hash.Add(step); hash.Add(depth.Raw);
+replacement:
+| hash.Add(radius); hash.Add(depth.Raw);
+
+[ai-s4-23-fold-depth]
+file = Assets/WarCore/Battle/Ai/Cover.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.State_EveryCoverNumberIsInThePolicy
+expect = WarCore.Tests.AiS4Tests.State_EveryCoverNumberIsInThePolicy
+note = the depth is not in the digest
+original:
+| hash.Add(step); hash.Add(depth.Raw);
+replacement:
+| hash.Add(step);
+
+[ai-s4-24-spot-depth]
+file = Assets/WarCore/Battle/Ai/Cover.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Pinned_DoesWhatTheRuleSaysAtEveryThink
+expect = WarCore.Tests.AiS4Tests.Pinned_DoesWhatTheRuleSaysAtEveryThink
+note = a wall anywhere within the radius toward the threat counts as cover
+original:
+|         internal bool Covered(SimVec3 threat, SimVec3 at) => combat.WallWithin(at, threat, depth);
+replacement:
+|         internal bool Covered(SimVec3 threat, SimVec3 at) => combat.WallWithin(at, threat, SimFix.FromRaw(radius));
+
+[ai-s4-25-walk-through-walls]
+file = Assets/WarCore/Battle/Ai/Cover.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Pinned_DoesWhatTheRuleSaysAtEveryThink
+expect = WarCore.Tests.AiS4Tests.Pinned_DoesWhatTheRuleSaysAtEveryThink
+note = a spot behind a wall on the walk is taken
+original:
+|             if (!combat.Sees(here, at)) return false;
+|
+replacement:
+
+[ai-s4-26-walk-ignores-teammates]
+file = Assets/WarCore/Battle/Ai/Cover.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Pinned_DoesWhatTheRuleSaysAtEveryThink|FullyQualifiedName~WarCore.Tests.AiS4Tests.Pinned_GoesBehindTheWallAndStaysThere
+expect = WarCore.Tests.AiS4Tests.Pinned_DoesWhatTheRuleSaysAtEveryThink
+expect = WarCore.Tests.AiS4Tests.Pinned_GoesBehindTheWallAndStaysThere
+note = a spot is taken whoever stands on it or in front of it
+original:
+|             return !combat.FriendOnWalk(unit, walk.Length <= Approach ? here : at - walk.Normalized * Approach, at);
+replacement:
+|             return true;
+
+[ai-s4-27-walk-whole-line]
+file = Assets/WarCore/Battle/Ai/Cover.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Pinned_DoesWhatTheRuleSaysAtEveryThink
+expect = WarCore.Tests.AiS4Tests.Pinned_DoesWhatTheRuleSaysAtEveryThink
+note = the whole walk must be free of teammates, not only the last stretch
+original:
+| walk.Length <= Approach ? here : at - walk.Normalized * Approach, at);
+replacement:
+| here, at);
+
+[ai-s4-28-walk-spot-only]
+file = Assets/WarCore/Battle/Ai/Cover.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Pinned_DoesWhatTheRuleSaysAtEveryThink
+expect = WarCore.Tests.AiS4Tests.Pinned_DoesWhatTheRuleSaysAtEveryThink
+note = only the spot itself must be free of teammates
+original:
+| walk.Length <= Approach ? here : at - walk.Normalized * Approach, at);
+replacement:
+| at, at);
+
+[ai-s4-29-walk-approach-length]
+file = Assets/WarCore/Battle/Ai/Cover.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Pinned_DoesWhatTheRuleSaysAtEveryThink
+expect = WarCore.Tests.AiS4Tests.Pinned_DoesWhatTheRuleSaysAtEveryThink
+note = the free stretch before the spot is 0.5 m instead of 1.5 m
+original:
+|         private static readonly SimFix Approach = SimFix.Ratio(3, 2);
+replacement:
+|         private static readonly SimFix Approach = SimFix.Ratio(1, 2);
+
+[ai-s4-30-keeps-beyond-radius]
+file = Assets/WarCore/Battle/Ai/Cover.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Pinned_DropsAnOrderThatIsNotCoverWithinTheRadius
+expect = WarCore.Tests.AiS4Tests.Pinned_DropsAnOrderThatIsNotCoverWithinTheRadius
+note = an order to cover beyond the radius is kept
+original:
+|             CombatSystem.Horizontal(target - here).LengthSquared <= radiusSquared && Covered(threat, target) && Walkable(unit, here, target);
+replacement:
+|             Covered(threat, target) && Walkable(unit, here, target);
+
+[ai-s4-31-keeps-not-cover]
+file = Assets/WarCore/Battle/Ai/Cover.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Pinned_DropsAnOrderThatIsNotCoverWithinTheRadius
+expect = WarCore.Tests.AiS4Tests.Pinned_DropsAnOrderThatIsNotCoverWithinTheRadius
+note = an order to a point in the open is kept
+original:
+| radiusSquared && Covered(threat, target) && Walkable(unit, here, target);
+replacement:
+| radiusSquared && Walkable(unit, here, target);
+
+[ai-s4-32-keeps-blocked]
+file = Assets/WarCore/Battle/Ai/Cover.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Pinned_DoesWhatTheRuleSaysAtEveryThink|FullyQualifiedName~WarCore.Tests.AiS4Tests.Pinned_GoesBehindTheWallAndStaysThere|FullyQualifiedName~WarCore.Tests.AiS4Tests.Pinned_InSightTakesCoverToo
+expect = WarCore.Tests.AiS4Tests.Pinned_DoesWhatTheRuleSaysAtEveryThink
+expect = WarCore.Tests.AiS4Tests.Pinned_GoesBehindTheWallAndStaysThere
+expect = WarCore.Tests.AiS4Tests.Pinned_InSightTakesCoverToo
+note = an order whose spot a teammate took meanwhile is kept
+original:
+| radiusSquared && Covered(threat, target) && Walkable(unit, here, target);
+replacement:
+| radiusSquared && Covered(threat, target);
+
+[ai-s4-33-lattice-no-shift-x]
+file = Assets/WarCore/Battle/Ai/Cover.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Pinned_DoesWhatTheRuleSaysAtEveryThink
+expect = WarCore.Tests.AiS4Tests.Pinned_DoesWhatTheRuleSaysAtEveryThink
+note = every unit uses the same lattice columns
+original:
+|             long shiftX = (long)(AiParts.Mix(key ^ SaltX) % (ulong)step), shiftZ
+replacement:
+|             long shiftX = 0, shiftZ
+
+[ai-s4-34-lattice-salts-swapped]
+file = Assets/WarCore/Battle/Ai/Cover.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Pinned_DoesWhatTheRuleSaysAtEveryThink
+expect = WarCore.Tests.AiS4Tests.Pinned_DoesWhatTheRuleSaysAtEveryThink
+note = the two shifts use each other's salt
+original:
+| AiParts.Mix(key ^ SaltX) % (ulong)step), shiftZ = (long)(AiParts.Mix(key ^ SaltZ) % (ulong)step);
+replacement:
+| AiParts.Mix(key ^ SaltZ) % (ulong)step), shiftZ = (long)(AiParts.Mix(key ^ SaltX) % (ulong)step);
+
+[ai-s4-35-spot-farthest]
+file = Assets/WarCore/Battle/Ai/Cover.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Pinned_DoesWhatTheRuleSaysAtEveryThink
+expect = WarCore.Tests.AiS4Tests.Pinned_DoesWhatTheRuleSaysAtEveryThink
+note = a farther spot replaces a nearer one
+original:
+|                     if (distance > radiusSquared || (found && distance >= best)) continue;
+replacement:
+|                     if (distance > radiusSquared || (found && distance <= best)) continue;
+
+[ai-s4-36-spot-beyond-radius]
+file = Assets/WarCore/Battle/Ai/Cover.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Pinned_DoesWhatTheRuleSaysAtEveryThink
+expect = WarCore.Tests.AiS4Tests.Pinned_DoesWhatTheRuleSaysAtEveryThink
+note = spots beyond the radius are taken
+original:
+|                     if (distance > radiusSquared || (found && distance >= best)) continue;
+replacement:
+|                     if (found && distance >= best) continue;
+
+[ai-s4-37-spot-not-standable]
+file = Assets/WarCore/Battle/Ai/Cover.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Pinned_DoesWhatTheRuleSaysAtEveryThink
+expect = WarCore.Tests.AiS4Tests.Pinned_DoesWhatTheRuleSaysAtEveryThink
+note = a spot nobody can stand on is taken
+original:
+|                     if (!moves.CanStandAt(at) || !Covered(threat, at) || !Walkable(unit, here, at)) continue;
+replacement:
+|                     if (!Covered(threat, at) || !Walkable(unit, here, at)) continue;
+
+[ai-s4-38-port-wall-reach]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Ports_WallWithinLooksOnlyAsFarAsItsReach
+expect = WarCore.Tests.AiS4Tests.Ports_WallWithinLooksOnlyAsFarAsItsReach
+note = the look goes all the way to the point it looks toward
+original:
+| SpatialQueries.Ray(origin, delta, length < reach ? length : reach, wallMask));
+replacement:
+| SpatialQueries.Ray(origin, delta, length, wallMask));
+
+[ai-s4-39-port-wall-past-point]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Ports_WallWithinLooksOnlyAsFarAsItsReach
+expect = WarCore.Tests.AiS4Tests.Ports_WallWithinLooksOnlyAsFarAsItsReach
+note = the look goes on past the point it looks toward
+original:
+| SpatialQueries.Ray(origin, delta, length < reach ? length : reach, wallMask));
+replacement:
+| SpatialQueries.Ray(origin, delta, reach, wallMask));
+
+[ai-s4-40-port-walk-any-team]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Ports_FriendOnWalkIsATeammateTheBodyWouldTouch
+expect = WarCore.Tests.AiS4Tests.Ports_FriendOnWalkIsATeammateTheBodyWouldTouch
+note = any unit on the walk counts, enemy or the unit itself
+original:
+|                 if (IsFriend(unit, candidates[i].Entity)) return true;
+replacement:
+|                 return true;
+
+[ai-s4-41-port-walk-end-only]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Ports_FriendOnWalkIsATeammateTheBodyWouldTouch
+expect = WarCore.Tests.AiS4Tests.Ports_FriendOnWalkIsATeammateTheBodyWouldTouch
+note = only the end of the walk is tested
+original:
+| SpatialQueries.Capsule(from, to, Entities.Get(colliders, unit).Radius, unitLayerMask)
+replacement:
+| SpatialQueries.Capsule(to, to, Entities.Get(colliders, unit).Radius, unitLayerMask)
+
+[ai-s4-42-content-cover-without-pressure]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Content_CoverNeedsBoundAndThePressureFields
+expect = WarCore.Tests.AiS4Tests.Content_CoverNeedsBoundAndThePressureFields
+note = the cover fields are read without the pressure fields
+original:
+|                     if (!pressed) throw r.Bad(r.FieldOf("coverRadiusMm"), "needs the pressure fields (pressureDeathRadiusMm ...)");
+|
+replacement:
+
+[ai-s4-43-content-cover-one-field]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Content_CoverFieldsAreReadAllOrNone
+expect = WarCore.Tests.AiS4Tests.Content_CoverFieldsAreReadAllOrNone
+note = the step alone does not make the three required
+original:
+|                 if (r.Has("coverRadiusMm") || r.Has("coverStepMm") || r.Has("coverDepthMm"))
+replacement:
+|                 if (r.Has("coverRadiusMm") || r.Has("coverDepthMm"))
+
+[ai-s4-44-content-cover-owner]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Content_CoverNeedsBoundAndThePressureFields
+expect = WarCore.Tests.AiS4Tests.Content_CoverNeedsBoundAndThePressureFields
+note = the depth is not tied to engage bound
+original:
+|             ("coverDepthMm", PartKind.Engage, ContentPolicies.BoundEngage),
+|
+replacement:
+
+[ai-s4-45-content-cover-min-step]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Content_CoverOutOfRangeNamesTheField
+expect = WarCore.Tests.AiS4Tests.Content_CoverOutOfRangeNamesTheField
+note = a step below the minimum is read
+original:
+| MinCoverStepMm = 250,
+replacement:
+| MinCoverStepMm = 249,
+
+[ai-s4-46-content-terrain-accepts]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Content_PartsCarryCoverAndRefuseItOnTerrain|FullyQualifiedName~WarCore.Tests.AiS4Tests.Content_ATerrainBattleRefusesCover
+expect = WarCore.Tests.AiS4Tests.Content_PartsCarryCoverAndRefuseItOnTerrain
+expect = WarCore.Tests.AiS4Tests.Content_ATerrainBattleRefusesCover
+note = cover is accepted on a terrain map
+original:
+|             if (!flat && ai != null && ai.CoverRadiusMm > 0) throw ai.FieldError("coverRadiusMm", "is not supported on a terrain map");
+|
+replacement:
+
+[ai-s4-47-content-depth-as-step]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Content_PartsCarryCoverAndRefuseItOnTerrain
+expect = WarCore.Tests.AiS4Tests.Content_PartsCarryCoverAndRefuseItOnTerrain
+note = the parts get the step in place of the depth
+original:
+| SimFix.Ratio(ai?.CoverStepMm ?? 0, 1000).Raw, SimFix.Ratio(ai?.CoverDepthMm ?? 0, 1000).Raw);
+replacement:
+| SimFix.Ratio(ai?.CoverStepMm ?? 0, 1000).Raw, SimFix.Ratio(ai?.CoverStepMm ?? 0, 1000).Raw);
+
+[ai-s4-48-battle-terrain-flag]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Content_ATerrainBattleRefusesCover
+expect = WarCore.Tests.AiS4Tests.Content_ATerrainBattleRefusesCover
+note = a terrain battle is built as a flat one
+original:
+| recipe.Match.ThinkInterval, terrain == null), pressure)
+replacement:
+| recipe.Match.ThinkInterval, true), pressure)
+
+[ai-s4-49-battle-sources-always]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Pinned_WithoutAWallIsTheBattleWithoutCover
+expect = WarCore.Tests.AiS4Tests.Pinned_WithoutAWallIsTheBattleWithoutCover
+note = a battle without cover keeps sources too
+original:
+| new Pressure(combat, ai.Pressure.Value, ai.CoverRadiusMm > 0);
+replacement:
+| new Pressure(combat, ai.Pressure.Value, true);
+
+[ai-s4-50-parts-depth-optional]
+file = Assets/WarCore/Battle/Ai/AiParts.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Parts_CoverNumbersGoTogether
+expect = WarCore.Tests.AiS4Tests.Parts_CoverNumbersGoTogether
+note = a radius without a depth is accepted
+original:
+|             if (coverRadiusRaw > 0 ? coverDepthRaw <= 0 : coverDepthRaw != 0) throw new ArgumentOutOfRangeException(nameof(coverDepthRaw));
+|
+replacement:

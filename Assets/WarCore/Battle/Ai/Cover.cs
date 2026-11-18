@@ -70,8 +70,9 @@ namespace WarCore.Battle
             bool found = false; SimWide best = default;
             long shiftX = (long)(AiParts.Mix(key ^ SaltX) % (ulong)step), shiftZ = (long)(AiParts.Mix(key ^ SaltZ) % (ulong)step);
             long column = Floor(here.X.Raw - shiftX), row = Floor(here.Z.Raw - shiftZ);
-            for (long j = row - reach; j <= row + reach + 1; j++)
-                for (long i = column - reach; i <= column + reach + 1; i++)
+            // The lattice points within the radius lie between column - reach and column + reach, and so for the rows.
+            for (long j = row - reach; j <= row + reach; j++)
+                for (long i = column - reach; i <= column + reach; i++)
                 {
                     var at = new SimVec3(SimFix.FromRaw(i * step + shiftX), here.Y, SimFix.FromRaw(j * step + shiftZ));
                     SimWide distance = CombatSystem.Horizontal(at - here).LengthSquared;

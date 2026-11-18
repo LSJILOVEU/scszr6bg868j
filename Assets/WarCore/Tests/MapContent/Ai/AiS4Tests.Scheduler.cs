@@ -196,6 +196,54 @@ namespace WarCore.Tests
             Assert.That(taken, Is.GreaterThan(0), "those left in the open were kept out by teammates");
         }
 
+        // An order under way is kept only while its target is cover within the radius. The attackers start 13 m from the
+        // wall (no spot within 9 m): key 10 is on its way to a spot right behind the wall, key 12 to a point in the open
+        // 8 m ahead. Each stands at its next think.
+        [Test]
+        public void Pinned_DropsAnOrderThatIsNotCoverWithinTheRadius()
+        {
+            M6World w = Yard(S4(), new[] { (64, 17, 1, 6) }, attackersX: 50);
+            Pressure p = w.System<Pressure>(); IMoveOrders moves = MovesOf(w); AiField field = FieldOf(w);
+            SimVec3 far = Mm(63000, 19500), open = Mm(58000, 21500), near = Mm(63000, 20500);
+            Assert.That(w.Combat.WallWithin(far, East, SimFix.FromInt(2)) && w.Combat.Sees(At(w, 10), far), Is.True);
+            Assert.That(w.Combat.WallWithin(open, East, SimFix.FromInt(2)), Is.False);
+            moves.Order(Id(w, 10), far); moves.Order(Id(w, 12), open);
+            var shots = new FireRecord[Attackers];
+            int thought = 0;
+            for (int t = 0; t < Think; t++)
+            {
+                for (int i = 0; i < Attackers; i++) shots[i] = Near(w, East, At(w, (ulong)i + 1));
+                p.Advance(shots);
+                bool ten = w.Read<MoveIntent>(10).Active, twelve = w.Read<MoveIntent>(12).Active;
+                w.Step();
+                foreach ((ulong key, bool before, SimVec3 target) in new[] { (10UL, ten, far), (12UL, twelve, open) })
+                {
+                    string what = "key " + key + " tick " + field.Tick;
+                    if (!Thinks(Id(w, key).Value, field.Tick)) { Assert.That(w.Read<MoveIntent>(key).Active, Is.EqualTo(before), what); continue; }
+                    Assert.That(before, Is.True, what + ": it walked until it thought");
+                    Assert.That(Horizontal2(At(w, key), target), Is.GreaterThan(Raw2(1000)), what + ": it was not there yet");
+                    Assert.That(w.Read<MoveIntent>(key).Active, Is.False, what + ": it stands");
+                    thought++;
+                }
+            }
+            Assert.That(thought, Is.EqualTo(2));
+            Assert.That(Horizontal2(At(w, 10), far), Is.GreaterThan(Raw2(9000)), "the spot behind the wall was beyond the radius");
+            Assert.That(Horizontal2(At(w, 12), open), Is.LessThan(Raw2(9000)), "the point in the open was within it");
+            // The same order from within the radius is kept to the end.
+            M6World v = Yard(S4(), new[] { (64, 17, 1, 6) }, attackersX: 55);
+            Pressure q = v.System<Pressure>();
+            MovesOf(v).Order(Id(v, 11), near);
+            for (int t = 0; t < 2 * Think; t++)
+            {
+                for (int i = 0; i < Attackers; i++) shots[i] = Near(v, East, At(v, (ulong)i + 1));
+                q.Advance(shots);
+                v.Step();
+                MoveIntent order = v.Read<MoveIntent>(11);
+                if (order.Active) Assert.That(order.Target, Is.EqualTo(near), "tick " + t);
+            }
+            Assert.That(At(v, 11), Is.EqualTo(near));
+        }
+
         // Once it is calm again a unit leaves its cover and goes for the enemy point as before.
         [Test]
         public void Pinned_OnceCalmGoesOn()
