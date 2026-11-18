@@ -85,7 +85,7 @@ namespace WarCore.Battle
             {
                 // Cover is taken from where the fire came from, which only a pressure system that keeps sources knows.
                 if (pressure == null || !pressure.Sources) throw new ArgumentException("Cover needs the pressure system with sources.", nameof(pressure));
-                cover = new Cover(combat, moves, slots, parts.CoverRadiusRaw, parts.CoverStepRaw, parts.CoverDepthRaw); policyDigest = cover.Fold(policyDigest);
+                cover = new Cover(combat, moves, parts.CoverRadiusRaw, parts.CoverStepRaw, parts.CoverDepthRaw); policyDigest = cover.Fold(policyDigest);
             }
             reservedHas = new bool[slots.Total]; standingHas = new bool[slots.Total];
             reservedBy = new ulong[slots.Total]; standingBy = new ulong[slots.Total];
@@ -136,14 +136,14 @@ namespace WarCore.Battle
                 {
                     contacts?.Saw(id, seen, c.Clock.Tick);
                     AiEngage answer = engage.Decide(in thinker, combat.Point(seen), field);
-                    if (answer == AiEngage.Cover && TakesCover(id, here, moving, target)) continue;
+                    if (answer == AiEngage.Cover && TakesCover(entity, id, here, moving, target)) continue;
                     if (answer == AiEngage.Hold || answer == AiEngage.Cover) { if (moving) StopUnit(id, here, target); continue; }
                     if (answer == AiEngage.Fallback) fallback = true; else advance = true;
                 }
                 else if (thinker.Nerve != AiNerve.Calm)
                 {
                     AiEngage answer = engage.Unseen(in thinker, field);
-                    if (answer == AiEngage.Cover && TakesCover(id, here, moving, target)) continue;
+                    if (answer == AiEngage.Cover && TakesCover(entity, id, here, moving, target)) continue;
                     if (answer == AiEngage.Fallback) fallback = true; else stand = answer == AiEngage.Hold || answer == AiEngage.Cover;
                 }
                 // Nothing in sight: a remembered target may be suppressed (fire at where it was last seen) from this tick on.
@@ -205,12 +205,12 @@ namespace WarCore.Battle
             return nearest;
         }
         // True when the unit is now walking to cover from where it was pressed from: it keeps an order whose target still
-        // is cover, or gets a new one. False (the unit stands) without cover rules, when it stands in cover, or when no spot is found.
-        private bool TakesCover(StableId id, SimVec3 here, bool moving, SimVec3 target)
+        // is free cover, or gets a new one. False (the unit stands) without cover rules, when it stands in cover, or when no spot is found.
+        private bool TakesCover(EntityId entity, StableId id, SimVec3 here, bool moving, SimVec3 target)
         {
             if (cover == null || !pressure.TryPressedFrom(id, out SimVec3 threat) || cover.Covered(threat, here)) return false;
-            if (moving && cover.Keeps(here, target, threat)) return true;
-            if (!cover.TryFind(id.Value, here, threat, out SimVec3 spot)) return false;
+            if (moving && cover.Keeps(entity, here, target, threat)) return true;
+            if (!cover.TryFind(entity, id.Value, here, threat, out SimVec3 spot)) return false;
             OrderUnit(id, here, moving, target, spot, -1);
             return true;
         }

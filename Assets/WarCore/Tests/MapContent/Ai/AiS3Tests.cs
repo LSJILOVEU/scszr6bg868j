@@ -345,10 +345,10 @@ namespace WarCore.Tests
             var broken = new AiUnit(new StableId(key), 1, here, AiNerve.Broken);
             Assert.That(calm.Nerve, Is.EqualTo(AiNerve.Calm));
             Assert.That(bound.Decide(in calm, enemy, field), Is.EqualTo(AiEngage.Advance));
-            Assert.That(bound.Decide(in pinned, enemy, field), Is.EqualTo(AiEngage.Hold));
+            Assert.That(bound.Decide(in pinned, enemy, field), Is.EqualTo(AiEngage.Cover));
             Assert.That(bound.Decide(in broken, enemy, field), Is.EqualTo(AiEngage.Fallback));
             Assert.That(bound.Unseen(in calm, field), Is.EqualTo(AiEngage.Advance));
-            Assert.That(bound.Unseen(in pinned, field), Is.EqualTo(AiEngage.Hold));
+            Assert.That(bound.Unseen(in pinned, field), Is.EqualTo(AiEngage.Cover));
             Assert.That(bound.Unseen(in broken, field), Is.EqualTo(AiEngage.Fallback));
             // The pressure system does not touch the bound part's digest.
             Assert.That(ContentPolicies.Parts(Pack(S3).Section<AiRules>(), default, Think).Engage.Fold(5),
