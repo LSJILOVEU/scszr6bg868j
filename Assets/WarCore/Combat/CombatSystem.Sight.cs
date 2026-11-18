@@ -77,6 +77,20 @@ namespace WarCore.Combat
         // Line of sight from the shooter to a point on the ground (both lifted to the aim height), walls and (L9) the ground.
         public bool Visible(EntityId shooter, SimVec3 point) => LineClear(AimPoint(Point(shooter)), AimPoint(point));
 
+        // Line of sight between two points on the ground (both lifted to the aim height): what a unit standing at one
+        // would see of a unit standing at the other. No unit has to stand at either.
+        public bool Sees(SimVec3 from, SimVec3 to) => LineClear(AimPoint(from), AimPoint(to));
+
+        // A wall stands on the sight line from one point on the ground toward another (both lifted to the aim height),
+        // within reach of the first. Walls only: the ground is not tested. Two points above one another have no line.
+        public bool WallWithin(SimVec3 from, SimVec3 toward, SimFix reach)
+        {
+            SimVec3 origin = AimPoint(from), delta = AimPoint(toward) - origin;
+            if (Horizontal(delta).LengthSquared.Sign == 0) return false;
+            SimFix length = delta.Length;
+            return sim.SpatialQuery.Any(SpatialQueries.Ray(origin, delta, length < reach ? length : reach, wallMask));
+        }
+
         // The one line-of-sight judgement: a horizontal zero length is clear, otherwise nothing of the wall layer on the segment
         // and (L9) the segment nowhere under the ground.
         // Explicit AtTarget intents use this; the Aimed and Auto paths use Trace.

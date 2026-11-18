@@ -104,8 +104,10 @@ namespace WarCore.Battle
 
     // What the engage part answers at a think. Hold: stand where it is (it still fires). Advance: go on as a unit that
     // is left alone would. Fallback: go to the team's nearest owned point and stand there (to the team's base when it
-    // owns none, stand when it has neither).
-    public enum AiEngage { Hold, Advance, Fallback }
+    // owns none, stand when it has neither). Cover: walk to a spot nearby with a wall close in front of it, toward where the
+    // fire that pressed the unit came from (Cover, Pressure.TryPressedFrom); the same as Hold when the battle has no
+    // cover rules, or the unit stands in cover already or finds no spot.
+    public enum AiEngage { Hold, Advance, Fallback, Cover }
 
     // Engage: what a unit that sees an enemy, or is pressed, does. The answers may depend only on the unit, the enemy's
     // point, the field and the part's own parameters (no state), like the other parts.
@@ -116,7 +118,8 @@ namespace WarCore.Battle
         // suppression and search.
         AiEngage Decide(in AiUnit unit, SimVec3 enemy, AiField field);
         // No enemy is in sight. Asked only for a unit that is not Calm. Advance leaves the think as it was before parts
-        // (suppression, search, then the point); Hold keeps suppression and skips the rest.
+        // (suppression, search, then the point); Hold keeps suppression and skips the rest. Cover skips suppression
+        // while the unit walks.
         AiEngage Unseen(in AiUnit unit, AiField field);
     }
 
@@ -132,13 +135,23 @@ namespace WarCore.Battle
         // Width in raw units of the ring of guard slots outside each capture circle (also a scheduler property); 0 = none.
         public long SlotRingRaw { get; }
         public IAiEngage Engage { get; }
+        // Cover (a scheduler property, used when the engage part answers Cover), in raw units: how far a unit looks for a
+        // spot behind a wall, the spacing of the spots it tries, and how close in front of the spot the wall must stand.
+        // All 0 = no cover (the answer reads as Hold).
+        public long CoverRadiusRaw { get; }
+        public long CoverStepRaw { get; }
+        public long CoverDepthRaw { get; }
         public AiParts(IAiDispatch dispatch = null, IAiPlacement placement = null, long slotSpacingRaw = GuardSlots.SpacingRaw, long slotRingRaw = 0,
-            IAiEngage engage = null)
+            IAiEngage engage = null, long coverRadiusRaw = 0, long coverStepRaw = 0, long coverDepthRaw = 0)
         {
             if (slotSpacingRaw <= 0) throw new ArgumentOutOfRangeException(nameof(slotSpacingRaw));
             if (slotRingRaw < 0) throw new ArgumentOutOfRangeException(nameof(slotRingRaw));
+            if (coverRadiusRaw < 0) throw new ArgumentOutOfRangeException(nameof(coverRadiusRaw));
+            if (coverRadiusRaw > 0 ? coverStepRaw <= 0 : coverStepRaw != 0) throw new ArgumentOutOfRangeException(nameof(coverStepRaw));
+            if (coverRadiusRaw > 0 ? coverDepthRaw <= 0 : coverDepthRaw != 0) throw new ArgumentOutOfRangeException(nameof(coverDepthRaw));
             Dispatch = dispatch ?? new NearestDispatch(); Placement = placement ?? new NearestSlotPlacement();
             SlotSpacingRaw = slotSpacingRaw; SlotRingRaw = slotRingRaw; Engage = engage ?? new HoldEngage();
+            CoverRadiusRaw = coverRadiusRaw; CoverStepRaw = coverStepRaw; CoverDepthRaw = coverDepthRaw;
         }
 
         // The only source of variation a part may use: Mix(unit key ^ a constant of the part). Stateless, so the same

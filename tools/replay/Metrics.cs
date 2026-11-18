@@ -181,6 +181,75 @@ namespace WarCore.Replay
         // (9, 10) A counted share of the team (pinned, broken). 0..1; NaN below MinUnits.
         public static double Share(int count, int units) => units < MinUnits ? double.NaN : (double)count / units;
 
+        // The two cover numbers need at least this many pinned units of the team in the frame.
+        public const int MinPinned = 5;
+        // Reach of the rifles in the shipped packs (falloffEnd 67 and 68 m): an enemy farther away than this is no threat.
+        public const double CoverRange = 68.0;
+
+        // The segment a-b crosses or touches the rectangle (centre x, z and full sizes, axis aligned). Walls only, in 2D:
+        // the tool does not know heights, and every wall of the shipped maps is taller than the sight line.
+        public static bool Blocked((double x, double z) a, (double x, double z) b, (double x, double z, double sx, double sz) wall)
+        {
+            double t0 = 0, t1 = 1;
+            for (int axis = 0; axis < 2; axis++)
+            {
+                double from = axis == 0 ? a.x : a.z, delta = (axis == 0 ? b.x : b.z) - from;
+                double lo = (axis == 0 ? wall.x - wall.sx / 2 : wall.z - wall.sz / 2), hi = (axis == 0 ? wall.x + wall.sx / 2 : wall.z + wall.sz / 2);
+                if (delta == 0) { if (from < lo || from > hi) return false; continue; }
+                double enter = (lo - from) / delta, leave = (hi - from) / delta;
+                if (enter > leave) { double swap = enter; enter = leave; leave = swap; }
+                if (enter > t0) t0 = enter;
+                if (leave < t1) t1 = leave;
+                if (t0 > t1) return false;
+            }
+            return true;
+        }
+
+        // (11) Share of the team's pinned units that no enemy (alive, on the field) within CoverRange has a wall-free line
+        // to. 0..1; NaN below MinPinned pinned units.
+        public static double PinnedHidden(IReadOnlyList<(double x, double z)> pinned, IReadOnlyList<(double x, double z)> enemies,
+            IReadOnlyList<(double x, double z, double sx, double sz)> walls, double range = CoverRange)
+        {
+            if (pinned.Count < MinPinned) return double.NaN;
+            int hidden = 0;
+            foreach (var unit in pinned)
+            {
+                bool seen = false;
+                foreach (var enemy in enemies)
+                {
+                    double dx = enemy.x - unit.x, dz = enemy.z - unit.z;
+                    if (dx * dx + dz * dz > range * range) continue;
+                    bool blocked = false;
+                    foreach (var wall in walls) if (Blocked(enemy, unit, wall)) { blocked = true; break; }
+                    if (!blocked) { seen = true; break; }
+                }
+                if (!seen) hidden++;
+            }
+            return (double)hidden / pinned.Count;
+        }
+
+        // A pinned unit this close to a wall (to the rectangle's edge, 0 inside it) counts as standing at it.
+        public const double AtWallRange = 2.5;
+
+        // (13) Share of the team's pinned units that stand within AtWallRange of a wall. 0..1; NaN below MinPinned pinned units.
+        public static double PinnedAtWall(IReadOnlyList<(double x, double z)> pinned, IReadOnlyList<(double x, double z, double sx, double sz)> walls,
+            double range = AtWallRange)
+        {
+            if (pinned.Count < MinPinned) return double.NaN;
+            int count = 0;
+            foreach (var unit in pinned)
+                foreach (var wall in walls)
+                {
+                    double dx = Math.Max(Math.Abs(unit.x - wall.x) - wall.sx / 2, 0), dz = Math.Max(Math.Abs(unit.z - wall.z) - wall.sz / 2, 0);
+                    if (dx * dx + dz * dz <= range * range) { count++; break; }
+                }
+            return (double)count / pinned.Count;
+        }
+
+        // (12) Share of the team's pinned units whose position differs from the previous recorded frame (moved counts them).
+        // 0..1; NaN below MinPinned pinned units.
+        public static double PinnedMoving(int moved, int pinned) => pinned < MinPinned ? double.NaN : (double)moved / pinned;
+
         // (7) Share of the team with an enemy (alive, on the field) within NearEnemyRange. 0..1; NaN below MinUnits.
         public static double EnemyWithin(IReadOnlyList<(double x, double z)> units, IReadOnlyList<(double x, double z)> enemies, double range = NearEnemyRange)
         {

@@ -73,17 +73,18 @@ namespace WarCore.Presentation
                 suppress = new TargetSuppress(combat, contacts, adapter, suppressTicks);
                 sim.RegisterGameplay("battle.ai-suppress", suppress, SimSystemPhase.Requests);
             }
-            // Only with all ten pressure fields written: how hard each unit is pressed, read by the engage part.
+            // Only with all ten pressure fields written: how hard each unit is pressed, read by the engage part. With cover
+            // rules it also keeps where the fire came from.
             Pressure pressure = null;
             if (ai?.Pressure != null)
             {
-                pressure = new Pressure(combat, ai.Pressure.Value);
+                pressure = new Pressure(combat, ai.Pressure.Value, ai.CoverRadiusMm > 0);
                 sim.RegisterGameplay("battle.ai-pressure", pressure, SimSystemPhase.Queries);
             }
             int meleeChaseRange = terrain != null ? recipe.TerrainPack.Section<AiRules>().MeleeChaseRange : 0;
             if (terrain == null && ai != null) meleeChaseRange = ai.MeleeChaseRange;
             bool fair = recipe.TerrainPack != null && recipe.TerrainPack.Section<AiRules>().FairDecisions;
-            sim.RegisterGameplay("battle.ai", new SimpleAiSystem(combat, recipe.Combat, recipe.Match, capture, adapter, a.Controlled, memory, contacts, search, suppress, meleeChaseRange, fair, recipe.Seed, ContentPolicies.Parts(ai, recipe.Match.Points, recipe.Match.ThinkInterval), pressure), SimSystemPhase.Requests);
+            sim.RegisterGameplay("battle.ai", new SimpleAiSystem(combat, recipe.Combat, recipe.Match, capture, adapter, a.Controlled, memory, contacts, search, suppress, meleeChaseRange, fair, recipe.Seed, ContentPolicies.Parts(ai, recipe.Match.Points, recipe.Match.ThinkInterval, terrain == null), pressure), SimSystemPhase.Requests);
             sim.RegisterGameplay("battle.capture", capture, SimSystemPhase.Queries);
             sim.RegisterGameplay("battle.match", match, SimSystemPhase.Queries);
             a.Capture = capture; a.Reinforce = reinforce; a.Match = match; a.Pressure = pressure;

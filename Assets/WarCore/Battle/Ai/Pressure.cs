@@ -43,17 +43,25 @@ namespace WarCore.Battle
     //    never runs.
     // The AI scheduler hands the level to the engage part (AiUnit.Nerve); nothing else reads it.
     //
+    // With sources on (a battle with cover rules) every entry also keeps where the fire that pressed the unit came from:
+    // the origin of the near shot that counted (the first such record of the tick), or, in a tick without one, of the
+    // first record that brought down a teammate who counted. A rise replaces the source only while the number stands
+    // below PinnedAt, so a unit keeps one source from the rise that pinned it until it is calm again: it takes cover
+    // once and stays, rather than moving for every new shooter. The scheduler reads it through TryPressedFrom; it is
+    // saved and hashed with the entry (state version 2). Without sources nothing of it exists and the state is as it was.
+    //
     // Order 32 in the Queries phase: after combat (30), whose fire records are not saved and so must be read on the tick
     // they are made. Only units with a number above zero have an entry.
     public sealed class Pressure : IRetainedGameplaySystem
     {
         public const int Max = 10000;
         private const ulong CourageSalt = 0x510e527fade682d1UL, BreakSalt = 0x9b05688c2b3e6c1fUL;
-        private struct Entry { internal int Value; internal bool Broken; }
-        private struct Fallen { internal ulong Key; internal int Team; internal SimVec3 At; }
+        private struct Entry { internal int Value; internal bool Broken; internal SimVec3 From; }
+        private struct Fallen { internal ulong Key; internal int Team; internal SimVec3 At, From; }
 
         private readonly CombatSystem combat;
         private readonly PressureRules rules;
+        private readonly bool sources;
         private readonly EntityStage stage;
         private readonly ComponentType<Position> positions;
         private readonly ComponentType<Combatant> combatants;
@@ -64,8 +72,9 @@ namespace WarCore.Battle
         private readonly List<ulong> drop;
         private readonly Fallen[] fallen;
 
-        public Pressure(CombatSystem combat, PressureRules rules)
+        public Pressure(CombatSystem combat, PressureRules rules, bool sources = false)
         {
+            this.sources = sources;
             this.combat = combat ?? throw new ArgumentNullException(nameof(combat));
             if (rules.BrokenAt == 0) throw new ArgumentException("Pressure rules are not set.", nameof(rules));
             this.rules = rules;
@@ -82,8 +91,9 @@ namespace WarCore.Battle
 
         public int Order => 32;
         public string StateTypeId => "battle.ai-pressure";
-        public int StateVersion => 1;
+        public int StateVersion => sources ? 2 : 1;
         internal int Count => entries.Count;
+        internal bool Sources => sources;
 
         // The unit's pressure, 0 when it has none.
         public int Value(StableId unit) => entries.TryGetValue(unit.Value, out Entry e) ? e.Value : 0;
@@ -91,6 +101,13 @@ namespace WarCore.Battle
         {
             if (!entries.TryGetValue(unit.Value, out Entry e)) return AiNerve.Calm;
             return e.Broken ? AiNerve.Broken : e.Value >= rules.PinnedAt ? AiNerve.Pinned : AiNerve.Calm;
+        }
+        // Where the fire that pressed the unit came from. False without sources or without an entry.
+        public bool TryPressedFrom(StableId unit, out SimVec3 from)
+        {
+            bool found = entries.TryGetValue(unit.Value, out Entry e) && sources;
+            from = found ? e.From : default;
+            return found;
         }
         // Whether this unit can break at all: Permille(key) < BreakSharePermille. The others stop at Pinned.
         public static bool Breaks(ulong key, int breakSharePermille) => AiParts.Permille(key, BreakSalt) < breakSharePermille;
@@ -123,7 +140,7 @@ namespace WarCore.Battle
                     || !store.TryGet(combatants, (EntityId)target, out Combatant victim) || !store.TryGet(positions, (EntityId)target, out Position at)) continue;
                 bool counted = false;
                 for (int i = 0; i < fallenCount; i++) if (fallen[i].Key == fire.Target.Value) { counted = true; break; }
-                if (!counted) fallen[fallenCount++] = new Fallen { Key = fire.Target.Value, Team = victim.Team, At = at.Value };
+                if (!counted) fallen[fallenCount++] = new Fallen { Key = fire.Target.Value, Team = victim.Team, At = at.Value, From = fire.Origin };
             }
             if (fires.Length > 0)
             {
@@ -134,21 +151,25 @@ namespace WarCore.Battle
                     ulong key = store.StableOf(entity).Value;
                     SimVec3 here = position.Value;
                     int shock = 0;
+                    SimVec3 from = default; bool sourced = false;
                     foreach (ref readonly FireRecord fire in fires)
                     {
                         if (fire.ShooterTeam == unit.Team || CombatSystem.Horizontal(fire.End - here).LengthSquared > nearSquared) continue;
-                        shock = rules.NearShock; break;
+                        shock = rules.NearShock; from = fire.Origin; sourced = true; break;
                     }
                     for (int i = 0; i < fallenCount; i++)
                     {
                         if (fallen[i].Team != unit.Team || fallen[i].Key == key
                             || CombatSystem.Horizontal(fallen[i].At - here).LengthSquared > deathSquared) continue;
                         shock += rules.DeathShock;
+                        if (!sourced) { from = fallen[i].From; sourced = true; }
                     }
                     if (shock == 0) continue;
                     long rise = (long)shock * Courage(key, rules.SpreadPermille) / 1000;
                     if (rise <= 0) continue;
                     entries.TryGetValue(key, out Entry e);
+                    // The source is replaced only while the number (after this tick's decay) is below the pinned line.
+                    if (sources && e.Value < rules.PinnedAt) e.From = from;
                     e.Value = (int)Math.Min(Max, e.Value + rise);
                     entries[key] = e;
                 }
@@ -178,7 +199,10 @@ namespace WarCore.Battle
             WriteRules(writer);
             writer.Int32(entries.Count);
             foreach (KeyValuePair<ulong, Entry> pair in entries)
-            { writer.UInt64(pair.Key); writer.Int32(pair.Value.Value); writer.Bool(pair.Value.Broken); }
+            {
+                writer.UInt64(pair.Key); writer.Int32(pair.Value.Value); writer.Bool(pair.Value.Broken);
+                if (sources) { writer.Int64(pair.Value.From.X.Raw); writer.Int64(pair.Value.From.Y.Raw); writer.Int64(pair.Value.From.Z.Raw); }
+            }
         }
 
         public void LoadState(SimStateReader reader)
@@ -205,7 +229,8 @@ namespace WarCore.Battle
                 // and a unit that cannot break never is.
                 SimStateReader.Require(broken ? Breaks(key, rules.BreakSharePermille) : value < rules.BrokenAt || !Breaks(key, rules.BreakSharePermille),
                     "AI pressure and its broken flag disagree.");
-                entries[key] = new Entry { Value = value, Broken = broken };
+                SimVec3 from = sources ? new SimVec3(SimFix.FromRaw(reader.Int64()), SimFix.FromRaw(reader.Int64()), SimFix.FromRaw(reader.Int64())) : default;
+                entries[key] = new Entry { Value = value, Broken = broken, From = from };
             }
         }
 
@@ -215,7 +240,11 @@ namespace WarCore.Battle
             hash.Add(rules.DeathRadiusMm); hash.Add(rules.DeathShock); hash.Add(rules.NearRadiusMm); hash.Add(rules.NearShock);
             hash.Add(rules.DecayPermille); hash.Add(rules.BrokenAt); hash.Add(rules.RecoverAt); hash.Add(rules.PinnedAt); hash.Add(rules.SpreadPermille); hash.Add(rules.BreakSharePermille);
             hash.Add(entries.Count);
-            foreach (KeyValuePair<ulong, Entry> pair in entries) { hash.Add(pair.Key); hash.Add(pair.Value.Value); hash.Add(pair.Value.Broken); }
+            foreach (KeyValuePair<ulong, Entry> pair in entries)
+            {
+                hash.Add(pair.Key); hash.Add(pair.Value.Value); hash.Add(pair.Value.Broken);
+                if (sources) { hash.Add(pair.Value.From.X.Raw); hash.Add(pair.Value.From.Y.Raw); hash.Add(pair.Value.From.Z.Raw); }
+            }
         }
     }
 }
