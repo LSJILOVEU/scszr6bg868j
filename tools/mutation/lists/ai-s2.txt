@@ -54,8 +54,8 @@ replacement:
 
 [ai-s2-06-d-range]
 file = Assets/WarCore/Battle/Ai/ReactionFire.cs
-filter = FullyQualifiedName~WarCore.Tests.AiS2Tests.Traits_HundredShooters
-expect = WarCore.Tests.AiS2Tests.Traits_HundredShooters
+filter = FullyQualifiedName~WarCore.Tests.AiS2Tests.Traits_DByHand
+expect = WarCore.Tests.AiS2Tests.Traits_DByHand
 note = d spans [-s, s - 1] instead of [-s, s]
 original:
 |             int d = AiParts.Permille(key, salt) * (2 * spread + 1) / 1000 - spread;

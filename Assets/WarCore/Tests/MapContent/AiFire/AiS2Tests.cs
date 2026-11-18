@@ -30,6 +30,15 @@ namespace WarCore.Tests
             Assert.That((fire.ReactionOf(id), fire.BurstOf(id), fire.PauseOf(id)), Is.EqualTo((reaction, burst, pause)));
         }
 
+        // d itself, seen through a team value of 1000 (value = 1000 + d): the three keys' reaction d of 165, 203, -133.
+        [TestCase(1UL, 1165)]
+        [TestCase(4UL, 1203)]
+        [TestCase(101UL, 867)]
+        public void Traits_DByHand(ulong key, int reaction)
+        {
+            Assert.That(S2.Fire(1000, 0, 0, 300).ReactionOf(S2.Placed(key)), Is.EqualTo(reaction));
+        }
+
         // A hundred ids (keys 1..100), team values R 15, B 3, Q 30, s = 300: minimum, maximum, and how many fall below and
         // above the team value, each exactly as the formula gives.
         [Test]
@@ -184,7 +193,7 @@ namespace WarCore.Tests
 
         // Version 4 exactly when s is above 0, whatever R, K and B; version 4 and version 3 refuse each other's snapshots
         // at the manifest check (naming the system and both versions); two version-4 worlds with another s refuse at the
-        // field. On tick 0 (no entries yet) s and the version are what tells the hashes apart.
+        // field. The state hash holds s.
         [Test]
         public void Versions_AndRefusals()
         {
@@ -202,12 +211,19 @@ namespace WarCore.Tests
                 Assert.That(error.Message, Does.Contain(saved));
                 Assert.That(error.Message, Does.Contain(expected));
             }
-            // The hash holds s and the version: before any entry exists the worlds differ only there.
-            Assert.That(S2.LineWorld(S2.Ai(200)).Hash, Is.Not.EqualTo(S2.LineWorld(S2.Ai(S2.Spread)).Hash), "s in the hash");
-            Assert.That(S2.LineWorld(S2.Ai(0)).Hash, Is.Not.EqualTo(S2.LineWorld(S2.Ai(S2.Spread)).Hash), "the version in the hash");
+            // The state hash holds s: two decisions without entries that differ only in s hash apart.
+            Assert.That(StateOf(S2.Fire(15, 3, 30, 200)), Is.Not.EqualTo(StateOf(S2.Fire(15, 3, 30, 300))), "s in the hash");
+            Assert.That(StateOf(S2.Fire(15, 3, 30, 300)), Is.EqualTo(StateOf(S2.Fire(15, 3, 30, 300))));
             M6World other = S2.LineWorld(S2.Ai(200));
             var differs = Assert.Throws<SimSnapshotException>(() => other.Sim.RestoreRetainedSnapshot(four.W.Sim.SaveRetainedSnapshot()));
             Assert.That(differs.Message, Is.EqualTo("AI trait spread differs."));
+        }
+
+        private static ulong StateOf(ReactionFire fire)
+        {
+            var hash = new StateHash();
+            fire.WriteState(hash);
+            return hash.Value;
         }
 
         // Version 4 without a burst: the burst block is still written (B 0, the Q of the pack, one (0, 0) record per entry)
