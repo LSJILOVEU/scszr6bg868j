@@ -591,8 +591,8 @@ replacement:
 file = Assets/WarCore/Battle/SimpleAiSystem.cs
 filter = FullyQualifiedName~AiPartsTests
 expect = WarCore.Tests.AiPartsTests.Parts_StepAllocatesZero
-note = every think allocates a default dispatch
+note = every think allocates
 original:
 | int point = dispatch.Pick(in thinker, field);
 replacement:
-| int point = (dispatch is NearestDispatch ? new NearestDispatch(300, 8) : dispatch).Pick(in thinker, field);
+| int point = dispatch.Pick(in thinker, field); GC.KeepAlive(new int[1]);
