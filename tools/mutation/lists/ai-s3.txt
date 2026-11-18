@@ -322,7 +322,17 @@ original:
 replacement:
 |                 if (!advance && search != null && unit.Weapon >= 0)
 
-[ai-s3-33-stand-ignored]
+[ai-s3-33-fallback-suppresses]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Broken_InSightFallsBackAndStays
+expect = WarCore.Tests.AiS3Tests.Broken_InSightFallsBackAndStays
+note = a unit falling back still starts suppression
+original:
+|                 if (!advance && !fallback && suppress != null && unit.Weapon >= 0) suppress.Decide(id, c.Clock.Tick);
+replacement:
+|                 if (!advance && suppress != null && unit.Weapon >= 0) suppress.Decide(id, c.Clock.Tick);
+
+[ai-s3-34-stand-ignored]
 file = Assets/WarCore/Battle/SimpleAiSystem.cs
 filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Pinned_StandsWhileItLasts
 expect = WarCore.Tests.AiS3Tests.Pinned_StandsWhileItLasts
@@ -332,7 +342,7 @@ original:
 replacement:
 |                 if (stand && false) { if (moving) StopUnit(id, here, target); continue; }
 
-[ai-s3-34-fallback-dispatch]
+[ai-s3-35-fallback-dispatch]
 file = Assets/WarCore/Battle/SimpleAiSystem.cs
 filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Broken_FallsBackToTheNearestOwnPointAndReturns
 expect = WarCore.Tests.AiS3Tests.Broken_FallsBackToTheNearestOwnPointAndReturns
@@ -342,7 +352,7 @@ original:
 replacement:
 |                 int point = dispatch.Pick(in thinker, field);
 
-[ai-s3-35-refuge-enemy-point]
+[ai-s3-36-refuge-enemy-point]
 file = Assets/WarCore/Battle/SimpleAiSystem.cs
 filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Broken_FallsBackToTheNearestOwnPointAndReturns
 expect = WarCore.Tests.AiS3Tests.Broken_FallsBackToTheNearestOwnPointAndReturns
@@ -352,7 +362,7 @@ original:
 replacement:
 |                 if (field.Owner(i) == team) continue;
 
-[ai-s3-36-refuge-no-base]
+[ai-s3-37-refuge-no-base]
 file = Assets/WarCore/Battle/SimpleAiSystem.cs
 filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Broken_WithoutAPointGoesToTheBaseOrStands
 expect = WarCore.Tests.AiS3Tests.Broken_WithoutAPointGoesToTheBaseOrStands
@@ -362,7 +372,7 @@ original:
 replacement:
 |                     else if (!moving || target.X.Raw != home.X.Raw || target.Z.Raw != home.Z.Raw) { if (moving) StopUnit(id, here, target); }
 
-[ai-s3-37-content-one-missing]
+[ai-s3-38-content-one-missing]
 file = Assets/WarCore/Content/Data/Sections/AiSection.cs
 filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Content_AnyFieldWrittenNeedsAllTen
 expect = WarCore.Tests.AiS3Tests.Content_AnyFieldWrittenNeedsAllTen
@@ -372,7 +382,7 @@ original:
 replacement:
 |                     int courage = r.Int("pressureSpreadPermille", 0, 1000), breakShare = r.Has("pressureBreakSharePermille") ? r.Int("pressureBreakSharePermille", 0, 1000) : 0;
 
-[ai-s3-38-content-recover]
+[ai-s3-39-content-recover]
 file = Assets/WarCore/Content/Data/Sections/AiSection.cs
 filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Content_RecoverMustBeBelowBroken
 expect = WarCore.Tests.AiS3Tests.Content_RecoverMustBeBelowBroken
@@ -382,7 +392,7 @@ original:
 replacement:
 |                     if (recoverAt > brokenAt) throw r.Bad(r.FieldOf("pressureRecoverAt"), "must be below pressureBrokenAt (" + brokenAt + ")");
 
-[ai-s3-39-content-range]
+[ai-s3-40-content-range]
 file = Assets/WarCore/Content/Data/Sections/AiSection.cs
 filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Content_OutOfRangeNamesTheField
 expect = WarCore.Tests.AiS3Tests.Content_OutOfRangeNamesTheField
@@ -392,7 +402,7 @@ original:
 replacement:
 |                     int recoverAt = r.Int("pressureRecoverAt", 0, max), pinnedAt = r.Int("pressurePinnedAt", 0, max);
 
-[ai-s3-40-not-registered]
+[ai-s3-41-not-registered]
 file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
 filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Content_FieldsAreReadAllOrNone
 expect = WarCore.Tests.AiS3Tests.Content_FieldsAreReadAllOrNone
@@ -402,7 +412,7 @@ original:
 replacement:
 |                 _ = pressure;
 
-[ai-s3-41-view-no-nerve]
+[ai-s3-42-view-no-nerve]
 file = Assets/WarCore/Presentation/Bridge/SimSession.cs
 filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.View_CarriesTheNerve
 expect = WarCore.Tests.AiS3Tests.View_CarriesTheNerve

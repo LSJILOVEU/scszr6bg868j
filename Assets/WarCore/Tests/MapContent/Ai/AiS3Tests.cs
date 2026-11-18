@@ -91,6 +91,7 @@ namespace WarCore.Tests
         private static PressureRules Rules(int deathRadius = 3000, int deathShock = 2000, int nearRadius = 3000, int nearShock = 1000, int decay = 12,
             int brokenAt = 7000, int recoverAt = 1000, int pinnedAt = 2000, int spread = 0, int breakShare = 1000) =>
             new PressureRules(deathRadius, deathShock, nearRadius, nearShock, decay, brokenAt, recoverAt, pinnedAt, spread, breakShare);
+        private static int Count(object system) => (int)system.GetType().GetProperty("Count", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(system);
         private static int Entries(Pressure pressure) => (int)typeof(Pressure).GetProperty("Count", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(pressure);
 
         // The splitmix64 finalizer, written out independently of AiParts.Mix.
@@ -490,32 +491,44 @@ namespace WarCore.Tests
         }
 
         // In sight of the enemy a broken unit turns round and goes to its own point, and while it is pressed it stays
-        // there although it has seen where the enemy is.
+        // there. It remembers where the enemy was, but a unit falling back neither suppresses nor searches: with every
+        // unit on the field broken, both tables stay empty.
         [Test]
         public void Broken_InSightFallsBackAndStays()
         {
-            string all = "\"engage\": \"bound\", \"boundMoveTicks\": 60, \"boundFireTicks\": 30, \"boundSharePermille\": 1000, \"boundMinRangeMm\": 12000";
+            string all = "\"targetMemoryTicks\": 300, \"searchTicks\": 90, \"suppressTicks\": 90, "
+                + "\"engage\": \"bound\", \"boundMoveTicks\": 60, \"boundFireTicks\": 30, \"boundSharePermille\": 1000, \"boundMinRangeMm\": 12000";
             M6World w = Field(Inject(1000, all, Wide), attackersX: 80);
             Pressure p = w.System<Pressure>();
-            for (int t = 0; t < 2 * Think; t++) { p.Advance(new[] { Fall(w, 10) }); w.Step(); }
-            foreach (ulong key in Rest)
+            TargetMemory memory = w.System<TargetMemory>(); TargetSearch search = w.System<TargetSearch>(); TargetSuppress suppress = w.System<TargetSuppress>();
+            Assert.That(memory, Is.Not.Null); Assert.That(search, Is.Not.Null); Assert.That(suppress, Is.Not.Null);
+            // Two fall on each side every tick, so each unit has a fallen teammate that is not itself.
+            void Press()
             {
-                Assert.That(p.Level(Id(w, key)), Is.EqualTo(AiNerve.Broken), "key " + key);
+                p.Advance(new[] { Fall(w, 9), Fall(w, 10), Fall(w, Attackers + 1, shooterTeam: 1), Fall(w, Attackers + 2, shooterTeam: 1) });
+                w.Step();
+                Assert.That((Count(search), Count(suppress)), Is.EqualTo((0, 0)), "tick " + w.Sim.Clock.Tick);
+            }
+            for (int t = 0; t < 2 * Think; t++) Press();
+            Assert.That(Count(memory), Is.GreaterThanOrEqualTo(Attackers), "every attacker saw an enemy and remembers it");
+            for (ulong key = 1; key <= Attackers + Defenders; key++) Assert.That(p.Level(Id(w, key)), Is.EqualTo(AiNerve.Broken), "key " + key);
+            for (ulong key = 1; key <= Attackers; key++)
+            {
                 MoveIntent order = w.Read<MoveIntent>(key);
                 Assert.That(order.Active, Is.True, "key " + key);
                 Assert.That(Horizontal2(order.Target, Own), Is.LessThanOrEqualTo(Metres2(6)), "key " + key);
             }
-            // 40 m at 6 m/s is 200 ticks, plus the time nineteen units need to sort out their slots.
-            for (int t = 0; t < 400; t++) { p.Advance(new[] { Fall(w, 10) }); w.Step(); }
+            // 40 m at 6 m/s is 200 ticks, plus the time twenty units need to sort out their slots.
+            for (int t = 0; t < 400; t++) Press();
             var stood = new Dictionary<ulong, SimVec3>();
-            foreach (ulong key in Rest)
+            for (ulong key = 1; key <= Attackers; key++)
             {
                 Assert.That(Horizontal2(At(w, key), Own), Is.LessThanOrEqualTo(Metres2(7)), "key " + key);
                 Assert.That(w.Read<MoveIntent>(key).Active, Is.False, "key " + key);
                 stood[key] = At(w, key);
             }
-            for (int t = 0; t < 2 * Think; t++) { p.Advance(new[] { Fall(w, 10) }); w.Step(); }
-            foreach (ulong key in Rest) Assert.That(At(w, key), Is.EqualTo(stood[key]), "key " + key);
+            for (int t = 0; t < 2 * Think; t++) Press();
+            for (ulong key = 1; key <= Attackers; key++) Assert.That(At(w, key), Is.EqualTo(stood[key]), "key " + key);
         }
 
         // A defender in its own point is already where a broken unit goes: it takes a slot there and does not leave.
@@ -635,6 +648,15 @@ namespace WarCore.Tests
                 saved[i] = worlds[i].Sim.SaveRetainedSnapshot();
                 var writer = new SimStateWriter(); worlds[i].System<Pressure>().SaveState(writer); own[i] = writer.ToArray();
             }
+            // The system's own hash holds each rule (the battle hash below also sees the content pack).
+            var ownHashes = new HashSet<ulong>();
+            foreach (int[] v in variants)
+            {
+                var hash = new StateHash();
+                new Pressure(worlds[0].Combat, new PressureRules(v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8], v[9])).WriteState(hash);
+                ownHashes.Add(hash.Value);
+            }
+            Assert.That(ownHashes.Count, Is.EqualTo(variants.Length), "each rule is part of the system's own hash");
             var hashes = new HashSet<ulong>();
             foreach (M6World world in worlds) hashes.Add(world.Hash);
             Assert.That(hashes.Count, Is.EqualTo(variants.Length), "each rule is part of the state hash");
