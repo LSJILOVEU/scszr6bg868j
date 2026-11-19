@@ -32,6 +32,8 @@ namespace WarCore.Content.MapTools
                     if (!GridRow(row.Text, w, d.Surfaces.Names.Count, false)) throw Fail(Grid, row.Line);
             }
 
+            SecondPlates(d);
+
             var layerNames = new HashSet<string>();
             foreach (MapLayer layer in d.Layers) layerNames.Add(layer.Name);
             JsonNode walls = root.Find("walls");

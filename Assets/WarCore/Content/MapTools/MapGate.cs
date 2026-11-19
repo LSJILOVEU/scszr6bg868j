@@ -78,7 +78,8 @@ namespace WarCore.Content.MapTools
                 if (wall.BaseRaw.HasValue ? WallAboveGround(desc, wall) : WallClearsTerrain(desc, wall)) { kept.Add(wall); continue; }
                 problems.Add(new MapProblem(wall.BaseRaw.HasValue ? "GATE_WALL_BURIED" : "GATE_WALL_TERRAIN", "wall " + Text(wall.Id), (wall.Cell.X, wall.Cell.Z)));
             }
-            MapDesc baked = kept.Count == desc.Walls.Count ? desc : WithWalls(desc, kept.ToArray());
+            List<MapPlate> plates = desc.Plates.Count > 0 ? PlateProblems(desc, kept, problems) : new List<MapPlate>();
+            MapDesc baked = kept.Count == desc.Walls.Count && plates.Count == desc.Plates.Count ? desc : WithParts(desc, kept, plates);
             byte[] bytes = null;
             try { bytes = WcMapWriter.Write(MapBake.BuildMap(baked)); }
             catch (InvalidDataException e) { problems.Add(new MapProblem("MAPDESC_WCMAP", e.Message.Split(' ')[0])); }
@@ -103,10 +104,72 @@ namespace WarCore.Content.MapTools
             return wall.BaseRaw.Value + wall.HeightRaw > highest;
         }
 
-        private static MapDesc WithWalls(MapDesc d, MapWall[] walls) =>
-            new MapDesc(d.Id, d.Content, d.Pack, d.Size, d.Origin, d.FloorRaw, d.CeilingRaw, d.Layers.ToArray(),
-                d.Heights?.Select(r => r.ToArray()).ToArray(), d.Surfaces, walls, d.Points.ToArray(), d.Bases.ToArray(), d.Units.ToArray(),
-                d.Run, d.Owners.ToArray(), d.HeightOwner?.ToArray(), d.SurfaceOwner?.ToArray(), d.Stamps.ToArray(), d.Removed.ToArray(), d.Next);
+        // The description with only the kept walls and plates; a cutout goes with its plate.
+        private static MapDesc WithParts(MapDesc d, List<MapWall> walls, List<MapPlate> plates)
+        {
+            var ids = new HashSet<ulong>(plates.Select(p => p.Id));
+            return new MapDesc(d.Id, d.Content, d.Pack, d.Size, d.Origin, d.FloorRaw, d.CeilingRaw, d.Layers.ToArray(),
+                d.Heights?.Select(r => r.ToArray()).ToArray(), d.Surfaces, plates.ToArray(), d.Cutouts.Where(c => ids.Contains(c.Plate)).ToArray(),
+                walls.ToArray(), d.Points.ToArray(), d.Bases.ToArray(), d.Units.ToArray(), d.Run, d.Owners.ToArray(),
+                d.HeightOwner?.ToArray(), d.SurfaceOwner?.ToArray(), d.Stamps.ToArray(), d.Removed.ToArray(), d.Next);
+        }
+
+        // Plate rules 3-5 (PlateSpan): buried plates are left out, then every plate of a conflicting stack pair, then every
+        // wall through a remaining plate (removed from walls). Returns the kept plates in description order.
+        private static List<MapPlate> PlateProblems(MapDesc desc, List<MapWall> walls, List<MapProblem> problems)
+        {
+            List<PlateGeom> geoms = MapBake.PlateGeoms(desc);
+            Func<int, int, long> ground = MapBake.LocalPoint(desc);
+            var above = new List<PlateGeom>();
+            foreach (PlateGeom g in geoms)
+            {
+                if (PlateSpan.AboveGround(g, ground, out int x, out int z)) { above.Add(g); continue; }
+                problems.Add(new MapProblem("GATE_PLATE_BURIED", "plate " + Text(g.Id), (x, z)));
+            }
+            var dropped = new HashSet<ulong>();
+            foreach (PlateSpan.Conflict c in PlateSpan.Stacks(desc.Size.X, desc.Size.Z, above, out _, out _))
+            {
+                problems.Add(new MapProblem("GATE_PLATE_STACK", "plate " + Text(above[c.A].Id) + " plate " + Text(above[c.B].Id), (c.CellX, c.CellZ)));
+                dropped.Add(above[c.A].Id); dropped.Add(above[c.B].Id);
+            }
+            List<PlateGeom> remaining = above.Where(g => !dropped.Contains(g.Id)).ToList();
+            var wallGeoms = new List<WallGeom>(walls.Count);
+            foreach (MapWall w in walls)
+            {
+                long bottom = w.BaseRaw.HasValue ? w.BaseRaw.Value - desc.FloorRaw : 0;
+                wallGeoms.Add(new WallGeom(w.Id, w.Cell.X, w.Cell.Z, w.Cell.X + w.Size.X, w.Cell.Z + w.Size.Z, bottom, bottom + w.HeightRaw));
+            }
+            var through = new HashSet<ulong>();
+            foreach (PlateSpan.Conflict c in PlateSpan.WallsThrough(wallGeoms, remaining))
+            {
+                problems.Add(new MapProblem("GATE_WALL_PLATE", "wall " + Text(wallGeoms[c.A].Id) + " plate " + Text(remaining[c.B].Id), (c.CellX, c.CellZ)));
+                through.Add(wallGeoms[c.A].Id);
+            }
+            walls.RemoveAll(w => through.Contains(w.Id));
+            var keep = new HashSet<ulong>(remaining.Select(g => g.Id));
+            return desc.Plates.Where(p => keep.Contains(p.Id)).ToList();
+        }
+
+        // Plate rule 6 against the pack: no cell of a plate's top steeper than min(pack walkable slope, 5/3). 5/3 keeps the
+        // wall-probe sphere (radius 0.25 m) going downhill within the 0.5 m minimum plate thickness: 0.25 * sqrt(1 + s^2) < 0.5.
+        internal const int PlateSlopeNum = 5, PlateSlopeDen = 3;
+
+        private static void PlateSlopes(WcMap map, ContentPack pack, List<MapProblem> problems)
+        {
+            long num = pack.Terrain?.MaxWalkableNum ?? HeightField.MaxSlopeNumerator, den = pack.Terrain?.MaxWalkableDen ?? HeightField.MaxSlopeDenominator;
+            foreach (WcMapPlate plate in map.Plates)
+            {
+                HeightField top = plate.TopField(map.Min.X, map.Min.Z);
+                bool found = false;
+                for (int j = 0; j < plate.Depth && !found; j++)
+                    for (int i = 0; i < plate.Width && !found; i++)
+                    {
+                        if (top.CellWithinSlope(i, j, num, den) && top.CellWithinSlope(i, j, PlateSlopeNum, PlateSlopeDen)) continue;
+                        problems.Add(new MapProblem("GATE_PLATE_SLOPE", "plate " + Text(plate.Id), (plate.X + i, plate.Z + j)));
+                        found = true;
+                    }
+            }
+        }
 
         // ---- steps 2 and 3 ----
 
@@ -138,6 +201,7 @@ namespace WarCore.Content.MapTools
                 for (int team = 1; team <= 2; team++)
                     if (!desc.Bases.Any(b => b.Team == team)) problems.Add(new MapProblem("GATE_MATCH", "team " + Text(team)));
 
+            PlateSlopes(map, pack, problems);
             if (surfacesBroken) return;
             NavGrid nav = TerrainDerivation.Derive(map, pack).Nav;
 

@@ -24,6 +24,8 @@ namespace WarCore.Content.MapTools
             CheckLinks(start, MapEditKinds.Point, start.Points, (ulong)start.Next.Point);
             CheckLinks(start, MapEditKinds.Base, start.Bases, (ulong)start.Next.Base);
             CheckLinks(start, MapEditKinds.Unit, start.Units, start.Next.Unit);
+            CheckLinks(start, MapEditKinds.Plate, start.Plates, start.Next.Plate);
+            CheckLinks(start, MapEditKinds.Cutout, start.Cutouts, start.Next.Cutout);
         }
 
         private static void CheckLinks<T>(MapDesc d, MapEditKind<T> kind, IReadOnlyList<T> items, ulong next) where T : class
@@ -78,6 +80,8 @@ namespace WarCore.Content.MapTools
                 case "point": owner = Find(MapEditKinds.Point, Current.Points, id).Owner; break;
                 case "base": owner = Find(MapEditKinds.Base, Current.Bases, id).Owner; break;
                 case "unit": owner = Find(MapEditKinds.Unit, Current.Units, id).Owner; break;
+                case "plate": owner = Find(MapEditKinds.Plate, Current.Plates, id).Owner; break;
+                case "cutout": owner = Find(MapEditKinds.Cutout, Current.Cutouts, id).Owner; break;
                 default: throw new ArgumentException("unknown entry kind: " + kind);
             }
             return owner.HasValue ? Current.Owners[owner.Value] : null;
@@ -121,18 +125,38 @@ namespace WarCore.Content.MapTools
         public int AddPoint(MapPoint template) => (int)Add(MapEditKinds.Point, template);
         public int AddBase(MapBase template) => (int)Add(MapEditKinds.Base, template);
         public ulong AddUnit(MapUnit unit) => Add(MapEditKinds.Unit, unit);
+        public ulong AddPlate(MapPlate template) => Add(MapEditKinds.Plate, template);
+        // The cutout's plate must exist.
+        public ulong AddCutout(MapCutout template) => Add(MapEditKinds.Cutout, PlateExists(template));
 
         // Replaces the entry with the same id: new fields, same id, same array position, owner hand, src kept from the old entry.
         public void ReplaceWall(MapWall entry) => Replace(MapEditKinds.Wall, entry);
         public void ReplacePoint(MapPoint entry) => Replace(MapEditKinds.Point, entry);
         public void ReplaceBase(MapBase entry) => Replace(MapEditKinds.Base, entry);
         public void ReplaceUnit(MapUnit entry) => Replace(MapEditKinds.Unit, entry);
+        public void ReplacePlate(MapPlate entry) => Replace(MapEditKinds.Plate, entry);
+        public void ReplaceCutout(MapCutout entry) => Replace(MapEditKinds.Cutout, PlateExists(entry));
+
+        private MapCutout PlateExists(MapCutout cutout)
+        {
+            if (cutout == null) throw new ArgumentNullException(nameof(cutout));
+            foreach (MapPlate plate in Current.Plates)
+                if (plate.Id == cutout.Plate) return cutout;
+            throw new ArgumentException("no plate with id " + cutout.Plate);
+        }
 
         // Deletes an entry; one with a src leaves a tombstone in "removed" so stamps do not bring it back. Its stamps row stays.
+        // A plate that a cutout still names is not removed (remove the cutouts first).
         public void Remove(string kind, ulong id)
         {
             switch (kind)
             {
+                case "plate":
+                    foreach (MapCutout cutout in Current.Cutouts)
+                        if (cutout.Plate == id) throw new ArgumentException("plate " + id + " still has cutout " + cutout.Id);
+                    Remove(MapEditKinds.Plate, id);
+                    break;
+                case "cutout": Remove(MapEditKinds.Cutout, id); break;
                 case "wall": Remove(MapEditKinds.Wall, id); break;
                 case "point": Remove(MapEditKinds.Point, id); break;
                 case "base": Remove(MapEditKinds.Base, id); break;
@@ -162,6 +186,8 @@ namespace WarCore.Content.MapTools
             Release(draft, MapEditKinds.Point, x0, z0, x1, z1);
             Release(draft, MapEditKinds.Base, x0, z0, x1, z1);
             Release(draft, MapEditKinds.Unit, x0, z0, x1, z1);
+            Release(draft, MapEditKinds.Plate, x0, z0, x1, z1);
+            Release(draft, MapEditKinds.Cutout, x0, z0, x1, z1);
         });
 
         private static void Release<T>(MapEditDraft draft, MapEditKind<T> kind, int x0, int z0, int x1, int z1) where T : class
@@ -186,6 +212,7 @@ namespace WarCore.Content.MapTools
             {
                 id = draft.Allocate(kind.Name, kind.Slot, kind.Limit);
                 draft.Items(kind).Add(kind.Make(template, id, HandIndex, null));
+                CheckCapacity(draft);
             });
             return id;
         }
@@ -229,6 +256,13 @@ namespace WarCore.Content.MapTools
         }
 
         // ---- shared ----
+
+        // The reader takes at most 4096 plates and 4096 cutouts; no step writes a description it would refuse.
+        private static void CheckCapacity(MapEditDraft draft)
+        {
+            if (draft.Plates.Count > MapDescReader.MaxPlateEntries || draft.Cutouts.Count > MapDescReader.MaxPlateEntries)
+                throw new InvalidOperationException("MAPDESC_PLATE");
+        }
 
         private void Step(Action<MapEditDraft> change)
         {

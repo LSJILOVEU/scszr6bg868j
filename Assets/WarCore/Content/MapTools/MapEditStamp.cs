@@ -42,10 +42,20 @@ namespace WarCore.Content.MapTools
         public IReadOnlyList<MapStampEntry<MapPoint>> Points { get; }
         public IReadOnlyList<MapStampEntry<MapBase>> Bases { get; }
         public IReadOnlyList<MapStampEntry<MapUnit>> Units { get; }
+        public IReadOnlyList<MapStampEntry<MapPlate>> Plates { get; }
+        // A cutout names its plate by id, so it can only cut a plate already in the description.
+        public IReadOnlyList<MapStampEntry<MapCutout>> Cutouts { get; }
 
         public MapStampPlan(string instance, MapHeightWrite[] heights, MapSurfaceWrite[] surfaces,
             MapStampEntry<MapWall>[] walls, MapStampEntry<MapPoint>[] points, MapStampEntry<MapBase>[] bases,
             MapStampEntry<MapUnit>[] units)
+            : this(instance, heights, surfaces, walls, points, bases, units, new MapStampEntry<MapPlate>[0], new MapStampEntry<MapCutout>[0])
+        {
+        }
+
+        public MapStampPlan(string instance, MapHeightWrite[] heights, MapSurfaceWrite[] surfaces,
+            MapStampEntry<MapWall>[] walls, MapStampEntry<MapPoint>[] points, MapStampEntry<MapBase>[] bases,
+            MapStampEntry<MapUnit>[] units, MapStampEntry<MapPlate>[] plates, MapStampEntry<MapCutout>[] cutouts)
         {
             if (string.IsNullOrEmpty(instance)) throw new ArgumentException("stamp instance name is empty", nameof(instance));
             Instance = instance;
@@ -55,6 +65,8 @@ namespace WarCore.Content.MapTools
             Points = Copy(points, nameof(points));
             Bases = Copy(bases, nameof(bases));
             Units = Copy(units, nameof(units));
+            Plates = Copy(plates, nameof(plates));
+            Cutouts = Copy(cutouts, nameof(cutouts));
         }
 
         private static ReadOnlyCollection<T> Copy<T>(T[] items, string name)
@@ -89,10 +101,12 @@ namespace WarCore.Content.MapTools
     public sealed partial class MapEdit
     {
         // Runs a stamp, in this order: (a) owner "stamp:<instance>" (reused when listed, else appended; MAPDESC_OWNER when the
-        // table already has 64); (b) height points then surface cells in plan order, written only where unowned or already
+        // table already has 4096, or when the owner's number is 64 or more and the plan writes any height point or surface
+        // cell, since the owner grids hold only the first 64); (b) height points then surface cells in plan order, written only where unowned or already
         // the stamp's own; (c) walls, points, bases, units in plan order: a tombstoned (instance, kind, src) is skipped; an
         // entry with that src is replaced when unowned or the stamp's own (id, src and position kept) and skipped otherwise;
-        // with no such entry a new one is appended, with the id of its stamps row or, without one, next (row appended).
+        // with no such entry a new one is appended, with the id of its stamps row or, without one, next (row appended); then
+        // plates and cutouts the same way, a cutout whose plate is not in the description being skipped.
         // Entries an earlier run made and this plan leaves out are kept.
         public MapStampResult Stamp(MapStampPlan plan)
         {
@@ -101,7 +115,9 @@ namespace WarCore.Content.MapTools
             Step(draft =>
             {
                 int k = OwnerFor(draft, "stamp:" + plan.Instance);
-                char own = MapEditDraft.OwnerChar(k);
+                if (k >= MapEditDraft.MaxOwners && (plan.Heights.Count > 0 || plan.Surfaces.Count > 0))
+                    throw new InvalidOperationException("MAPDESC_OWNER");
+                char own = k < MapEditDraft.MaxOwners ? MapEditDraft.OwnerChar(k) : MapEditDraft.NoOwner;
                 int hw = 0, hs = 0, sw = 0, ss = 0;
                 foreach (MapHeightWrite h in plan.Heights)
                 {
@@ -129,10 +145,21 @@ namespace WarCore.Content.MapTools
                 CheckAll(MapEditKinds.Point, plan.Points);
                 CheckAll(MapEditKinds.Base, plan.Bases);
                 CheckAll(MapEditKinds.Unit, plan.Units);
+                CheckAll(MapEditKinds.Plate, plan.Plates);
+                CheckAll(MapEditKinds.Cutout, plan.Cutouts);
                 Place(draft, MapEditKinds.Wall, plan.Instance, k, plan.Walls, ref ew, ref es);
                 Place(draft, MapEditKinds.Point, plan.Instance, k, plan.Points, ref ew, ref es);
                 Place(draft, MapEditKinds.Base, plan.Instance, k, plan.Bases, ref ew, ref es);
                 Place(draft, MapEditKinds.Unit, plan.Instance, k, plan.Units, ref ew, ref es);
+                Place(draft, MapEditKinds.Plate, plan.Instance, k, plan.Plates, ref ew, ref es);
+                var cutouts = new List<MapStampEntry<MapCutout>>();
+                foreach (MapStampEntry<MapCutout> entry in plan.Cutouts)
+                {
+                    if (draft.Plates.Exists(p => p.Id == entry.Template.Plate)) cutouts.Add(entry);
+                    else es++;
+                }
+                Place(draft, MapEditKinds.Cutout, plan.Instance, k, cutouts, ref ew, ref es);
+                CheckCapacity(draft);
                 result = new MapStampResult(hw, hs, sw, ss, ew, es);
             });
             return result;
@@ -147,7 +174,7 @@ namespace WarCore.Content.MapTools
         {
             int k = draft.Owners.IndexOf(name);
             if (k >= 0) return k;
-            if (draft.Owners.Count >= MapEditDraft.MaxOwners) throw new InvalidOperationException("MAPDESC_OWNER");
+            if (draft.Owners.Count >= MapDesc.MaxOwners) throw new InvalidOperationException("MAPDESC_OWNER");
             draft.Owners.Add(name);
             return draft.Owners.Count - 1;
         }

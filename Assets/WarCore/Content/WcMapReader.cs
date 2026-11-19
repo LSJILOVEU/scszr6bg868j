@@ -17,17 +17,19 @@ namespace WarCore.Content
             try
             {
                 Require(r.ReadUInt32() == WcMapWriter.Magic, "MAGIC");
-                Require(r.ReadUInt16() == WcMapWriter.FormatVersion, "VERSION");
-                Require(r.ReadUInt16() == WcMapWriter.SectionCount, "SECTION_COUNT");
+                ushort version = r.ReadUInt16();
+                Require(version == WcMapWriter.FormatVersion || version == WcMapWriter.PlateVersion, "VERSION");
+                ushort count = version == WcMapWriter.PlateVersion ? WcMapWriter.PlateSectionCount : WcMapWriter.SectionCount;
+                Require(r.ReadUInt16() == count, "SECTION_COUNT");
                 Require(HashEquals(bytes, bytes.Length - 32, WcMapWriter.Digest(bytes, 0, bytes.Length - 32)), "FILE_HASH");
-                var sections = new byte[12][];
-                var offsets = new uint[12];
-                for (ushort expected = 1; expected <= 11; expected++)
+                var sections = new byte[count + 1][];
+                var offsets = new uint[count + 1];
+                for (ushort expected = 1; expected <= count; expected++)
                 {
                     long start = stream.Position;
                     Require(bytes.Length - 32 - start >= 38, "TRUNCATED");
                     ushort id = r.ReadUInt16();
-                    Require(id >= 1 && id <= 11, "UNKNOWN_SECTION");
+                    Require(id >= 1 && id <= count, "UNKNOWN_SECTION");
                     Require(id == expected, "SECTION_ORDER");
                     uint length = r.ReadUInt32();
                     Require(length <= MaxFileBytes && length <= bytes.Length - 32 - stream.Position - 32, "LENGTH");
@@ -62,6 +64,30 @@ namespace WarCore.Content
         }
         private static SimFix Fix(BinaryReader r) => SimFix.FromRaw(r.ReadInt64());
         private static SimVec3 Vector(BinaryReader r) => new SimVec3(Fix(r), Fix(r), Fix(r));
+
+        // Section 12. The masks carry no length, so the count and each rectangle are checked as they are read, before the
+        // masks are; the rest is WcMapValidation's.
+        private static WcMapPlate[] Plates(BinaryReader r, uint width, uint depth)
+        {
+            uint count = r.ReadUInt32();
+            Require(count > 0, "VERSION");
+            Require(count <= PlateSpan.MaxPlates, "CAPACITY");
+            var plates = new WcMapPlate[(int)count];
+            for (int i = 0; i < plates.Length; i++)
+            {
+                ulong id = r.ReadUInt64();
+                int x = r.ReadUInt16(), z = r.ReadUInt16(), w = r.ReadUInt16(), d = r.ReadUInt16();
+                Require(w >= 1 && d >= 1 && x + w <= width && z + d <= depth, "PLATE_GEOMETRY");
+                byte axis = r.ReadByte();
+                int from = r.ReadInt32(), to = r.ReadInt32(), thick = r.ReadInt32();
+                byte surface = r.ReadByte();
+                int length = (w * d + 7) / 8;
+                byte[] solid = r.ReadBytes(length), walk = r.ReadBytes(length);
+                Require(solid.Length == length && walk.Length == length, "TRUNCATED");
+                plates[i] = new WcMapPlate(id, x, z, w, d, (PlateAxis)axis, from, to, thick, surface, solid, walk);
+            }
+            return plates;
+        }
 
         private static WcMap Decode(byte[][] sections, uint[] offsets)
         {
@@ -148,8 +174,15 @@ namespace WarCore.Content
             foreach (ushort id in new ushort[] { 3, 4, 6, 7 })
                 Require(directory.ReadUInt16() == id && directory.ReadUInt32() == offsets[id], "REFERENCE");
             Require(directory.ReadUInt32() == 0, "DEPENDENCIES"); End(directory);
+            WcMapPlate[] plates = null;
+            if (sections.Length > 12)
+            {
+                using var plateReader = Section(sections, 12);
+                plates = Plates(plateReader, width, depth);
+                End(plateReader);
+            }
             var map = new WcMap(mapId, contentId, min, max, chunkSize, height, width, depth, layers, walls, bitmap,
-                heightPoints, surfaceNames, surfaceCells);
+                heightPoints, surfaceNames, surfaceCells, plates);
             Validate(map);
             return map;
         }

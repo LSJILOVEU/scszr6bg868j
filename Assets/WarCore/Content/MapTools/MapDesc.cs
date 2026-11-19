@@ -140,10 +140,63 @@ namespace WarCore.Content.MapTools
         public int Point { get; }
         public int Base { get; }
         public ulong Unit { get; }
-        public MapNext(ulong wall, int point, int @base, ulong unit) { Wall = wall; Point = point; Base = @base; Unit = unit; }
+        // Version 2: written only when above 1.
+        public ulong Plate { get; }
+        public ulong Cutout { get; }
+        public MapNext(ulong wall, int point, int @base, ulong unit) : this(wall, point, @base, unit, 1, 1) { }
+        public MapNext(ulong wall, int point, int @base, ulong unit, ulong plate, ulong cutout)
+        {
+            Wall = wall; Point = point; Base = @base; Unit = unit; Plate = plate; Cutout = cutout;
+        }
     }
 
-    // Map description model (format "warcore.map" version 1, or 2 when a wall has a raised bottom). Deeply immutable: every
+    // "slope" of a plate: the top rises along Axis ("x" or "z") from FromRaw on the plate's minimum edge to ToRaw on its
+    // maximum edge (absolute raw Y).
+    public sealed class MapSlope
+    {
+        public string Axis { get; }
+        public long FromRaw { get; }
+        public long ToRaw { get; }
+        public MapSlope(string axis, long fromRaw, long toRaw) { Axis = axis; FromRaw = fromRaw; ToRaw = toRaw; }
+    }
+
+    // Floor plate (description version 2): a whole-cell rectangle; YRaw (flat top) or Slope, exactly one; absolute raw Y.
+    public sealed class MapPlate
+    {
+        public ulong Id { get; }
+        public MapXZ Cell { get; }
+        public MapXZ Size { get; }
+        public long? YRaw { get; }
+        public MapSlope Slope { get; }
+        public long ThickRaw { get; }
+        public string Surface { get; }
+        public int? Owner { get; }
+        public MapSrc Src { get; }
+        public MapPlate(ulong id, MapXZ cell, MapXZ size, long? yRaw, MapSlope slope, long thickRaw, string surface = null,
+            int? owner = null, MapSrc src = null)
+        {
+            Id = id; Cell = cell; Size = size; YRaw = yRaw; Slope = slope; ThickRaw = thickRaw; Surface = surface; Owner = owner; Src = src;
+        }
+    }
+
+    // Cutout (description version 2): cells [Cell, Cell + Size) of plate Plate (an id) are not solid; cells outside the
+    // plate are ignored.
+    public sealed class MapCutout
+    {
+        public ulong Id { get; }
+        public ulong Plate { get; }
+        public MapXZ Cell { get; }
+        public MapXZ Size { get; }
+        public int? Owner { get; }
+        public MapSrc Src { get; }
+        public MapCutout(ulong id, ulong plate, MapXZ cell, MapXZ size, int? owner = null, MapSrc src = null)
+        {
+            Id = id; Plate = plate; Cell = cell; Size = size; Owner = owner; Src = src;
+        }
+    }
+
+    // Map description model (format "warcore.map" version 1, or 2 when it uses something version 1 cannot hold, see
+    // NeedsVersion2). Deeply immutable: every
     // input array is copied, including the inner rows of Heights, and every collection is handed out read-only. One
     // property per top-level JSON key. Optional keys are null when absent. An owner grid made only of '.' is the same as
     // no grid and is stored as null.
@@ -151,8 +204,10 @@ namespace WarCore.Content.MapTools
     {
         public const string FormatName = "warcore.map";
         public const int FormatVersion = 1;
-        // Written only when the description uses something version 1 cannot hold: a wall with "baseRaw".
+        // Written only when the description uses something version 1 cannot hold (NeedsVersion2).
         public const int WallBaseVersion = 2;
+        public const int MaxOwnersVersion1 = 64;
+        public const int MaxOwners = 4096;
 
         public string Format => FormatName;
         public int Version { get; }
@@ -167,6 +222,8 @@ namespace WarCore.Content.MapTools
         // Z rows (Depth + 1) of X points (Width + 1), raw Y.
         public IReadOnlyList<IReadOnlyList<int>> Heights { get; }
         public MapSurfaces Surfaces { get; }
+        public IReadOnlyList<MapPlate> Plates { get; }
+        public IReadOnlyList<MapCutout> Cutouts { get; }
         public IReadOnlyList<MapWall> Walls { get; }
         public IReadOnlyList<MapPoint> Points { get; }
         public IReadOnlyList<MapBase> Bases { get; }
@@ -183,6 +240,15 @@ namespace WarCore.Content.MapTools
             MapLayer[] layers, int[][] heights, MapSurfaces surfaces, MapWall[] walls, MapPoint[] points, MapBase[] bases,
             MapUnit[] units, MapRun run, string[] owners, string[] heightOwner, string[] surfaceOwner, MapStamp[] stamps,
             MapSrc[] removed, MapNext next)
+            : this(id, content, pack, size, origin, floorRaw, ceilingRaw, layers, heights, surfaces, new MapPlate[0], new MapCutout[0],
+                walls, points, bases, units, run, owners, heightOwner, surfaceOwner, stamps, removed, next)
+        {
+        }
+
+        public MapDesc(string id, string content, string pack, MapXZ size, MapXZ origin, long floorRaw, long ceilingRaw,
+            MapLayer[] layers, int[][] heights, MapSurfaces surfaces, MapPlate[] plates, MapCutout[] cutouts, MapWall[] walls,
+            MapPoint[] points, MapBase[] bases, MapUnit[] units, MapRun run, string[] owners, string[] heightOwner,
+            string[] surfaceOwner, MapStamp[] stamps, MapSrc[] removed, MapNext next)
         {
             Id = id ?? throw new ArgumentNullException(nameof(id));
             Content = content ?? throw new ArgumentNullException(nameof(content));
@@ -196,10 +262,9 @@ namespace WarCore.Content.MapTools
                 Heights = new ReadOnlyCollection<IReadOnlyList<int>>(rows);
             }
             Surfaces = surfaces;
+            Plates = Copy(plates, nameof(plates));
+            Cutouts = Copy(cutouts, nameof(cutouts));
             Walls = Copy(walls, nameof(walls));
-            Version = FormatVersion;
-            foreach (MapWall wall in Walls)
-                if (wall.BaseRaw.HasValue) Version = WallBaseVersion;
             Points = Copy(points, nameof(points));
             Bases = Copy(bases, nameof(bases));
             Units = Copy(units, nameof(units));
@@ -210,6 +275,26 @@ namespace WarCore.Content.MapTools
             Stamps = Copy(stamps, nameof(stamps));
             Removed = Copy(removed, nameof(removed));
             Next = next ?? throw new ArgumentNullException(nameof(next));
+            Version = NeedsVersion2 ? WallBaseVersion : FormatVersion;
+        }
+
+        // Kinds of entries version 1 does not know; their rows in stamps or removed need version 2.
+        internal static bool IsVersion2Kind(string kind) => kind == "plate" || kind == "cutout";
+
+        // Anything version 1 cannot hold. MapDescReader.UsesVersion2 makes the same decision on the bare JSON tree.
+        public bool NeedsVersion2
+        {
+            get
+            {
+                foreach (MapWall wall in Walls)
+                    if (wall.BaseRaw.HasValue) return true;
+                if (Plates.Count > 0 || Cutouts.Count > 0 || Owners.Count > MaxOwnersVersion1) return true;
+                foreach (MapStamp row in Stamps)
+                    if (IsVersion2Kind(row.Kind)) return true;
+                foreach (MapSrc row in Removed)
+                    if (IsVersion2Kind(row.Kind)) return true;
+                return Next.Plate > 1 || Next.Cutout > 1;
+            }
         }
 
         internal static ReadOnlyCollection<T> Copy<T>(T[] items, string name) =>

@@ -74,6 +74,15 @@ namespace WarCore.Content
         public WcMap(string mapId, string contentId, SimVec3 min, SimVec3 max, SimFix chunkSize,
             SimFix flatHeight, uint width, uint depth, WcMapLayer[] layers, WcMapWall[] walls, byte[] passability,
             int[] heightPoints, string[] surfaceNames, byte[] surfaceCells)
+            : this(mapId, contentId, min, max, chunkSize, flatHeight, width, depth, layers, walls, passability, heightPoints,
+                surfaceNames, surfaceCells, null)
+        {
+        }
+
+        // Plates constructor (file version 3): plates null or empty = none, and the file stays version 2.
+        public WcMap(string mapId, string contentId, SimVec3 min, SimVec3 max, SimFix chunkSize,
+            SimFix flatHeight, uint width, uint depth, WcMapLayer[] layers, WcMapWall[] walls, byte[] passability,
+            int[] heightPoints, string[] surfaceNames, byte[] surfaceCells, WcMapPlate[] plates)
         {
             if ((surfaceNames == null) != (surfaceCells == null)) throw new ArgumentException("Surface names and cells go together.");
             if (heightPoints != null) this.heightPoints = new ReadOnlyCollection<int>((int[])heightPoints.Clone());
@@ -87,7 +96,11 @@ namespace WarCore.Content
             Layers = new ReadOnlyCollection<WcMapLayer>((WcMapLayer[])(layers ?? throw new ArgumentNullException(nameof(layers))).Clone());
             Walls = new ReadOnlyCollection<WcMapWall>((WcMapWall[])(walls ?? throw new ArgumentNullException(nameof(walls))).Clone());
             Passability = new ReadOnlyCollection<byte>((byte[])(passability ?? throw new ArgumentNullException(nameof(passability))).Clone());
+            Plates = new ReadOnlyCollection<WcMapPlate>(plates == null ? Array.Empty<WcMapPlate>() : (WcMapPlate[])plates.Clone());
         }
+
+        // Floor plates in file order (ascending id); plate number n (1..N) is Plates[n - 1]. Empty on version 2 files.
+        public IReadOnlyList<WcMapPlate> Plates { get; }
 
         public uint LayerMask(string name)
         {

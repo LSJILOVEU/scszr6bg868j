@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using WarCore.Battle;
 using WarCore.Sim;
@@ -67,6 +69,15 @@ namespace WarCore.Content.MapTools
                     for (int x = w.Cell.X; x < w.Cell.X + w.Size.X; x++)
                         if (!w.BaseRaw.HasValue || BlocksWalk(d, w, x, z)) blocked[z * width + x] = true;
             }
+            WcMapPlate[] plates = null;
+            if (d.Plates.Count > 0)
+            {
+                List<PlateGeom> geoms = PlateGeoms(d);
+                bool[] headroom = PlateSpan.GroundBlocks(width, depth, LocalPoint(d), geoms);
+                for (int index = 0; index < blocked.Length; index++)
+                    if (headroom[index]) blocked[index] = true;
+                plates = Plates(d, geoms, WallGeoms(d));
+            }
             var bits = new byte[(width * depth + 7) / 8];
             for (int index = 0; index < blocked.Length; index++)
                 if (!blocked[index]) bits[index >> 3] |= (byte)(1 << (index & 7));
@@ -83,7 +94,68 @@ namespace WarCore.Content.MapTools
                     for (int x = 0; x < width; x++) surfaceCells[z * width + x] = (byte)Base64Index(d.Surfaces.Rows[z][x]);
             }
             return new WcMap(d.Id, d.Content, min, max, SimFix.FromInt(Math.Max(width, depth)), SimFix.FromRaw(d.FloorRaw),
-                (uint)width, (uint)depth, layers, walls, bits, heights, surfaceNames, surfaceCells);
+                (uint)width, (uint)depth, layers, walls, bits, heights, surfaceNames, surfaceCells, plates);
+        }
+
+        // Height point (i, j) in raw Y above floorRaw (the .wcmap's local height).
+        internal static Func<int, int, long> LocalPoint(MapDesc d)
+        {
+            Func<int, int, long> point = Point(d);
+            return (i, j) => point(i, j) - d.FloorRaw;
+        }
+
+        // The description's plates in ascending id (plate number order), local heights, cutouts applied.
+        internal static List<PlateGeom> PlateGeoms(MapDesc d)
+        {
+            var sorted = d.Plates.OrderBy(p => p.Id).ToList();
+            var geoms = new List<PlateGeom>(sorted.Count);
+            foreach (MapPlate p in sorted)
+            {
+                PlateAxis axis = p.Slope == null ? PlateAxis.Flat : p.Slope.Axis == "x" ? PlateAxis.X : PlateAxis.Z;
+                long from = (p.YRaw ?? p.Slope.FromRaw) - d.FloorRaw, to = (p.YRaw ?? p.Slope.ToRaw) - d.FloorRaw;
+                var solid = new bool[p.Size.X * p.Size.Z];
+                for (int i = 0; i < solid.Length; i++) solid[i] = true;
+                foreach (MapCutout c in d.Cutouts)
+                {
+                    if (c.Plate != p.Id) continue;
+                    int x0 = Math.Max(c.Cell.X, p.Cell.X), x1 = Math.Min(c.Cell.X + c.Size.X, p.Cell.X + p.Size.X);
+                    int z0 = Math.Max(c.Cell.Z, p.Cell.Z), z1 = Math.Min(c.Cell.Z + c.Size.Z, p.Cell.Z + p.Size.Z);
+                    for (int z = z0; z < z1; z++)
+                        for (int x = x0; x < x1; x++) solid[(z - p.Cell.Z) * p.Size.X + (x - p.Cell.X)] = false;
+                }
+                geoms.Add(new PlateGeom(p.Id, p.Cell.X, p.Cell.Z, p.Size.X, p.Size.Z, axis, from, to, p.ThickRaw, solid));
+            }
+            return geoms;
+        }
+
+        // The description's walls as the plate rules see them (local raw Y; a floor wall starts at 0).
+        internal static List<WallGeom> WallGeoms(MapDesc d)
+        {
+            var walls = new List<WallGeom>(d.Walls.Count);
+            foreach (MapWall w in d.Walls)
+            {
+                long bottom = w.BaseRaw.HasValue ? w.BaseRaw.Value - d.FloorRaw : 0;
+                walls.Add(new WallGeom(w.Id, w.Cell.X, w.Cell.Z, w.Cell.X + w.Size.X, w.Cell.Z + w.Size.Z, bottom, bottom + w.HeightRaw));
+            }
+            return walls;
+        }
+
+        private static WcMapPlate[] Plates(MapDesc d, List<PlateGeom> geoms, List<WallGeom> walls)
+        {
+            var sorted = d.Plates.OrderBy(p => p.Id).ToList();
+            var plates = new WcMapPlate[geoms.Count];
+            for (int n = 0; n < plates.Length; n++)
+            {
+                PlateGeom g = geoms[n];
+                MapPlate p = sorted[n];
+                byte surface = WcMapPlate.NoSurface;
+                if (p.Surface != null)
+                    for (int i = 0; i < d.Surfaces.Names.Count; i++)
+                        if (string.Equals(d.Surfaces.Names[i], p.Surface, StringComparison.Ordinal)) surface = (byte)i;
+                plates[n] = new WcMapPlate(g.Id, g.X, g.Z, g.W, g.D, g.Axis, (int)(g.From + d.FloorRaw), (int)(g.To + d.FloorRaw),
+                    (int)g.Thick, surface, PlateSpan.Pack(g.Solid), PlateSpan.Pack(PlateSpan.Walkable(g, walls)));
+            }
+            return plates;
         }
 
         // WallSpan for a raised wall in absolute raw Y; a flat map's ground is floorRaw.

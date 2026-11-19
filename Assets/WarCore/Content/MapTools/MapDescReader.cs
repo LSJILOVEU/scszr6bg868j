@@ -54,12 +54,17 @@ namespace WarCore.Content.MapTools
     internal sealed partial class MapDescReader
     {
         internal const string Format = "MAPDESC_FORMAT", Key = "MAPDESC_KEY", SizeCode = "MAPDESC_SIZE", Grid = "MAPDESC_GRID",
-            IdCode = "MAPDESC_ID", Team = "MAPDESC_TEAM", WallCode = "MAPDESC_WALL", PointCode = "MAPDESC_POINT", OwnerCode = "MAPDESC_OWNER";
+            IdCode = "MAPDESC_ID", Team = "MAPDESC_TEAM", WallCode = "MAPDESC_WALL", PointCode = "MAPDESC_POINT", OwnerCode = "MAPDESC_OWNER",
+            PlateCode = "MAPDESC_PLATE";
         internal const int HeightLimit = (1 << 29) - 1;
         internal static readonly string[] Kinds = { "wall", "point", "base", "unit" };
+        internal static readonly string[] Kinds2 = { "wall", "point", "base", "unit", "plate", "cutout" };
         private static readonly string[] TopKeys = { "format", "version", "id", "content", "pack", "size", "origin", "floorRaw",
             "ceilingRaw", "layers", "heights", "surfaces", "walls", "points", "bases", "units", "run", "owners", "heightOwner",
             "surfaceOwner", "stamps", "removed", "next" };
+        private static readonly string[] TopKeys2 = { "format", "version", "id", "content", "pack", "size", "origin", "floorRaw",
+            "ceilingRaw", "layers", "heights", "surfaces", "plates", "cutouts", "walls", "points", "bases", "units", "run", "owners",
+            "heightOwner", "surfaceOwner", "stamps", "removed", "next" };
 
         private readonly JsonNode root;
         private string entry, entryId;
@@ -90,14 +95,40 @@ namespace WarCore.Content.MapTools
             return desc;
         }
 
+        // The bare-tree form of MapDesc.NeedsVersion2: a wall "baseRaw"; non-empty "plates" or "cutouts"; more than 64 owners;
+        // a stamps or removed row of kind "plate" or "cutout"; next.plate or next.cutout other than 1.
         private static bool UsesVersion2(JsonNode root)
         {
             JsonNode walls = root.Find("walls");
-            if (walls == null || walls.Kind != JsonKind.Array) return false;
-            foreach (JsonNode wall in walls.Items)
-                if (wall.Kind == JsonKind.Object && wall.Find("baseRaw") != null) return true;
+            if (walls != null && walls.Kind == JsonKind.Array)
+                foreach (JsonNode wall in walls.Items)
+                    if (wall.Kind == JsonKind.Object && wall.Find("baseRaw") != null) return true;
+            if (NonEmpty(root.Find("plates")) || NonEmpty(root.Find("cutouts"))) return true;
+            JsonNode owners = root.Find("owners");
+            if (owners != null && owners.Kind == JsonKind.Array && owners.Items.Count > MapDesc.MaxOwnersVersion1) return true;
+            if (HasVersion2Kind(root.Find("stamps")) || HasVersion2Kind(root.Find("removed"))) return true;
+            JsonNode next = root.Find("next");
+            if (next == null || next.Kind != JsonKind.Object) return false;
+            return NotOne(next.Find("plate")) || NotOne(next.Find("cutout"));
+        }
+
+        private static bool NonEmpty(JsonNode node) => node != null && node.Kind == JsonKind.Array && node.Items.Count > 0;
+
+        private static bool NotOne(JsonNode node) => node != null && !(node.Kind == JsonKind.Number && node.Text == "1");
+
+        private static bool HasVersion2Kind(JsonNode rows)
+        {
+            if (rows == null || rows.Kind != JsonKind.Array) return false;
+            foreach (JsonNode row in rows.Items)
+            {
+                JsonNode kind = row.Kind == JsonKind.Object ? row.Find("kind") : null;
+                if (kind != null && kind.Kind == JsonKind.String && MapDesc.IsVersion2Kind(kind.Text)) return true;
+            }
             return false;
         }
+
+        private bool Version2 => version == MapDesc.WallBaseVersion;
+        private string[] KnownKinds => Version2 ? Kinds2 : Kinds;
 
         // Whole tree in document order, before the version value: a number with a fraction or "-0" is a key error.
         private void Lexis(JsonNode node)
@@ -214,12 +245,12 @@ namespace WarCore.Content.MapTools
 
         private void Leave() { entry = null; entryId = null; }
 
-        private static bool Wide(string kind) => kind == "wall" || kind == "unit";
+        private static bool Wide(string kind) => kind == "wall" || kind == "unit" || kind == "plate" || kind == "cutout";
 
         private void EnterStamp(JsonNode element)
         {
             JsonNode kind = element.Kind == JsonKind.Object ? element.Find("kind") : null;
-            bool known = kind != null && kind.Kind == JsonKind.String && Array.IndexOf(Kinds, kind.Text) >= 0;
+            bool known = kind != null && kind.Kind == JsonKind.String && Array.IndexOf(KnownKinds, kind.Text) >= 0;
             Enter("stamp", element, known ? "id" : null, known && Wide(kind.Text));
         }
 
@@ -235,7 +266,7 @@ namespace WarCore.Content.MapTools
             JsonNode instance = Req(obj, "instance", JsonKind.String);
             if (instance.Text.Length == 0) throw Fail(OwnerCode, instance.Line);
             JsonNode kind = Req(obj, "kind", JsonKind.String);
-            if (Array.IndexOf(Kinds, kind.Text) < 0) throw Fail(OwnerCode, kind.Line);
+            if (Array.IndexOf(KnownKinds, kind.Text) < 0) throw Fail(OwnerCode, kind.Line);
             ulong src = ULong(Req(obj, "src", JsonKind.Number), 0, OwnerCode);
             return new MapSrc(instance.Text, kind.Text, src);
         }
@@ -256,7 +287,7 @@ namespace WarCore.Content.MapTools
 
         private MapDesc First()
         {
-            Keys(root, TopKeys);
+            Keys(root, Version2 ? TopKeys2 : TopKeys);
             string id = Req(root, "id", JsonKind.String).Text;
             string content = Req(root, "content", JsonKind.String).Text;
             string pack = Req(root, "pack", JsonKind.String).Text;
@@ -305,6 +336,9 @@ namespace WarCore.Content.MapTools
                     if (string.CompareOrdinal(names[i - 1], names[i]) >= 0) throw Fail(Grid, namesNode.Items[i].Line);
                 surfaces = new MapSurfaces(names, Strings(Req(surfacesNode, "rows", JsonKind.Array)));
             }
+
+            MapPlate[] plates = Plates();
+            MapCutout[] cutouts = Cutouts();
 
             JsonNode wallsNode = Req(root, "walls", JsonKind.Array);
             var walls = new MapWall[wallsNode.Items.Count];
@@ -387,7 +421,7 @@ namespace WarCore.Content.MapTools
 
             JsonNode ownersNode = Req(root, "owners", JsonKind.Array);
             string[] owners = Strings(ownersNode);
-            if (owners.Length < 1 || owners.Length > 64) throw Fail(OwnerCode, ownersNode.Line);
+            if (owners.Length < 1 || owners.Length > (Version2 ? MapDesc.MaxOwners : MapDesc.MaxOwnersVersion1)) throw Fail(OwnerCode, ownersNode.Line);
             for (int i = 0; i < owners.Length; i++)
             {
                 bool repeated = Array.IndexOf(owners, owners[i], 0, i) >= 0;
@@ -426,14 +460,18 @@ namespace WarCore.Content.MapTools
             }
 
             JsonNode nextNode = Req(root, "next", JsonKind.Object);
-            Keys(nextNode, "wall", "point", "base", "unit");
-            var next = new MapNext(ULong(Req(nextNode, "wall", JsonKind.Number), 1, IdCode),
-                Int(Req(nextNode, "point", JsonKind.Number), 1, int.MaxValue, IdCode),
-                Int(Req(nextNode, "base", JsonKind.Number), 1, int.MaxValue, IdCode),
-                ULong(Req(nextNode, "unit", JsonKind.Number), 1, IdCode));
+            if (Version2) Keys(nextNode, "wall", "point", "base", "unit", "plate", "cutout");
+            else Keys(nextNode, "wall", "point", "base", "unit");
+            ulong nextWall = ULong(Req(nextNode, "wall", JsonKind.Number), 1, IdCode);
+            int nextPoint = Int(Req(nextNode, "point", JsonKind.Number), 1, int.MaxValue, IdCode);
+            int nextBase = Int(Req(nextNode, "base", JsonKind.Number), 1, int.MaxValue, IdCode);
+            ulong nextUnit = ULong(Req(nextNode, "unit", JsonKind.Number), 1, IdCode);
+            JsonNode nextPlate = Opt(nextNode, "plate", JsonKind.Number), nextCutout = Opt(nextNode, "cutout", JsonKind.Number);
+            var next = new MapNext(nextWall, nextPoint, nextBase, nextUnit, nextPlate == null ? 1 : ULong(nextPlate, 1, IdCode),
+                nextCutout == null ? 1 : ULong(nextCutout, 1, IdCode));
 
-            return new MapDesc(id, content, pack, size, origin, floor, ceiling, layers, heights, surfaces, walls, points, bases,
-                units, new MapRun(seed, crowd.Text), owners, heightOwner, surfaceOwner, stamps, removed, next);
+            return new MapDesc(id, content, pack, size, origin, floor, ceiling, layers, heights, surfaces, plates, cutouts, walls,
+                points, bases, units, new MapRun(seed, crowd.Text), owners, heightOwner, surfaceOwner, stamps, removed, next);
         }
     }
 }
