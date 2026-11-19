@@ -450,3 +450,36 @@ original:
 | if ((long)doorStart + doorWidth > (long)length - 1)
 replacement:
 | if ((long)doorStart + doorWidth > (long)length)
+
+[ml1-44-bake-top-is-height]
+file = Assets/WarCore/Content/MapTools/MapBake.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1WallTopTests.ShortRaisedWallOnHighGroundBlocks
+note = the bake takes the wall height as its top; a short raised wall on high ground opens its cell
+original:
+|             return WallSpan.BlocksWalk(bottom, bottom + w.HeightRaw, low, high);
+replacement:
+|             return WallSpan.BlocksWalk(bottom, w.HeightRaw, low, high);
+
+[ml1-45-wcmap-top-is-height]
+file = Assets/WarCore/Content/WcMapValidation.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1WallTopTests.ShortRaisedWallOnHighGroundBlocks
+expect = WarCore.Tests.Ml1WallTopTests.ShortRaisedWallOnHighGroundMarkedOpenIsAMismatch
+note = the .wcmap navigation check takes the wall height as its top
+original:
+| top = bottom + wall.Height.Raw;
+replacement:
+| top = wall.Height.Raw;
+
+[ml1-46-wcmap-points-not-from-floor]
+file = Assets/WarCore/Content/WcMapValidation.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1WallTopTests.OneMetreRuleMeasuresFromTheFloor
+expect = WarCore.Tests.Ml1WallTopTests.BuriedMeasuresFromTheFloor
+expect = WarCore.Tests.Ml1WallTopTests.LintelReadsEachCellFromTheFloor
+note = .wcmap height points are read as absolute, not above Min.Y; only visible when the floor is not 0
+original:
+| (long)map.VertexRaw(i, j) - map.Min.Y.Raw
+replacement:
+| (long)map.VertexRaw(i, j)
