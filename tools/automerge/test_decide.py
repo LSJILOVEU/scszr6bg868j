@@ -97,7 +97,7 @@ class Decide(unittest.TestCase):
     # 8
     def test_protected_paths_need_human(self):
         for path in (".github/workflows/x.yml", "tools/pii-guard/pii_guard.py", "CLAUDE.md",
-                     ".claude/settings.json", "tools/automerge/decide.py"):
+                     ".claude/settings.json", "tools/automerge/decide.py", "tools/open-pr/open_pr.py"):
             with self.subTest(path=path):
                 code, why = run(files=base_files() + [{"filename": path}])
                 self.assertEqual(code, decide.MANUAL)

@@ -21,8 +21,9 @@ REQUIRED_CHECKS = ("test (ubuntu-latest)", "test (windows-latest)", "guard", "ga
 # Check runs of this workflow itself; they are running while it decides.
 SELF_CHECKS = ("automerge",)
 OTHER_OK = ("success", "skipped")
-# Rule files and the merge logic itself stay a human decision. Agent instruction files count at any depth.
-PROTECTED_PREFIXES = (".github/", "tools/pii-guard/", "tools/automerge/")
+# Rule files, the merge logic itself and code that runs with secrets stay a human decision.
+# Agent instruction files count at any depth.
+PROTECTED_PREFIXES = (".github/", "tools/pii-guard/", "tools/automerge/", "tools/open-pr/")
 PROTECTED_DIRS = (".claude",)  # any path segment, case-insensitive
 PROTECTED_NAMES = ("claude.md", "claude.local.md")  # file name at any depth, case-insensitive
 
