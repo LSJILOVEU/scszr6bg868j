@@ -1,0 +1,30 @@
+name: unity-compat
+
+# Compiles the engine-free assemblies and their EditMode tests against netstandard2.1 + NUnit 3.5,
+# the API surface Unity uses, to catch compile errors the net8.0 headless build misses (tools/unity-compat).
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: unity-compat-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unity-compat:
+    name: unity-compat
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Compile as Unity does
+        run: python3 tools/unity-compat/check.py
