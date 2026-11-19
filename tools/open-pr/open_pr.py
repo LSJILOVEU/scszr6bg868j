@@ -1,31 +1,35 @@
 #!/usr/bin/env python3
 """Open or edit a pull request into main from workflow inputs (.github/workflows/open-pr.yml).
 
-Every input arrives as an environment variable and is passed to git and gh as a separate argument; nothing is
-ever run through a shell. Exit 0 ok, 1 rejected or failed.
+Inputs are read from the workflow_dispatch event file (GITHUB_EVENT_PATH, key "inputs"), never from step env:
+GitHub prints each step's env values at the top of its public log. Values are passed to git and gh as separate
+arguments; nothing is run through a shell, and input text is never printed. Exit 0 ok, 1 rejected or failed.
 
   open_pr.py check   validate inputs, run pii-guard on title + body, and (open) on origin/main..origin/<branch>
-  open_pr.py apply   validate again, read-only checks with gh, then gh pr create / gh pr edit unless DRY_RUN=true
+  open_pr.py apply   validate again, read-only checks with gh, then gh pr create / gh pr edit unless dry_run
 
+Inputs (missing keys take the workflow defaults):
+  mode      open | edit (default open)
+  branch    head branch (open only), ^(claude|wip)/[A-Za-z0-9._/-]+$
+  pr        pull request number (edit only)
+  title     one line, 1..72 characters
+  body      1..60000 characters, used verbatim
+  dry_run   true | false, boolean or string (default true)
 Environment:
-  MODE      open | edit
-  BRANCH    head branch (open only), ^(claude|wip)/[A-Za-z0-9._/-]+$
-  PR        pull request number (edit only)
-  TITLE     one line, 1..72 characters
-  BODY      1..60000 characters, used verbatim
-  DRY_RUN   true | false
+  GITHUB_EVENT_PATH    event JSON written by the runner
   GH_TOKEN  token for gh (apply only); GH_REPO owner/name (apply only)
   GUARD     path to pii_guard.py (default tools/pii-guard/pii_guard.py)
   GUARD_REQUIRE_TERMS  1 (default) fails when no private term list is available
   BASE, REMOTE         default main, origin
 """
-import os, re, subprocess, sys, tempfile
+import json, os, re, subprocess, sys, tempfile
 
 BRANCH_RE = re.compile(r"^(claude|wip)/[A-Za-z0-9._/-]+$")
 PR_RE = re.compile(r"^[1-9][0-9]{0,8}$")
 MAX_TITLE = 72
 MAX_BODY = 60000
 MAX_BRANCH = 200
+DEFAULTS = {"mode": "open", "branch": "", "pr": "", "title": "", "body": "", "dry_run": "true"}
 
 
 class Reject(Exception):
@@ -34,6 +38,31 @@ class Reject(Exception):
 
 def env(name, default=""):
     return os.environ.get(name, default)
+
+
+def load_inputs():
+    """Inputs from the event file as strings; missing keys take DEFAULTS. Unknown keys are ignored."""
+    path = env("GITHUB_EVENT_PATH")
+    if not path:
+        raise Reject("GITHUB_EVENT_PATH is not set")
+    try:
+        with open(path, encoding="utf-8") as f:
+            raw = json.load(f).get("inputs")
+    except (OSError, ValueError, AttributeError):
+        raise Reject("could not read inputs from the event file")
+    if not isinstance(raw, dict):
+        raise Reject("event file has no inputs object")
+    out = {}
+    for k, default in DEFAULTS.items():
+        v = raw.get(k, default)
+        if v is None:
+            v = default
+        if isinstance(v, bool):
+            v = "true" if v else "false"
+        if not isinstance(v, str):
+            raise Reject("input %s must be a string" % k)
+        out[k] = v
+    return out
 
 
 def branch_ok(b):
@@ -47,8 +76,9 @@ def branch_ok(b):
 
 def validate():
     """Return the cleaned inputs as a dict, or raise Reject with a message that never echoes input text."""
-    mode, branch, pr = env("MODE"), env("BRANCH"), env("PR")
-    title, body, dry = env("TITLE"), env("BODY"), env("DRY_RUN")
+    i = load_inputs()
+    mode, branch, pr = i["mode"], i["branch"], i["pr"]
+    title, body, dry = i["title"], i["body"], i["dry_run"]
     if mode not in ("open", "edit"):
         raise Reject("mode must be open or edit")
     if dry not in ("true", "false"):

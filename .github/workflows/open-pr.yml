@@ -1,7 +1,8 @@
 name: open-pr
 
-# Open a pull request into main, or edit the title and description of one, from workflow_dispatch inputs.
-# Only people with write access can dispatch. Inputs reach the script through env only, never through run: text.
+# Open a pull request into main, or edit the title and description of one, from workflow_dispatch.
+# Only people with write access can dispatch. The script reads inputs from the event file (GITHUB_EVENT_PATH):
+# they must not appear in env: (GitHub prints step env values in the public log), run:, or run-name.
 # Title and body must pass pii-guard; in open mode every commit in main..branch must pass too. Nothing is rewritten.
 # The OPEN_PR_TOKEN secret (fine-grained, this repository only) is used so the pull request triggers the usual
 # workflows; pull requests opened with GITHUB_TOKEN would not. The token is visible only to the apply step.
@@ -47,13 +48,6 @@ jobs:
     if: github.ref_name == github.event.repository.default_branch
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    env:
-      MODE: ${{ inputs.mode }}
-      BRANCH: ${{ inputs.branch }}
-      PR: ${{ inputs.pr }}
-      TITLE: ${{ inputs.title }}
-      BODY: ${{ inputs.body }}
-      DRY_RUN: ${{ inputs.dry_run }}
     steps:
       - uses: actions/checkout@v4
         with:

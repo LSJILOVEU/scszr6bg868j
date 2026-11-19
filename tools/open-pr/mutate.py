@@ -24,6 +24,9 @@ muts = [
  ('    if not env("GH_TOKEN"):', '    if False:'),
  ('    if len(title) > MAX_TITLE:', '    if False:'),
  ('        if not PR_RE.match(pr):', '        if False:'),
+ ('"body": "", "dry_run": "true"}', '"body": "", "dry_run": "false"}'),
+ ('        v = raw.get(k, default)', '        v = os.environ.get(k.upper(), raw.get(k, default))'),
+ ('            v = "true" if v else "false"', '            v = "false" if v else "true"'),
 ]
 killed = 0
 for a, _ in muts:

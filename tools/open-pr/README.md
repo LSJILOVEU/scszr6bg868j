@@ -3,7 +3,8 @@
 `.github/workflows/open-pr.yml` opens a pull request into `main`, or edits the title and description of an open one,
 without a local `gh`. Only accounts with write access can dispatch it, and it runs only when dispatched on `main`.
 
-Steps (script: `open_pr.py`, every input passed through environment variables, no shell interpolation):
+Steps (script: `open_pr.py`). Inputs are read from the event file (`GITHUB_EVENT_PATH`), never put in step `env:`
+(GitHub prints step env values in the public log), `run:` or `run-name`; values go to git and gh as separate arguments:
 
 1. `check` (no token): validates inputs, runs `pii_guard.py --text` on title + body with the private term list
    (`--require-terms`), and in open mode fetches the branch and runs `pii_guard.py --range origin/main..origin/<branch>`.

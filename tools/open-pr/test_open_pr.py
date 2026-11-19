@@ -9,6 +9,7 @@ import json, os, shutil, subprocess, sys, tempfile, unittest
 HERE = os.path.dirname(os.path.abspath(__file__))
 SCRIPT = os.path.join(HERE, "open_pr.py")
 GUARD = os.path.join(HERE, "..", "pii-guard", "pii_guard.py")
+WORKFLOW = os.path.join(HERE, "..", "..", ".github", "workflows", "open-pr.yml")
 
 FAKE_GH = r'''#!/usr/bin/env python3
 import json, os, sys
@@ -34,6 +35,7 @@ IDENT = {"GIT_AUTHOR_NAME": "warcore", "GIT_AUTHOR_EMAIL": "noreply@users.norepl
 SESSION_LINK = "https://" + "claude" + ".ai/" + "code/session_" + "0123456789abcdef"
 EMAIL = "someone" + "@" + "corp-mail.io"
 WRITES = (["pr", "create"], ["pr", "edit"])
+INPUT_KEYS = ("mode", "branch", "pr", "title", "body", "dry_run")
 
 
 def write(path, text):
@@ -84,30 +86,35 @@ class OpenPrTest(unittest.TestCase):
     def tearDownClass(cls):
         shutil.rmtree(cls.tmp, ignore_errors=True)
 
-    def run_pr(self, step, **inputs):
+    def run_pr(self, step, drop=(), event=None, **inputs):
+        """Inputs named in INPUT_KEYS go into a fake event file; other keyword arguments become env vars."""
         log = os.path.join(self.tmp, "gh.log")
         if os.path.exists(log):
             os.remove(log)
         self.summary = os.path.join(self.tmp, "summary.md")
         if os.path.exists(self.summary):
             os.remove(self.summary)
+        ev = dict(mode="open", branch="claude/ok", pr="", title="Add b", body="Adds b.\n", dry_run="false")
+        ev.update({k: v for k, v in inputs.items() if k in INPUT_KEYS})
+        for k in drop:
+            ev.pop(k)
+        event_path = os.path.join(self.tmp, "event.json")
+        write(event_path, event if event is not None else json.dumps({"inputs": ev, "ref": "refs/heads/main"}))
         e = {k: v for k, v in os.environ.items() if not k.startswith(("GITHUB_", "PII_", "GH_"))}
         e.update(PATH=self.bin + os.pathsep + e.get("PATH", ""), FAKE_GH_LOG=log, GUARD=GUARD,
                  PII_TERMS="w:zqxtermzq", GUARD_REQUIRE_TERMS="1", GH_TOKEN="x", GH_REPO="o/r",
-                 GITHUB_STEP_SUMMARY=self.summary, **IDENT)
-        e.update(MODE="open", BRANCH="claude/ok", PR="", TITLE="Add b", BODY="Adds b.\n", DRY_RUN="false")
-        e.update({k.upper(): v for k, v in inputs.items() if not k.startswith("fake_")})
-        e.update({k.upper(): v for k, v in inputs.items() if k.startswith("fake_")})
+                 GITHUB_STEP_SUMMARY=self.summary, GITHUB_EVENT_PATH=event_path, **IDENT)
+        e.update({k.upper(): v for k, v in inputs.items() if k not in INPUT_KEYS})
         p = subprocess.run([sys.executable, "-I", SCRIPT, step], cwd=self.work, env=e, capture_output=True, text=True)
         calls = [json.loads(l) for l in read(log).splitlines()] if os.path.exists(log) else []
         return p.returncode, p.stdout + p.stderr, calls
 
-    def both(self, **inputs):
+    def both(self, **kw):
         """check then apply, as the workflow does; stop at the first failure."""
-        code, out, calls = self.run_pr("check", **inputs)
+        code, out, calls = self.run_pr("check", **kw)
         if code != 0:
             return code, out, calls
-        code2, out2, calls2 = self.run_pr("apply", **inputs)
+        code2, out2, calls2 = self.run_pr("apply", **kw)
         return code2, out + out2, calls + calls2
 
     def writes(self, calls):
@@ -249,6 +256,40 @@ class OpenPrTest(unittest.TestCase):
         argv = self.writes(calls)[0]["argv"]
         self.assertIn("--title=--body-file=/etc/passwd", argv)
         self.assertEqual(sum(a.startswith("--body-file=") for a in argv), 1)
+
+    def test_inputs_come_from_event_file_only(self):
+        # env vars named like the inputs are ignored; the event file decides
+        code, out, calls = self.both(title="From event", MODE="edit", TITLE="From env", BODY="env body",
+                                     DRY_RUN="true", BRANCH="feature/x")
+        self.assertEqual(code, 0, out)
+        argv = self.writes(calls)[0]["argv"]
+        self.assertEqual(argv[:2], ["pr", "create"])
+        self.assertIn("--title=From event", argv)
+        self.assertNotIn("From event", out)
+
+    def test_event_defaults_and_types(self):
+        code, out, calls = self.both(drop=("dry_run",))
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.writes(calls), [], "missing dry_run must default to a dry run")
+        code, out, calls = self.both(dry_run=True)
+        self.assertEqual((code, self.writes(calls)), (0, []), out)
+        code, out, calls = self.both(dry_run=False)
+        self.assertEqual(code, 0, out)
+        self.assertEqual(len(self.writes(calls)), 1)
+        for bad in ("", "not json", json.dumps({"ref": "x"}), json.dumps({"inputs": []}),
+                    json.dumps({"inputs": {"title": 5, "body": "b", "branch": "claude/ok"}})):
+            code, out, calls = self.both(event=bad)
+            self.assertEqual((code, calls), (1, []), bad)
+        code, out, calls = self.both(GITHUB_EVENT_PATH="")
+        self.assertEqual((code, calls), (1, []))
+
+    def test_workflow_never_references_inputs(self):
+        # step env values are printed in the public log, and run-name is public: inputs stay in the event file
+        text = read(WORKFLOW)
+        self.assertNotIn("inputs.", text)
+        self.assertNotRegex(text, r"(?m)^run-name:")
+        self.assertIn("python3 -I tools/open-pr/open_pr.py check", text)
+        self.assertIn("python3 -I tools/open-pr/open_pr.py apply", text)
 
 
 if __name__ == "__main__":
