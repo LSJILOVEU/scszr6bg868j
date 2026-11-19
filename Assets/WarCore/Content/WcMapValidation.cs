@@ -6,7 +6,7 @@ using WarCore.Sim;
 
 namespace WarCore.Content
 {
-    internal static class WcMapValidation
+    internal static partial class WcMapValidation
     {
         internal const int MaxFileBytes = 2 * 1024 * 1024;
         internal const int MaxWalls = 4096;
@@ -74,10 +74,13 @@ namespace WarCore.Content
                 for (int iz = z0; iz < z1; iz++)
                     for (int ix = x0; ix < x1; ix++) blocked[iz * (int)map.Width + ix] = true;
             }
-            // Raised walls read height points, so the height table is checked first; without them the order is as before.
+            // Plate fields first (section 12), then, when raised walls or plates read height points, the height table; without
+            // either the order is as before.
+            List<PlateGeom> plates = map.Plates.Count > 0 ? PlateFields(map, cells) : null;
+            if (raised != null || plates != null) ValidateHeightField(map);
+            if (plates != null) PlateHeadroom(map, plates, blocked);
             if (raised != null)
             {
-                ValidateHeightField(map);
                 Func<int, int, long> point = LocalPoint(map);
                 foreach (WcMapWall wall in raised)
                 {
@@ -97,8 +100,9 @@ namespace WarCore.Content
                 bool passable = (map.Passability[i >> 3] & (1 << (i & 7))) != 0;
                 Require(i < cells ? passable == !blocked[i] : !passable, "NAV_WALL_MISMATCH");
             }
-            if (raised == null) ValidateHeightField(map);
+            if (raised == null && plates == null) ValidateHeightField(map);
             ValidateWallsOnTerrain(map);
+            if (plates != null) PlateRules(map, plates);
             ValidateSurfaceTable(map, cells);
         }
 
@@ -113,7 +117,7 @@ namespace WarCore.Content
         }
 
         // Height point (i, j) in raw Y above Min.Y; 0 everywhere on a flat map (FlatHeight = Min.Y).
-        private static Func<int, int, long> LocalPoint(WcMap map) =>
+        internal static Func<int, int, long> LocalPoint(WcMap map) =>
             map.HasHeightField ? (i, j) => (long)map.VertexRaw(i, j) - map.Min.Y.Raw : (Func<int, int, long>)((i, j) => 0);
 
         // A floor wall's bottom is Min.Y and every height point is >= Min.Y, so it is never buried below the ground. It must

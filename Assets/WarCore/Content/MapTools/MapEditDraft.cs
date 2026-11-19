@@ -52,6 +52,21 @@ namespace WarCore.Content.MapTools
             (u, origin) => MmCell(u.At, origin),
             (u, d) => OnMap(u.At, d));
 
+        internal static readonly MapEditKind<MapPlate> Plate = new MapEditKind<MapPlate>("plate", 4, ulong.MaxValue,
+            p => p.Id, p => p.Owner, p => p.Src,
+            (p, id, owner, src) => new MapPlate(id, p.Cell, p.Size, p.YRaw, p.Slope, p.ThickRaw, p.Surface, owner, src),
+            (p, origin) => (p.Cell.X, p.Cell.Z),
+            (p, d) => Box(p.Cell, p.Size, d));
+
+        internal static readonly MapEditKind<MapCutout> Cutout = new MapEditKind<MapCutout>("cutout", 5, ulong.MaxValue,
+            c => c.Id, c => c.Owner, c => c.Src,
+            (c, id, owner, src) => new MapCutout(id, c.Plate, c.Cell, c.Size, owner, src),
+            (c, origin) => (c.Cell.X, c.Cell.Z),
+            (c, d) => Box(c.Cell, c.Size, d));
+
+        private static bool Box(MapXZ cell, MapXZ size, MapDesc d) => cell.X >= 0 && cell.Z >= 0 && size.X >= 1 && size.Z >= 1
+            && (long)cell.X + size.X <= d.Size.X && (long)cell.Z + size.Z <= d.Size.Z;
+
         private static bool OnMap(MapMm at, MapDesc d)
         {
             long x0 = d.Origin.X * 1000L, z0 = d.Origin.Z * 1000L;
@@ -74,6 +89,8 @@ namespace WarCore.Content.MapTools
     {
         internal const string Base64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
         internal const char NoOwner = '.';
+        // Height and surface owner grids hold one base64 character: only the first 64 owners can own grid data. The owner
+        // table itself holds up to MapDesc.MaxOwners (entries name owners by number).
         internal const int MaxOwners = 64;
 
         private readonly MapDesc d;
@@ -90,6 +107,8 @@ namespace WarCore.Content.MapTools
         internal readonly List<MapPoint> Points;
         internal readonly List<MapBase> Bases;
         internal readonly List<MapUnit> Units;
+        internal readonly List<MapPlate> Plates;
+        internal readonly List<MapCutout> Cutouts;
 
         internal MapEditDraft(MapDesc desc)
         {
@@ -113,11 +132,13 @@ namespace WarCore.Content.MapTools
             Owners = new List<string>(desc.Owners);
             Stamps = new List<MapStamp>(desc.Stamps);
             Removed = new List<MapSrc>(desc.Removed);
-            Next = new[] { desc.Next.Wall, (ulong)desc.Next.Point, (ulong)desc.Next.Base, desc.Next.Unit };
+            Next = new[] { desc.Next.Wall, (ulong)desc.Next.Point, (ulong)desc.Next.Base, desc.Next.Unit, desc.Next.Plate, desc.Next.Cutout };
             Walls = new List<MapWall>(desc.Walls);
             Points = new List<MapPoint>(desc.Points);
             Bases = new List<MapBase>(desc.Bases);
             Units = new List<MapUnit>(desc.Units);
+            Plates = new List<MapPlate>(desc.Plates);
+            Cutouts = new List<MapCutout>(desc.Cutouts);
         }
 
         internal MapXZ Origin => d.Origin;
@@ -127,6 +148,8 @@ namespace WarCore.Content.MapTools
             if (kind.Slot == 0) return (List<T>)(object)Walls;
             if (kind.Slot == 1) return (List<T>)(object)Points;
             if (kind.Slot == 2) return (List<T>)(object)Bases;
+            if (kind.Slot == 4) return (List<T>)(object)Plates;
+            if (kind.Slot == 5) return (List<T>)(object)Cutouts;
             return (List<T>)(object)Units;
         }
 
@@ -147,9 +170,9 @@ namespace WarCore.Content.MapTools
             MapSurfaces surfaces = null;
             if (SurfaceRows != null) surfaces = new MapSurfaces(Copy(d.Surfaces.Names), Rows(SurfaceRows));
             return new MapDesc(d.Id, d.Content, d.Pack, d.Size, d.Origin, d.FloorRaw, d.CeilingRaw, Copy(d.Layers), heights,
-                surfaces, Walls.ToArray(), Points.ToArray(), Bases.ToArray(), Units.ToArray(), d.Run, Owners.ToArray(),
-                HeightOwner == null ? null : Rows(HeightOwner), SurfaceOwner == null ? null : Rows(SurfaceOwner),
-                Stamps.ToArray(), Removed.ToArray(), new MapNext(Next[0], (int)Next[1], (int)Next[2], Next[3]));
+                surfaces, Plates.ToArray(), Cutouts.ToArray(), Walls.ToArray(), Points.ToArray(), Bases.ToArray(), Units.ToArray(), d.Run,
+                Owners.ToArray(), HeightOwner == null ? null : Rows(HeightOwner), SurfaceOwner == null ? null : Rows(SurfaceOwner),
+                Stamps.ToArray(), Removed.ToArray(), new MapNext(Next[0], (int)Next[1], (int)Next[2], Next[3], Next[4], Next[5]));
         }
 
         // A missing owner grid is all '.'.

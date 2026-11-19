@@ -1,0 +1,230 @@
+{
+  "format": "warcore.map",
+  "version": 2,
+  "id": "plate-demo",
+  "content": "none",
+  "pack": "rwr-m6",
+  "size": [24, 16],
+  "origin": [0, 0],
+  "floorRaw": 0,
+  "ceilingRaw": 524288,
+  "layers": [
+    {
+      "name": "walls",
+      "bit": 1
+    }
+  ],
+  "plates": [
+    {
+      "id": 1,
+      "cell": [9, 9],
+      "size": [4, 1],
+      "slope": {
+        "axis": "x",
+        "fromRaw": 0,
+        "toRaw": 196608
+      },
+      "thickRaw": 32768
+    },
+    {
+      "id": 2,
+      "cell": [9, 6],
+      "size": [6, 4],
+      "yRaw": 196608,
+      "thickRaw": 32768
+    },
+    {
+      "id": 3,
+      "cell": [9, 6],
+      "size": [6, 4],
+      "yRaw": 393216,
+      "thickRaw": 32768
+    }
+  ],
+  "cutouts": [
+    {
+      "id": 1,
+      "plate": 2,
+      "cell": [9, 9],
+      "size": [4, 1]
+    }
+  ],
+  "walls": [
+    {
+      "id": 1,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [8, 5],
+      "size": [8, 1],
+      "heightRaw": 196608
+    },
+    {
+      "id": 2,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [8, 10],
+      "size": [8, 1],
+      "heightRaw": 196608
+    },
+    {
+      "id": 3,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [8, 6],
+      "size": [1, 1],
+      "heightRaw": 196608
+    },
+    {
+      "id": 4,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [8, 9],
+      "size": [1, 1],
+      "heightRaw": 196608
+    },
+    {
+      "id": 5,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [15, 6],
+      "size": [1, 4],
+      "heightRaw": 196608
+    },
+    {
+      "id": 6,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [11, 6],
+      "size": [1, 1],
+      "heightRaw": 163840,
+      "baseRaw": 196608
+    },
+    {
+      "id": 7,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [11, 8],
+      "size": [1, 1],
+      "heightRaw": 163840,
+      "baseRaw": 196608
+    },
+    {
+      "id": 8,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [11, 7],
+      "size": [1, 1],
+      "heightRaw": 32768,
+      "baseRaw": 327680
+    }
+  ],
+  "points": [
+    {
+      "id": 1,
+      "at": [5000, 13000],
+      "radiusMm": 3000,
+      "initialOwner": 0,
+      "spawn": [5000, 13000]
+    },
+    {
+      "id": 2,
+      "at": [19000, 13000],
+      "radiusMm": 3000,
+      "initialOwner": 0,
+      "spawn": [19000, 13000]
+    }
+  ],
+  "bases": [
+    {
+      "id": 1,
+      "team": 1,
+      "at": [2000, 8000]
+    },
+    {
+      "id": 2,
+      "team": 2,
+      "at": [22000, 8000]
+    }
+  ],
+  "units": [
+    {
+      "key": 1,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [1500, 2000],
+      "reserve": false
+    },
+    {
+      "key": 2,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [3000, 2000],
+      "reserve": false
+    },
+    {
+      "key": 3,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [1500, 3500],
+      "reserve": false
+    },
+    {
+      "key": 4,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [3000, 3500],
+      "reserve": false
+    },
+    {
+      "key": 5,
+      "type": "rwr.soldier-1",
+      "team": 2,
+      "squad": 2,
+      "at": [22500, 2000],
+      "reserve": false
+    },
+    {
+      "key": 6,
+      "type": "rwr.soldier-1",
+      "team": 2,
+      "squad": 2,
+      "at": [21000, 2000],
+      "reserve": false
+    },
+    {
+      "key": 7,
+      "type": "rwr.soldier-1",
+      "team": 2,
+      "squad": 2,
+      "at": [22500, 3500],
+      "reserve": false
+    },
+    {
+      "key": 8,
+      "type": "rwr.soldier-1",
+      "team": 2,
+      "squad": 2,
+      "at": [21000, 3500],
+      "reserve": false
+    }
+  ],
+  "run": {
+    "seed": 41,
+    "crowdPass": "teamIdle"
+  },
+  "owners": ["hand"],
+  "stamps": [],
+  "removed": [],
+  "next": {
+    "wall": 9,
+    "point": 3,
+    "base": 3,
+    "unit": 9,
+    "plate": 4,
+    "cutout": 2
+  }
+}

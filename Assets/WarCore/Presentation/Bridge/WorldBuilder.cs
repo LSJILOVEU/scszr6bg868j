@@ -36,6 +36,8 @@ namespace WarCore.Presentation
             if (recipe.PlayerKey.HasValue && (!crowd || recipe.Combat == null || recipe.Match == null))
                 throw new ArgumentException("Player control requires InterimCrowd, Combat and Match.", nameof(recipe));
             WcMap map = mapBytes == null ? null : WcMapReader.Read(mapBytes);
+            if (map != null && map.Plates.Count > 0)
+                throw new NotSupportedException("Maps with floor plates are not supported by the runtime yet.");
             assembly.Map = map;
             FeatureTable.RunPrepare(assembly);
             long groundRaw = map == null ? 0 : map.FlatHeight.Raw;

@@ -10,6 +10,9 @@ namespace WarCore.Content
     {
         public const ushort FormatVersion = 2;
         internal const ushort SectionCount = 11;
+        // Written only for a map with plates: the version 2 sections unchanged, then section 12 (plates).
+        public const ushort PlateVersion = 3;
+        internal const ushort PlateSectionCount = 12;
         internal const uint Magic = 0x504D4357; // WCMP
 
         public static byte[] Write(WcMap map)
@@ -17,9 +20,11 @@ namespace WarCore.Content
             WcMapValidation.Validate(map);
             using var stream = new MemoryStream();
             using var writer = new BinaryWriter(stream);
-            writer.Write(Magic); writer.Write(FormatVersion); writer.Write(SectionCount);
-            var offsets = new uint[SectionCount + 1];
-            for (ushort id = 1; id <= SectionCount; id++)
+            bool plates = map.Plates.Count > 0;
+            ushort count = plates ? PlateSectionCount : SectionCount;
+            writer.Write(Magic); writer.Write(plates ? PlateVersion : FormatVersion); writer.Write(count);
+            var offsets = new uint[count + 1];
+            for (ushort id = 1; id <= count; id++)
             {
                 offsets[id] = checked((uint)stream.Position);
                 byte[] payload = Payload(id, map, offsets);
@@ -107,6 +112,16 @@ namespace WarCore.Content
                     foreach (ushort section in new ushort[] { 3, 4, 6, 7 })
                     { w.Write(section); w.Write(offsets[section]); }
                     w.Write(0U); // dependencies
+                    break;
+                case 12:
+                    w.Write((uint)map.Plates.Count);
+                    foreach (WcMapPlate plate in map.Plates)
+                    {
+                        w.Write(plate.Id); w.Write((ushort)plate.X); w.Write((ushort)plate.Z); w.Write((ushort)plate.Width); w.Write((ushort)plate.Depth);
+                        w.Write((byte)plate.Axis); w.Write(plate.FromRaw); w.Write(plate.ToRaw); w.Write(plate.ThickRaw); w.Write(plate.Surface);
+                        foreach (byte b in plate.Solid) w.Write(b);
+                        foreach (byte b in plate.Walkable) w.Write(b);
+                    }
                     break;
                 // Placement gameplay, links, regions and diagnostics are reserved empty sections.
             }

@@ -1,0 +1,805 @@
+# ML-4: floor plates and cutouts in the description, .wcmap version 3 (section 12), the plate rules (PlateSpan), the gate,
+# the editor and the runtime refusal. Filter: the ML-4 tests. Not listed: the walk band bottom (>= vs >, WallSpan) is still
+# unreachable on a legal map (rules 3-5), and MapGate.WithParts dropping the cutouts of a dropped plate cannot be seen from
+# the gate (the bake ignores a cutout whose plate is missing), so both are equivalent here; see the PR Departures.
+
+[ml4-01-model-plates]
+file = Assets/WarCore/Content/MapTools/MapDesc.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4DescTests.EachThingAloneMakesVersionTwo("plates"
+expect = WarCore.Tests.Ml4DescTests.ModelDecidesTheSame
+note = model forgets non-empty plates
+original:
+| if (Plates.Count > 0 || Cutouts.Count > 0 ||
+replacement:
+| if (Cutouts.Count > 0 ||
+
+[ml4-02-model-cutouts]
+file = Assets/WarCore/Content/MapTools/MapDesc.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4DescTests.EachThingAloneMakesVersionTwo("cutouts"
+note = model forgets non-empty cutouts
+original:
+| if (Plates.Count > 0 || Cutouts.Count > 0 ||
+replacement:
+| if (Plates.Count > 0 ||
+
+[ml4-03-model-owners]
+file = Assets/WarCore/Content/MapTools/MapDesc.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4DescTests.EachThingAloneMakesVersionTwo("owners"
+expect = WarCore.Tests.Ml4DescTests.ModelDecidesTheSame
+expect = WarCore.Tests.Ml4EditTests.SixtyFifthOwnerForAnEntriesOnlyStamp
+note = model: owners over 64 stay version 1
+original:
+| Owners.Count > MaxOwnersVersion1) return true;
+replacement:
+| Owners.Count > MaxOwners) return true;
+
+[ml4-04-model-stamps]
+file = Assets/WarCore/Content/MapTools/MapDesc.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4DescTests.EachThingAloneMakesVersionTwo("stamps"
+expect = WarCore.Tests.Ml4DescTests.ModelDecidesTheSame
+note = model ignores stamps rows
+original:
+| foreach (MapStamp row in Stamps)
+replacement:
+| foreach (MapStamp row in new MapStamp[0])
+
+[ml4-05-model-removed]
+file = Assets/WarCore/Content/MapTools/MapDesc.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4DescTests.EachThingAloneMakesVersionTwo("removed"
+expect = WarCore.Tests.Ml4DescTests.ModelDecidesTheSame
+note = model ignores removed rows
+original:
+| foreach (MapSrc row in Removed)
+replacement:
+| foreach (MapSrc row in new MapSrc[0])
+
+[ml4-06-model-next-plate]
+file = Assets/WarCore/Content/MapTools/MapDesc.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4DescTests.EachThingAloneMakesVersionTwo("nextPlate"
+expect = WarCore.Tests.Ml4DescTests.ModelDecidesTheSame
+note = model ignores next.plate
+original:
+| return Next.Plate > 1 || Next.Cutout > 1;
+replacement:
+| return Next.Cutout > 1;
+
+[ml4-07-model-next-cutout]
+file = Assets/WarCore/Content/MapTools/MapDesc.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4DescTests.EachThingAloneMakesVersionTwo("nextCutout"
+expect = WarCore.Tests.Ml4DescTests.ModelDecidesTheSame
+note = model ignores next.cutout
+original:
+| return Next.Plate > 1 || Next.Cutout > 1;
+replacement:
+| return Next.Plate > 1;
+
+[ml4-08-tree-plates]
+file = Assets/WarCore/Content/MapTools/MapDescReader.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4DescTests.EachThingAloneMakesVersionTwo("plates"
+note = bare tree misses plates
+original:
+| if (NonEmpty(root.Find("plates")) || NonEmpty(root.Find("cutouts"))) return true;
+replacement:
+| if (NonEmpty(root.Find("cutouts"))) return true;
+
+[ml4-09-tree-cutouts]
+file = Assets/WarCore/Content/MapTools/MapDescReader.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4DescTests.EachThingAloneMakesVersionTwo("cutouts"
+note = bare tree misses cutouts
+original:
+| if (NonEmpty(root.Find("plates")) || NonEmpty(root.Find("cutouts"))) return true;
+replacement:
+| if (NonEmpty(root.Find("plates"))) return true;
+
+[ml4-10-tree-owners]
+file = Assets/WarCore/Content/MapTools/MapDescReader.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4DescTests.EachThingAloneMakesVersionTwo("owners"
+note = bare tree misses 65 owners
+original:
+| owners.Items.Count > MapDesc.MaxOwnersVersion1) return true;
+replacement:
+| owners.Items.Count > MapDesc.MaxOwners) return true;
+
+[ml4-11-tree-stamps]
+file = Assets/WarCore/Content/MapTools/MapDescReader.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4DescTests.EachThingAloneMakesVersionTwo("stamps"
+note = bare tree misses stamps rows
+original:
+| if (HasVersion2Kind(root.Find("stamps")) || HasVersion2Kind(root.Find("removed"))) return true;
+replacement:
+| if (HasVersion2Kind(root.Find("removed"))) return true;
+
+[ml4-12-tree-removed]
+file = Assets/WarCore/Content/MapTools/MapDescReader.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4DescTests.EachThingAloneMakesVersionTwo("removed"
+note = bare tree misses removed rows
+original:
+| if (HasVersion2Kind(root.Find("stamps")) || HasVersion2Kind(root.Find("removed"))) return true;
+replacement:
+| if (HasVersion2Kind(root.Find("stamps"))) return true;
+
+[ml4-13-tree-next-plate]
+file = Assets/WarCore/Content/MapTools/MapDescReader.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4DescTests.EachThingAloneMakesVersionTwo("nextPlate"
+note = bare tree misses next.plate
+original:
+| return NotOne(next.Find("plate")) || NotOne(next.Find("cutout"));
+replacement:
+| return NotOne(next.Find("cutout"));
+
+[ml4-14-tree-next-cutout]
+file = Assets/WarCore/Content/MapTools/MapDescReader.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4DescTests.EachThingAloneMakesVersionTwo("nextCutout"
+note = bare tree misses next.cutout
+original:
+| return NotOne(next.Find("plate")) || NotOne(next.Find("cutout"));
+replacement:
+| return NotOne(next.Find("plate"));
+
+[ml4-15-tree-empty-array]
+file = Assets/WarCore/Content/MapTools/MapDescReader.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4DescTests.VersionTwoUsingNothingIsAVersionError
+note = an empty plates array counts as used
+original:
+| node.Kind == JsonKind.Array && node.Items.Count > 0;
+replacement:
+| node.Kind == JsonKind.Array;
+
+[ml4-16-tree-next-one]
+file = Assets/WarCore/Content/MapTools/MapDescReader.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4DescTests.VersionTwoUsingNothingIsAVersionError
+note = next.plate 1 counts as used
+original:
+| private static bool NotOne(JsonNode node) => node != null && !(node.Kind == JsonKind.Number && node.Text == "1");
+replacement:
+| private static bool NotOne(JsonNode node) => node != null;
+
+[ml4-17-floordiv]
+file = Assets/WarCore/Content/PlateSpan.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4DescTests.TopPointsOnTheGridLines
+note = division toward zero
+original:
+| return (a % b != 0 && (a < 0) != (b < 0)) ? q - 1 : q;
+replacement:
+| return q;
+
+[ml4-18-thick-min]
+file = Assets/WarCore/Content/MapTools/MapDescPlates.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4DescErrorTests.SingleValueRangesArePass1
+note = thickness 32767 accepted
+original:
+| WcMapPlate.MinThickRaw, HeightLimit, PlateCode
+replacement:
+| WcMapPlate.MinThickRaw - 1, HeightLimit, PlateCode
+
+[ml4-19-floor-inclusive]
+file = Assets/WarCore/Content/MapTools/MapDescPlates.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4DescErrorTests.TopsStayBetweenFloorAndCeiling
+note = a top at floorRaw rejected
+original:
+| if (raw < d.FloorRaw || raw > d.CeilingRaw)
+replacement:
+| if (raw <= d.FloorRaw || raw > d.CeilingRaw)
+
+[ml4-20-floor-minus-one]
+file = Assets/WarCore/Content/MapTools/MapDescPlates.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4DescErrorTests.TopsStayBetweenFloorAndCeiling
+note = a top 1 raw under floorRaw accepted
+original:
+| if (raw < d.FloorRaw || raw > d.CeilingRaw)
+replacement:
+| if (raw < d.FloorRaw - 1 || raw > d.CeilingRaw)
+
+[ml4-21-ceiling-inclusive]
+file = Assets/WarCore/Content/MapTools/MapDescPlates.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4DescErrorTests.TopsStayBetweenFloorAndCeiling
+note = a top at ceilingRaw rejected
+original:
+| if (raw < d.FloorRaw || raw > d.CeilingRaw)
+replacement:
+| if (raw < d.FloorRaw || raw >= d.CeilingRaw)
+
+[ml4-22-toraw-unchecked]
+file = Assets/WarCore/Content/MapTools/MapDescPlates.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4DescErrorTests.TopsStayBetweenFloorAndCeiling
+note = toRaw not range-checked
+original:
+|                     Level(d, plate.Slope.ToRaw, slope.Find("toRaw"));
+|
+replacement:
+|
+
+[ml4-23-rect-edge]
+file = Assets/WarCore/Content/MapTools/MapDescPlates.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4DescErrorTests.RectanglesStayOnTheMap
+note = a plate ending on the map edge rejected
+original:
+| if ((long)plate.Cell.X + plate.Size.X > w ||
+replacement:
+| if ((long)plate.Cell.X + plate.Size.X >= w ||
+
+[ml4-24-rect-depth]
+file = Assets/WarCore/Content/MapTools/MapDescPlates.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4DescErrorTests.RectanglesStayOnTheMap
+note = a plate 1 cell past the far z edge accepted
+original:
+| (long)plate.Cell.Z + plate.Size.Z > depth)
+replacement:
+| (long)plate.Cell.Z + plate.Size.Z > depth + 1)
+
+[ml4-25-cutout-plate-unchecked]
+file = Assets/WarCore/Content/MapTools/MapDescPlates.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4DescErrorTests.CutoutPointsAtAPlate
+note = a cutout of a missing plate accepted
+original:
+| if (!plateIds.Contains(cutout.Plate)) throw
+replacement:
+| if (false) throw
+
+[ml4-26-surface-unchecked]
+file = Assets/WarCore/Content/MapTools/MapDescPlates.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4DescErrorTests.SurfaceMustBeInTheTable
+note = a surface not in the table accepted
+original:
+| if (plate.Surface != null && (d.Surfaces == null || !Contains(d.Surfaces.Names, plate.Surface)))
+replacement:
+| if (plate.Surface != null && d.Surfaces == null)
+
+[ml4-27-entries-4097]
+file = Assets/WarCore/Content/MapTools/MapDescPlates.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4DescErrorTests.AtMost4096Entries
+expect = WarCore.Tests.Ml4EditTests.The4097thPlateIsRefused
+expect = WarCore.Tests.Ml4EditTests.The4097thCutoutIsRefused
+note = 4097 plates or cutouts accepted
+original:
+| internal const int MaxPlateEntries = 4096;
+replacement:
+| internal const int MaxPlateEntries = 4097;
+
+[ml4-28-owners-v2-4096]
+file = Assets/WarCore/Content/MapTools/MapDescReader.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4EditTests.The4097thOwnerIsRefused
+note = version 2 holds only 4095 owners
+original:
+| owners.Length > (Version2 ? MapDesc.MaxOwners : MapDesc.MaxOwnersVersion1)
+replacement:
+| owners.Length > (Version2 ? MapDesc.MaxOwners - 1 : MapDesc.MaxOwnersVersion1)
+
+[ml4-29-owners-v1-65]
+file = Assets/WarCore/Content/MapTools/MapDescReader.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4DescTests.EachThingIsAnErrorInVersionOne("owners"
+note = version 1 holds 65 owners
+original:
+| owners.Length > (Version2 ? MapDesc.MaxOwners : MapDesc.MaxOwnersVersion1)
+replacement:
+| owners.Length > (Version2 ? MapDesc.MaxOwners : MapDesc.MaxOwnersVersion1 + 1)
+
+[ml4-30-headroom-exclusive]
+file = Assets/WarCore/Content/PlateSpan.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4RuleTests.PlateBottomTwoMetresUpLeavesTheGroundOpen
+note = plate bottom 1 raw under 2 m leaves the ground open
+original:
+| if (WallSpan.BlocksWalk(topMin - p.Thick, topMax, low, high)) blocked[z * width + x] = true;
+replacement:
+| if (WallSpan.BlocksWalk(topMin - p.Thick + 1, topMax, low, high)) blocked[z * width + x] = true;
+
+[ml4-31-headroom-cell-gmax]
+file = Assets/WarCore/Content/PlateSpan.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4RuleTests.HeadroomIsJudgedOnEachCellsHighestCorner
+note = headroom from the lowest ground corner
+original:
+|                         WallSpan.CellGround(ground, x, z, out long low, out long high);
+|                         if (WallSpan.BlocksWalk(topMin - p.Thick, topMax, low, high))
+replacement:
+|                         WallSpan.CellGround(ground, x, z, out long low, out long high);
+|                         high = low;
+|                         if (WallSpan.BlocksWalk(topMin - p.Thick, topMax, low, high))
+
+[ml4-32-headroom-whole-plate]
+file = Assets/WarCore/Content/PlateSpan.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4RuleTests.HeadroomUnderASlopedPlateIsPerCell
+note = headroom from the whole plate's lowest top
+original:
+| if (WallSpan.BlocksWalk(topMin - p.Thick, topMax, low, high)) blocked[z * width + x] = true;
+replacement:
+| if (WallSpan.BlocksWalk(Math.Min(p.From, p.To) - p.Thick, topMax, low, high)) blocked[z * width + x] = true;
+
+[ml4-33-walk-topmin-only]
+file = Assets/WarCore/Content/PlateSpan.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4RuleTests.SlopedPlateHeadroomUsesTheHighestCorner
+note = walkable band from the lowest top corner only
+original:
+| if (WallSpan.BlocksWalk(w.Bottom, w.Top, topMin, topMax)) walk[index] = false;
+replacement:
+| if (WallSpan.BlocksWalk(w.Bottom, w.Top, topMin, topMin)) walk[index] = false;
+
+[ml4-34-walk-headroom-inclusive]
+file = Assets/WarCore/Content/WallSpan.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4RuleTests.RaisedWallTwoMetresOverThePlateLeavesItWalkable
+expect = WarCore.Tests.Ml4RuleTests.PlateBottomTwoMetresUpLeavesTheGroundOpen
+note = raised wall exactly 2 m over the plate blocks
+original:
+| bottomRaw < groundMaxRaw + ClearanceRaw
+replacement:
+| bottomRaw <= groundMaxRaw + ClearanceRaw
+
+[ml4-35-below-half-metre]
+file = Assets/WarCore/Content/WallSpan.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4RuleTests.WallUnderThePlateDoesNotBlockIt
+note = band bottom 0.5 m: the wall under the plate blocks it
+original:
+| BelowRaw = SimFix.Scale / 4;
+replacement:
+| BelowRaw = SimFix.Scale / 2;
+
+[ml4-36-bake-wall-absolute]
+file = Assets/WarCore/Content/MapTools/MapBake.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4RuleTests.RaisedWallTwoMetresOverThePlateLeavesItWalkable(-65536)
+note = bake: raised wall bottoms absolute in the walkable rule
+original:
+| walls.Add(new WallGeom(w.Id, w.Cell.X, w.Cell.Z, w.Cell.X + w.Size.X, w.Cell.Z + w.Size.Z, bottom, bottom + w.HeightRaw));
+replacement:
+| walls.Add(new WallGeom(w.Id, w.Cell.X, w.Cell.Z, w.Cell.X + w.Size.X, w.Cell.Z + w.Size.Z, bottom + d.FloorRaw, bottom + d.FloorRaw + w.HeightRaw));
+
+[ml4-37-bake-plate-local]
+file = Assets/WarCore/Content/MapTools/MapBake.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4RuleTests.PlateBottomTwoMetresUpLeavesTheGroundOpen(-65536)
+note = bake: plate heights taken as local
+original:
+| long from = (p.YRaw ?? p.Slope.FromRaw) - d.FloorRaw, to = (p.YRaw ?? p.Slope.ToRaw) - d.FloorRaw;
+replacement:
+| long from = (p.YRaw ?? p.Slope.FromRaw), to = (p.YRaw ?? p.Slope.ToRaw);
+
+[ml4-38-validate-plate-absolute]
+file = Assets/WarCore/Content/WcMapValidation.Plates.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4RuleTests.PlateBottomTwoMetresUpLeavesTheGroundOpen(-65536)
+expect = WarCore.Tests.Ml4RuleTests.BuriedOnANegativeFloor
+note = .wcmap rules: plate heights not made local
+original:
+| p.FromRaw - map.Min.Y.Raw, p.ToRaw - map.Min.Y.Raw,
+replacement:
+| p.FromRaw, p.ToRaw,
+
+[ml4-39-buried-far-corner]
+file = Assets/WarCore/Content/PlateSpan.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4RuleTests.BuriedIsCornerWise
+note = buried ignores the far corner
+original:
+|
+|                         || p.Top(i, j + 1) < ground(x, z + 1) || p.Top(i + 1, j + 1) < ground(x + 1, z + 1))
+replacement:
+|
+|                         || p.Top(i, j + 1) < ground(x, z + 1))
+
+[ml4-40-buried-inclusive]
+file = Assets/WarCore/Content/PlateSpan.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4RuleTests.BuriedOnANegativeFloor
+note = a corner on the ground counts as buried
+original:
+| if (p.Top(i, j) < ground(x, z) ||
+replacement:
+| if (p.Top(i, j) <= ground(x, z) ||
+
+[ml4-41-stack-inclusive]
+file = Assets/WarCore/Content/PlateSpan.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4RuleTests.StackGapIsTwoMetresInclusive
+note = a gap of exactly 2 m is a stack
+original:
+| if (tops[k + 1].BottomMin - tops[k].Top >= WallSpan.ClearanceRaw) continue;
+replacement:
+| if (tops[k + 1].BottomMin - tops[k].Top > WallSpan.ClearanceRaw) continue;
+
+[ml4-42-stack-skip-lowest]
+file = Assets/WarCore/Content/PlateSpan.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4RuleTests.ThreeInAStackCheckNeighbours
+expect = WarCore.Tests.Ml4RuleTests.StackGapIsTwoMetresInclusive
+expect = WarCore.Tests.Ml4GateTests.EachCounterExampleReportsOneProblem
+note = the lowest neighbour pair is not checked
+original:
+| for (int k = 0; k + 1 < tops.Count; k++)
+replacement:
+| for (int k = 1; k + 1 < tops.Count; k++)
+
+[ml4-43-stack-sort-by-id]
+file = Assets/WarCore/Content/PlateSpan.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4RuleTests.ThreeInAStackCheckNeighbours
+note = plates in a cell sorted by id, not by top
+original:
+| tops.Sort((a, b) => a.Top != b.Top ? a.Top.CompareTo(b.Top) : a.Id.CompareTo(b.Id));
+replacement:
+| tops.Sort((a, b) => a.Id.CompareTo(b.Id));
+
+[ml4-44-stack-equal-tops]
+file = Assets/WarCore/Content/PlateSpan.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4RuleTests.EqualTopsAreAStack
+note = equal tops skipped
+original:
+| if (tops[k + 1].BottomMin - tops[k].Top >= WallSpan.ClearanceRaw) continue;
+replacement:
+| if (tops[k + 1].Top == tops[k].Top || tops[k + 1].BottomMin - tops[k].Top >= WallSpan.ClearanceRaw) continue;
+
+[ml4-45-stack-every-cell]
+file = Assets/WarCore/Content/PlateSpan.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4GateTests.EachCounterExampleReportsOneProblem
+note = a pair reported at every shared cell
+original:
+| if (seen.Add((a, b))) found.Add(new Conflict(a, b, x, z));
+replacement:
+| found.Add(new Conflict(a, b, x, z));
+
+[ml4-46-wall-top-closed]
+file = Assets/WarCore/Content/PlateSpan.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4RuleTests.WallThroughPlateEdges
+note = wall top = plate bottom is through
+original:
+| if (w.Top > topMin - p.Thick && w.Bottom < topMax)
+replacement:
+| if (w.Top >= topMin - p.Thick && w.Bottom < topMax)
+
+[ml4-47-wall-bottom-closed]
+file = Assets/WarCore/Content/PlateSpan.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4RuleTests.WallThroughPlateEdges
+note = wall bottom = plate top is through
+original:
+| if (w.Top > topMin - p.Thick && w.Bottom < topMax)
+replacement:
+| if (w.Top > topMin - p.Thick && w.Bottom <= topMax)
+
+[ml4-48-wall-cutout-checked]
+file = Assets/WarCore/Content/PlateSpan.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4RuleTests.WallInACutoutIsLegal
+note = cutout cells checked for walls
+original:
+|                             if (!p.SolidAt(x, z)) continue;
+|                             p.CellTop(x, z, out long topMin, out long topMax);
+|                             if (w.Top > topMin - p.Thick
+replacement:
+|                             p.CellTop(x, z, out long topMin, out long topMax);
+|                             if (w.Top > topMin - p.Thick
+
+[ml4-49-wall-every-cell]
+file = Assets/WarCore/Content/PlateSpan.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4GateTests.EachCounterExampleReportsOneProblem
+note = a (wall, plate) pair reported at every cell
+original:
+| { found.Add(new Conflict(wi, pi, x, z)); hit = true; }
+replacement:
+| { found.Add(new Conflict(wi, pi, x, z)); }
+
+[ml4-50-wcmap-slope-3-2]
+file = Assets/WarCore/Content/WcMapValidation.Plates.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4RuleTests.PlateSlopeTwoToOne
+note = .wcmap plate slope limit 3/2
+original:
+| Require(!PlateSpan.Steep(top, plates[n], HeightField.MaxSlopeNumerator, HeightField.MaxSlopeDenominator, out _, out _), "PLATE_SLOPE");
+replacement:
+| Require(!PlateSpan.Steep(top, plates[n], 3, 2, out _, out _), "PLATE_SLOPE");
+
+[ml4-51-gate-no-pack-slope]
+file = Assets/WarCore/Content/MapTools/MapGate.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4GateTests.PlateSlopeFollowsThePack
+note = gate ignores the pack slope
+original:
+| if (top.CellWithinSlope(i, j, num, den) && top.CellWithinSlope(i, j, PlateSlopeNum, PlateSlopeDen)) continue;
+replacement:
+| if (top.CellWithinSlope(i, j, PlateSlopeNum, PlateSlopeDen)) continue;
+
+[ml4-52-gate-no-cap]
+file = Assets/WarCore/Content/MapTools/MapGate.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4GateTests.PlateSlopeIsCappedAtFiveThirds
+expect = WarCore.Tests.Ml4GateTests.EachCounterExampleReportsOneProblem
+note = gate without the 5/3 cap
+original:
+| if (top.CellWithinSlope(i, j, num, den) && top.CellWithinSlope(i, j, PlateSlopeNum, PlateSlopeDen)) continue;
+replacement:
+| if (top.CellWithinSlope(i, j, num, den)) continue;
+
+[ml4-53-gate-cap-7-4]
+file = Assets/WarCore/Content/MapTools/MapGate.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4GateTests.PlateSlopeIsCappedAtFiveThirds
+note = gate cap 7/4
+original:
+| PlateSlopeNum = 5, PlateSlopeDen = 3;
+replacement:
+| PlateSlopeNum = 7, PlateSlopeDen = 4;
+
+[ml4-54-gate-drop-one-of-pair]
+file = Assets/WarCore/Content/MapTools/MapGate.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4GateTests.StackPairsAreReportedOnceAndTheRestBakes
+note = gate keeps one plate of each stack pair
+original:
+| dropped.Add(above[c.A].Id); dropped.Add(above[c.B].Id);
+replacement:
+| dropped.Add(above[c.A].Id);
+
+[ml4-55-per-cell-64]
+file = Assets/WarCore/Content/PlateSpan.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4RuleTests.SixtyFourPlatesPerCell
+note = 64 plates in a cell are crowded
+original:
+| if (here.Count > MaxPerCell && crowdedX < 0)
+replacement:
+| if (here.Count >= MaxPerCell && crowdedX < 0)
+
+[ml4-56-solid-cells]
+file = Assets/WarCore/Content/WcMapValidation.Plates.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4RuleTests.SolidCellsUpToTheMapCells
+note = solid cells must stay under the map cells
+original:
+| Require(solidCells <= cells, "CAPACITY");
+replacement:
+| Require(solidCells < cells, "CAPACITY");
+
+[ml4-57-wcmap-surface]
+file = Assets/WarCore/Content/WcMapValidation.Plates.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4WcMapTests.SurfaceIndexNeedsATable
+note = surface index = names count accepted
+original:
+| p.Surface < map.SurfaceNames.Count), "PLATE_SURFACE");
+replacement:
+| p.Surface <= map.SurfaceNames.Count), "PLATE_SURFACE");
+
+[ml4-58-wcmap-thick]
+file = Assets/WarCore/Content/WcMapValidation.Plates.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4WcMapTests.GeometryFields
+note = .wcmap thickness 32767 accepted
+original:
+| p.ThickRaw >= WcMapPlate.MinThickRaw &&
+replacement:
+| p.ThickRaw >= WcMapPlate.MinThickRaw - 1 &&
+
+[ml4-59-wcmap-bounds-min]
+file = Assets/WarCore/Content/WcMapValidation.Plates.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4WcMapTests.HeightsOutsideTheMapAreBounds
+note = .wcmap top 1 raw under Min.Y accepted
+original:
+| h >= map.Min.Y.Raw && h <= map.Max.Y.Raw, "BOUNDS");
+replacement:
+| h >= map.Min.Y.Raw - 1 && h <= map.Max.Y.Raw, "BOUNDS");
+
+[ml4-60-order-fields-heights]
+file = Assets/WarCore/Content/WcMapValidation.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4WcMapTests.FieldsBeforeTheHeightTable
+note = height table before section 12 fields
+original:
+|             List<PlateGeom> plates = map.Plates.Count > 0 ? PlateFields(map, cells) : null;
+|             if (raised != null || plates != null) ValidateHeightField(map);
+replacement:
+|             if (raised != null || map.Plates.Count > 0) ValidateHeightField(map);
+|             List<PlateGeom> plates = map.Plates.Count > 0 ? PlateFields(map, cells) : null;
+
+[ml4-61-order-stack-buried]
+file = Assets/WarCore/Content/WcMapValidation.Plates.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4WcMapTests.BuriedBeforeStack
+note = stack before buried
+original:
+|             foreach (PlateGeom p in plates) Require(PlateSpan.AboveGround(p, point, out _, out _), "PLATE_BURIED");
+|             List<PlateSpan.Conflict> stacks = PlateSpan.Stacks((int)map.Width, (int)map.Depth, plates, out int crowdedX, out _);
+|             Require(crowdedX < 0, "CAPACITY");
+|             Require(stacks.Count == 0, "PLATE_STACK");
+replacement:
+|             List<PlateSpan.Conflict> stacks = PlateSpan.Stacks((int)map.Width, (int)map.Depth, plates, out int crowdedX, out _);
+|             Require(crowdedX < 0, "CAPACITY");
+|             Require(stacks.Count == 0, "PLATE_STACK");
+|             foreach (PlateGeom p in plates) Require(PlateSpan.AboveGround(p, point, out _, out _), "PLATE_BURIED");
+
+[ml4-62-order-wall-stack]
+file = Assets/WarCore/Content/WcMapValidation.Plates.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4WcMapTests.StackBeforeWallThrough
+note = wall-through before stack
+original:
+|             Require(stacks.Count == 0, "PLATE_STACK");
+|             List<WallGeom> walls = Walls(map);
+|             Require(PlateSpan.WallsThrough(walls, plates).Count == 0, "WALL_PLATE");
+replacement:
+|             List<WallGeom> walls = Walls(map);
+|             Require(PlateSpan.WallsThrough(walls, plates).Count == 0, "WALL_PLATE");
+|             Require(stacks.Count == 0, "PLATE_STACK");
+
+[ml4-63-writer-always-v3]
+file = Assets/WarCore/Content/WcMapWriter.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4DescTests.WcMapWithoutPlatesIsVersionTwo
+expect = WarCore.Tests.Ml4LegacyBytesTests
+note = .wcmap version 3 without plates
+original:
+| bool plates = map.Plates.Count > 0;
+replacement:
+| bool plates = true;
+
+[ml4-64-reader-v3-empty]
+file = Assets/WarCore/Content/WcMapReader.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4WcMapTests.VersionThreeWithoutPlatesIsAVersionError
+note = version 3 with no plates accepted
+original:
+|             Require(count > 0, "VERSION");
+|
+replacement:
+|
+
+[ml4-65-reader-rect-late]
+file = Assets/WarCore/Content/WcMapReader.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4WcMapTests.DecodeChecksCountAndRectangleBeforeTheMasks
+note = rectangle not checked before the masks
+original:
+|                 Require(w >= 1 && d >= 1 && x + w <= width && z + d <= depth, "PLATE_GEOMETRY");
+|
+replacement:
+|
+
+[ml4-66-reader-count-late]
+file = Assets/WarCore/Content/WcMapReader.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4WcMapTests.DecodeChecksCountAndRectangleBeforeTheMasks
+note = plate count not checked before reading
+original:
+|             Require(count <= PlateSpan.MaxPlates, "CAPACITY");
+|
+replacement:
+|
+
+[ml4-67-reader-section-count]
+file = Assets/WarCore/Content/WcMapReader.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4WcMapTests.SectionCountFollowsTheVersion
+expect = WarCore.Tests.Ml4LegacyBytesTests
+note = section count 12 for every version
+original:
+| ushort count = version == WcMapWriter.PlateVersion ? WcMapWriter.PlateSectionCount : WcMapWriter.SectionCount;
+replacement:
+| ushort count = WcMapWriter.PlateSectionCount;
+
+[ml4-68-stamp-owner-64-late]
+file = Assets/WarCore/Content/MapTools/MapEditStamp.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4EditTests.OwnerPastSixtyFourCannotWriteGrids
+note = owner number 64 or more writes grids without refusing
+original:
+| if (k >= MapEditDraft.MaxOwners && (plan.Heights.Count > 0 || plan.Surfaces.Count > 0))
+replacement:
+| if (false && (plan.Heights.Count > 0 || plan.Surfaces.Count > 0))
+
+[ml4-69-stamp-owners-4096]
+file = Assets/WarCore/Content/MapTools/MapEditStamp.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4EditTests.The4097thOwnerIsRefused
+note = a 4097th owner accepted
+original:
+| if (draft.Owners.Count >= MapDesc.MaxOwners) throw
+replacement:
+| if (draft.Owners.Count >= MapDesc.MaxOwners + 1) throw
+
+[ml4-70-stamp-owners-64]
+file = Assets/WarCore/Content/MapTools/MapEditStamp.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4EditTests.SixtyFifthOwnerForAnEntriesOnlyStamp
+expect = WarCore.Tests.Ml4EditTests.OwnerPastSixtyFourCannotWriteGrids
+note = owner table capped at 64 again
+original:
+| if (draft.Owners.Count >= MapDesc.MaxOwners) throw
+replacement:
+| if (draft.Owners.Count >= MapEditDraft.MaxOwners) throw
+
+[ml4-71-edit-plates-4097]
+file = Assets/WarCore/Content/MapTools/MapEdit.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4EditTests.The4097thPlateIsRefused
+note = editor accepts a 4097th plate
+original:
+| if (draft.Plates.Count > MapDescReader.MaxPlateEntries ||
+replacement:
+| if (draft.Plates.Count > MapDescReader.MaxPlateEntries + 1 ||
+
+[ml4-72-edit-cutouts-4097]
+file = Assets/WarCore/Content/MapTools/MapEdit.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4EditTests.The4097thCutoutIsRefused
+note = editor accepts a 4097th cutout
+original:
+| || draft.Cutouts.Count > MapDescReader.MaxPlateEntries
+replacement:
+| || draft.Cutouts.Count > MapDescReader.MaxPlateEntries + 1
+
+[ml4-73-stamp-cutout-missing]
+file = Assets/WarCore/Content/MapTools/MapEditStamp.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4EditTests.StampCutoutOfAMissingPlateIsSkipped
+note = a stamped cutout of a missing plate is placed
+original:
+| if (draft.Plates.Exists(p => p.Id == entry.Template.Plate)) cutouts.Add(entry);
+replacement:
+| cutouts.Add(entry);
+
+[ml4-74-edit-remove-plate]
+file = Assets/WarCore/Content/MapTools/MapEdit.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4EditTests.HandAddReplaceRemove
+note = a plate with cutouts can be removed
+original:
+| if (cutout.Plate == id) throw new ArgumentException
+replacement:
+| if (false) throw new ArgumentException
+
+[ml4-75-edit-cutout-plate]
+file = Assets/WarCore/Content/MapTools/MapEdit.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4EditTests.HandAddReplaceRemove
+note = a cutout of a missing plate accepted by hand
+original:
+| if (plate.Id == cutout.Plate) return cutout;
+replacement:
+| return cutout;
+
+[ml4-76-runtime-accepts]
+file = Assets/WarCore/Presentation/Bridge/WorldBuilder.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4GateTests.RuntimeRefusesPlates
+note = the runtime takes a map with plates
+original:
+| if (map != null && map.Plates.Count > 0)
+replacement:
+| if (map != null && map.Plates.Count > 3)

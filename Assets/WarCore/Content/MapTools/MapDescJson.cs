@@ -117,6 +117,18 @@ namespace WarCore.Content.MapTools
                 root.Add("heights", Many(d.Heights, row => Many(row, h => Num(h))));
             if (d.Surfaces != null)
                 root.Add("surfaces", new Obj().Add("names", Strings(d.Surfaces.Names, false)).Add("rows", Strings(d.Surfaces.Rows, true)));
+            if (d.Plates.Count > 0)
+                root.Add("plates", Many(d.Plates, p => new Obj()
+                    .Add("id", Num(p.Id)).Add("cell", Pair(p.Cell.X, p.Cell.Z)).Add("size", Pair(p.Size.X, p.Size.Z))
+                    .Add("yRaw", p.YRaw.HasValue ? Num(p.YRaw.Value) : null)
+                    .Add("slope", p.Slope == null ? null
+                        : new Obj().Add("axis", Str(p.Slope.Axis)).Add("fromRaw", Num(p.Slope.FromRaw)).Add("toRaw", Num(p.Slope.ToRaw)))
+                    .Add("thickRaw", Num(p.ThickRaw)).Add("surface", p.Surface == null ? null : Str(p.Surface))
+                    .Add("owner", OptNum(p.Owner)).Add("src", Src(p.Src))));
+            if (d.Cutouts.Count > 0)
+                root.Add("cutouts", Many(d.Cutouts, c => new Obj()
+                    .Add("id", Num(c.Id)).Add("plate", Num(c.Plate)).Add("cell", Pair(c.Cell.X, c.Cell.Z)).Add("size", Pair(c.Size.X, c.Size.Z))
+                    .Add("owner", OptNum(c.Owner)).Add("src", Src(c.Src))));
             root.Add("walls", Many(d.Walls, w => new Obj()
                 .Add("id", Num(w.Id)).Add("kind", Str(w.Kind)).Add("layer", Str(w.Layer))
                 .Add("cell", Pair(w.Cell.X, w.Cell.Z)).Add("size", Pair(w.Size.X, w.Size.Z)).Add("heightRaw", Num(w.HeightRaw))
@@ -140,7 +152,8 @@ namespace WarCore.Content.MapTools
                 .Add("instance", Str(s.Instance)).Add("kind", Str(s.Kind)).Add("src", Num(s.Src)).Add("id", Num(s.Id))));
             root.Add("removed", Many(d.Removed, r => (Out)Src(r)));
             root.Add("next", new Obj().Add("wall", Num(d.Next.Wall)).Add("point", Num(d.Next.Point))
-                .Add("base", Num(d.Next.Base)).Add("unit", Num(d.Next.Unit)));
+                .Add("base", Num(d.Next.Base)).Add("unit", Num(d.Next.Unit))
+                .Add("plate", d.Next.Plate > 1 ? Num(d.Next.Plate) : null).Add("cutout", d.Next.Cutout > 1 ? Num(d.Next.Cutout) : null));
             return root;
         }
 
