@@ -49,6 +49,7 @@ With a GitHub tool that wraps it (`actions_run_trigger`, method `run_workflow`):
 
 Find the result with `actions_list` (`list_workflow_runs`, resource `open-pr.yml`, event `workflow_dispatch`); the
 run summary has the pull request number. A dispatch returns no run id, so pick the newest run.
+A dry run also makes read-only `gh` calls, so it needs `OPEN_PR_TOKEN` too.
 
 ## One-time setup (repository owner)
 
