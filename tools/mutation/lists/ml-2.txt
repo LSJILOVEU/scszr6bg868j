@@ -1,0 +1,137 @@
+# ML-2: the route search with a cost limit (GridPathfinder.FindWithin) and the read-only port IMoveOrders.TryRouteCost.
+# Filters run the ML-2 tests only; Find itself is held by the locked path suites listed in the PR.
+# Not in the list: the cut placed before the stale-entry skip instead of after it (an equivalent mutation: a stale entry
+# leaves the heap after its fresh twin, so every entry still in the heap has F at least as large).
+
+[ml-2-01-cut-strict]
+file = Assets/WarCore/Sim/GridPathfinder.cs
+filter = FullyQualifiedName~WarCore.Tests.Ml2RouteLimitTests
+expect = WarCore.Tests.Ml2RouteLimitTests.ReuseLockQueries_EqualFindAndHoldTheLimitEdge
+expect = WarCore.Tests.Ml2RouteLimitTests.BlockedStartIsRejectedAtLimitZero_BlockedTargetIsUnreachableAtNoLimit
+note = a route costing exactly the limit is given up
+original:
+|                 if (current.F > limitCost) return GridPathStatus.Unreachable;
+replacement:
+|                 if (current.F >= limitCost) return GridPathStatus.Unreachable;
+
+[ml-2-02-cut-missing]
+file = Assets/WarCore/Sim/GridPathfinder.cs
+filter = FullyQualifiedName~WarCore.Tests.Ml2RouteLimitTests
+expect = WarCore.Tests.Ml2RouteLimitTests.ReuseLockQueries_EqualFindAndHoldTheLimitEdge
+expect = WarCore.Tests.Ml2RouteLimitTests.SealedTargetOn512Grid_ThirtyMetreLimitExpandsAtMostTheSquareAroundTheTarget
+note = the limit is ignored: a route dearer than the limit is found and the search is not cut
+original:
+|                 if (current.F > limitCost) return GridPathStatus.Unreachable;
+replacement:
+|
+
+[ml-2-03-cut-on-g]
+file = Assets/WarCore/Sim/GridPathfinder.cs
+filter = FullyQualifiedName~WarCore.Tests.Ml2RouteLimitTests
+expect = WarCore.Tests.Ml2RouteLimitTests.SealedTargetOn512Grid_ThirtyMetreLimitExpandsAtMostTheSquareAroundTheTarget
+note = the cut compares the cost so far instead of the estimate, so the search runs far past the limit
+original:
+|                 if (current.F > limitCost) return GridPathStatus.Unreachable;
+replacement:
+|                 if (current.G > limitCost) return GridPathStatus.Unreachable;
+
+[ml-2-04-limit-before-start]
+file = Assets/WarCore/Sim/GridPathfinder.cs
+filter = FullyQualifiedName~WarCore.Tests.Ml2RouteLimitTests
+expect = WarCore.Tests.Ml2RouteLimitTests.BlockedStartIsRejectedAtLimitZero_BlockedTargetIsUnreachableAtNoLimit
+note = a small limit answers before the blocked start is rejected
+original:
+|             pathCount = 0; TotalCostWide = 0; heapCount = 0; Expanded = 0;
+replacement:
+|             pathCount = 0; TotalCostWide = 0; heapCount = 0; Expanded = 0;
+|             if (limitCost < 1000) return GridPathStatus.Unreachable;
+
+[ml-2-05-blocked-target]
+file = Assets/WarCore/Sim/GridPathfinder.cs
+filter = FullyQualifiedName~WarCore.Tests.Ml2RouteLimitTests
+expect = WarCore.Tests.Ml2RouteLimitTests.BlockedStartIsRejectedAtLimitZero_BlockedTargetIsUnreachableAtNoLimit
+expect = WarCore.Tests.Ml2RouteLimitTests.M3FixedMaps_EqualFindAndHoldTheLimitEdge
+note = a walled-in target is rejected instead of unreachable
+original:
+|                 return GridPathStatus.Unreachable;
+|             generation = unchecked(generation + 1);
+replacement:
+|                 return GridPathStatus.Rejected;
+|             generation = unchecked(generation + 1);
+
+[ml-2-06-expanded-counts-cut]
+file = Assets/WarCore/Sim/GridPathfinder.cs
+filter = FullyQualifiedName~WarCore.Tests.Ml2RouteLimitTests
+expect = WarCore.Tests.Ml2RouteLimitTests.SealedTargetOn512Grid_ThirtyMetreLimitExpandsAtMostTheSquareAroundTheTarget
+note = the expansion count includes the entry that ended the search
+original:
+|                 if (current.F > limitCost) return GridPathStatus.Unreachable;
+|                 Expanded++;
+replacement:
+|                 Expanded++;
+|                 if (current.F > limitCost) return GridPathStatus.Unreachable;
+
+[ml-2-07-mover-no-nav]
+file = Assets/WarCore/Interim/InterimLocomotion.Path.cs
+filter = FullyQualifiedName~WarCore.Tests.Ml2RouteLimitTests
+expect = WarCore.Tests.Ml2RouteLimitTests.Port_WithoutNavigationAnswersFalse
+note = a mover without navigation answers true
+original:
+|             if (pathfinder == null || pathfinder.FindWithin(from, to, limitCost) != GridPathStatus.Found) return false;
+replacement:
+|             if (pathfinder == null) return true;
+|             if (pathfinder.FindWithin(from, to, limitCost) != GridPathStatus.Found) return false;
+
+[ml-2-08-mover-ignores-limit]
+file = Assets/WarCore/Interim/InterimLocomotion.Path.cs
+filter = FullyQualifiedName~WarCore.Tests.Ml2RouteLimitTests
+expect = WarCore.Tests.Ml2RouteLimitTests.Port_ForwardsTheLimitAsIs
+expect = WarCore.Tests.Ml2RouteLimitTests.Port_TenCallsBeforeAndAfterTheAi_EveryTickHashUnchanged
+note = the mover searches without the limit
+original:
+|             if (pathfinder == null || pathfinder.FindWithin(from, to, limitCost) != GridPathStatus.Found) return false;
+replacement:
+|             if (pathfinder == null || pathfinder.Find(from, to) != GridPathStatus.Found) return false;
+
+[ml-2-09-mover-cost]
+file = Assets/WarCore/Interim/InterimLocomotion.Path.cs
+filter = FullyQualifiedName~WarCore.Tests.Ml2RouteLimitTests
+expect = WarCore.Tests.Ml2RouteLimitTests.Port_ForwardsTheLimitAsIs
+expect = WarCore.Tests.Ml2RouteLimitTests.Port_TenCallsBeforeAndAfterTheAi_EveryTickHashUnchanged
+note = the answered cost is rounded to whole cells
+original:
+|             cost = pathfinder.TotalCostWide;
+replacement:
+|             cost = pathfinder.TotalCostWide / 1000 * 1000;
+
+[ml-2-10-bridge-converts-limit]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.Ml2RouteLimitTests
+expect = WarCore.Tests.Ml2RouteLimitTests.Port_ForwardsTheLimitAsIs
+expect = WarCore.Tests.Ml2RouteLimitTests.Port_TenCallsBeforeAndAfterTheAi_EveryTickHashUnchanged
+note = the bridge loosens the limit by one before forwarding it
+original:
+|  => locomotion.TryRouteCost(from, to, limitCost, out cost);
+replacement:
+|  => locomotion.TryRouteCost(from, to, limitCost == long.MaxValue ? limitCost : limitCost + 1, out cost);
+
+[ml-2-11-bridge-default]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.Ml2RouteLimitTests
+expect = WarCore.Tests.Ml2RouteLimitTests.Port_ForwardsTheLimitAsIs
+expect = WarCore.Tests.Ml2RouteLimitTests.Port_TenCallsBeforeAndAfterTheAi_EveryTickHashUnchanged
+note = the bridge does not implement the port and falls back to the default answer
+original:
+|         public bool TryRouteCost(SimVec3 from, SimVec3 to, long limitCost, out long cost) => locomotion.TryRouteCost(from, to, limitCost, out cost);
+replacement:
+|
+
+[ml-2-12-default-true]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~WarCore.Tests.Ml2RouteLimitTests
+expect = WarCore.Tests.Ml2RouteLimitTests.DefaultPort_AnswersFalse
+note = the default port answers true
+original:
+|         bool TryRouteCost(SimVec3 from, SimVec3 to, long limitCost, out long cost) { cost = 0; return false; }
+replacement:
+|         bool TryRouteCost(SimVec3 from, SimVec3 to, long limitCost, out long cost) { cost = 0; return true; }
