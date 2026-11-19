@@ -148,6 +148,16 @@ namespace WarCore.Tests
         }
 
         // 2k: the public queries on the 2a fixture, and a cutout cell on its own fixture.
+        // A plate two cells deep: the cell right of its first row is off the plate, not the start of its second row.
+        [Test]
+        public void RightOfADeepPlate()
+        {
+            PlateSlab p = Ml5Plates.Flat(1, 0, 0, 2, 2, 400000, 32768);
+            var nav = new LayeredNav(Open(3, 2), 0, new[] { p }, new[] { Costs(p) }, new[] { Speeds(Costs(p)) });
+            Assert.That(nav.TryNode(1, 2, 0, out _), Is.False);
+            Assert.That((Node(nav, 1, 0, 1), nav.TryNode(1, 2, 1, out _)), Is.EqualTo((8, false)));
+        }
+
         [Test]
         public void PublicQueries()
         {

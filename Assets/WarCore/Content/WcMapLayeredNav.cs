@@ -46,7 +46,7 @@ namespace WarCore.Content
                     {
                         int at = j * p.Width + i;
                         solid[at] = p.IsSolid(i, j);
-                        if (!p.IsWalkable(i, j) || !def.Passable || !top.CellWithinSlope(i, j, slopeNum, slopeDen)) continue;
+                        if (!solid[at] || !p.IsWalkable(i, j) || !def.Passable || !top.CellWithinSlope(i, j, slopeNum, slopeDen)) continue;
                         costs[k][at] = (byte)def.Cost;
                         speeds[k][at] = (ushort)def.SpeedMilli;
                     }

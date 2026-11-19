@@ -238,7 +238,7 @@ namespace WarCore.Sim
             hash.Add(StepRaw);
             hash.Add(Ground.Digest);
             hash.Add(Ground.Ground == null);
-            if (Ground.Ground == null) hash.Add(flatGroundRaw);
+            hash.Add(flatGroundRaw);
             hash.Add(plates.Length);
             for (int k = 0; k < plates.Length; k++)
             {

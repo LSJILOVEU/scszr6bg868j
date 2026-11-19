@@ -57,6 +57,10 @@ namespace WarCore.Tests
             var plates = new[] { p };
             StringAssert.StartsWith("One cost and one speed table per plate.",
                 Refused<ArgumentException>(Open(2, 1), 0, plates, new byte[0][], new ushort[0][]));
+            StringAssert.StartsWith("One cost and one speed table per plate.",
+                Refused<ArgumentException>(Open(2, 1), 0, plates, new byte[0][], new[] { new ushort[] { 1000, 0 } }));
+            StringAssert.StartsWith("One cost and one speed table per plate.",
+                Refused<ArgumentException>(Open(2, 1), 0, plates, new[] { new byte[] { 1, 0 }, new byte[] { 1, 0 } }, new[] { new ushort[] { 1000, 0 }, new ushort[] { 1000, 0 } }));
             StringAssert.StartsWith("Plate 1 table size.", Refused<ArgumentException>(Open(2, 1), 0, plates, new[] { new byte[] { 1 } }, new[] { new ushort[] { 1000, 0 } }));
             StringAssert.StartsWith("Plate 1 table size.", Refused<ArgumentException>(Open(2, 1), 0, plates, new[] { new byte[] { 1, 0 } }, new[] { new ushort[] { 1000, 0, 0 } }));
             StringAssert.StartsWith("Plate 1: a cell that is not solid is walkable.",
@@ -111,6 +115,7 @@ namespace WarCore.Tests
             var changed = new[]
             {
                 ("ground tables", Make(Open(3, 2, (2, 0)), 7, new[] { a, b })),
+                ("a ground cost", Make(Ground(3, 2, new byte[] { 1, 2, 1, 1, 1, 1 }), 7, new[] { a, b })),
                 ("flat ground height", Make(Open(3, 2), 8, new[] { a, b })),
                 ("a top point", Make(Open(3, 2), 7, new[] { One(1, 0, 0, 19661), b })),
                 ("a solid bit", Make(Open(3, 2), 7, new[] { a, Ml5Plates.Flat(2, 2, 1, 1, 1, 5000, 32768, (0, 0)) })),
@@ -120,6 +125,10 @@ namespace WarCore.Tests
             };
             foreach ((string what, ulong digest) in changed) Assert.That(digest, Is.Not.EqualTo(baseline), what);
             Assert.That(changed.Select(c => c.Item2).Distinct().Count(), Is.EqualTo(changed.Length));
+
+            // Two plates with the same nodes, costs and seams (high above everything), solid in another cell.
+            PlateSlab left = Ml5Plates.Flat(2, 0, 1, 2, 1, 400000, 32768, (1, 0)), right = Ml5Plates.Flat(2, 0, 1, 2, 1, 400000, 32768, (0, 0));
+            Assert.That(Make(Open(3, 2), 7, new[] { a, left }), Is.Not.EqualTo(Make(Open(3, 2), 7, new[] { a, right })), "which cell is solid");
 
             var heights = new int[12];
             TerrainTables field = Ground(3, 2, Costs(3, 2, 1), heights);

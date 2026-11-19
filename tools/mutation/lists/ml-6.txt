@@ -104,8 +104,7 @@ replacement:
 [ml6-11-node-rect]
 file = Assets/WarCore/Sim/LayeredNav.cs
 filter = FullyQualifiedName~Ml6
-expect = WarCore.Tests.Ml6VectorTests.PublicQueries
-expect = WarCore.Tests.Ml6OracleTests.MatchesTheOracle
+expect = WarCore.Tests.Ml6VectorTests.RightOfADeepPlate
 note = plate x bound not checked
 original:
 | if (lx < 0 || lz < 0 || lx >= p.Width || lz >= p.Depth) return -1;
@@ -286,11 +285,11 @@ replacement:
 file = Assets/WarCore/Sim/LayeredNav.cs
 filter = FullyQualifiedName~Ml6
 expect = WarCore.Tests.Ml6ConstructorTests.DigestFollowsEveryInput
-note = flat height hashed with a field
+note = flat height kept with a height field
 original:
-|             if (Ground.Ground == null) hash.Add(flatGroundRaw);
+| this.flatGroundRaw = ground.Ground == null ? flatGroundRaw : 0;
 replacement:
-|             hash.Add(flatGroundRaw);
+| this.flatGroundRaw = flatGroundRaw;
 
 [ml6-30-digest-ground]
 file = Assets/WarCore/Sim/LayeredNav.cs
@@ -469,9 +468,9 @@ filter = FullyQualifiedName~Ml6
 expect = WarCore.Tests.Ml6BridgeTests.DemoHouse
 note = walkable bit ignored
 original:
-| if (!p.IsWalkable(i, j) || !def.Passable
+| !solid[at] || !p.IsWalkable(i, j) ||
 replacement:
-| if (!def.Passable
+| !solid[at] ||
 
 [ml6-48-bridge-slope]
 file = Assets/WarCore/Content/WcMapLayeredNav.cs
