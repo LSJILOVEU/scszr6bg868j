@@ -29,7 +29,7 @@ namespace WarCore.Content.MapTools
     {
         internal static readonly MapEditKind<MapWall> Wall = new MapEditKind<MapWall>("wall", 0, ulong.MaxValue,
             w => w.Id, w => w.Owner, w => w.Src,
-            (w, id, owner, src) => new MapWall(id, w.Kind, w.Layer, w.Cell, w.Size, w.HeightRaw, owner, src),
+            (w, id, owner, src) => new MapWall(id, w.Kind, w.Layer, w.Cell, w.Size, w.HeightRaw, owner, src, w.BaseRaw),
             (w, origin) => (w.Cell.X, w.Cell.Z),
             (w, d) => w.Cell.X >= 0 && w.Cell.Z >= 0 && w.Size.X >= 1 && w.Size.Z >= 1
                 && (long)w.Cell.X + w.Size.X <= d.Size.X && (long)w.Cell.Z + w.Size.Z <= d.Size.Z);

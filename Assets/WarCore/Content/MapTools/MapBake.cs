@@ -51,17 +51,21 @@ namespace WarCore.Content.MapTools
             var layers = new WcMapLayer[d.Layers.Count];
             for (int i = 0; i < layers.Length; i++) layers[i] = new WcMapLayer(d.Layers[i].Name, d.Layers[i].Bit);
 
-            // Walls are whole-cell boxes standing on the floor; the passability bitmap is the union of their footprints.
+            // Walls are whole-cell boxes standing on the floor, or with "baseRaw" on that raised bottom (centre Y relative to
+            // the floor). The passability bitmap is the union of the footprints of floor walls plus, for raised walls, the
+            // cells whose walk band they overlap (WallSpan).
             var walls = new WcMapWall[d.Walls.Count];
             var blocked = new bool[width * depth];
             for (int i = 0; i < walls.Length; i++)
             {
                 MapWall w = d.Walls[i];
                 long halfX = w.Size.X * s / 2, halfZ = w.Size.Z * s / 2;
-                var center = new SimVec3(SimFix.FromRaw(w.Cell.X * s + halfX), SimFix.FromRaw(w.HeightRaw / 2), SimFix.FromRaw(w.Cell.Z * s + halfZ));
+                long bottom = w.BaseRaw.HasValue ? w.BaseRaw.Value - d.FloorRaw : 0;
+                var center = new SimVec3(SimFix.FromRaw(w.Cell.X * s + halfX), SimFix.FromRaw(bottom + w.HeightRaw / 2), SimFix.FromRaw(w.Cell.Z * s + halfZ));
                 walls[i] = new WcMapWall(0, w.Id, w.Kind, w.Layer, center, SimFix.FromRaw(halfX), SimFix.FromRaw(w.HeightRaw), SimFix.FromRaw(halfZ));
                 for (int z = w.Cell.Z; z < w.Cell.Z + w.Size.Z; z++)
-                    for (int x = w.Cell.X; x < w.Cell.X + w.Size.X; x++) blocked[z * width + x] = true;
+                    for (int x = w.Cell.X; x < w.Cell.X + w.Size.X; x++)
+                        if (!w.BaseRaw.HasValue || BlocksWalk(d, w, x, z)) blocked[z * width + x] = true;
             }
             var bits = new byte[(width * depth + 7) / 8];
             for (int index = 0; index < blocked.Length; index++)
@@ -81,6 +85,17 @@ namespace WarCore.Content.MapTools
             return new WcMap(d.Id, d.Content, min, max, SimFix.FromInt(Math.Max(width, depth)), SimFix.FromRaw(d.FloorRaw),
                 (uint)width, (uint)depth, layers, walls, bits, heights, surfaceNames, surfaceCells);
         }
+
+        // WallSpan for a raised wall in absolute raw Y; a flat map's ground is floorRaw.
+        internal static bool BlocksWalk(MapDesc d, MapWall w, int x, int z)
+        {
+            long bottom = w.BaseRaw.Value;
+            WallSpan.CellGround(Point(d), x, z, out long low, out long high);
+            return WallSpan.BlocksWalk(bottom, bottom + w.HeightRaw, low, high);
+        }
+
+        // Height point (i, j) of a description in absolute raw Y.
+        internal static Func<int, int, long> Point(MapDesc d) => d.Heights == null ? (i, j) => d.FloorRaw : (Func<int, int, long>)((i, j) => d.Heights[j][i]);
 
         private static int Base64Index(char c) =>
             c >= 'A' && c <= 'Z' ? c - 'A' : c >= 'a' && c <= 'z' ? c - 'a' + 26 : c >= '0' && c <= '9' ? c - '0' + 52 : c == '+' ? 62 : 63;

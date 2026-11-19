@@ -63,6 +63,7 @@ namespace WarCore.Content.MapTools
 
         private readonly JsonNode root;
         private string entry, entryId;
+        private int version;
 
         internal MapDescReader(JsonNode root) { this.root = root; }
 
@@ -79,10 +80,23 @@ namespace WarCore.Content.MapTools
             if (format == null) throw Fail(Format, root.Line);
             if (format.Kind != JsonKind.String || format.Text != MapDesc.FormatName) throw Fail(Format, format.Line);
             if (version == null) throw Fail(Format, root.Line);
-            if (version.Kind != JsonKind.Number || version.Text != "1") throw Fail(Format, version.Line);
+            if (version.Kind != JsonKind.Number || (version.Text != "1" && version.Text != "2")) throw Fail(Format, version.Line);
+            this.version = version.Text == "2" ? MapDesc.WallBaseVersion : MapDesc.FormatVersion;
+            // Version 2 only for what version 1 cannot hold, checked on the bare tree before pass 1: a version 2 file must
+            // use a version 2 key ("baseRaw" on a wall object); otherwise it is a version error, so writer and reader agree.
+            if (this.version == MapDesc.WallBaseVersion && !UsesVersion2(root)) throw Fail(Format, version.Line);
             MapDesc desc = First();
             Second(desc);
             return desc;
+        }
+
+        private static bool UsesVersion2(JsonNode root)
+        {
+            JsonNode walls = root.Find("walls");
+            if (walls == null || walls.Kind != JsonKind.Array) return false;
+            foreach (JsonNode wall in walls.Items)
+                if (wall.Kind == JsonKind.Object && wall.Find("baseRaw") != null) return true;
+            return false;
         }
 
         // Whole tree in document order, before the version value: a number with a fraction or "-0" is a key error.
@@ -299,7 +313,8 @@ namespace WarCore.Content.MapTools
                 JsonNode e = wallsNode.Items[i];
                 Enter("wall", e, "id", true);
                 Item(e, JsonKind.Object);
-                Keys(e, "id", "kind", "layer", "cell", "size", "heightRaw", "owner", "src");
+                if (version == MapDesc.WallBaseVersion) Keys(e, "id", "kind", "layer", "cell", "size", "heightRaw", "baseRaw", "owner", "src");
+                else Keys(e, "id", "kind", "layer", "cell", "size", "heightRaw", "owner", "src");
                 ulong wallId = ULong(Req(e, "id", JsonKind.Number), 1, IdCode);
                 string kind = Req(e, "kind", JsonKind.String).Text;
                 string layer = Req(e, "layer", JsonKind.String).Text;
@@ -308,7 +323,9 @@ namespace WarCore.Content.MapTools
                 JsonNode heightNode = Req(e, "heightRaw", JsonKind.Number);
                 long height = Long(heightNode, 1, long.MaxValue, WallCode);
                 if (height % 2 != 0) throw Fail(WallCode, heightNode.Line);
-                walls[i] = new MapWall(wallId, kind, layer, cell, wallSize, height, Owner(e), OptSrc(e));
+                JsonNode baseNode = Opt(e, "baseRaw", JsonKind.Number);
+                long? wallBase = baseNode == null ? (long?)null : Long(baseNode, long.MinValue, long.MaxValue, WallCode);
+                walls[i] = new MapWall(wallId, kind, layer, cell, wallSize, height, Owner(e), OptSrc(e), wallBase);
                 Leave();
             }
 

@@ -1,0 +1,452 @@
+# ML-1: walls with a raised bottom (baseRaw), the walk-band rule, WALL_BURIED, description version 2, door prefab.
+# The band bottom (ml1-02, ml1-04) cannot be reached through a valid map: WALL_BURIED keeps every raised top above the
+# highest corner, so those two are killed by the function-level test only. ML-4 (floor slabs) makes it reachable.
+
+[ml1-01-headroom-inclusive]
+file = Assets/WarCore/Content/WallSpan.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1WallSpanTests.LintelAtTheHeadroomIsOpenAndOneRawLowerBlocks
+expect = WarCore.Tests.Ml1WallSpanTests.SlopeLintelReadsEachCellsCorners
+note = the lintel at exactly 2.0 m blocks the doorway
+original:
+| bottomRaw < groundMaxRaw + ClearanceRaw
+replacement:
+| bottomRaw <= groundMaxRaw + ClearanceRaw
+
+[ml1-02-band-bottom-exclusive]
+file = Assets/WarCore/Content/WallSpan.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1WallSpanTests.BandBottomIsTheProbeSphereInclusive
+note = a top touching ground - 0.25 m no longer blocks (unreachable under WALL_BURIED; function-level only)
+original:
+| topRaw >= groundMinRaw - BelowRaw
+replacement:
+| topRaw > groundMinRaw - BelowRaw
+
+[ml1-03-headroom-2-5m]
+file = Assets/WarCore/Content/WallSpan.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1WallSpanTests.LintelAtTheHeadroomIsOpenAndOneRawLowerBlocks
+expect = WarCore.Tests.Ml1PrefabTests.ThreeWallsWithTheLintelAtTheHeadroom
+note = headroom 2.5 m instead of the 2.0 m ruling
+original:
+| ClearanceRaw = 2 * SimFix.Scale;
+replacement:
+| ClearanceRaw = 5 * SimFix.Scale / 2;
+
+[ml1-04-no-probe-margin]
+file = Assets/WarCore/Content/WallSpan.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1WallSpanTests.BandBottomIsTheProbeSphereInclusive
+note = band bottom at the ground instead of 0.25 m below
+original:
+| BelowRaw = SimFix.Scale / 4;
+replacement:
+| BelowRaw = 0;
+
+[ml1-05-drop-far-corner]
+file = Assets/WarCore/Content/WallSpan.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1WallSpanTests.SlopeLintelReadsEachCellsCorners
+note = the cell ground ignores its far corner
+original:
+| d = point(x + 1, z + 1);
+replacement:
+| d = point(x, z);
+
+[ml1-06-max-of-two-corners]
+file = Assets/WarCore/Content/WallSpan.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1WallSpanTests.SlopeLintelReadsEachCellsCorners
+note = highest corner taken from two corners only
+original:
+| maxRaw = Math.Max(Math.Max(a, b), Math.Max(c, d));
+replacement:
+| maxRaw = Math.Max(a, c);
+
+[ml1-07-footprint-near-edges]
+file = Assets/WarCore/Content/WallSpan.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1ValidationTests.BuriedRaisedWallIsRejectedOneRawHigherIsNot
+expect = WarCore.Tests.Mt150WcMapValidationTests.
+note = highest point under a footprint without its far edge
+original:
+| for (int iz = z0; iz <= z1; iz++)
+replacement:
+| for (int iz = z0; iz < z1; iz++)
+
+[ml1-08-bake-whole-wall-one-value]
+file = Assets/WarCore/Content/MapTools/MapBake.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1WallSpanTests.SlopeLintelReadsEachCellsCorners
+note = every cell of a raised wall judged on the wall's last cell
+original:
+| WallSpan.CellGround(Point(d), x, z, out long low, out long high);
+replacement:
+| WallSpan.CellGround(Point(d), w.Cell.X + w.Size.X - 1, z, out long low, out long high);
+
+[ml1-09-bake-raised-footprint]
+file = Assets/WarCore/Content/MapTools/MapBake.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1WallSpanTests.FlatLintelThroughTheBake
+expect = WarCore.Tests.Ml1DoorDemoTests.PathGoesThroughTheDoorway
+note = raised walls block their whole footprint in the bake
+original:
+| if (!w.BaseRaw.HasValue || BlocksWalk(d, w, x, z)) blocked
+replacement:
+| if (!w.BaseRaw.HasValue || true) blocked
+
+[ml1-10-bake-centre-on-floor]
+file = Assets/WarCore/Content/MapTools/MapBake.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1WallSpanTests.FlatLintelThroughTheBake
+expect = WarCore.Tests.Ml1ValidationTests.RaisedMeansCentreAboveHalfHeight
+note = the baked centre Y ignores the raised bottom
+original:
+| SimFix.FromRaw(bottom + w.HeightRaw / 2)
+replacement:
+| SimFix.FromRaw(w.HeightRaw / 2)
+
+[ml1-11-bake-bottom-absolute]
+file = Assets/WarCore/Content/MapTools/MapBake.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1WallSpanTests.RaisedBottomIsMeasuredFromTheFloor
+note = the baked bottom is not made relative to the floor
+original:
+| w.BaseRaw.Value - d.FloorRaw : 0;
+replacement:
+| w.BaseRaw.Value : 0;
+
+[ml1-12-flat-ground-zero]
+file = Assets/WarCore/Content/MapTools/MapBake.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1WallSpanTests.RaisedBottomIsMeasuredFromTheFloor
+note = a flat map's ground read as 0 instead of floorRaw
+original:
+| (i, j) => d.FloorRaw :
+replacement:
+| (i, j) => 0L :
+
+[ml1-13-no-top-bound]
+file = Assets/WarCore/Content/WcMapValidation.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1ValidationTests.RaisedWallStaysInsideTheVerticalBounds
+note = a raised wall may reach above Max.Y
+original:
+| y <= map.Max.Y.Raw - map.Min.Y.Raw - h / 2, "BOUNDS");
+replacement:
+| y <= map.Max.Y.Raw - map.Min.Y.Raw, "BOUNDS");
+
+[ml1-14-no-bottom-bound]
+file = Assets/WarCore/Content/WcMapValidation.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1ValidationTests.RaisedWallStaysInsideTheVerticalBounds
+note = a wall may reach below Min.Y
+original:
+| y >= h / 2 && y <= map.Max.Y.Raw
+replacement:
+| y >= 0 && y <= map.Max.Y.Raw
+
+[ml1-15-raised-at-half-height]
+file = Assets/WarCore/Content/WcMapValidation.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1ValidationTests.RaisedMeansCentreAboveHalfHeight
+expect = WarCore.Tests.Mt150WcMapValidationTests.
+note = centre Y = half height counts as raised
+original:
+| wall.LocalCenter.Y.Raw > wall.Height.Raw / 2;
+replacement:
+| wall.LocalCenter.Y.Raw >= wall.Height.Raw / 2;
+
+[ml1-16-raised-from-two-raw]
+file = Assets/WarCore/Content/WcMapValidation.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1ValidationTests.RaisedMeansCentreAboveHalfHeight
+note = centre Y = half height + 1 raw counts as a floor wall
+original:
+| wall.LocalCenter.Y.Raw > wall.Height.Raw / 2;
+replacement:
+| wall.LocalCenter.Y.Raw > wall.Height.Raw / 2 + 1;
+
+[ml1-17-check-raised-footprint]
+file = Assets/WarCore/Content/WcMapValidation.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1ValidationTests.NavigationCheckFollowsTheWalkBand
+expect = WarCore.Tests.Ml1WallSpanTests.FlatLintelThroughTheBake
+note = the navigation check expects raised walls to block their footprint
+original:
+| if (WallSpan.BlocksWalk(bottom, top, low, high)) blocked
+replacement:
+| if (true) blocked
+
+[ml1-18-check-raised-never]
+file = Assets/WarCore/Content/WcMapValidation.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1ValidationTests.NavigationCheckFollowsTheWalkBand
+expect = WarCore.Tests.Ml1WallSpanTests.SmallestRaisedWallOnFlatGroundBlocks
+note = the navigation check expects raised walls to block nothing
+original:
+| if (WallSpan.BlocksWalk(bottom, top, low, high)) blocked
+replacement:
+| if (false) blocked
+
+[ml1-19-heights-not-first]
+file = Assets/WarCore/Content/WcMapValidation.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1ValidationTests.HeightTableIsCheckedFirstOnlyWithARaisedWall
+note = with a raised wall the height table is read before it is checked
+original:
+|             if (raised != null)
+|             {
+|                 ValidateHeightField(map);
+replacement:
+|             if (raised != null)
+|             {
+
+[ml1-20-heights-always-first]
+file = Assets/WarCore/Content/WcMapValidation.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1ValidationTests.HeightTableIsCheckedFirstOnlyWithARaisedWall
+note = the height table is checked first also without raised walls (old order changes)
+original:
+|             if (raised != null)
+|             {
+|                 ValidateHeightField(map);
+replacement:
+|             ValidateHeightField(map);
+|             if (raised != null)
+|             {
+
+[ml1-21-buried-inclusive]
+file = Assets/WarCore/Content/WcMapValidation.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1ValidationTests.BuriedRaisedWallIsRejectedOneRawHigherIsNot
+note = a raised wall whose top equals the highest corner passes
+original:
+| wall.LocalCenter.Y.Raw + wall.Height.Raw / 2 > highest, "WALL_BURIED"
+replacement:
+| wall.LocalCenter.Y.Raw + wall.Height.Raw / 2 >= highest, "WALL_BURIED"
+
+[ml1-22-one-metre-for-raised]
+file = Assets/WarCore/Content/WcMapValidation.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1ValidationTests.OneMetreRuleIsOnlyForFloorWalls
+expect = WarCore.Tests.Ml1ValidationTests.RaisedMeansCentreAboveHalfHeight
+note = the 1 m rule also applies to raised walls
+original:
+|                 else Require(wall.Height.Raw >= highest + WallClearanceRaw, "WALL_TERRAIN");
+replacement:
+|                 Require(wall.Height.Raw >= highest + WallClearanceRaw, "WALL_TERRAIN");
+
+[ml1-23-gate-no-buried-rule]
+file = Assets/WarCore/Content/MapTools/MapGate.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1ValidationTests.GateReportsABuriedWallAndBakesTheRest
+expect = WarCore.Tests.Ml1ValidationTests.OneMetreRuleIsOnlyForFloorWalls
+note = the gate judges raised walls by the floor-wall clearance
+original:
+| if (wall.BaseRaw.HasValue ? WallAboveGround(desc, wall) : WallClearsTerrain(desc, wall))
+replacement:
+| if (WallClearsTerrain(desc, wall))
+
+[ml1-24-gate-buried-inclusive]
+file = Assets/WarCore/Content/MapTools/MapGate.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1ValidationTests.GateReportsABuriedWallAndBakesTheRest
+note = the gate passes a raised wall whose top equals the highest point
+original:
+| return wall.BaseRaw.Value + wall.HeightRaw > highest;
+replacement:
+| return wall.BaseRaw.Value + wall.HeightRaw >= highest;
+
+[ml1-25-gate-wrong-code]
+file = Assets/WarCore/Content/MapTools/MapGate.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1ValidationTests.GateReportsABuriedWallAndBakesTheRest
+note = a buried raised wall is reported as a terrain clearance problem
+original:
+| wall.BaseRaw.HasValue ? "GATE_WALL_BURIED" : "GATE_WALL_TERRAIN"
+replacement:
+| "GATE_WALL_TERRAIN"
+
+[ml1-26-v2-without-base]
+file = Assets/WarCore/Content/MapTools/MapDescReader.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1DescTests.VersionTwoWithoutBaseRawIsAVersionError
+note = version 2 is accepted without a version 2 key
+original:
+| if (this.version == MapDesc.WallBaseVersion && !UsesVersion2(root)) throw
+replacement:
+| if (false) throw
+
+[ml1-27-v2-any-wall-object]
+file = Assets/WarCore/Content/MapTools/MapDescReader.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1DescTests.VersionTwoWithoutBaseRawIsAVersionError
+note = any wall object makes version 2 legal
+original:
+| if (wall.Kind == JsonKind.Object && wall.Find("baseRaw") != null) return true;
+replacement:
+| if (wall.Kind == JsonKind.Object) return true;
+
+[ml1-28-v1-knows-base]
+file = Assets/WarCore/Content/MapTools/MapDescReader.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1DescTests.VersionOneDoesNotKnowBaseRaw
+note = version 1 accepts baseRaw
+original:
+| if (version == MapDesc.WallBaseVersion) Keys(
+replacement:
+| if (true) Keys(
+
+[ml1-29-reader-drops-base]
+file = Assets/WarCore/Content/MapTools/MapDescReader.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1DescTests.RaisedWallWritesVersionTwoAndRoundTrips
+note = the reader drops a parsed baseRaw
+original:
+| height, Owner(e), OptSrc(e), wallBase);
+replacement:
+| height, Owner(e), OptSrc(e));
+
+[ml1-30-base-at-floor]
+file = Assets/WarCore/Content/MapTools/MapDescCross.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1DescTests.BaseMustBeAboveTheFloor
+note = baseRaw = floorRaw is accepted
+original:
+| wall.BaseRaw.Value <= d.FloorRaw
+replacement:
+| wall.BaseRaw.Value < d.FloorRaw
+
+[ml1-31-ceiling-exclusive]
+file = Assets/WarCore/Content/MapTools/MapDescCross.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1DescTests.TopMustStayUnderTheCeiling
+note = a top exactly at the ceiling is refused
+original:
+| > unchecked((ulong)(d.CeilingRaw - d.FloorRaw)) - (ulong)wall.HeightRaw))
+replacement:
+| >= unchecked((ulong)(d.CeilingRaw - d.FloorRaw)) - (ulong)wall.HeightRaw))
+
+[ml1-32-ceiling-signed]
+file = Assets/WarCore/Content/MapTools/MapDescCross.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1DescTests.RangeRulesHoldAtTheLongLimits
+note = the ceiling rule compared in signed longs (overflows at the limits)
+original:
+| unchecked((ulong)(wall.BaseRaw.Value - d.FloorRaw)) > unchecked((ulong)(d.CeilingRaw - d.FloorRaw)) - (ulong)wall.HeightRaw))
+replacement:
+| unchecked(wall.BaseRaw.Value - d.FloorRaw > d.CeilingRaw - d.FloorRaw - wall.HeightRaw)))
+
+[ml1-33-always-version-1]
+file = Assets/WarCore/Content/MapTools/MapDesc.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1DescTests.RaisedWallWritesVersionTwoAndRoundTrips
+note = a raised wall does not raise the version
+original:
+| if (wall.BaseRaw.HasValue) Version = WallBaseVersion;
+replacement:
+| if (false) Version = WallBaseVersion;
+
+[ml1-34-writer-drops-base]
+file = Assets/WarCore/Content/MapTools/MapDescJson.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1DescTests.RaisedWallWritesVersionTwoAndRoundTrips
+note = baseRaw is not written
+original:
+| .Add("baseRaw", w.BaseRaw.HasValue ? Num(w.BaseRaw.Value) : null)
+replacement:
+| .Add("baseRaw", null)
+
+[ml1-35-writer-base-everywhere]
+file = Assets/WarCore/Content/MapTools/MapDescJson.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1LegacyBytesTests.OldMapsBakeAndWriteBackUnchanged
+note = every wall writes baseRaw (old maps change bytes)
+original:
+| .Add("baseRaw", w.BaseRaw.HasValue ? Num(w.BaseRaw.Value) : null)
+replacement:
+| .Add("baseRaw", Num(w.BaseRaw ?? 0))
+
+[ml1-36-clone-drops-base]
+file = Assets/WarCore/Content/MapTools/MapEditDraft.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1PrefabTests.StampingTwiceChangesNothing
+expect = WarCore.Tests.Ml1DoorDemoTests.StoredMapsAreWhatThePrefabStampsAndPassTheGate
+note = an editor copy of a wall loses its raised bottom
+original:
+| owner, src, w.BaseRaw),
+replacement:
+| owner, src),
+
+[ml1-37-lintel-parity-down]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1PrefabTests.OddLintelMovesUpAndOddFrameIsRefused
+note = an odd lintel moves its underside down (into the walk band)
+original:
+| if (((topRaw - bottom) & 1) != 0) bottom++;
+replacement:
+| if (((topRaw - bottom) & 1) != 0) bottom--;
+
+[ml1-38-lintel-low]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1PrefabTests.ThreeWallsWithTheLintelAtTheHeadroom
+note = the lintel underside 2 raw under the headroom
+original:
+| long bottom = ground + WallSpan.ClearanceRaw;
+replacement:
+| long bottom = ground + WallSpan.ClearanceRaw - 2;
+
+[ml1-39-door-ground-near-edge]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1DoorDemoTests.SlopeDoorIsOnTheSlope
+expect = WarCore.Tests.Ml1DoorDemoTests.StoredMapsAreWhatThePrefabStampsAndPassTheGate
+note = the doorway ground ignores its far edge
+original:
+| doorCell.X, doorCell.Z, doorCell.X + doorSize.X, doorCell.Z + doorSize.Z);
+replacement:
+| doorCell.X, doorCell.Z, doorCell.X + doorSize.X - 1, doorCell.Z + doorSize.Z - 1);
+
+[ml1-40-lintel-zero-height]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1PrefabTests.TopTooLowForALintel
+note = a lintel of height 0 is allowed
+original:
+| if (topRaw < bottom + 2)
+replacement:
+| if (topRaw < bottom)
+
+[ml1-41-frame-no-clearance]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1PrefabTests.FrameMustPassTheOneMetreRule
+note = frames skip the 1 m clearance
+original:
+| cell.Z + size.Z) + WcMapValidation.WallClearanceRaw;
+replacement:
+| cell.Z + size.Z);
+
+[ml1-42-odd-frame]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1PrefabTests.OddLintelMovesUpAndOddFrameIsRefused
+note = an odd frame height is accepted
+original:
+| if (frame <= 0 || (frame & 1) != 0)
+replacement:
+| if (frame <= 0)
+
+[ml1-43-empty-right-frame]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
+expect = WarCore.Tests.Ml1PrefabTests.DoorAndFramesAreAtLeastOneCell
+note = a right frame of 0 cells is accepted
+original:
+| if ((long)doorStart + doorWidth > (long)length - 1)
+replacement:
+| if ((long)doorStart + doorWidth > (long)length)

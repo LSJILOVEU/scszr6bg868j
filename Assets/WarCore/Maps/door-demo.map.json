@@ -1,0 +1,220 @@
+{
+  "format": "warcore.map",
+  "version": 2,
+  "id": "door-demo",
+  "content": "none",
+  "pack": "rwr-m6",
+  "size": [60, 40],
+  "origin": [0, 0],
+  "floorRaw": 0,
+  "ceilingRaw": 262144,
+  "layers": [
+    {
+      "name": "walls",
+      "bit": 1
+    }
+  ],
+  "walls": [
+    {
+      "id": 1,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [30, 0],
+      "size": [1, 19],
+      "heightRaw": 196608,
+      "owner": 1,
+      "src": {
+        "instance": "door",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 2,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [30, 19],
+      "size": [1, 2],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 1,
+      "src": {
+        "instance": "door",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 3,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [30, 21],
+      "size": [1, 19],
+      "heightRaw": 196608,
+      "owner": 1,
+      "src": {
+        "instance": "door",
+        "kind": "wall",
+        "src": 3
+      }
+    }
+  ],
+  "points": [
+    {
+      "id": 1,
+      "at": [15000, 32000],
+      "radiusMm": 6000,
+      "initialOwner": 0,
+      "spawn": [15000, 32000]
+    },
+    {
+      "id": 2,
+      "at": [45000, 32000],
+      "radiusMm": 6000,
+      "initialOwner": 0,
+      "spawn": [45000, 32000]
+    }
+  ],
+  "bases": [
+    {
+      "id": 1,
+      "team": 1,
+      "at": [4000, 32000]
+    },
+    {
+      "id": 2,
+      "team": 2,
+      "at": [56000, 32000]
+    }
+  ],
+  "units": [
+    {
+      "key": 1,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [2000, 29000],
+      "reserve": false
+    },
+    {
+      "key": 2,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [4000, 29000],
+      "reserve": false
+    },
+    {
+      "key": 3,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [6000, 29000],
+      "reserve": false
+    },
+    {
+      "key": 4,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [2000, 35000],
+      "reserve": false
+    },
+    {
+      "key": 5,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [4000, 35000],
+      "reserve": false
+    },
+    {
+      "key": 6,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [6000, 35000],
+      "reserve": false
+    },
+    {
+      "key": 7,
+      "type": "rwr.soldier-1",
+      "team": 2,
+      "squad": 2,
+      "at": [58000, 29000],
+      "reserve": false
+    },
+    {
+      "key": 8,
+      "type": "rwr.soldier-1",
+      "team": 2,
+      "squad": 2,
+      "at": [56000, 29000],
+      "reserve": false
+    },
+    {
+      "key": 9,
+      "type": "rwr.soldier-1",
+      "team": 2,
+      "squad": 2,
+      "at": [54000, 29000],
+      "reserve": false
+    },
+    {
+      "key": 10,
+      "type": "rwr.soldier-1",
+      "team": 2,
+      "squad": 2,
+      "at": [58000, 35000],
+      "reserve": false
+    },
+    {
+      "key": 11,
+      "type": "rwr.soldier-1",
+      "team": 2,
+      "squad": 2,
+      "at": [56000, 35000],
+      "reserve": false
+    },
+    {
+      "key": 12,
+      "type": "rwr.soldier-1",
+      "team": 2,
+      "squad": 2,
+      "at": [54000, 35000],
+      "reserve": false
+    }
+  ],
+  "run": {
+    "seed": 41,
+    "crowdPass": "teamIdle"
+  },
+  "owners": ["hand", "stamp:door"],
+  "stamps": [
+    {
+      "instance": "door",
+      "kind": "wall",
+      "src": 1,
+      "id": 1
+    },
+    {
+      "instance": "door",
+      "kind": "wall",
+      "src": 2,
+      "id": 2
+    },
+    {
+      "instance": "door",
+      "kind": "wall",
+      "src": 3,
+      "id": 3
+    }
+  ],
+  "removed": [],
+  "next": {
+    "wall": 4,
+    "point": 3,
+    "base": 3,
+    "unit": 13
+  }
+}

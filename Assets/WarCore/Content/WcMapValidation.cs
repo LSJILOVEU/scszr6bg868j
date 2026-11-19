@@ -53,6 +53,7 @@ namespace WarCore.Content
             var keys = new HashSet<ulong>();
             int cells = checked((int)(map.Width * map.Depth));
             var blocked = new bool[cells];
+            List<WcMapWall> raised = null;
             foreach (WcMapWall wall in map.Walls)
             {
                 Require(wall.Chunk == 0, "REFERENCE");
@@ -64,13 +65,31 @@ namespace WarCore.Content
                 Require(hx > 0 && hx <= MaxSide * SimFix.Scale / 2 && hz > 0 && hz <= MaxSide * SimFix.Scale / 2
                     && h > 0 && h <= map.Max.Y.Raw - map.Min.Y.Raw && h % 2 == 0, "WALL_GEOMETRY");
                 Require(x >= hx && x <= map.Width * SimFix.Scale - hx
-                    && z >= hz && z <= map.Depth * SimFix.Scale - hz && y == h / 2, "BOUNDS");
+                    && z >= hz && z <= map.Depth * SimFix.Scale - hz && y >= h / 2 && y <= map.Max.Y.Raw - map.Min.Y.Raw - h / 2, "BOUNDS");
                 Require((x - hx) % SimFix.Scale == 0 && (x + hx) % SimFix.Scale == 0
                     && (z - hz) % SimFix.Scale == 0 && (z + hz) % SimFix.Scale == 0, "GRID");
                 int x0 = (int)((x - hx) / SimFix.Scale), x1 = (int)((x + hx) / SimFix.Scale);
                 int z0 = (int)((z - hz) / SimFix.Scale), z1 = (int)((z + hz) / SimFix.Scale);
+                if (IsRaised(wall)) { (raised ??= new List<WcMapWall>()).Add(wall); continue; }
                 for (int iz = z0; iz < z1; iz++)
                     for (int ix = x0; ix < x1; ix++) blocked[iz * (int)map.Width + ix] = true;
+            }
+            // Raised walls read height points, so the height table is checked first; without them the order is as before.
+            if (raised != null)
+            {
+                ValidateHeightField(map);
+                Func<int, int, long> point = LocalPoint(map);
+                foreach (WcMapWall wall in raised)
+                {
+                    long bottom = wall.LocalCenter.Y.Raw - wall.Height.Raw / 2, top = bottom + wall.Height.Raw;
+                    Footprint(wall, out int x0, out int z0, out int x1, out int z1);
+                    for (int iz = z0; iz < z1; iz++)
+                        for (int ix = x0; ix < x1; ix++)
+                        {
+                            WallSpan.CellGround(point, ix, iz, out long low, out long high);
+                            if (WallSpan.BlocksWalk(bottom, top, low, high)) blocked[iz * (int)map.Width + ix] = true;
+                        }
+                }
             }
             Require(map.Passability.Count == (cells + 7) / 8, "BITMAP_LENGTH");
             for (int i = 0; i < map.Passability.Count * 8; i++)
@@ -78,28 +97,41 @@ namespace WarCore.Content
                 bool passable = (map.Passability[i >> 3] & (1 << (i & 7))) != 0;
                 Require(i < cells ? passable == !blocked[i] : !passable, "NAV_WALL_MISMATCH");
             }
-            ValidateHeightField(map);
+            if (raised == null) ValidateHeightField(map);
             ValidateWallsOnTerrain(map);
             ValidateSurfaceTable(map, cells);
         }
 
-        // A wall's bottom is always Min.Y (BOUNDS: centre Y = Height/2) and every height point is >= Min.Y, so the wall is
-        // never buried below the ground. It must also stand at least 1 m above the highest point under its footprint:
-        // the extremes of the piecewise-linear surface are at grid points, inclusive of both far edges of the footprint.
+        // A wall with a raised bottom: centre Y above half its height (BOUNDS keeps it at or above Min.Y).
+        internal static bool IsRaised(WcMapWall wall) => wall.LocalCenter.Y.Raw > wall.Height.Raw / 2;
+
+        private static void Footprint(WcMapWall wall, out int x0, out int z0, out int x1, out int z1)
+        {
+            long x = wall.LocalCenter.X.Raw, z = wall.LocalCenter.Z.Raw, hx = wall.HalfX.Raw, hz = wall.HalfZ.Raw;
+            x0 = (int)((x - hx) / SimFix.Scale); x1 = (int)((x + hx) / SimFix.Scale);
+            z0 = (int)((z - hz) / SimFix.Scale); z1 = (int)((z + hz) / SimFix.Scale);
+        }
+
+        // Height point (i, j) in raw Y above Min.Y; 0 everywhere on a flat map (FlatHeight = Min.Y).
+        private static Func<int, int, long> LocalPoint(WcMap map) =>
+            map.HasHeightField ? (i, j) => (long)map.VertexRaw(i, j) - map.Min.Y.Raw : (Func<int, int, long>)((i, j) => 0);
+
+        // A floor wall's bottom is Min.Y and every height point is >= Min.Y, so it is never buried below the ground. It must
+        // also stand at least 1 m above the highest point under its footprint: the extremes of the piecewise-linear surface
+        // are at grid points, inclusive of both far edges of the footprint. A raised wall skips that rule; instead its top
+        // must be above the highest corner of every footprint cell (WALL_BURIED), which is the same highest point.
         internal const long WallClearanceRaw = SimFix.Scale;
         private static void ValidateWallsOnTerrain(WcMap map)
         {
-            if (!map.HasHeightField) return;
+            Func<int, int, long> point = LocalPoint(map);
             foreach (WcMapWall wall in map.Walls)
             {
-                long x = wall.LocalCenter.X.Raw, z = wall.LocalCenter.Z.Raw, hx = wall.HalfX.Raw, hz = wall.HalfZ.Raw;
-                int x0 = (int)((x - hx) / SimFix.Scale), x1 = (int)((x + hx) / SimFix.Scale);
-                int z0 = (int)((z - hz) / SimFix.Scale), z1 = (int)((z + hz) / SimFix.Scale);
-                long highest = long.MinValue;
-                for (int iz = z0; iz <= z1; iz++)
-                    for (int ix = x0; ix <= x1; ix++)
-                        highest = Math.Max(highest, map.VertexRaw(ix, iz));
-                Require(map.FlatHeight.Raw + wall.Height.Raw >= highest + WallClearanceRaw, "WALL_TERRAIN");
+                bool isRaised = IsRaised(wall);
+                if (!isRaised && !map.HasHeightField) continue;
+                Footprint(wall, out int x0, out int z0, out int x1, out int z1);
+                long highest = WallSpan.HighestPoint(point, x0, z0, x1, z1);
+                if (isRaised) Require(wall.LocalCenter.Y.Raw + wall.Height.Raw / 2 > highest, "WALL_BURIED");
+                else Require(wall.Height.Raw >= highest + WallClearanceRaw, "WALL_TERRAIN");
             }
         }
 

@@ -74,9 +74,12 @@ namespace WarCore.Content.MapTools
         public long HeightRaw { get; }
         public int? Owner { get; }
         public MapSrc Src { get; }
-        public MapWall(ulong id, string kind, string layer, MapXZ cell, MapXZ size, long heightRaw, int? owner = null, MapSrc src = null)
+        // Absolute raw Y of the wall's bottom ("baseRaw", description version 2); null: the wall stands on floorRaw.
+        public long? BaseRaw { get; }
+        public MapWall(ulong id, string kind, string layer, MapXZ cell, MapXZ size, long heightRaw, int? owner = null, MapSrc src = null,
+            long? baseRaw = null)
         {
-            Id = id; Kind = kind; Layer = layer; Cell = cell; Size = size; HeightRaw = heightRaw; Owner = owner; Src = src;
+            Id = id; Kind = kind; Layer = layer; Cell = cell; Size = size; HeightRaw = heightRaw; Owner = owner; Src = src; BaseRaw = baseRaw;
         }
     }
 
@@ -140,16 +143,19 @@ namespace WarCore.Content.MapTools
         public MapNext(ulong wall, int point, int @base, ulong unit) { Wall = wall; Point = point; Base = @base; Unit = unit; }
     }
 
-    // Map description model (format "warcore.map" version 1). Deeply immutable: every input array is copied, including the
-    // inner rows of Heights, and every collection is handed out read-only. One property per top-level JSON key.
-    // Optional keys are null when absent. An owner grid made only of '.' is the same as no grid and is stored as null.
+    // Map description model (format "warcore.map" version 1, or 2 when a wall has a raised bottom). Deeply immutable: every
+    // input array is copied, including the inner rows of Heights, and every collection is handed out read-only. One
+    // property per top-level JSON key. Optional keys are null when absent. An owner grid made only of '.' is the same as
+    // no grid and is stored as null.
     public sealed class MapDesc
     {
         public const string FormatName = "warcore.map";
         public const int FormatVersion = 1;
+        // Written only when the description uses something version 1 cannot hold: a wall with "baseRaw".
+        public const int WallBaseVersion = 2;
 
         public string Format => FormatName;
-        public int Version => FormatVersion;
+        public int Version { get; }
         public string Id { get; }
         public string Content { get; }
         public string Pack { get; }
@@ -191,6 +197,9 @@ namespace WarCore.Content.MapTools
             }
             Surfaces = surfaces;
             Walls = Copy(walls, nameof(walls));
+            Version = FormatVersion;
+            foreach (MapWall wall in Walls)
+                if (wall.BaseRaw.HasValue) Version = WallBaseVersion;
             Points = Copy(points, nameof(points));
             Bases = Copy(bases, nameof(bases));
             Units = Copy(units, nameof(units));
