@@ -120,7 +120,7 @@ namespace WarCore.Content.MapTools
             root.Add("walls", Many(d.Walls, w => new Obj()
                 .Add("id", Num(w.Id)).Add("kind", Str(w.Kind)).Add("layer", Str(w.Layer))
                 .Add("cell", Pair(w.Cell.X, w.Cell.Z)).Add("size", Pair(w.Size.X, w.Size.Z)).Add("heightRaw", Num(w.HeightRaw))
-                .Add("owner", OptNum(w.Owner)).Add("src", Src(w.Src))));
+                .Add("baseRaw", w.BaseRaw.HasValue ? Num(w.BaseRaw.Value) : null).Add("owner", OptNum(w.Owner)).Add("src", Src(w.Src))));
             root.Add("points", Many(d.Points, p => new Obj()
                 .Add("id", Num(p.Id)).Add("at", Pair(p.At.X, p.At.Z)).Add("radiusMm", Num(p.RadiusMm))
                 .Add("initialOwner", Num(p.InitialOwner)).Add("spawn", p.Spawn.HasValue ? Pair(p.Spawn.Value.X, p.Spawn.Value.Z) : null)

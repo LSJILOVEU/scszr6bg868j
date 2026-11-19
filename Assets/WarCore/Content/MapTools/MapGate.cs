@@ -53,14 +53,15 @@ namespace WarCore.Content.MapTools
             return new MapProblem(code, line: line);
         }
 
-        // Walls that fail the terrain clearance are reported and left out of the bake; the rest goes through the writer.
+        // Walls that fail the terrain clearance (floor walls) or are buried (raised walls) are reported and left out of the
+        // bake; the rest goes through the writer.
         private static WcMap Bake(MapDesc desc, List<MapProblem> problems)
         {
             var kept = new List<MapWall>();
             foreach (MapWall wall in desc.Walls)
             {
-                if (WallClearsTerrain(desc, wall)) { kept.Add(wall); continue; }
-                problems.Add(new MapProblem("GATE_WALL_TERRAIN", "wall " + Text(wall.Id), (wall.Cell.X, wall.Cell.Z)));
+                if (wall.BaseRaw.HasValue ? WallAboveGround(desc, wall) : WallClearsTerrain(desc, wall)) { kept.Add(wall); continue; }
+                problems.Add(new MapProblem(wall.BaseRaw.HasValue ? "GATE_WALL_BURIED" : "GATE_WALL_TERRAIN", "wall " + Text(wall.Id), (wall.Cell.X, wall.Cell.Z)));
             }
             MapDesc baked = kept.Count == desc.Walls.Count ? desc : WithWalls(desc, kept.ToArray());
             byte[] bytes = null;
@@ -77,6 +78,14 @@ namespace WarCore.Content.MapTools
             for (int z = wall.Cell.Z; z <= wall.Cell.Z + wall.Size.Z; z++)
                 for (int x = wall.Cell.X; x <= wall.Cell.X + wall.Size.X; x++) highest = Math.Max(highest, desc.Heights[z][x]);
             return desc.FloorRaw + wall.HeightRaw >= highest + WcMapValidation.WallClearanceRaw;
+        }
+
+        // As WcMapValidation WALL_BURIED: a raised wall's top must be above the highest height point under its footprint
+        // (on a flat map, floorRaw), both far edges included.
+        private static bool WallAboveGround(MapDesc desc, MapWall wall)
+        {
+            long highest = WallSpan.HighestPoint(MapBake.Point(desc), wall.Cell.X, wall.Cell.Z, wall.Cell.X + wall.Size.X, wall.Cell.Z + wall.Size.Z);
+            return wall.BaseRaw.Value + wall.HeightRaw > highest;
         }
 
         private static MapDesc WithWalls(MapDesc d, MapWall[] walls) =>

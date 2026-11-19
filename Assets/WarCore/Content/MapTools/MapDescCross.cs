@@ -47,6 +47,11 @@ namespace WarCore.Content.MapTools
                 // ceilingRaw - floorRaw spans up to 2^64 - 1, so the room is compared as ulong once it is known to be non-negative.
                 if (d.CeilingRaw < d.FloorRaw || unchecked((ulong)(d.CeilingRaw - d.FloorRaw)) < (ulong)wall.HeightRaw)
                     throw Fail(WallCode, e.Find("heightRaw").Line);
+                // A raised bottom is above the floor (equal would be the same as no baseRaw) and the top stays under the
+                // ceiling: baseRaw - floorRaw + heightRaw <= ceilingRaw - floorRaw, compared as ulong like the room above.
+                if (wall.BaseRaw.HasValue && (wall.BaseRaw.Value <= d.FloorRaw
+                    || unchecked((ulong)(wall.BaseRaw.Value - d.FloorRaw)) > unchecked((ulong)(d.CeilingRaw - d.FloorRaw)) - (ulong)wall.HeightRaw))
+                    throw Fail(WallCode, e.Find("baseRaw").Line);
                 Tail(d, e, wall.Owner, wall.Src, "wall");
             }
 
