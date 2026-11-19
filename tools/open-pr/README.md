@@ -60,6 +60,7 @@ run summary has the pull request number. A dispatch returns no run id, so pick t
 
 ```sh
 python3 -I tools/open-pr/test_open_pr.py
+python3 -I tools/open-pr/mutate.py      # each mutant of open_pr.py must fail the tests
 ```
 
 Offline: a throwaway git remote, the real `pii_guard.py`, and a fake `gh` that records calls.
