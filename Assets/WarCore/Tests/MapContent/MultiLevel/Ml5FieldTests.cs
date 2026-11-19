@@ -101,7 +101,9 @@ namespace WarCore.Tests
             Assert.Throws<ArgumentException>(() => Field(1, 1, 0, 0, Stack(PlateField.MaxPerCell + 1)));
             PlateSlab[] dug = Stack(PlateField.MaxPerCell + 1);
             dug[64] = Flat(65, 0, 0, 1, 1, top: 64 * S, holes: (0, 0));
-            Assert.That(Field(1, 1, 0, 0, dug).Count, Is.EqualTo(65), "a dug cell does not count");
+            PlateField dugField = null;
+            Assert.DoesNotThrow(() => dugField = Field(1, 1, 0, 0, dug), "a dug cell does not count");
+            Assert.That(dugField.Count, Is.EqualTo(65));
             PlateField none = Field(8, 4, 0, 0);
             Assert.That(none.Count, Is.EqualTo(0));
             Clear(none, V(0, 0, 0), V(524288, 262144, 262144));
