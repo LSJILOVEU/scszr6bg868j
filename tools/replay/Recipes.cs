@@ -54,8 +54,15 @@ namespace WarCore.Replay
                 () => DemoRecipes.M7().WithAiRules(Layer("replay-playtest-s3", DemoRecipes.PlaytestLayer, S3Ai)), DemoRecipes.M7MapBytes),
             ["lanes-s3"] = new Entry("Three-lane map, default AI + engage bound + pressure",
                 () => Lanes(Layer("replay-lanes-s3", LanesBake().PackId, S3Ai)), () => LanesBake().WcMapBytes),
+            // AI-S4 (PLACEHOLDER values): cover on top of the S3 setups.
+            ["playtest-s4"] = new Entry("M7, rwr-m7-playtest AI rules + engage bound + pressure + cover",
+                () => DemoRecipes.M7().WithAiRules(Layer("replay-playtest-s4", DemoRecipes.PlaytestLayer, S4Ai)), DemoRecipes.M7MapBytes),
+            ["lanes-s4"] = new Entry("Three-lane map, default AI + engage bound + pressure + cover",
+                () => Lanes(Layer("replay-lanes-s4", LanesBake().PackId, S4Ai)), () => LanesBake().WcMapBytes),
         };
 
+        private const string CoverAi = "\"coverRadiusMm\": 9000, \"coverStepMm\": 1000, \"coverDepthMm\": 2000";
+        private static readonly string S4Ai = S3Ai.Substring(0, S3Ai.Length - 2) + ", " + CoverAi + " }";
         private const string S3Ai = "{ \"engage\": \"bound\", \"boundMoveTicks\": 60, \"boundFireTicks\": 90, \"boundSharePermille\": 700, \"boundMinRangeMm\": 12000, "
             + "\"pressureDeathRadiusMm\": 3000, \"pressureDeathShock\": 2000, \"pressureNearRadiusMm\": 3000, \"pressureNearShock\": 1000, \"pressureDecayPermille\": 12, "
             + "\"pressureBrokenAt\": 7000, \"pressureRecoverAt\": 1000, \"pressurePinnedAt\": 2000, \"pressureSpreadPermille\": 500, \"pressureBreakSharePermille\": 300 }";
@@ -67,7 +74,16 @@ namespace WarCore.Replay
         private const string P2Ai = "{ \"slotSpacingMm\": 2000, \"slotRingMm\": 6000, \"placement\": \"assault-roles\", "
             + "\"frontPermille\": 425, \"flankPermille\": 375, \"rearPermille\": 200, \"frontArcMm\": 14000, \"flankSideMm\": 35000, "
             + "\"rearOutMm\": 12000, \"flankMinMm\": 60000, \"anchorMm\": 6000, \"arriveMm\": 3000 }";
-        private static MapBakeResult LanesBake() => MapBake.Run(File.ReadAllBytes(LanesPath));
+        // The three-lane setups run with the map's own seed (41) unless the command line names another.
+        public static int? LanesSeed;
+        private const string BakedSeed = "\"seed\": 41";
+        private static MapBakeResult LanesBake()
+        {
+            if (LanesSeed == null) return MapBake.Run(File.ReadAllBytes(LanesPath));
+            string text = File.ReadAllText(LanesPath);
+            if (text.IndexOf(BakedSeed, StringComparison.Ordinal) < 0) throw new InvalidOperationException("The three-lane map no longer says " + BakedSeed + ".");
+            return MapBake.Run(System.Text.Encoding.UTF8.GetBytes(text.Replace(BakedSeed, "\"seed\": " + LanesSeed.Value)));
+        }
         private static WorldRecipe Lanes(ContentPack ai)
         {
             MapBakeResult bake = LanesBake();

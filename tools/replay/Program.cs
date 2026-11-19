@@ -19,11 +19,13 @@ namespace WarCore.Replay
                 return 0;
             }
             if (args.Length == 1 && args[0] == "--selftest") { UseProjectRoot(); return SelfTest.Run(); }
-            if (args.Length != 4 || !Recipes.All.ContainsKey(args[0]))
+            if ((args.Length != 4 && args.Length != 5) || !Recipes.All.ContainsKey(args[0]))
             {
-                Console.Error.WriteLine("usage: WarCore.Replay <setup> <maxTicks> <every> <output.json> | --list | --selftest");
+                Console.Error.WriteLine("usage: WarCore.Replay <setup> <maxTicks> <every> <output.json> [lanesSeed] | --list | --selftest");
                 return 2;
             }
+            // A fifth argument reseeds the three-lane setups (the other setups ignore it), to see one change over several matches.
+            if (args.Length == 5) Recipes.LanesSeed = int.Parse(args[4], CultureInfo.InvariantCulture);
             string output = Path.GetFullPath(args[3]);
             UseProjectRoot();
             string json = Export(args[0], int.Parse(args[1], CultureInfo.InvariantCulture), int.Parse(args[2], CultureInfo.InvariantCulture), out string summary);
@@ -52,7 +54,7 @@ namespace WarCore.Replay
 
             var points = new List<(double x, double z, double r)>();
             foreach (ViewPoint point in session.Current.Points) points.Add((point.X, point.Z, point.Radius));
-            const int metricCount = 10;
+            const int metricCount = 13;
             var stats = new Metrics.Series[2, metricCount];
             for (int t = 0; t < 2; t++) for (int m = 0; m < metricCount; m++) stats[t, m] = new Metrics.Series();
             var side = new[] { new List<(double x, double z)>(), new List<(double x, double z)>() };
@@ -63,6 +65,14 @@ namespace WarCore.Replay
             double ring = entry.RingMm / 1000.0;
             var owners = new List<int>();
             var pinned = new List<int>(); var broken = new List<int>(); var pressed = new int[2, 2];
+            // Cover numbers: where each team's pinned units stand, how many of them moved since the previous recorded frame
+            // (frameX/frameZ: a unit's position in that frame, NaN when it was not on the field), and the walls.
+            var pinnedAt = new[] { new List<(double x, double z)>(), new List<(double x, double z)>() };
+            var pinnedMoved = new int[2];
+            var frameX = new float[keys.Count]; var frameZ = new float[keys.Count];
+            for (int i = 0; i < keys.Count; i++) frameX[i] = float.NaN;
+            var walls = new List<(double x, double z, double sx, double sz)>();
+            foreach (ViewWall wall in session.Map.Walls) walls.Add((wall.CenterX, wall.CenterZ, wall.SizeX, wall.SizeZ));
 
             var sb = new StringBuilder(4 << 20);
             ViewMap map = session.Map;
@@ -96,6 +106,7 @@ namespace WarCore.Replay
                 sb.Append("],\"u\":[");
                 side[0].Clear(); side[1].Clear(); idleSide[0].Clear(); idleSide[1].Clear();
                 pinned.Clear(); broken.Clear(); Array.Clear(pressed, 0, pressed.Length);
+                pinnedAt[0].Clear(); pinnedAt[1].Clear(); pinnedMoved[0] = pinnedMoved[1] = 0;
                 // Per unit: x, z in decimetres, state (0 = not on the field, 1 = alive, 2 = dead).
                 for (int i = 0; i < keys.Count; i++)
                 {
@@ -106,13 +117,20 @@ namespace WarCore.Replay
                         if (e.Alive && teams[i] >= 1 && teams[i] <= 2)
                         {
                             side[teams[i] - 1].Add((e.X, e.Z)); idleSide[teams[i] - 1].Add(frame.Tick - since[i] >= Metrics.IdleTicks);
-                            if (e.Nerve == 1) { pinned.Add(i); pressed[teams[i] - 1, 0]++; } else if (e.Nerve == 2) { broken.Add(i); pressed[teams[i] - 1, 1]++; }
+                            if (e.Nerve == 1)
+                            {
+                                pinned.Add(i); pressed[teams[i] - 1, 0]++; pinnedAt[teams[i] - 1].Add((e.X, e.Z));
+                                if (!float.IsNaN(frameX[i]) && (e.X != frameX[i] || e.Z != frameZ[i])) pinnedMoved[teams[i] - 1]++;
+                            }
+                            else if (e.Nerve == 2) { broken.Add(i); pressed[teams[i] - 1, 1]++; }
                         }
+                        frameX[i] = e.Alive ? e.X : float.NaN; frameZ[i] = e.Z;
                     }
-                    else sb.Append("0,0,0");
+                    else { sb.Append("0,0,0"); frameX[i] = float.NaN; }
                 }
                 // Per frame metrics: [share1, share2, nnSpread1, nnSpread2, spread1, spread2, close1, close2, idle1, idle2, closeNear1, closeNear2,
-                // enemy20_1, enemy20_2, idleNoEnemy1, idleNoEnemy2, pinned1, pinned2, broken1, broken2]; null when undefined.
+                // enemy20_1, enemy20_2, idleNoEnemy1, idleNoEnemy2, pinned1, pinned2, broken1, broken2, pinnedHidden1, pinnedHidden2,
+                // pinnedMoving1, pinnedMoving2, pinnedAtWall1, pinnedAtWall2]; null when undefined.
                 var values = new double[2 * metricCount];
                 for (int t = 0; t < 2; t++)
                 {
@@ -126,6 +144,9 @@ namespace WarCore.Replay
                     values[14 + t] = Metrics.IdleNoEnemy(side[t], idleSide[t], side[1 - t], points, ring);
                     values[16 + t] = Metrics.Share(pressed[t, 0], side[t].Count);
                     values[18 + t] = Metrics.Share(pressed[t, 1], side[t].Count);
+                    values[20 + t] = Metrics.PinnedHidden(pinnedAt[t], side[1 - t], walls);
+                    values[22 + t] = Metrics.PinnedMoving(pinnedMoved[t], pinnedAt[t].Count);
+                    values[24 + t] = Metrics.PinnedAtWall(pinnedAt[t], walls);
                     for (int m = 0; m < metricCount; m++) stats[t, m].Add(values[m * 2 + t]);
                 }
                 sb.Append("],\"m\":[");
@@ -139,7 +160,7 @@ namespace WarCore.Replay
             }
             bool decided = session.IsFinished && session.Winner != 0;
             sb.Append("],\"metrics\":{\"attackRange\":").Append(N(Metrics.AttackRange)).Append(",\"slotRing\":").Append(N(ring)).Append(",\"decidedTick\":").Append(decided ? session.EndTick.ToString(CultureInfo.InvariantCulture) : "null");
-            string[] names = { "maxPointShare", "nnSpread", "attackSpread", "closeShare", "idleOutside", "closeShareNearPoints", "enemyWithin20", "idleNoEnemy", "pinnedShare", "brokenShare" };
+            string[] names = { "maxPointShare", "nnSpread", "attackSpread", "closeShare", "idleOutside", "closeShareNearPoints", "enemyWithin20", "idleNoEnemy", "pinnedShare", "brokenShare", "pinnedHidden", "pinnedMoving", "pinnedAtWall" };
             var line = new StringBuilder();
             for (int t = 0; t < 2; t++)
             {

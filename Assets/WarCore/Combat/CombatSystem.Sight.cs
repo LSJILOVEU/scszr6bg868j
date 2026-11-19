@@ -77,6 +77,31 @@ namespace WarCore.Combat
         // Line of sight from the shooter to a point on the ground (both lifted to the aim height), walls and (L9) the ground.
         public bool Visible(EntityId shooter, SimVec3 point) => LineClear(AimPoint(Point(shooter)), AimPoint(point));
 
+        // Line of sight between two points on the ground (both lifted to the aim height): what a unit standing at one
+        // would see of a unit standing at the other. No unit has to stand at either.
+        public bool Sees(SimVec3 from, SimVec3 to) => LineClear(AimPoint(from), AimPoint(to));
+
+        // The unit's body (its collider radius), moved in a straight line from one point on the ground to another, would
+        // touch a living teammate (never the unit itself): somebody stands in the way, or where it would end up.
+        public bool FriendOnWalk(EntityId unit, SimVec3 from, SimVec3 to)
+        {
+            var result = sim.SpatialQuery.AllCapped(SpatialQueries.Capsule(from, to, Entities.Get(colliders, unit).Radius, unitLayerMask), candidates.Length, candidates);
+            if (result.Truncated) throw new InvalidOperationException("Combat unit capacity exceeded; the teammate check would be incomplete.");
+            for (int i = 0; i < result.Written; i++)
+                if (IsFriend(unit, candidates[i].Entity)) return true;
+            return false;
+        }
+
+        // A wall stands on the sight line from one point on the ground toward another (both lifted to the aim height),
+        // within reach of the first. Walls only: the ground is not tested. Two points above one another have no line.
+        public bool WallWithin(SimVec3 from, SimVec3 toward, SimFix reach)
+        {
+            SimVec3 origin = AimPoint(from), delta = AimPoint(toward) - origin;
+            if (Horizontal(delta).LengthSquared.Sign == 0) return false;
+            SimFix length = delta.Length;
+            return sim.SpatialQuery.Any(SpatialQueries.Ray(origin, delta, length < reach ? length : reach, wallMask));
+        }
+
         // The one line-of-sight judgement: a horizontal zero length is clear, otherwise nothing of the wall layer on the segment
         // and (L9) the segment nowhere under the ground.
         // Explicit AtTarget intents use this; the Aimed and Auto paths use Trace.

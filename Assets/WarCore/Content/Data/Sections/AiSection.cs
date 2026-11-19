@@ -58,6 +58,12 @@ namespace WarCore.Content
         public int BoundMinRangeMm { get; }
         // The pressure system's numbers (the ten pressure* fields, all or none); null leaves the system out of the battle.
         public WarCore.Battle.PressureRules? Pressure { get; internal set; }
+        // Cover (all three or none, only with engage "bound" and the pressure fields), in millimetres: how far a pinned unit
+        // looks for a spot behind a wall, the spacing of the spots it tries, and how close in front of the spot the wall
+        // must stand. 0 = no cover.
+        public int CoverRadiusMm { get; internal set; }
+        public int CoverStepMm { get; internal set; }
+        public int CoverDepthMm { get; internal set; }
         // Builds the load error for a written field (pack, layer, entry, field); null when the section is not written.
         internal System.Func<string, string, ContentException> FieldError { get; set; }
         internal AiRules(int failedSlotTicks, int targetMemoryTicks = 0, int searchTicks = 0, int reactionTicks = 0, int senseTicks = 1,
@@ -107,6 +113,7 @@ namespace WarCore.Content
         internal const int MaxBoundTicks = 100000;
         internal const int MaxBoundMinRangeMm = 512000; // PLACEHOLDER: maximum map side length.
         internal const int MaxPressureRadiusMm = 512000; // PLACEHOLDER: maximum map side length.
+        internal const int MinCoverRadiusMm = 1000, MaxCoverRadiusMm = 30000, MinCoverStepMm = 250, MaxCoverStepMm = 5000, MinCoverDepthMm = 250, MaxCoverDepthMm = 10000; // PLACEHOLDER bounds.
         // The pressure system's fields: written all ten or none.
         internal static readonly string[] PressureFields =
         {
@@ -131,6 +138,8 @@ namespace WarCore.Content
             ("flankSideMm", PartKind.Placement, ContentPolicies.AssaultRoles), ("rearOutMm", PartKind.Placement, ContentPolicies.AssaultRoles),
             ("flankMinMm", PartKind.Placement, ContentPolicies.AssaultRoles), ("anchorMm", PartKind.Placement, ContentPolicies.AssaultRoles),
             ("arriveMm", PartKind.Placement, ContentPolicies.AssaultRoles),
+            ("coverRadiusMm", PartKind.Engage, ContentPolicies.BoundEngage), ("coverStepMm", PartKind.Engage, ContentPolicies.BoundEngage),
+            ("coverDepthMm", PartKind.Engage, ContentPolicies.BoundEngage),
         };
         // assault-roles parameters in AssaultRolesPlacement's constructor order, with their ranges (PLACEHOLDER bounds).
         internal static readonly string[] AssaultFields =
@@ -161,6 +170,7 @@ namespace WarCore.Content
             System.Func<string, string, ContentException> fieldError = null;
             int[] assault = null;
             WarCore.Battle.PressureRules? pressure = null;
+            int coverRadius = 0, coverStep = 0, coverDepth = 0;
             if (entry != null)
             {
                 var r = new EntryReader(b.Pack, entry);
@@ -241,11 +251,19 @@ namespace WarCore.Content
                     if (recoverAt >= brokenAt) throw r.Bad(r.FieldOf("pressureRecoverAt"), "must be below pressureBrokenAt (" + brokenAt + ")");
                     pressure = new WarCore.Battle.PressureRules(deathRadius, deathShock, nearRadius, nearShock, decay, brokenAt, recoverAt, pinnedAt, courage, breakShare);
                 }
+                // Any of the three written makes all three required. Only a pressed unit takes cover, so the pressure fields must be there.
+                if (r.Has("coverRadiusMm") || r.Has("coverStepMm") || r.Has("coverDepthMm"))
+                {
+                    coverRadius = r.Int("coverRadiusMm", MinCoverRadiusMm, MaxCoverRadiusMm);
+                    coverStep = r.Int("coverStepMm", MinCoverStepMm, MaxCoverStepMm);
+                    coverDepth = r.Int("coverDepthMm", MinCoverDepthMm, MaxCoverDepthMm);
+                    if (!pressed) throw r.Bad(r.FieldOf("coverRadiusMm"), "needs the pressure fields (pressureDeathRadiusMm ...)");
+                }
                 fieldError = (field, why) => r.Bad(r.FieldOf(field), why);
                 r.Done();
             }
             b.Publish(new AiRules(failed, memory, search, reaction, sense, burst, pause, suppress, chase, fair, follows, hold, spread, dispatch, placement, spacing, scatter, ring,
-                engage, boundMove, boundFire, boundShare, boundMinRange, assault) { SlotRingError = ringError, FieldError = fieldError, Pressure = pressure });
+                engage, boundMove, boundFire, boundShare, boundMinRange, assault) { SlotRingError = ringError, FieldError = fieldError, Pressure = pressure, CoverRadiusMm = coverRadius, CoverStepMm = coverStep, CoverDepthMm = coverDepth });
         }
     }
 }

@@ -79,6 +79,25 @@ namespace WarCore.Replay
             Expect("idleNoEnemy 0 with an enemy at 45 m", Metrics.IdleNoEnemy(idleUnits, idle, near45, points, 6) == 0);
             Expect("idleNoEnemy 6 of 12 without a ring and no enemy", Math.Abs(Metrics.IdleNoEnemy(idleUnits, idle, new List<(double x, double z)>(), points, 0) - 0.5) < 1e-12);
 
+            // Cover: a wall 10 m wide and 1 m deep centred on (0, 10); enemies at (0, 20) and (30, 20).
+            var wall = new List<(double x, double z, double sx, double sz)> { (0, 10, 10, 1) };
+            Expect("a line through the wall is blocked", Metrics.Blocked((0, 20), (0, 0), wall[0]));
+            Expect("a line past the wall's end is not", !Metrics.Blocked((0, 20), (12, 0), wall[0]));
+            Expect("a line touching the wall's corner is blocked", Metrics.Blocked((0, 20), (10, 0), wall[0]));
+            Expect("a line that stops short of the wall is not", !Metrics.Blocked((0, 20), (0, 11), wall[0]));
+            var pinnedFive = new List<(double x, double z)> { (0, 0), (1, 0), (-1, 0), (12, 0), (-12, 0) };
+            var one = new List<(double x, double z)> { (0, 20) };
+            Expect("pinnedHidden 3 of 5 behind the wall", Math.Abs(Metrics.PinnedHidden(pinnedFive, one, wall) - 0.6) < 1e-12);
+            Expect("pinnedHidden 0 when a second enemy sees round the wall", Metrics.PinnedHidden(pinnedFive, new List<(double x, double z)> { (0, 20), (30, 20) }, wall) == 0);
+            Expect("pinnedHidden 1 when the enemy is out of range", Metrics.PinnedHidden(pinnedFive, one, wall, 15) == 1);
+            Expect("pinnedHidden counts an enemy at exactly the range", Metrics.PinnedHidden(new List<(double x, double z)> { (12, 4), (12, 4), (12, 4), (12, 4), (12, 4) }, one, wall, 20) == 0);
+            Expect("pinnedHidden undefined below MinPinned", double.IsNaN(Metrics.PinnedHidden(pinnedFive.GetRange(0, Metrics.MinPinned - 1), one, wall)));
+            var atWall = new List<(double x, double z)> { (0, 10), (0, 13), (7.5, 10), (7.6, 10), (6.5, 12.5) };   // inside, 2.5 m off the face, 2.5 m and 2.6 m off the end, 2.5 m off the corner
+            Expect("pinnedAtWall 4 of 5", Math.Abs(Metrics.PinnedAtWall(atWall, wall) - 0.8) < 1e-12);
+            Expect("pinnedAtWall undefined below MinPinned", double.IsNaN(Metrics.PinnedAtWall(atWall.GetRange(0, Metrics.MinPinned - 1), wall)));
+            Expect("pinnedMoving 2 of 5", Math.Abs(Metrics.PinnedMoving(2, 5) - 0.4) < 1e-12);
+            Expect("pinnedMoving undefined below MinPinned", double.IsNaN(Metrics.PinnedMoving(2, Metrics.MinPinned - 1)));
+
             string a = Program.Export("base", 300, 3, out _), b = Program.Export("base", 300, 3, out _);
             Expect("export repeats byte for byte", a == b);
 

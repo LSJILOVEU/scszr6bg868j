@@ -43,6 +43,8 @@ namespace WarCore.Battle
         // The placement's waypoint face, when it has one (found once here, not per think).
         private readonly IAiWaypoint waypoints;
         private readonly IAiEngage engage;
+        // Where a unit told to take cover walks to; null when the battle has no cover rules.
+        private readonly Cover cover;
         private int intentCount, current;
         private long decisionTick;
         public SimpleAiSystem(CombatSystem combat, CombatPack weapons, MatchPack pack, CaptureSystem capture, IMoveOrders moves,
@@ -66,7 +68,7 @@ namespace WarCore.Battle
             field = new AiField(pack, capture); dispatch = parts.Dispatch; placement = parts.Placement; engage = parts.Engage;
             waypoints = placement as IAiWaypoint;
             // Fold order is fixed: fair decisions, dispatch, placement, then a slot spacing other than the default, then a slot ring,
-            // then engage.
+            // then engage, then cover.
             policyDigest = placement.Fold(dispatch.Fold(policyDigest));
             if (parts.SlotSpacingRaw != GuardSlots.SpacingRaw)
             {
@@ -79,6 +81,12 @@ namespace WarCore.Battle
                 policyDigest = hash.Value;
             }
             policyDigest = engage.Fold(policyDigest);
+            if (parts.CoverRadiusRaw > 0)
+            {
+                // Cover is taken from where the fire came from, which only a pressure system that keeps sources knows.
+                if (pressure == null || !pressure.Sources) throw new ArgumentException("Cover needs the pressure system with sources.", nameof(pressure));
+                cover = new Cover(combat, moves, parts.CoverRadiusRaw, parts.CoverStepRaw, parts.CoverDepthRaw); policyDigest = cover.Fold(policyDigest);
+            }
             reservedHas = new bool[slots.Total]; standingHas = new bool[slots.Total];
             reservedBy = new ulong[slots.Total]; standingBy = new ulong[slots.Total];
             stage = new EntityStage(combat.Entities); positions = combat.Entities.Resolve<Position>(); combatants = combat.Entities.Resolve<Combatant>();
@@ -120,20 +128,23 @@ namespace WarCore.Battle
                     continue;
                 }
                 var thinker = new AiUnit(id, unit.Team, here, pressure != null ? pressure.Level(id) : AiNerve.Calm);
-                // An enemy in sight: the engage part says stand (Hold), go on to the point below (Advance) or fall back.
-                // No enemy in sight: the part is asked only about a unit that is pressed.
+                // An enemy in sight: the engage part says stand (Hold), go on to the point below (Advance), fall back or
+                // take cover. No enemy in sight: the part is asked only about a unit that is pressed. Cover is taken from
+                // where the fire that pressed the unit came from, seen or not; cover that cannot be taken is Hold.
                 bool advance = false, fallback = false, stand = false;
                 if (unit.Weapon >= 0 && combat.Pack.Selector.TrySelect(combat, entity, weapons.Weapons[unit.Weapon].FalloffEnd, out EntityId seen))
                 {
                     contacts?.Saw(id, seen, c.Clock.Tick);
                     AiEngage answer = engage.Decide(in thinker, combat.Point(seen), field);
-                    if (answer == AiEngage.Hold) { if (moving) StopUnit(id, here, target); continue; }
+                    if (answer == AiEngage.Cover && TakesCover(entity, id, here, moving, target)) continue;
+                    if (answer == AiEngage.Hold || answer == AiEngage.Cover) { if (moving) StopUnit(id, here, target); continue; }
                     if (answer == AiEngage.Fallback) fallback = true; else advance = true;
                 }
                 else if (thinker.Nerve != AiNerve.Calm)
                 {
                     AiEngage answer = engage.Unseen(in thinker, field);
-                    if (answer == AiEngage.Fallback) fallback = true; else stand = answer == AiEngage.Hold;
+                    if (answer == AiEngage.Cover && TakesCover(entity, id, here, moving, target)) continue;
+                    if (answer == AiEngage.Fallback) fallback = true; else stand = answer == AiEngage.Hold || answer == AiEngage.Cover;
                 }
                 // Nothing in sight: a remembered target may be suppressed (fire at where it was last seen) from this tick on.
                 if (!advance && !fallback && suppress != null && unit.Weapon >= 0) suppress.Decide(id, c.Clock.Tick);
@@ -192,6 +203,15 @@ namespace WarCore.Battle
                 if (nearest < 0 || distance < best) { nearest = i; best = distance; }
             }
             return nearest;
+        }
+        // True when the unit is now walking to cover from where it was pressed from (the spot is found anew at every think).
+        // False (the unit stands) without cover rules, when it stands in cover, or when no spot is found.
+        private bool TakesCover(EntityId entity, StableId id, SimVec3 here, bool moving, SimVec3 target)
+        {
+            if (cover == null || !pressure.TryPressedFrom(id, out SimVec3 threat) || cover.Covered(threat, here)) return false;
+            if (!cover.TryFind(entity, id.Value, here, threat, out SimVec3 spot)) return false;
+            OrderUnit(id, here, moving, target, spot, -1);
+            return true;
         }
         private bool TryMeleeTarget(EntityId entity, SimVec3 here, out SimVec3 target)
         {

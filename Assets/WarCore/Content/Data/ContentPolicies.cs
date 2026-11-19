@@ -35,8 +35,11 @@ namespace WarCore.Content
         // (radius + ring) of two points must stay at least one spacing apart, or loading the battle fails.
         // thinkInterval is the battle's (MatchPack.ThinkInterval): the scheduler asks the engage part only on think ticks,
         // so bound's move and fire windows must be whole multiples of it, or loading the battle fails. The default 1 checks nothing.
-        public static AiParts Parts(AiRules ai, ReadOnlySpan<ControlPointDef> points = default, int thinkInterval = 1)
+        // flat: the battle runs on a flat map. A cover spot takes the height of the unit that looks for it, so cover rules
+        // on a terrain map fail the load.
+        public static AiParts Parts(AiRules ai, ReadOnlySpan<ControlPointDef> points = default, int thinkInterval = 1, bool flat = true)
         {
+            if (!flat && ai != null && ai.CoverRadiusMm > 0) throw ai.FieldError("coverRadiusMm", "is not supported on a terrain map");
             long spacing = SimFix.Ratio(ai?.SlotSpacingMm ?? AiRules.DefaultSlotSpacingMm, 1000).Raw;
             long ring = SimFix.Ratio(ai?.SlotRingMm ?? 0, 1000).Raw;
             if (ring > 0) CheckZones(ai, points, spacing, ring);
@@ -49,7 +52,8 @@ namespace WarCore.Content
             }
             return new AiParts(
                 new NearestDispatch(ai?.HoldSharePermille ?? 0, ai?.AttackSpreadPoints ?? 1),
-                Placement(ai), spacing, ring, engage);
+                Placement(ai), spacing, ring, engage,
+                SimFix.Ratio(ai?.CoverRadiusMm ?? 0, 1000).Raw, SimFix.Ratio(ai?.CoverStepMm ?? 0, 1000).Raw, SimFix.Ratio(ai?.CoverDepthMm ?? 0, 1000).Raw);
         }
 
         private static void CheckThinks(AiRules ai, string field, int ticks, int thinkInterval)
