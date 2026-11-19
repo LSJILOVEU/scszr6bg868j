@@ -1,0 +1,67 @@
+name: open-pr
+
+# Open a pull request into main, or edit the title and description of one, from workflow_dispatch.
+# Only people with write access can dispatch. The script reads inputs from the event file (GITHUB_EVENT_PATH):
+# they must not appear in env: (GitHub prints step env values in the public log), run:, or run-name.
+# Title and body must pass pii-guard; in open mode every commit in main..branch must pass too. Nothing is rewritten.
+# The OPEN_PR_TOKEN secret (fine-grained, this repository only) is used so the pull request triggers the usual
+# workflows; pull requests opened with GITHUB_TOKEN would not. The token is visible only to the apply step.
+# Script and offline tests: tools/open-pr/.
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: open a new pull request, or edit an existing one
+        type: choice
+        options: [open, edit]
+        default: open
+      branch:
+        description: head branch (open), claude/... or wip/...
+        type: string
+        default: ''
+      pr:
+        description: pull request number (edit)
+        type: string
+        default: ''
+      title:
+        description: title, one line, at most 72 characters
+        type: string
+        required: true
+      body:
+        description: description, used verbatim
+        type: string
+        required: true
+      dry_run:
+        description: only run the checks
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: open-pr
+  cancel-in-progress: false
+
+jobs:
+  open-pr:
+    if: github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check inputs, text and commits
+        env:
+          PII_TERMS: ${{ secrets.PII_TERMS }}
+        run: python3 -I tools/open-pr/open_pr.py check
+      - name: Open or edit
+        env:
+          GH_TOKEN: ${{ secrets.OPEN_PR_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          GH_PROMPT_DISABLED: '1'
+          GH_NO_UPDATE_NOTIFIER: '1'
+        run: python3 -I tools/open-pr/open_pr.py apply
