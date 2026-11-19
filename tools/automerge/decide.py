@@ -2,7 +2,7 @@
 """Decide whether a pull request may be squash-merged by the automerge workflow.
 
 Inputs are JSON files fetched by run.sh:
-  --pr      output of `gh pr view --json number,title,state,isDraft,baseRefName,headRefOid,labels`
+  --pr      output of `gh pr view --json number,title,state,isDraft,baseRefName,headRefOid,labels,changedFiles`
   --files   list of {"filename", "previous_filename"} from the pull request files API
   --checks  list of {"id", "name", "status", "conclusion"} check runs on the head commit
   --sha     the head commit the triggering event was about
@@ -21,13 +21,19 @@ REQUIRED_CHECKS = ("test (ubuntu-latest)", "test (windows-latest)", "guard", "ga
 # Check runs of this workflow itself; they are running while it decides.
 SELF_CHECKS = ("automerge",)
 OTHER_OK = ("success", "skipped")
-# Rule files and the merge logic itself stay a human decision.
-PROTECTED_PREFIXES = (".github/", ".claude/", "tools/pii-guard/", "tools/automerge/")
-PROTECTED_FILES = ("CLAUDE.md",)
+# Rule files and the merge logic itself stay a human decision. Agent instruction files count at any depth.
+PROTECTED_PREFIXES = (".github/", "tools/pii-guard/", "tools/automerge/")
+PROTECTED_DIRS = (".claude",)  # any path segment, case-insensitive
+PROTECTED_NAMES = ("claude.md", "claude.local.md")  # file name at any depth, case-insensitive
 
 
 def is_protected(path):
-    return path in PROTECTED_FILES or any(path.startswith(p) for p in PROTECTED_PREFIXES)
+    parts = path.split("/")
+    if parts[-1].lower() in PROTECTED_NAMES:
+        return True
+    if any(seg.lower() in PROTECTED_DIRS for seg in parts[:-1]):
+        return True
+    return any(path.startswith(p) for p in PROTECTED_PREFIXES)
 
 
 def latest_by_name(checks):
@@ -62,6 +68,9 @@ def decide(pr, files, checks, sha):
         return WAIT, f"#{n}: labelled hold, skip"
     if "reviewed" not in labels:
         return WAIT, f"#{n}: no reviewed label, skip"
+    # The files API stops at 3000 entries; a short list could hide a rule file.
+    if pr.get("changedFiles") != len(files):
+        return MANUAL, f"#{n}: file list has {len(files)} of {pr.get('changedFiles')} files: needs a human merge"
     for f in files:
         for path in (f.get("filename"), f.get("previous_filename")):
             if path and is_protected(path):

@@ -7,7 +7,7 @@ here="$(cd "$(dirname "$0")" && pwd)"
 status=0
 for pr in $PRS; do
   dir="$(mktemp -d)"
-  gh pr view "$pr" --repo "$REPO" --json number,title,state,isDraft,baseRefName,headRefOid,labels > "$dir/pr.json"
+  gh pr view "$pr" --repo "$REPO" --json number,title,state,isDraft,baseRefName,headRefOid,labels,changedFiles > "$dir/pr.json"
   gh api "repos/$REPO/pulls/$pr/files?per_page=100" --paginate \
     --jq '.[] | {filename, previous_filename}' | jq -s . > "$dir/files.json"
   gh api "repos/$REPO/commits/$SHA/check-runs?per_page=100" --paginate \

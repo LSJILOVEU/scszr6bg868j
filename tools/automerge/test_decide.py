@@ -40,8 +40,10 @@ def base_checks():
 
 
 def run(pr=None, files=None, checks=None, sha=SHA):
-    return decide.decide(pr or base_pr(), base_files() if files is None else files,
-                         base_checks() if checks is None else checks, sha)
+    files = base_files() if files is None else files
+    pr = pr or base_pr()
+    pr.setdefault("changedFiles", len(files))
+    return decide.decide(pr, files, base_checks() if checks is None else checks, sha)
 
 
 class Decide(unittest.TestCase):
@@ -134,13 +136,33 @@ class Decide(unittest.TestCase):
         self.assertEqual(run(checks=checks)[0], decide.MERGE)
 
     def test_paths_that_only_look_protected_merge(self):
-        files = [{"filename": "docs/CLAUDE.md"}, {"filename": "docs/.github-notes.md"}, {"filename": "tools/pii-guardian.txt"}]
+        files = [{"filename": "docs/CLAUDE.md.bak"}, {"filename": "docs/.github-notes.md"},
+                 {"filename": "tools/pii-guardian.txt"}, {"filename": "docs/.claude-notes.md"}]
         self.assertEqual(run(files=files)[0], decide.MERGE)
+
+    def test_agent_rule_files_in_subdirectories_need_human(self):
+        for path in ("Assets/CLAUDE.md", "docs/a/claude.md", "tools/x/CLAUDE.local.md", "Claude.MD"):
+            with self.subTest(path=path):
+                self.assertEqual(run(files=base_files() + [{"filename": path}])[0], decide.MANUAL)
+
+    def test_dot_claude_at_any_depth_needs_human(self):
+        for path in ("tools/x/.claude/settings.json", "Assets/.Claude/commands/a.md"):
+            with self.subTest(path=path):
+                self.assertEqual(run(files=base_files() + [{"filename": path}])[0], decide.MANUAL)
+
+    def test_truncated_file_list_needs_human(self):
+        pr = base_pr(); pr["changedFiles"] = 3001
+        code, why = run(pr=pr)
+        self.assertEqual(code, decide.MANUAL)
+        self.assertIn("needs a human merge", why)
+        pr = base_pr(); pr.pop("changedFiles", None); pr["changedFiles"] = None
+        self.assertEqual(run(pr=pr)[0], decide.MANUAL)
 
     def test_cli_exit_codes(self):
         with tempfile.TemporaryDirectory() as d:
             paths = {}
-            for key, val in (("pr", base_pr()), ("files", base_files()), ("checks", base_checks())):
+            pr = base_pr(); pr["changedFiles"] = len(base_files())
+            for key, val in (("pr", pr), ("files", base_files()), ("checks", base_checks())):
                 paths[key] = os.path.join(d, key + ".json")
                 with open(paths[key], "w", encoding="utf-8") as fh:
                     json.dump(val, fh)

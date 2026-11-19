@@ -24,6 +24,9 @@ MUTANTS = [
     ("draft accepted", 'if pr.get("isDraft"):', 'if False:'),
     ("any base accepted", 'if pr.get("baseRefName") != BASE_BRANCH:', 'if False:'),
     ("tools/automerge/ unprotected", ', "tools/automerge/")', ')'),
+    ("CLAUDE.md only at root", 'if parts[-1].lower() in PROTECTED_NAMES:', 'if path in ("CLAUDE.md", "CLAUDE.local.md"):'),
+    (".claude/ only at root", 'for seg in parts[:-1]):', 'for seg in parts[:1]):'),
+    ("truncated file list ignored", 'if pr.get("changedFiles") != len(files):', 'if False:'),
 ]
 
 
