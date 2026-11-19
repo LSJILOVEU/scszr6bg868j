@@ -4,7 +4,7 @@ namespace WarCore.Sim
 {
     public enum GridPathStatus { Found, Unreachable, Rejected }
 
-    // Synchronous search. Path borrows storage until the next Find call; consume it immediately.
+    // Synchronous search. Path borrows storage until the next Find or FindWithin call; consume it immediately.
     public sealed class GridPathfinder
     {
         private readonly NavGrid grid;
@@ -25,6 +25,8 @@ namespace WarCore.Sim
         // With cell costs it can exceed an int (up to (512 x 512 - 1) x 1414 x 255 < 2^37): read TotalCostWide there.
         public int TotalCost => TotalCostWide <= int.MaxValue ? (int)TotalCostWide : throw new SimOverflowException("Total path cost exceeds an int; read TotalCostWide.");
         public long TotalCostWide { get; private set; }
+        // Cells taken off the open set and expanded by the last search (stale heap entries not counted). Diagnostics only.
+        internal int Expanded { get; private set; }
 
         private readonly struct Entry
         {
@@ -59,9 +61,21 @@ namespace WarCore.Sim
             return Find(from, to);
         }
 
-        public GridPathStatus Find(int start, int target)
+        public GridPathStatus Find(int start, int target) => FindWithin(start, target, long.MaxValue);
+
+        public GridPathStatus FindWithin(SimVec3 start, SimVec3 target, long limitCost)
         {
-            pathCount = 0; TotalCostWide = 0; heapCount = 0;
+            grid.TryCell(start, out int from);
+            grid.TryCell(target, out int to);
+            return FindWithin(from, to, limitCost);
+        }
+
+        // As Find, but gives up once no route can cost limitCost or less: Found exactly when the cheapest route costs at most
+        // limitCost (then Path and TotalCostWide equal Find's), else Unreachable; a blocked start stays Rejected. The heuristic
+        // is consistent, so entries leave the heap in non-decreasing F and the first F above the limit ends the search.
+        public GridPathStatus FindWithin(int start, int target, long limitCost)
+        {
+            pathCount = 0; TotalCostWide = 0; heapCount = 0; Expanded = 0;
             if (start < 0 || start >= grid.Count || !grid.IsPassable(start % grid.Width, start / grid.Width))
                 return GridPathStatus.Rejected;
             if (target < 0 || target >= grid.Count || !grid.IsPassable(target % grid.Width, target / grid.Width))
@@ -79,6 +93,8 @@ namespace WarCore.Sim
             {
                 Entry current = Pop();
                 if (current.G != costs[current.Key]) continue;
+                if (current.F > limitCost) return GridPathStatus.Unreachable;
+                Expanded++;
                 if (current.Key == target)
                 {
                     Complete(target);
