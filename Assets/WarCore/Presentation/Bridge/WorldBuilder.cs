@@ -69,7 +69,8 @@ namespace WarCore.Presentation
                     gameplaySchema: recipe.Combat?.BuildSchema(recipe.Units.Length));
             assembly.Sim = sim;
             FeatureTable.RunComponents(assembly);
-            sim.ConfigureSpatial(assembly.Positions, assembly.Colliders, SimFix.FromInt(2));
+            sim.ConfigureSpatial(assembly.Positions, assembly.Colliders, SimFix.FromInt(2),
+                footAnchoredLayers: WorldAssembly.FootAnchoredLayers(recipe.Combat));
             if (map != null)
             {
                 for (int n = 0; n < map.Walls.Count; n++)

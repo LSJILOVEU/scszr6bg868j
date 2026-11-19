@@ -40,6 +40,19 @@ namespace WarCore.Content
             return null;
         }
 
+        // An optional object field (a section's NestedObject) as an entry of its own: null when the entry has no such field.
+        internal ContentEntry ObjectOrNull(string name)
+        {
+            foreach (var f in entry.Fields)
+                if (f.Name == name)
+                {
+                    f.Used = true;
+                    if (f.Node.Kind != JsonKind.Object) throw Bad(f, "must be an object");
+                    return EntryMerge.Nested(entry, f);
+                }
+            return null;
+        }
+
         internal bool Has(string name)
         {
             foreach (var f in entry.Fields) if (f.Name == name) return true;

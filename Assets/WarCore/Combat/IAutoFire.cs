@@ -21,7 +21,10 @@ namespace WarCore.Combat
         void Sense(CombatSystem combat, EntityId shooter, in Combatant unit, in Position position, long tick);
 
         // Called only for a unit that has a ready weapon, is not on a melee swing, has no fire intent and is not the player.
-        // direction is only read when the result is Fire.
+        // direction is only read when the result is Fire. The shot starts where CombatSystem puts it, not where this decides:
+        // without a body (legacy) at the shooter's foot, so direction is target foot - shooter foot; ML-3 new mode at the
+        // muzzle, so direction runs from the muzzle to the target's viewpoint (CombatSystem.ShotEnd(target) -
+        // CombatSystem.MuzzlePoint(shooter)), as the built-in decision aims.
         AutoFireAction TryAim(CombatSystem combat, EntityId shooter, in Combatant unit, in Position position,
             in WeaponDef weapon, long tick, out SimVec3 direction);
     }

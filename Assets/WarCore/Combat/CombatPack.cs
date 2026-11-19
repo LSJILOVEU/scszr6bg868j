@@ -15,6 +15,9 @@ namespace WarCore.Combat
         // Block data (C3). Empty for every pack that has none; such a pack hashes, sizes and registers exactly as before.
         public ReadOnlySpan<BlockSpec> Block => block;
         public bool HasBlock => block.Length > 0;
+        // The standing body (ML-3). Null for every pack that has none: legacy geometry, and the pack hashes exactly as before.
+        // It is the only source of the body; the spatial index's foot-anchored layers and the unit colliders' height follow it.
+        public CombatBody? Body { get; }
         // Most damage commands one unit can issue in a tick: one shot, or one swing landing on up to this many targets.
         public int MaxHitsPerAction { get; }
         public IHitResolver Resolver { get; }
@@ -30,7 +33,8 @@ namespace WarCore.Combat
         public long AllyHoldMilli { get; }
 
         public CombatPack(WeaponDef[] weapons, IHitResolver resolver, ITargetSelector selector, long maxHealthRaw,
-            bool friendlyFire = false, bool friendlyFireLocked = false, int allyCheckMissRaw = 0, long allyHoldMilli = 30000, MeleeSpec[] melee = null, BlockSpec[] block = null)
+            bool friendlyFire = false, bool friendlyFireLocked = false, int allyCheckMissRaw = 0, long allyHoldMilli = 30000, MeleeSpec[] melee = null, BlockSpec[] block = null,
+            CombatBody? body = null)
         {
             if (allyCheckMissRaw < 0 || allyCheckMissRaw > SimFix.Scale) throw new ArgumentOutOfRangeException(nameof(allyCheckMissRaw));
             if (allyHoldMilli < 1000 || allyHoldMilli > 1_000_000_000_000L) throw new ArgumentOutOfRangeException(nameof(allyHoldMilli));
@@ -43,6 +47,7 @@ namespace WarCore.Combat
             Resolver = resolver; Selector = selector; MaxHealthRaw = maxHealthRaw;
             FriendlyFire = friendlyFire; FriendlyFireLocked = friendlyFireLocked;
             AllyCheckMissRaw = allyCheckMissRaw; AllyHoldMilli = allyHoldMilli;
+            Body = body;
             var hash = new StateHash();
             hash.Add("combat.pack.v2"); hash.Add(weapons.Length);
             foreach (var weapon in this.weapons) weapon.WriteState(hash);
@@ -53,13 +58,16 @@ namespace WarCore.Combat
             { hash.Add("combat.pack.melee.v1"); hash.Add(this.melee.Length); foreach (var spec in this.melee) spec.WriteState(hash); }
             if (this.block.Length > 0)
             { hash.Add("combat.pack.block.v1"); hash.Add(this.block.Length); foreach (var spec in this.block) spec.WriteState(hash); }
+            if (body.HasValue)
+            { hash.Add("combat.pack.body.v1"); body.Value.WriteState(hash); }
             PolicyDigest = hash.Value;
         }
 
         // The same pack with another target selector: every other constructor argument is passed on as this pack holds it
-        // (no melee or block stays absent), so only the selector's PolicyKey changes the digest.
+        // (no melee, block or body stays absent), so only the selector's PolicyKey changes the digest.
+        // Rule (ML-3): a new optional section of the pack is passed on by every With* copy, with a test.
         public CombatPack WithSelector(ITargetSelector selector) => new CombatPack(weapons, Resolver, selector, MaxHealthRaw,
-            FriendlyFire, FriendlyFireLocked, AllyCheckMissRaw, AllyHoldMilli, melee.Length == 0 ? null : melee, block.Length == 0 ? null : block);
+            FriendlyFire, FriendlyFireLocked, AllyCheckMissRaw, AllyHoldMilli, melee.Length == 0 ? null : melee, block.Length == 0 ? null : block, Body);
 
         public GameplaySchema BuildSchema(int unitCount) => new GameplaySchema(
             new[] { new GameplayResourceDef(1, "health", 0, MaxHealthRaw, MaxHealthRaw, isLife: true) },

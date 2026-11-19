@@ -49,6 +49,8 @@ namespace WarCore.Content
         private readonly int[] unitTypeBlock, unitTypeArchetypes;
         private readonly long?[] unitTypeSpeeds;
         private readonly object[] sections;
+        // ML-3: the combat section's optional body; null keeps the legacy geometry.
+        public CombatBody? Body { get; }
 
         public string Id { get; }
         // Optional terrain rules (WP-22); null when the pack has none. Not part of any PolicyDigest.
@@ -58,8 +60,10 @@ namespace WarCore.Content
             long maxHealthRaw, string resolverId, string selectorId, MatchRules? match,
             bool friendlyFire, bool friendlyFireLocked, int allyCheckMissRaw, long allyHoldMilli,
             BlockSpec[] block, int[] unitTypeBlock, int[] unitTypeArchetypes, long?[] unitTypeSpeeds,
-            string[] meleeIds = null, MeleeSpec[] melee = null, int[] unitTypeMelee = null, TerrainRules terrain = null, object[] sections = null, string[] ruleIds = null)
+            string[] meleeIds = null, MeleeSpec[] melee = null, int[] unitTypeMelee = null, TerrainRules terrain = null, object[] sections = null, string[] ruleIds = null,
+            CombatBody? body = null)
         {
+            Body = body;
             this.block = block; this.unitTypeBlock = unitTypeBlock;
             this.unitTypeArchetypes = unitTypeArchetypes; this.unitTypeSpeeds = unitTypeSpeeds;
             Terrain = terrain;
@@ -131,7 +135,7 @@ namespace WarCore.Content
             SimFix sight = selectorId == ContentPolicies.SightLimitedNearest ? Match.Sight : default;
             bool effective = friendlyFireLocked ? friendlyFire : requestedFriendlyFire ?? friendlyFire;
             return new CombatPack(weapons, ContentPolicies.Resolver(resolverId), ContentPolicies.Selector(selectorId, sight), maxHealthRaw,
-                effective, friendlyFireLocked, allyCheckMissRaw, allyHoldMilli, melee.Length == 0 ? null : melee, block.Length == 0 ? null : block);
+                effective, friendlyFireLocked, allyCheckMissRaw, allyHoldMilli, melee.Length == 0 ? null : melee, block.Length == 0 ? null : block, Body);
         }
 
         // Control points and spawn anchors are map data and stay with the caller.

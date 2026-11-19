@@ -28,12 +28,14 @@ namespace WarCore.Sim
         internal long UsedBytes => active.UsedBytes + spare.UsedBytes;
         internal long ActiveUsedBytes => active.UsedBytes;
         public PostureGeometry Postures { get; }
+        // ML-3: bodies on these layers grow up from their Position (the foot) instead of being centred on it. 0 = none (legacy).
+        internal uint FootAnchoredLayers { get; }
         internal void ValidateRead() => store.ValidateSpatialWrites();
 
         internal GridSpatialIndex(EntityStore store, ComponentType<Position> positions, ComponentType<Collider> colliders,
             SimFix cellSize, int maxEntities = 4096, int maxMemberships = 32768, PostureGeometry postures = null,
             bool readLiveLayers = true, int maxCells = 0, int maxCellsPerBody = 64,
-            int staticMaxMemberships = 0, int staticMaxCells = 0)
+            int staticMaxMemberships = 0, int staticMaxCells = 0, uint footAnchoredLayers = 0)
         {
             if (store == null)
                 throw new ArgumentNullException(nameof(store));
@@ -51,6 +53,7 @@ namespace WarCore.Sim
             this.readLiveLayers = readLiveLayers;
             this.maxCellsPerBody = maxCellsPerBody;
             Postures = postures;
+            FootAnchoredLayers = footAnchoredLayers;
             MembershipCapacity = maxMemberships;
             entityError = "Spatial entity capacity " + maxEntities + " exhausted.";
             if (staticMaxMemberships < 0 || staticMaxMemberships > int.MaxValue / 5)
@@ -89,7 +92,13 @@ namespace WarCore.Sim
                 return false;
             if (entity.Id >= Capacity)
                 throw new SimBoundaryException(entityError);
-            body = Postures == null ? new SpatialBody(entity, position.Value, collider) : Postures.Body(entity, position.Value, collider);
+            SimVec3 center = position.Value;
+            // ML-3: a foot-anchored body's centre is the foot plus its truncated half height, so its bottom is exactly the foot
+            // for any height raw, odd or even (an odd height only puts the top 1 raw lower). Lifted first, then the postures.
+            // WorldHalfExtents.Y is that truncated half height for every shape.
+            if ((collider.Layer & FootAnchoredLayers) != 0)
+                center = new SimVec3(center.X, SimFix.FromRaw(SimChecked.Add(center.Y.Raw, collider.WorldHalfExtents.Y.Raw)), center.Z);
+            body = Postures == null ? new SpatialBody(entity, center, collider) : Postures.Body(entity, center, collider);
             return true;
         }
 

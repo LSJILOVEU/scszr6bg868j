@@ -41,6 +41,20 @@ namespace WarCore.Content
     // The two ways a layer can carry a section: an array of entries with ids, or one object.
     internal static class EntryMerge
     {
+        // The members of an object field as an entry of their own (Label: "section.field"), for a reader. Each member must be a
+        // number, string or boolean.
+        internal static ContentEntry Nested(ContentEntry owner, ContentField field)
+        {
+            var entry = new ContentEntry(owner.Section + "." + field.Name, null, field.Layer);
+            foreach (var member in field.Node.Members)
+            {
+                if (member.Value.Kind == JsonKind.Object || member.Value.Kind == JsonKind.Array)
+                    throw new ContentException("content layer '" + field.Layer + "' " + entry.Label + " field '" + member.Name + "' must be a number, string or boolean");
+                entry.Fields.Add(new ContentField(member.Name, member.Value, field.Layer));
+            }
+            return entry;
+        }
+
         internal static void Array(List<ContentEntry> target, JsonNode array, string section, string layer)
         {
             if (array.Kind != JsonKind.Array) throw new ContentException("content layer '" + layer + "' " + section + " must be an array");
@@ -61,19 +75,21 @@ namespace WarCore.Content
         }
 
         // An object section keeps its single entry as the only element of the list.
-        internal static void Object(List<ContentEntry> target, JsonNode node, string section, string layer)
+        internal static void Object(List<ContentEntry> target, JsonNode node, string section, string layer, string nestedObject = null)
         {
             if (node.Kind != JsonKind.Object) throw new ContentException("content layer '" + layer + "' " + section + " must be an object");
             if (target.Count == 0) target.Add(new ContentEntry(section, null, layer));
-            Overlay(target[0], node, layer);
+            Overlay(target[0], node, layer, nestedObject);
         }
 
-        private static void Overlay(ContentEntry entry, JsonNode node, string layer)
+        // nestedObject: the one field name allowed to hold an object; it is kept whole, so a child layer replaces all of it.
+        private static void Overlay(ContentEntry entry, JsonNode node, string layer, string nestedObject = null)
         {
             foreach (var member in node.Members)
             {
                 if (member.Name == "id" && entry.Id != null) continue;
-                if (member.Value.Kind == JsonKind.Object || member.Value.Kind == JsonKind.Array)
+                bool nested = member.Value.Kind == JsonKind.Object && nestedObject != null && member.Name == nestedObject;
+                if (!nested && (member.Value.Kind == JsonKind.Object || member.Value.Kind == JsonKind.Array))
                     throw new ContentException("content layer '" + layer + "' " + entry.Label + " field '" + member.Name + "' must be a number, string or boolean");
                 entry.Fields.RemoveAll(f => f.Name == member.Name);
                 entry.Fields.Add(new ContentField(member.Name, member.Value, layer));

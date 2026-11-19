@@ -51,7 +51,7 @@ namespace WarCore.Presentation
             EntityStore entities = a.Sim.Entities;
             SimVec3 point = a.SpawnPoint(spawn);
             entities.Set(a.Positions, unit, new Position(point));
-            entities.Set(a.Colliders, unit, new Collider(SimFix.Ratio(1, 4), SimFix.FromInt(1)));
+            entities.Set(a.Colliders, unit, new Collider(SimFix.Ratio(1, 4), WorldAssembly.UnitHeight(a.Recipe.Combat)));
             entities.Set(a.Intents, unit, new MoveIntent(point, WorldAssembly.SpawnSpeed(spawn), spawn.Squad, false));
             if (a.Path) entities.Set(a.Waypoints, unit, default);
         }

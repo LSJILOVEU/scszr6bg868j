@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using WarCore.Combat;
 using WarCore.Sim;
 
 namespace WarCore.Content.MapTools
@@ -13,6 +14,20 @@ namespace WarCore.Content.MapTools
     //   2. structure (references, wall layers, teams with bases, standable anchors and placed units);
     //   3. reachability of every qualified base to every qualified control point.
     // Stricter than the runtime on purpose: footprints are checked on flat maps too and every team needs a base.
+    public enum WallSightBand : byte { SightPasses = 1, BodyShows = 2 }
+
+    // One line of MapGate.WallHeights: a wall, its first cell, its top above the highest ground under it (raw), and its band.
+    public readonly struct WallHeightLine
+    {
+        public readonly ulong WallId;
+        public readonly int CellX, CellZ;
+        public readonly long TopAboveGroundRaw;
+        public readonly WallSightBand Band;
+        public WallHeightLine(ulong wallId, int cellX, int cellZ, long topAboveGroundRaw, WallSightBand band)
+        { WallId = wallId; CellX = cellX; CellZ = cellZ; TopAboveGroundRaw = topAboveGroundRaw; Band = band; }
+        public override string ToString() => "wall " + WallId + " (" + CellX + ", " + CellZ + ") " + TopAboveGroundRaw + " raw " + Band;
+    }
+
     public static class MapGate
     {
         // The same as InterimLocomotion.UnitFootprint; Content does not reference Interim.
@@ -152,6 +167,29 @@ namespace WarCore.Content.MapTools
                 foreach (MapPoint point in points)
                     if (finder.Find(At(b.At), At(point.At)) != GridPathStatus.Found)
                         problems.Add(new MapProblem("GATE_UNREACHABLE", "base " + Text(b.Id) + " point " + Text(point.Id), Cell(nav, At(b.At)), b.At));
+        }
+
+        // ---- ML-3 wall-height report (read before a pack turns its body on; not a load error) ----
+
+        // Every wall of the description that is low for the body: its top minus the highest height point under its footprint
+        // (both far edges included; floorRaw on a flat map), taken as the least favourable side on a slope. SightPasses: at
+        // most the eye height, so standing sight and level shots go over it. BodyShows: above the eye but below the body
+        // height, so it hides the viewpoint while the top of the capsule shows over it. Taller walls are not listed. Flat
+        // maps are listed too (they have no lower bound on wall height). Walls in description order.
+        public static IReadOnlyList<WallHeightLine> WallHeights(byte[] descBytes, CombatBody body)
+        {
+            if (descBytes == null) throw new ArgumentNullException(nameof(descBytes));
+            MapDesc desc = MapDescJson.Read(descBytes);
+            Func<int, int, long> point = MapBake.Point(desc);
+            var lines = new List<WallHeightLine>();
+            foreach (MapWall wall in desc.Walls)
+            {
+                long top = (wall.BaseRaw ?? desc.FloorRaw) + wall.HeightRaw;
+                long above = top - WallSpan.HighestPoint(point, wall.Cell.X, wall.Cell.Z, wall.Cell.X + wall.Size.X, wall.Cell.Z + wall.Size.Z);
+                if (above <= body.Eye.Raw) lines.Add(new WallHeightLine(wall.Id, wall.Cell.X, wall.Cell.Z, above, WallSightBand.SightPasses));
+                else if (above < body.Height.Raw) lines.Add(new WallHeightLine(wall.Id, wall.Cell.X, wall.Cell.Z, above, WallSightBand.BodyShows));
+            }
+            return lines.AsReadOnly();
         }
 
         private static MapProblem FootprintProblem(NavGrid nav, MapMm at, string id) => new MapProblem("GATE_SPAWN_FOOTPRINT", id, Cell(nav, At(at)), at);
