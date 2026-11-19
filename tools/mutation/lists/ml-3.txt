@@ -1,7 +1,7 @@
 # ML-3: the standing body (height, eye, muzzle), foot-anchored unit bodies, the D6 content gate, the window prefab
 # (D6a) and the wall-height report. Filter: the ML-3 tests only; the legacy locks are checked by the full suite.
 # Not listed: D3 'the end uses the shooter's eye' is equivalent while a pack has one body (EyeRaw/AimEndRaw ignore
-# the unit); see the pull request's Departures.
+# the unit); 'the query centre rounds an odd half height up' moves the centre 1 raw and is not listed either.
 
 [ml3-01-never-bodied]
 file = Assets/WarCore/Combat/CombatSystem.cs
@@ -703,3 +703,73 @@ original:
 | WallSpan.HighestPoint(point, wall.Cell.X, wall.Cell.Z, wall.Cell.X + wall.Size.X, wall.Cell.Z + wall.Size.Z)
 replacement:
 | point(wall.Cell.X, wall.Cell.Z)
+
+[ml3-69-sees-legacy-eye]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3SightPortsTests.SeesAndWallWithinReadTheEye
+note = Sees reads the legacy 0.5 m eye in body mode
+original:
+| => LineClear(Eye(from), Eye(to));
+replacement:
+| => LineClear(AimPoint(from), AimPoint(to));
+
+[ml3-70-wallwithin-legacy-eye]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3SightPortsTests.SeesAndWallWithinReadTheEye
+note = WallWithin reads the legacy 0.5 m eye in body mode
+original:
+| SimVec3 origin = Eye(from), delta = Eye(toward) - origin;
+replacement:
+| SimVec3 origin = AimPoint(from), delta = AimPoint(toward) - origin;
+
+[ml3-71-visible-point-not-lifted]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3SightPortsTests.VisibleToAGroundPointLiftsThePoint
+note = Visible to a ground point ends on the ground
+original:
+| => LineClear(EyePoint(shooter), Eye(point));
+replacement:
+| => LineClear(EyePoint(shooter), point);
+
+[ml3-72-allyblocks-end-ground]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3SightPortsTests.AllyBlocksRunsMuzzleToTheLiftedPoint
+note = AllyBlocks ends on the ground point
+original:
+| SimVec3 direction = Lift(point, aimEndRaw) - origin;
+replacement:
+| SimVec3 direction = point - origin;
+
+[ml3-73-allyblocks-origin-foot]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3SightPortsTests.AllyBlocksRunsMuzzleToTheLiftedPoint
+note = AllyBlocks starts at the foot
+original:
+| SimVec3 origin = MuzzlePoint(shooter);
+replacement:
+| SimVec3 origin = Point(shooter);
+
+[ml3-74-thrust-at-foot]
+file = Assets/WarCore/Combat/CombatSystem.Melee.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3SightPortsTests.ThrustRunsAtTheBodyCentre
+note = P13: the thrust capsule runs at the foot
+original:
+| ? SpatialQueries.Capsule(center, center + direction.Normalized * spec.Radius,
+replacement:
+| ? SpatialQueries.Capsule(origin, origin + direction.Normalized * spec.Radius,
+
+[ml3-75-melee-wall-line-from-muzzle]
+file = Assets/WarCore/Combat/CombatSystem.Melee.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3SightPortsTests.MeleeWallLineStartsAtTheEye
+note = P12: the melee wall line starts at the muzzle
+original:
+| var from = Lift(origin, EyeRaw(shooter));
+replacement:
+| var from = Lift(origin, muzzleRaw);
