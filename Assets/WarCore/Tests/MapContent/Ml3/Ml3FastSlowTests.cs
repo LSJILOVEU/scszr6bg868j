@@ -20,11 +20,11 @@ namespace WarCore.Tests
             new[] { -2 * M, -4 * M, M / 3 },
         };
 
-        // Even and odd heights; the eye at the lowest and highest allowed points, the middle and the placeholder.
+        // Even and odd heights; the eye at the lowest and highest allowed points, the middle, and 1.5 m in a 1.8 m body.
         [TestCase(114688L, R)]
         [TestCase(114688L, 114688L - R)]
         [TestCase(114688L, 57344L)]
-        [TestCase(114688L, 98304L)]
+        [TestCase(117964L, 98304L)]
         [TestCase(114689L, 114689L - R)]
         [TestCase(114689L, R)]
         [TestCase(2 * R, R)]
