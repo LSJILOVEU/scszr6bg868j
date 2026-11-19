@@ -803,3 +803,33 @@ original:
 | if (map != null && map.Plates.Count > 0)
 replacement:
 | if (map != null && map.Plates.Count > 3)
+
+[ml4-77-release-cutout]
+file = Assets/WarCore/Content/MapTools/MapEdit.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4EditTests.ReleaseHandFreesCutoutsInTheBox
+note = ReleaseHand leaves hand cutouts owned
+original:
+|             Release(draft, MapEditKinds.Cutout, x0, z0, x1, z1);
+replacement:
+|
+
+[ml4-78-links-plate]
+file = Assets/WarCore/Content/MapTools/MapEdit.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4EditTests.PlateAndCutoutLinksAreChecked
+note = editor start does not check plate links
+original:
+|             CheckLinks(start, MapEditKinds.Plate, start.Plates, start.Next.Plate);
+replacement:
+|
+
+[ml4-79-links-cutout]
+file = Assets/WarCore/Content/MapTools/MapEdit.cs
+filter = FullyQualifiedName~Ml4
+expect = WarCore.Tests.Ml4EditTests.PlateAndCutoutLinksAreChecked
+note = editor start does not check cutout links
+original:
+|             CheckLinks(start, MapEditKinds.Cutout, start.Cutouts, start.Next.Cutout);
+replacement:
+|

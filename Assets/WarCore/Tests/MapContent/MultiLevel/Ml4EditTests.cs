@@ -91,6 +91,40 @@ namespace WarCore.Tests
             Assert.That(e.Current.Plates.First(p => p.Id == 2).YRaw, Is.EqualTo(3 * M), "a released plate is the stamp's again");
         }
 
+        // ReleaseHand frees hand cutouts anchored in the box and leaves the others with the hand.
+        [Test]
+        public void ReleaseHandFreesCutoutsInTheBox()
+        {
+            MapEdit e = Empty();
+            ulong plate = e.AddPlate(Ml4Maps.Flat(1, 0, 0, 8, 6, 3 * M));
+            ulong inside = e.AddCutout(Ml4Maps.Cut(1, plate, 1, 1, 1, 1));
+            ulong outside = e.AddCutout(Ml4Maps.Cut(1, plate, 5, 4, 1, 1));
+            e.ReleaseHand(0, 0, 2, 2);
+            Assert.That(e.EntryOwner("cutout", inside), Is.Null);
+            Assert.That(e.EntryOwner("cutout", outside), Is.EqualTo("hand"));
+            Assert.That(e.EntryOwner("plate", plate), Is.Null, "the plate is anchored at 0,0");
+        }
+
+        // The editor checks the links of plates and cutouts like those of walls: a src repeated within a kind is refused.
+        [Test]
+        public void PlateAndCutoutLinksAreChecked()
+        {
+            MapSrc src = new MapSrc("s", "plate", 1);
+            MapDesc plates = Ml4Maps.Make(0, 8, 6, null, new[]
+            {
+                new MapPlate(1, new MapXZ(0, 0), new MapXZ(2, 2), 3 * M, null, M / 2, src: src),
+                new MapPlate(2, new MapXZ(4, 0), new MapXZ(2, 2), 3 * M, null, M / 2, src: src),
+            });
+            Assert.That(Assert.Throws<ArgumentException>(() => new MapEdit(plates)).Message, Is.EqualTo("MAPEDIT_LINK plate: src repeated"));
+            MapSrc cut = new MapSrc("s", "cutout", 1);
+            MapDesc cutouts = Ml4Maps.Make(0, 8, 6, null, new[] { Ml4Maps.Flat(1, 0, 0, 4, 2, 3 * M) }, new[]
+            {
+                new MapCutout(1, 1, new MapXZ(0, 0), new MapXZ(1, 1), src: cut),
+                new MapCutout(2, 1, new MapXZ(2, 0), new MapXZ(1, 1), src: cut),
+            });
+            Assert.That(Assert.Throws<ArgumentException>(() => new MapEdit(cutouts)).Message, Is.EqualTo("MAPEDIT_LINK cutout: src repeated"));
+        }
+
         // A cutout naming a plate not in the description (removed by hand, or never there) is skipped and counted.
         [Test]
         public void StampCutoutOfAMissingPlateIsSkipped()
