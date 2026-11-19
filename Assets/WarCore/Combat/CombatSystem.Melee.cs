@@ -136,9 +136,11 @@ namespace WarCore.Combat
             Entities.Set(meleeStates, shooter, new MeleeState(state.Spec, -1, state.NextStartTick));
             SimVec3 origin = state.Origin;
             SimVec3 direction = new SimVec3(SimFix.FromRaw(state.DirX), default, SimFix.FromRaw(state.DirZ));
+            // The swing's origin stays the foot it was started from; the query runs at the body centre over it (ML-3).
+            SimVec3 center = Center(origin);
             SpatialRequest request = spec.IsThrust
-                ? SpatialQueries.Capsule(origin, origin + direction.Normalized * spec.Radius, spec.LineHalfWidth, unitLayerMask)
-                : SpatialQueries.Sector(origin, spec.Radius, direction, spec.CosHalfAnglePermille, spec.HalfHeight, unitLayerMask);
+                ? SpatialQueries.Capsule(center, center + direction.Normalized * spec.Radius, spec.LineHalfWidth, unitLayerMask)
+                : SpatialQueries.Sector(center, spec.Radius, direction, spec.CosHalfAnglePermille, spec.HalfHeight, unitLayerMask);
             var result = sim.SpatialQuery.AllCapped(in request, candidates.Length, candidates);
             if (result.Truncated) throw new InvalidOperationException("Combat unit capacity exceeded; melee target selection would be incomplete.");
             int count = 0;
@@ -147,8 +149,9 @@ namespace WarCore.Combat
                 EntityId entity = candidates[i].Entity;
                 if (!(IsEnemy(shooter, entity) || (pack.FriendlyFire && IsFriend(shooter, entity)))
                     || !Entities.TryGet(positions, entity, out Position other)) continue;
-                var from = origin + new SimVec3(default, SimFix.Ratio(1, 2), default);
-                var delta = AimPoint(other.Value) - from;
+                // Wall line: the swing's foot at the striker's eye to the target's viewpoint (legacy both 0.5 m).
+                var from = Lift(origin, EyeRaw(shooter));
+                var delta = Eye(other.Value, entity) - from;
                 if (Horizontal(delta).LengthSquared.Sign != 0 && sim.SpatialQuery.Any(SpatialQueries.Ray(from, delta, delta.Length, wallMask))) continue;
                 var item = new MeleeTarget { Entity = entity, Id = Entities.StableOf(entity), Distance = Horizontal(other.Value - origin).LengthSquared };
                 int at = count++;

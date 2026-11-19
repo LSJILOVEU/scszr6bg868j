@@ -43,7 +43,8 @@ namespace WarCore.Sim
             return gameplay;
         }
         internal bool TryGameplaySpatial(StableId id, out SimVec3 position, out uint layer) => TryGameplaySpatial(id, out position, out layer, out _);
-        // Explicit and occlusion-checked targets are points at the collider centre; block 3a admits only capsules there.
+        // Explicit and occlusion-checked targets are points at the entity's Position; block 3a admits only capsules there.
+        // That is the collider centre unless the entity's layer is foot-anchored (ML-3), where it is the foot.
         internal bool TryGameplaySpatial(StableId id, out SimVec3 position, out uint layer, out ShapeKind shape)
         {
             position = default;

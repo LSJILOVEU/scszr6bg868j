@@ -5,7 +5,7 @@ namespace WarCore.Tests.Diagnostics
     {
         internal const string SpatialQuery = "b8675f3115b18a148a2c6136cf84bdc0ee07f16e74dee758a7e034fef277199f";
         internal const string GridSpatialQuery = "432aeb7c9af932c4894063b6f9cf26ea9a159103d2c32509586b66bb3d1dbc31";
-        internal const string GridSpatialIndex = "56e5d126ffbe87e63528e7cf04a24acfa5d41e90a6dfa049ee5a28a371f8dfc9";
+        internal const string GridSpatialIndex = "2184dda25e3cd8280059803e5954c6f9a14b539657a7022b8bf1a9f5a9f7c774";
         internal const string GridSpatialIndex_Modes = "e4456ffe4ab12768c15e035b7509f10f8764932f3ffe9f9e191292044c8a92c3";
         internal const string SpatialQueryView = "49bd7c77f8b16e7b431a83a24223bbc822ee91aacf934dc1787e44aba4c0b018";
         internal const string GridSpatialQuery_Modes = "4cfe2f250734f8051c7858ee9e9207b493261ce637d33841424326c5cc8f4896";
@@ -24,7 +24,7 @@ namespace WarCore.Tests.Diagnostics
         internal const string SpatialBodyColumns = "692ce59bce520ab0bbdf875c59187857d34079b956dbd230aaed4e9f517bac8d";
         internal const string GridSpatialIndex_StableOrder = "805fbc0a466c622247516c04f03f52c7cc0c540fe395fa9bcd8812be75b50bcc";
         internal const string ProfiledSpatialQueryBase = "7056dae8489cb1f5b49fb3f1cf6e5386410f80f00447d24346dff6bc43060023";
-        internal const string ProfiledGridSpatialQuery = "5acad8329d6800e35b164c951feb3cafabda81a46765329a5640bd197cd7b00a";
+        internal const string ProfiledGridSpatialQuery = "eb874b6b45d643933b66c09e822e107a5962d3d1091dd481533f90072b8ee339";
         internal const string ProfiledSpatialGeometry = "f19bb1ca8ea5975fc7ea51b43827dec097b1a0994ce109fff16da7f9cb98420f";
         internal const string ProfiledSpatialRay = "99f37c7381f5fcbcee214b013bfb6f28308302f81fe16ef1b2d64b6cd20dfc5f";
     }

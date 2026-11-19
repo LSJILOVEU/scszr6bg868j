@@ -15,13 +15,54 @@ namespace WarCore.Combat
         public SimVec3 Point(EntityId entity) => Entities.Read(positions, entity).Value;
         public Combatant Unit(EntityId entity) => Entities.Read(combatants, entity);
         public bool IsDead(EntityId entity) => sim.GameplayLife(Entities.StableOf(entity)).State == GameplayLifeState.Dead;
+        // The legacy eye: a point on the ground lifted 0.5 m. Kept with its meaning; the body-aware points are below.
         public static SimVec3 AimPoint(SimVec3 point) => point + new SimVec3(default, SimFix.Ratio(1, 2), default);
         public static SimVec3 Horizontal(SimVec3 delta) => new SimVec3(delta.X, default, delta.Z);
+
+        // A point lifted by a raw height; a zero lift returns the point itself.
+        private static SimVec3 Lift(SimVec3 point, long raw) => raw == 0 ? point : point + new SimVec3(default, SimFix.FromRaw(raw), default);
+
+        // ML-3 viewpoint of a unit: where it looks from and where others look and aim at it (new mode: foot + eye height;
+        // a pack without a body: foot + 0.5 m, as AimPoint).
+        public SimVec3 EyePoint(EntityId unit) => Lift(Point(unit), EyeRaw(unit));
+
+        // ML-3 muzzle of a unit: where its aimed and automatic shots start (new mode: foot + muzzle height; without a body:
+        // the foot).
+        public SimVec3 MuzzlePoint(EntityId unit) => Lift(Point(unit), muzzleRaw);
+        internal SimVec3 MuzzleOver(SimVec3 foot) => Lift(foot, muzzleRaw);
+
+        // ML-3 where the built-in aimed and automatic lines at a unit end (new mode: its viewpoint; without a body: its foot).
+        // A game-layer IAutoFire aims along ShotEnd(target) - MuzzlePoint(shooter), as the built-in decision does.
+        public SimVec3 ShotEnd(EntityId target) => Lift(Point(target), AimEndRaw(target));
+
+        // ML-3: a fire record's origin turned back into the point on the ground under the shooter. New mode: Origin minus the
+        // muzzle height (all three shot paths record the muzzle). Without a body: Origin as recorded, including the 0.5 m an
+        // explicit target shot has always recorded.
+        public SimVec3 GroundOfFireOrigin(in FireRecord fire) => bodied ? Lift(fire.Origin, -muzzleRaw) : fire.Origin;
+
+        // One body per pack (v1): a unit's eye and aim end are the pack's. A line that ends on a unit uses that unit's own
+        // value, a line that ends on a ground point the pack's standing default (D3); both are the same number until a pack
+        // carries postures or several bodies, when the ground-point readers need an explicit height.
+        private long EyeRaw(EntityId unit) => eyeRaw;
+        private long AimEndRaw(EntityId unit) => aimEndRaw;
+        private SimVec3 Eye(SimVec3 ground) => Lift(ground, eyeRaw);
+        private SimVec3 Eye(SimVec3 foot, EntityId unit) => Lift(foot, EyeRaw(unit));
+
+        // New mode: the unit-layer query centre over a foot (the body's centre); without a body the foot itself.
+        private SimVec3 Center(SimVec3 foot) => Lift(foot, centerRaw);
+
+        // D2a-3: in new mode every shooter's collider must be as tall as the pack's body. Read-only, no random numbers.
+        private void RequireBodyHeight(EntityId unit)
+        {
+            if (Entities.TryGet(colliders, unit, out Collider collider) && collider.Height.Raw != bodyHeightRaw)
+                throw new InvalidOperationException("Unit collider height " + collider.Height.Raw + " raw differs from the combat pack's body height "
+                    + bodyHeightRaw + " raw.");
+        }
 
         public ReadOnlySpan<SpatialHit> Candidates(EntityId shooter, SimFix range)
         {
             if (inStep) QueriesThisStep++;
-            var result = sim.SpatialQuery.AllCapped(SpatialQueries.Sphere(Point(shooter), range, unitLayerMask), candidates.Length, candidates);
+            var result = sim.SpatialQuery.AllCapped(SpatialQueries.Sphere(Center(Point(shooter)), range, unitLayerMask), candidates.Length, candidates);
             if (result.Truncated) throw new InvalidOperationException("Combat unit capacity exceeded; target selection would be incomplete.");
             return candidates.AsSpan(0, result.Written);
         }
@@ -72,31 +113,33 @@ namespace WarCore.Combat
             !shooter.Equals(candidate) && Entities.TryGet(combatants, candidate, out Combatant other)
             && Unit(shooter).Team != 0 && other.Team == Unit(shooter).Team && !IsDead(candidate);
 
-        public bool Visible(EntityId shooter, EntityId target) => LineClear(AimPoint(Point(shooter)), AimPoint(Point(target)));
+        // Viewpoint to viewpoint (ML-3: each unit's own eye height; without a body both 0.5 m up).
+        public bool Visible(EntityId shooter, EntityId target) => LineClear(EyePoint(shooter), EyePoint(target));
 
-        // Line of sight from the shooter to a point on the ground (both lifted to the aim height), walls and (L9) the ground.
-        public bool Visible(EntityId shooter, SimVec3 point) => LineClear(AimPoint(Point(shooter)), AimPoint(point));
+        // Line of sight from the shooter to a point on the ground (both lifted to the eye height; for the point the pack's
+        // standing default), walls and (L9) the ground.
+        public bool Visible(EntityId shooter, SimVec3 point) => LineClear(EyePoint(shooter), Eye(point));
 
-        // Line of sight between two points on the ground (both lifted to the aim height): what a unit standing at one
+        // Line of sight between two points on the ground (both lifted to the eye height): what a unit standing at one
         // would see of a unit standing at the other. No unit has to stand at either.
-        public bool Sees(SimVec3 from, SimVec3 to) => LineClear(AimPoint(from), AimPoint(to));
+        public bool Sees(SimVec3 from, SimVec3 to) => LineClear(Eye(from), Eye(to));
 
         // The unit's body (its collider radius), moved in a straight line from one point on the ground to another, would
         // touch a living teammate (never the unit itself): somebody stands in the way, or where it would end up.
         public bool FriendOnWalk(EntityId unit, SimVec3 from, SimVec3 to)
         {
-            var result = sim.SpatialQuery.AllCapped(SpatialQueries.Capsule(from, to, Entities.Get(colliders, unit).Radius, unitLayerMask), candidates.Length, candidates);
+            var result = sim.SpatialQuery.AllCapped(SpatialQueries.Capsule(Center(from), Center(to), Entities.Get(colliders, unit).Radius, unitLayerMask), candidates.Length, candidates);
             if (result.Truncated) throw new InvalidOperationException("Combat unit capacity exceeded; the teammate check would be incomplete.");
             for (int i = 0; i < result.Written; i++)
                 if (IsFriend(unit, candidates[i].Entity)) return true;
             return false;
         }
 
-        // A wall stands on the sight line from one point on the ground toward another (both lifted to the aim height),
+        // A wall stands on the sight line from one point on the ground toward another (both lifted to the eye height),
         // within reach of the first. Walls only: the ground is not tested. Two points above one another have no line.
         public bool WallWithin(SimVec3 from, SimVec3 toward, SimFix reach)
         {
-            SimVec3 origin = AimPoint(from), delta = AimPoint(toward) - origin;
+            SimVec3 origin = Eye(from), delta = Eye(toward) - origin;
             if (Horizontal(delta).LengthSquared.Sign == 0) return false;
             SimFix length = delta.Length;
             return sim.SpatialQuery.Any(SpatialQueries.Ray(origin, delta, length < reach ? length : reach, wallMask));
@@ -119,6 +162,8 @@ namespace WarCore.Combat
         // end is where the ray stops. L9: the ray lifted by 0.5 m (the eye height of AimPoint) is then tested against the ground
         // up to that end; if it goes under, the shot is a wall hit at the first blocked sample lowered back by 0.5 m, recorded
         // as is (no second rounding). The ground wins a tie with the unit or wall at the end.
+        // ML-3 new mode: the ray already starts at the muzzle, so it is tested against the ground as it flies (no lift, the
+        // blocked sample is the end as is).
         private Struck Trace(EntityId shooter, SimVec3 origin, SimVec3 direction, SimFix range, out EntityId hit, out SimFix distance, out SimVec3 end)
         {
             hit = default; distance = range;
@@ -144,7 +189,7 @@ namespace WarCore.Combat
             end = origin + direction.Normalized * distance;
             if (ground != null)
             {
-                SimVec3 lift = new SimVec3(default, SimFix.Ratio(1, 2), default);
+                SimVec3 lift = new SimVec3(default, SimFix.FromRaw(groundLiftRaw), default);
                 if (ground.TryFirstBelow(origin + lift, end + lift, out SimVec3 at))
                 { hit = default; end = at - lift; distance = (end - origin).Length; return Struck.Wall; }
             }
@@ -159,11 +204,12 @@ namespace WarCore.Combat
 
         // AI read port: is a living teammate the first thing on the straight (3D) line from the shooter towards a point, traced
         // out to range (the whole flight of a shot, not only to the point)? It is the line an aimed intent at the point flies
-        // along. A point straight above or below the shooter gives no line.
+        // along (ML-3: from the muzzle to the point lifted to the standing eye). A point straight above or below the shooter
+        // gives no line.
         public bool AllyBlocks(EntityId shooter, SimVec3 point, SimFix range)
         {
-            SimVec3 origin = Point(shooter);
-            SimVec3 direction = point - origin;
+            SimVec3 origin = MuzzlePoint(shooter);
+            SimVec3 direction = Lift(point, aimEndRaw) - origin;
             return Horizontal(direction).LengthSquared.Sign != 0 && AllyBlocks(shooter, origin, direction, range);
         }
     }

@@ -84,6 +84,10 @@ namespace WarCore.Presentation
             return point;
         }
 
+        // ML-3: the unit collider height follows the combat pack's body (its height), else the legacy 1 m.
+        internal static SimFix UnitHeight(CombatPack pack) => pack?.Body?.Height ?? SimFix.FromInt(1);
+        // ML-3: the spatial index anchors the unit layer at the foot exactly when the combat pack has a body.
+        internal static uint FootAnchoredLayers(CombatPack pack) => pack?.Body != null ? MoverLayer : 0u;
         internal static SimFix SpawnSpeed(in UnitSpawn spawn) => SimFix.Ratio(spawn.SpeedMmPerSec, 1000 * SimClock.TickRate);
 
         // A reserve unit of a battle has no body until it is deployed.

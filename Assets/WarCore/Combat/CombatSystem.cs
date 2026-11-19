@@ -31,12 +31,37 @@ namespace WarCore.Combat
         private readonly IAutoFire builtInAutoFire;
         private IAutoFire autoFire;
         private readonly HeightField ground;
+        // ML-3 body heights above the foot, in raw units, fixed at construction from the pack's body section (D4 of the
+        // design): legacy values when the pack has none, so every formula below gives the bytes it gave before.
+        private readonly bool bodied;
+        private readonly long bodyHeightRaw;
+        // eye: the viewpoint for sight, cover, explicit target shots and the melee wall line (legacy 0.5 m).
+        // muzzle: the start of aimed and automatic shots (legacy 0, the foot).
+        // aimEnd: how far above a ground point or a target's foot the aimed and automatic lines end (legacy 0, new = eye).
+        // groundLift: the extra lift of a shot line tested against the ground (legacy 0.5 m, new 0: the line is the bullet's).
+        // targetOrigin: the recorded start of an explicit target shot (legacy foot + 0.5 m, new = muzzle; never merged with muzzle).
+        // center: the lift from a foot to its body centre for unit-layer queries (legacy 0, new floor(height / 2)).
+        private readonly long eyeRaw, muzzleRaw, aimEndRaw, groundLiftRaw, targetOriginRaw, centerRaw;
 
         public CombatSystem(Simulation sim, ComponentType<Position> positions, ComponentType<Combatant> combatants,
             CombatPack pack, uint wallMask, uint unitLayerMask, int unitCount, IControlTarget controlled = null, HeightField ground = null)
         {
             this.sim = sim; this.positions = positions; this.combatants = combatants; this.pack = pack;
             this.wallMask = wallMask; this.unitLayerMask = unitLayerMask;
+            ValidateBody(sim.FootAnchoredLayers, pack.Body, wallMask, unitLayerMask);
+            bodied = pack.Body.HasValue;
+            if (bodied)
+            {
+                CombatBody body = pack.Body.Value;
+                bodyHeightRaw = body.Height.Raw;
+                eyeRaw = body.Eye.Raw; muzzleRaw = body.Muzzle.Raw; aimEndRaw = body.Eye.Raw;
+                groundLiftRaw = 0; targetOriginRaw = body.Muzzle.Raw; centerRaw = body.Height.Raw / 2;
+            }
+            else
+            {
+                eyeRaw = LegacyEyeRaw; muzzleRaw = 0; aimEndRaw = 0;
+                groundLiftRaw = LegacyEyeRaw; targetOriginRaw = LegacyEyeRaw; centerRaw = 0;
+            }
             stage = new EntityStage(sim.Entities);
             candidates = new SpatialHit[unitCount]; fires = new FireRecord[unitCount];
             hitStream = sim.Rng.Stream("combat.hit");
@@ -52,6 +77,21 @@ namespace WarCore.Combat
             intentSlots = new int[candidates.Length];
             InitMelee();
             InitBlock();
+        }
+
+        private const long LegacyEyeRaw = SimFix.Scale / 2;
+
+        // D2a: the pack's body is the only source. The spatial index must anchor the unit layer at the foot exactly when the
+        // pack has a body (a Sim with no index yet counts as 0), and never a wall layer. A restored world rebuilds this system,
+        // so the check runs again.
+        private static void ValidateBody(uint footAnchored, CombatBody? body, uint wallMask, uint unitLayerMask)
+        {
+            if (body.HasValue && (footAnchored & unitLayerMask) != unitLayerMask)
+                throw new InvalidOperationException("The combat pack has a body but the spatial index does not anchor the unit layer at the foot.");
+            if (!body.HasValue && (footAnchored & unitLayerMask) != 0)
+                throw new InvalidOperationException("The spatial index anchors the unit layer at the foot but the combat pack has no body.");
+            if ((footAnchored & wallMask) != 0)
+                throw new InvalidOperationException("The spatial index anchors a wall layer at the foot.");
         }
 
         public EntityStore Entities => sim.Entities;
@@ -123,6 +163,7 @@ namespace WarCore.Combat
                 {
                     if (!Entities.TryGet(combatants, shooter, out Combatant unit)
                         || !Entities.TryGet(positions, shooter, out Position position)) continue;
+                    if (bodied) RequireBodyHeight(shooter);
                     if (IsDead(shooter))
                     {
                         if (pack.HasMelee) CancelMelee(shooter);
@@ -141,10 +182,10 @@ namespace WarCore.Combat
                         FireAtTarget(c, shooter, in unit, in position, in weapon, tick, in intents[shooter.Id]);
                         continue;
                     }
-                    SimVec3 origin = position.Value, direction;
+                    SimVec3 origin = Lift(position.Value, muzzleRaw), direction;
                     if (hasIntent)
                     {
-                        direction = intents[shooter.Id].Point - origin;
+                        direction = Lift(intents[shooter.Id].Point, aimEndRaw) - origin;
                         if (Horizontal(direction).LengthSquared.Sign == 0) continue;
                         // Positions are final here (after movement): an intent that avoids allies is declined for this tick
                         // when a living teammate is first on the line, with no shot, no ammo and no cooldown change.

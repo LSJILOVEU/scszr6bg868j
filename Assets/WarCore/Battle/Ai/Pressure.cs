@@ -45,7 +45,7 @@ namespace WarCore.Battle
     //
     // With sources on (a battle with cover rules) every entry also keeps where the fire that pressed the unit came from:
     // the origin of the near shot that counted (the first such record of the tick), or, in a tick without one, of the
-    // first record that brought down a teammate who counted. A rise replaces the source only while the number stands
+    // first record that brought down a teammate who counted; kept as the ground point under it (CombatSystem.GroundOfFireOrigin). A rise replaces the source only while the number stands
     // below PinnedAt, so a unit keeps one source from the rise that pinned it until it is calm again: it takes cover
     // once and stays, rather than moving for every new shooter. The scheduler reads it through TryPressedFrom; it is
     // saved and hashed with the entry (state version 2). Without sources nothing of it exists and the state is as it was.
@@ -140,7 +140,8 @@ namespace WarCore.Battle
                     || !store.TryGet(combatants, (EntityId)target, out Combatant victim) || !store.TryGet(positions, (EntityId)target, out Position at)) continue;
                 bool counted = false;
                 for (int i = 0; i < fallenCount; i++) if (fallen[i].Key == fire.Target.Value) { counted = true; break; }
-                if (!counted) fallen[fallenCount++] = new Fallen { Key = fire.Target.Value, Team = victim.Team, At = at.Value, From = fire.Origin };
+                // From is a point on the ground (it goes to WallWithin later): the record's origin turned back to the shooter's ground (ML-3).
+                if (!counted) fallen[fallenCount++] = new Fallen { Key = fire.Target.Value, Team = victim.Team, At = at.Value, From = combat.GroundOfFireOrigin(in fire) };
             }
             if (fires.Length > 0)
             {
@@ -155,7 +156,7 @@ namespace WarCore.Battle
                     foreach (ref readonly FireRecord fire in fires)
                     {
                         if (fire.ShooterTeam == unit.Team || CombatSystem.Horizontal(fire.End - here).LengthSquared > nearSquared) continue;
-                        shock = rules.NearShock; from = fire.Origin; sourced = true; break;
+                        shock = rules.NearShock; from = combat.GroundOfFireOrigin(in fire); sourced = true; break;
                     }
                     for (int i = 0; i < fallenCount; i++)
                     {

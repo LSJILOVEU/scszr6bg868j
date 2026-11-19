@@ -26,18 +26,24 @@ namespace WarCore.Sim
         private bool advancingMovement;
         internal GridSpatialIndex SpatialIndex => spatialIndex;
         public ISpatialQueryModes SpatialQuery => spatialQuery;
+        // ML-3: the layers whose bodies grow up from the foot (see ConfigureSpatial); 0 before the index is configured.
+        public uint FootAnchoredLayers => spatialIndex?.FootAnchoredLayers ?? 0;
 
         // Assembly is explicit because component handles and posture data belong to content.
         // Ownership, synchronization and restoration remain engine responsibilities.
+        // footAnchoredLayers (ML-3): bodies whose collider layer is in this mask stand on their Position (the foot) and grow
+        // up from it; every other body stays centred on its Position. 0 (the default) keeps every body as before. Wall layers
+        // must not be in it. The index is derived data: the mask is neither saved nor hashed.
         public ISpatialQueryModes ConfigureSpatial(ComponentType<Position> positions, ComponentType<Collider> colliders,
-            SimFix cellSize, int maxMemberships = 0, PostureGeometry postures = null)
+            SimFix cellSize, int maxMemberships = 0, PostureGeometry postures = null, uint footAnchoredLayers = 0)
         {
             if (started || warmed || spatialIndex != null)
                 throw new InvalidOperationException("Configure the simulation spatial index once before warmup.");
             spatialIndex = new GridSpatialIndex(Entities, positions, colliders, cellSize, Entities.Capacity,
                 maxMemberships == 0 ? Config.SpatialMembershipCapacity : maxMemberships, postures, readLiveLayers: false,
                 maxCells: Config.SpatialCellCapacity, maxCellsPerBody: Config.SpatialMaxCellsPerBody,
-                staticMaxMemberships: Config.StaticSpatialMembershipCapacity, staticMaxCells: Config.StaticSpatialCellCapacity);
+                staticMaxMemberships: Config.StaticSpatialMembershipCapacity, staticMaxCells: Config.StaticSpatialCellCapacity,
+                footAnchoredLayers: footAnchoredLayers);
             spatialQuery = new SpatialQueryView(spatialIndex, new GridQueryContext(Entities.Capacity));
             spatialPositions = positions;
             spatialColliders = colliders;

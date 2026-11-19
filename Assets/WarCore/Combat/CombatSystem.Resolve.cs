@@ -7,6 +7,11 @@ namespace WarCore.Combat
     // What a shot ended on. Open = nothing on the line; FriendBlocked = a teammate stopped the bullet without damage.
     public enum FireOutcome : byte { Open = 0, Hit, WallBlocked, FriendBlocked, FriendHit }
 
+    // One shot of this tick. Origin: where the shot started; End: where it stopped (the bullet's real end for aimed and
+    // automatic shots). Without a body (legacy) aimed and automatic shots start at the shooter's foot and an explicit target
+    // shot records foot + 0.5 m to the target's foot + 0.5 m. ML-3 new mode: Origin is the muzzle point (foot + muzzle
+    // height) for all three paths and an explicit target shot ends at the target's viewpoint; CombatSystem.GroundOfFireOrigin
+    // turns Origin back into the shooter's ground point.
     public readonly struct FireRecord
     {
         public readonly StableId Shooter, Target;
@@ -43,7 +48,9 @@ namespace WarCore.Combat
             if (!IsEnemy(shooter, target) || !Entities.TryGet(positions, target, out Position targetPosition)
                 || Horizontal(targetPosition.Value - origin).LengthSquared > new SimVec3(weapon.FalloffEnd, default, default).LengthSquared
                 || !Visible(shooter, target)) return;
-            Fire(c, shooter, target, in unit, in position, in weapon, tick, AimPoint(origin), AimPoint(targetPosition.Value),
+            // The judgement is the sight line (viewpoint to viewpoint); the record runs from foot + targetOrigin (legacy 0.5 m,
+            // new mode the muzzle) to the target's viewpoint, lifted once.
+            Fire(c, shooter, target, in unit, in position, in weapon, tick, Lift(origin, targetOriginRaw), Eye(targetPosition.Value, target),
                 targetPosition.Value, FireOutcome.Hit, unit.SpreadStored, unit.SpreadLastMilli);
         }
 

@@ -108,10 +108,12 @@ namespace WarCore.Presentation
         private readonly ComponentType<Combatant> combatants;
         private readonly ComponentType<SquadStanding>? standing;
         private static readonly SimFix Radius = SimFix.Ratio(1, 4);
+        private readonly SimFix unitHeight;
         public ulong PolicyKey { get; }
         internal BattleAdapter(Simulation sim, InterimLocomotion locomotion, WorldRecipe recipe, DeployGround ground, long groundRaw, ComponentType<SquadStanding>? standing = null)
         {
             this.standing = standing;
+            unitHeight = WorldAssembly.UnitHeight(recipe.Combat);
             this.sim = sim; this.locomotion = locomotion; this.ground = ground; this.groundRaw = groundRaw;
             stage = new EntityStage(sim.Entities); spawns = recipe.Units.ToArray(); ids = new StableId[spawns.Length];
             positions = sim.Entities.Resolve<Position>(); colliders = sim.Entities.Resolve<Collider>();
@@ -151,7 +153,7 @@ namespace WarCore.Presentation
             }
             int index = Array.IndexOf(ids, stable); UnitSpawn spawn = spawns[index];
             sim.Entities.Set(positions, unit, new Position(at));
-            sim.Entities.Set(colliders, unit, new Collider(Radius, SimFix.FromInt(1)));
+            sim.Entities.Set(colliders, unit, new Collider(Radius, unitHeight));
             sim.Entities.Set(intents, unit, new MoveIntent(at, SimFix.Ratio(spawn.SpeedMmPerSec, 1000 * SimClock.TickRate), spawn.Squad, false));
             sim.Entities.Set(waypoints, unit, default);
             return true;

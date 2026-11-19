@@ -1,0 +1,705 @@
+# ML-3: the standing body (height, eye, muzzle), foot-anchored unit bodies, the D6 content gate, the window prefab
+# (D6a) and the wall-height report. Filter: the ML-3 tests only; the legacy locks are checked by the full suite.
+# Not listed: D3 'the end uses the shooter's eye' is equivalent while a pack has one body (EyeRaw/AimEndRaw ignore
+# the unit); see the pull request's Departures.
+
+[ml3-01-never-bodied]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ShotTests.FlatShotFliesAtEyeHeightAndHits
+note = a pack with a body runs the legacy heights
+original:
+| bodied = pack.Body.HasValue;
+replacement:
+| bodied = false;
+
+[ml3-02-new-eye-legacy]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ShotTests.OneMetreWallIsSeenOverAndShotOver
+expect = WarCore.Tests.Ml3ShotTests.EyeMuzzleAndShotEndPoints
+note = new mode keeps the 0.5 m eye
+original:
+| eyeRaw = body.Eye.Raw; muzzleRaw
+replacement:
+| eyeRaw = LegacyEyeRaw; muzzleRaw
+
+[ml3-03-muzzle-is-eye]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ShotTests.MuzzleBelowTheEyeStartsLowAndRises
+note = P4/P6 shots start at the eye instead of the muzzle
+original:
+| muzzleRaw = body.Muzzle.Raw; aimEndRaw
+replacement:
+| muzzleRaw = body.Eye.Raw; aimEndRaw
+
+[ml3-04-muzzle-at-foot]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ShotTests.FlatShotFliesAtEyeHeightAndHits
+note = P4/P6 shots start at the foot in new mode
+original:
+| muzzleRaw = body.Muzzle.Raw; aimEndRaw
+replacement:
+| muzzleRaw = 0; aimEndRaw
+
+[ml3-05-aim-end-at-muzzle]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ShotTests.MuzzleBelowTheEyeStartsLowAndRises
+note = P4/P6 lines end at the target muzzle height
+original:
+| aimEndRaw = body.Eye.Raw;
+replacement:
+| aimEndRaw = body.Muzzle.Raw;
+
+[ml3-06-aim-end-at-foot]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ShotTests.FlatShotFliesAtEyeHeightAndHits
+expect = WarCore.Tests.Ml3ShotTests.MuzzleBelowTheEyeStartsLowAndRises
+note = P4/P6 lines end at the target foot in new mode
+original:
+| aimEndRaw = body.Eye.Raw;
+replacement:
+| aimEndRaw = 0;
+
+[ml3-07-new-ground-lift]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ShotTests.HigherRidgeStopsTheNewShotWithoutLowering
+note = P7: new mode still lifts the ground test 0.5 m
+original:
+| groundLiftRaw = 0; targetOriginRaw = body.Muzzle.Raw;
+replacement:
+| groundLiftRaw = LegacyEyeRaw; targetOriginRaw = body.Muzzle.Raw;
+
+[ml3-08-target-origin-legacy]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ShotTests.ExplicitTargetShotRecordsMuzzleToTargetEye
+note = P8: new mode records explicit target shots from 0.5 m
+original:
+| targetOriginRaw = body.Muzzle.Raw;
+replacement:
+| targetOriginRaw = LegacyEyeRaw;
+
+[ml3-09-center-not-lifted]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3BodyTests.CandidateSphereStartsAtTheBodyCentre
+expect = WarCore.Tests.Ml3BodyTests.SwingReachesFromTheBodyCentre
+expect = WarCore.Tests.Ml3BodyTests.CandidatesAndWalkChecksAreTheLegacySets
+note = P9-P11/P13: unit queries stay at the foot
+original:
+| centerRaw = body.Height.Raw / 2;
+replacement:
+| centerRaw = 0;
+
+[ml3-10-center-whole-height]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3BodyTests.CandidateSphereStartsAtTheBodyCentre
+note = unit queries start at the top of the head
+original:
+| centerRaw = body.Height.Raw / 2;
+replacement:
+| centerRaw = body.Height.Raw;
+
+[ml3-11-legacy-eye-foot]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ShotTests.ExplicitTargetShotKeepsTheLegacyHalfMetreWithoutABody
+expect = WarCore.Tests.Ml3ShotTests.EyeMuzzleAndShotEndPoints
+note = legacy eye at the foot
+original:
+| eyeRaw = LegacyEyeRaw; muzzleRaw = 0;
+replacement:
+| eyeRaw = 0; muzzleRaw = 0;
+
+[ml3-12-legacy-muzzle-half]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ShotTests.EyeMuzzleAndShotEndPoints
+expect = WarCore.Tests.Ml3ShotTests.RidgeStopsTheLegacyShotAndNotTheNewOne
+note = legacy aimed and automatic shots start at 0.5 m
+original:
+| muzzleRaw = 0; aimEndRaw = 0;
+replacement:
+| muzzleRaw = LegacyEyeRaw; aimEndRaw = 0;
+
+[ml3-13-legacy-aim-end-half]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ShotTests.EyeMuzzleAndShotEndPoints
+note = legacy lines end 0.5 m above the target foot
+original:
+| aimEndRaw = 0;
+|                 groundLiftRaw
+replacement:
+| aimEndRaw = LegacyEyeRaw;
+|                 groundLiftRaw
+
+[ml3-14-legacy-no-ground-lift]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ShotTests.RidgeStopsTheLegacyShotAndNotTheNewOne
+note = P7: legacy loses its 0.5 m ground-test lift
+original:
+| groundLiftRaw = LegacyEyeRaw; targetOriginRaw
+replacement:
+| groundLiftRaw = 0; targetOriginRaw
+
+[ml3-15-legacy-target-origin-foot]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ShotTests.ExplicitTargetShotKeepsTheLegacyHalfMetreWithoutABody
+expect = WarCore.Tests.Ml3BodyTests.LegacyGroundOfFireOriginIsTheOrigin
+note = legacy explicit target shot recorded from the foot
+original:
+| targetOriginRaw = LegacyEyeRaw; centerRaw = 0;
+replacement:
+| targetOriginRaw = 0; centerRaw = 0;
+
+[ml3-16-legacy-center-lifted]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3BodyTests.CandidatesAndWalkChecksAreTheLegacySets
+note = legacy unit queries lifted 0.5 m
+original:
+| targetOriginRaw = LegacyEyeRaw; centerRaw = 0;
+replacement:
+| targetOriginRaw = LegacyEyeRaw; centerRaw = LegacyEyeRaw;
+
+[ml3-17-aimed-origin-foot]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ShotTests.OneMetreWallIsSeenOverAndShotOver
+expect = WarCore.Tests.Ml3ShotTests.TwoMetreWallHidesAndStops
+note = P4: aimed shots start at the foot
+original:
+| SimVec3 origin = Lift(position.Value, muzzleRaw), direction;
+replacement:
+| SimVec3 origin = position.Value, direction;
+
+[ml3-18-aimed-end-foot]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ShotTests.MuzzleBelowTheEyeStartsLowAndRises
+expect = WarCore.Tests.Ml3ShotTests.TwoMetreWallHidesAndStops
+note = P4: aimed lines end at the aimed ground point
+original:
+| direction = Lift(intents[shooter.Id].Point, aimEndRaw) - origin;
+replacement:
+| direction = intents[shooter.Id].Point - origin;
+
+[ml3-19-autofire-origin-foot]
+file = Assets/WarCore/Combat/DefaultAutoFire.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ShotTests.FlatShotFliesAtEyeHeightAndHits
+note = P6: automatic shots start at the foot
+original:
+| SimVec3 origin = combat.MuzzleOver(position.Value);
+replacement:
+| SimVec3 origin = position.Value;
+
+[ml3-20-autofire-end-muzzle]
+file = Assets/WarCore/Combat/DefaultAutoFire.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ShotTests.MuzzleBelowTheEyeStartsLowAndRises
+note = P6: automatic lines end at the target muzzle
+original:
+| direction = combat.ShotEnd(target) - origin;
+replacement:
+| direction = combat.MuzzlePoint(target) - origin;
+
+[ml3-21-target-shot-lifted-twice]
+file = Assets/WarCore/Combat/CombatSystem.Resolve.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ShotTests.ExplicitTargetShotRecordsMuzzleToTargetEye
+note = P8: the explicit target shot origin is lifted twice
+original:
+| Lift(origin, targetOriginRaw), Eye(
+replacement:
+| Lift(Lift(origin, targetOriginRaw), muzzleRaw), Eye(
+
+[ml3-22-target-shot-end-foot]
+file = Assets/WarCore/Combat/CombatSystem.Resolve.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ShotTests.ExplicitTargetShotRecordsMuzzleToTargetEye
+note = the explicit target shot ends at the target foot
+original:
+| Eye(targetPosition.Value, target)
+replacement:
+| targetPosition.Value
+
+[ml3-23-candidates-at-foot]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3BodyTests.CandidateSphereStartsAtTheBodyCentre
+note = P9: the candidate sphere is centred on the foot
+original:
+| SpatialQueries.Sphere(Center(Point(shooter)), range
+replacement:
+| SpatialQueries.Sphere(Point(shooter), range
+
+[ml3-24-walk-at-foot]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3BodyTests.CandidatesAndWalkChecksAreTheLegacySets
+note = P10: the walk check sweeps at the foot
+original:
+| SpatialQueries.Capsule(Center(from), Center(to),
+replacement:
+| SpatialQueries.Capsule(from, to,
+
+[ml3-25-swing-at-foot]
+file = Assets/WarCore/Combat/CombatSystem.Melee.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3BodyTests.SwingReachesFromTheBodyCentre
+note = P13: swing queries are centred on the foot
+original:
+| SimVec3 center = Center(origin);
+replacement:
+| SimVec3 center = origin;
+
+[ml3-26-melee-wall-line-legacy]
+file = Assets/WarCore/Combat/CombatSystem.Melee.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ShotTests.SwingOverALowWall
+note = P12: the melee wall line runs at 0.5 m in new mode
+original:
+| var from = Lift(origin, EyeRaw(shooter));
+replacement:
+| var from = Lift(origin, LegacyEyeRaw);
+
+[ml3-27-pressure-not-lowered]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3BodyTests.PressureSourceIsTheShootersGround
+note = P15: the pressure source stays at the muzzle
+original:
+| bodied ? Lift(fire.Origin, -muzzleRaw) : fire.Origin
+replacement:
+| fire.Origin
+
+[ml3-28-pressure-lowered-by-eye]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3BodyTests.PressureSourceIsTheShootersGround
+note = P15: the pressure source is lowered by the eye
+original:
+| Lift(fire.Origin, -muzzleRaw)
+replacement:
+| Lift(fire.Origin, -eyeRaw)
+
+[ml3-29-no-body-anchor-check]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ConfigTests.MaskDisagreementThrowsAtConstruction
+expect = WarCore.Tests.Ml3ConfigTests.CombatBeforeTheIndexCountsAsUnanchored
+note = D2a-2: a body with an unanchored unit layer is accepted
+original:
+|             if (body.HasValue && (footAnchored & unitLayerMask) != unitLayerMask)
+|                 throw new InvalidOperationException("The combat pack has a body but the spatial index does not anchor the unit layer at the foot.");
+|
+replacement:
+
+[ml3-30-no-legacy-anchor-check]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ConfigTests.MaskDisagreementThrowsAtConstruction
+note = D2a-2: no body with an anchored unit layer is accepted
+original:
+|             if (!body.HasValue && (footAnchored & unitLayerMask) != 0)
+|                 throw new InvalidOperationException("The spatial index anchors the unit layer at the foot but the combat pack has no body.");
+|
+replacement:
+
+[ml3-31-no-wall-anchor-check]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ConfigTests.MaskDisagreementThrowsAtConstruction
+note = D2a-2: an anchored wall layer is accepted
+original:
+|             if ((footAnchored & wallMask) != 0)
+|                 throw new InvalidOperationException("The spatial index anchors a wall layer at the foot.");
+|
+replacement:
+
+[ml3-32-no-height-check]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ConfigTests.WrongColliderHeightThrowsWhenTheUnitShoots
+note = D2a-3: a collider of another height shoots (the test unit is only a shooter, so a target-only check dies the same way)
+original:
+| if (bodied) RequireBodyHeight(shooter);
+replacement:
+
+[ml3-33-withselector-drops-body]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ConfigTests.WithSelectorKeepsTheBody
+expect = WarCore.Tests.Ml3ConfigTests.TerrainCoverMapKeepsTheBody
+note = D2a-1: WithSelector drops the body
+original:
+| block.Length == 0 ? null : block, Body);
+replacement:
+| block.Length == 0 ? null : block);
+
+[ml3-34-digest-tag-always]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ConfigTests.BodyIsInTheDigestOnlyWhenPresent
+note = the body tag enters every digest
+original:
+|             if (body.HasValue)
+|             { hash.Add("combat.pack.body.v1"); body.Value.WriteState(hash); }
+replacement:
+|             hash.Add("combat.pack.body.v1");
+|             if (body.HasValue) body.Value.WriteState(hash);
+
+[ml3-35-digest-drops-muzzle]
+file = Assets/WarCore/Combat/CombatBody.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ConfigTests.BodyIsInTheDigestOnlyWhenPresent
+note = the muzzle is left out of the digest
+original:
+| hash.Add(Eye.Raw); hash.Add(Muzzle.Raw); }
+replacement:
+| hash.Add(Eye.Raw); }
+
+[ml3-36-index-no-lift]
+file = Assets/WarCore/Sim/GridSpatialIndex.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3BodyTests.BodyStandsOnTheFoot
+note = D2: the body stays centred on the foot
+original:
+| collider.WorldHalfExtents.Y.Raw)), center.Z);
+replacement:
+| 0)), center.Z);
+
+[ml3-37-index-whole-height]
+file = Assets/WarCore/Sim/GridSpatialIndex.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3BodyTests.BodyStandsOnTheFoot
+note = D2: the body is lifted by its whole height
+original:
+| collider.WorldHalfExtents.Y.Raw)), center.Z);
+replacement:
+| collider.Height.Raw)), center.Z);
+
+[ml3-38-index-round-up]
+file = Assets/WarCore/Sim/GridSpatialIndex.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3BodyTests.BodyStandsOnTheFoot(114689
+note = D2: an odd height lifts by the rounded-up half
+original:
+| collider.WorldHalfExtents.Y.Raw)), center.Z);
+replacement:
+| (collider.Height.Raw + 1) / 2)), center.Z);
+
+[ml3-39-index-ignores-layer]
+file = Assets/WarCore/Sim/GridSpatialIndex.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3BodyTests.WallLayerIsNotLifted
+note = D2: the mask lifts every layer, walls too
+original:
+| if ((collider.Layer & FootAnchoredLayers) != 0)
+replacement:
+| if (FootAnchoredLayers != 0)
+
+[ml3-40-gate-min-exclusive]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ContentTests.HeightBounds
+expect = WarCore.Tests.Ml3ContentTests.EyeBounds
+expect = WarCore.Tests.Ml3ContentTests.MuzzleBounds
+note = D6: lower bounds exclusive
+original:
+| if (raw >= min && raw <= max) return;
+replacement:
+| if (raw > min && raw <= max) return;
+
+[ml3-41-gate-max-exclusive]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ContentTests.HeightBounds
+expect = WarCore.Tests.Ml3ContentTests.EyeBounds
+expect = WarCore.Tests.Ml3ContentTests.MuzzleBounds
+note = D6: upper bounds exclusive
+original:
+| if (raw >= min && raw <= max) return;
+replacement:
+| if (raw >= min && raw < max) return;
+
+[ml3-42-height-min-up]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ContentTests.HeightBounds
+note = D6-1: 2r refused
+original:
+| Within(r, "height", height.Raw, 2 * UnitRadiusRaw, WallSpan.ClearanceRaw);
+replacement:
+| Within(r, "height", height.Raw, 2 * UnitRadiusRaw + 1, WallSpan.ClearanceRaw);
+
+[ml3-43-height-min-down]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ContentTests.HeightBounds
+note = D6-1: 2r - 1 raw accepted
+original:
+| Within(r, "height", height.Raw, 2 * UnitRadiusRaw, WallSpan.ClearanceRaw);
+replacement:
+| Within(r, "height", height.Raw, 2 * UnitRadiusRaw - 1, WallSpan.ClearanceRaw);
+
+[ml3-44-height-max-up]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ContentTests.HeightBounds
+note = D6-1: headroom + 1 raw accepted
+original:
+| Within(r, "height", height.Raw, 2 * UnitRadiusRaw, WallSpan.ClearanceRaw);
+replacement:
+| Within(r, "height", height.Raw, 2 * UnitRadiusRaw, WallSpan.ClearanceRaw + 1);
+
+[ml3-45-height-max-down]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ContentTests.HeightBounds
+note = D6-1: the headroom refused
+original:
+| Within(r, "height", height.Raw, 2 * UnitRadiusRaw, WallSpan.ClearanceRaw);
+replacement:
+| Within(r, "height", height.Raw, 2 * UnitRadiusRaw, WallSpan.ClearanceRaw - 1);
+
+[ml3-46-eye-min-up]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ContentTests.EyeBounds
+note = D6-2: r refused
+original:
+| Within(r, "eye", eye.Raw, UnitRadiusRaw, height.Raw - UnitRadiusRaw);
+replacement:
+| Within(r, "eye", eye.Raw, UnitRadiusRaw + 1, height.Raw - UnitRadiusRaw);
+
+[ml3-47-eye-min-down]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ContentTests.EyeBounds
+note = D6-2: r - 1 raw accepted
+original:
+| Within(r, "eye", eye.Raw, UnitRadiusRaw, height.Raw - UnitRadiusRaw);
+replacement:
+| Within(r, "eye", eye.Raw, UnitRadiusRaw - 1, height.Raw - UnitRadiusRaw);
+
+[ml3-48-eye-max-up]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ContentTests.EyeBounds
+note = D6-2: H - r + 1 raw accepted
+original:
+| Within(r, "eye", eye.Raw, UnitRadiusRaw, height.Raw - UnitRadiusRaw);
+replacement:
+| Within(r, "eye", eye.Raw, UnitRadiusRaw, height.Raw - UnitRadiusRaw + 1);
+
+[ml3-49-eye-max-down]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ContentTests.EyeBounds
+note = D6-2: H - r refused
+original:
+| Within(r, "eye", eye.Raw, UnitRadiusRaw, height.Raw - UnitRadiusRaw);
+replacement:
+| Within(r, "eye", eye.Raw, UnitRadiusRaw, height.Raw - UnitRadiusRaw - 1);
+
+[ml3-50-muzzle-min-up]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ContentTests.MuzzleBounds
+note = D6-3: 0 refused
+original:
+| Within(r, "muzzle", muzzle.Raw, 0, height.Raw);
+replacement:
+| Within(r, "muzzle", muzzle.Raw, 1, height.Raw);
+
+[ml3-51-muzzle-min-down]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ContentTests.MuzzleBounds
+note = D6-3: -1 raw accepted
+original:
+| Within(r, "muzzle", muzzle.Raw, 0, height.Raw);
+replacement:
+| Within(r, "muzzle", muzzle.Raw, -1, height.Raw);
+
+[ml3-52-muzzle-max-up]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ContentTests.MuzzleBounds
+note = D6-3: H + 1 raw accepted
+original:
+| Within(r, "muzzle", muzzle.Raw, 0, height.Raw);
+replacement:
+| Within(r, "muzzle", muzzle.Raw, 0, height.Raw + 1);
+
+[ml3-53-muzzle-max-down]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3ContentTests.MuzzleBounds
+note = D6-3: H refused
+original:
+| Within(r, "muzzle", muzzle.Raw, 0, height.Raw);
+replacement:
+| Within(r, "muzzle", muzzle.Raw, 0, height.Raw - 1);
+
+[ml3-54-sill-min-inclusive]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3WindowTests.SillAtLeastTwiceTheRadius
+note = D6a: a sill of exactly 2r refused
+original:
+| if (sill < 2 * r)
+replacement:
+| if (sill <= 2 * r)
+
+[ml3-55-sill-min-down]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3WindowTests.SillAtLeastTwiceTheRadius
+note = D6a: a sill 2 raw under 2r accepted
+original:
+| if (sill < 2 * r)
+replacement:
+| if (sill < 2 * r - 2)
+
+[ml3-56-sill-max-inclusive]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3WindowTests.SillAndOpeningAgainstEyeAndMuzzle
+note = D6a: a sill of exactly min(E, M) - r refused
+original:
+| if (sill > Math.Min(eye, muzzle) - r)
+replacement:
+| if (sill >= Math.Min(eye, muzzle) - r)
+
+[ml3-57-sill-max-up]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3WindowTests.SillAndOpeningAgainstEyeAndMuzzle
+note = D6a: a sill 2 raw over min(E, M) - r accepted
+original:
+| if (sill > Math.Min(eye, muzzle) - r)
+replacement:
+| if (sill > Math.Min(eye, muzzle) - r + 2)
+
+[ml3-58-sill-min-to-max]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3WindowTests.SillAndOpeningAgainstEyeAndMuzzle
+note = D6a: the sill limit uses max(E, M)
+original:
+| if (sill > Math.Min(eye, muzzle) - r)
+replacement:
+| if (sill > Math.Max(eye, muzzle) - r)
+
+[ml3-59-opening-inclusive]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3WindowTests.SillAndOpeningAgainstEyeAndMuzzle
+note = D6a: an opening top of exactly max(E, M) + r refused
+original:
+| if (opening < Math.Max(eye, muzzle) + r)
+replacement:
+| if (opening <= Math.Max(eye, muzzle) + r)
+
+[ml3-60-opening-down]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3WindowTests.SillAndOpeningAgainstEyeAndMuzzle
+note = D6a: an opening top 2 raw under max(E, M) + r accepted
+original:
+| if (opening < Math.Max(eye, muzzle) + r)
+replacement:
+| if (opening < Math.Max(eye, muzzle) + r - 2)
+
+[ml3-61-opening-max-to-min]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3WindowTests.SillAndOpeningAgainstEyeAndMuzzle
+note = D6a: the opening limit uses min(E, M)
+original:
+| if (opening < Math.Max(eye, muzzle) + r)
+replacement:
+| if (opening < Math.Min(eye, muzzle) + r)
+
+[ml3-62-sill-parity-down]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3WindowTests.SillAtLeastTwiceTheRadius
+note = an odd sill moves down instead of up
+original:
+| if (((sillTop - sillBottom) & 1) != 0) sillTop++;
+replacement:
+| if (((sillTop - sillBottom) & 1) != 0) sillTop--;
+
+[ml3-63-opening-parity-down]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3WindowTests.SillAndOpeningAgainstEyeAndMuzzle
+note = an odd opening top moves down instead of up
+original:
+| if (((topRaw - openingTop) & 1) != 0) openingTop++;
+replacement:
+| if (((topRaw - openingTop) & 1) != 0) openingTop--;
+
+[ml3-64-terrain-sill-from-floor]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3WindowTests.TerrainWindowStandsOnTheFloor
+note = a terrain sill starts at the map floor, not the ground under it
+original:
+| Math.Max(lowest, map.FloorRaw + 1)
+replacement:
+| map.FloorRaw + 1
+
+[ml3-65-report-thresholds-swapped]
+file = Assets/WarCore/Content/MapTools/MapGate.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3WindowTests.ReportOnAFlatMap
+note = the report bands use H for sight and E for the body
+original:
+| if (above <= body.Eye.Raw)
+replacement:
+| if (above <= body.Height.Raw)
+
+[ml3-66-report-eye-exclusive]
+file = Assets/WarCore/Content/MapTools/MapGate.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3WindowTests.ReportOnAFlatMap
+note = a wall exactly at the eye hides it
+original:
+| if (above <= body.Eye.Raw)
+replacement:
+| if (above < body.Eye.Raw)
+
+[ml3-67-report-height-inclusive]
+file = Assets/WarCore/Content/MapTools/MapGate.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3WindowTests.ReportOnAFlatMap
+note = a wall exactly at the height is listed
+original:
+| else if (above < body.Height.Raw)
+replacement:
+| else if (above <= body.Height.Raw)
+
+[ml3-68-report-lowest-ground]
+file = Assets/WarCore/Content/MapTools/MapGate.cs
+filter = FullyQualifiedName~Ml3
+expect = WarCore.Tests.Ml3WindowTests.ReportReadsTheHighestGroundUnderTheWall
+note = the report measures from the first corner (the lowest on the slope)
+original:
+| WallSpan.HighestPoint(point, wall.Cell.X, wall.Cell.Z, wall.Cell.X + wall.Size.X, wall.Cell.Z + wall.Size.Z)
+replacement:
+| point(wall.Cell.X, wall.Cell.Z)
