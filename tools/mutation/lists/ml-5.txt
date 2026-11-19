@@ -1,0 +1,513 @@
+# ML-5: the plate-crossing test (Sim/PlateField) and its bridge from a .wcmap. Filter: the ML-5 tests.
+# Not listed as equivalent: Leaving() for an axis that stays out of the map (Cell already refuses cells off the map),
+# the start-outside jump on the + side (walking cell by cell from outside gives the same answer), and a corner with
+# only + or only - crossings visited at a single point (that point is the next or the current cell anyway). Loosening the
+# off-map guard in Cell() indexes past the cell table and throws instead of answering wrong, so it is not listed either.
+
+[ml5-01-top-strict]
+file = Assets/WarCore/Sim/PlateField.Walk.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5VectorTests.FacesAreClearInsideIsBlocked
+note = level line on the top face counts
+original:
+| if (c <= 0 || c >= band) continue;
+replacement:
+| if (c < 0 || c >= band) continue;
+
+[ml5-02-bottom-strict]
+file = Assets/WarCore/Sim/PlateField.Walk.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5VectorTests.FacesAreClearInsideIsBlocked
+note = level line on the bottom face counts
+original:
+| if (c <= 0 || c >= band) continue;
+replacement:
+| if (c <= 0 || c > band) continue;
+
+[ml5-03-lo-strict]
+file = Assets/WarCore/Sim/PlateField.Walk.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5VectorTests.VerticalAndZeroLength
+expect = WarCore.Tests.Ml5OracleTests.MatchesTheOracle
+note = a segment ending on a face counts
+original:
+| if (!Less(loN, den, bn, bd) || !Less(an, ad, hiN, den)) continue;
+replacement:
+| if (Less(bn, bd, loN, den) || !Less(an, ad, hiN, den)) continue;
+
+[ml5-04-hi-strict]
+file = Assets/WarCore/Sim/PlateField.Walk.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5VectorTests.VerticalAndZeroLength
+expect = WarCore.Tests.Ml5OracleTests.MatchesTheOracle
+note = a segment starting on a face going out counts
+original:
+| if (!Less(loN, den, bn, bd) || !Less(an, ad, hiN, den)) continue;
+replacement:
+| if (!Less(loN, den, bn, bd) || Less(hiN, den, an, ad)) continue;
+
+[ml5-05-x-min-edge]
+file = Assets/WarCore/Sim/PlateField.Walk.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5VectorTests.HalfOpenEdges
+expect = WarCore.Tests.Ml5OracleTests.MatchesTheOracle
+note = the minimum x edge goes to the previous column
+original:
+| long ix = FloorDiv(q.Fx - ox, S), iz = FloorDiv(q.Fz - oz, S);
+replacement:
+| long ix = FloorDiv(q.Fx - ox - 1, S), iz = FloorDiv(q.Fz - oz, S);
+
+[ml5-06-z-min-edge]
+file = Assets/WarCore/Sim/PlateField.Walk.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5VectorTests.HalfOpenEdges
+expect = WarCore.Tests.Ml5OracleTests.MatchesTheOracle
+note = the minimum z edge goes to the previous row
+original:
+| long ix = FloorDiv(q.Fx - ox, S), iz = FloorDiv(q.Fz - oz, S);
+replacement:
+| long ix = FloorDiv(q.Fx - ox, S), iz = FloorDiv(q.Fz - oz - 1, S);
+
+[ml5-07-start-cell-floor]
+file = Assets/WarCore/Sim/PlateField.Walk.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5VectorTests.NegativeOriginFloorsDown
+expect = WarCore.Tests.Ml5VectorTests.OffTheMap
+expect = WarCore.Tests.Ml5OracleTests.MatchesTheOracle
+note = start cell by truncation
+original:
+| long ix = FloorDiv(q.Fx - ox, S), iz = FloorDiv(q.Fz - oz, S);
+replacement:
+| long ix = (q.Fx - ox) / S, iz = (q.Fz - oz) / S;
+
+[ml5-08-corner-cell]
+file = Assets/WarCore/Sim/PlateField.Walk.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5VectorTests.DiagonalThroughACorner
+expect = WarCore.Tests.Ml5VectorTests.TiesGoToTheSmallerId
+expect = WarCore.Tests.Ml5OracleTests.MatchesTheOracle
+note = the corner goes to the cell after it
+original:
+| Cell(ref q, crossX && q.Dx > 0 ? ixAfter : ix, crossZ && q.Dz > 0 ? izAfter : iz, en, ed, en, ed);
+replacement:
+| Cell(ref q, crossX ? ixAfter : ix, crossZ ? izAfter : iz, en, ed, en, ed);
+
+[ml5-09-corner-skipped]
+file = Assets/WarCore/Sim/PlateField.Walk.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5VectorTests.DiagonalThroughACorner
+expect = WarCore.Tests.Ml5VectorTests.TiesGoToTheSmallerId
+expect = WarCore.Tests.Ml5OracleTests.MatchesTheOracle
+note = the corner cell is not visited
+original:
+| Cell(ref q, crossX && q.Dx > 0 ? ixAfter : ix, crossZ && q.Dz > 0 ? izAfter : iz, en, ed, en, ed);
+replacement:
+|
+
+[ml5-10-end-negative]
+file = Assets/WarCore/Sim/PlateField.Walk.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5VectorTests.EndOnAMinimumEdge
+expect = WarCore.Tests.Ml5OracleTests.MatchesTheOracle
+note = an end reached going -x is given to the next column
+original:
+| if (!negative && !(q.Found && Less(q.BestN, q.BestD, en, ed))) Cell(ref q, ix, iz, en, ed, en, ed);
+replacement:
+| if (!(q.Found && Less(q.BestN, q.BestD, en, ed))) Cell(ref q, ix, iz, en, ed, en, ed);
+
+[ml5-11-end-positive]
+file = Assets/WarCore/Sim/PlateField.Walk.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5VectorTests.EndOnAMinimumEdge
+expect = WarCore.Tests.Ml5OracleTests.MatchesTheOracle
+note = an end reached going +x is not visited
+original:
+| if (!negative && !(q.Found && Less(q.BestN, q.BestD, en, ed))) Cell(ref q, ix, iz, en, ed, en, ed);
+replacement:
+|
+
+[ml5-12-end-clamp]
+file = Assets/WarCore/Sim/PlateField.Walk.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5VectorTests.EndOnAMinimumEdge
+expect = WarCore.Tests.Ml5OracleTests.MatchesTheOracle
+note = a crossing at t = 1 is dropped
+original:
+| if (en > ed) { en = 1; ed = 1; hasX = hasZ = false; }
+replacement:
+| if (en >= ed) { en = 1; ed = 1; hasX = hasZ = false; }
+
+[ml5-13-early-stop-tie]
+file = Assets/WarCore/Sim/PlateField.Walk.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5VectorTests.TiesGoToTheSmallerId
+expect = WarCore.Tests.Ml5OracleTests.MatchesTheOracle
+note = the walk stops on a tie
+original:
+| if (q.Found && Less(q.BestN, q.BestD, tn, td)) return;
+replacement:
+| if (q.Found && !Less(tn, td, q.BestN, q.BestD)) return;
+
+[ml5-14-tie-dropped]
+file = Assets/WarCore/Sim/PlateField.Walk.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5VectorTests.TiesGoToTheSmallerId
+expect = WarCore.Tests.Ml5OracleTests.MatchesTheOracle
+note = a tie keeps the first plate found
+original:
+| if (!q.Found || Less(cn, cd, q.BestN, q.BestD) || (k < q.BestSlab && !Less(q.BestN, q.BestD, cn, cd)))
+replacement:
+| if (!q.Found || Less(cn, cd, q.BestN, q.BestD))
+
+[ml5-15-tie-larger]
+file = Assets/WarCore/Sim/PlateField.Walk.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5VectorTests.TiesGoToTheSmallerId
+expect = WarCore.Tests.Ml5OracleTests.MatchesTheOracle
+note = a tie goes to the larger id
+original:
+| if (!q.Found || Less(cn, cd, q.BestN, q.BestD) || (k < q.BestSlab && !Less(q.BestN, q.BestD, cn, cd)))
+replacement:
+| if (!q.Found || Less(cn, cd, q.BestN, q.BestD) || (k > q.BestSlab && !Less(q.BestN, q.BestD, cn, cd)))
+
+[ml5-16-inf-cell-start]
+file = Assets/WarCore/Sim/PlateField.Walk.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5VectorTests.VerticalAndZeroLength
+expect = WarCore.Tests.Ml5OracleTests.MatchesTheOracle
+note = the infimum is always the cell start
+original:
+| if (Less(an, ad, loN, den)) { cn = loN; cd = den; }
+replacement:
+| if (false) { cn = loN; cd = den; }
+
+[ml5-17-inf-from-below]
+file = Assets/WarCore/Sim/PlateField.Walk.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5VectorTests.VerticalAndZeroLength
+expect = WarCore.Tests.Ml5OracleTests.MatchesTheOracle
+note = entering from below uses the top face
+original:
+| else { loN = c - band; hiN = c; den = -slope; }
+replacement:
+| else { loN = c; hiN = c; den = -slope; }
+
+[ml5-18-level-t]
+file = Assets/WarCore/Sim/PlateField.Walk.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5VectorTests.LevelLineEntersThroughTheSide
+expect = WarCore.Tests.Ml5OracleTests.MatchesTheOracle
+note = a level line reports the cell end
+original:
+| cn = an; cd = ad;
+|                 }
+|                 else
+replacement:
+| cn = bn; cd = bd;
+|                 }
+|                 else
+
+[ml5-19-slope-a]
+file = Assets/WarCore/Sim/PlateField.Walk.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5VectorTests.SlopedPlate
+expect = WarCore.Tests.Ml5VectorTests.FlooredStandingHeightIsInsideASlope
+expect = WarCore.Tests.Ml5OracleTests.MatchesTheOracle
+note = the x slope of the cell is ignored
+original:
+| long h00 = p.TopRaw(i, j), a = p.TopRaw(i + 1, j) - h00, b = p.TopRaw(i, j + 1) - h00;
+replacement:
+| long h00 = p.TopRaw(i, j), a = 0, b = p.TopRaw(i, j + 1) - h00;
+
+[ml5-20-slope-b]
+file = Assets/WarCore/Sim/PlateField.Walk.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5OracleTests.MatchesTheOracle
+note = the z slope of the cell is ignored
+original:
+| long h00 = p.TopRaw(i, j), a = p.TopRaw(i + 1, j) - h00, b = p.TopRaw(i, j + 1) - h00;
+replacement:
+| long h00 = p.TopRaw(i, j), a = p.TopRaw(i + 1, j) - h00, b = 0;
+
+[ml5-21-edge-jump-negative]
+file = Assets/WarCore/Sim/PlateField.Walk.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5OracleTests.MatchesTheOracle
+note = entering from beyond the maximum edge skips the last column
+original:
+| long line = i >= size ? size : i;
+replacement:
+| long line = i >= size ? size - 1 : i;
+
+[ml5-22-skip-positive]
+file = Assets/WarCore/Sim/PlateField.Walk.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5OracleTests.MatchesTheOracle
+expect = WarCore.Tests.Ml5VectorTests.HalfOpenEdges
+note = moving + skips every other cell
+original:
+| n = origin + line * S - f; den = d; after = line;
+replacement:
+| n = origin + line * S - f; den = d; after = line + 1;
+
+[ml5-23-at-floor]
+file = Assets/WarCore/Sim/PlateField.Walk.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5VectorTests.NegativeOriginFloorsDown
+expect = WarCore.Tests.Ml5OracleTests.MatchesTheOracle
+note = the point is truncated toward zero
+original:
+| return p.Negative ? (exact ? -r : -r - 1) : r;
+replacement:
+| return p.Negative ? -r : r;
+
+[ml5-24-t-swapped]
+file = Assets/WarCore/Sim/PlateField.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5VectorTests.LevelLineEntersThroughTheSide
+expect = WarCore.Tests.Ml5OracleTests.MatchesTheOracle
+note = t* numerator and denominator swapped
+original:
+| slabs[q.BestSlab].Id, q.BestN, q.BestD);
+replacement:
+| slabs[q.BestSlab].Id, q.BestD, q.BestN);
+
+[ml5-25-domain-high]
+file = Assets/WarCore/Sim/PlateField.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5FieldTests.QueryDomain
+note = 2^32 itself refused
+original:
+| private static bool Outside(long c) => c > LineBound || c < -LineBound;
+replacement:
+| private static bool Outside(long c) => c >= LineBound || c < -LineBound;
+
+[ml5-26-domain-low]
+file = Assets/WarCore/Sim/PlateField.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5FieldTests.QueryDomain
+note = -2^32 itself refused
+original:
+| private static bool Outside(long c) => c > LineBound || c < -LineBound;
+replacement:
+| private static bool Outside(long c) => c > LineBound || c <= -LineBound;
+
+[ml5-27-domain-wide]
+file = Assets/WarCore/Sim/PlateField.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5FieldTests.QueryDomain
+note = one raw past 2^32 taken
+original:
+| private static bool Outside(long c) => c > LineBound || c < -LineBound;
+replacement:
+| private static bool Outside(long c) => c > LineBound + 1 || c < -LineBound - 1;
+
+[ml5-28-ctor-coplanar]
+file = Assets/WarCore/Sim/PlateField.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5FieldTests.ConstructorRules
+note = a bent cell is taken
+original:
+| if (h00 + h11 != h10 + h01) throw
+replacement:
+| if (h00 + h11 == h10 + h01 + 12345) throw
+
+[ml5-29-ctor-slope-up]
+file = Assets/WarCore/Sim/PlateField.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5FieldTests.SlopeUpToTwoToOne
+note = one raw steeper than 2/1 rising is taken
+original:
+| private static bool Steeper(long step) => step > 2 * S || step < -2 * S;
+replacement:
+| private static bool Steeper(long step) => step > 2 * S + 1 || step < -2 * S;
+
+[ml5-30-ctor-slope-down]
+file = Assets/WarCore/Sim/PlateField.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5FieldTests.SlopeUpToTwoToOne
+note = one raw steeper than 2/1 falling is taken
+original:
+| private static bool Steeper(long step) => step > 2 * S || step < -2 * S;
+replacement:
+| private static bool Steeper(long step) => step > 2 * S || step < -2 * S - 1;
+
+[ml5-31-ctor-slope-tight]
+file = Assets/WarCore/Sim/PlateField.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5FieldTests.SlopeUpToTwoToOne
+note = exactly 2/1 refused
+original:
+| private static bool Steeper(long step) => step > 2 * S || step < -2 * S;
+replacement:
+| private static bool Steeper(long step) => step >= 2 * S || step <= -2 * S;
+
+[ml5-32-ctor-per-cell]
+file = Assets/WarCore/Sim/PlateField.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5FieldTests.PlateCounts
+note = 65 plates in one cell taken
+original:
+| if (p.IsSolid(i, j) && ++perCell[(p.Z + j) * width + p.X + i] > MaxPerCell)
+replacement:
+| if (p.IsSolid(i, j) && ++perCell[(p.Z + j) * width + p.X + i] > MaxPerCell + 1)
+
+[ml5-33-ctor-per-cell-dug]
+file = Assets/WarCore/Sim/PlateField.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5FieldTests.PlateCounts
+note = dug cells counted
+original:
+| if (p.IsSolid(i, j) && ++perCell[(p.Z + j) * width + p.X + i] > MaxPerCell)
+replacement:
+| if (++perCell[(p.Z + j) * width + p.X + i] > MaxPerCell)
+
+[ml5-34-ctor-count]
+file = Assets/WarCore/Sim/PlateField.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5FieldTests.PlateCounts
+note = 4097 plates taken
+original:
+| if (plates.Count > MaxPlates) throw
+replacement:
+| if (plates.Count > MaxPlates + 1) throw
+
+[ml5-35-ctor-id-rise]
+file = Assets/WarCore/Sim/PlateField.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5FieldTests.ConstructorRules
+note = a repeated id taken
+original:
+| if (p.Id == 0 || (k > 0 && p.Id <= slabs[k - 1].Id)) throw
+replacement:
+| if (p.Id == 0 || (k > 0 && p.Id < slabs[k - 1].Id)) throw
+
+[ml5-36-ctor-id-zero]
+file = Assets/WarCore/Sim/PlateField.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5FieldTests.ConstructorRules
+note = id 0 taken
+original:
+| if (p.Id == 0 || (k > 0 && p.Id <= slabs[k - 1].Id)) throw
+replacement:
+| if ((k > 0 && p.Id <= slabs[k - 1].Id)) throw
+
+[ml5-37-ctor-thick]
+file = Assets/WarCore/Sim/PlateField.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5FieldTests.ConstructorRules
+note = thinner than 0.5 m taken
+original:
+| if (p.ThickRaw < S / 2 || p.ThickRaw >= HeightField.HeightLimitRaw) throw
+replacement:
+| if (p.ThickRaw < S / 2 - 1 || p.ThickRaw >= HeightField.HeightLimitRaw) throw
+
+[ml5-38-ctor-thick-high]
+file = Assets/WarCore/Sim/PlateField.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5FieldTests.ConstructorRules
+note = thickness 2^29 taken
+original:
+| if (p.ThickRaw < S / 2 || p.ThickRaw >= HeightField.HeightLimitRaw) throw
+replacement:
+| if (p.ThickRaw < S / 2 || p.ThickRaw > HeightField.HeightLimitRaw) throw
+
+[ml5-39-ctor-height]
+file = Assets/WarCore/Sim/PlateField.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5FieldTests.ConstructorRules
+note = height 2^29 taken
+original:
+| if (h <= -HeightField.HeightLimitRaw || h >= HeightField.HeightLimitRaw) throw
+replacement:
+| if (h <= -HeightField.HeightLimitRaw || h > HeightField.HeightLimitRaw) throw
+
+[ml5-40-ctor-height-low]
+file = Assets/WarCore/Sim/PlateField.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5FieldTests.ConstructorRules
+note = height -2^29 taken
+original:
+| if (h <= -HeightField.HeightLimitRaw || h >= HeightField.HeightLimitRaw) throw
+replacement:
+| if (h < -HeightField.HeightLimitRaw || h >= HeightField.HeightLimitRaw) throw
+
+[ml5-41-ctor-inside]
+file = Assets/WarCore/Sim/PlateField.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5FieldTests.ConstructorRules
+note = a plate past the map taken
+original:
+| if (p.X < 0 || p.Z < 0 || p.X + p.Width > width || p.Z + p.Depth > depth) throw
+replacement:
+| if (p.X < 0 || p.Z < 0 || p.X + p.Width > width + 1 || p.Z + p.Depth > depth) throw
+
+[ml5-42-ctor-origin-metre]
+file = Assets/WarCore/Sim/PlateField.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5FieldTests.ConstructorRules
+note = origin off the metre taken
+original:
+| if (originX.Raw % S != 0 || originZ.Raw % S != 0 || originX.Raw < -limit
+replacement:
+| if (originZ.Raw % S != 0 || originX.Raw < -limit
+
+[ml5-43-ctor-origin-edge]
+file = Assets/WarCore/Sim/PlateField.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5FieldTests.ConstructorRules
+note = a map past the world edge taken
+original:
+| || originX.Raw > limit - width * S || originZ.Raw > limit - depth * S)
+replacement:
+| || originX.Raw > limit - width * S + S || originZ.Raw > limit - depth * S)
+
+[ml5-44-ctor-origin-low]
+file = Assets/WarCore/Sim/PlateField.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5FieldTests.ConstructorRules
+note = a map below the world edge taken
+original:
+| originX.Raw < -limit || originZ.Raw < -limit
+replacement:
+| originX.Raw < -limit || originZ.Raw < -limit - S
+
+[ml5-45-ctor-side]
+file = Assets/WarCore/Sim/PlateField.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5FieldTests.ConstructorRules
+note = width 513 taken
+original:
+| if (width < 1 || width > HeightField.MaxSide || depth < 1 || depth > HeightField.MaxSide) throw new ArgumentOutOfRangeException(nameof(width));
+replacement:
+| if (width < 1 || width > HeightField.MaxSide + 1 || depth < 1 || depth > HeightField.MaxSide) throw new ArgumentOutOfRangeException(nameof(width));
+
+[ml5-46-bridge-origin]
+file = Assets/WarCore/Content/WcMapPlateField.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5FieldTests.BridgeUsesTheMapOrigin
+note = the bridge puts the map at 0
+original:
+| return new PlateField((int)map.Width, (int)map.Depth, map.Min.X, map.Min.Z, slabs);
+replacement:
+| return new PlateField((int)map.Width, (int)map.Depth, map.Min.X, SimFix.FromRaw(0), slabs);
+
+[ml5-47-bridge-solid]
+file = Assets/WarCore/Content/WcMapPlateField.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5FieldTests.DemoHouseThroughTheBridge
+note = the bridge ignores cutouts
+original:
+| for (int i = 0; i < p.Width; i++) solid[j * p.Width + i] = p.IsSolid(i, j);
+replacement:
+| for (int i = 0; i < p.Width; i++) solid[j * p.Width + i] = true;
+
+[ml5-48-bridge-empty]
+file = Assets/WarCore/Content/WcMapPlateField.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5FieldTests.BridgeWithoutPlatesAndTheLimits
+note = an empty field instead of null
+original:
+| if (map.Plates.Count == 0) return null;
+replacement:
+| if (map.Plates.Count < 0) return null;
