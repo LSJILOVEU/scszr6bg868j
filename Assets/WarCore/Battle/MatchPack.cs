@@ -124,5 +124,8 @@ namespace WarCore.Battle
         void Stop(StableId unit);
         bool TryGetOrder(StableId unit, out SimVec3 target);
         bool HasFailed(StableId unit) => false;
+        // Walking cost from one point to another when it is at most limitCost (1000 per orthogonal cell step times the cell cost,
+        // 1414 per diagonal step); false when there is no such route or no navigation. Read only: never changes the simulation.
+        bool TryRouteCost(SimVec3 from, SimVec3 to, long limitCost, out long cost) { cost = 0; return false; }
     }
 }

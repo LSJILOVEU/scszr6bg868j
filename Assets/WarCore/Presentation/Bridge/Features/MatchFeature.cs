@@ -135,6 +135,7 @@ namespace WarCore.Presentation
         }
         public bool CanStandAt(SimVec3 at) => ground.CanStand(at);
         public bool HasFailed(StableId unit) => locomotion.HasFailed(Resolve(unit));
+        public bool TryRouteCost(SimVec3 from, SimVec3 to, long limitCost, out long cost) => locomotion.TryRouteCost(from, to, limitCost, out cost);
         public bool IsCommanded(StableId unit) => standing.HasValue && sim.Entities.TryGet(standing.Value, Resolve(unit), out _);
         public bool TryDeploy(EntityId unit, SimVec3 at)
         {

@@ -9,6 +9,17 @@ namespace WarCore.Interim
         private readonly GridPathfinder pathfinder;
         private readonly ComponentType<MoveWaypoint> waypoints;
 
+        // Read-only route cost for callers outside movement (AI): true with the cheapest route cost (GridPathfinder units) when a
+        // route of at most limitCost exists. Uses this mover's own search, so it changes no component, saved state or hash; only
+        // the search scratch, which every movement search starts afresh. False without navigation.
+        public bool TryRouteCost(SimVec3 from, SimVec3 to, long limitCost, out long cost)
+        {
+            cost = 0;
+            if (pathfinder == null || pathfinder.FindWithin(from, to, limitCost) != GridPathStatus.Found) return false;
+            cost = pathfinder.TotalCostWide;
+            return true;
+        }
+
         private bool TryWaypoint(SimVec3 point, SimVec3 target, out SimVec3 waypoint)
         {
             waypoint = default;
