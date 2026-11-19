@@ -191,6 +191,26 @@ namespace WarCore.Tests
             Assert.That(Encoding.UTF8.GetString(written), Does.Contain("\"version\": 2,"));
         }
 
+        // Plates or cutouts alone make version 2, before next is looked at: with next at 1 the text gets past the version
+        // step to the id error, and a model built with next at 1 is still version 2.
+        [Test]
+        public void PlatesAndCutoutsDecideWithoutNext()
+        {
+            string plates = Using("plates").Replace("\"unit\": 1, \"plate\": 2\n", "\"unit\": 1\n");
+            Assert.That(Error(plates), Is.EqualTo("MAPDESC_ID plate 1 line " + Line(plates, "\"id\": 1, \"cell\"")));
+            string cutouts = Using("cutouts").Replace("\"unit\": 1, \"cutout\": 2\n", "\"unit\": 1\n");
+            Assert.That(Error(cutouts), Is.EqualTo("MAPDESC_ID cutout 1 line " + Line(cutouts, "\"id\": 1, \"plate\"")));
+            var next = new MapNext(1, 1, 1, 1, 1, 1);
+            var withPlate = new MapDesc("m", "none", "rwr-m6", new MapXZ(4, 2), new MapXZ(0, 0), 0, M, new MapLayer[0], null, null,
+                new[] { Ml4Maps.Flat(1, 0, 0, 1, 1, 3 * M) }, new MapCutout[0], new MapWall[0], new MapPoint[0], new MapBase[0], new MapUnit[0],
+                new MapRun(1, "none"), new[] { MapEdit.Hand }, null, null, new MapStamp[0], new MapSrc[0], next);
+            Assert.That(withPlate.Version, Is.EqualTo(2), "plates");
+            var withCutout = new MapDesc("m", "none", "rwr-m6", new MapXZ(4, 2), new MapXZ(0, 0), 0, M, new MapLayer[0], null, null,
+                new MapPlate[0], new[] { Ml4Maps.Cut(1, 1, 0, 0, 1, 1) }, new MapWall[0], new MapPoint[0], new MapBase[0], new MapUnit[0],
+                new MapRun(1, "none"), new[] { MapEdit.Hand }, null, null, new MapStamp[0], new MapSrc[0], next);
+            Assert.That(withCutout.Version, Is.EqualTo(2), "cutouts");
+        }
+
         // The same text as version 1: the error version 1 always gave.
         [TestCaseSource(nameof(OneThing))]
         public void EachThingIsAnErrorInVersionOne(string thing)

@@ -6,8 +6,7 @@
 [ml4-01-model-plates]
 file = Assets/WarCore/Content/MapTools/MapDesc.cs
 filter = FullyQualifiedName~Ml4
-expect = WarCore.Tests.Ml4DescTests.EachThingAloneMakesVersionTwo("plates"
-expect = WarCore.Tests.Ml4DescTests.ModelDecidesTheSame
+expect = WarCore.Tests.Ml4DescTests.PlatesAndCutoutsDecideWithoutNext
 note = model forgets non-empty plates
 original:
 | if (Plates.Count > 0 || Cutouts.Count > 0 ||
@@ -17,7 +16,7 @@ replacement:
 [ml4-02-model-cutouts]
 file = Assets/WarCore/Content/MapTools/MapDesc.cs
 filter = FullyQualifiedName~Ml4
-expect = WarCore.Tests.Ml4DescTests.EachThingAloneMakesVersionTwo("cutouts"
+expect = WarCore.Tests.Ml4DescTests.PlatesAndCutoutsDecideWithoutNext
 note = model forgets non-empty cutouts
 original:
 | if (Plates.Count > 0 || Cutouts.Count > 0 ||
@@ -83,7 +82,7 @@ replacement:
 [ml4-08-tree-plates]
 file = Assets/WarCore/Content/MapTools/MapDescReader.cs
 filter = FullyQualifiedName~Ml4
-expect = WarCore.Tests.Ml4DescTests.EachThingAloneMakesVersionTwo("plates"
+expect = WarCore.Tests.Ml4DescTests.PlatesAndCutoutsDecideWithoutNext
 note = bare tree misses plates
 original:
 | if (NonEmpty(root.Find("plates")) || NonEmpty(root.Find("cutouts"))) return true;
@@ -93,7 +92,7 @@ replacement:
 [ml4-09-tree-cutouts]
 file = Assets/WarCore/Content/MapTools/MapDescReader.cs
 filter = FullyQualifiedName~Ml4
-expect = WarCore.Tests.Ml4DescTests.EachThingAloneMakesVersionTwo("cutouts"
+expect = WarCore.Tests.Ml4DescTests.PlatesAndCutoutsDecideWithoutNext
 note = bare tree misses cutouts
 original:
 | if (NonEmpty(root.Find("plates")) || NonEmpty(root.Find("cutouts"))) return true;
@@ -771,6 +770,7 @@ expect = WarCore.Tests.Ml4EditTests.StampCutoutOfAMissingPlateIsSkipped
 note = a stamped cutout of a missing plate is placed
 original:
 | if (draft.Plates.Exists(p => p.Id == entry.Template.Plate)) cutouts.Add(entry);
+|                     else es++;
 replacement:
 | cutouts.Add(entry);
 

@@ -123,8 +123,10 @@ namespace WarCore.Tests
         [Test]
         public void SixtyFifthOwnerForAnEntriesOnlyStamp()
         {
-            var e = new MapEdit(Read(Map(owners: OwnersText(64))));
-            MapStampResult r = e.Stamp(Plan("s65", new MapStampEntry<MapPlate>[0], new MapStampEntry<MapCutout>[0], walls: new[] { new MapStampEntry<MapWall>(1, WallAt(3, 3)) }));
+            var e = new MapEdit(Ml4DescTests.Read(Map(owners: OwnersText(64))));
+            MapStampResult r = null;
+            Assert.DoesNotThrow(() => r = e.Stamp(Plan("s65", new MapStampEntry<MapPlate>[0], new MapStampEntry<MapCutout>[0],
+                walls: new[] { new MapStampEntry<MapWall>(1, WallAt(3, 3)) })), "the 65th owner fits the table");
             Assert.That(r.EntriesWritten, Is.EqualTo(1));
             Assert.That(e.Current.Owners.Count, Is.EqualTo(65));
             Assert.That(e.EntryOwner("wall", 1), Is.EqualTo("stamp:s65"));
@@ -137,7 +139,7 @@ namespace WarCore.Tests
         [Test]
         public void OwnerPastSixtyFourCannotWriteGrids()
         {
-            var e = new MapEdit(Read(Map(owners: OwnersText(65)).Replace("\"version\": 1,", "\"version\": 2,")));
+            var e = new MapEdit(Ml4DescTests.Read(Map(owners: OwnersText(65)).Replace("\"version\": 1,", "\"version\": 2,")));
             e.SetHeight(0, 0, 500);
             Assert.That(e.HeightOwner(0, 0), Is.EqualTo("hand"));
             byte[] before = Bytes(e);
@@ -149,7 +151,7 @@ namespace WarCore.Tests
                 new MapStampEntry<MapPoint>[0], new MapStampEntry<MapBase>[0], new MapStampEntry<MapUnit>[0]);
             Assert.That(Assert.Throws<InvalidOperationException>(() => e.Stamp(s)).Message, Is.EqualTo("MAPDESC_OWNER"));
             Assert.That(Bytes(e), Is.EqualTo(before));
-            e.Stamp(Plan("s1", new[] { PlateEntry(1, 0, 3 * M) }, new MapStampEntry<MapCutout>[0]));
+            Assert.DoesNotThrow(() => e.Stamp(Plan("s1", new[] { PlateEntry(1, 0, 3 * M) }, new MapStampEntry<MapCutout>[0])), "owner number 65 fits the table");
             Assert.That(e.EntryOwner("plate", 1), Is.EqualTo("stamp:s1"), "owner number 65, entries only");
         }
 
@@ -189,13 +191,14 @@ namespace WarCore.Tests
         [Test]
         public void The4097thOwnerIsRefused()
         {
-            var e = new MapEdit(Read(Map(owners: OwnersText(4096)).Replace("\"version\": 1,", "\"version\": 2,")));
+            var e = new MapEdit(Ml4DescTests.Read(Map(owners: OwnersText(4096)).Replace("\"version\": 1,", "\"version\": 2,")));
             byte[] before = Bytes(e);
             var x = Assert.Throws<InvalidOperationException>(() => e.Stamp(Plan("new", new MapStampEntry<MapPlate>[0], new MapStampEntry<MapCutout>[0],
                 walls: new[] { new MapStampEntry<MapWall>(1, WallAt(3, 3)) })));
             Assert.That(x.Message, Is.EqualTo("MAPDESC_OWNER"));
             Assert.That(Bytes(e), Is.EqualTo(before));
-            e.Stamp(Plan("o4095", new MapStampEntry<MapPlate>[0], new MapStampEntry<MapCutout>[0], walls: new[] { new MapStampEntry<MapWall>(1, WallAt(3, 3)) }));
+            Assert.DoesNotThrow(() => e.Stamp(Plan("o4095", new MapStampEntry<MapPlate>[0], new MapStampEntry<MapCutout>[0],
+                walls: new[] { new MapStampEntry<MapWall>(1, WallAt(3, 3)) })), "a listed owner needs no new row");
             Assert.That(e.EntryOwner("wall", 1), Is.EqualTo("stamp:o4095"), "a listed owner is reused");
         }
     }
