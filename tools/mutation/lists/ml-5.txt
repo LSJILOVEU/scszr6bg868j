@@ -3,6 +3,10 @@
 # the start-outside jump on the + side (walking cell by cell from outside gives the same answer), and a corner with
 # only + or only - crossings visited at a single point (that point is the next or the current cell anyway). Loosening the
 # off-map guard in Cell() indexes past the cell table and throws instead of answering wrong, so it is not listed either.
+# Also equivalent: SameT compared in long (equal fractions stay equal mod 2^64, and unequal ones would need a difference
+# that is a multiple of 2^64); the early stop before a corner cell and before the end cell at t = 1 on a tie (the cell
+# before it has positive length, so its best t* is strictly below the crossing; a tie at the crossing cannot happen there).
+# ml5-49 to ml5-58 were added in review round 1.
 
 [ml5-01-top-strict]
 file = Assets/WarCore/Sim/PlateField.Walk.cs
@@ -511,3 +515,111 @@ original:
 | if (map.Plates.Count == 0) return null;
 replacement:
 | if (map.Plates.Count < 0) return null;
+
+[ml5-49-vertical-start-only]
+file = Assets/WarCore/Sim/PlateField.Walk.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5VectorTests.VerticalAndZeroLength
+expect = WarCore.Tests.Ml5VectorTests.CutoutCellsAreOpen
+note = a segment with no XZ crossing looks only at its start
+original:
+| else { en = 1; ed = 1; }
+replacement:
+| else { en = 0; ed = 1; }
+
+[ml5-50-level-never-blocks]
+file = Assets/WarCore/Sim/PlateField.Walk.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5VectorTests.LevelLineEntersThroughTheSide
+expect = WarCore.Tests.Ml5VectorTests.FacesAreClearInsideIsBlocked
+note = K = 0 treated as clear
+original:
+| if (c <= 0 || c >= band) continue;
+replacement:
+| if (c <= 0 || c >= band || slope == 0) continue;
+
+[ml5-51-zero-length-clear]
+file = Assets/WarCore/Sim/PlateField.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5VectorTests.VerticalAndZeroLength
+note = zero-length segment treated as clear
+original:
+| if (slabs.Length == 0) return false;
+replacement:
+| if (slabs.Length == 0 || (q.Dx == 0 && q.Dy == 0 && q.Dz == 0)) return false;
+
+[ml5-52-side-takes-root]
+file = Assets/WarCore/Sim/PlateField.Walk.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5VectorTests.NegativeOriginFloorsDown
+expect = WarCore.Tests.Ml5OracleTests.MatchesTheOracle
+note = infimum always the root, even before the cell start
+original:
+| if (Less(an, ad, loN, den)) { cn = loN; cd = den; }
+replacement:
+| if (den > 0) { cn = loN; cd = den; }
+
+[ml5-53-less-long]
+file = Assets/WarCore/Sim/PlateField.Walk.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5FieldTests.DemoHouseThroughTheBridge
+expect = WarCore.Tests.Ml5OracleTests.MatchesTheOracle
+note = Less multiplies in long
+original:
+| private static bool Less(long a, long b, long c, long d) => (FixedInt128.Product(a, d) - FixedInt128.Product(c, b)).Sign < 0;
+replacement:
+| private static bool Less(long a, long b, long c, long d) => a * d < c * b;
+
+[ml5-54-floormuldiv-long]
+file = Assets/WarCore/Sim/PlateField.Walk.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5FieldTests.LargeCoordinates
+note = the reported point multiplies in long
+original:
+| FixedInt128 p = FixedInt128.Product(a, b);
+replacement:
+| if (d > 0) return FloorDiv(a * b, d);
+|             FixedInt128 p = FixedInt128.Product(a, b);
+
+[ml5-55-axis-pick-long]
+file = Assets/WarCore/Sim/PlateField.Walk.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5FieldTests.LargeCoordinates
+note = the earlier of the x and z crossings compared in long
+original:
+| if (hasX && (!hasZ || FixedUInt128.Multiply((ulong)xn, (ulong)zd).CompareTo(FixedUInt128.Multiply((ulong)zn, (ulong)xd)) <= 0)) { en = xn; ed = xd; }
+replacement:
+| if (hasX && (!hasZ || xn * zd <= zn * xd)) { en = xn; ed = xd; }
+
+[ml5-56-skip-negative]
+file = Assets/WarCore/Sim/PlateField.Walk.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5VectorTests.LevelLineEntersThroughTheSide
+note = moving - skips every other cell
+original:
+| n = f - origin - line * S; den = -d; after = line - 1;
+replacement:
+| n = f - origin - line * S; den = -d; after = line - 2;
+
+[ml5-57-one-end-off-map]
+file = Assets/WarCore/Sim/PlateField.Walk.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5VectorTests.OffTheMap
+note = a start off the map ends the walk
+original:
+| private static bool Leaving(long i, long d, int size) => d > 0 ? i >= size : d < 0 ? i < 0 : i < 0 || i >= size;
+replacement:
+| private static bool Leaving(long i, long d, int size) => i < 0 || i >= size;
+
+[ml5-58-start-inside-later]
+file = Assets/WarCore/Sim/PlateField.Walk.cs
+filter = FullyQualifiedName~Ml5
+expect = WarCore.Tests.Ml5VectorTests.StartInsideTheBody
+expect = WarCore.Tests.Ml5VectorTests.FlooredStandingHeightIsInsideASlope
+note = a level start inside reports the cell end
+original:
+| if (c <= 0 || c >= band) continue;
+|                     cn = an; cd = ad;
+replacement:
+| if (c <= 0 || c >= band) continue;
+|                     cn = an == 0 ? bn : an; cd = an == 0 ? bd : ad;
