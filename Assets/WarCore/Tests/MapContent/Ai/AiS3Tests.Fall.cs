@@ -68,6 +68,43 @@ namespace WarCore.Tests
             Assert.That(half.Value(Id(w, 11)), Is.EqualTo(0));
         }
 
+        // Halves one unit's health on one tick.
+        private sealed class Wound : IRetainedGameplaySystem
+        {
+            private readonly M6World world; private readonly ulong key;
+            internal Wound(M6World world, ulong key) { this.world = world; this.key = key; }
+            public int Order => 25;
+            public string StateTypeId => "test.wound";
+            public int StateVersion => 1;
+            public void Step(SimContext c)
+            {
+                if (c.Clock.Tick != 1) return;
+                StableId id = world.Sim.Entities.StableOf(world.Unit(key));
+                c.Damage(world.Sim.GameplayTarget(id), new GameplayApplyKey(id, 1, 0, id, 1, 0), 1, world.Recipe.Combat.MaxHealthRaw / 2);
+            }
+            public void SaveState(SimStateWriter w) { }
+            public void LoadState(SimStateReader r) { }
+            public void WriteState(StateHash h) { }
+        }
+
+        // The health is the unit's own, not the full value: a wounded unit falls to what it has left.
+        [Test]
+        public void Fall_KillRuleReadsAWoundedUnitsHealth()
+        {
+            M6World w = Field(null);
+            w.Sim.RegisterGameplay("test.wound", new Wound(w, 10), SimSystemPhase.Queries);
+            w.Step(2);
+            long full = w.Recipe.Combat.MaxHealthRaw, left = w.Combat.HealthRaw(Id(w, 10));
+            Assert.That(left, Is.EqualTo(full - full / 2));
+            Assert.That(w.Dead(10), Is.False);
+            var p = new Pressure(w.Combat, KillRules());
+            p.Advance(new[] { Hit(w, 10, left - 1) });
+            Assert.That(p.Value(Id(w, 11)), Is.EqualTo(0));
+            var q = new Pressure(w.Combat, KillRules());
+            q.Advance(new[] { Hit(w, 10, left) });
+            Assert.That(q.Value(Id(w, 11)), Is.EqualTo(2000));
+        }
+
         [Test]
         public void Fall_KillsAddsShotsAndLandedStrikesOfThatUnitOnly()
         {

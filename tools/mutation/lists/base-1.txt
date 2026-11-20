@@ -1,5 +1,5 @@
 # BASE-1: what counts as a teammate brought down for the pressure system (pressureFall: hit | kill). Filter: AiS3 fall tests.
-# Not listed: CombatSystem.HealthRaw (one line, read by pf-kill-full-health's test through a real battle).
+# Not listed: CombatSystem.HealthRaw (one line; pf-kill-full-health replaces its use).
 [pf-kill-check-gone]
 file = Assets/WarCore/Battle/Ai/Pressure.cs
 filter = FullyQualifiedName~AiS3Tests.Fall
@@ -23,7 +23,7 @@ replacement:
 [pf-kill-full-health]
 file = Assets/WarCore/Battle/Ai/Pressure.cs
 filter = FullyQualifiedName~AiS3Tests.Fall
-expect = WarCore.Tests.AiS3Tests.Fall_KillRuleIgnoresWoundsInABattle
+expect = WarCore.Tests.AiS3Tests.Fall_KillRuleReadsAWoundedUnitsHealth
 note = health is taken as full, not read from the unit
 original:
 |                 if (!counted && rules.FallOnKill && !Kills(fire.Target, fires, combat.Strikes, combat.HealthRaw(fire.Target))) continue;
