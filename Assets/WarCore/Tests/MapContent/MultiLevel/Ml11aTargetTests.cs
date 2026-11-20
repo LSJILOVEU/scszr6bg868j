@@ -1,5 +1,7 @@
 using NUnit.Framework;
 using WarCore.Battle;
+using WarCore.Content.MapTools;
+using WarCore.Interim;
 using WarCore.Presentation;
 using WarCore.Sim;
 using static WarCore.Tests.Ml11aWorld;
@@ -96,9 +98,9 @@ namespace WarCore.Tests
             Assert.That(ones, Is.InRange(1, 5), "the fixture has both ranks");
         }
 
-        private static M6World Fleeing(UnitSpawn[] units, ControlPointDef[] points, SpawnAnchor[] bases = null, bool stair = true)
+        private static M6World Fleeing(UnitSpawn[] units, ControlPointDef[] points, SpawnAnchor[] bases = null, bool stair = true, byte[] map = null)
         {
-            M6World w = World(units, points, stair: stair, capture: 100000, bases: bases);
+            M6World w = World(units, points, stair: stair, capture: 100000, bases: bases, map: map);
             Install(w, "engage", new Flee());
             Install(w, "dispatch", new Sent());
             return w;
@@ -118,6 +120,37 @@ namespace WarCore.Tests
             Assert.That(layer, Is.EqualTo(0));
             Assert.That(Slots(w).TryFindAll(0, target, 1, out _), Is.True, "a slot of the ground point");
             for (int t = 0; t < 200; t++) { w.Step(); Assert.That(Failed(w, 1), Is.False, "tick " + t); }
+        }
+
+        // 11. The cost is read from the unit's layer. A unit upstairs at the floor's (43, 30), an owned point on the ground right
+        // under it and one on the floor at (40, 33). From the floor: two steps, a diagonal and two steps to the point upstairs
+        // (the cutout bars the straight diagonals); to the ground point 3414 to the stair's top, a seam, three stair cells, a
+        // seam, one step north and eight east. The unit falls back to the point upstairs.
+        [Test]
+        public void AUnitUpstairsFallsBackByTheCostFromItsFloor()
+        {
+            var points = new[] { PointUp(1, 40500, 33500, 1, 1), PointDown(2, 43500, 30500, 1, 1) };
+            M6World w = Fleeing(new[] { Gunner(1, 43500, 30500, 1), Still(10, 43500, 33500, 1) }, points);
+            Assert.That((Cost(w, 0, Up(43500, 30500), 1), Cost(w, 1, Up(43500, 30500), 1)), Is.EqualTo((5414L, 17414L)));
+            Assert.That((Cost(w, 0, Flat(43500, 30500), 0), Cost(w, 1, Flat(43500, 30500), 0)), Is.EqualTo((15414L, 0L)));
+            w.Step(12);
+            Assert.That(Ordered(w, 1, out SimVec3 target, out int layer), Is.True);
+            Assert.That(layer, Is.EqualTo(1));
+            Assert.That(Slots(w).TryFindAll(1, target, 0, out _), Is.True, "a slot of the point upstairs");
+        }
+
+        // 1. Without plates the walk home is not checked, as before: the base is 0.1 m from a wall, where a soldier's footprint
+        // does not fit, and the unit is still ordered there.
+        [Test]
+        public void WithoutPlatesTheWalkHomeIsNotChecked()
+        {
+            byte[] map = Ml7Worlds.Bytes(Ml4Maps.Make(0, 80, 40, null, new MapPlate[0], null, new[] { Ml4Maps.Wall(1, 30, 20, 1, 1, 2 * M) }));
+            M6World w = Fleeing(new[] { Gunner(1, 41500, 20500), Still(10, 45500, 20500) }, new[] { Far }, Bases(new SpawnAnchor(1, Flat(31100, 20500))), map: map);
+            Assert.That(Part<IUnitLayers>(w, "layers"), Is.Null);
+            Assert.That(Moves(w).CanStandAt(Flat(31100, 20500), 0), Is.False);
+            w.Step(12);
+            Assert.That(Ordered(w, 1, out SimVec3 target, out int layer), Is.True);
+            Assert.That((target, layer), Is.EqualTo((Flat(31100, 20500), 0)));
         }
 
         // 11. Without an owned point the unit falls back to its base. Upstairs the order carries the base's layer; a unit under

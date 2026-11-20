@@ -4,7 +4,9 @@
 # Not listed: GuardSlots.AllAt and AllCanonical with "<=" at the table boundary (the mutant reads past the ground table: an
 # exception, not an assertion; AllLayerOf carries the boundary); the squared cost replaced by the cost (same order); "<"
 # for "<=" in the relaxation (the same value written once more); a spread from the front-line point falling back to the unit
-# (a front-line point reaches a point by definition); the scheduler's arrays sized by Total (an exception).
+# (a front-line point reaches a point by definition); the scheduler's arrays sized by Total (an exception); the layer
+# dropped from "is the unit already walking to this slot" (the same place on another layer has another height, so the
+# targets differ anyway).
 
 [ml11a-sa-arrive-layer]
 file = Assets/WarCore/Battle/SimpleAiSystem.cs
@@ -148,17 +150,6 @@ original:
 | if (layer == slotLayer && Arrived(here, destination))
 replacement:
 | if (Arrived(here, destination))
-
-[ml11a-sa-slot-onway-layer]
-file = Assets/WarCore/Battle/SimpleAiSystem.cs
-filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
-expect = WarCore.Tests.Ml11a
-expect = WarCore.Tests.Ml9bMatchTests.
-note = an order to the same spot on another layer counts as on the way
-original:
-| if (!moving || orderLayer != slotLayer || !target.Equals(destination))
-replacement:
-| if (!moving || !target.Equals(destination))
 
 [ml11a-sa-slot-order-layer]
 file = Assets/WarCore/Battle/SimpleAiSystem.cs
