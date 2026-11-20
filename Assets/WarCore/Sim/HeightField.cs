@@ -108,7 +108,10 @@ namespace WarCore.Sim
         // Widths: |coordinate| <= 2^32 (else ArgumentOutOfRangeException; no world check, so rays may end off the map),
         // |d| <= 2^34, n * delta <= 2^67 (FixedInt128), quotient <= 2^33, t comparison <= 2^68 (FixedUInt128), closed-domain
         // height numerator < 2^48; at most 2053 samples (MaxSide 512); no allocation.
-        public bool TryFirstBelow(SimVec3 from, SimVec3 to, out SimVec3 at)
+        public bool TryFirstBelow(SimVec3 from, SimVec3 to, out SimVec3 at) => TryFirstBelow(from, to, out at, out _, out _);
+
+        // The same test, with the first blocked sample's t = n / d (0 <= n <= d <= 2^34; n = 0, d = 1 when nothing is below).
+        internal bool TryFirstBelow(SimVec3 from, SimVec3 to, out SimVec3 at, out long n, out long d)
         {
             if (Outside(from.X.Raw) || Outside(from.Y.Raw) || Outside(from.Z.Raw)
                 || Outside(to.X.Raw) || Outside(to.Y.Raw) || Outside(to.Z.Raw)) throw new ArgumentOutOfRangeException(nameof(to));
@@ -121,6 +124,7 @@ namespace WarCore.Sim
             Family(ref best, fx - fz, dx - dz, OriginX.Raw - OriginZ.Raw, -Depth, Width, fx, fy, fz, dx, dy, dz);
             Sample(ref best, 1, 1, fx, fy, fz, dx, dy, dz);
             at = best.At;
+            n = best.Found ? best.N : 0; d = best.Found ? best.D : 1;
             return best.Found;
         }
 

@@ -57,7 +57,7 @@ namespace WarCore.Battle
                 SimVec3 at = world.Point(candidate);
                 int k = grid.TryCell(at, out int key) ? conceal[key] : 1000;
                 SimWide cap = new SimVec3(SimFix.FromRaw(Scaled(limit.Raw, k)), default, default).LengthSquared;
-                SimWide distance = CombatSystem.Horizontal(at - world.Point(shooter)).LengthSquared;
+                SimWide distance = world.SpanSquared(world.Point(shooter), at);
                 StableId id = world.Entities.StableOf(candidate);
                 if (distance > cap || (found && (distance > best || (distance == best && id.CompareTo(bestId) >= 0)))) continue;
                 if (!world.Visible(shooter, candidate)) continue;

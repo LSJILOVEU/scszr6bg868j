@@ -128,6 +128,24 @@ namespace WarCore.Sim
 
         public bool Blocks(SimVec3 from, SimVec3 to) => TryFirstThrough(from, to, out _);
 
+        // ML-9: everything the plate test reads, in a fixed order: the map's size and origin, then each plate's id, rectangle,
+        // top points, thickness and solid cells. A snapshot keyed by it cannot be restored under plates of another thickness.
+        public ulong Digest()
+        {
+            var hash = new StateHash();
+            hash.Add("sim.plate-field.v1");
+            hash.Add(Width); hash.Add(Depth); hash.Add(OriginX.Raw); hash.Add(OriginZ.Raw);
+            hash.Add(slabs.Length);
+            foreach (PlateSlab p in slabs)
+            {
+                hash.Add(p.Id); hash.Add(p.X); hash.Add(p.Z); hash.Add(p.Width); hash.Add(p.Depth);
+                foreach (int h in p.Points) hash.Add(h);
+                hash.Add(p.ThickRaw);
+                foreach (bool solid in p.Solid) hash.Add(solid);
+            }
+            return hash.Value;
+        }
+
         public bool TryFirstThrough(SimVec3 from, SimVec3 to, out PlateHit hit)
         {
             if (Outside(from.X.Raw) || Outside(from.Y.Raw) || Outside(from.Z.Raw)

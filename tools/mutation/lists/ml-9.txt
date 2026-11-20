@@ -1,0 +1,407 @@
+# ML-9: floor plates stop sight, shots and melee (LineStop picks the first of ground and plates by t); 3D distances on plate
+# maps; straight up and down on plate maps; the plates.field content key. Filter: ML-9 tests.
+# Not listed, equivalent: the tie rule of LineStop (ground wins at equal t): at an equal t both tests report the same point
+# (ATieGivesTheCommonPoint), so "plate wins" returns the same bits. The cross product against comparing the distances of the
+# two points: both order the same along one segment up to the points' rounding, and the rounding never reverses two hits more
+# than 1 raw apart; no segment was found where they disagree. "Add the key without plates" cannot be written: the key is added
+# by the plate feature, which is not on without plates (AWorldWithoutPlatesHasNoFieldKey locks the absence).
+[ml9-stop-larger-t]
+file = Assets/WarCore/Sim/LineStop.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9LineStopTests.ThePlateStopsFirst
+note = the larger t wins
+original:
+| (ulong)hit.TNum, (ulong)gd)) <= 0)
+replacement:
+| (ulong)hit.TNum, (ulong)gd)) >= 0)
+
+[ml9-stop-ground-only]
+file = Assets/WarCore/Sim/LineStop.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9LineStopTests.ThePlateStopsFirst
+note = the plates are never asked
+original:
+| if (plates == null || !plates.TryFirstThrough(from, to, out PlateHit hit)) return below;
+replacement:
+| if (plates == null || !plates.TryFirstThrough(from, to, out PlateHit hit) || true) return below;
+
+[ml9-stop-plates-only]
+file = Assets/WarCore/Sim/LineStop.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9LineStopTests.TheGroundStopsFirst
+note = the ground is never asked
+original:
+| bool below = ground != null && ground.TryFirstBelow(from, to, out at, out gn, out gd);
+replacement:
+| bool below = false && ground.TryFirstBelow(from, to, out at, out gn, out gd);
+
+[ml9-stop-ground-wins-plate-point]
+file = Assets/WarCore/Sim/LineStop.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9LineStopTests.TheGroundStopsFirst
+note = the ground wins with the plate's point
+original:
+| <= 0)
+|                 return true;
+replacement:
+| <= 0)
+|             { at = hit.At; return true; }
+
+[ml9-stop-plate-wins-ground-point]
+file = Assets/WarCore/Sim/LineStop.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9LineStopTests.ThePlateStopsFirst
+note = the plate wins with the ground's point
+original:
+|             at = hit.At;
+|             return true;
+replacement:
+|             if (!below) at = hit.At;
+|             return true;
+
+[ml9-ground-t-zero]
+file = Assets/WarCore/Sim/HeightField.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9LineStopTests.ThePlateStopsFirst
+note = the ground's t is always 0
+original:
+| n = best.Found ? best.N : 0;
+replacement:
+| n = 0;
+
+[ml9-lineclear-no-plates]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9SightShotTests.FloorsHideEachOther
+note = LineClear skips the plates
+original:
+| return !LineStop.TryFirst(ground, plates, from, to, out _);
+replacement:
+| return !LineStop.TryFirst(ground, null, from, to, out _);
+
+[ml9-lineclear-vertical-clear]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9SightShotTests.TheCutoutOpensTheVerticalLine
+expect = WarCore.Tests.Ml9SightShotTests.FloorsHideEachOther
+note = a vertical line is always clear
+original:
+| return plates == null || !plates.Blocks(from, to);
+replacement:
+| return true;
+
+[ml9-trace-unlifted]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9SightShotTests.ShotsStopInTheFloor
+note = the shot tests the unlifted segment
+original:
+| LineStop.TryFirst(ground, plates, origin + lift, end + lift, out SimVec3 at)
+replacement:
+| LineStop.TryFirst(ground, plates, origin, end, out SimVec3 at)
+
+[ml9-trace-lifted-twice]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9SightShotTests.ShotsStopInTheFloor
+note = the shot tests a segment lifted twice
+original:
+| LineStop.TryFirst(ground, plates, origin + lift, end + lift, out SimVec3 at)
+replacement:
+| LineStop.TryFirst(ground, plates, origin + lift + lift, end + lift + lift, out SimVec3 at)
+
+[ml9-trace-end-not-lowered]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9SightShotTests.ShotsStopInTheFloor
+note = the end is not lowered back
+original:
+| end = at - lift;
+replacement:
+| end = at;
+
+[ml9-trace-ground-only]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9SightShotTests.WithoutGroundThePlatesStillStopShots
+note = the plate test needs a ground
+original:
+| if (ground != null || plates != null)
+replacement:
+| if (ground != null)
+
+[ml9-melee-no-plates]
+file = Assets/WarCore/Combat/CombatSystem.Melee.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9MeleeDistanceTests.TheFloorStopsMelee
+note = the wall line skips the plates
+original:
+| if (plates != null && plates.Blocks(from, from + delta)) continue;
+replacement:
+| if (plates != null && false) continue;
+
+[ml9-melee-vertical-skipped]
+file = Assets/WarCore/Combat/CombatSystem.Melee.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9MeleeDistanceTests.TheFloorStopsMelee
+note = the wall line skips the plates on a vertical line
+original:
+| if (plates != null && plates.Blocks(from, from + delta)) continue;
+replacement:
+| if (plates != null && Horizontal(delta).LengthSquared.Sign != 0 && plates.Blocks(from, from + delta)) continue;
+
+[ml9-body-eye-zero]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9SightShotTests.ThePlatesNeedAnEyeAndMuzzleAboveTheFoot
+note = an eye at the foot passes
+original:
+| body.Value.Eye.Raw < 1
+replacement:
+| body.Value.Eye.Raw < 0
+
+[ml9-body-muzzle-zero]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9SightShotTests.ThePlatesNeedAnEyeAndMuzzleAboveTheFoot
+note = a muzzle at the foot passes
+original:
+| body.Value.Muzzle.Raw < 1
+replacement:
+| body.Value.Muzzle.Raw < 0
+
+[ml9-body-any-plates]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9SightShotTests.ThePlatesNeedAnEyeAndMuzzleAboveTheFoot
+note = the check runs without plates
+original:
+| if (plates != null && body.HasValue &&
+replacement:
+| if (body.HasValue &&
+
+[ml9-overhead-any-height]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9SightShotTests.StraightUpAndDown
+expect = WarCore.Tests.Ml9SightShotTests.TheAutomaticShotGoesStraightUp
+note = the same height counts as overhead
+original:
+| public bool Overhead(SimVec3 foot, SimVec3 other) => plates != null && foot.Y.Raw != other.Y.Raw;
+replacement:
+| public bool Overhead(SimVec3 foot, SimVec3 other) => plates != null;
+
+[ml9-overhead-no-plates]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9SightShotTests.StraightUpAndDown
+expect = WarCore.Tests.Ml9SightShotTests.TheAutomaticShotGoesStraightUp
+expect = WarCore.Tests.Ml9SightShotTests.TheTeammateCheckLooksStraightUp
+note = overhead without plates
+original:
+| public bool Overhead(SimVec3 foot, SimVec3 other) => plates != null && foot.Y.Raw != other.Y.Raw;
+replacement:
+| public bool Overhead(SimVec3 foot, SimVec3 other) => foot.Y.Raw != other.Y.Raw;
+
+[ml9-autofire-plus-x]
+file = Assets/WarCore/Combat/DefaultAutoFire.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9SightShotTests.TheAutomaticShotGoesStraightUp
+note = the automatic shot straight up goes along +X
+original:
+|             if (CombatSystem.Horizontal(direction).LengthSquared.Sign == 0
+|                 && !(combat.Overhead(position.Value, combat.Point(target)) && direction.LengthSquared.Sign != 0))
+replacement:
+|             if (CombatSystem.Horizontal(direction).LengthSquared.Sign == 0)
+
+[ml9-intent-skipped]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9SightShotTests.StraightUpAndDown
+note = an aimed point straight above gives no shot
+original:
+|                         if (Horizontal(direction).LengthSquared.Sign == 0
+|                             && !(Overhead(position.Value, intents[shooter.Id].Point) && direction.LengthSquared.Sign != 0)) continue;
+replacement:
+|                         if (Horizontal(direction).LengthSquared.Sign == 0) continue;
+
+[ml9-allyblocks-no-vertical]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9SightShotTests.TheTeammateCheckLooksStraightUp
+note = the teammate check has no vertical line
+original:
+| bool line = Horizontal(direction).LengthSquared.Sign != 0 || Overhead(Point(shooter), point) && direction.LengthSquared.Sign != 0;
+replacement:
+| bool line = Horizontal(direction).LengthSquared.Sign != 0;
+
+[ml9-span-squared-flat]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9MeleeDistanceTests.
+note = SpanSquared is always horizontal
+original:
+| public SimWide SpanSquared(SimVec3 from, SimVec3 to) => plates != null ? (to - from).LengthSquared : Horizontal(to - from).LengthSquared;
+replacement:
+| public SimWide SpanSquared(SimVec3 from, SimVec3 to) => Horizontal(to - from).LengthSquared;
+
+[ml9-span-squared-3d]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9MeleeDistanceTests.
+note = SpanSquared is always 3D
+original:
+| public SimWide SpanSquared(SimVec3 from, SimVec3 to) => plates != null ? (to - from).LengthSquared : Horizontal(to - from).LengthSquared;
+replacement:
+| public SimWide SpanSquared(SimVec3 from, SimVec3 to) => (to - from).LengthSquared;
+
+[ml9-span-flat]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9MeleeDistanceTests.RecordedDistancesAre3D
+note = Span is always horizontal
+original:
+| public SimFix Span(SimVec3 from, SimVec3 to) => plates != null ? (to - from).Length : Horizontal(to - from).Length;
+replacement:
+| public SimFix Span(SimVec3 from, SimVec3 to) => Horizontal(to - from).Length;
+
+[ml9-span-3d]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9MeleeDistanceTests.RecordedDistancesAre3D
+note = Span is always 3D
+original:
+| public SimFix Span(SimVec3 from, SimVec3 to) => plates != null ? (to - from).Length : Horizontal(to - from).Length;
+replacement:
+| public SimFix Span(SimVec3 from, SimVec3 to) => (to - from).Length;
+
+[ml9-site-selector]
+file = Assets/WarCore/Combat/NearestVisibleEnemy.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9MeleeDistanceTests.TheSelectorsPickTheNearestIn3D
+note = the selector counts horizontally
+original:
+| SimWide distance = world.SpanSquared(world.Point(shooter), world.Point(candidate));
+replacement:
+| SimWide distance = CombatSystem.Horizontal(world.Point(candidate) - world.Point(shooter)).LengthSquared;
+
+[ml9-site-concealed]
+file = Assets/WarCore/Battle/ConcealedSight.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9MeleeDistanceTests.TheSelectorsPickTheNearestIn3D
+note = the concealed selector counts horizontally
+original:
+| SimWide distance = world.SpanSquared(world.Point(shooter), at);
+replacement:
+| SimWide distance = CombatSystem.Horizontal(at - world.Point(shooter)).LengthSquared;
+
+[ml9-site-aimed-swing]
+file = Assets/WarCore/Combat/CombatSystem.Melee.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9MeleeDistanceTests.AnAimedSwingCountsIn3D
+note = the aimed swing's range is horizontal
+original:
+| if (!gunless && SpanSquared(origin, intent.Point) > Reach(spec.EngageRange)) return false;
+replacement:
+| if (!gunless && direction.LengthSquared > Reach(spec.EngageRange)) return false;
+
+[ml9-site-target-swing]
+file = Assets/WarCore/Combat/CombatSystem.Melee.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9MeleeDistanceTests.TheReachIsCountedIn3D
+note = the target swing's reach is horizontal
+original:
+| if (SpanSquared(origin, targetPosition.Value) > Reach(gunless ? spec.Radius : spec.EngageRange)) return false;
+replacement:
+| if (direction.LengthSquared > Reach(gunless ? spec.Radius : spec.EngageRange)) return false;
+
+[ml9-site-nearest-swing]
+file = Assets/WarCore/Combat/CombatSystem.Melee.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9MeleeDistanceTests.TheNearestEnemyToStrikeIsNearestIn3D
+note = the nearest enemy to strike is horizontal
+original:
+| SimWide distance = SpanSquared(origin, other.Value);
+replacement:
+| SimWide distance = delta.LengthSquared;
+
+[ml9-site-swing-order]
+file = Assets/WarCore/Combat/CombatSystem.Melee.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9MeleeDistanceTests.TheSwingTakesTheNearestIn3D
+note = the swing orders its hits horizontally
+original:
+| Distance = SpanSquared(origin, other.Value) };
+replacement:
+| Distance = Horizontal(other.Value - origin).LengthSquared };
+
+[ml9-site-threat]
+file = Assets/WarCore/Combat/CombatSystem.Block.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9MeleeDistanceTests.AThreatIsCountedIn3D
+note = the threat is horizontal
+original:
+| if (SpanSquared(here.Value, state.Origin) > Reach(pack.Melee[state.Spec].Radius)) continue;
+replacement:
+| if (Horizontal(state.Origin - here.Value).LengthSquared > Reach(pack.Melee[state.Spec].Radius)) continue;
+
+[ml9-site-target-range]
+file = Assets/WarCore/Combat/CombatSystem.Resolve.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9MeleeDistanceTests.TheTargetRangeIsCountedIn3D
+note = the target range is horizontal
+original:
+| || SpanSquared(origin, targetPosition.Value) > new SimVec3(weapon.FalloffEnd, default, default).LengthSquared
+replacement:
+| || Horizontal(targetPosition.Value - origin).LengthSquared > new SimVec3(weapon.FalloffEnd, default, default).LengthSquared
+
+[ml9-site-hit-distance]
+file = Assets/WarCore/Combat/CombatSystem.Resolve.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9MeleeDistanceTests.RecordedDistancesAre3D
+note = the hit's distance is horizontal
+original:
+| SimFix distance = Span(position.Value, targetCenter);
+replacement:
+| SimFix distance = Horizontal(targetCenter - position.Value).Length;
+
+[ml9-site-miss-distance]
+file = Assets/WarCore/Combat/CombatSystem.Resolve.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9MeleeDistanceTests.RecordedDistancesAre3D
+note = the miss's distance is horizontal
+original:
+| origin, end, Span(origin, end), 0, unit.Team, outcome);
+replacement:
+| origin, end, Horizontal(end - origin).Length, 0, unit.Team, outcome);
+
+[ml9-bridge-no-plates]
+file = Assets/WarCore/Presentation/Bridge/Features/CombatFeature.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9SnapshotTests.TheBridgeHandsThePlatesToCombat
+note = the bridge passes no plates
+original:
+| a.Plates?.Field);
+replacement:
+| null);
+
+[ml9-key-no-thickness]
+file = Assets/WarCore/Sim/PlateField.cs
+filter = FullyQualifiedName~Ml9
+expect = WarCore.Tests.Ml9SnapshotTests.OnlyTheThicknessChangedRefusesTheSnapshot
+note = the field key leaves out the thickness
+original:
+| hash.Add(p.ThickRaw);
+replacement:
+|
+
+[ml9-key-not-added]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateFeature.cs
+filter = FullyQualifiedName~Ml9|FullyQualifiedName~Ml7SessionTests
+expect = WarCore.Tests.Ml9SnapshotTests.OnlyTheThicknessChangedRefusesTheSnapshot
+expect = WarCore.Tests.Ml7SessionTests.ThePreviewOpensPlateMaps
+note = the field key is not added
+original:
+| a.ContentKeys.Add(new StableContentKey("plates.field", a.Plates.Field.Digest()));
+replacement:
+|

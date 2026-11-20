@@ -34,7 +34,11 @@ namespace WarCore.Combat
             // so the shot goes along +X
             // and takes the same ally check, spread, wall and teammate handling as any other ray.
             // PLACEHOLDER: +X is arbitrary; switch to the unit's facing once units have one (block 5 C1, T1b/H1).
-            if (CombatSystem.Horizontal(direction).LengthSquared.Sign == 0) direction = new SimVec3(SimFix.FromInt(1), default, default);
+            // ML-9: on a map with plates a target whose foot is higher or lower is shot along the vertical (no spread: the
+            // spread turns the horizontal part only).
+            if (CombatSystem.Horizontal(direction).LengthSquared.Sign == 0
+                && !(combat.Overhead(position.Value, combat.Point(target)) && direction.LengthSquared.Sign != 0))
+                direction = new SimVec3(SimFix.FromInt(1), default, default);
             if (combat.AllyBlocks(shooter, origin, direction) && sim.Rng.NextInt(allyStream, 65536) >= combat.Pack.AllyCheckMissRaw)
                 return AutoFireAction.HoldFire;
             return AutoFireAction.Fire;

@@ -146,14 +146,15 @@ namespace WarCore.Combat
         }
 
         // The one line-of-sight judgement: a horizontal zero length is clear, otherwise nothing of the wall layer on the segment
-        // and (L9) the segment nowhere under the ground.
+        // and (L9) the segment nowhere under the ground. ML-9: on a map with floor plates the segment must also pass through no
+        // plate, and a segment straight up or down is tested against the plates alone.
         // Explicit AtTarget intents use this; the Aimed and Auto paths use Trace.
         private bool LineClear(SimVec3 from, SimVec3 to)
         {
-            if (Horizontal(to - from).LengthSquared.Sign == 0) return true;
+            if (Horizontal(to - from).LengthSquared.Sign == 0) return plates == null || !plates.Blocks(from, to);
             var delta = to - from;
             if (sim.SpatialQuery.Any(SpatialQueries.Ray(from, delta, delta.Length, wallMask))) return false;
-            return ground == null || !ground.TryFirstBelow(from, to, out _);
+            return !LineStop.TryFirst(ground, plates, from, to, out _);
         }
 
         private enum Struck : byte { Open, Wall, Enemy, Friend }
@@ -164,6 +165,9 @@ namespace WarCore.Combat
         // as is (no second rounding). The ground wins a tie with the unit or wall at the end.
         // ML-3 new mode: the ray already starts at the muzzle, so it is tested against the ground as it flies (no lift, the
         // blocked sample is the end as is).
+        // ML-9: the floor plates are tested with the ground on the same (lifted) segment, after the nearest unit or wall has cut it
+        // to end: the first of ground and plates wins (LineStop), and a plate touching the unit or wall at the end wins too. The
+        // end's rounding (a few raw) is accepted, as for the ground.
         private Struck Trace(EntityId shooter, SimVec3 origin, SimVec3 direction, SimFix range, out EntityId hit, out SimFix distance, out SimVec3 end)
         {
             hit = default; distance = range;
@@ -187,10 +191,10 @@ namespace WarCore.Combat
             else if (!found) struck = Struck.Open;
             else { distance = best; struck = IsFriend(shooter, hit) ? Struck.Friend : Struck.Enemy; }
             end = origin + direction.Normalized * distance;
-            if (ground != null)
+            if (ground != null || plates != null)
             {
                 SimVec3 lift = new SimVec3(default, SimFix.FromRaw(groundLiftRaw), default);
-                if (ground.TryFirstBelow(origin + lift, end + lift, out SimVec3 at))
+                if (LineStop.TryFirst(ground, plates, origin + lift, end + lift, out SimVec3 at))
                 { hit = default; end = at - lift; distance = (end - origin).Length; return Struck.Wall; }
             }
             return struck;
@@ -205,12 +209,13 @@ namespace WarCore.Combat
         // AI read port: is a living teammate the first thing on the straight (3D) line from the shooter towards a point, traced
         // out to range (the whole flight of a shot, not only to the point)? It is the line an aimed intent at the point flies
         // along (ML-3: from the muzzle to the point lifted to the standing eye). A point straight above or below the shooter
-        // gives no line.
+        // gives no line, except on a map with plates when the point's height differs from the shooter's foot (ML-9).
         public bool AllyBlocks(EntityId shooter, SimVec3 point, SimFix range)
         {
             SimVec3 origin = MuzzlePoint(shooter);
             SimVec3 direction = Lift(point, aimEndRaw) - origin;
-            return Horizontal(direction).LengthSquared.Sign != 0 && AllyBlocks(shooter, origin, direction, range);
+            bool line = Horizontal(direction).LengthSquared.Sign != 0 || Overhead(Point(shooter), point) && direction.LengthSquared.Sign != 0;
+            return line && AllyBlocks(shooter, origin, direction, range);
         }
     }
 }

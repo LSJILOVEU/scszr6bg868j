@@ -31,6 +31,8 @@ namespace WarCore.Combat
         private readonly IAutoFire builtInAutoFire;
         private IAutoFire autoFire;
         private readonly HeightField ground;
+        // ML-9: the map's floor plates, or null (no plates: every plate branch below is skipped and nothing changes).
+        private readonly PlateField plates;
         // ML-3 body heights above the foot, in raw units, fixed at construction from the pack's body section (D4 of the
         // design): legacy values when the pack has none, so every formula below gives the bytes it gave before.
         private readonly bool bodied;
@@ -44,11 +46,13 @@ namespace WarCore.Combat
         private readonly long eyeRaw, muzzleRaw, aimEndRaw, groundLiftRaw, targetOriginRaw, centerRaw;
 
         public CombatSystem(Simulation sim, ComponentType<Position> positions, ComponentType<Combatant> combatants,
-            CombatPack pack, uint wallMask, uint unitLayerMask, int unitCount, IControlTarget controlled = null, HeightField ground = null)
+            CombatPack pack, uint wallMask, uint unitLayerMask, int unitCount, IControlTarget controlled = null, HeightField ground = null,
+            PlateField plates = null)
         {
             this.sim = sim; this.positions = positions; this.combatants = combatants; this.pack = pack;
             this.wallMask = wallMask; this.unitLayerMask = unitLayerMask;
             ValidateBody(sim.FootAnchoredLayers, pack.Body, wallMask, unitLayerMask);
+            ValidatePlateBody(plates, pack.Body);
             bodied = pack.Body.HasValue;
             if (bodied)
             {
@@ -72,6 +76,7 @@ namespace WarCore.Combat
             liveUnits = new LiveUnit[Entities.Capacity];
             this.controlled = controlled;
             this.ground = ground;
+            this.plates = plates;
             intents = new FireIntent[Entities.Capacity];
             intentTicks = new long[Entities.Capacity];
             intentSlots = new int[candidates.Length];
@@ -93,6 +98,27 @@ namespace WarCore.Combat
             if ((footAnchored & wallMask) != 0)
                 throw new InvalidOperationException("The spatial index anchors a wall layer at the foot.");
         }
+
+        // ML-9 (K11): a unit on a plate stands at the floored top, which on a slope can lie up to 1 raw inside the plate body.
+        // With a body every line starts and ends at eye or muzzle height (the aim end is the eye), so both must be at least
+        // 1 raw for every line to begin strictly above the continuous top. Without a body every line is already 0.5 m up.
+        private static void ValidatePlateBody(PlateField plates, CombatBody? body)
+        {
+            if (plates != null && body.HasValue && (body.Value.Eye.Raw < 1 || body.Value.Muzzle.Raw < 1))
+                throw new InvalidOperationException("A map with floor plates needs a combat body whose eye and muzzle are at least 1 raw above the foot.");
+        }
+
+        // ML-9: the map has floor plates.
+        public bool HasPlates => plates != null;
+
+        // ML-9 (K2): the distance used to pick, reach and weigh targets. With floor plates it is the 3D distance, otherwise the
+        // horizontal one, as before.
+        public SimWide SpanSquared(SimVec3 from, SimVec3 to) => plates != null ? (to - from).LengthSquared : Horizontal(to - from).LengthSquared;
+        public SimFix Span(SimVec3 from, SimVec3 to) => plates != null ? (to - from).Length : Horizontal(to - from).Length;
+
+        // ML-9: a target or point straight above or below may be shot along the vertical only on a map with plates and only when
+        // the two feet are at different heights; elsewhere the old zero-direction rules stand.
+        public bool Overhead(SimVec3 foot, SimVec3 other) => plates != null && foot.Y.Raw != other.Y.Raw;
 
         public EntityStore Entities => sim.Entities;
         public int Order => 30;
@@ -186,7 +212,8 @@ namespace WarCore.Combat
                     if (hasIntent)
                     {
                         direction = Lift(intents[shooter.Id].Point, aimEndRaw) - origin;
-                        if (Horizontal(direction).LengthSquared.Sign == 0) continue;
+                        if (Horizontal(direction).LengthSquared.Sign == 0
+                            && !(Overhead(position.Value, intents[shooter.Id].Point) && direction.LengthSquared.Sign != 0)) continue;
                         // Positions are final here (after movement): an intent that avoids allies is declined for this tick
                         // when a living teammate is first on the line, with no shot, no ammo and no cooldown change.
                         if (intents[shooter.Id].AvoidAllies && AllyBlocks(shooter, origin, direction, weapon.FalloffEnd)) continue;
