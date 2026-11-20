@@ -22,9 +22,9 @@ namespace WarCore.Presentation
             {
                 MapSoldier s = setup.Soldiers[i];
                 units[i] = useUnitTypes
-                    ? UnitSpawn.OfType(s.Key, pack, s.Type, s.Squad, s.Team, s.XMm, s.ZMm, s.Reserve)
+                    ? UnitSpawn.OfType(s.Key, pack, s.Type, s.Squad, s.Team, s.XMm, s.ZMm, s.Reserve, s.Layer)
                     : new UnitSpawn(s.Key, 0, s.Squad, s.XMm, s.ZMm, SpeedMmPerSec, s.Team,
-                    pack.WeaponOfUnitType(s.Type), s.Reserve, pack.MeleeOfUnitType(s.Type));
+                    pack.WeaponOfUnitType(s.Type), s.Reserve, pack.MeleeOfUnitType(s.Type), layer: s.Layer);
             }
             WorldRecipe recipe = new WorldRecipe(setup.Seed, MoverKind.InterimCrowd, units, Array.Empty<BridgeCommand>())
                 .WithCombat(pack.BuildCombat());

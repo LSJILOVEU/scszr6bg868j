@@ -84,6 +84,7 @@ namespace WarCore.Content.MapTools
         private static Val Str(string value) => new Val(Quote(value));
         private static Val Bool(bool value) => new Val(value ? "true" : "false");
         private static Out OptNum(int? value) => value.HasValue ? Num(value.Value) : null;
+        private static Out OptNum(ulong? value) => value.HasValue ? Num(value.Value) : null;
 
         private static Arr Pair(long x, long z) { var a = new Arr(); a.Items.Add(Num(x)); a.Items.Add(Num(z)); return a; }
 
@@ -136,14 +137,14 @@ namespace WarCore.Content.MapTools
             root.Add("points", Many(d.Points, p => new Obj()
                 .Add("id", Num(p.Id)).Add("at", Pair(p.At.X, p.At.Z)).Add("radiusMm", Num(p.RadiusMm))
                 .Add("initialOwner", Num(p.InitialOwner)).Add("spawn", p.Spawn.HasValue ? Pair(p.Spawn.Value.X, p.Spawn.Value.Z) : null)
-                .Add("owner", OptNum(p.Owner)).Add("src", Src(p.Src))));
+                .Add("spawnPlate", OptNum(p.SpawnPlate)).Add("owner", OptNum(p.Owner)).Add("src", Src(p.Src))));
             root.Add("bases", Many(d.Bases, b => new Obj()
                 .Add("id", Num(b.Id)).Add("team", Num(b.Team)).Add("at", Pair(b.At.X, b.At.Z))
-                .Add("owner", OptNum(b.Owner)).Add("src", Src(b.Src))));
+                .Add("plate", OptNum(b.Plate)).Add("owner", OptNum(b.Owner)).Add("src", Src(b.Src))));
             root.Add("units", Many(d.Units, u => new Obj()
                 .Add("key", Num(u.Key)).Add("type", Str(u.Type)).Add("team", Num(u.Team)).Add("squad", Num(u.Squad))
                 .Add("at", Pair(u.At.X, u.At.Z)).Add("reserve", Bool(u.Reserve))
-                .Add("owner", OptNum(u.Owner)).Add("src", Src(u.Src))));
+                .Add("plate", OptNum(u.Plate)).Add("owner", OptNum(u.Owner)).Add("src", Src(u.Src))));
             root.Add("run", new Obj().Add("seed", Num(d.Run.Seed)).Add("crowdPass", Str(d.Run.CrowdPass)));
             root.Add("owners", Strings(d.Owners, false));
             root.Add("heightOwner", Strings(d.HeightOwner, true));

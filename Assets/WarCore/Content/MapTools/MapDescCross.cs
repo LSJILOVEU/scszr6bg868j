@@ -57,6 +57,8 @@ namespace WarCore.Content.MapTools
                 Tail(d, e, wall.Owner, wall.Src, "wall");
             }
 
+            var plateIds = new HashSet<ulong>();
+            foreach (MapPlate plate in d.Plates) plateIds.Add(plate.Id);
             JsonNode points = root.Find("points");
             var pointIds = new HashSet<int>();
             for (int i = 0; i < d.Points.Count; i++)
@@ -67,6 +69,11 @@ namespace WarCore.Content.MapTools
                 if (!pointIds.Add(point.Id) || point.Id >= d.Next.Point) throw Fail(IdCode, e.Find("id").Line);
                 Inside(d, point.At, e.Find("at"));
                 if (point.Spawn.HasValue) Inside(d, point.Spawn.Value, e.Find("spawn"));
+                if (point.SpawnPlate.HasValue)
+                {
+                    if (!point.Spawn.HasValue) throw Fail(PointCode, e.Find("spawnPlate").Line);
+                    PlateKnown(plateIds, point.SpawnPlate.Value, e.Find("spawnPlate"));
+                }
                 Tail(d, e, point.Owner, point.Src, "point");
             }
 
@@ -79,6 +86,7 @@ namespace WarCore.Content.MapTools
                 Enter("base", e, "id", false);
                 if (!baseIds.Add(anchor.Id) || anchor.Id >= d.Next.Base) throw Fail(IdCode, e.Find("id").Line);
                 Inside(d, anchor.At, e.Find("at"));
+                if (anchor.Plate.HasValue) PlateKnown(plateIds, anchor.Plate.Value, e.Find("plate"));
                 Tail(d, e, anchor.Owner, anchor.Src, "base");
             }
 
@@ -91,6 +99,12 @@ namespace WarCore.Content.MapTools
                 Enter("unit", e, "key", true);
                 if (!unitKeys.Add(unit.Key) || unit.Key >= d.Next.Unit) throw Fail(IdCode, e.Find("key").Line);
                 Inside(d, unit.At, e.Find("at"));
+                if (unit.Plate.HasValue)
+                {
+                    PlateKnown(plateIds, unit.Plate.Value, e.Find("plate"));
+                    // Reserves deploy at anchors, not where the description puts them.
+                    if (unit.Reserve) throw Fail(PlateCode, e.Find("plate").Line);
+                }
                 Tail(d, e, unit.Owner, unit.Src, "unit");
             }
 
@@ -124,6 +138,12 @@ namespace WarCore.Content.MapTools
             if (owner.HasValue && owner.Value >= d.Owners.Count) throw Fail(OwnerCode, e.Find("owner").Line);
             if (src != null && src.Kind != kind) throw Fail(OwnerCode, e.Find("src").Find("kind").Line);
             Leave();
+        }
+
+        // A plate reference names a plate of the description.
+        private void PlateKnown(HashSet<ulong> plateIds, ulong plate, JsonNode node)
+        {
+            if (!plateIds.Contains(plate)) throw Fail(PlateCode, node.Line);
         }
 
         // Half-open map range in millimetres: origin <= v < origin + size.

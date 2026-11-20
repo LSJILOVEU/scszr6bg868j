@@ -12,11 +12,16 @@ namespace WarCore.Battle
         public readonly SimVec3 Center, Spawn;
         public readonly SimFix Radius;
         public readonly bool HasSpawn;
-        public ControlPointDef(int id, SimVec3 center, SimFix radius, int initialOwner = 0, bool hasSpawn = false, SimVec3 spawn = default)
+        // The layer the spawn stands on: 0 = the ground, 1..N = a floor plate (only with a spawn).
+        public readonly int SpawnLayer;
+        public ControlPointDef(int id, SimVec3 center, SimFix radius, int initialOwner = 0, bool hasSpawn = false, SimVec3 spawn = default,
+            int spawnLayer = 0)
         {
             if (radius.Raw <= 0) throw new ArgumentOutOfRangeException(nameof(radius));
             if (initialOwner < 0 || initialOwner > 2) throw new ArgumentOutOfRangeException(nameof(initialOwner));
-            Id = id; Center = center; Radius = radius; InitialOwner = initialOwner; HasSpawn = hasSpawn; Spawn = spawn;
+            if (spawnLayer < 0 || spawnLayer > MatchPack.MaxLayer) throw new ArgumentOutOfRangeException(nameof(spawnLayer));
+            if (spawnLayer != 0 && !hasSpawn) throw new ArgumentException("A spawn layer needs a spawn.", nameof(spawnLayer));
+            Id = id; Center = center; Radius = radius; InitialOwner = initialOwner; HasSpawn = hasSpawn; Spawn = spawn; SpawnLayer = spawnLayer;
         }
         internal void WriteState(StateHash hash)
         { hash.Add(Id); Center.WriteState(hash); hash.Add(Radius.Raw); hash.Add(InitialOwner); hash.Add(HasSpawn); Spawn.WriteState(hash); }
@@ -26,10 +31,13 @@ namespace WarCore.Battle
     {
         public readonly int Team;
         public readonly SimVec3 Point;
-        public SpawnAnchor(int team, SimVec3 point)
+        // 0 = the ground, 1..N = a floor plate.
+        public readonly int Layer;
+        public SpawnAnchor(int team, SimVec3 point, int layer = 0)
         {
             if (team < 1 || team > 2) throw new ArgumentOutOfRangeException(nameof(team));
-            Team = team; Point = point;
+            if (layer < 0 || layer > MatchPack.MaxLayer) throw new ArgumentOutOfRangeException(nameof(layer));
+            Team = team; Point = point; Layer = layer;
         }
     }
 
@@ -61,6 +69,8 @@ namespace WarCore.Battle
         public int RespawnGuardTicks { get; }
         public ulong PolicyDigest { get; }
         public const int MaxRespawnTicks = 36000;
+        // The highest layer an anchor may name: the plate limit of a map (as UnitSpawn.MaxLayer and the Sim's).
+        public const int MaxLayer = 4096;
 
         public MatchPack(ControlPointDef[] points, SpawnAnchor[] bases, int num, int den, bool strict,
             int captureTicks, InterruptMode interrupt, int decayPerTick, int intervalTicks, int thinkInterval,
@@ -102,7 +112,20 @@ namespace WarCore.Battle
             // Default rule order keeps the existing snapshot digest.
             if (!Rules.SequenceEqual(DefaultRules))
             { hash.Add("battle.pack.rules.v1"); hash.Add(this.rules.Length); foreach (string id in this.rules) hash.Add(id); }
+            // Only when some anchor is on a plate, so a pack on the ground keeps its digest from before layers existed.
+            if (HasLayers())
+            {
+                hash.Add("battle.pack.layers.v1");
+                foreach (var point in this.points) hash.Add(point.SpawnLayer);
+                foreach (var anchor in this.bases) hash.Add(anchor.Layer);
+            }
             PolicyDigest = hash.Value;
+        }
+        private bool HasLayers()
+        {
+            foreach (var point in points) if (point.SpawnLayer != 0) return true;
+            foreach (var anchor in bases) if (anchor.Layer != 0) return true;
+            return false;
         }
         internal void Check(SimStateReader reader)
         {
@@ -114,6 +137,12 @@ namespace WarCore.Battle
     {
         ulong PolicyKey { get; }
         bool TryDeploy(EntityId unit, SimVec3 at);
+        // Deploy on a layer: 0 is the ground (the two-argument method); a deployer without floor plates knows no other layer.
+        bool TryDeploy(EntityId unit, SimVec3 at, int layer)
+        {
+            if (layer == 0) return TryDeploy(unit, at);
+            throw new NotSupportedException("This deployer has no floor plates.");
+        }
     }
     public interface IMoveOrders
     {

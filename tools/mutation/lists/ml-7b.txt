@@ -1,0 +1,641 @@
+# ML-7b: plate ids in the description (points' spawns, bases, units), baked to layers, carried to respawn, reinforcement and the
+# world build, and the gate by plate. Filter: ML-7b tests.
+# Not listed: PlateRef's minimum 1 (an id 0 then fails the plate lookup with the same code and line); MapCells' ">> 16" against
+# "/ Scale" and its map bounds (points are inside the half-open map range and on these maps the origin is 0); the bake's
+# missing-plate throw in LayerOf (the reader refuses an unknown id first); MapRecipe's unit-type path (the packs here have no
+# unit-type speed; it passes the layer the same way); the editor's point and base copies (the unit copy is listed; same shape);
+# PlateWorld's use of MapCells (covered by the ML-7 and ML-8 plate tests).
+
+[ml7b-write-unit-always]
+file = Assets/WarCore/Content/MapTools/MapDescJson.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bDescTests.VersionOneStaysVersionOne
+note = a unit writes "plate" without an id
+original:
+| .Add("plate", OptNum(u.Plate))
+replacement:
+| .Add("plate", Num(u.Plate.GetValueOrDefault()))
+
+[ml7b-write-spawn-always]
+file = Assets/WarCore/Content/MapTools/MapDescJson.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bDescTests.VersionOneStaysVersionOne
+note = a point writes "spawnPlate" without an id
+original:
+| .Add("spawnPlate", OptNum(p.SpawnPlate))
+replacement:
+| .Add("spawnPlate", Num(p.SpawnPlate.GetValueOrDefault()))
+
+[ml7b-write-base-never]
+file = Assets/WarCore/Content/MapTools/MapDescJson.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bDescTests.TheNewKeysRoundTrip
+expect = WarCore.Tests.Ml7bDescTests.EachKeyAloneNeedsVersionTwo
+note = a base never writes "plate"
+original:
+| .Add("plate", OptNum(b.Plate))
+replacement:
+| .Add("plate", (Out)null)
+
+[ml7b-write-spawn-never]
+file = Assets/WarCore/Content/MapTools/MapDescJson.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bDescTests.TheNewKeysRoundTrip
+expect = WarCore.Tests.Ml7bDescTests.EachKeyAloneNeedsVersionTwo
+note = a point never writes "spawnPlate"
+original:
+| .Add("spawnPlate", OptNum(p.SpawnPlate))
+replacement:
+| .Add("spawnPlate", (Out)null)
+
+[ml7b-write-unit-never]
+file = Assets/WarCore/Content/MapTools/MapDescJson.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bDescTests.TheNewKeysRoundTrip
+expect = WarCore.Tests.Ml7bDescTests.EachKeyAloneNeedsVersionTwo
+note = a unit never writes "plate"
+original:
+| .Add("plate", OptNum(u.Plate))
+replacement:
+| .Add("plate", (Out)null)
+
+[ml7b-needs-point]
+file = Assets/WarCore/Content/MapTools/MapDesc.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bDescTests.EachKeyAloneNeedsVersionTwo
+note = a spawn plate alone keeps version 1
+original:
+|                     if (point.SpawnPlate.HasValue) return true;
+replacement:
+
+[ml7b-needs-base]
+file = Assets/WarCore/Content/MapTools/MapDesc.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bDescTests.EachKeyAloneNeedsVersionTwo
+note = a base plate alone keeps version 1
+original:
+|                     if (anchor.Plate.HasValue) return true;
+replacement:
+
+[ml7b-needs-unit]
+file = Assets/WarCore/Content/MapTools/MapDesc.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bDescTests.EachKeyAloneNeedsVersionTwo
+note = a unit plate alone keeps version 1
+original:
+|                     if (unit.Plate.HasValue) return true;
+replacement:
+|                     if (unit.Plate == 0UL) return true;
+
+[ml7b-uses-point]
+file = Assets/WarCore/Content/MapTools/MapDescReader.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bDescTests.EachKeyAloneNeedsVersionTwo
+note = the bare tree ignores "spawnPlate"
+original:
+| if (HasKey(root.Find("points"), "spawnPlate") || HasKey(root.Find("bases"), "plate") || HasKey(root.Find("units"), "plate")) return true;
+replacement:
+| if (HasKey(root.Find("bases"), "plate") || HasKey(root.Find("units"), "plate")) return true;
+
+[ml7b-uses-base]
+file = Assets/WarCore/Content/MapTools/MapDescReader.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bDescTests.EachKeyAloneNeedsVersionTwo
+note = the bare tree ignores a base "plate"
+original:
+| if (HasKey(root.Find("points"), "spawnPlate") || HasKey(root.Find("bases"), "plate") || HasKey(root.Find("units"), "plate")) return true;
+replacement:
+| if (HasKey(root.Find("points"), "spawnPlate") || HasKey(root.Find("units"), "plate")) return true;
+
+[ml7b-uses-unit]
+file = Assets/WarCore/Content/MapTools/MapDescReader.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bDescTests.EachKeyAloneNeedsVersionTwo
+note = the bare tree ignores a unit "plate"
+original:
+| if (HasKey(root.Find("points"), "spawnPlate") || HasKey(root.Find("bases"), "plate") || HasKey(root.Find("units"), "plate")) return true;
+replacement:
+| if (HasKey(root.Find("points"), "spawnPlate") || HasKey(root.Find("bases"), "plate")) return true;
+
+[ml7b-keys-base-v1]
+file = Assets/WarCore/Content/MapTools/MapDescReader.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bDescTests.TheNewKeysRoundTrip
+expect = WarCore.Tests.Ml7bDescTests.TheEditorKeepsPlateIds
+note = version 2 bases do not know "plate"
+original:
+| if (Version2) Keys(e, "id", "team", "at", "plate", "owner", "src");
+replacement:
+| if (Version2) Keys(e, "id", "team", "at", "owner", "src");
+
+[ml7b-keys-v1-plate]
+file = Assets/WarCore/Content/MapTools/MapDescReader.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bDescTests.EachKeyAloneNeedsVersionTwo
+note = version 1 units know "plate"
+original:
+| else Keys(e, "key", "type", "team", "squad", "at", "reserve", "owner", "src");
+replacement:
+| else Keys(e, "key", "type", "team", "squad", "at", "reserve", "plate", "owner", "src");
+
+[ml7b-plate-unknown]
+file = Assets/WarCore/Content/MapTools/MapDescCross.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bDescTests.AnUnknownPlateIsRefused
+note = an unknown plate id is accepted
+original:
+|             if (!plateIds.Contains(plate)) throw Fail(PlateCode, node.Line);
+replacement:
+
+[ml7b-spawn-plate-no-spawn]
+file = Assets/WarCore/Content/MapTools/MapDescCross.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bDescTests.ASpawnPlateNeedsASpawn
+note = a spawn plate without a spawn is accepted
+original:
+|                     if (!point.Spawn.HasValue) throw Fail(PointCode, e.Find("spawnPlate").Line);
+replacement:
+
+[ml7b-reserve-plate]
+file = Assets/WarCore/Content/MapTools/MapDescCross.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bDescTests.AReserveStaysOnTheGround
+note = a reserve on a plate is accepted
+original:
+|                     if (unit.Reserve) throw Fail(PlateCode, e.Find("plate").Line);
+replacement:
+
+[ml7b-layer-desc-order]
+file = Assets/WarCore/Content/MapTools/MapBake.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bBakeGateTests.PlateIdsBecomeLayersAndAnchorsStandOnTheTop
+note = the layer is the description index
+original:
+|                     if (map.Plates[k].Id == plate.Value) return k + 1;
+replacement:
+|                     if (d.Plates[k].Id == plate.Value) return k + 1;
+
+[ml7b-layer-zero-based]
+file = Assets/WarCore/Content/MapTools/MapBake.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bBakeGateTests.PlateIdsBecomeLayersAndAnchorsStandOnTheTop
+note = the layer is the index without + 1
+original:
+|                     if (map.Plates[k].Id == plate.Value) return k + 1;
+replacement:
+|                     if (map.Plates[k].Id == plate.Value) return k;
+
+[ml7b-anchor-ground-y]
+file = Assets/WarCore/Content/MapTools/MapBake.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bBakeGateTests.PlateIdsBecomeLayersAndAnchorsStandOnTheTop
+note = a plate anchor stands on the ground
+original:
+|                     throw new InvalidDataException("MAPDESC_PLATE_ANCHOR " + what);
+|                 return new SimVec3(x, y, z);
+replacement:
+|                     throw new InvalidDataException("MAPDESC_PLATE_ANCHOR " + what);
+|                 return Ground(at);
+
+[ml7b-anchor-solid-skip]
+file = Assets/WarCore/Content/MapTools/MapBake.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bBakeGateTests.AnAnchorOffASolidCellIsRefused
+expect = WarCore.Tests.Ml7bBakeGateTests.TheCellEdgeDecidesBakeAndGate
+note = a cutout cell bakes
+original:
+| if (!MapCells.OnSolidPlate(map, layer, x, z)
+|                     || !map
+replacement:
+| if (!map
+
+[ml7b-unit-unchecked]
+file = Assets/WarCore/Content/MapTools/MapBake.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bBakeGateTests.AnAnchorOffASolidCellIsRefused
+expect = WarCore.Tests.Ml7bBakeGateTests.TheCellEdgeDecidesBakeAndGate
+note = a unit on a plate is not placed
+original:
+|                 if (layer != 0) On(layer, u.At, Name("unit", u.Key));
+replacement:
+
+[ml7b-soldier-layer]
+file = Assets/WarCore/Content/MapTools/MapBake.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bBakeGateTests.PlateIdsBecomeLayersAndAnchorsStandOnTheTop
+expect = WarCore.Tests.Ml7bBakeGateTests.TheCellEdgeDecidesBakeAndGate
+expect = WarCore.Tests.Ml7bMatchTests.AMapRecipeCarriesTheLayers
+note = the soldier keeps layer 0
+original:
+| u.At.X, u.At.Z, u.Reserve, layer);
+replacement:
+| u.At.X, u.At.Z, u.Reserve, 0);
+
+[ml7b-spawn-layer]
+file = Assets/WarCore/Content/MapTools/MapBake.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bBakeGateTests.PlateIdsBecomeLayersAndAnchorsStandOnTheTop
+expect = WarCore.Tests.Ml7bMatchTests.AMapRecipeCarriesTheLayers
+note = the point keeps spawn layer 0
+original:
+| Name("spawn", (ulong)p.Id)) : default, spawnLayer);
+replacement:
+| Name("spawn", (ulong)p.Id)) : default, 0);
+
+[ml7b-base-layer]
+file = Assets/WarCore/Content/MapTools/MapBake.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bBakeGateTests.PlateIdsBecomeLayersAndAnchorsStandOnTheTop
+expect = WarCore.Tests.Ml7bMatchTests.AMapRecipeCarriesTheLayers
+note = the base keeps layer 0
+original:
+| On(layer, b.At, Name("base", (ulong)b.Id)), layer);
+replacement:
+| On(layer, b.At, Name("base", (ulong)b.Id)), 0);
+
+[ml7b-cell-no-solid]
+file = Assets/WarCore/Content/MapCells.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bBakeGateTests.AnAnchorOffASolidCellIsRefused
+expect = WarCore.Tests.Ml7bMatchTests.TheWorldBuildChecksPlateAnchors
+note = a cutout counts as solid
+original:
+| i < p.Width && j < p.Depth && p.IsSolid(i, j);
+replacement:
+| i < p.Width && j < p.Depth;
+
+[ml7b-cell-no-bounds]
+file = Assets/WarCore/Content/MapCells.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bBakeGateTests.AnAnchorOffASolidCellIsRefused
+expect = WarCore.Tests.Ml7bMatchTests.TheWorldBuildChecksPlateAnchors
+note = a point off the plate is looked up in it
+original:
+| return i >= 0 && j >= 0 && i < p.Width && j < p.Depth && p.IsSolid(i, j);
+replacement:
+| return p.IsSolid(i, j);
+
+[ml7b-cell-edge]
+file = Assets/WarCore/Content/MapCells.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bBakeGateTests.TheCellEdgeDecidesBakeAndGate
+expect = WarCore.Tests.Ml7bMatchTests.TheCellEdgeDecidesBuildAndDeployment
+note = a point on a cell edge belongs to the cell before
+original:
+| long ix = (x.Raw - map.Min.X.Raw) >> 16,
+replacement:
+| long ix = (x.Raw - map.Min.X.Raw - 1) >> 16,
+
+[ml7b-digest-always]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bMatchTests.OnlyLayersChangeTheDigest
+note = the layers are always hashed
+original:
+|             if (HasLayers())
+replacement:
+|             if (true)
+
+[ml7b-digest-no-points]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bMatchTests.OnlyLayersChangeTheDigest
+note = spawn layers are not hashed
+original:
+|                 foreach (var point in this.points) hash.Add(point.SpawnLayer);
+replacement:
+
+[ml7b-digest-no-bases]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bMatchTests.OnlyLayersChangeTheDigest
+note = base layers are not hashed
+original:
+|                 foreach (var anchor in this.bases) hash.Add(anchor.Layer);
+replacement:
+
+[ml7b-has-no-points]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bMatchTests.OnlyLayersChangeTheDigest
+note = a spawn layer alone adds no marker
+original:
+|             foreach (var point in points) if (point.SpawnLayer != 0) return true;
+replacement:
+
+[ml7b-has-no-bases]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bMatchTests.OnlyLayersChangeTheDigest
+note = a base layer alone adds no marker
+original:
+|             foreach (var anchor in bases) if (anchor.Layer != 0) return true;
+replacement:
+
+[ml7b-range-spawn]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bMatchTests.AnchorLayersAreChecked
+note = spawn layer 4096 is refused
+original:
+| if (spawnLayer < 0 || spawnLayer > MatchPack.MaxLayer)
+replacement:
+| if (spawnLayer < 0 || spawnLayer >= MatchPack.MaxLayer)
+
+[ml7b-range-anchor]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bMatchTests.AnchorLayersAreChecked
+note = anchor layer 4097 is accepted
+original:
+| if (layer < 0 || layer > MatchPack.MaxLayer) throw new ArgumentOutOfRangeException(nameof(layer));
+replacement:
+| if (layer < 0 || layer > MatchPack.MaxLayer + 1) throw new ArgumentOutOfRangeException(nameof(layer));
+
+[ml7b-spawn-layer-needs-spawn]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bMatchTests.AnchorLayersAreChecked
+note = a spawn layer without a spawn is accepted
+original:
+|             if (spawnLayer != 0 && !hasSpawn) throw new ArgumentException("A spawn layer needs a spawn.", nameof(spawnLayer));
+replacement:
+
+[ml7b-default-layer0]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bMatchTests.DeploymentOnAPlate
+note = the default method refuses layer 0 too
+original:
+|             if (layer == 0) return TryDeploy(unit, at);
+|             throw new NotSupportedException("This deployer
+replacement:
+|             throw new NotSupportedException("This deployer
+
+[ml7b-adapter-layer0]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bMatchTests.DeploymentOnAPlate
+note = layer 0 takes the plate path
+original:
+|             if (layer == 0) return TryDeploy(unit, at);
+replacement:
+
+[ml7b-adapter-no-plates]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bMatchTests.DeploymentOnAPlate
+note = no plates is not refused
+original:
+|             if (plates == null) throw new NotSupportedException("Deployment on layer " + layer + " needs a world with floor plates.");
+replacement:
+
+[ml7b-adapter-any-cell]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bMatchTests.DeploymentOnAPlate
+expect = WarCore.Tests.Ml7bMatchTests.ThePlayerRespawnsOnThePlate
+note = a solid cell that is not walkable takes a deployment
+original:
+| plates.TryFloor(layer, at.X, at.Z, true, out SimFix y)
+replacement:
+| plates.TryFloor(layer, at.X, at.Z, false, out SimFix y)
+
+[ml7b-adapter-ground-y]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bMatchTests.DeploymentOnAPlate
+expect = WarCore.Tests.Ml7bMatchTests.ThePlayerRespawnsOnThePlate
+expect = WarCore.Tests.Ml7bMatchTests.ReinforcementsLandOnThePlate
+expect = WarCore.Tests.Ml7bMatchTests.APlateMatchResumesToTheSameHashes
+note = a plate deployment keeps the anchor height
+original:
+| return Place(stable, unit, new SimVec3(at.X, y, at.Z), layer);
+replacement:
+| return Place(stable, unit, new SimVec3(at.X, default, at.Z), layer);
+
+[ml7b-adapter-layer-zero]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bMatchTests.DeploymentOnAPlate
+expect = WarCore.Tests.Ml7bMatchTests.ThePlayerRespawnsOnThePlate
+expect = WarCore.Tests.Ml7bMatchTests.ReinforcementsLandOnThePlate
+expect = WarCore.Tests.Ml7bMatchTests.APlateMatchResumesToTheSameHashes
+note = a plate deployment writes layer 0
+original:
+| new VerticalState(layer, 0));
+replacement:
+| new VerticalState(0, 0));
+
+[ml7b-respawn-ground]
+file = Assets/WarCore/Battle/RespawnSystem.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bMatchTests.ThePlayerRespawnsOnThePlate
+note = respawn deploys on layer 0
+original:
+| deployer.TryDeploy(reserve, anchor + offset, layer)
+replacement:
+| deployer.TryDeploy(reserve, anchor + offset, 0)
+
+[ml7b-respawn-anchor-layer]
+file = Assets/WarCore/Battle/RespawnSystem.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bMatchTests.ThePlayerRespawnsOnThePlate
+note = the anchor's layer is not taken
+original:
+| anchor = point; layer = pointLayer;
+replacement:
+| anchor = point;
+
+[ml7b-reinforce-base-layer]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bMatchTests.APlateMatchResumesToTheSameHashes
+note = base layers are not recorded
+original:
+| { layers[count] = anchor.Layer; anchors[count++] = anchor.Point; }
+replacement:
+| { anchors[count++] = anchor.Point; }
+
+[ml7b-reinforce-spawn-layer]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bMatchTests.ReinforcementsLandOnThePlate
+note = spawn layers are not recorded
+original:
+| { layers[count] = pack.Points[i].SpawnLayer; anchors[count++] = pack.Points[i].Spawn; }
+replacement:
+| { anchors[count++] = pack.Points[i].Spawn; }
+
+[ml7b-reinforce-pick]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bMatchTests.ReinforcementsLandOnThePlate
+expect = WarCore.Tests.Ml7bMatchTests.APlateMatchResumesToTheSameHashes
+note = the first anchor's layer is used
+original:
+| deployer.TryDeploy(reserve, point, layers[pick])
+replacement:
+| deployer.TryDeploy(reserve, point, layers[0])
+
+[ml7b-build-no-plates]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateFeature.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bMatchTests.TheWorldBuildChecksPlateAnchors
+note = a plate anchor on a map without plates builds
+original:
+|                     if (layer != 0)
+|                         throw new ArgumentException("Match " + name + " names layer " + layer + " on a map without floor plates.", nameof(recipe));
+replacement:
+
+[ml7b-build-layer-count]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateFeature.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bMatchTests.TheWorldBuildChecksPlateAnchors
+note = layer = LayerCount is not refused as such
+original:
+| if (layer >= layerCount)
+replacement:
+| if (layer > layerCount)
+
+[ml7b-build-solid]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateFeature.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bMatchTests.TheWorldBuildChecksPlateAnchors
+expect = WarCore.Tests.Ml7bMatchTests.TheCellEdgeDecidesBuildAndDeployment
+note = an anchor on a cutout builds
+original:
+|                 if (!MapCells.OnSolidPlate(map, layer, at.X, at.Z))
+|                     throw new ArgumentException("Match " + name + " is not on a solid cell of layer " + layer + ".", "recipe");
+replacement:
+
+[ml7b-build-unchecked]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateFeature.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bMatchTests.TheWorldBuildChecksPlateAnchors
+expect = WarCore.Tests.Ml7bMatchTests.TheCellEdgeDecidesBuildAndDeployment
+note = anchors are not checked on plate maps
+original:
+|             if (a.Recipe.Match != null) CheckAnchors(a.Recipe.Match, a.Map, a.Plates.LayerCount);
+replacement:
+
+[ml7b-build-no-spawns]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateFeature.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bMatchTests.TheWorldBuildChecksPlateAnchors
+note = spawns are not checked
+original:
+|                 if (point.HasSpawn) yield return ("spawn of point " + point.Id, point.SpawnLayer, point.Spawn);
+replacement:
+|                 if (point.HasSpawn && point.SpawnLayer < 0) yield return ("spawn of point " + point.Id, point.SpawnLayer, point.Spawn);
+
+[ml7b-recipe-layer]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bMatchTests.AMapRecipeCarriesTheLayers
+note = the recipe drops the layer
+original:
+| pack.MeleeOfUnitType(s.Type), layer: s.Layer);
+replacement:
+| pack.MeleeOfUnitType(s.Type));
+
+[ml7b-edit-unit]
+file = Assets/WarCore/Content/MapTools/MapEditDraft.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bDescTests.TheEditorKeepsPlateIds
+note = the editor drops a unit's plate
+original:
+| u.Reserve, owner, src, u.Plate),
+replacement:
+| u.Reserve, owner, src),
+
+[ml7b-gate-base-ground]
+file = Assets/WarCore/Content/MapTools/MapGate.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bBakeGateTests.TheGateReadsThePlateLayer
+note = a plate base is checked on the ground
+original:
+| b.Plate.HasValue ? OnPlate(layered, map, b.Plate.Value, b.At, out _) : Standable(nav, b.At)
+replacement:
+| Standable(nav, b.At)
+
+[ml7b-gate-spawn-ground]
+file = Assets/WarCore/Content/MapTools/MapGate.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bBakeGateTests.TheGateReadsThePlateLayer
+note = a plate spawn is checked on the ground
+original:
+| point.SpawnPlate.HasValue ? OnPlate(layered, map, point.SpawnPlate.Value, point.Spawn.Value, out _) : Standable(nav, point.Spawn.Value)
+replacement:
+| Standable(nav, point.Spawn.Value)
+
+[ml7b-gate-unit-ground]
+file = Assets/WarCore/Content/MapTools/MapGate.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bBakeGateTests.TheGateReadsThePlateLayer
+expect = WarCore.Tests.Ml7bBakeGateTests.TheCellEdgeDecidesBakeAndGate
+note = a plate unit is checked on the ground
+original:
+| unit.Plate.HasValue ? OnPlate(layered, map, unit.Plate.Value, unit.At, out _) : Standable(nav, unit.At)
+replacement:
+| Standable(nav, unit.At)
+
+[ml7b-gate-solid-only]
+file = Assets/WarCore/Content/MapTools/MapGate.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bBakeGateTests.TheGateReadsThePlateLayer
+note = a solid plate cell that is not walkable passes
+original:
+| && layered.TryNode(layer, cx, cz, out node) && layered.IsPassable(node);
+replacement:
+| && layered.TryNode(layer, cx, cz, out node);
+
+[ml7b-gate-no-layer-text]
+file = Assets/WarCore/Content/MapTools/MapGate.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bBakeGateTests.TheGateReadsThePlateLayer
+note = the problem does not name the layer
+original:
+| "unit " + Text(unit.Key) + Layer(map, unit.Plate)
+replacement:
+| "unit " + Text(unit.Key)
+
+[ml7b-gate-layer-index]
+file = Assets/WarCore/Content/MapTools/MapGate.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bBakeGateTests.TheGateReadsThePlateLayer
+expect = WarCore.Tests.Ml7bBakeGateTests.AFloorBaseReachesThePointsDownTheStair
+note = the gate layer is the index without + 1
+original:
+|                 if (map.Plates[k].Id == plate) return k + 1;
+replacement:
+|                 if (map.Plates[k].Id == plate) return k;
+
+[ml7b-gate-reach-grid]
+file = Assets/WarCore/Content/MapTools/MapGate.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bBakeGateTests.AFloorBaseReachesThePointsDownTheStair
+note = a plate base is routed on the ground grid
+original:
+| if (!b.Plate.HasValue) found =
+replacement:
+| if (true) found =
+
+[ml7b-gate-reach-goal]
+file = Assets/WarCore/Content/MapTools/MapGate.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bBakeGateTests.AFloorBaseReachesThePointsDownTheStair
+note = the goal is the floor node, not the ground
+original:
+| layered.TryNode(0, px, pz, out int goal)
+replacement:
+| layered.TryNode(2, px, pz, out int goal)
+
+[ml7b-gate-refs-bases]
+file = Assets/WarCore/Content/MapTools/MapGate.cs
+filter = FullyQualifiedName~Ml7b
+expect = WarCore.Tests.Ml7bBakeGateTests.AFloorBaseReachesThePointsDownTheStair
+note = base plate ids alone build no graph
+original:
+| desc.Bases.Any(b => b.Plate.HasValue) || 
+replacement:

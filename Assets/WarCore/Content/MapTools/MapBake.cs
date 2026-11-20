@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -33,7 +34,7 @@ namespace WarCore.Content.MapTools
             byte[] mapBytes;
             try { mapBytes = WcMapWriter.Write(BuildMap(desc)); }
             catch (InvalidDataException e) { throw new InvalidDataException("MAPDESC_WCMAP " + e.Message, e); }
-            return new MapBakeResult(Sha256(canonical), desc.Pack, mapBytes, BuildSetup(desc));
+            return new MapBakeResult(Sha256(canonical), desc.Pack, mapBytes, BuildSetup(desc, WcMapReader.Read(mapBytes)));
         }
 
         private static byte[] Sha256(byte[] bytes)
@@ -183,8 +184,11 @@ namespace WarCore.Content.MapTools
             return points;
         }
 
-        // Team, owner, radius and the half-open map range were checked while reading, before any Battle type is built.
-        internal static MapSetup BuildSetup(MapDesc d)
+        // Team, owner, radius and the half-open map range were checked while reading, before any Battle type is built. An anchor
+        // or unit on a plate takes the plate's layer (its index in the baked plate table, ascending id, + 1) and stands on its top
+        // (the map read back from the baked bytes: the same table and top fields as at run time); a point that is not on a solid
+        // cell of that plate (off the plate, on a cutout) is MAPDESC_PLATE_ANCHOR. Walkability is not checked here.
+        internal static MapSetup BuildSetup(MapDesc d, WcMap map)
         {
             int[] heights = Heights(d);
             HeightField field = heights == null ? null
@@ -197,20 +201,46 @@ namespace WarCore.Content.MapTools
                 return new SimVec3(x, y, z);
             }
 
+            int LayerOf(ulong? plate)
+            {
+                if (!plate.HasValue) return 0;
+                for (int k = 0; k < map.Plates.Count; k++)
+                    if (map.Plates[k].Id == plate.Value) return k + 1;
+                throw new InvalidDataException("MAPDESC_PLATE_ANCHOR plate " + plate.Value.ToString(CultureInfo.InvariantCulture));
+            }
+            SimVec3 On(int layer, MapMm at, string what)
+            {
+                if (layer == 0) return Ground(at);
+                SimFix x = MapCells.Mm(at.X), z = MapCells.Mm(at.Z);
+                if (!MapCells.OnSolidPlate(map, layer, x, z)
+                    || !map.Plates[layer - 1].TopField(map.Min.X, map.Min.Z).TryHeightAt(x, z, out SimFix y))
+                    throw new InvalidDataException("MAPDESC_PLATE_ANCHOR " + what);
+                return new SimVec3(x, y, z);
+            }
+            string Name(string kind, ulong id) => kind + " " + id.ToString(CultureInfo.InvariantCulture);
+
             var points = new ControlPointDef[d.Points.Count];
             for (int i = 0; i < points.Length; i++)
             {
                 MapPoint p = d.Points[i];
+                int spawnLayer = LayerOf(p.SpawnPlate);
                 points[i] = new ControlPointDef(p.Id, Ground(p.At), SimFix.Ratio(p.RadiusMm, 1000), p.InitialOwner,
-                    p.Spawn.HasValue, p.Spawn.HasValue ? Ground(p.Spawn.Value) : default);
+                    p.Spawn.HasValue, p.Spawn.HasValue ? On(spawnLayer, p.Spawn.Value, Name("spawn", (ulong)p.Id)) : default, spawnLayer);
             }
             var bases = new SpawnAnchor[d.Bases.Count];
-            for (int i = 0; i < bases.Length; i++) bases[i] = new SpawnAnchor(d.Bases[i].Team, Ground(d.Bases[i].At));
+            for (int i = 0; i < bases.Length; i++)
+            {
+                MapBase b = d.Bases[i];
+                int layer = LayerOf(b.Plate);
+                bases[i] = new SpawnAnchor(b.Team, On(layer, b.At, Name("base", (ulong)b.Id)), layer);
+            }
             var soldiers = new MapSoldier[d.Units.Count];
             for (int i = 0; i < soldiers.Length; i++)
             {
                 MapUnit u = d.Units[i];
-                soldiers[i] = new MapSoldier(u.Key, u.Type, u.Team, u.Squad, u.At.X, u.At.Z, u.Reserve);
+                int layer = LayerOf(u.Plate);
+                if (layer != 0) On(layer, u.At, Name("unit", u.Key));
+                soldiers[i] = new MapSoldier(u.Key, u.Type, u.Team, u.Squad, u.At.X, u.At.Z, u.Reserve, layer);
             }
             return new MapSetup(points, bases, soldiers, d.Run.Seed, d.Run.CrowdPass);
         }

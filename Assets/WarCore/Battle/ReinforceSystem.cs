@@ -23,6 +23,7 @@ namespace WarCore.Battle
         private readonly ComponentType<Combatant> combatants;
         private readonly long[] next = new long[2], attempts = new long[2], successes = new long[2];
         private readonly SimVec3[] anchors;
+        private readonly int[] layers;
         private readonly DeployRecord[] deployed = new DeployRecord[2];
         private int deployCount;
         public ReinforceSystem(CombatSystem combat, MatchPack pack, CaptureSystem capture, IUnitDeployer deployer, long startTick = 0)
@@ -30,6 +31,7 @@ namespace WarCore.Battle
             this.combat = combat; this.pack = pack; this.capture = capture; this.deployer = deployer;
             stage = new EntityStage(combat.Entities); positions = combat.Entities.Resolve<Position>(); combatants = combat.Entities.Resolve<Combatant>();
             anchors = new SimVec3[pack.Bases.Length + pack.Points.Length];
+            layers = new int[anchors.Length];
             next[0] = next[1] = startTick + pack.IntervalTicks;
         }
         public int Order => 8;
@@ -55,9 +57,9 @@ namespace WarCore.Battle
                     { reserve = entity; found = true; break; }
                 if (!found) continue;
                 int count = 0;
-                foreach (var anchor in pack.Bases) if (anchor.Team == team) anchors[count++] = anchor.Point;
+                foreach (var anchor in pack.Bases) if (anchor.Team == team) { layers[count] = anchor.Layer; anchors[count++] = anchor.Point; }
                 for (int i = 0; i < pack.Points.Length; i++)
-                    if (capture.Points[i].Owner == team && pack.Points[i].HasSpawn) anchors[count++] = pack.Points[i].Spawn;
+                    if (capture.Points[i].Owner == team && pack.Points[i].HasSpawn) { layers[count] = pack.Points[i].SpawnLayer; anchors[count++] = pack.Points[i].Spawn; }
                 if (count == 0) continue;
                 int cells = pack.GridColumns * pack.GridRows;
                 bool done = false;
@@ -67,8 +69,9 @@ namespace WarCore.Battle
                         int slot = (int)((attempt + cell) % cells);
                         SimVec3 offset = new SimVec3(SimFix.Ratio(2 * (slot % pack.GridColumns) - pack.GridColumns + 1, 2) * pack.GridSpacing,
                             default, SimFix.Ratio(2 * (slot / pack.GridColumns) - pack.GridRows + 1, 2) * pack.GridSpacing);
-                        SimVec3 point = anchors[(int)((attempt + a) % count)] + offset;
-                        if (!deployer.TryDeploy(reserve, point)) continue;
+                        int pick = (int)((attempt + a) % count);
+                        SimVec3 point = anchors[pick] + offset;
+                        if (!deployer.TryDeploy(reserve, point, layers[pick])) continue;
                         successes[index]++;
                         deployed[deployCount++] = new DeployRecord(c.Clock.Tick, combat.Entities.StableOf(reserve), team, point);
                         done = true; break;

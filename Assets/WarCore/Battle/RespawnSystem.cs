@@ -48,13 +48,13 @@ namespace WarCore.Battle
                     && !combat.Entities.TryGet(positions, entity, out _) && !combat.IsDead(entity))
                 { reserve = entity; found = true; break; }
             // A dead unit keeps its Position (death cleanup removes only the move intent), so the body is the distance origin.
-            if (!found || !TryAnchor(team, combat.Point(player), out SimVec3 anchor)) return;
+            if (!found || !TryAnchor(team, combat.Point(player), out SimVec3 anchor, out int layer)) return;
             int cells = pack.GridColumns * pack.GridRows;
             for (int slot = 0; slot < cells; slot++)
             {
                 SimVec3 offset = new SimVec3(SimFix.Ratio(2 * (slot % pack.GridColumns) - pack.GridColumns + 1, 2) * pack.GridSpacing,
                     default, SimFix.Ratio(2 * (slot / pack.GridColumns) - pack.GridRows + 1, 2) * pack.GridSpacing);
-                if (!deployer.TryDeploy(reserve, anchor + offset)) continue;
+                if (!deployer.TryDeploy(reserve, anchor + offset, layer)) continue;
                 controlled.Switch(c, reserve);
                 if (pack.RespawnGuardTicks > 0) { guarded = combat.Entities.StableOf(reserve); guardEnd = c.Clock.Tick + pack.RespawnGuardTicks; }
                 return;
@@ -62,14 +62,16 @@ namespace WarCore.Battle
         }
 
         // The team's owned, uncontested spawn point nearest the body, ties to the lower index; with none, the nearest team base the
-        // same way (bases are never contested). With neither there is no anchor and the switch waits.
-        private bool TryAnchor(int team, SimVec3 origin, out SimVec3 anchor)
+        // same way (bases are never contested). With neither there is no anchor and the switch waits. The anchor's layer comes
+        // with it; the choice is by horizontal distance only.
+        private bool TryAnchor(int team, SimVec3 origin, out SimVec3 anchor, out int layer)
         {
-            anchor = default; SimWide best = default; bool found = false;
+            anchor = default; layer = 0; SimWide best = default; bool found = false;
             for (int i = 0; i < pack.Points.Length; i++)
-                if (capture.Points[i].Owner == team && pack.Points[i].HasSpawn && !Contested(team, pack.Points[i])) Closer(pack.Points[i].Spawn, origin, ref anchor, ref best, ref found);
+                if (capture.Points[i].Owner == team && pack.Points[i].HasSpawn && !Contested(team, pack.Points[i]))
+                    Closer(pack.Points[i].Spawn, pack.Points[i].SpawnLayer, origin, ref anchor, ref layer, ref best, ref found);
             if (found) return true;
-            foreach (var spawn in pack.Bases) if (spawn.Team == team) Closer(spawn.Point, origin, ref anchor, ref best, ref found);
+            foreach (var spawn in pack.Bases) if (spawn.Team == team) Closer(spawn.Point, spawn.Layer, origin, ref anchor, ref layer, ref best, ref found);
             return found;
         }
 
@@ -85,11 +87,11 @@ namespace WarCore.Battle
             return false;
         }
 
-        private static void Closer(SimVec3 point, SimVec3 origin, ref SimVec3 anchor, ref SimWide best, ref bool found)
+        private static void Closer(SimVec3 point, int pointLayer, SimVec3 origin, ref SimVec3 anchor, ref int layer, ref SimWide best, ref bool found)
         {
             SimWide distance = CombatSystem.Horizontal(point - origin).LengthSquared;
             if (found && distance >= best) return;
-            anchor = point; best = distance; found = true;
+            anchor = point; layer = pointLayer; best = distance; found = true;
         }
 
         // Pure read: the default identity matches no unit, so nothing is shielded before the first switch.

@@ -211,26 +211,64 @@ namespace WarCore.Content.MapTools
                 if (Standable(nav, point.At)) { points.Add(point); continue; }
                 problems.Add(new MapProblem("GATE_POINT_BLOCKED", "point " + Text(point.Id), Cell(nav, At(point.At)), point.At));
             }
+            // Anchors and units with a plate id stand on a walkable node of that plate's layer (ML-6 graph under the pack); the
+            // footprint on a plate is the movers' business. Without plate ids the graph is not built and nothing changes.
+            LayeredNav layered = HasPlateRefs(desc) ? WcMapLayeredNav.Build(map, pack) : null;
             var bases = new List<MapBase>();
             foreach (MapBase b in desc.Bases)
             {
-                if (Standable(nav, b.At)) { bases.Add(b); continue; }
-                problems.Add(FootprintProblem(nav, b.At, "base " + Text(b.Id)));
+                if (b.Plate.HasValue ? OnPlate(layered, map, b.Plate.Value, b.At, out _) : Standable(nav, b.At)) { bases.Add(b); continue; }
+                problems.Add(FootprintProblem(nav, b.At, "base " + Text(b.Id) + Layer(map, b.Plate)));
             }
             foreach (MapPoint point in desc.Points)
-                if (point.Spawn.HasValue && !Standable(nav, point.Spawn.Value))
-                    problems.Add(FootprintProblem(nav, point.Spawn.Value, "spawn " + Text(point.Id)));
+                if (point.Spawn.HasValue && !(point.SpawnPlate.HasValue ? OnPlate(layered, map, point.SpawnPlate.Value, point.Spawn.Value, out _) : Standable(nav, point.Spawn.Value)))
+                    problems.Add(FootprintProblem(nav, point.Spawn.Value, "spawn " + Text(point.Id) + Layer(map, point.SpawnPlate)));
             // Without control points there is no match, and the runtime places reserve units at the start too.
             bool reservesPlaced = desc.Points.Count == 0;
             foreach (MapUnit unit in desc.Units)
-                if ((reservesPlaced || !unit.Reserve) && !Standable(nav, unit.At))
-                    problems.Add(FootprintProblem(nav, unit.At, "unit " + Text(unit.Key)));
+                if ((reservesPlaced || !unit.Reserve) && !(unit.Plate.HasValue ? OnPlate(layered, map, unit.Plate.Value, unit.At, out _) : Standable(nav, unit.At)))
+                    problems.Add(FootprintProblem(nav, unit.At, "unit " + Text(unit.Key) + Layer(map, unit.Plate)));
 
+            // A base on the ground: the ground grid, as before. A base on a plate: the layered graph from its node to the ground
+            // node of the point's centre (the centre's layer is ML-9's).
             var finder = new GridPathfinder(nav);
+            LayeredPathfinder layeredFinder = layered != null ? new LayeredPathfinder(layered) : null;
             foreach (MapBase b in bases)
                 foreach (MapPoint point in points)
-                    if (finder.Find(At(b.At), At(point.At)) != GridPathStatus.Found)
+                {
+                    bool found;
+                    if (!b.Plate.HasValue) found = finder.Find(At(b.At), At(point.At)) == GridPathStatus.Found;
+                    else
+                    {
+                        OnPlate(layered, map, b.Plate.Value, b.At, out int start);
+                        MapCells.TryCell(map, MapCells.Mm(point.At.X), MapCells.Mm(point.At.Z), out int px, out int pz);
+                        found = layered.TryNode(0, px, pz, out int goal) && layeredFinder.Find(start, goal) == GridPathStatus.Found;
+                    }
+                    if (!found)
                         problems.Add(new MapProblem("GATE_UNREACHABLE", "base " + Text(b.Id) + " point " + Text(point.Id), Cell(nav, At(b.At)), b.At));
+                }
+        }
+
+        private static bool HasPlateRefs(MapDesc desc) =>
+            desc.Bases.Any(b => b.Plate.HasValue) || desc.Units.Any(u => u.Plate.HasValue) || desc.Points.Any(p => p.SpawnPlate.HasValue);
+
+        // The layer of a plate id: its index in the baked plate table (ascending id) + 1.
+        private static int LayerOf(WcMap map, ulong plate)
+        {
+            for (int k = 0; k < map.Plates.Count; k++)
+                if (map.Plates[k].Id == plate) return k + 1;
+            return -1;
+        }
+
+        private static string Layer(WcMap map, ulong? plate) => plate.HasValue ? " layer " + Text(LayerOf(map, plate.Value)) : "";
+
+        // A walkable node of the plate's layer under the point (MapCells, as the bake and the runtime).
+        private static bool OnPlate(LayeredNav layered, WcMap map, ulong plate, MapMm at, out int node)
+        {
+            node = -1;
+            int layer = LayerOf(map, plate);
+            return layer > 0 && MapCells.TryCell(map, MapCells.Mm(at.X), MapCells.Mm(at.Z), out int cx, out int cz)
+                && layered.TryNode(layer, cx, cz, out node) && layered.IsPassable(node);
         }
 
         // ---- ML-3 wall-height report (read before a pack turns its body on; not a load error) ----
