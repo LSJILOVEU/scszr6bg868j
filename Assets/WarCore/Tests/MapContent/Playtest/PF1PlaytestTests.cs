@@ -11,6 +11,7 @@ using WarCore.Sim;
 namespace WarCore.Tests
 {
     // PF1: the playtest recipe is the MP respawn demo plus the AI rules of content layer rwr-m7-playtest.
+    // AI-N1: its two rifles come from that layer too (more spread, half the lethal chance); nothing else in the combat pack differs.
     public sealed class PF1PlaytestTests
     {
         private const int Ticks = 600, Restore = 300;
@@ -56,8 +57,35 @@ namespace WarCore.Tests
             Assert.That(play.CrowdPass, Is.EqualTo(demo.CrowdPass));
             Assert.That(play.RuleSetId, Is.EqualTo(demo.RuleSetId));
             Assert.That(play.Match.PolicyDigest, Is.EqualTo(demo.Match.PolicyDigest));
-            Assert.That(play.Combat.PolicyDigest, Is.EqualTo(demo.Combat.PolicyDigest));
+            // AI-N1: the combat pack differs in the two rifles only; PolicyDigest therefore differs, so the rest is compared field by field.
+            Assert.That(play.Combat.PolicyDigest, Is.Not.EqualTo(demo.Combat.PolicyDigest));
+            Assert.That(play.Combat.Resolver.PolicyKey, Is.EqualTo(demo.Combat.Resolver.PolicyKey));
+            Assert.That(play.Combat.Selector.PolicyKey, Is.EqualTo(demo.Combat.Selector.PolicyKey));
+            Assert.That(play.Combat.MaxHealthRaw, Is.EqualTo(demo.Combat.MaxHealthRaw));
+            Assert.That((play.Combat.FriendlyFire, play.Combat.FriendlyFireLocked, play.Combat.AllyCheckMissRaw, play.Combat.AllyHoldMilli),
+                Is.EqualTo((demo.Combat.FriendlyFire, demo.Combat.FriendlyFireLocked, demo.Combat.AllyCheckMissRaw, demo.Combat.AllyHoldMilli)));
+            Assert.That(play.Combat.Melee.ToArray(), Is.EqualTo(demo.Combat.Melee.ToArray()));
+            Assert.That(play.Combat.Block.ToArray(), Is.EqualTo(demo.Combat.Block.ToArray()));
             Assert.That(play.TerrainPack, Is.Null);
+        }
+
+        // AI-N1: PLACEHOLDER values, 4x spread and half the lethal chance on the two rifles; every other weapon field and weapon 3 stay as in rwr.
+        [Test]
+        public void PF1Recipe_RiflesCarryTheAiN1Values()
+        {
+            WeaponDef[] demo = DemoRecipes.MpRespawnDemo().Combat.Weapons.ToArray(), play = DemoRecipes.MpPlaytest().Combat.Weapons.ToArray();
+            Assert.That(play.Length, Is.EqualTo(demo.Length));
+            long[] effect = { 16384, 18022 };
+            for (int i = 0; i < play.Length; i++)
+            {
+                if (i >= 2) { Assert.That(play[i].Equals(demo[i]), Is.True, "weapon " + i); continue; }
+                Assert.That(play[i].EffectRaw, Is.EqualTo(effect[i]), "weapon " + i);
+                Assert.That(demo[i].EffectRaw, Is.EqualTo(i == 0 ? 32768 : 36045), "weapon " + i);
+                Assert.That((play[i].Spread.BaseMilli, play[i].Spread.GrowthMilli, play[i].Spread.MaxMilli), Is.EqualTo((4000, 1000, 9000)));
+                Assert.That(play[i].Spread.RecoverPerSecMilli, Is.EqualTo(demo[i].Spread.RecoverPerSecMilli));
+                Assert.That((play[i].FireIntervalMilli, play[i].Magazine, play[i].ReloadMilli, play[i].FalloffStart, play[i].FalloffEnd),
+                    Is.EqualTo((demo[i].FireIntervalMilli, demo[i].Magazine, demo[i].ReloadMilli, demo[i].FalloffStart, demo[i].FalloffEnd)));
+            }
         }
 
         [Test]
