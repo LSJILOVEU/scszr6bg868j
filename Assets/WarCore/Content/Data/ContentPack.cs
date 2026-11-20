@@ -87,6 +87,7 @@ namespace WarCore.Content
         public int UnitTypeCount => unitTypeIds.Length;
         public string UnitTypeId(int index) => unitTypeIds[index];
         public string WeaponId(int index) => weaponIds[index];
+        public bool HasMatch => match.HasValue;
         public MatchRules Match => match ?? throw new ContentException("content pack '" + Id + "' has no match section");
 
         // The value a data section added after the first seven built, by its type. The shipped sections keep their own accessors above.

@@ -1,0 +1,186 @@
+# ED-0: content cartridges (one data directory each), layers, editor.json, the catalog's directory lookup, ContentPack.HasMatch,
+# the map facade's name queries, and MapDocument.Start through the catalog. Filter: ED-0 tests.
+# Not listed, equivalent: the ".json" extension check (Directory.GetFiles("*.json") on .NET already returns only names ending in
+# ".json"; the check guards a platform quirk no test machine shows).
+[ed0-name-data-rule]
+file = Assets/WarCore/Content/Data/ContentCatalog.cs
+filter = FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed0CatalogTests.CartridgeNamesFollowTheDataFolderRuleInOrdinalOrder
+note = a Data folder keeps its own name
+original:
+|             return info.Name == "Data" && info.Parent != null ? info.Parent.Name : info.Name;
+replacement:
+|             return info.Name;
+
+[ed0-cartridge-sort]
+file = Assets/WarCore/Content/Data/ContentCatalog.cs
+filter = FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed0CatalogTests.CartridgeNamesFollowTheDataFolderRuleInOrdinalOrder
+note = cartridges keep the order given
+original:
+|             found.Sort((a, b) => string.CompareOrdinal(a.Name, b.Name));
+replacement:
+|
+
+[ed0-layer-sort]
+file = Assets/WarCore/Content/Data/ContentCatalog.cs
+filter = FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed0CatalogTests.LayersAreOrdinalAndLeaveTheReservedFilesOut
+note = layers keep the file system's order
+original:
+|             Array.Sort(sorted, StringComparer.Ordinal);
+replacement:
+|
+
+[ed0-reserved-names]
+file = Assets/WarCore/Content/Data/ContentCatalog.cs
+filter = FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed0CatalogTests.LayersAreOrdinalAndLeaveTheReservedFilesOut
+note = editor.json and surface-colors.json count as layers
+original:
+|                 if (id == EditorFile || id == ColorsFile) continue;
+replacement:
+|
+
+[ed0-duplicate-cartridge]
+file = Assets/WarCore/Content/Data/ContentCatalog.cs
+filter = FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed0CatalogTests.TwoDirectoriesWithOneCartridgeNameAreRefused
+note = two directories with one name are accepted
+original:
+|                 if (found[i].Name == found[i - 1].Name)
+replacement:
+|                 if (false)
+
+[ed0-layer-in-two]
+file = Assets/WarCore/Content/Data/ContentCatalog.cs
+filter = FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed0CatalogTests.ALayerInTwoCartridgesNamesBoth
+note = the last holder wins silently
+original:
+|                 if (at >= 0) throw new ContentException("content layer '" + layerId + "' is in two cartridges: " + names[at] + " and " + names[i]);
+replacement:
+|
+
+[ed0-missing-dir]
+file = Assets/WarCore/Content/Data/ContentCatalog.cs
+filter = FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed0CatalogTests.AMissingDirectoryIsRefused
+expect = WarCore.Tests.Ed0EnvTests.AMissingDirectoryInTheListIsRefused
+note = a missing directory is skipped
+original:
+|                 if (!Directory.Exists(dir)) throw new ContentException("content data directory " + dir + " does not exist");
+replacement:
+|                 if (!Directory.Exists(dir)) continue;
+
+[ed0-empty-item]
+file = Assets/WarCore/Content/Data/ContentCatalog.cs
+filter = FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed0EnvTests.TheListVariableNamesEveryDirectoryAndSkipsEmptyItems
+note = an empty list item is not skipped
+original:
+|                 if (string.IsNullOrEmpty(dir)) continue;
+replacement:
+|
+
+[ed0-list-first]
+file = Assets/WarCore/Content/Data/ContentCatalog.cs
+filter = FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed0EnvTests.TheListVariableWinsOverTheSingleOne
+note = the single variable is read first
+original:
+|             string list = Environment.GetEnvironmentVariable(DirectoriesVariable);
+replacement:
+|             string list = Environment.GetEnvironmentVariable(FileContentSource.DirectoryVariable) ?? Environment.GetEnvironmentVariable(DirectoriesVariable);
+
+[ed0-single-ignored]
+file = Assets/WarCore/Content/Data/ContentCatalog.cs
+filter = FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed0EnvTests.TheSingleVariableAloneIsOneCartridge
+note = the single variable is ignored
+original:
+|             if (!string.IsNullOrEmpty(single)) return new ContentCatalog(new[] { single });
+replacement:
+|
+
+[ed0-editor-unknown-key]
+file = Assets/WarCore/Content/Data/ContentCatalog.cs
+filter = FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed0CatalogTests.ABadEditorFileFailsItsCartridgeOnly
+note = unknown editor keys pass
+original:
+|                     if (member.Name != "defaultLayer") throw
+replacement:
+|                     if (false) throw
+
+[ed0-editor-foreign-layer]
+file = Assets/WarCore/Content/Data/ContentCatalog.cs
+filter = FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed0CatalogTests.ABadEditorFileFailsItsCartridgeOnly
+note = a default layer from another cartridge passes
+original:
+|                 if (Array.BinarySearch(layers[i], layer.Text, StringComparer.Ordinal) < 0)
+replacement:
+|                 if (false)
+
+[ed0-default-needs-match]
+file = Assets/WarCore/Content/Data/ContentCatalog.cs
+filter = FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed0CatalogTests.WithoutAnEditorFileTheFirstLayerWithTerrainAndMatchIsTheDefault
+note = a terrain-only layer is the default
+original:
+|                 if (pack.Terrain != null && pack.HasMatch) return id;
+replacement:
+|                 if (pack.Terrain != null) return id;
+
+[ed0-default-needs-terrain]
+file = Assets/WarCore/Content/Data/ContentCatalog.cs
+filter = FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed0CatalogTests.WithoutAnEditorFileTheFirstLayerWithTerrainAndMatchIsTheDefault
+note = a match-only layer is the default
+original:
+|                 if (pack.Terrain != null && pack.HasMatch) return id;
+replacement:
+|                 if (pack.HasMatch) return id;
+
+[ed0-has-match]
+file = Assets/WarCore/Content/Data/ContentPack.cs
+filter = FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed0CatalogTests.TheFacadeReadsNamesFromTheData
+note = every pack has a match section
+original:
+|         public bool HasMatch => match.HasValue;
+replacement:
+|         public bool HasMatch => true;
+
+[ed0-surfaces-without-terrain]
+file = Assets/WarCore/Presentation/Maps/MapCatalog.cs
+filter = FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed0CatalogTests.TheFacadeReadsNamesFromTheData
+expect = WarCore.Tests.Ed0ProjectTests.TheDocumentNamesItsLayersSurfacesAndUnitTypes
+note = a layer without terrain rules throws instead of naming no surfaces
+original:
+|             if (rules == null) return Array.AsReadOnly(Array.Empty<string>());
+replacement:
+|             if (rules == null) throw new InvalidOperationException();
+
+[ed0-start-rwr]
+file = Assets/WarCore/Presentation/Maps/MapDocument.cs
+filter = FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed0ProjectTests.AnAncientMapStartsAndRepeats
+expect = WarCore.Tests.Ed0ProjectTests.TheMapFacadeNeverNamesRwr
+note = Start loads through RwrPack again
+original:
+|             ContentPack pack = ContentCatalog.Find().Load(PackId);
+replacement:
+|             ContentPack pack = WarCore.Content.Rwr.RwrPack.Load(PackId);
+
+[ed0-empty-list]
+file = Assets/WarCore/Content/Data/ContentCatalog.cs
+filter = FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed0EnvTests.AListOfOnlyEmptyItemsIsRefused
+note = a list of only empty items gives a catalog with no cartridges
+original:
+| if (Array.TrueForAll(items, string.IsNullOrEmpty)) throw new ContentException(DirectoriesVariable + " names no directory");
+replacement:
+| if (false) throw new ContentException(DirectoriesVariable + " names no directory");

@@ -1,9 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 using WarCore.Content;
 using WarCore.Content.MapTools;
-using WarCore.Content.Rwr;
 
 namespace WarCore.Presentation
 {
@@ -38,12 +38,18 @@ namespace WarCore.Presentation
 
         public string PackId => desc.Pack;
 
-        // Bakes the description and starts a world under the RWR content layer it names.
+        // Bakes the description and starts a world under the content layer it names, found in the content cartridges.
         public SimSession Start()
         {
             MapBakeResult result = MapBake.Run(Save());
-            ContentPack pack = RwrPack.Load(PackId);
+            ContentPack pack = ContentCatalog.Find().Load(PackId);
             return SimSession.Create(MapRecipe.From(result, pack), result.WcMapBytes);
         }
+
+        // Surface ids of this description's layer (ordinal order; empty without terrain rules).
+        public IReadOnlyList<string> SurfaceNames() => MapCatalog.SurfaceNames(ContentCatalog.Find().Load(PackId));
+
+        // Unit type ids of this description's layer, in the pack's order.
+        public IReadOnlyList<string> UnitTypeNames() => MapCatalog.UnitTypeNames(ContentCatalog.Find().Load(PackId));
     }
 }
