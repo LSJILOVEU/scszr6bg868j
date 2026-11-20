@@ -39,7 +39,9 @@ namespace WarCore.Tests
         public void OnlyPlateWorldsChangeTheVersion()
         {
             var one = new[] { Unit(1, 1, 3500, 7500) };
-            Assert.That(M3TestWorld.Locomotion(Walk(Demo, one)).StateVersion, Is.EqualTo(4 + 100 + 200), "crowd, terrain branch, plates");
+            SimSession crowd = null;
+            Assert.DoesNotThrow(() => crowd = Walk(Demo, one), "a plate map without a terrain pack builds (the default rules)");
+            Assert.That(M3TestWorld.Locomotion(crowd).StateVersion, Is.EqualTo(4 + 100 + 200), "crowd, terrain branch, plates");
             Assert.That(M3TestWorld.Locomotion(Walk(Demo, one, mover: MoverKind.InterimPath)).StateVersion, Is.EqualTo(3 + 100 + 200));
             Assert.That(M3TestWorld.Locomotion(World(NoPlates, new[] { Unit(1, 1, 500, 500) }, preview: false)).StateVersion, Is.EqualTo(4), "flat, no plates");
             WcMap heights = WcMapReader.Read(Raised(M / 4, true));
@@ -93,6 +95,7 @@ namespace WarCore.Tests
                 Assert.That(M3TestWorld.Position(s).Y.Raw, Is.EqualTo(lift), "tick " + t);
             }
             Assert.That(down && M3TestWorld.Position(s).Equals(P(3500, lift, 7500)), Is.True);
+            Assert.That(M3TestWorld.Locomotion(s).IsArrived(M3TestWorld.Unit(s)), Is.True, "the target itself stands on the ground");
         }
 
         // 6: a unit on the first floor and one on the ground under it cross the same (x, z) without giving way; the floor
@@ -203,7 +206,9 @@ namespace WarCore.Tests
             };
             MatchPack pack = RespawnWorld.Pack(points, new[] { new SpawnAnchor(1, SimVec3.Metres(2, 0, 8)), new SpawnAnchor(2, SimVec3.Metres(22, 0, 8)) }, 300);
             WorldRecipe recipe = RespawnWorld.Recipe(units, pack).WithPlatesPreview();
-            return SimSession.Create(recipe, Demo);
+            SimSession s = null;
+            Assert.DoesNotThrow(() => s = SimSession.Create(recipe, Demo), "a match and combat on a plate map without a terrain pack");
+            return s;
         }
 
         // 9 (M-i 2): plates too high to block the ground (bottom 2.5 m over ground of at most 0.5 m) and with no seams change

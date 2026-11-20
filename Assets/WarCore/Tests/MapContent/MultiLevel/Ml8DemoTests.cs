@@ -156,7 +156,14 @@ namespace WarCore.Tests
             }
             var targets = Enumerable.Range(1, 4).Select(k => M3TestWorld.Component<MoveIntent>(s, (ulong)k).Target).OrderBy(p => p.X.Raw).ThenBy(p => p.Z.Raw).ToArray();
             Assert.That(targets, Is.EqualTo(new[] { P(10500, 3 * M, 6500), P(11000, 3 * M, 7200), P(12500, 3 * M, 6500), P(13000, 3 * M, 7200) }),
-                "slots (11, 5.2) and (13, 5.2) move to the first walkable cell of their ring, (10, 6) and (12, 6); slots on z 7.2 stay: " + string.Join(" ", targets.Select(Show)));
+                "slots (11, 5.2) and (13, 5.2) move to the first walkable cell of their ring, (10, 6) and (12, 6); slots on z 7.2 stay: "
+                + string.Join(" ", targets.Select(Show)));
+
+            // A point on a walkable cell whose footprint would hang over the floor's edge moves to the cell's centre.
+            l.Order(M3TestWorld.Unit(s, 1), M3TestWorld.Point(11000, 6100), 2);
+            Assert.That(Show(M3TestWorld.Component<MoveIntent>(s, 1).Target), Is.EqualTo(Show(P(11500, 3 * M, 6500))));
+            l.Order(M3TestWorld.Unit(s, 1), M3TestWorld.Point(11000, 6250), 2);
+            Assert.That(Show(M3TestWorld.Component<MoveIntent>(s, 1).Target), Is.EqualTo(Show(P(11000, 3 * M, 6250))), "touching the edge stays");
         }
     }
 }
