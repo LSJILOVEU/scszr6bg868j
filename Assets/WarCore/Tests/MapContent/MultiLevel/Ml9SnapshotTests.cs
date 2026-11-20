@@ -32,6 +32,16 @@ namespace WarCore.Tests
         private static M6World World(long thickRaw) => new M6World(
             Recipe(Sides, Pack(Points(), Bases(new SpawnAnchor(1, P(5, 30))), 0, interval: 30), false).WithPlatesPreview(), Arena(thickRaw));
 
+        // The bridge hands the map's plates to combat: on the first floor and straight under it nobody sees the other.
+        [Test]
+        public void TheBridgeHandsThePlatesToCombat()
+        {
+            M6World w = World(M / 2);
+            Assert.That(w.Combat.HasPlates, Is.True);
+            Assert.That((w.Combat.Visible(w.Unit(3), w.Unit(1)), w.Combat.Visible(w.Unit(1), w.Unit(3))), Is.EqualTo((false, false)), "through the floor");
+            Assert.That(w.Combat.Visible(w.Unit(1), w.Unit(5)), Is.True, "on the same floor");
+        }
+
         [Test]
         public void APlateBattleResumesToTheSameHashes()
         {
