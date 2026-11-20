@@ -44,7 +44,33 @@ namespace WarCore.Interim
             if (!layered) throw new NotSupportedException("Layer orders need a world with floor plates.");
             MoveIntent intent = RequireIntent(unit);
             SetTargetLayer(unit, layer);
-            Route(unit, intent, OnLayer(layer, target));
+            Route(unit, intent, Standable(layer, OnLayer(layer, target)));
+        }
+
+        // How far (in cells) a plate order's point may move to find a place to stand.
+        internal const int SnapCells = 8;
+
+        // A plate order's point, as a squad slot may give it (off the plate, on a cutout or a wall, or with the footprint over
+        // an edge), moves to where a unit can stand on that layer: kept when its cell is walkable and its footprint stands on
+        // cells open for that cell; else that cell's centre when walkable; else the centre of the nearest walkable cell of the
+        // layer (rings of growing Chebyshev distance up to SnapCells, each ring in z then x order). Unchanged when none is found.
+        private SimVec3 Standable(int layer, SimVec3 p)
+        {
+            int cx = (int)((p.X.Raw - grid.OriginX.Raw) >> 16), cz = (int)((p.Z.Raw - grid.OriginZ.Raw) >> 16);
+            if (layers.TryNode(layer, cx, cz, out int own) && layers.IsPassable(own))
+            {
+                int key = cz * grid.Width + cx;
+                openCells.Set(layer, key, layer, key);
+                return grid.SegmentClear(p, p, UnitFootprint, openCells) ? p : NodeCentre(own);
+            }
+            for (int r = 1; r <= SnapCells; r++)
+                for (int z = cz - r; z <= cz + r; z++)
+                    for (int x = cx - r; x <= cx + r; x++)
+                    {
+                        if (z != cz - r && z != cz + r && x != cx - r && x != cx + r) continue;
+                        if (layers.TryNode(layer, x, z, out int node) && layers.IsPassable(node)) return NodeCentre(node);
+                    }
+            return p;
         }
 
         private void SetTargetLayer(EntityId unit, int layer) =>
@@ -104,7 +130,12 @@ namespace WarCore.Interim
             int fx = fromKey % grid.Width, fz = fromKey / grid.Width, tx = toKey % grid.Width, tz = toKey / grid.Width;
             int dx = tx - fx, dz = tz - fz;
             if (dx < -1 || dx > 1 || dz < -1 || dz > 1) return false;
-            if (dx == 0 || dz == 0) return Into(layer, fx, fz, tx, tz, out newLayer);
+            if (dx == 0 || dz == 0)
+            {
+                if (Into(layer, fx, fz, tx, tz, out newLayer)) return true;
+                newLayer = layer;
+                return false;
+            }
             if (Walkable(layer, tx, tz)) return true;
             if (Into(layer, fx, fz, tx, fz, out int mid) && Into(mid, tx, fz, tx, tz, out newLayer)) return true;
             if (Into(layer, fx, fz, fx, tz, out mid) && Into(mid, fx, tz, tx, tz, out newLayer)) return true;
@@ -120,6 +151,11 @@ namespace WarCore.Interim
             if (!TryEnter(layer, a, b, out int entered) || !Floor(entered, next.X, next.Z, out SimFix y)) return false;
             candidateLayer = entered;
             next = new SimVec3(next.X, y, next.Z);
+            // Where the unit stops, its footprint stands on cells open for its new layer alone; the union of both ends' rules
+            // (below) is only for the way there. Without this a step off a floor could end with the footprint over a floor
+            // cell that the stair's own rule closes, and no later step could leave it.
+            openCells.Set(entered, b, entered, b);
+            if (!grid.SegmentClear(next, next, UnitFootprint, openCells)) return false;
             openCells.Set(layer, a, entered, b);
             return true;
         }
