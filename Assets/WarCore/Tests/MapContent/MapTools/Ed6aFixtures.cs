@@ -130,6 +130,14 @@ namespace WarCore.Tests
             return list;
         }
 
+        // The call's result; a throw fails the test on an assertion (so a mutation that makes a write throw is caught as such).
+        internal static T NoThrow<T>(Func<T> f)
+        {
+            T result = default;
+            Assert.DoesNotThrow(() => result = f());
+            return result;
+        }
+
         internal static void SameBytes(MapDocument a, MapDocument b) => Assert.That(a.Save(), Is.EqualTo(b.Save()));
     }
 

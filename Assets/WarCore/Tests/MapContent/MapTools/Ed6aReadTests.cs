@@ -16,37 +16,37 @@ namespace WarCore.Tests
         {
             for (int i = 0; i < doc.Walls().Count; i++)
             {
-                MapWallInfo a = doc.Walls()[i], b = doc.WithWallReplaced(a).Walls()[i];
+                MapWallInfo a = doc.Walls()[i], b = NoThrow(() => doc.WithWallReplaced(a)).Walls()[i];
                 Assert.That(Text(b), Is.EqualTo(Text(a)));
                 Assert.That(b.Owner, Is.EqualTo("hand"));
             }
             for (int i = 0; i < doc.Points().Count; i++)
             {
-                MapPointInfo a = doc.Points()[i], b = doc.WithPointReplaced(a).Points()[i];
+                MapPointInfo a = doc.Points()[i], b = NoThrow(() => doc.WithPointReplaced(a)).Points()[i];
                 Assert.That(Text(b), Is.EqualTo(Text(a)));
                 Assert.That(b.Owner, Is.EqualTo("hand"));
             }
             for (int i = 0; i < doc.Bases().Count; i++)
             {
-                MapBaseInfo a = doc.Bases()[i], b = doc.WithBaseReplaced(a).Bases()[i];
+                MapBaseInfo a = doc.Bases()[i], b = NoThrow(() => doc.WithBaseReplaced(a)).Bases()[i];
                 Assert.That(Text(b), Is.EqualTo(Text(a)));
                 Assert.That(b.Owner, Is.EqualTo("hand"));
             }
             for (int i = 0; i < doc.Units().Count; i++)
             {
-                MapUnitInfo a = doc.Units()[i], b = doc.WithUnitReplaced(a).Units()[i];
+                MapUnitInfo a = doc.Units()[i], b = NoThrow(() => doc.WithUnitReplaced(a)).Units()[i];
                 Assert.That(Text(b), Is.EqualTo(Text(a)));
                 Assert.That(b.Owner, Is.EqualTo("hand"));
             }
             for (int i = 0; i < doc.Plates().Count; i++)
             {
-                MapPlateInfo a = doc.Plates()[i], b = doc.WithPlateReplaced(a).Plates()[i];
+                MapPlateInfo a = doc.Plates()[i], b = NoThrow(() => doc.WithPlateReplaced(a)).Plates()[i];
                 Assert.That(Text(b), Is.EqualTo(Text(a)));
                 Assert.That(b.Owner, Is.EqualTo("hand"));
             }
             for (int i = 0; i < doc.Cutouts().Count; i++)
             {
-                MapCutoutInfo a = doc.Cutouts()[i], b = doc.WithCutoutReplaced(a).Cutouts()[i];
+                MapCutoutInfo a = doc.Cutouts()[i], b = NoThrow(() => doc.WithCutoutReplaced(a)).Cutouts()[i];
                 Assert.That(Text(b), Is.EqualTo(Text(a)));
                 Assert.That(b.Owner, Is.EqualTo("hand"));
             }
@@ -78,10 +78,11 @@ namespace WarCore.Tests
         public void OwnerAndStampMapping()
         {
             MapDocument m6 = Open(M6Path);
-            Assert.That(m6.Walls()[0].Owner, Is.EqualTo(""));
-            Assert.That(m6.Walls()[0].Stamp, Is.EqualTo(""));
-            Assert.That(m6.Units()[0].Owner, Is.EqualTo(""));
-            Assert.That(m6.Points()[0].Stamp, Is.EqualTo(""));
+            IReadOnlyList<MapWallInfo> walls = NoThrow(() => m6.Walls());
+            Assert.That(walls[0].Owner, Is.EqualTo(""));
+            Assert.That(walls[0].Stamp, Is.EqualTo(""));
+            Assert.That(NoThrow(() => m6.Units())[0].Owner, Is.EqualTo(""));
+            Assert.That(NoThrow(() => m6.Points())[0].Stamp, Is.EqualTo(""));
             MapDocument door = Open(DoorPath);
             foreach (MapWallInfo w in door.Walls())
             {

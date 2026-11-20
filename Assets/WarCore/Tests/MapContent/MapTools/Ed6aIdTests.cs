@@ -19,7 +19,7 @@ namespace WarCore.Tests
             Assert.That(w.Id, Is.EqualTo(2UL));
             Assert.That(w.Owner, Is.EqualTo(""));
 
-            MapDocument resized = doc.WithWallReplaced(new MapWallInfo(w.Id, w.Kind, w.Layer, w.CellX, w.CellZ, 2, 10, 65536, false, 0, "", ""));
+            MapDocument resized = NoThrow(() => doc.WithWallReplaced(new MapWallInfo(w.Id, w.Kind, w.Layer, w.CellX, w.CellZ, 2, 10, 65536, false, 0, "", "")));
             MapWallInfo r = resized.Walls()[1];
             Assert.That(r.Id, Is.EqualTo(2UL));
             Assert.That(r.SizeX, Is.EqualTo(2));
@@ -27,7 +27,7 @@ namespace WarCore.Tests
             Assert.That(r.HeightRaw, Is.EqualTo(65536L));
             Assert.That(r.Owner, Is.EqualTo("hand"));
 
-            MapDocument moved = doc.WithCellsMoved("wall", 2, 3, -2);
+            MapDocument moved = NoThrow(() => doc.WithCellsMoved("wall", 2, 3, -2));
             MapWallInfo m = moved.Walls()[1];
             Assert.That(m.Id, Is.EqualTo(2UL));
             Assert.That(m.CellX, Is.EqualTo(31));
@@ -37,7 +37,7 @@ namespace WarCore.Tests
             Assert.That(m.Owner, Is.EqualTo("hand"));
             Assert.That(moved.Walls().Count, Is.EqualTo(4));
 
-            MapDocument point = doc.WithMmMoved("point", 1, 1500, -700);
+            MapDocument point = NoThrow(() => doc.WithMmMoved("point", 1, 1500, -700));
             MapPointInfo p = point.Points()[0];
             Assert.That(p.Id, Is.EqualTo(1UL));
             Assert.That(p.XMm, Is.EqualTo(17500L));
@@ -71,7 +71,8 @@ namespace WarCore.Tests
             MapDocument doc = Open(DoorPath);
             Assert.That(doc.Walls()[2].Stamp, Is.EqualTo("door"));
             ulong next = doc.NextId("wall");
-            MapDocument copied = doc.WithCopy("wall", 3, -3, 0);
+            MapDocument copied = NoThrow(() => doc.WithCopy("wall", 3, -3, 0));
+            Assert.That(copied.Walls().Count, Is.EqualTo(4));
             MapWallInfo c = copied.Walls()[3];
             Assert.That(c.Id, Is.EqualTo(next));
             Assert.That(c.Stamp, Is.EqualTo(""));
@@ -90,14 +91,18 @@ namespace WarCore.Tests
         public void CopyMovesWallsByCellsAndPointsByMillimetres()
         {
             MapDocument doc = Open(M6Path);
-            MapWallInfo w = doc.WithCopy("wall", 2, 3, -2).Walls()[4];
+            MapDocument walls = NoThrow(() => doc.WithCopy("wall", 2, 3, -2));
+            Assert.That(walls.Walls().Count, Is.EqualTo(5));
+            MapWallInfo w = walls.Walls()[4];
             Assert.That(w.Id, Is.EqualTo(5UL));
             Assert.That(w.CellX, Is.EqualTo(31));
             Assert.That(w.CellZ, Is.EqualTo(22));
             Assert.That(w.SizeZ, Is.EqualTo(16));
             Assert.That(w.HeightRaw, Is.EqualTo(131072L));
 
-            MapPointInfo p = doc.WithCopy("point", 1, 3000, -2000).Points()[3];
+            MapDocument points = NoThrow(() => doc.WithCopy("point", 1, 3000, -2000));
+            Assert.That(points.Points().Count, Is.EqualTo(4));
+            MapPointInfo p = points.Points()[3];
             Assert.That(p.Id, Is.EqualTo(4UL));
             Assert.That(p.XMm, Is.EqualTo(19000L));
             Assert.That(p.ZMm, Is.EqualTo(18000L));
@@ -154,7 +159,7 @@ namespace WarCore.Tests
                 Assert.Throws<ArgumentException>(() => doc.WithCellsMoved(kind, id, 1, 2));
                 return;
             }
-            MapDesc before = Desc(doc), after = Desc(doc.WithCellsMoved(kind, id, 1, 2));
+            MapDesc before = Desc(doc), after = Desc(NoThrow(() => doc.WithCellsMoved(kind, id, 1, 2)));
             (int X, int Z) cell0 = CellOf(before, kind, id), cell1 = CellOf(after, kind, id);
             Assert.That(cell1.X, Is.EqualTo(cell0.X + 1));
             Assert.That(cell1.Z, Is.EqualTo(cell0.Z + 2));
@@ -174,7 +179,7 @@ namespace WarCore.Tests
                 Assert.Throws<ArgumentException>(() => doc.WithMmMoved(kind, id, 100, 200));
                 return;
             }
-            MapDesc before = Desc(doc), after = Desc(doc.WithMmMoved(kind, id, 100, 200));
+            MapDesc before = Desc(doc), after = Desc(NoThrow(() => doc.WithMmMoved(kind, id, 100, 200)));
             MapMm at0 = AtOf(before, kind, id), at1 = AtOf(after, kind, id);
             Assert.That(at1.X, Is.EqualTo(at0.X + 100));
             Assert.That(at1.Z, Is.EqualTo(at0.Z + 200));

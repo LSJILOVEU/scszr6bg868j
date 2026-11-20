@@ -125,6 +125,7 @@ file = Assets/WarCore/Presentation/Maps/MapEntrySteps.cs
 filter = FullyQualifiedName~Ed6a
 expect = WarCore.Tests.Ed6aIdTests.ReplaceMove
 expect = WarCore.Tests.Ed6aIdTests.CopyMoves
+expect = WarCore.Tests.Ed6aIdTests.CellMovesTake
 note = cell moves swap dx and dz
 original:
 | new MapXZ(AddCells(cell.X, dx), AddCells(cell.Z, dz));
