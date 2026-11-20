@@ -1,4 +1,4 @@
-# CI demo list: one entry that the named tests catch, one that they cannot catch (wrong filter).
+# CI sample list: two small mutations the E1b tests catch (about 15 s each in CI).
 
 [ci-hash-hex-upper]
 file = Assets/WarCore/Presentation/Maps/MapDocument.cs
@@ -12,9 +12,9 @@ replacement:
 
 [ci-reserve-false]
 file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
-filter = FullyQualifiedName~E1bDocumentTests
-expect = WarCore.Tests.E1bDocumentTests.RepositoryDescriptionRoundTripsByteForByte
-note = reserve always false (filter does not run the recipe tests)
+filter = FullyQualifiedName~E1b|FullyQualifiedName~E1a
+expect = WarCore.Tests.E1bRecipeTests.SoldiersMapFieldByField
+note = reserve always false
 original:
 |                     pack.WeaponOfUnitType(s.Type), s.Reserve, pack.MeleeOfUnitType(s.Type), layer: s.Layer);
 replacement:
