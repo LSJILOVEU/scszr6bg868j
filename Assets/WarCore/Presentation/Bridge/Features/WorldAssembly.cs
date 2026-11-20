@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using WarCore.Battle;
 using WarCore.Combat;
@@ -40,6 +41,8 @@ namespace WarCore.Presentation
         // plain path.
         internal WcMap Map { get; set; }
         internal TerrainTables Terrain { get; set; }
+        // The plates of a map with floor plates, written by the plate installer; null otherwise.
+        internal PlateWorld Plates { get; set; }
         internal long GroundRaw { get; set; }
         internal uint WallMask { get; set; }
         // Entries of the stable content manifest that features contribute (the terrain digest, for one).
@@ -58,6 +61,7 @@ namespace WarCore.Presentation
         internal ComponentType<MotionLimits> MotionLimits { get; set; }
         internal ComponentType<SquadStanding>? Standing { get; set; }
         internal ComponentType<Combatant> Combatants { get; set; }
+        internal ComponentType<VerticalState> Verticals { get; set; }
 
         // Written by the match installer before the simulation exists; the simulation owns it. Null without match rules.
         internal MatchMode Mode { get; set; }
@@ -75,10 +79,17 @@ namespace WarCore.Presentation
         internal MatchSystem Match { get; set; }
         internal Pressure Pressure { get; set; }
 
-        // Where a unit stands when it is placed: the map's flat floor, or the terrain surface where the map has a height field.
+        // Where a unit stands when it is placed: the map's flat floor, or the terrain surface where the map has a height field;
+        // on a plate (layer above 0, checked by the plate installer) the plate's floored surface.
         internal SimVec3 SpawnPoint(in UnitSpawn spawn)
         {
             SimVec3 point = SimSession.Target(spawn.XMm, spawn.ZMm, GroundRaw);
+            if (spawn.Layer > 0)
+            {
+                if (!Plates.TryFloor(spawn.Layer, point.X, point.Z, true, out SimFix floor))
+                    throw new InvalidOperationException("Unit spawn " + spawn.Key + " is not on its plate.");
+                return new SimVec3(point.X, floor, point.Z);
+            }
             if (Terrain?.Ground != null && Terrain.Ground.TryHeightAt(point.X, point.Z, out SimFix groundY))
                 point = new SimVec3(point.X, groundY, point.Z);
             return point;

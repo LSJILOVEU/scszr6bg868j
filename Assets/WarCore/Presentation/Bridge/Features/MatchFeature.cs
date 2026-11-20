@@ -28,7 +28,8 @@ namespace WarCore.Presentation
             TerrainTables terrain = a.Terrain;
             AiRules ai = (terrain != null ? recipe.TerrainPack : recipe.AiPack)?.Section<AiRules>();
             var capture = new CaptureSystem(combat, recipe.Match);
-            var adapter = new BattleAdapter(sim, a.Locomotion, recipe, new DeployGround(terrain != null ? terrain.Nav : WcMapNavigation.Create(a.Map), terrain, a.GroundRaw), a.GroundRaw, a.Standing);
+            var adapter = new BattleAdapter(sim, a.Locomotion, recipe, new DeployGround(terrain != null ? terrain.Nav : WcMapNavigation.Create(a.Map), terrain, a.GroundRaw), a.GroundRaw, a.Standing,
+                a.Plates != null ? a.Verticals : (ComponentType<VerticalState>?)null);
             var reinforce = new ReinforceSystem(combat, recipe.Match, capture, adapter);
             var match = new MatchSystem(combat, recipe.Match, capture, a.Mode);
             a.Mode.Bind(match);
@@ -107,12 +108,15 @@ namespace WarCore.Presentation
         private readonly ComponentType<MoveWaypoint> waypoints;
         private readonly ComponentType<Combatant> combatants;
         private readonly ComponentType<SquadStanding>? standing;
+        private readonly ComponentType<VerticalState>? verticals;
         private static readonly SimFix Radius = SimFix.Ratio(1, 4);
         private readonly SimFix unitHeight;
         public ulong PolicyKey { get; }
-        internal BattleAdapter(Simulation sim, InterimLocomotion locomotion, WorldRecipe recipe, DeployGround ground, long groundRaw, ComponentType<SquadStanding>? standing = null)
+        internal BattleAdapter(Simulation sim, InterimLocomotion locomotion, WorldRecipe recipe, DeployGround ground, long groundRaw, ComponentType<SquadStanding>? standing = null,
+            ComponentType<VerticalState>? verticals = null)
         {
             this.standing = standing;
+            this.verticals = verticals;
             unitHeight = WorldAssembly.UnitHeight(recipe.Combat);
             this.sim = sim; this.locomotion = locomotion; this.ground = ground; this.groundRaw = groundRaw;
             stage = new EntityStage(sim.Entities); spawns = recipe.Units.ToArray(); ids = new StableId[spawns.Length];
@@ -156,6 +160,8 @@ namespace WarCore.Presentation
             sim.Entities.Set(colliders, unit, new Collider(Radius, unitHeight));
             sim.Entities.Set(intents, unit, new MoveIntent(at, SimFix.Ratio(spawn.SpeedMmPerSec, 1000 * SimClock.TickRate), spawn.Squad, false));
             sim.Entities.Set(waypoints, unit, default);
+            // Deployment is on the ground: a unit that stood on a plate before comes back on layer 0.
+            if (verticals.HasValue) sim.Entities.Set(verticals.Value, unit, new VerticalState(0, 0));
             return true;
         }
     }

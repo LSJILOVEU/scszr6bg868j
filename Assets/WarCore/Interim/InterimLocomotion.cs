@@ -60,6 +60,7 @@ namespace WarCore.Interim
         public void Order(EntityId unit, SimVec3 target)
         {
             MoveIntent intent = RequireIntent(unit);
+            if (layered) SetTargetLayer(unit, 0);
             target = Grounded(target);
             if (grid != null)
             {

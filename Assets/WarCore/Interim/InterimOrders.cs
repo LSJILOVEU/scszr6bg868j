@@ -82,7 +82,7 @@ namespace WarCore.Interim
                     if ((controlled == null || !unit.Equals(controlled.Current))
                         && entities.TryGet(intents, unit, out MoveIntent intent) && intent.Squad == command.Squad)
                     {
-                        locomotion.Order(unit, command.TargetPoint);
+                        locomotion.Order(unit, command.TargetPoint, command.TargetLayer);
                         Mark(unit, new SquadStanding(StandingKind.Move));
                     }
                 return;
@@ -112,7 +112,7 @@ namespace WarCore.Interim
             }
             for (int rank = 0; rank < n; rank++)
             {
-                locomotion.Order(members[rank], command.TargetPoint + SlotOffset(rank, n, slotSpacing));
+                locomotion.Order(members[rank], command.TargetPoint + SlotOffset(rank, n, slotSpacing), command.TargetLayer);
                 Mark(members[rank], new SquadStanding(StandingKind.Move));
             }
         }

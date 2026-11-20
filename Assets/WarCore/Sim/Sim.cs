@@ -305,6 +305,7 @@ namespace WarCore.Sim
         public void Step(InputFrame input)
         {
             RequireActivationBoundary();
+            CheckInputLayers(input);
             if (Entities.IdentityMode == IdentityMode.StableWorld)
                 stableInput = new StableInputFrame(input);
             StepCore(input);
