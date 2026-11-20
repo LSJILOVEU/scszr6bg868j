@@ -107,3 +107,11 @@ these to `playtest-s3` and `lanes-s3`; 3600 ticks, every 3):
 the seeds 41-46 of the three-lane map the means are, before and after: `pinnedHidden` 0.108 / 0.004 and 0.260 / 0.185,
 `pinnedMoving` 0.127 / 0.215 and 0.216 / 0.388; three matches of six are undecided at 3600 either way (42, 44, 45
 before; 41, 42, 44 after).
+
+AI-S2 (each shooter's own reaction, burst and pause, `traitSpreadPermille` 300, PLACEHOLDER; the setup adds only this
+field to `playtest`). The replay cannot show who fired when; the per-shooter timing is held by `AiS2Tests`.
+
+| Setup | End | Hash | share 1/2 | nn 1/2 | close 1/2 | idle 1/2 | closeNear 1/2 | idleNoEnemy 1/2 |
+|---|---|---|---|---|---|---|---|---|
+| playtest | undecided at 2400 | 1B5A952895358459 | 0.726 / 0.634 | 0.408 / 0.278 | 0.874 / 0.870 | 0.085 / 0.106 | 0.884 / 0.880 | 0.009 / 0.016 |
+| playtest-s2 | undecided at 2400 | 7531D3A423B34B4C | 0.692 / 0.657 | 0.591 / 0.268 | 0.823 / 0.874 | 0.092 / 0.093 | 0.834 / 0.886 | 0.009 / 0.017 |
