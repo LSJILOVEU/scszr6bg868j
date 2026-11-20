@@ -33,12 +33,16 @@ namespace WarCore.Battle
         {
             // A holder goes to its team's front-line point; without one it attacks like the rest.
             int nearest = holdSharePermille > 0 && Holds(unit.Id.Value, holdSharePermille) ? field.Frontline(unit.Team) : -1;
-            bool attack = nearest < 0; SimWide best = default;
-            if (attack && attackSpreadPoints > 1) { nearest = SpreadTarget(unit.Team, unit.Here, unit.Id.Value, field); attack = false; }
-            for (int i = 0; attack && i < field.PointCount; i++)
+            if (nearest < 0 && attackSpreadPoints > 1) nearest = SpreadTarget(unit.Team, unit.Here, unit.Layer, unit.Id.Value, field);
+            // On a map with floor plates a front-line or spread point the unit itself cannot walk to is dropped for the nearest
+            // point it can walk to. (Without plates every point is walked to, and a spread that finds none means there is none.)
+            if (nearest >= 0 && field.TrySpan(unit.Here, unit.Layer, nearest, out _)) return nearest;
+            nearest = -1; SimWide best = default;
+            for (int i = 0; i < field.PointCount; i++)
             {
                 if (field.Owner(i) == unit.Team) continue;
-                SimWide distance = CombatSystem.Horizontal(unit.Here - field.Center(i)).LengthSquared;
+                // On a map with floor plates the distance is the walking cost, and a point that cannot be walked to is passed over.
+                if (!field.TrySpan(unit.Here, unit.Layer, i, out SimWide distance)) continue;
                 if (nearest < 0 || distance < best) { nearest = i; best = distance; }
             }
             return nearest;
@@ -51,16 +55,19 @@ namespace WarCore.Battle
         // Stateless spread by unit key: rank k = Mix(key ^ salt) % min(spread, points not owned); the k-th nearest such point
         // (0 = nearest; equal distances to the lower point index); -1 when the team owns every point. Distances are measured
         // from the team's front-line point, so the choice holds while the unit walks and changes only when a point flips;
-        // a team without a front line measures from its first spawn anchor, and without one from the unit itself.
+        // a team without a front line measures from its first spawn anchor, and without one from the unit itself. On a map
+        // with floor plates the distances are walking costs and a point that cannot be walked to from there does not count.
         private const ulong SpreadSalt = 0x3c6ef372fe94f82bUL;
-        private int SpreadTarget(int team, SimVec3 here, ulong key, AiField field)
+        private int SpreadTarget(int team, SimVec3 here, int unitLayer, ulong key, AiField field)
         {
             int front = field.Frontline(team);
-            SimVec3 from = here;
-            if (front >= 0) from = field.Center(front);
-            else if (field.TryBase(team, out SimVec3 anchor)) from = anchor;
-            int count = 0;
-            for (int i = 0; i < field.PointCount; i++) if (field.Owner(i) != team) count++;
+            SimVec3 from = here; int layer = unitLayer;
+            if (front >= 0) { from = field.Center(front); layer = field.Layer(front); }
+            else if (field.TryBase(team, out SimVec3 anchor, out int anchorLayer)) { from = anchor; layer = anchorLayer; }
+            int count = Count(team, from, layer, field);
+            // On a map with floor plates: a base no point can be walked to from (its cell is not walkable, or it is cut off)
+            // measures from the unit itself, like a team without a base.
+            if (count == 0) { from = here; layer = unitLayer; count = Count(team, from, layer, field); }
             if (count == 0) return -1;
             int rank = (int)(AiParts.Mix(key ^ SpreadSalt) % (ulong)Math.Min(attackSpreadPoints, count));
             int last = -1; SimWide lastDistance = default;
@@ -69,14 +76,20 @@ namespace WarCore.Battle
                 int pick = -1; SimWide best = default;
                 for (int i = 0; i < field.PointCount; i++)
                 {
-                    if (field.Owner(i) == team) continue;
-                    SimWide distance = CombatSystem.Horizontal(from - field.Center(i)).LengthSquared;
+                    if (field.Owner(i) == team || !field.TrySpan(from, layer, i, out SimWide distance)) continue;
                     if (last >= 0 && (distance < lastDistance || (distance == lastDistance && i <= last))) continue;
                     if (pick < 0 || distance < best) { pick = i; best = distance; }
                 }
                 last = pick; lastDistance = best;
             }
             return last;
+        }
+        // The points the team does not own that can be walked to from a place.
+        private static int Count(int team, SimVec3 from, int layer, AiField field)
+        {
+            int count = 0;
+            for (int i = 0; i < field.PointCount; i++) if (field.Owner(i) != team && field.TrySpan(from, layer, i, out _)) count++;
+            return count;
         }
     }
 }

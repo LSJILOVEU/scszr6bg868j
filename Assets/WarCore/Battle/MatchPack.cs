@@ -172,5 +172,14 @@ namespace WarCore.Battle
         // Walking cost from one point to another when it is at most limitCost (1000 per orthogonal cell step times the cell cost,
         // 1414 per diagonal step); false when there is no such route or no navigation. Read only: never changes the simulation.
         bool TryRouteCost(SimVec3 from, SimVec3 to, long limitCost, out long cost) { cost = 0; return false; }
+        // ML-11a: the same with a layer (0 = the ground, 1..N = a floor plate). An implementation without plates keeps these
+        // defaults: layer 0 is the port without a layer, and nothing stands on, or is ordered to, any other layer.
+        bool CanStandAt(SimVec3 at, int layer) => layer == 0 && CanStandAt(at);
+        void Order(StableId unit, SimVec3 target, int layer)
+        {
+            if (layer != 0) throw new NotSupportedException("Layer orders need a world with floor plates.");
+            Order(unit, target);
+        }
+        bool TryGetOrder(StableId unit, out SimVec3 target, out int layer) { layer = 0; return TryGetOrder(unit, out target); }
     }
 }

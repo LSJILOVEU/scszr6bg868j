@@ -12,7 +12,10 @@ namespace WarCore.Battle
         public readonly SimVec3 Here;
         // How hard the unit is pressed (Pressure); Calm when the battle runs without that system.
         public readonly AiNerve Nerve;
-        public AiUnit(StableId id, int team, SimVec3 here, AiNerve nerve = AiNerve.Calm) { Id = id; Team = team; Here = here; Nerve = nerve; }
+        // The layer the unit stands on (0 = the ground, 1..N = a floor plate); 0 on a map without plates.
+        public readonly int Layer;
+        public AiUnit(StableId id, int team, SimVec3 here, AiNerve nerve = AiNerve.Calm, int layer = 0)
+        { Id = id; Team = team; Here = here; Nerve = nerve; Layer = layer; }
     }
 
     // What the pressure system (Pressure) says about one unit: Pinned at or above the pinned line; Broken from the
@@ -28,9 +31,11 @@ namespace WarCore.Battle
         // Front line per team, found on first use in a Step. Sized by the teams that have a spawn anchor.
         private readonly int[] frontline;
         private readonly bool[] known;
-        internal AiField(MatchPack pack, CaptureSystem capture)
+        // The walking costs to the points on a map with floor plates; null without plates.
+        private readonly IPointReach reach;
+        internal AiField(MatchPack pack, CaptureSystem capture, IPointReach reach = null)
         {
-            this.pack = pack; this.capture = capture;
+            this.pack = pack; this.capture = capture; this.reach = reach;
             int teams = 0;
             foreach (SpawnAnchor anchor in pack.Bases) teams = Math.Max(teams, anchor.Team + 1);
             frontline = new int[teams]; known = new bool[teams];
@@ -41,13 +46,28 @@ namespace WarCore.Battle
         public int PointCount => pack.Points.Length;
         public SimVec3 Center(int point) => pack.Points[point].Center;
         public int Owner(int point) => capture.Points[point].Owner;
+        // The layer of the point's centre (0 = the ground).
+        public int Layer(int point) => pack.Points[point].Layer;
         // The team's first spawn anchor.
-        public bool TryBase(int team, out SimVec3 at)
+        public bool TryBase(int team, out SimVec3 at) => TryBase(team, out at, out _);
+        public bool TryBase(int team, out SimVec3 at, out int layer)
         {
             foreach (SpawnAnchor anchor in pack.Bases)
-                if (anchor.Team == team) { at = anchor.Point; return true; }
-            at = default; return false;
+                if (anchor.Team == team) { at = anchor.Point; layer = anchor.Layer; return true; }
+            at = default; layer = 0; return false;
         }
+        // How far a point is from a place, to compare points by (smaller = nearer; nothing else may be read from it). Without
+        // floor plates: the squared horizontal distance to the centre, always true. With plates: the square of the walking cost
+        // from the place (a cell of that layer) to the centre; false when the point cannot be walked to from there.
+        public bool TrySpan(SimVec3 from, int fromLayer, int point, out SimWide span)
+        {
+            if (reach == null) { span = CombatSystem.Horizontal(from - pack.Points[point].Center).LengthSquared; return true; }
+            bool found = reach.TryCost(point, from, fromLayer, out long cost);
+            span = found ? new SimVec3(SimFix.FromRaw(cost), default, default).LengthSquared : default;
+            return found;
+        }
+        // True when the team's base (TryBase) can be walked to from a place; always true on a map without floor plates.
+        public bool ReachesBase(int team, SimVec3 from, int fromLayer) => reach == null || reach.TryBaseCost(team, from, fromLayer, out _);
         // The team's owned point closest to any point it does not own (ties to the lower point index); -1 when it owns none or all.
         public int Frontline(int team)
         {
@@ -64,7 +84,7 @@ namespace WarCore.Battle
                 for (int j = 0; j < pack.Points.Length; j++)
                 {
                     if (capture.Points[j].Owner == team) continue;
-                    SimWide distance = CombatSystem.Horizontal(pack.Points[i].Center - pack.Points[j].Center).LengthSquared;
+                    if (!TrySpan(pack.Points[i].Center, pack.Points[i].Layer, j, out SimWide distance)) continue;
                     if (front < 0 || distance < best) { front = i; best = distance; }
                 }
             }

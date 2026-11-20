@@ -23,6 +23,9 @@ namespace WarCore.Battle
         private readonly TargetSuppress suppress;
         private readonly Pressure pressure;
         private readonly GuardSlots slots;
+        // ML-11a, a map with floor plates: the layer each unit stands on. Null without plates: every layer below is 0 and
+        // every port falls to the one without a layer.
+        private readonly IUnitLayers layers;
         // Rebuilt every Step, never persisted: who reserves a slot (active order to it) and who stands at it.
         private readonly bool[] reservedHas, standingHas;
         private readonly ulong[] reservedBy, standingBy;
@@ -30,7 +33,7 @@ namespace WarCore.Battle
         {
             internal StableId Id;
             internal SimVec3 Destination;
-            internal int Kind, Slot, MemorySlot, Standing;
+            internal int Kind, Slot, MemorySlot, Standing, Layer;
         }
         private readonly bool fairDecisions;
         private readonly ulong seedSalt, policyDigest;
@@ -46,27 +49,33 @@ namespace WarCore.Battle
         // Where a unit told to take cover walks to; null when the battle has no cover rules.
         private readonly Cover cover;
         private int intentCount, current;
+        // Of the unit that is thinking (not state): the layer it stands on and the layer of its order, when it has one.
+        private int layer, orderLayer;
         private long decisionTick;
         public SimpleAiSystem(CombatSystem combat, CombatPack weapons, MatchPack pack, CaptureSystem capture, IMoveOrders moves,
             IControlTarget controlled = null, FailedSlotMemory memory = null, TargetMemory contacts = null,
             TargetSearch search = null, TargetSuppress suppress = null, int meleeChaseRange = 0,
-            bool fairDecisions = false, ulong decisionSeed = 0, AiParts parts = null, Pressure pressure = null, ISlotFloor slotFloor = null)
+            bool fairDecisions = false, ulong decisionSeed = 0, AiParts parts = null, Pressure pressure = null, ISlotFloor slotFloor = null,
+            IUnitLayers layers = null, IPointReach reach = null)
         {
+            if ((layers == null) != (reach == null) || (layers == null) != (slotFloor == null))
+                throw new ArgumentException("The plates' floor, the units' layers and the points' walking costs come together.", nameof(layers));
+            this.layers = layers;
             this.combat = combat; this.weapons = weapons; this.pack = pack; this.capture = capture; this.moves = moves;
             this.controlled = controlled; this.memory = memory; this.contacts = contacts; this.search = search; this.suppress = suppress;
             this.pressure = pressure;
             this.meleeChaseRange = SimFix.FromInt(meleeChaseRange);
             this.fairDecisions = fairDecisions; seedSalt = AiParts.Mix(decisionSeed); policyDigest = pack.PolicyDigest;
             parts = parts ?? new AiParts();
-            // ML-9b: the plates' floor for points on a plate (their slots are not read by this AI; ML-11).
+            // ML-9b: the plates' floor for points on a plate.
             slots = new GuardSlots(pack.Points, parts.SlotSpacingRaw, parts.SlotRingRaw, slotFloor);
             if (fairDecisions)
             {
-                intents = new Intent[combat.Entities.Capacity]; winners = new int[slots.Total];
+                intents = new Intent[combat.Entities.Capacity]; winners = new int[slots.AllTotal];
                 var hash = new StateHash(); hash.Add("battle.ai.fair-decisions.v1"); hash.Add(policyDigest); hash.Add(fairDecisions); hash.Add(decisionSeed);
                 policyDigest = hash.Value;
             }
-            field = new AiField(pack, capture); dispatch = parts.Dispatch; placement = parts.Placement; engage = parts.Engage;
+            field = new AiField(pack, capture, reach); dispatch = parts.Dispatch; placement = parts.Placement; engage = parts.Engage;
             waypoints = placement as IAiWaypoint;
             // Fold order is fixed: fair decisions, dispatch, placement, then a slot spacing other than the default, then a slot ring,
             // then engage, then cover.
@@ -88,8 +97,14 @@ namespace WarCore.Battle
                 if (pressure == null || !pressure.Sources) throw new ArgumentException("Cover needs the pressure system with sources.", nameof(pressure));
                 cover = new Cover(combat, moves, parts.CoverRadiusRaw, parts.CoverStepRaw, parts.CoverDepthRaw); policyDigest = cover.Fold(policyDigest);
             }
-            reservedHas = new bool[slots.Total]; standingHas = new bool[slots.Total];
-            reservedBy = new ulong[slots.Total]; standingBy = new ulong[slots.Total];
+            // Last in the fold order: the AI that reads layers (slots on plates, orders with a layer, points by walking cost).
+            if (layers != null)
+            {
+                var hash = new StateHash(); hash.Add("battle.ai.layers.v1"); hash.Add(policyDigest);
+                policyDigest = hash.Value;
+            }
+            reservedHas = new bool[slots.AllTotal]; standingHas = new bool[slots.AllTotal];
+            reservedBy = new ulong[slots.AllTotal]; standingBy = new ulong[slots.AllTotal];
             stage = new EntityStage(combat.Entities); positions = combat.Entities.Resolve<Position>(); combatants = combat.Entities.Resolve<Combatant>();
             if (weapons.HasMelee) meleeStates = combat.Entities.Resolve<MeleeState>();
         }
@@ -111,10 +126,11 @@ namespace WarCore.Battle
                 if (fairDecisions) { current = intentCount++; intents[current] = new Intent { Id = id }; }
                 memory?.Observe(id, c.Input);
                 SimVec3 here = position.Value;
-                bool moving = moves.TryGetOrder(id, out SimVec3 target);
-                if (fairDecisions && moving && slots.TryFind(target, -1, out int retained))
-                { intents[current] = new Intent { Id = id, Kind = 3, Slot = retained, Standing = slots.Nearest(here) }; }
-                if (moving && Arrived(here, target) && slots.TryFind(target, -1, out _))
+                layer = LayerOf(entity);
+                bool moving = moves.TryGetOrder(id, out SimVec3 target, out orderLayer);
+                if (fairDecisions && moving && slots.TryFindAll(orderLayer, target, -1, out int retained))
+                { intents[current] = new Intent { Id = id, Kind = 3, Slot = retained, Standing = slots.NearestAll(layer, here) }; }
+                if (moving && layer == orderLayer && Arrived(here, target) && slots.TryFindAll(orderLayer, target, -1, out _))
                 { StopUnit(id, here, target); moving = false; }
                 if ((c.Clock.Tick + (long)((fairDecisions ? AiParts.Mix(id.Value ^ seedSalt) : id.Value) % (ulong)pack.ThinkInterval)) % pack.ThinkInterval != 0) continue;
                 if (meleeChaseRange.Raw > 0 && unit.Weapon < 0 && weapons.HasMelee
@@ -125,10 +141,10 @@ namespace WarCore.Battle
                     if (CombatSystem.Horizontal(enemy - here).LengthSquared <= new SimVec3(engage, default, default).LengthSquared)
                     { if (moving) StopUnit(id, here, target); }
                     else if (!moving || target.X.Raw != enemy.X.Raw || target.Z.Raw != enemy.Z.Raw)
-                    { OrderUnit(id, here, moving, target, enemy, -2); }
+                    { OrderUnit(id, here, moving, target, enemy, 0, -2); }
                     continue;
                 }
-                var thinker = new AiUnit(id, unit.Team, here, pressure != null ? pressure.Level(id) : AiNerve.Calm);
+                var thinker = new AiUnit(id, unit.Team, here, pressure != null ? pressure.Level(id) : AiNerve.Calm, layer);
                 // An enemy in sight: the engage part says stand (Hold), go on to the point below (Advance), fall back or
                 // take cover. No enemy in sight: the part is asked only about a unit that is pressed. Cover is taken from
                 // where the fire that pressed the unit came from, seen or not; cover that cannot be taken is Hold.
@@ -158,7 +174,7 @@ namespace WarCore.Battle
                     {
                         // Orders are grounded (only Y changes), so X and Z tell whether the unit is already on its way.
                         if (!moving || target.X.Raw != lastKnown.X.Raw || target.Z.Raw != lastKnown.Z.Raw)
-                        { OrderUnit(id, here, moving, target, lastKnown, -1); }
+                        { OrderUnit(id, here, moving, target, lastKnown, 0, -1); }
                         continue;
                     }
                     if (hunt == TargetSearch.Hunt.Hold)
@@ -166,9 +182,13 @@ namespace WarCore.Battle
                 }
                 if (fallback && Refuge(unit.Team, here) < 0)
                 {
-                    // The team owns no point: back to its base, or stand when it has none.
-                    if (!field.TryBase(unit.Team, out SimVec3 home) || Arrived(here, home)) { if (moving) StopUnit(id, here, target); }
-                    else if (!moving || target.X.Raw != home.X.Raw || target.Z.Raw != home.Z.Raw) OrderUnit(id, here, moving, target, home, -1);
+                    // The team owns no point (or none it can walk to): back to its base, or stand when it has none (or, on a map
+                    // with floor plates, cannot walk to it or stand on it).
+                    if (!field.TryBase(unit.Team, out SimVec3 home, out int homeLayer) || (layer == homeLayer && Arrived(here, home))
+                        || (layers != null && !(field.ReachesBase(unit.Team, here, layer) && moves.CanStandAt(home, homeLayer))))
+                    { if (moving) StopUnit(id, here, target); }
+                    else if (!moving || orderLayer != homeLayer || target.X.Raw != home.X.Raw || target.Z.Raw != home.Z.Raw)
+                        OrderUnit(id, here, moving, target, home, homeLayer, -1);
                     continue;
                 }
                 int point = fallback ? Refuge(unit.Team, here) : dispatch.Pick(in thinker, field);
@@ -178,29 +198,30 @@ namespace WarCore.Battle
                 if (waypoints != null && waypoints.TryWaypoint(in thinker, point, field, out SimVec3 via) && GoesVia(here, via, point))
                 {
                     if (!moving || target.X.Raw != via.X.Raw || target.Z.Raw != via.Z.Raw)
-                    { OrderUnit(id, here, moving, target, via, -1); }
+                    { OrderUnit(id, here, moving, target, via, 0, -1); }
                     continue;
                 }
                 if (moving && KeepsSlot(id, target, point)) continue;
                 int slot = Choose(id, placement.Anchor(in thinker, point, field), point, c.Clock.Tick);
                 if (slot < 0)
                 { if (moving) StopUnit(id, here, target); continue; }
-                SimVec3 destination = slots.At(slot);
-                if (Arrived(here, destination))
+                SimVec3 destination = slots.AllAt(slot);
+                int slotLayer = slots.AllLayerOf(slot);
+                if (layer == slotLayer && Arrived(here, destination))
                 { if (moving) StopUnit(id, here, target); continue; }
-                if (!moving || !target.Equals(destination))
-                { OrderUnit(id, here, moving, target, destination, slots.Canonical(slot)); }
+                if (!moving || orderLayer != slotLayer || !target.Equals(destination))
+                { OrderUnit(id, here, moving, target, destination, slotLayer, slots.AllCanonical(slot)); }
             }
             if (fairDecisions) ApplyIntents();
         }
-        // Where a unit falls back to: the point its team owns that is horizontally nearest (ties to the lower index); -1 when it owns none.
+        // Where a unit falls back to: the point its team owns that is nearest (ties to the lower index): horizontally, or on a
+        // map with floor plates by walking cost, a point it cannot walk to not counting. -1 when there is none.
         private int Refuge(int team, SimVec3 here)
         {
             int nearest = -1; SimWide best = default;
             for (int i = 0; i < field.PointCount; i++)
             {
-                if (field.Owner(i) != team) continue;
-                SimWide distance = CombatSystem.Horizontal(field.Center(i) - here).LengthSquared;
+                if (field.Owner(i) != team || !field.TrySpan(here, layer, i, out SimWide distance)) continue;
                 if (nearest < 0 || distance < best) { nearest = i; best = distance; }
             }
             return nearest;
@@ -211,7 +232,7 @@ namespace WarCore.Battle
         {
             if (cover == null || !pressure.TryPressedFrom(id, out SimVec3 threat) || cover.Covered(threat, here)) return false;
             if (!cover.TryFind(entity, id.Value, here, threat, out SimVec3 spot)) return false;
-            OrderUnit(id, here, moving, target, spot, -1);
+            OrderUnit(id, here, moving, target, spot, 0, -1);
             return true;
         }
         private bool TryMeleeTarget(EntityId entity, SimVec3 here, out SimVec3 target)
@@ -233,6 +254,7 @@ namespace WarCore.Battle
             }
             return found;
         }
+        private int LayerOf(EntityId entity) => layers != null ? layers.LayerOf(entity) : 0;
         private void Forget(EntityId entity)
         {
             if (memory == null && contacts == null) return;
@@ -248,21 +270,21 @@ namespace WarCore.Battle
                 if (!combat.Entities.TryGet(combatants, entity, out Combatant _) || !combat.Entities.TryGet(positions, entity, out Position position)
                     || combat.IsDead(entity)) continue;
                 StableId id = combat.Entities.StableOf(entity);
-                if (moves.TryGetOrder(id, out SimVec3 target) && slots.TryFind(target, -1, out int reserved))
+                if (moves.TryGetOrder(id, out SimVec3 target, out int targetLayer) && slots.TryFindAll(targetLayer, target, -1, out int reserved))
                 {
                     Claim(reservedHas, reservedBy, reserved, id);
                     if (fairDecisions && moves.IsCommanded(id)) winners[reserved] = -1;
                 }
                 else
                 {
-                    int standing = slots.Nearest(position.Value);
+                    int standing = slots.NearestAll(LayerOf(entity), position.Value);
                     if (standing >= 0) Claim(standingHas, standingBy, standing, id);
                 }
             }
         }
         private bool Available(int slot, StableId id)
         {
-            int record = slots.Canonical(slot);
+            int record = slots.AllCanonical(slot);
             return (!reservedHas[record] || reservedBy[record] == id.Value) && (!standingHas[record] || standingBy[record] == id.Value);
         }
         // Stateless: the unit goes via the waypoint while it is farther from the centre than the waypoint is. A waypoint
@@ -274,45 +296,46 @@ namespace WarCore.Battle
                 && !slots.TryFind(via, -1, out _) && moves.CanStandAt(via);
         }
         private bool KeepsSlot(StableId id, SimVec3 target, int point) =>
-            slots.TryFind(target, point, out int slot) && Available(slot, id) && moves.CanStandAt(target);
+            slots.TryFindAll(orderLayer, target, point, out int slot) && Available(slot, id) && moves.CanStandAt(target, orderLayer);
         // The available standable slot nearest to the anchor, ties to the lower slot number. A full circle returns -1: no
         // order, no stacking. A slot the memory says failed for this unit recently is skipped.
         private int Choose(StableId id, SimVec3 anchor, int point, long tick)
         {
             int chosen = -1; SimWide best = default;
-            int first = slots.Start(point), end = first + slots.Count(point);
+            int first = slots.AllStart(point), end = first + slots.AllCount(point);
             for (int slot = first; slot < end; slot++)
             {
                 if (!Available(slot, id)) continue;
-                if (memory != null && memory.Skips(id, slots.Canonical(slot), tick)) continue;
-                SimWide distance = CombatSystem.Horizontal(anchor - slots.At(slot)).LengthSquared;
+                if (memory != null && memory.Skips(id, slots.AllCanonical(slot), tick)) continue;
+                SimWide distance = CombatSystem.Horizontal(anchor - slots.AllAt(slot)).LengthSquared;
                 if (chosen >= 0 && distance >= best) continue;
-                if (!moves.CanStandAt(slots.At(slot))) continue;
+                if (!moves.CanStandAt(slots.AllAt(slot), slots.AllLayerOf(slot))) continue;
                 chosen = slot; best = distance;
             }
             return chosen;
         }
-        private void OrderUnit(StableId id, SimVec3 here, bool moving, SimVec3 oldTarget, SimVec3 destination, int memorySlot)
+        // to: the layer of the destination (0 = the ground).
+        private void OrderUnit(StableId id, SimVec3 here, bool moving, SimVec3 oldTarget, SimVec3 destination, int to, int memorySlot)
         {
             if (fairDecisions)
             {
-                intents[current] = new Intent { Id = id, Kind = 2, Destination = destination,
-                    Slot = slots.TryFind(destination, -1, out int proposed) ? proposed : -1, MemorySlot = memorySlot, Standing = slots.Nearest(here) };
+                intents[current] = new Intent { Id = id, Kind = 2, Destination = destination, Layer = to,
+                    Slot = slots.TryFindAll(to, destination, -1, out int proposed) ? proposed : -1, MemorySlot = memorySlot, Standing = slots.NearestAll(layer, here) };
                 return;
             }
-            if (moving && slots.TryFind(oldTarget, -1, out int old)) Release(reservedHas, reservedBy, old, id);
-            Release(standingHas, standingBy, slots.Nearest(here), id);
-            moves.Order(id, destination);
-            if (slots.TryFind(destination, -1, out int slot)) Claim(reservedHas, reservedBy, slot, id);
+            if (moving && slots.TryFindAll(orderLayer, oldTarget, -1, out int old)) Release(reservedHas, reservedBy, old, id);
+            Release(standingHas, standingBy, slots.NearestAll(layer, here), id);
+            moves.Order(id, destination, to);
+            if (slots.TryFindAll(to, destination, -1, out int slot)) Claim(reservedHas, reservedBy, slot, id);
             if (memorySlot == -2) memory?.Forget(id); else memory?.Ordered(id, memorySlot);
         }
         private void StopUnit(StableId id, SimVec3 here, SimVec3 oldTarget)
         {
-            if (fairDecisions) { intents[current] = new Intent { Id = id, Kind = 1, Slot = slots.Nearest(here) }; memory?.Forget(id); return; }
-            if (slots.TryFind(oldTarget, -1, out int old)) Release(reservedHas, reservedBy, old, id);
+            if (fairDecisions) { intents[current] = new Intent { Id = id, Kind = 1, Slot = slots.NearestAll(layer, here) }; memory?.Forget(id); return; }
+            if (slots.TryFindAll(orderLayer, oldTarget, -1, out int old)) Release(reservedHas, reservedBy, old, id);
             moves.Stop(id);
             memory?.Forget(id);
-            int standing = slots.Nearest(here);
+            int standing = slots.NearestAll(layer, here);
             if (standing >= 0) Claim(standingHas, standingBy, standing, id);
         }
         private void ApplyIntents()
@@ -346,7 +369,7 @@ namespace WarCore.Battle
                 {
                     Intent proposal = intents[i];
                     if (proposal.Kind != 2 || (proposal.Slot >= 0 && winners[proposal.Slot] != i + 1)) continue;
-                    moves.Order(proposal.Id, proposal.Destination);
+                    moves.Order(proposal.Id, proposal.Destination, proposal.Layer);
                     if (proposal.MemorySlot == -2) memory?.Forget(proposal.Id); else memory?.Ordered(proposal.Id, proposal.MemorySlot);
                     intents[i].Kind = proposal.Slot < 0 ? 0 : 3;
                     if (moves.TryGetOrder(proposal.Id, out _) || proposal.Standing < 0) continue;
