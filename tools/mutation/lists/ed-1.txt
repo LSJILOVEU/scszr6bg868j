@@ -1,0 +1,322 @@
+# ED-1: MapEdit batches, the surface name table, turning on heights or surfaces (Content/MapTools/MapEditBatch.cs,
+# MapEdit.cs, MapEditDraft.cs, MapNew.cs), and the facade (Presentation/Maps/MapEditSession.cs, MapEditList.cs).
+# Filter: ED-1 tests plus the MapEdit locks they lean on (E3, Mt140, Ml4Edit).
+# Not listed: MapNew's second write-and-read (it returns the same description as edit.Current); WithEdits through Batch
+# against a plain loop (Edited throws away the editor on a refusal either way, so the facade cannot tell them apart);
+# EnableSurfaces' fill character (index 0 is the only name).
+
+[ed1-current-stale]
+file = Assets/WarCore/Content/MapTools/MapEdit.cs
+filter = FullyQualifiedName~Ed1|FullyQualifiedName~E3|FullyQualifiedName~Mt140|FullyQualifiedName~Ml4Edit
+expect = WarCore.Tests.Ed1BatchTests
+note = Current inside a batch shows the state before it
+original:
+| get => batch == null ? current : batch.Build();
+replacement:
+| get => current;
+
+[ed1-step-error-lost]
+file = Assets/WarCore/Content/MapTools/MapEdit.cs
+filter = FullyQualifiedName~Ed1|FullyQualifiedName~E3|FullyQualifiedName~Mt140|FullyQualifiedName~Ml4Edit
+expect = WarCore.Tests.Ed1BatchTests
+note = a refused step inside a batch is not recorded
+original:
+| if (batchError == null) batchError = ExceptionDispatchInfo.Capture(e);
+replacement:
+| if (batchError == null) { }
+
+[ed1-step-error-last]
+file = Assets/WarCore/Content/MapTools/MapEdit.cs
+filter = FullyQualifiedName~Ed1|FullyQualifiedName~E3|FullyQualifiedName~Mt140|FullyQualifiedName~Ml4Edit
+expect = WarCore.Tests.Ed1BatchTests.TwoRefusedSteps
+note = the last refused step's exception is kept, not the first
+original:
+| if (batchError == null) batchError = ExceptionDispatchInfo.Capture(e);
+replacement:
+| batchError = ExceptionDispatchInfo.Capture(e);
+
+[ed1-batch-no-throw]
+file = Assets/WarCore/Content/MapTools/MapEditBatch.cs
+filter = FullyQualifiedName~Ed1|FullyQualifiedName~E3|FullyQualifiedName~Mt140|FullyQualifiedName~Ml4Edit
+expect = WarCore.Tests.Ed1BatchTests
+note = a batch with a refused step commits
+original:
+| failed?.Throw();
+replacement:
+| if (failed != null) { }
+
+[ed1-batch-catch-keeps-draft]
+file = Assets/WarCore/Content/MapTools/MapEditBatch.cs
+filter = FullyQualifiedName~Ed1|FullyQualifiedName~E3|FullyQualifiedName~Mt140|FullyQualifiedName~Ml4Edit
+expect = WarCore.Tests.Ed1BatchTests.WhenTheBodyThrows
+note = the draft survives a throwing body
+original:
+|             catch
+|             {
+|                 batch = null;
+replacement:
+|             catch
+|             {
+
+[ed1-nested-allowed]
+file = Assets/WarCore/Content/MapTools/MapEditBatch.cs
+filter = FullyQualifiedName~Ed1|FullyQualifiedName~E3|FullyQualifiedName~Mt140|FullyQualifiedName~Ml4Edit
+expect = WarCore.Tests.Ed1BatchTests.ABatchInsideABatch
+note = a batch inside a batch starts a fresh draft
+original:
+|             if (batch != null)
+|             {
+|                 var nested
+replacement:
+|             if (false)
+|             {
+|                 var nested
+
+[ed1-nested-not-recorded]
+file = Assets/WarCore/Content/MapTools/MapEditBatch.cs
+filter = FullyQualifiedName~Ed1|FullyQualifiedName~E3|FullyQualifiedName~Mt140|FullyQualifiedName~Ml4Edit
+expect = WarCore.Tests.Ed1BatchTests.ABatchInsideABatch
+note = a caught nested batch does not fail the outer one
+original:
+| if (batchError == null) batchError = ExceptionDispatchInfo.Capture(nested);
+replacement:
+| if (batchError == null) { }
+
+[ed1-name-duplicate]
+file = Assets/WarCore/Content/MapTools/MapEditBatch.cs
+filter = FullyQualifiedName~Ed1|FullyQualifiedName~E3|FullyQualifiedName~Mt140|FullyQualifiedName~Ml4Edit
+expect = WarCore.Tests.Ed1SurfaceTests
+note = a name already in the table is inserted again
+original:
+| if (at >= 0) return;
+replacement:
+| if (at >= 0) at = ~at;
+
+[ed1-name-limit]
+file = Assets/WarCore/Content/MapTools/MapEditBatch.cs
+filter = FullyQualifiedName~Ed1|FullyQualifiedName~E3|FullyQualifiedName~Mt140|FullyQualifiedName~Ml4Edit
+expect = WarCore.Tests.Ed1SurfaceTests.TheSixtyFifthName
+note = 65 names are taken
+original:
+| if (draft.SurfaceNames.Count >= MapEditDraft.MaxOwners)
+replacement:
+| if (draft.SurfaceNames.Count > MapEditDraft.MaxOwners)
+
+[ed1-name-renumber-from]
+file = Assets/WarCore/Content/MapTools/MapEditBatch.cs
+filter = FullyQualifiedName~Ed1|FullyQualifiedName~E3|FullyQualifiedName~Mt140|FullyQualifiedName~Ml4Edit
+expect = WarCore.Tests.Ed1SurfaceTests.ANewNameKeeps
+note = cells at the insert position keep their old index
+original:
+| if (index >= insert)
+replacement:
+| if (index > insert)
+
+[ed1-name-table-not-built]
+file = Assets/WarCore/Content/MapTools/MapEditDraft.cs
+filter = FullyQualifiedName~Ed1|FullyQualifiedName~E3|FullyQualifiedName~Mt140|FullyQualifiedName~Ml4Edit
+expect = WarCore.Tests.Ed1SurfaceTests
+note = the built description keeps the old name table
+original:
+| new MapSurfaces(SurfaceNames.ToArray(), Rows(SurfaceRows));
+replacement:
+| new MapSurfaces(Copy(d.Surfaces.Names), Rows(SurfaceRows));
+
+[ed1-heights-floor]
+file = Assets/WarCore/Content/MapTools/MapEditBatch.cs
+filter = FullyQualifiedName~Ed1|FullyQualifiedName~E3|FullyQualifiedName~Mt140|FullyQualifiedName~Ml4Edit
+expect = WarCore.Tests.Ed1SurfaceTests.HeightsTurnOnInsideFloorAndCeiling
+note = one below the floor is taken
+original:
+| raw < current.FloorRaw ||
+replacement:
+| raw < current.FloorRaw - 1 ||
+
+[ed1-heights-ceiling]
+file = Assets/WarCore/Content/MapTools/MapEditBatch.cs
+filter = FullyQualifiedName~Ed1|FullyQualifiedName~E3|FullyQualifiedName~Mt140|FullyQualifiedName~Ml4Edit
+expect = WarCore.Tests.Ed1SurfaceTests.HeightsTurnOnInsideFloorAndCeiling
+note = the ceiling itself is refused
+original:
+| raw > current.CeilingRaw ||
+replacement:
+| raw >= current.CeilingRaw ||
+
+[ed1-heights-low-limit]
+file = Assets/WarCore/Content/MapTools/MapEditBatch.cs
+filter = FullyQualifiedName~Ed1|FullyQualifiedName~E3|FullyQualifiedName~Mt140|FullyQualifiedName~Ml4Edit
+expect = WarCore.Tests.Ed1SurfaceTests.HeightsStayInTheReadersRange
+note = below the reader's range is taken
+original:
+| || raw < -MapDescReader.HeightLimit ||
+replacement:
+| ||
+
+[ed1-heights-high-limit]
+file = Assets/WarCore/Content/MapTools/MapEditBatch.cs
+filter = FullyQualifiedName~Ed1|FullyQualifiedName~E3|FullyQualifiedName~Mt140|FullyQualifiedName~Ml4Edit
+expect = WarCore.Tests.Ed1SurfaceTests.HeightsStayInTheReadersRange
+note = above the reader's range is taken
+original:
+| || raw > MapDescReader.HeightLimit)
+replacement:
+| )
+
+[ed1-heights-twice]
+file = Assets/WarCore/Content/MapTools/MapEditBatch.cs
+filter = FullyQualifiedName~Ed1|FullyQualifiedName~E3|FullyQualifiedName~Mt140|FullyQualifiedName~Ml4Edit
+expect = WarCore.Tests.Ed1SurfaceTests
+note = heights turn on over existing ones
+original:
+| if (draft.Heights != null) throw new ArgumentException("the description already has heights");
+replacement:
+| if (draft.Heights == null) { }
+
+[ed1-heights-rows]
+file = Assets/WarCore/Content/MapTools/MapEditBatch.cs
+filter = FullyQualifiedName~Ed1|FullyQualifiedName~E3|FullyQualifiedName~Mt140|FullyQualifiedName~Ml4Edit
+expect = WarCore.Tests.Ed1SurfaceTests
+note = the height table has D rows
+original:
+| draft.Heights = new int[draft.Depth + 1][];
+replacement:
+| draft.Heights = new int[draft.Depth][];
+
+[ed1-surfaces-twice]
+file = Assets/WarCore/Content/MapTools/MapEditBatch.cs
+filter = FullyQualifiedName~Ed1|FullyQualifiedName~E3|FullyQualifiedName~Mt140|FullyQualifiedName~Ml4Edit
+expect = WarCore.Tests.Ed1SurfaceTests
+note = surfaces turn on over existing ones
+original:
+| if (draft.SurfaceRows != null) throw new ArgumentException("the description already has surfaces");
+replacement:
+| if (draft.SurfaceRows == null) { }
+
+[ed1-add-name-unchecked]
+file = Assets/WarCore/Content/MapTools/MapEditBatch.cs
+filter = FullyQualifiedName~Ed1|FullyQualifiedName~E3|FullyQualifiedName~Mt140|FullyQualifiedName~Ml4Edit
+expect = WarCore.Tests.Ed1SurfaceTests
+note = AddSurfaceName takes names the bake refuses
+original:
+|                 CheckSurfaceName(name);
+|                 if (draft.SurfaceNames == null)
+replacement:
+|                 if (draft.SurfaceNames == null)
+
+[ed1-enable-surfaces-unchecked]
+file = Assets/WarCore/Content/MapTools/MapEditBatch.cs
+filter = FullyQualifiedName~Ed1|FullyQualifiedName~E3|FullyQualifiedName~Mt140|FullyQualifiedName~Ml4Edit
+expect = WarCore.Tests.Ed1SurfaceTests
+note = EnableSurfaces takes names the bake refuses
+original:
+|                 CheckSurfaceName(name);
+|                 if (draft.SurfaceRows != null)
+replacement:
+|                 if (draft.SurfaceRows != null)
+
+[ed1-new-no-terrain-owner]
+file = Assets/WarCore/Content/MapTools/MapNew.cs
+filter = FullyQualifiedName~Ed1|FullyQualifiedName~E3|FullyQualifiedName~Mt140|FullyQualifiedName~Ml4Edit
+expect = WarCore.Tests.Ed1NewTests
+note = a new map has only the hand owner
+original:
+| new[] { MapEdit.Hand, "stamp:" + TerrainInstance },
+replacement:
+| new[] { MapEdit.Hand },
+
+[ed1-new-no-heights]
+file = Assets/WarCore/Content/MapTools/MapNew.cs
+filter = FullyQualifiedName~Ed1|FullyQualifiedName~E3|FullyQualifiedName~Mt140|FullyQualifiedName~Ml4Edit
+expect = WarCore.Tests.Ed1NewTests
+note = HeightRaw is ignored
+original:
+| if (spec.HeightRaw.HasValue) edit.EnableHeights(spec.HeightRaw.Value);
+replacement:
+| if (false) edit.EnableHeights(spec.HeightRaw.Value);
+
+[ed1-cutout-plate-unchecked]
+file = Assets/WarCore/Content/MapTools/MapEdit.cs
+filter = FullyQualifiedName~Ed1|FullyQualifiedName~E3|FullyQualifiedName~Mt140|FullyQualifiedName~Ml4Edit
+expect = WarCore.Tests.Ml4EditTests
+note = a cutout may name a missing plate
+original:
+|                 extra?.Invoke(draft, template);
+replacement:
+|
+
+[ed1-plate-with-cutout-removed]
+file = Assets/WarCore/Content/MapTools/MapEdit.cs
+filter = FullyQualifiedName~Ed1|FullyQualifiedName~E3|FullyQualifiedName~Mt140|FullyQualifiedName~Ml4Edit
+expect = WarCore.Tests.Ml4EditTests
+note = a plate is removed while a cutout names it
+original:
+| if (cutout.Plate == id) throw new ArgumentException("plate " + id + " still has cutout " + cutout.Id);
+replacement:
+| if (cutout.Plate == id) { }
+
+[ed1-session-limit]
+file = Assets/WarCore/Presentation/Maps/MapEditSession.cs
+filter = FullyQualifiedName~Ed1|FullyQualifiedName~E3|FullyQualifiedName~Mt140|FullyQualifiedName~Ml4Edit
+expect = WarCore.Tests.Ed1SessionTests.TheLimitDropsTheOldest
+note = one version fewer than the limit is kept
+original:
+|             undo.AddLast(Current);
+|             if (undo.Count > limit) undo.RemoveFirst();
+|             redo.Clear();
+replacement:
+|             undo.AddLast(Current);
+|             if (undo.Count >= limit) undo.RemoveFirst();
+|             redo.Clear();
+
+[ed1-session-redo-kept]
+file = Assets/WarCore/Presentation/Maps/MapEditSession.cs
+filter = FullyQualifiedName~Ed1|FullyQualifiedName~E3|FullyQualifiedName~Mt140|FullyQualifiedName~Ml4Edit
+expect = WarCore.Tests.Ed1SessionTests.ADoAfterAnUndo
+note = a Do keeps the redo list
+original:
+|             redo.Clear();
+replacement:
+|
+
+[ed1-session-null-kept]
+file = Assets/WarCore/Presentation/Maps/MapEditSession.cs
+filter = FullyQualifiedName~Ed1|FullyQualifiedName~E3|FullyQualifiedName~Mt140|FullyQualifiedName~Ml4Edit
+expect = WarCore.Tests.Ed1SessionTests.AFailedEdit
+note = an edit returning null becomes a version
+original:
+| if (next == null) throw new InvalidOperationException("the edit returned no document");
+replacement:
+| if (next == null) { }
+
+[ed1-session-limit-zero]
+file = Assets/WarCore/Presentation/Maps/MapEditSession.cs
+filter = FullyQualifiedName~Ed1|FullyQualifiedName~E3|FullyQualifiedName~Mt140|FullyQualifiedName~Ml4Edit
+expect = WarCore.Tests.Ed1SessionTests.AnEmptySession
+note = a limit of 0 is taken
+original:
+| if (limit < 1)
+replacement:
+| if (limit < 0)
+
+[ed1-session-redo-not-undoable]
+file = Assets/WarCore/Presentation/Maps/MapEditSession.cs
+filter = FullyQualifiedName~Ed1|FullyQualifiedName~E3|FullyQualifiedName~Mt140|FullyQualifiedName~Ml4Edit
+expect = WarCore.Tests.Ed1SessionTests.TwentySteps
+note = a redo cannot be undone
+original:
+|             undo.AddLast(Current);
+|             if (undo.Count > limit) undo.RemoveFirst();
+|             Current = redo.Pop();
+replacement:
+|             if (undo.Count > limit) undo.RemoveFirst();
+|             Current = redo.Pop();
+
+[ed1-list-order]
+file = Assets/WarCore/Presentation/Maps/MapEditList.cs
+filter = FullyQualifiedName~Ed1|FullyQualifiedName~E3|FullyQualifiedName~Mt140|FullyQualifiedName~Ml4Edit
+expect = WarCore.Tests.Ed1SessionTests.WithEditsIsTheSame
+note = surface edits run before the edits added earlier
+original:
+| steps.Add(e => e.SetSurface(x, z, name));
+replacement:
+| steps.Insert(0, e => e.SetSurface(x, z, name));

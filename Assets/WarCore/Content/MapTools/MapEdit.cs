@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.ExceptionServices;
 
 namespace WarCore.Content.MapTools
 {
@@ -12,7 +13,17 @@ namespace WarCore.Content.MapTools
         public const string Hand = "hand";
         private const int HandIndex = 0;
 
-        public MapDesc Current { get; private set; }
+        private MapDesc current;
+        // The draft of the running Batch (null outside one) and the first exception one of its steps threw.
+        private MapEditDraft batch;
+        private ExceptionDispatchInfo batchError;
+
+        // Inside a Batch this is built from the batch's draft on each read, so it always shows the steps done so far.
+        public MapDesc Current
+        {
+            get => batch == null ? current : batch.Build();
+            private set => current = value;
+        }
 
         // start is a description MapDescJson.Read accepted. The editing links it does not check are checked here:
         // per kind, (i) non-null src unique among entries, (ii) stamps ids below next, (iii) stamps ids unique,
@@ -127,7 +138,7 @@ namespace WarCore.Content.MapTools
         public ulong AddUnit(MapUnit unit) => Add(MapEditKinds.Unit, unit);
         public ulong AddPlate(MapPlate template) => Add(MapEditKinds.Plate, template);
         // The cutout's plate must exist.
-        public ulong AddCutout(MapCutout template) => Add(MapEditKinds.Cutout, PlateExists(template));
+        public ulong AddCutout(MapCutout template) => Add(MapEditKinds.Cutout, template, PlateExists);
 
         // Replaces the entry with the same id: new fields, same id, same array position, owner hand, src kept from the old entry.
         public void ReplaceWall(MapWall entry) => Replace(MapEditKinds.Wall, entry);
@@ -135,13 +146,12 @@ namespace WarCore.Content.MapTools
         public void ReplaceBase(MapBase entry) => Replace(MapEditKinds.Base, entry);
         public void ReplaceUnit(MapUnit entry) => Replace(MapEditKinds.Unit, entry);
         public void ReplacePlate(MapPlate entry) => Replace(MapEditKinds.Plate, entry);
-        public void ReplaceCutout(MapCutout entry) => Replace(MapEditKinds.Cutout, PlateExists(entry));
+        public void ReplaceCutout(MapCutout entry) => Replace(MapEditKinds.Cutout, entry, PlateExists);
 
-        private MapCutout PlateExists(MapCutout cutout)
+        private static void PlateExists(MapEditDraft draft, MapCutout cutout)
         {
-            if (cutout == null) throw new ArgumentNullException(nameof(cutout));
-            foreach (MapPlate plate in Current.Plates)
-                if (plate.Id == cutout.Plate) return cutout;
+            foreach (MapPlate plate in draft.Plates)
+                if (plate.Id == cutout.Plate) return;
             throw new ArgumentException("no plate with id " + cutout.Plate);
         }
 
@@ -152,16 +162,19 @@ namespace WarCore.Content.MapTools
             switch (kind)
             {
                 case "plate":
-                    foreach (MapCutout cutout in Current.Cutouts)
-                        if (cutout.Plate == id) throw new ArgumentException("plate " + id + " still has cutout " + cutout.Id);
-                    Remove(MapEditKinds.Plate, id);
+                    Step(draft =>
+                    {
+                        foreach (MapCutout cutout in draft.Cutouts)
+                            if (cutout.Plate == id) throw new ArgumentException("plate " + id + " still has cutout " + cutout.Id);
+                        RemoveIn(draft, MapEditKinds.Plate, id);
+                    });
                     break;
                 case "cutout": Remove(MapEditKinds.Cutout, id); break;
                 case "wall": Remove(MapEditKinds.Wall, id); break;
                 case "point": Remove(MapEditKinds.Point, id); break;
                 case "base": Remove(MapEditKinds.Base, id); break;
                 case "unit": Remove(MapEditKinds.Unit, id); break;
-                default: throw new ArgumentException("unknown entry kind: " + kind);
+                default: Step(_ => throw new ArgumentException("unknown entry kind: " + kind)); break;
             }
         }
 
@@ -203,13 +216,16 @@ namespace WarCore.Content.MapTools
             }
         }
 
-        private ulong Add<T>(MapEditKind<T> kind, T template) where T : class
+        // Every check runs inside the step, so in a Batch a refused call fails the batch (only a null argument is refused
+        // before the step). extra: a check against the draft that runs first.
+        private ulong Add<T>(MapEditKind<T> kind, T template, Action<MapEditDraft, T> extra = null) where T : class
         {
             if (template == null) throw new ArgumentNullException(nameof(template));
-            CheckInside(kind, template);
             ulong id = 0;
             Step(draft =>
             {
+                extra?.Invoke(draft, template);
+                CheckInside(kind, template);
                 id = draft.Allocate(kind.Name, kind.Slot, kind.Limit);
                 draft.Items(kind).Add(kind.Make(template, id, HandIndex, null));
                 CheckCapacity(draft);
@@ -217,26 +233,29 @@ namespace WarCore.Content.MapTools
             return id;
         }
 
-        private void Replace<T>(MapEditKind<T> kind, T entry) where T : class
+        private void Replace<T>(MapEditKind<T> kind, T entry, Action<MapEditDraft, T> extra = null) where T : class
         {
             if (entry == null) throw new ArgumentNullException(nameof(entry));
-            CheckInside(kind, entry);
             Step(draft =>
             {
+                extra?.Invoke(draft, entry);
+                CheckInside(kind, entry);
                 List<T> items = draft.Items(kind);
                 int at = IndexOf(kind, items, kind.Id(entry));
                 items[at] = kind.Make(entry, kind.Id(entry), HandIndex, kind.Src(items[at]));
             });
         }
 
-        private void Remove<T>(MapEditKind<T> kind, ulong id) where T : class => Step(draft =>
+        private void Remove<T>(MapEditKind<T> kind, ulong id) where T : class => Step(draft => RemoveIn(draft, kind, id));
+
+        private static void RemoveIn<T>(MapEditDraft draft, MapEditKind<T> kind, ulong id) where T : class
         {
             List<T> items = draft.Items(kind);
             int at = IndexOf(kind, items, id);
             MapSrc src = kind.Src(items[at]);
             items.RemoveAt(at);
             if (src != null && Tombstone(draft, src) < 0) draft.Removed.Add(new MapSrc(src.Instance, src.Kind, src.Src));
-        });
+        }
 
         private static int Tombstone(MapEditDraft draft, MapSrc src)
         {
@@ -266,14 +285,24 @@ namespace WarCore.Content.MapTools
 
         private void Step(Action<MapEditDraft> change)
         {
-            var draft = new MapEditDraft(Current);
+            if (batch != null)
+            {
+                try { change(batch); }
+                catch (Exception e)
+                {
+                    if (batchError == null) batchError = ExceptionDispatchInfo.Capture(e);
+                    throw;
+                }
+                return;
+            }
+            var draft = new MapEditDraft(current);
             change(draft);
-            Current = draft.Build();
+            current = draft.Build();
         }
 
         private char SurfaceChar(string name)
         {
-            IReadOnlyList<string> names = Current.Surfaces.Names;
+            IReadOnlyList<string> names = batch != null ? batch.SurfaceNames : current.Surfaces.Names;
             for (int n = 0; n < names.Count; n++)
                 if (string.Equals(names[n], name, StringComparison.Ordinal)) return MapEditDraft.OwnerChar(n);
             throw new ArgumentException("surface name not in the table: " + name);
@@ -281,19 +310,19 @@ namespace WarCore.Content.MapTools
 
         private void CheckInside<T>(MapEditKind<T> kind, T entry) where T : class
         {
-            if (!kind.Inside(entry, Current)) throw new ArgumentOutOfRangeException(nameof(entry), kind.Name + " is off the map");
+            if (!kind.Inside(entry, current)) throw new ArgumentOutOfRangeException(nameof(entry), kind.Name + " is off the map");
         }
 
         private void CheckCell(int x, int z)
         {
-            if (x < 0 || x >= Current.Size.X) throw new ArgumentOutOfRangeException(nameof(x));
-            if (z < 0 || z >= Current.Size.Z) throw new ArgumentOutOfRangeException(nameof(z));
+            if (x < 0 || x >= current.Size.X) throw new ArgumentOutOfRangeException(nameof(x));
+            if (z < 0 || z >= current.Size.Z) throw new ArgumentOutOfRangeException(nameof(z));
         }
 
         private void CheckPoint(int i, int j)
         {
-            if (i < 0 || i > Current.Size.X) throw new ArgumentOutOfRangeException(nameof(i));
-            if (j < 0 || j > Current.Size.Z) throw new ArgumentOutOfRangeException(nameof(j));
+            if (i < 0 || i > current.Size.X) throw new ArgumentOutOfRangeException(nameof(i));
+            if (j < 0 || j > current.Size.Z) throw new ArgumentOutOfRangeException(nameof(j));
         }
     }
 }
