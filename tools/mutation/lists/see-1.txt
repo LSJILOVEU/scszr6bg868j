@@ -1,4 +1,6 @@
 # SEE-1: the zone round the player (SeeZone, LayerCut's ring switch) and the silhouettes (Silhouettes). Filter: See1 tests.
+# Silhouettes' box reject (a wall whose footprint lies outside the line's bounding box is skipped) only saves time: what it lets
+# through the box test decides again, so the mutants that accept more are equivalent; those that reject more are listed.
 # Not listed: SeeZone's `length <= 0` guard (highest is at least the eye, so it never holds); Silhouettes' skip of the plate
 # under the unit (a head line meets its own plate only on a stair steeper than the camera's line, and then the floor above
 # covers the unit anyway in the demo house); Unity code (no Unity here).
@@ -270,3 +272,43 @@ original:
 | if (!player.HasValue || !player.Value.Alive) return set;
 replacement:
 | if (!player.HasValue) return set;
+
+[see1-silhouette-box-reject-east]
+file = Assets/WarCore/Presentation/Camera/Silhouettes.cs
+filter = FullyQualifiedName~See1
+expect = WarCore.Tests.See1SilhouetteTests.OnlyCoveredLivingTeamMatesAreDrawn
+note = the box reject drops a wall that covers
+original:
+| wall.CenterX + wall.SizeX / 2 < minX
+replacement:
+| wall.CenterX + wall.SizeX / 2 < maxX
+
+[see1-silhouette-box-reject-west]
+file = Assets/WarCore/Presentation/Camera/Silhouettes.cs
+filter = FullyQualifiedName~See1
+expect = WarCore.Tests.See1SilhouetteTests.OnlyCoveredLivingTeamMatesAreDrawn
+note = the box reject drops a wall that covers
+original:
+| wall.CenterX - wall.SizeX / 2 > maxX
+replacement:
+| wall.CenterX - wall.SizeX / 2 > minX
+
+[see1-silhouette-box-reject-north]
+file = Assets/WarCore/Presentation/Camera/Silhouettes.cs
+filter = FullyQualifiedName~See1
+expect = WarCore.Tests.See1SilhouetteTests.OnlyCoveredLivingTeamMatesAreDrawn
+note = the box reject drops a wall that covers
+original:
+| wall.CenterZ + wall.SizeZ / 2 < minZ
+replacement:
+| wall.CenterZ + wall.SizeZ / 2 < maxZ
+
+[see1-silhouette-box-reject-south]
+file = Assets/WarCore/Presentation/Camera/Silhouettes.cs
+filter = FullyQualifiedName~See1
+expect = WarCore.Tests.See1SilhouetteTests.OnlyCoveredLivingTeamMatesAreDrawn
+note = the box reject drops a wall that covers
+original:
+| wall.CenterZ - wall.SizeZ / 2 > maxZ
+replacement:
+| wall.CenterZ - wall.SizeZ / 2 > minZ

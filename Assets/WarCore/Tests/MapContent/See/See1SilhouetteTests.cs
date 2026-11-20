@@ -35,8 +35,11 @@ namespace WarCore.Tests
                 Far,
                 At(25, 16, key: 2), At(25, 17.5f, key: 3), At(25, 17.6f, key: 4),
                 At(25, 16, key: 5, team: 2), At(25, 16, key: 6, alive: false), At(25, 16, key: 7, team: 0),
+                // Heads near the ends of a wall: the line from (31, 16.5) enters A at x 28.5 (A ends at x 30), from (42, 12.5) the
+                // pillar (x 40..41, z 10..11) at x 40.5, from (43.5, 13.5) at x 41 (z 11).
+                At(31, 16.5f, key: 8), At(42, 12.5f, key: 9), At(43.5f, 13.5f, key: 10),
             };
-            Assert.That(Run(t, Far, units), Is.EquivalentTo(new ulong[] { 2, 3 }));
+            Assert.That(Run(t, Far, units), Is.EquivalentTo(new ulong[] { 2, 3, 8, 9, 10 }));
         }
 
         // The player is not his own silhouette even when the cut he is given does not fade what covers him.

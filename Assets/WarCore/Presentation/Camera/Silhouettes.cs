@@ -37,9 +37,13 @@ namespace WarCore.Presentation
         private static bool Covered(ViewPlates plates, ViewMap map, LayerCutResult cut, ViewEntity unit, double oy, double dx, double dy,
             double dz, int plateCount, int wallCount)
         {
+            double minX = Math.Min(unit.X, unit.X + dx), maxX = Math.Max(unit.X, unit.X + dx);
+            double minZ = Math.Min(unit.Z, unit.Z + dz), maxZ = Math.Max(unit.Z, unit.Z + dz);
             for (int w = 0; w < wallCount; w++)
             {
                 ViewWall wall = map.Walls[w];
+                if (wall.CenterX + wall.SizeX / 2 < minX || wall.CenterX - wall.SizeX / 2 > maxX || wall.CenterZ + wall.SizeZ / 2 < minZ
+                    || wall.CenterZ - wall.SizeZ / 2 > maxZ) continue;
                 if (cut.Wall(w) == CutState.Shown && PlateRay.CrossesBox(wall.CenterX, wall.CenterY, wall.CenterZ, wall.SizeX, wall.SizeY,
                         wall.SizeZ, unit.X, oy, unit.Z, dx, dy, dz))
                     return true;

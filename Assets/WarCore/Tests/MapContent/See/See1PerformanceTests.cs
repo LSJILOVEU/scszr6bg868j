@@ -7,7 +7,7 @@ using static WarCore.Tests.See1Field;
 namespace WarCore.Tests
 {
     // SEE-1 acceptance 10: the mean time of LayerCut.Run (radius 5) and Silhouettes.Run together over 100 runs on 2000 one-cell walls
-    // (3 to 9 m high) and 500 units, half of them team mates. Run by hand ("Manual"); it asserts nothing and prints the mean.
+    // (3 to 9 m high) and 500 units, half of them team mates. Run by hand ("Manual"); it prints the mean and sets no time limit.
     public sealed class See1PerformanceTests
     {
         [Test, Category("Manual")]
@@ -30,7 +30,8 @@ namespace WarCore.Tests
             var clock = Stopwatch.StartNew();
             for (int run = 0; run < 100; run++) Once(map, me, units);
             clock.Stop();
-            Assert.Pass($"SEE-1 mean {clock.Elapsed.TotalMilliseconds / 100:0.000} ms for a cut and the silhouettes ({walls.Count} walls, {units.Length} units)");
+            TestContext.Progress.WriteLine($"SEE-1 mean {clock.Elapsed.TotalMilliseconds / 100:0.000} ms for a cut and the silhouettes ({walls.Count} walls, {units.Length} units)");
+            Assert.That(Once(map, me, units), Is.LessThanOrEqualTo(249), "at most the other team mates");
         }
 
         private static int Once(ViewMap map, ViewEntity me, ViewEntity[] units)
