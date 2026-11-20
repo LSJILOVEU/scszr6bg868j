@@ -1,0 +1,504 @@
+# PROJ-1: projectiles (speed, flight, landing, pool bound, state). Filter: the PROJ-1 tests only; the legacy locks
+# and every world without a projectile weapon are checked by the full suite.
+# Not listed (equivalent or caught only by the full suite):
+# - action ordinal 2 -> 0 or 1: a unit carries one weapon, so a projectile key never meets a shot or swing key of
+#   the same unit and launch tick; kept as a guard, not testable by behaviour.
+# - registering the system without a projectile weapon: the constructor refuses such a pack, so every built world
+#   throws (the full suite).
+# - removal reordering the pool: the compaction keeps order by construction; RollsFollowTheFiringOrder and the
+#   save order check (BadSavesAreRefused) cover the observable order.
+
+[proj1-01-step-divisor]
+file = Assets/WarCore/Combat/ProjectileSpec.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1PackTests.StepAndFlights
+expect = WarCore.Tests.Projectile.Proj1FlightTests.LandsOnTheHandWorkedTick
+note = the tick length in thousandths off by one
+original:
+| private const long MilliPerSecond = 30000;
+replacement:
+| private const long MilliPerSecond = 30001;
+
+[proj1-02-step-scale]
+file = Assets/WarCore/Combat/ProjectileSpec.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1PackTests.StepAndFlights
+expect = WarCore.Tests.Projectile.Proj1FlightTests.LandsOnTheHandWorkedTick
+note = the raw scale off by one
+original:
+| speed * (long)SimFix.Scale / MilliPerSecond
+replacement:
+| speed * (long)(SimFix.Scale - 1) / MilliPerSecond
+
+[proj1-03-min-speed]
+file = Assets/WarCore/Combat/ProjectileSpec.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1PackTests.SpeedOutsideItsRangeIsRefused
+expect = WarCore.Tests.Projectile.Proj1PackTests.PackRefusesWhatContentRefuses
+note = 999 mm/s accepted
+original:
+| MinSpeed = 1000,
+replacement:
+| MinSpeed = 999,
+
+[proj1-04-max-speed]
+file = Assets/WarCore/Combat/ProjectileSpec.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1PackTests.SpeedOutsideItsRangeIsRefused
+expect = WarCore.Tests.Projectile.Proj1PackTests.PackRefusesWhatContentRefuses
+note = 1 000 001 mm/s accepted
+original:
+| MaxSpeed = 1_000_000,
+replacement:
+| MaxSpeed = 1_000_001,
+
+[proj1-05-flights-floor]
+file = Assets/WarCore/Combat/ProjectileSpec.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1PackTests.StepAndFlights
+expect = WarCore.Tests.Projectile.Proj1PackTests.SpeedBoundsLoad
+note = flights rounded down
+original:
+| (range.Raw + step - 1) / step
+replacement:
+| range.Raw / step
+
+[proj1-06-max-flights]
+file = Assets/WarCore/Combat/ProjectileSpec.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1PackTests.FlightOf900TicksLoadsAnd901IsRefused
+expect = WarCore.Tests.Projectile.Proj1PackTests.PackRefusesWhatContentRefuses
+note = 901 ticks accepted
+original:
+| MaxFlights = 900;
+replacement:
+| MaxFlights = 901;
+
+[proj1-07-pack-no-body]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1PackTests.PackRefusesWhatContentRefuses
+note = a pack without a body takes a projectile weapon
+original:
+| if (!specs[i].IsInstant) throw new ArgumentException(
+replacement:
+| if (false) throw new ArgumentException(
+
+[proj1-08-content-no-body]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1PackTests.ProjectileWeaponWithoutBodyIsRefused
+note = content without a body takes a projectile weapon
+original:
+| if (b.ProjectileSpeeds[i] != 0)
+replacement:
+| if (false)
+
+[proj1-09-content-min]
+file = Assets/WarCore/Content/Data/Sections/WeaponsSection.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1PackTests.SpeedOutsideItsRangeIsRefused
+note = content accepts 1..999
+original:
+| if (speed != 0 && speed < ProjectileSpec.MinSpeed)
+replacement:
+| if (false)
+
+[proj1-10-content-flights]
+file = Assets/WarCore/Content/Data/Sections/WeaponsSection.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1PackTests.FlightOf900TicksLoadsAnd901IsRefused
+note = content skips the flight length check
+original:
+| if (speed != 0 && end.Raw > 0 && ProjectileSpec.FlightsOf
+replacement:
+| if (false && end.Raw > 0 && ProjectileSpec.FlightsOf
+
+[proj1-11-content-not-passed]
+file = Assets/WarCore/Content/Data/ContentPack.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1PackTests.SpeedBoundsLoad
+note = the speeds never reach the combat pack
+original:
+| projectileSpeeds.Length == 0 ? null : projectileSpeeds);
+replacement:
+| null);
+
+[proj1-12-digest-always]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1DigestTests.ShippedPackDigestIsUnchanged
+expect = WarCore.Tests.Projectile.Proj1PackTests.WrittenZeroKeepsTheDigest
+note = the section is appended to every digest
+original:
+| if (projectiles.Length > 0)
+|             { hash.Add("combat.pack.projectile.v1");
+replacement:
+| if (true)
+|             { hash.Add("combat.pack.projectile.v1");
+
+[proj1-13-digest-no-steps]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1PackTests.DigestCarriesTheSteps
+note = the steps are left out of the digest
+original:
+| foreach (var spec in projectiles) hash.Add(spec.StepRaw); }
+replacement:
+| }
+
+[proj1-14-with-selector]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1PackTests.WithSelectorKeepsTheProjectiles
+note = WithSelector drops the projectile section
+original:
+| projectileSpeeds.Length == 0 ? null : projectileSpeeds);
+replacement:
+| null);
+
+[proj1-15-no-settle]
+file = Assets/WarCore/Combat/CombatSystem.Projectile.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1LaunchTests.LaunchSpendsTheShotAndLandsNothing
+note = a launch spends nothing
+original:
+|             Entities.Set(combatants, shooter, Settle(in unit, in weapon, tick, spreadStored, spreadLast));
+| 
+replacement:
+|
+
+[proj1-16-fire-record]
+file = Assets/WarCore/Combat/CombatSystem.Projectile.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1LaunchTests.LaunchSpendsTheShotAndLandsNothing
+note = a launch writes a fire record
+original:
+| projectileSystem.Add(Entities.StableOf(shooter), unit.Team, unit.Weapon, tick, origin, direction);
+replacement:
+| projectileSystem.Add(Entities.StableOf(shooter), unit.Team, unit.Weapon, tick, origin, direction); fires[fireCount++] = new FireRecord(Entities.StableOf(shooter), default, origin, origin, default, 0, unit.Team, FireOutcome.Open);
+
+[proj1-17-moves-on-launch-tick]
+file = Assets/WarCore/Combat/ProjectileSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1FlightTests.LandsOnTheHandWorkedTick
+note = the launch tick flies a segment (k from 0)
+original:
+| if (tick > launchTicks[i] && Land(c, i, tick)) continue;
+replacement:
+| if (tick >= launchTicks[i] && Land(c, i, tick)) continue;
+
+[proj1-18-accumulated-start]
+file = Assets/WarCore/Combat/ProjectileSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1FlightTests.UnitOnTheProjectilesPointIsStruckNextTick
+note = a segment start drifts 1 raw a tick
+original:
+| SimVec3 from = origins[i] + steps[i] * SimFix.FromInt((int)(k - 1));
+replacement:
+| SimVec3 from = origins[i] + steps[i] * SimFix.FromInt((int)(k - 1)) + new SimVec3(SimFix.FromRaw(k), default, default);
+
+[proj1-19-end-points-only]
+file = Assets/WarCore/Combat/ProjectileSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1FlightTests.WallStopsTheProjectile
+expect = WarCore.Tests.Projectile.Proj1FlightTests.LandsOnTheHandWorkedTick
+note = only the segment's end point is tested
+original:
+| combat.TraceSegment(launcher, teams[i], from, toward, range, out EntityId hit, out SimVec3 end);
+replacement:
+| combat.TraceSegment(launcher, teams[i], from + toward, toward, SimFix.FromRaw(1), out EntityId hit, out SimVec3 end);
+
+[proj1-20-last-not-cut]
+file = Assets/WarCore/Combat/ProjectileSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1FlightTests.RangeEndsAtFalloffEnd
+note = the last segment is a full step
+original:
+| if (k >= flights)
+replacement:
+| if (false)
+
+[proj1-21-tie-to-unit]
+file = Assets/WarCore/Combat/CombatSystem.Projectile.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1FlightTests.TieBetweenWallAndUnitGoesToTheWall
+note = a tie goes to the unit
+original:
+| && (!found || wall.Distance.Raw <= best.Raw))
+replacement:
+| && (!found || wall.Distance.Raw < best.Raw))
+
+[proj1-22-launcher-not-excluded]
+file = Assets/WarCore/Combat/CombatSystem.Projectile.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1FlightTests.LandsOnTheHandWorkedTick
+note = the launcher can stop its own projectile
+original:
+| && !Entities.StableOf(entity).Equals(launcher) && !IsDead(entity);
+replacement:
+| && !IsDead(entity);
+
+[proj1-23-dead-block]
+file = Assets/WarCore/Combat/CombatSystem.Projectile.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1LandingTests.DeadTargetDoesNotStopTheProjectile
+note = the dead stop projectiles
+original:
+| && !Entities.StableOf(entity).Equals(launcher) && !IsDead(entity);
+replacement:
+| && !Entities.StableOf(entity).Equals(launcher);
+
+[proj1-24-team-now]
+file = Assets/WarCore/Combat/ProjectileSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1LandingTests.TeamIsTheOneRecordedAtLaunch
+note = the launcher's team now instead of at launch
+original:
+| CombatSystem.Landing landing = combat.TraceSegment(launcher, teams[i],
+replacement:
+| CombatSystem.Landing landing = combat.TraceSegment(launcher, combat.Unit(combat.Entities.Resolve(new EntityLink(launcher))).Team,
+
+[proj1-25-friendly-fire-flipped]
+file = Assets/WarCore/Combat/ProjectileSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1LandingTests.TeammateOnTheLine
+note = friendly fire read backwards
+original:
+| case CombatSystem.Landing.Friend when pack.FriendlyFire:
+replacement:
+| case CombatSystem.Landing.Friend when !pack.FriendlyFire:
+
+[proj1-26-falloff-distance]
+file = Assets/WarCore/Combat/CombatSystem.Projectile.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1LandingTests.FalloffUsesTheDistanceAtTheLanding
+note = the falloff distance ignores where the unit is struck
+original:
+| distance = Span(launchFoot, Point(target));
+replacement:
+| distance = Span(launchFoot, launchFoot);
+
+[proj1-27-hit-stream]
+file = Assets/WarCore/Combat/ProjectileSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1StateTests.ProjectileRollsDoNotShiftInstantRolls
+note = projectile rolls come from the instant stream
+original:
+| hitStream = sim.Rng.Stream(HitStreamName);
+replacement:
+| hitStream = sim.Rng.Stream("combat.hit");
+
+[proj1-28-no-shield]
+file = Assets/WarCore/Combat/CombatSystem.Projectile.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1LandingTests.ShieldedVictimTakesNothing
+note = the shield is ignored
+original:
+|             if (Shielded(victim, tick)) damage = 0;
+| 
+replacement:
+|
+
+[proj1-29-bound-minus-one]
+file = Assets/WarCore/Combat/ProjectileSpec.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1CapacityTests.PerUnitBound
+note = the bound drops its - 1
+original:
+| return ((Flights + 1L) * 1000 - 1) / gap + 1;
+replacement:
+| return ((Flights + 1L) * 1000) / gap + 1;
+
+[proj1-30-bound-plus-one]
+file = Assets/WarCore/Combat/ProjectileSpec.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1CapacityTests.PerUnitBound
+expect = WarCore.Tests.Projectile.Proj1CapacityTests.TheBoundIsReachedAndAPoolOneSmallerThrows
+note = the bound drops its + 1
+original:
+| return ((Flights + 1L) * 1000 - 1) / gap + 1;
+replacement:
+| return ((Flights + 1L) * 1000 - 1) / gap;
+
+[proj1-31-bound-interval-only]
+file = Assets/WarCore/Combat/ProjectileSpec.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1CapacityTests.PerUnitBound
+note = the bound ignores a shorter reload
+original:
+| long gap = Math.Min(weapon.FireIntervalMilli, weapon.ReloadMilli);
+replacement:
+| long gap = weapon.FireIntervalMilli;
+
+[proj1-32-commands-without-p]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1CapacityTests.LimitsGrowByP
+expect = WarCore.Tests.Projectile.Proj1CapacityTests.MoreLandingsThanUnitsAllSettle
+note = the damage command limit leaves out P
+original:
+| checked(unitCount * MaxHitsPerAction + projectiles),
+replacement:
+| checked(unitCount * MaxHitsPerAction),
+
+[proj1-33-staging-unchecked]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1CapacityTests.CapacityAboveTheSettlementLimitIsRefused
+note = the settlement limit is not checked
+original:
+| if (staging > GameplayMath.MaxPackets)
+replacement:
+| if (false)
+
+[proj1-34-full-pool-dropped]
+file = Assets/WarCore/Combat/ProjectileSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1CapacityTests.TheBoundIsReachedAndAPoolOneSmallerThrows
+note = a full pool drops the launch silently
+original:
+| if (count == launchers.Length) throw new InvalidOperationException("Projectile capacity exceeded.");
+replacement:
+| if (count == launchers.Length) return;
+
+[proj1-35-save-launch-tick]
+file = Assets/WarCore/Combat/ProjectileSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1StateTests.RestoreMidFlightContinuesTheSameRun
+note = the save writes a wrong launch tick
+original:
+| writer.Int64(launchTicks[i]);
+replacement:
+| writer.Int64(launchTicks[i] + 1);
+
+[proj1-36-load-count]
+file = Assets/WarCore/Combat/ProjectileSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1StateTests.BadSavesAreRefused
+note = the load takes more than the pool
+original:
+| int n = reader.Count(launchers.Length);
+replacement:
+| int n = reader.Count(int.MaxValue);
+
+[proj1-37-load-k-equals-f]
+file = Assets/WarCore/Combat/ProjectileSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1StateTests.BadSavesAreRefused
+note = the load accepts k = F
+original:
+| tick - launch < flights
+replacement:
+| tick - launch <= flights
+
+[proj1-38-load-flights]
+file = Assets/WarCore/Combat/ProjectileSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1StateTests.BadSavesAreRefused
+note = the load skips the flight length
+original:
+| SimStateReader.Require(flights == pack.Projectiles[weapon].Flights,
+replacement:
+| SimStateReader.Require(true,
+
+[proj1-39-load-digest]
+file = Assets/WarCore/Combat/ProjectileSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1StateTests.BadSavesAreRefused
+note = the load skips the pack digest
+original:
+| SimStateReader.Require(reader.UInt64() == pack.PolicyDigest,
+replacement:
+| SimStateReader.Require(reader.UInt64() != 0,
+
+[proj1-40-load-instant-weapon]
+file = Assets/WarCore/Combat/ProjectileSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1StateTests.BadSavesAreRefused
+note = the load takes an instant weapon
+original:
+| && pack.IsProjectile(weapon), 
+replacement:
+| && true, 
+
+[proj1-41-not-removed]
+file = Assets/WarCore/Combat/ProjectileSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1FlightTests.LandsOnTheHandWorkedTick
+note = a landed projectile stays in the pool
+original:
+| if (tick > launchTicks[i] && Land(c, i, tick)) continue;
+replacement:
+| if (tick > launchTicks[i]) Land(c, i, tick);
+
+[proj1-42-no-ground-or-plates]
+file = Assets/WarCore/Combat/CombatSystem.Projectile.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1FlightTests.RidgeStopsTheProjectile
+expect = WarCore.Tests.Projectile.Proj1FlightTests.PlateStopsTheProjectile
+note = ground and plates are not tested
+original:
+| if ((ground != null || plates != null) && LineStop.TryFirst(
+replacement:
+| if (false && LineStop.TryFirst(
+
+[proj1-43-target-not-visible]
+file = Assets/WarCore/Combat/CombatSystem.Resolve.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1LaunchTests.TargetIntentOutOfRangeOrSightFiresNothing
+note = the explicit target path skips the sight check
+original:
+| || !Visible(shooter, target)) return;
+replacement:
+| ) return;
+
+[proj1-44-every-weapon-launches]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1LaunchTests.InstantWeaponInAMixedPackStaysInstant
+note = an instant weapon of a mixed pack launches
+original:
+| if (pack.IsProjectile(unit.Weapon)) LaunchRay(
+replacement:
+| if (pack.HasProjectiles) LaunchRay(
+
+[proj1-45-phase]
+file = Assets/WarCore/Presentation/Bridge/Features/CombatFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1CapacityTests.WorldWithProjectilesRegistersTheSystem
+note = the system registers in Requests
+original:
+| ProjectileCapacity(recipe))), SimSystemPhase.Queries);
+replacement:
+| ProjectileCapacity(recipe))), SimSystemPhase.Requests);
+
+[proj1-46-order]
+file = Assets/WarCore/Combat/ProjectileSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1CapacityTests.WorldWithProjectilesRegistersTheSystem
+note = the system runs before combat
+original:
+| public int Order => 31;
+replacement:
+| public int Order => 29;
+
+[proj1-47-world-p]
+file = Assets/WarCore/Presentation/Bridge/Features/CombatFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1CapacityTests.WorldWithProjectilesRegistersTheSystem
+note = the built world's pool differs from P
+original:
+| return pack.ProjectileCapacity(weapons);
+replacement:
+| return pack.ProjectileCapacity(weapons) + 1;
+
+[proj1-48-target-launch-spread]
+file = Assets/WarCore/Combat/CombatSystem.Resolve.cs
+filter = FullyQualifiedName~WarCore.Tests.Projectile
+expect = WarCore.Tests.Projectile.Proj1LaunchTests.TargetIntentFiresAtTheViewpoint
+note = the explicit target path updates the spread state
+original:
+| Launch(shooter, in unit, in weapon, tick, muzzle, toward, unit.SpreadStored, unit.SpreadLastMilli);
+replacement:
+| Launch(shooter, in unit, in weapon, tick, muzzle, toward, unit.SpreadStored + 1, tick * 1000);

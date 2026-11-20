@@ -48,6 +48,14 @@ namespace WarCore.Combat
             if (!IsEnemy(shooter, target) || !Entities.TryGet(positions, target, out Position targetPosition)
                 || SpanSquared(origin, targetPosition.Value) > new SimVec3(weapon.FalloffEnd, default, default).LengthSquared
                 || !Visible(shooter, target)) return;
+            // PROJ-1: a projectile weapon fires from the muzzle at the target's viewpoint, without spread, after the same checks.
+            if (pack.IsProjectile(unit.Weapon))
+            {
+                SimVec3 muzzle = Lift(origin, targetOriginRaw), toward = Eye(targetPosition.Value, target) - muzzle;
+                if (toward.LengthSquared.Sign == 0) return;
+                Launch(shooter, in unit, in weapon, tick, muzzle, toward, unit.SpreadStored, unit.SpreadLastMilli);
+                return;
+            }
             // The judgement is the sight line (viewpoint to viewpoint); the record runs from foot + targetOrigin (legacy 0.5 m,
             // new mode the muzzle) to the target's viewpoint, lifted once.
             Fire(c, shooter, target, in unit, in position, in weapon, tick, Lift(origin, targetOriginRaw), Eye(targetPosition.Value, target),

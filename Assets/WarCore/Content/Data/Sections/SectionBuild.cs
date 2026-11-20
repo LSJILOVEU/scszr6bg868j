@@ -16,6 +16,8 @@ namespace WarCore.Content
 
         internal string[] WeaponIds = Array.Empty<string>(), MeleeIds = Array.Empty<string>(), UnitIds = Array.Empty<string>();
         internal WeaponDef[] Weapons = Array.Empty<WeaponDef>();
+        // PROJ-1: projectile speed per weapon in mm/s (0 = instant), same order as Weapons.
+        internal int[] ProjectileSpeeds = Array.Empty<int>();
         internal MeleeSpec[] Melee = Array.Empty<MeleeSpec>();
         internal string[] BlockIds = Array.Empty<string>();
         internal BlockSpec[] Block = Array.Empty<BlockSpec>();
@@ -47,6 +49,6 @@ namespace WarCore.Content
 
         internal ContentPack ToPack() => new ContentPack(Pack, WeaponIds, Weapons, UnitIds, UnitWeapons, MaxHealthRaw, ResolverId, SelectorId, Rules,
             FriendlyFire, FriendlyFireLocked, AllyCheckMissRaw, AllyHoldMilli, Block, UnitBlock, UnitArchetypes, UnitSpeeds,
-            MeleeIds, Melee, UnitMelee, Terrain, published.ToArray(), RuleIds, Body);
+            MeleeIds, Melee, UnitMelee, Terrain, published.ToArray(), RuleIds, Body, ProjectileSpeeds);
     }
 }
