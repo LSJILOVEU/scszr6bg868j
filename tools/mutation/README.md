@@ -205,3 +205,33 @@ Self-test switches (only for the self-test): environment variable `WARCORE_MUTAT
 Stages: `worktree-add`, `baseline-build`, `baseline-test`, `mutant-build`, `mutant-test`, `restore-build`,
 `restore-test`. A paused run prints `PAUSED <point> <stage> <gate pid>` to stderr and sleeps until killed.
 The switches are not passed to child processes.
+
+## CI
+
+`.github/workflows/mutation.yml` (workflow and final check both named `mutation`) runs on every pull request into
+`main` and by hand (`workflow_dispatch`, base: merge base with `main`).
+
+1. `plan`: base = first parent of the pull request merge commit. `ci/plan.py --base BASE --head HEAD` takes the files
+   directly in `lists/` named `*.txt` that the change adds, modifies or renames (new path); deleted lists, `selftest/`
+   and other files are ignored. Each list is cut, in entry order, into `ceil(n/10)` shards whose sizes differ by at
+   most one; lists are never mixed. At most 24 shards per change. Errors exit 2 with the id on the first stderr line:
+   `bad-name`, `bad-id` (list or id outside `[A-Za-z0-9._-]`), `empty-list`, `duplicate-id`, `too-many-shards`,
+   `git`, `bad-args`.
+2. `hygiene`: `hygiene.py BASE HEAD` on the whole change.
+3. `shard (<list> i/k)`: one Ubuntu job per shard, at most 6 at a time, 180 minutes each:
+   `mutate.py <list> --only <ids>`. The table and log are printed and added to the job summary.
+4. `mutation`: fails unless planning and hygiene passed and every shard passed (or none was planned).
+
+`mutate.py`, `hygiene.py` and `plan.py` come from the base commit (checked out as `base/`); the pull request
+(`pr/`) only supplies code, tests and lists. A change to these tools is judged by the old copy until it is merged.
+When the base has no `plan.py` (only the pull request adding it) the pull request copy is used, with a notice.
+List names and ids reach the shell only through environment variables.
+
+Not covered: lists the change did not touch are not re-run (a code change that breaks an old list is not seen
+here); a pull request's own build steps run in the same job and could tamper with the job; the check is not one of
+the required checks of `tools/automerge/decide.py`, but a red or running `mutation` still blocks the automatic merge
+(any other check must be success or skipped). On a private repository every shard counts against the Actions
+minutes of the account.
+
+Offline tests: `python3 -I tools/mutation/ci/test_plan.py`; their own mutation check:
+`python3 -I tools/mutation/ci/mutate.py` (exit 1 if a mutant survives).

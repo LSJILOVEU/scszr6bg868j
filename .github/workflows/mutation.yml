@@ -1,0 +1,150 @@
+name: mutation
+
+# Run the mutation lists a pull request adds, changes or renames (tools/mutation/lists/*.txt), split into shards of
+# at most 10 entries (tools/mutation/ci/plan.py), plus tools/mutation/hygiene.py on the whole change. The final job
+# `mutation` fails when planning, hygiene or any shard did not pass; a pull request without list changes only runs
+# planning and hygiene.
+# mutate.py, hygiene.py and plan.py are taken from the base commit (checked out under base/), so a pull request
+# cannot change the tools that judge it; only its code, tests and lists (checked out under pr/) are used. When the base
+# has no plan.py yet (the pull request adding it), the pull request copy is used and a notice says so.
+# Values from the pull request reach scripts through env:, never through ${{ }} inside run:.
+# Docs: tools/mutation/README.md (CI). Offline tests: tools/mutation/ci/test_plan.py.
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mutation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      base: ${{ steps.base.outputs.sha }}
+      matrix: ${{ steps.plan.outputs.matrix }}
+      count: ${{ steps.plan.outputs.count }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: pr
+          fetch-depth: 0
+          persist-credentials: false
+      # pull_request checks out the merge commit: its first parent is the base branch head it was made from.
+      - name: Find the base commit
+        id: base
+        run: |
+          set -eu
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            sha=$(git -C pr rev-parse HEAD^1)
+          else
+            sha=$(git -C pr merge-base refs/remotes/origin/main HEAD)
+          fi
+          echo "base $sha, head $(git -C pr rev-parse HEAD)"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          path: base
+          ref: ${{ steps.base.outputs.sha }}
+          persist-credentials: false
+          sparse-checkout: tools/mutation
+      - name: Plan shards
+        id: plan
+        env:
+          BASE: ${{ steps.base.outputs.sha }}
+        run: |
+          set -eu
+          planner=base/tools/mutation/ci/plan.py
+          if [ ! -f "$planner" ]; then
+            planner=pr/tools/mutation/ci/plan.py
+            echo "::notice::base commit has no plan.py; using the pull request copy"
+          fi
+          python3 -I "$planner" --repo pr --base "$BASE" --head HEAD --github-output "$GITHUB_OUTPUT"
+
+  hygiene:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: pr
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          path: base
+          ref: ${{ needs.plan.outputs.base }}
+          persist-credentials: false
+          sparse-checkout: tools/mutation
+      - name: Test hygiene of added test lines
+        env:
+          BASE: ${{ needs.plan.outputs.base }}
+        run: python3 -I base/tools/mutation/hygiene.py "$BASE" HEAD --repo pr
+
+  shard:
+    needs: plan
+    if: needs.plan.outputs.count != '0'
+    name: shard (${{ matrix.label }})
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    runs-on: ubuntu-latest
+    # 10 mutations x 900 s each at most, plus the baseline build and test.
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: pr
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          path: base
+          ref: ${{ needs.plan.outputs.base }}
+          persist-credentials: false
+          sparse-checkout: tools/mutation
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Run mutations
+        env:
+          LIST: ${{ matrix.list }}
+          IDS: ${{ matrix.ids }}
+        run: >-
+          python3 -I base/tools/mutation/mutate.py "pr/$LIST" --repo pr --only "$IDS"
+          --out "$RUNNER_TEMP/mutation.md" --log "$RUNNER_TEMP/mutation.log"
+      - name: Details
+        if: always()
+        run: |
+          for f in "$RUNNER_TEMP/mutation.log" "$RUNNER_TEMP/mutation.md"; do
+            if [ -f "$f" ]; then echo "== $(basename "$f")"; cat "$f"; fi
+          done
+          if [ -f "$RUNNER_TEMP/mutation.md" ]; then cat "$RUNNER_TEMP/mutation.md" >> "$GITHUB_STEP_SUMMARY"; fi
+
+  mutation:
+    needs: [plan, hygiene, shard]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Planning, hygiene and every shard passed
+        env:
+          PLAN: ${{ needs.plan.result }}
+          HYGIENE: ${{ needs.hygiene.result }}
+          SHARDS: ${{ needs.shard.result }}
+          COUNT: ${{ needs.plan.outputs.count }}
+        run: |
+          echo "plan=$PLAN hygiene=$HYGIENE shards=$SHARDS count=$COUNT"
+          [ "$PLAN" = success ] || { echo "::error::planning did not pass"; exit 1; }
+          [ "$HYGIENE" = success ] || { echo "::error::hygiene did not pass"; exit 1; }
+          if [ "$COUNT" = 0 ]; then
+            [ "$SHARDS" = skipped ] || { echo "::error::no shards planned but shard job is $SHARDS"; exit 1; }
+          else
+            [ "$SHARDS" = success ] || { echo "::error::a shard did not pass"; exit 1; }
+          fi
