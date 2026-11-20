@@ -4,7 +4,7 @@
 # default body (InterimLocomotion implements the method itself); PlateWorld's ">> 16" against "/ Scale" (points on the map are never
 # negative) and its layer and bounds guards (every caller checks the layer count and the bridge's world bounds first); the walkable
 # flag of WorldAssembly.SpawnPoint (the plate installer refuses the same cell, with its own message, before a unit stands there);
-# the feature table order.
+# the feature table order; the plate order's stop (ML-8 routes the order instead; ml-8.txt covers it).
 
 [ml7-step-check]
 file = Assets/WarCore/Sim/Sim.cs
@@ -231,15 +231,6 @@ expect = WarCore.Tests.Ml7SessionTests.AnOrderOntoAPlateStopsTheUnit
 note = a two-argument order keeps the layer
 original:
 |             if (layered) SetTargetLayer(unit, 0);
-replacement:
-
-[ml7-plate-order-walks]
-file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
-filter = FullyQualifiedName~Ml7
-expect = WarCore.Tests.Ml7SessionTests.AnOrderOntoAPlateStopsTheUnit
-note = no stop
-original:
-|             Stop(unit);
 replacement:
 
 [ml7-plate-order-unrecorded]
