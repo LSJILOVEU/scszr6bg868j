@@ -70,8 +70,8 @@ namespace WarCore.Tests
             }
             Assert.That(RespawnDigestLockTests.Points()[0].HasSpawn, Is.True, "the first locked point has a spawn");
             Assert.That(Pack(0, 0).PolicyDigest, Is.EqualTo(C1cContentTests.Guard90));
-            var digests = new[] { Pack(0, 0).PolicyDigest, Pack(1, 0).PolicyDigest, Pack(0, 1).PolicyDigest, Pack(2, 0).PolicyDigest };
-            Assert.That(digests.Distinct().Count(), Is.EqualTo(4));
+            var digests = new[] { Pack(0, 0).PolicyDigest, Pack(1, 0).PolicyDigest, Pack(0, 1).PolicyDigest, Pack(2, 0).PolicyDigest, Pack(0, 2).PolicyDigest };
+            Assert.That(digests.Distinct().Count(), Is.EqualTo(5));
         }
 
         // 5: the three-argument deployment, directly.
@@ -176,13 +176,13 @@ namespace WarCore.Tests
             Assert.That((Vertical(s, 2).Layer, M3TestWorld.Position(s, 2).Y.Raw), Is.EqualTo(((ushort)0, 0L)));
         }
 
-        // Invariant 2: a match with plate anchors resumes from tick 150 to the same hashes up to 300 (deployments at 100 on the
-        // ground and 200 on the plate).
+        // Invariant 2: a match with plate anchors resumes from tick 150 to the same hashes up to 300. Team 1's base is on the
+        // plate and point 1's spawn on the ground: reserve 20 deploys at the base at tick 100, reserve 21 at the spawn at 200.
         [Test]
         public void APlateMatchResumesToTheSameHashes()
         {
-            var points = Points(new ControlPointDef(1, P(41, 32), SimFix.FromInt(2), 1, true, Up(41500, 32500), 1));
-            MatchPack pack = Pack(points, Bases(new SpawnAnchor(1, P(5, 30))), 0, interval: 100);
+            var points = Points(new ControlPointDef(1, P(41, 32), SimFix.FromInt(2), 1, true, P(5, 30)));
+            MatchPack pack = Pack(points, Bases(new SpawnAnchor(1, Up(41500, 32500), 1)), 0, interval: 100);
             M6World a = World(pack);
             a.Step(150);
             byte[] snapshot = a.Sim.SaveRetainedSnapshot();
@@ -194,7 +194,8 @@ namespace WarCore.Tests
             var resumed = new List<ulong>();
             for (int i = 0; i < 150; i++) { b.Step(); resumed.Add(b.Sim.StateHashRetained()); }
             Assert.That(resumed, Is.EqualTo(expected));
-            Assert.That(b.Read<VerticalState>(21).Layer, Is.EqualTo((ushort)1), "the second reserve stands on the plate");
+            Assert.That((b.Read<VerticalState>(20).Layer, b.Read<Position>(20).Value), Is.EqualTo(((ushort)1, Up(40500, 31500))), "at the plate base");
+            Assert.That((b.Read<VerticalState>(21).Layer, b.Read<Position>(21).Value.Y.Raw), Is.EqualTo(((ushort)0, 0L)), "at the ground spawn");
         }
     }
 }

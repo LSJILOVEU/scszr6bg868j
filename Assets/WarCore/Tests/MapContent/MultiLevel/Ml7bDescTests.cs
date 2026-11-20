@@ -84,6 +84,20 @@ namespace WarCore.Tests
             Assert.That(Error(zero), Is.EqualTo("MAPDESC_PLATE unit 1 line " + Line(zero, "\"plate\": 0")), "ids start at 1");
         }
 
+        // The editor's copies keep the plate ids (remapping them when a stamp renumbers plates is the editor's package, ML-12).
+        [Test]
+        public void TheEditorKeepsPlateIds()
+        {
+            var edit = new MapEdit(House());
+            ulong unit = edit.AddUnit(Unit(1, 11500, 7500, 9));
+            int anchor = edit.AddBase(Base(1, 1, 11500, 8500, 9));
+            int point = edit.AddPoint(Point(1, 5000, 3000, new MapMm(11500, 6500), 9));
+            MapDesc d = edit.Current;
+            Assert.That(d.Units.Single(u => u.Key == unit).Plate, Is.EqualTo((ulong?)9));
+            Assert.That(d.Bases.Single(b => b.Id == anchor).Plate, Is.EqualTo((ulong?)9));
+            Assert.That(d.Points.Single(p => p.Id == point).SpawnPlate, Is.EqualTo((ulong?)9));
+        }
+
         [Test]
         public void ASpawnPlateNeedsASpawn()
         {
