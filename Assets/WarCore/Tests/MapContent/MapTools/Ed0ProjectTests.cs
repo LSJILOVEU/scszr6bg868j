@@ -20,7 +20,7 @@ namespace WarCore.Tests
         [SetUp] public void Make() => dirs = new Ed0Dirs();
         [TearDown] public void Clean() => dirs.Dispose();
 
-        private static readonly string[] RwrLayers = { "rwr", "rwr-ai-playtest", "rwr-m6", "rwr-m7-playtest", "rwr-melee", "rwr-terrain-demo" };
+        private static readonly string[] RwrLayers = { "rwr", "rwr-ai-playtest", "rwr-m6", "rwr-m7-playtest", "rwr-melee", "rwr-surfaces", "rwr-terrain-demo" };
 
         [Test]
         public void TheShippedCartridges()
