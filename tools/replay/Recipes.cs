@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using WarCore.Content;
 using WarCore.Content.MapTools;
 using WarCore.Content.Rwr;
+using WarCore.Battle;
 using WarCore.Presentation;
 
 namespace WarCore.Replay
@@ -63,6 +65,8 @@ namespace WarCore.Replay
                 () => DemoRecipes.M7().WithAiRules(Layer("replay-playtest-s4", DemoRecipes.PlaytestLayer, S4Ai)), DemoRecipes.M7MapBytes),
             ["lanes-s4"] = new Entry("Three-lane map, default AI + engage bound + pressure + cover",
                 () => Lanes(Layer("replay-lanes-s4", LanesBake().PackId, S4Ai)), () => LanesBake().WcMapBytes),
+            // ANC-2: ancient-field layer (spear), 60 against 60 on a flat 96 x 64 m field; the same layout as Tests/MapContent/Ancient.
+            ["ancient-field"] = new Entry("Ancient field, 60 v 60 with spears", AncientField, AncientFieldMap),
         };
 
         private const string CoverAi = "\"coverRadiusMm\": 9000, \"coverStepMm\": 1000, \"coverDepthMm\": 2000";
@@ -108,6 +112,36 @@ namespace WarCore.Replay
                 if (layerId != id) return rest.TryRead(layerId, out json, out location);
                 json = text; location = "replay:" + id; return true;
             }
+        }
+        private const string AncientDir = "Assets/WarCore/Content/Ancient/Data", AncientFieldDir = "Assets/WarCore/Tests/MapContent/Ancient/Data";
+        private sealed class AncientSource : IContentSource
+        {
+            public bool TryRead(string layerId, out string text, out string location) =>
+                new FileContentSource(AncientFieldDir).TryRead(layerId, out text, out location) || new FileContentSource(AncientDir).TryRead(layerId, out text, out location);
+        }
+        private static byte[] AncientFieldMap()
+        {
+            var bits = new byte[96 * 64 / 8]; Array.Fill(bits, (byte)255);
+            var points = new int[97 * 65];
+            var min = new WarCore.Sim.SimVec3(default, default, default);
+            var max = new WarCore.Sim.SimVec3(WarCore.Sim.SimFix.FromInt(96), WarCore.Sim.SimFix.FromInt(4), WarCore.Sim.SimFix.FromInt(64));
+            return WcMapWriter.Write(new WcMap("ancient-field", "none", min, max, WarCore.Sim.SimFix.FromInt(96), default, 96, 64,
+                new[] { new WcMapLayer("walls", 1) }, Array.Empty<WcMapWall>(), bits, points, new[] { "ancient.ground" }, new byte[96 * 64]));
+        }
+        private static WorldRecipe AncientField()
+        {
+            ContentPack pack = ContentLoader.Load(new AncientSource(), "ancient-field");
+            string[] rank = { "ancient.guard", "ancient.guard", "ancient.spearman", "ancient.spearman", "ancient.swordsman", "ancient.swordsman" };
+            var units = new UnitSpawn[120];
+            for (int i = 0; i < 60; i++)
+            {
+                units[i] = UnitSpawn.OfType((ulong)i + 1, pack, rank[i % 6], 1, 1, 30000 - 1500 * (i % 6), 22000 + 2000 * (i / 6));
+                units[i + 60] = UnitSpawn.OfType((ulong)i + 61, pack, rank[i % 6], 2, 2, 66000 + 1500 * (i % 6), 22000 + 2000 * (i / 6));
+            }
+            var pts = new[] { 12, 32, 52 }.Select((z, n) => new ControlPointDef(n + 1, WarCore.Sim.SimVec3.Metres(48, 0, z), WarCore.Sim.SimFix.FromInt(4))).ToArray();
+            var bases = new[] { new SpawnAnchor(1, WarCore.Sim.SimVec3.Metres(4, 0, 32)), new SpawnAnchor(2, WarCore.Sim.SimVec3.Metres(92, 0, 32)) };
+            return new WorldRecipe(41, MoverKind.InterimCrowd, units, Array.Empty<BridgeCommand>()).WithCombat(pack.BuildCombat())
+                .WithMatch(pack.BuildMatch(pts, bases)).WithCrowdPass(CrowdPassKind.TeamIdle).WithTerrainRules(pack).WithFacing().WithBlockAi();
         }
     }
 }
