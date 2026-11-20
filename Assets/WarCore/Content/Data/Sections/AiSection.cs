@@ -18,6 +18,9 @@ namespace WarCore.Content
         // Ticks an AI shooter holds its fire after a burst, counted from the burst's last shot; ignored when the burst is off.
         public int BurstPauseTicks { get; }
         public bool BurstPauseFollowsShooter { get; }
+        // Spread, in thousandths, of each AI shooter's own reaction time, burst length and pause around the values above
+        // (each scaled by 1000 + d over 1000, d in [-spread, +spread], from the shooter's identity); 0 = all alike.
+        public int TraitSpreadPermille { get; }
         // Ticks an AI unit keeps firing at its target's last known point after it lost sight of it; 0 turns the suppression off. Needs the memory.
         public int SuppressTicks { get; }
         public int MeleeChaseRange { get; }
@@ -72,7 +75,7 @@ namespace WarCore.Content
             string dispatch = ContentPolicies.NearestDispatch, string placement = ContentPolicies.NearestSlot,
             int slotSpacingMm = DefaultSlotSpacingMm, int scatterMm = 0, int slotRingMm = 0,
             string engage = ContentPolicies.HoldEngage, int boundMoveTicks = 0, int boundFireTicks = 0, int boundSharePermille = 0, int boundMinRangeMm = 0,
-            int[] assault = null)
+            int[] assault = null, int traitSpreadPermille = 0)
         {
             FailedSlotTicks = failedSlotTicks; TargetMemoryTicks = targetMemoryTicks; SearchTicks = searchTicks; ReactionTicks = reactionTicks;
             SenseTicks = senseTicks; BurstShots = burstShots; BurstPauseTicks = burstPauseTicks; SuppressTicks = suppressTicks;
@@ -90,6 +93,7 @@ namespace WarCore.Content
                 FrontPermille = assault[0]; FlankPermille = assault[1]; RearPermille = assault[2]; FrontArcMm = assault[3]; FlankSideMm = assault[4];
                 RearOutMm = assault[5]; FlankMinMm = assault[6]; AnchorMm = assault[7]; ArriveMm = assault[8];
             }
+            TraitSpreadPermille = traitSpreadPermille;
         }
     }
 
@@ -103,6 +107,7 @@ namespace WarCore.Content
         internal const int MaxSenseTicks = 1000000;
         internal const int MaxBurstShots = 1000000;
         internal const int MaxBurstPauseTicks = 1000000;
+        internal const int MaxTraitSpreadPermille = 500;
         internal const int MaxSuppressTicks = 1000000;
         internal const int MaxMeleeChaseRange = 512; // PLACEHOLDER: maximum map side length in metres.
         internal const int MaxHoldSharePermille = 1000;
@@ -168,6 +173,7 @@ namespace WarCore.Content
             int spacing = AiRules.DefaultSlotSpacingMm, scatter = 0, ring = 0;
             System.Func<string, ContentException> ringError = null;
             bool follows = false;
+            int traits = 0;
             bool fair = false;
             string dispatch = ContentPolicies.NearestDispatch, placement = ContentPolicies.NearestSlot, engage = ContentPolicies.HoldEngage;
             int boundMove = 0, boundFire = 0, boundShare = 0, boundMinRange = 0;
@@ -186,6 +192,8 @@ namespace WarCore.Content
                 if (r.Has("burstShots")) burst = r.Int("burstShots", 0, MaxBurstShots);
                 if (r.Has("burstPauseTicks")) pause = r.Int("burstPauseTicks", 0, MaxBurstPauseTicks);
                 if (r.Has("burstPauseFollowsShooter")) follows = r.Bool("burstPauseFollowsShooter");
+                // A scheduler-side field like the burst: valid under every part.
+                if (r.Has("traitSpreadPermille")) traits = r.Int("traitSpreadPermille", 0, MaxTraitSpreadPermille);
                 if (r.Has("suppressTicks")) suppress = r.Int("suppressTicks", 0, MaxSuppressTicks);
                 if (r.Has("meleeChaseRange")) chase = r.Int("meleeChaseRange", 0, MaxMeleeChaseRange);
                 if (r.Has("fairDecisions")) fair = r.Bool("fairDecisions");
@@ -271,7 +279,7 @@ namespace WarCore.Content
                 r.Done();
             }
             b.Publish(new AiRules(failed, memory, search, reaction, sense, burst, pause, suppress, chase, fair, follows, hold, spread, dispatch, placement, spacing, scatter, ring,
-                engage, boundMove, boundFire, boundShare, boundMinRange, assault) { SlotRingError = ringError, FieldError = fieldError, Pressure = pressure, CoverRadiusMm = coverRadius, CoverStepMm = coverStep, CoverDepthMm = coverDepth });
+                engage, boundMove, boundFire, boundShare, boundMinRange, assault, traits) { SlotRingError = ringError, FieldError = fieldError, Pressure = pressure, CoverRadiusMm = coverRadius, CoverStepMm = coverStep, CoverDepthMm = coverDepth });
         }
     }
 }

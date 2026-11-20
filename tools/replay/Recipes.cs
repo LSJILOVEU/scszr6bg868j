@@ -53,6 +53,9 @@ namespace WarCore.Replay
                 () => DemoRecipes.M7().WithAiRules(Layer("replay-playtest-s1", DemoRecipes.PlaytestLayer, S1Ai)), DemoRecipes.M7MapBytes),
             ["lanes-s1"] = new Entry("Three-lane map, default AI + engage bound",
                 () => Lanes(Layer("replay-lanes-s1", LanesBake().PackId, S1Ai)), () => LanesBake().WcMapBytes),
+            // AI-S2 (value fixed by the task, PLACEHOLDER): each shooter's own reaction, burst and pause, spread 300 permille.
+            ["playtest-s2"] = new Entry("M7, rwr-m7-playtest AI rules + trait spread 300",
+                () => DemoRecipes.M7().WithAiRules(Layer("replay-playtest-s2", DemoRecipes.PlaytestLayer, "{ \"traitSpreadPermille\": 300 }")), DemoRecipes.M7MapBytes),
             // AI-S3 (values fixed by the task, PLACEHOLDER): the pressure system on top of the S1 setups.
             ["playtest-s3"] = new Entry("M7, rwr-m7-playtest AI rules + engage bound + pressure",
                 () => DemoRecipes.M7().WithAiRules(Layer("replay-playtest-s3", DemoRecipes.PlaytestLayer, S3Ai)), DemoRecipes.M7MapBytes),
