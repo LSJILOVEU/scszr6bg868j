@@ -235,7 +235,9 @@ and `tools/automerge/decide.py` leaves pull requests touching them (`mutate.py`,
 When the base has no `plan.py` (only the pull request adding it) the pull request copy is used, with a notice.
 List names and ids reach the shell only through environment variables.
 
-Not covered: lists the change did not touch are not re-run (a code change that breaks an old list is not seen
+Lists go stale: an old list re-run after later changes can report invalid entries (original text gone, behaviour
+moved), so a change that edits an old list must bring the whole list up to date. Not covered: lists the change did
+not touch are not re-run (a code change that breaks an old list is not seen
 here); a pull request's own build steps run in the same job and could tamper with the job; the check is not one of
 the required checks of `tools/automerge/decide.py`, but a red or running `mutation` still blocks the automatic merge
 (any other check must be success or skipped). On a private repository every shard counts against the Actions
