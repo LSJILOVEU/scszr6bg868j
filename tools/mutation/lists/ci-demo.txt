@@ -1,0 +1,21 @@
+# CI demo list: one entry that the named tests catch, one that they cannot catch (wrong filter).
+
+[ci-hash-hex-upper]
+file = Assets/WarCore/Presentation/Maps/MapDocument.cs
+filter = FullyQualifiedName~E1b|FullyQualifiedName~E1a
+expect = WarCore.Tests.E1bDocumentTests.RepositoryDescriptionRoundTripsByteForByte
+note = hash hex upper case
+original:
+|                 foreach (byte b in hash) hex.Append(b.ToString("x2"));
+replacement:
+|                 foreach (byte b in hash) hex.Append(b.ToString("X2"));
+
+[ci-reserve-false]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~E1bDocumentTests
+expect = WarCore.Tests.E1bDocumentTests.RepositoryDescriptionRoundTripsByteForByte
+note = reserve always false (filter does not run the recipe tests)
+original:
+|                     pack.WeaponOfUnitType(s.Type), s.Reserve, pack.MeleeOfUnitType(s.Type), layer: s.Layer);
+replacement:
+|                     pack.WeaponOfUnitType(s.Type), false, pack.MeleeOfUnitType(s.Type), layer: s.Layer);
