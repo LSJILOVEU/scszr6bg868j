@@ -11,7 +11,7 @@ namespace WarCore.Combat
     // automatic shots). Without a body (legacy) aimed and automatic shots start at the shooter's foot and an explicit target
     // shot records foot + 0.5 m to the target's foot + 0.5 m. ML-3 new mode: Origin is the muzzle point (foot + muzzle
     // height) for all three paths and an explicit target shot ends at the target's viewpoint; CombatSystem.GroundOfFireOrigin
-    // turns Origin back into the shooter's ground point.
+    // turns Origin back into the shooter's ground point. Distance is horizontal; ML-9: 3D on a map with floor plates.
     public readonly struct FireRecord
     {
         public readonly StableId Shooter, Target;
@@ -46,7 +46,7 @@ namespace WarCore.Combat
             EntityId target = (EntityId)resolved;
             SimVec3 origin = position.Value;
             if (!IsEnemy(shooter, target) || !Entities.TryGet(positions, target, out Position targetPosition)
-                || Horizontal(targetPosition.Value - origin).LengthSquared > new SimVec3(weapon.FalloffEnd, default, default).LengthSquared
+                || SpanSquared(origin, targetPosition.Value) > new SimVec3(weapon.FalloffEnd, default, default).LengthSquared
                 || !Visible(shooter, target)) return;
             // The judgement is the sight line (viewpoint to viewpoint); the record runs from foot + targetOrigin (legacy 0.5 m,
             // new mode the muzzle) to the target's viewpoint, lifted once.
@@ -81,7 +81,7 @@ namespace WarCore.Combat
             in Position position, in WeaponDef weapon, long tick, SimVec3 origin, SimVec3 recordEnd, SimVec3 targetCenter,
             FireOutcome outcome, int spreadStored, long spreadLast)
         {
-            SimFix distance = Horizontal(targetCenter - position.Value).Length;
+            SimFix distance = Span(position.Value, targetCenter);
             long falloff = weapon.FalloffRaw(distance);
             int roll = sim.Rng.NextInt(hitStream, 65536);
             long damage = pack.Resolver.DamageRaw(in weapon, falloff, roll, pack.MaxHealthRaw);
@@ -96,7 +96,7 @@ namespace WarCore.Combat
             SimVec3 origin, SimVec3 end, FireOutcome outcome, int spreadStored, long spreadLast)
         {
             Entities.Set(combatants, shooter, Settle(in unit, in weapon, tick, spreadStored, spreadLast));
-            fires[fireCount++] = new FireRecord(Entities.StableOf(shooter), blocker, origin, end, Horizontal(end - origin).Length, 0, unit.Team, outcome);
+            fires[fireCount++] = new FireRecord(Entities.StableOf(shooter), blocker, origin, end, Span(origin, end), 0, unit.Team, outcome);
         }
     }
 }

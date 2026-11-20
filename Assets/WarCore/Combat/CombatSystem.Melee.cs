@@ -82,7 +82,7 @@ namespace WarCore.Combat
                 {
                     direction = Horizontal(intent.Point - origin);
                     if (direction.LengthSquared.Sign == 0) return false;
-                    if (!gunless && direction.LengthSquared > Reach(spec.EngageRange)) return false;
+                    if (!gunless && SpanSquared(origin, intent.Point) > Reach(spec.EngageRange)) return false;
                 }
                 else
                 {
@@ -90,7 +90,7 @@ namespace WarCore.Combat
                     EntityId target = (EntityId)resolved;
                     if (!IsEnemy(shooter, target) || !Entities.TryGet(positions, target, out Position targetPosition)) return false;
                     direction = Horizontal(targetPosition.Value - origin);
-                    if (direction.LengthSquared > Reach(gunless ? spec.Radius : spec.EngageRange)) return false;
+                    if (SpanSquared(origin, targetPosition.Value) > Reach(gunless ? spec.Radius : spec.EngageRange)) return false;
                     // Same placeholder as the gun path: a target standing on the shooter gives no heading, so swing along +X.
                     if (direction.LengthSquared.Sign == 0) direction = new SimVec3(SimFix.FromInt(1), default, default);
                 }
@@ -109,7 +109,8 @@ namespace WarCore.Combat
 
         private static SimWide Reach(SimFix range) => new SimVec3(range, default, default).LengthSquared;
 
-        // Nearest living enemy within range (horizontal, ties by StableId) that the shooter can see over the walls.
+        // Nearest living enemy within range (horizontal; ML-9: 3D on a map with plates; ties by StableId) that the shooter can
+        // see over the walls (and through no plate).
         private bool TryNearestEnemy(EntityId shooter, SimVec3 origin, SimFix range, out SimVec3 toward)
         {
             toward = default;
@@ -120,7 +121,7 @@ namespace WarCore.Combat
                 EntityId entity = hits[i].Entity;
                 if (!IsEnemy(shooter, entity) || !Entities.TryGet(positions, entity, out Position other)) continue;
                 SimVec3 delta = Horizontal(other.Value - origin);
-                SimWide distance = delta.LengthSquared;
+                SimWide distance = SpanSquared(origin, other.Value);
                 if (distance > Reach(range)) continue;
                 StableId id = Entities.StableOf(entity);
                 if (found && (distance > best || (distance == best && id.CompareTo(bestId) >= 0))) continue;
@@ -149,11 +150,14 @@ namespace WarCore.Combat
                 EntityId entity = candidates[i].Entity;
                 if (!(IsEnemy(shooter, entity) || (pack.FriendlyFire && IsFriend(shooter, entity)))
                     || !Entities.TryGet(positions, entity, out Position other)) continue;
-                // Wall line: the swing's foot at the striker's eye to the target's viewpoint (legacy both 0.5 m).
+                // Wall line: the swing's foot at the striker's eye to the target's viewpoint (legacy both 0.5 m). ML-9: on a map
+                // with plates the same segment must pass through no plate, straight up or down included (walls are not tested
+                // on a vertical line, as before; the ground is not tested by melee).
                 var from = Lift(origin, EyeRaw(shooter));
                 var delta = Eye(other.Value, entity) - from;
                 if (Horizontal(delta).LengthSquared.Sign != 0 && sim.SpatialQuery.Any(SpatialQueries.Ray(from, delta, delta.Length, wallMask))) continue;
-                var item = new MeleeTarget { Entity = entity, Id = Entities.StableOf(entity), Distance = Horizontal(other.Value - origin).LengthSquared };
+                if (plates != null && plates.Blocks(from, from + delta)) continue;
+                var item = new MeleeTarget { Entity = entity, Id = Entities.StableOf(entity), Distance = SpanSquared(origin, other.Value) };
                 int at = count++;
                 while (at > 0 && (meleeTargets[at - 1].Distance > item.Distance
                     || (meleeTargets[at - 1].Distance == item.Distance && meleeTargets[at - 1].Id.CompareTo(item.Id) > 0)))

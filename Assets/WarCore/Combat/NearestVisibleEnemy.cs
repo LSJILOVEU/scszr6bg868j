@@ -17,7 +17,7 @@ namespace WarCore.Combat
             {
                 EntityId candidate = hit.Entity;
                 if (!world.IsEnemy(shooter, candidate)) continue;
-                SimWide distance = CombatSystem.Horizontal(world.Point(candidate) - world.Point(shooter)).LengthSquared;
+                SimWide distance = world.SpanSquared(world.Point(shooter), world.Point(candidate));
                 StableId id = world.Entities.StableOf(candidate);
                 if (distance > limit || (found && (distance > best || (distance == best && id.CompareTo(bestId) >= 0)))) continue;
                 if (!world.Visible(shooter, candidate)) continue;

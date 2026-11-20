@@ -11,6 +11,8 @@ namespace WarCore.Presentation
         private readonly WcMap map;
         private readonly HeightField[] tops;
         internal LayeredNav Nav { get; }
+        // ML-9: the plates as the line tests read them (sight, shots, melee).
+        internal PlateField Field { get; }
         internal int LayerCount => Nav.LayerCount;
 
         internal PlateWorld(WcMap map, LayeredNav nav)
@@ -19,6 +21,7 @@ namespace WarCore.Presentation
             Nav = nav ?? throw new ArgumentNullException(nameof(nav));
             tops = new HeightField[map.Plates.Count];
             for (int k = 0; k < tops.Length; k++) tops[k] = map.Plates[k].TopField(map.Min.X, map.Min.Z);
+            Field = WcMapPlateField.Build(map);
         }
 
         // A copy of each plate's top field, in baked order (index k = layer k + 1).

@@ -63,7 +63,7 @@ namespace WarCore.Combat
             {
                 EntityId other = hits[i].Entity;
                 if (!IsEnemy(victim, other) || !Entities.TryGet(meleeStates, other, out MeleeState state) || !state.Pending || state.Spec < 0) continue;
-                if (Horizontal(state.Origin - here.Value).LengthSquared > Reach(pack.Melee[state.Spec].Radius)) continue;
+                if (SpanSquared(here.Value, state.Origin) > Reach(pack.Melee[state.Spec].Radius)) continue;
                 StableId id = Entities.StableOf(other);
                 if (found && (state.StartTick > startTick || (state.StartTick == startTick && id.CompareTo(attacker) >= 0))) continue;
                 found = true; attacker = id; startTick = state.StartTick;

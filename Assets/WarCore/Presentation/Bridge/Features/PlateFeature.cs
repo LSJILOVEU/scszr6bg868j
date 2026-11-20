@@ -46,6 +46,8 @@ namespace WarCore.Presentation
             if (a.Recipe.Match != null) CheckAnchors(a.Recipe.Match, a.Map, a.Plates.LayerCount);
             // The graph's digest names the exact plates, ground and rules, so a snapshot cannot be restored under other plates.
             a.ContentKeys.Add(new StableContentKey("plates.nav", nav.Digest));
+            // The graph's digest leaves out the plates' thickness; the line tests read it (ML-9), so the plate field has its own key.
+            a.ContentKeys.Add(new StableContentKey("plates.field", a.Plates.Field.Digest()));
         }
 
         // Every match anchor on a plate names a plate of this map and stands on a solid cell of it (MapCells, as the bake);
