@@ -10,6 +10,14 @@ namespace WarCore.Battle
         int PointCount { get; }
         void CountAlive(out int teamOne, out int teamTwo);
         int PointsOwnedBy(int team);
+        // NT-1: teams 1..TeamCount take part. A reader that knows only two teams keeps the defaults.
+        int TeamCount => 2;
+        // Living units per team: alive[t - 1] for team t in 1..TeamCount, every other slot 0. Needs alive.Length >= TeamCount.
+        void CountAlive(Span<int> alive)
+        {
+            CountAlive(out int one, out int two);
+            alive.Clear(); alive[0] = one; alive[1] = two;
+        }
     }
 
     // WP-19 A0: the single owner of the match result. Start and Step never judge; battle.match (Queries, Order 50)

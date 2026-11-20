@@ -17,9 +17,9 @@ expect = WarCore.Tests.C1bAnchorTests.EnemyInNearestPoint_UsesNextOwnedPoint
 expect = WarCore.Tests.C1bAnchorTests.AllyInPoint_NotContested
 note = the player's own team is taken as the enemy
 original:
-| unit.Team == 3 - team
+| unit.Team != team && unit.Team >= 1
 replacement:
-| unit.Team == team
+| unit.Team == team && unit.Team >= 1
 
 [c1b-03-enemy-team-fixed]
 file = Assets/WarCore/Battle/RespawnSystem.cs
@@ -27,7 +27,7 @@ filter = FullyQualifiedName~WarCore.Tests.C1b
 expect = WarCore.Tests.C1bAnchorTests.PlayerOnTeamTwo_TeamOneContests
 note = the enemy team is always team 2
 original:
-| unit.Team == 3 - team
+| unit.Team != team && unit.Team >= 1 && unit.Team <= pack.TeamCount
 replacement:
 | unit.Team == 2
 

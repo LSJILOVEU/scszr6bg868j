@@ -8,10 +8,10 @@ namespace WarCore.Tests
     public sealed class Mt008MatchPackTests
     {
         [Test]
-        public void ControlPointDef_RejectsInitialOwnerAboveTwo()
+        public void ControlPointDef_RejectsInitialOwnerAboveEight()
         {
             Assert.Throws<ArgumentOutOfRangeException>(() =>
-                new ControlPointDef(1, default, SimFix.FromInt(1), initialOwner: 3));
+                new ControlPointDef(1, default, SimFix.FromInt(1), initialOwner: 9));
         }
 
         [Test]

@@ -25,6 +25,7 @@ namespace WarCore.Battle
         private readonly MatchPack pack;
         private readonly PointState[] states;
         private readonly int[] counts;
+        private readonly int teams;
         private readonly CaptureRecord[] changes;
         private int changeCount;
         private readonly IUnitLayers layers;
@@ -33,7 +34,7 @@ namespace WarCore.Battle
         {
             this.combat = combat; this.pack = pack; this.layers = layers; stage = new EntityStage(combat.Entities);
             positions = combat.Entities.Resolve<Position>(); combatants = combat.Entities.Resolve<Combatant>();
-            states = new PointState[pack.Points.Length]; counts = new int[states.Length * 2]; changes = new CaptureRecord[states.Length];
+            states = new PointState[pack.Points.Length]; teams = pack.TeamCount; counts = new int[states.Length * teams]; changes = new CaptureRecord[states.Length];
             for (int i = 0; i < states.Length; i++) states[i] = new PointState(pack.Points[i].InitialOwner, 0, 0);
         }
         public int Order => 40;
@@ -53,14 +54,22 @@ namespace WarCore.Battle
             changeCount = 0; Array.Clear(counts, 0, counts.Length);
             foreach (EntityId unit in stage.Capture())
             {
-                if (!combat.Entities.TryGet(combatants, unit, out Combatant value) || value.Team < 1 || value.Team > 2
+                if (!combat.Entities.TryGet(combatants, unit, out Combatant value) || value.Team < 1 || value.Team > teams
                     || !combat.Entities.TryGet(positions, unit, out Position position) || combat.IsDead(unit)) continue;
-                for (int i = 0; i < states.Length; i++) if (Inside(layers, unit, position.Value, pack.Points[i])) counts[2 * i + value.Team - 1]++;
+                for (int i = 0; i < states.Length; i++) if (Inside(layers, unit, position.Value, pack.Points[i])) counts[teams * i + value.Team - 1]++;
             }
             for (int i = 0; i < states.Length; i++)
             {
-                int one = counts[2 * i], two = counts[2 * i + 1], leader = one > two ? 1 : two > one ? 2 : 0;
-                long a = Math.Max(one, two), b = Math.Min(one, two);
+                // NT-1: the leader has strictly the most units in the circle (a tie for the most leads nobody); a is its count
+                // and b the most of any other team. With two teams this is the old one-against-two comparison.
+                int leader = 0; long a = 0, b = 0;
+                for (int t = 0; t < teams; t++)
+                {
+                    int count = counts[teams * i + t];
+                    if (count > a) { b = a; a = count; leader = t + 1; }
+                    else if (count == a) leader = 0;
+                    else if (count > b) b = count;
+                }
                 bool advantage = leader != 0 && (pack.Strict ? a * pack.Den > b * pack.Num : a * pack.Den >= b * pack.Num);
                 PointState old = states[i];
                 if (advantage && leader != old.Owner)

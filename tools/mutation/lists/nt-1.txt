@@ -1,0 +1,429 @@
+# NT-1: up to eight teams in the match core (pack range and team count, reinforcement, capture, the three end rules, the
+# match system count, respawn contest). Test classes are named Nt1*.
+
+[nt1-pack-anchor-seven]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1MatchPackTests.Nt1SpawnAnchor_AcceptsOneAndEight_RejectsZeroAndNine
+note = anchor team 8 is rejected
+original:
+|             if (team < 1 || team > MatchPack.MaxTeams) throw new ArgumentOutOfRangeException(nameof(team));
+replacement:
+|             if (team < 1 || team > MatchPack.MaxTeams - 1) throw new ArgumentOutOfRangeException(nameof(team));
+
+[nt1-pack-anchor-nine]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1MatchPackTests.Nt1SpawnAnchor_AcceptsOneAndEight_RejectsZeroAndNine
+note = anchor team 9 is accepted
+original:
+|             if (team < 1 || team > MatchPack.MaxTeams) throw new ArgumentOutOfRangeException(nameof(team));
+replacement:
+|             if (team < 1 || team > MatchPack.MaxTeams + 1) throw new ArgumentOutOfRangeException(nameof(team));
+
+[nt1-pack-owner-seven]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1MatchPackTests.Nt1ControlPointDef_AcceptsOwnerZeroAndEight_RejectsMinusOneAndNine
+note = initial owner 8 is rejected
+original:
+| if (initialOwner < 0 || initialOwner > MatchPack.MaxTeams) throw
+replacement:
+| if (initialOwner < 0 || initialOwner > MatchPack.MaxTeams - 1) throw
+
+[nt1-pack-owner-nine]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1MatchPackTests.Nt1ControlPointDef_AcceptsOwnerZeroAndEight_RejectsMinusOneAndNine
+note = initial owner 9 is accepted
+original:
+| if (initialOwner < 0 || initialOwner > MatchPack.MaxTeams) throw
+replacement:
+| if (initialOwner < 0 || initialOwner > MatchPack.MaxTeams + 1) throw
+
+[nt1-pack-max-nine]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1MatchPackTests.Nt1MaxTeams_IsEight
+note = the team limit is 9
+original:
+|         public const int MaxTeams = 8;
+replacement:
+|         public const int MaxTeams = 9;
+
+[nt1-pack-floor-one]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1MatchPackTests.Nt1TeamCount_OneTeamOnly_IsStillTwo
+note = the team count may fall to 1
+original:
+|             int teams = 2;
+replacement:
+|             int teams = 1;
+
+[nt1-pack-floor-three]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1MatchPackTests.Nt1TeamCount_TwoTeams_IsTwo
+expect = WarCore.Tests.Nt1TwoTeamLockTests.Nt1TwoTeams_CaptureAndReinforceWorldKeepsHashesAndSnapshotBytes
+note = the team count is at least 3
+original:
+|             int teams = 2;
+replacement:
+|             int teams = 3;
+
+[nt1-pack-count-ignores-anchors]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1MatchPackTests.Nt1TeamCount_AnchorsUpToFive_IsFive
+note = anchor teams do not raise the team count
+original:
+|             foreach (var anchor in this.bases) teams = Math.Max(teams, anchor.Team);
+replacement:
+|             foreach (var anchor in this.bases) { }
+
+[nt1-pack-count-ignores-owners]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1MatchPackTests.Nt1TeamCount_InitialOwnerSevenAnchorsUpToThree_IsSeven
+note = initial owners do not raise the team count
+original:
+|             foreach (var point in this.points) teams = Math.Max(teams, point.InitialOwner);
+replacement:
+|             foreach (var point in this.points) { }
+
+[nt1-reinforce-loop-two]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1ReinforceTests.Nt1Reinforce_ThreeTeams_EachDeploysOnTheDueTickInTeamOrder
+note = only teams 1 and 2 get reinforcements
+original:
+|             for (int team = 1; team <= pack.TeamCount; team++)
+replacement:
+|             for (int team = 1; team <= 2; team++)
+
+[nt1-reinforce-version-one]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1ReinforceTests.Nt1Reinforce_VersionAndBytes_TwoTeamsKeepVersionOne
+note = more teams keep version 1
+original:
+|         public int StateVersion => pack.TeamCount == 2 ? 1 : 2;
+replacement:
+|         public int StateVersion => 1;
+
+[nt1-reinforce-version-two]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1ReinforceTests.Nt1Reinforce_VersionAndBytes_TwoTeamsKeepVersionOne
+expect = WarCore.Tests.Nt1TwoTeamLockTests.Nt1TwoTeams_PlaytestKeepsHashesAndSnapshotBytes
+note = two teams move to version 2
+original:
+|         public int StateVersion => pack.TeamCount == 2 ? 1 : 2;
+replacement:
+|         public int StateVersion => 2;
+
+[nt1-reinforce-init-two]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1ReinforceTests.Nt1Reinforce_ThreeTeams_EachDeploysOnTheDueTickInTeamOrder
+note = only the first two due ticks are set
+original:
+|             for (int i = 0; i < teams; i++) next[i] = startTick + pack.IntervalTicks;
+replacement:
+|             for (int i = 0; i < 2; i++) next[i] = startTick + pack.IntervalTicks;
+
+[nt1-reinforce-save-two]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1ReinforceTests.Nt1Reinforce_VersionAndBytes_TwoTeamsKeepVersionOne
+note = only two triples are saved
+original:
+|             for (int i = 0; i < pack.TeamCount; i++) { writer.Int64
+replacement:
+|             for (int i = 0; i < 2; i++) { writer.Int64
+
+[nt1-reinforce-load-two]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1ReinforceTests.Nt1Reinforce_ThreeTeams_TeamThreeCountersReachLoadAndHash
+expect = WarCore.Tests.Nt1ReinforceTests.Nt1Reinforce_ThreeTeams_SaveAt40RestoreRunTo200
+note = only two triples are loaded
+original:
+|             for (int i = 0; i < pack.TeamCount; i++) { next[i] = reader
+replacement:
+|             for (int i = 0; i < 2; i++) { next[i] = reader
+
+[nt1-reinforce-hash-two]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1ReinforceTests.Nt1Reinforce_ThreeTeams_TeamThreeCountersReachLoadAndHash
+note = only two triples are hashed
+original:
+|             for (int i = 0; i < pack.TeamCount; i++) { hash.Add
+replacement:
+|             for (int i = 0; i < 2; i++) { hash.Add
+
+[nt1-reinforce-deployed-two]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1ReinforceTests.Nt1Reinforce_ThreeTeams_EachDeploysOnTheDueTickInTeamOrder
+note = room for two deploy records per tick
+original:
+| deployed = new DeployRecord[teams];
+replacement:
+| deployed = new DeployRecord[2];
+
+[nt1-capture-filter-two]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1CaptureTests.Nt1Capture_OneTwoFive_ThirdTeamCaptures
+note = team 3 units are not counted
+original:
+| value.Team < 1 || value.Team > teams
+replacement:
+| value.Team < 1 || value.Team > 2
+
+[nt1-capture-filter-gone]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1CaptureTests.Nt1Capture_TeamNineUnitsDoNotCount
+note = units of team 9 are counted
+original:
+| value.Team < 1 || value.Team > teams
+replacement:
+| value.Team < 1
+
+[nt1-capture-write-stride]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1CaptureTests.Nt1Capture_SecondPoint_SecondTeamCapturesIt
+note = counts are written with a stride of 2
+original:
+| counts[teams * i + value.Team - 1]++;
+replacement:
+| counts[2 * i + value.Team - 1]++;
+
+[nt1-capture-read-stride]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1CaptureTests.Nt1Capture_SecondPoint_SecondTeamCapturesIt
+note = counts are read with a stride of 2
+original:
+|                     int count = counts[teams * i + t];
+replacement:
+|                     int count = counts[2 * i + t];
+
+[nt1-capture-second-skipped]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1CaptureTests.Nt1Capture_FiveThreeOne_NobodyLeads
+note = a team after the leader never becomes the second largest
+original:
+|                     else if (count > b) b = count;
+replacement:
+|                     else if (count > b) { }
+
+[nt1-capture-second-before-leader]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1CaptureTests.Nt1Capture_ThreeFiveOne_NobodyLeads
+note = a new leader forgets the count it overtook
+original:
+|                     if (count > a) { b = a; a = count; leader = t + 1; }
+replacement:
+|                     if (count > a) { a = count; leader = t + 1; }
+
+[nt1-capture-tie-leads]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1CaptureTests.Nt1Capture_FourFourOne_TieForTheMostAtOneToOne_NobodyLeads
+expect = WarCore.Tests.Nt1CaptureTests.Nt1Capture_OneFourFour_TieForTheMostAfterALowerTeam_NobodyLeads
+note = a tie for the most keeps the first team as leader
+original:
+|                     else if (count == a) leader = 0;
+replacement:
+|                     else if (count == a) { }
+
+[nt1-allpoints-upward]
+file = Assets/WarCore/Battle/MatchRules.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1RuleTests.Nt1AllPoints_TwoTeamsReportEveryPoint_HigherTeamWins
+note = the search for a full owner runs from team 1 up
+original:
+|             for (int team = world.TeamCount; team >= 1; team--)
+replacement:
+|             for (int team = 1; team <= world.TeamCount; team++)
+
+[nt1-allpoints-two]
+file = Assets/WarCore/Battle/MatchRules.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1RuleTests.Nt1AllPoints_ThirdTeamOwnsEveryPoint_Wins
+note = only teams 1 and 2 can own every point
+original:
+|             for (int team = world.TeamCount; team >= 1; team--)
+replacement:
+|             for (int team = 2; team >= 1; team--)
+
+[nt1-exhausted-three-standing]
+file = Assets/WarCore/Battle/MatchRules.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1RuleTests.Nt1Exhausted_TwoTeamsStanding_GoesOn
+note = two teams standing end the match
+original:
+|             if (standing >= 2) return false;
+replacement:
+|             if (standing >= 3) return false;
+
+[nt1-exhausted-winner-one]
+file = Assets/WarCore/Battle/MatchRules.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1RuleTests.Nt1Exhausted_OnlyTheThirdTeamStanding_Wins
+note = the last team standing is always team 1
+original:
+|             winner = standing == 0 ? -1 : last;
+replacement:
+|             winner = standing == 0 ? -1 : 1;
+
+[nt1-exhausted-empty-team-one]
+file = Assets/WarCore/Battle/MatchRules.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1RuleTests.Nt1Exhausted_NobodyStanding_Draw
+note = nobody standing gives team 1
+original:
+|             winner = standing == 0 ? -1 : last;
+replacement:
+|             winner = standing == 0 ? 1 : last;
+
+[nt1-exhausted-loop-two]
+file = Assets/WarCore/Battle/MatchRules.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1RuleTests.Nt1Exhausted_OnlyTheThirdTeamStanding_Wins
+note = only teams 1 and 2 are counted
+original:
+|             for (int team = 1; team <= world.TeamCount; team++)
+|                 if (alive[team - 1] != 0)
+replacement:
+|             for (int team = 1; team <= 2; team++)
+|                 if (alive[team - 1] != 0)
+
+[nt1-time-all-compare-units]
+file = Assets/WarCore/Battle/MatchRules.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1RuleTests.Nt1Time_TieForMostPoints_OnlyTiedTeamsCompareUnits_Draw
+note = every team competes on units, not only the tied ones
+original:
+|                 if (points[team - 1] != most) continue;
+replacement:
+|                 if (false) continue;
+
+[nt1-time-unit-tie-first]
+file = Assets/WarCore/Battle/MatchRules.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1RuleTests.Nt1Time_TieForMostPoints_OnlyTiedTeamsCompareUnits_Draw
+note = a tie on units gives the first tied team
+original:
+|             winner = tie ? -1 : best;
+replacement:
+|             winner = best;
+
+[nt1-time-loop-two]
+file = Assets/WarCore/Battle/MatchRules.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1RuleTests.Nt1Time_OneTeamWithMostPoints_WinsWithoutCountingUnits
+note = only teams 1 and 2 are read for points
+original:
+|             for (int team = 1; team <= teams; team++) { points[team - 1]
+replacement:
+|             for (int team = 1; team <= 2; team++) { points[team - 1]
+
+[nt1-time-later-more-units]
+file = Assets/WarCore/Battle/MatchRules.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1RuleTests.Nt1Time_TieForMostPoints_MoreUnitsAmongTiedWins
+note = a later tied team with more units does not replace the first
+original:
+| if (best == 0 || alive[team - 1] > bestAlive)
+replacement:
+| if (best == 0)
+
+[nt1-match-filter-gone]
+file = Assets/WarCore/Battle/MatchSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1ThreeTeamWorldTests.Nt1MatchSystem_CountsEachTeamAndSkipsTeamNine
+note = units outside 1..TeamCount are counted
+original:
+|  && unit.Team >= 1 && unit.Team <= teams)
+replacement:
+| )
+
+[nt1-match-index]
+file = Assets/WarCore/Battle/MatchSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1ThreeTeamWorldTests.Nt1MatchSystem_CountsEachTeamAndSkipsTeamNine
+note = team t is counted in slot t
+original:
+|                     alive[unit.Team - 1]++;
+replacement:
+|                     alive[unit.Team % 8]++;
+
+[nt1-match-teams-two]
+file = Assets/WarCore/Battle/MatchSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1ThreeTeamWorldTests.Nt1MatchSystem_ThirdTeamFalls_TeamOneWinsByExhaustion
+note = the match system reports two teams
+original:
+|         public int TeamCount => pack.TeamCount;
+replacement:
+|         public int TeamCount => 2;
+
+[nt1-default-no-clear]
+file = Assets/WarCore/Battle/MatchMode.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1RuleTests.Nt1DefaultSpanCount_FillsTwoSlotsAndClearsTheRest
+note = the default count leaves stale slots
+original:
+|             alive.Clear(); alive[0] = one; alive[1] = two;
+replacement:
+|             alive[0] = one; alive[1] = two;
+
+[nt1-default-three]
+file = Assets/WarCore/Battle/MatchMode.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1RuleTests.Nt1DefaultSpanCount_FillsTwoSlotsAndClearsTheRest
+note = a reader without TeamCount reports three teams
+original:
+|         int TeamCount => 2;
+replacement:
+|         int TeamCount => 3;
+
+[nt1-respawn-old-enemy]
+file = Assets/WarCore/Battle/RespawnSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1RespawnTests.Nt1Respawn_ThirdTeamUnitInThePoint_FallsBackToTheBase
+note = only the two-team enemy contests
+original:
+| unit.Team != team && unit.Team >= 1 && unit.Team <= pack.TeamCount
+replacement:
+| unit.Team == 3 - team
+
+[nt1-respawn-range-gone]
+file = Assets/WarCore/Battle/RespawnSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1RespawnTests.Nt1Respawn_TeamZeroUnitInThePoint_UsesThePoint
+expect = WarCore.Tests.Nt1RespawnTests.Nt1Respawn_TeamNineUnitInThePoint_UsesThePoint
+note = units of no team contest
+original:
+| unit.Team != team && unit.Team >= 1 && unit.Team <= pack.TeamCount
+replacement:
+| unit.Team != team
+
+[nt1-respawn-upper-two]
+file = Assets/WarCore/Battle/RespawnSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1
+expect = WarCore.Tests.Nt1RespawnTests.Nt1Respawn_ThirdTeamUnitInThePoint_FallsBackToTheBase
+note = team 3 is outside the contest range
+original:
+| unit.Team != team && unit.Team >= 1 && unit.Team <= pack.TeamCount
+replacement:
+| unit.Team != team && unit.Team >= 1 && unit.Team <= 2
