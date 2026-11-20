@@ -75,7 +75,7 @@ namespace WarCore.Tests
             One(W + "MissingFieldInANewWeaponIsRejectedNotDefaulted", "miss", "new weapon with only magazine", "miss",
                 "\"weapons\": [ { \"id\": \"miss.w\", \"magazine\": 3 } ]", "content pack 'miss' layer 'miss' weapon 'miss.w' is missing field 'fireIntervalMilli'");
             One(W + "DuplicateJsonPropertyIsRejected", "twice", "captureTicks twice", "twice", "\"match\": { \"captureTicks\": 1, \"captureTicks\": 2 }", "content layer 'twice' line 1 (match): field 'captureTicks' is repeated in the same object");
-            One(W + "UnknownPolicyListsTheAllowedOnes", "pol", "resolver made.up", "pol", "\"combat\": { \"resolver\": \"made.up\" }", "content pack 'pol' layer 'pol' combat field 'resolver': unknown policy 'made.up', allowed: rwr.hit");
+            One(W + "UnknownPolicyListsTheAllowedOnes", "pol", "resolver made.up", "pol", "\"combat\": { \"resolver\": \"made.up\" }", "content pack 'pol' layer 'pol' combat field 'resolver': unknown policy 'made.up', allowed: damage, rwr.hit");
             One(W + "UnknownSelectorIsRejected", "sel", "selector made.up", "sel", "\"combat\": { \"selector\": \"made.up\" }", "content pack 'sel' layer 'sel' combat field 'selector': unknown policy 'made.up', allowed: nearest-visible, sight-limited");
             One(W + "NumbersThatOverflowOrAreOutOfRangeNameTheField", "o1", "magazine 99999999999", "o1",
                 "\"weapons\": [ { \"id\": \"rwr.weapon-1\", \"magazine\": 99999999999 } ]", "content pack 'o1' layer 'o1' weapon 'rwr.weapon-1' field 'magazine': out of range [-2147483648, 2147483647]");
