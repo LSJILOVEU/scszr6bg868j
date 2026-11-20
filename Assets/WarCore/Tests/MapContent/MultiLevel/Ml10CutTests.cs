@@ -18,9 +18,10 @@ namespace WarCore.Tests
 
         private static ViewEntity At(float x, float y, float z, int layer = 0) => new ViewEntity(1, 0, x, y, z, team: 1, layer: layer);
 
-        private static (ViewPlates Plates, ViewMap Map) House(bool upperWall = false, bool farWall = false)
+        private static (ViewPlates Plates, ViewMap Map) House(bool upperWall = false, bool farWall = false, bool cornerPlate = false)
         {
-            byte[] bytes = upperWall || farWall ? MapBake.Run(MapDescJson.Write(WithWalls(upperWall, farWall))).WcMapBytes : PlateDemo.MapBytes();
+            byte[] bytes = upperWall || farWall || cornerPlate
+                ? MapBake.Run(MapDescJson.Write(WithExtras(upperWall, farWall, cornerPlate))).WcMapBytes : PlateDemo.MapBytes();
             return (ViewPlates.From(WcMapReader.Read(bytes)), ViewMap.Parse(bytes));
         }
 
@@ -114,6 +115,36 @@ namespace WarCore.Tests
             Assert.That((cut.Indoors, cut.Wall(upper), cut.Wall(far)), Is.EqualTo((true, CutState.Hidden, CutState.Shown)));
         }
 
+        // The line from the head can meet what the line from the feet passes under: 0.5 m up under the first floor at (10, 8.5),
+        // the line from the feet (0.6 m) reaches the floor's 2.5..3 m only at x 7.3..7.7, past its west edge (x 9); the line
+        // from the head (1.5 m) reaches it at x 8.9..9.3, over the floor. The floor fades.
+        [Test]
+        public void TheHeadLineFadesWhatTheFeetPassUnder()
+        {
+            var (plates, map) = House();
+            LayerCutResult cut = LayerCut.Run(plates, map, At(10f, 0.5f, 8.5f), Forward);
+            Assert.That((cut.Indoors, cut.Plate(1)), Is.EqualTo((true, CutState.Faded)));
+        }
+
+        // Indoors needs the plate's bottom strictly above the feet: 2.5 m up in the floor's rectangle (on the stair's line, x
+        // 13 1/3) is not under the floor, 2.49 m is.
+        [Test]
+        public void TheIndoorsEdge()
+        {
+            var (plates, map) = House();
+            Assert.That(LayerCut.Run(plates, map, At(13.3333f, 2.5f, 9.5f, 1), Forward).Indoors, Is.False);
+            Assert.That(LayerCut.Run(plates, map, At(13.3333f, 2.49f, 9.5f, 1), Forward).Indoors, Is.True);
+        }
+
+        // A plate meeting the building at a corner only is not part of it: under the first floor the plate at 6 m stays.
+        [Test]
+        public void ACornerAloneDoesNotJoinTheBuilding()
+        {
+            var (plates, map) = House(cornerPlate: true);
+            LayerCutResult cut = LayerCut.Run(plates, map, At(11.5f, 0, 7.5f), Forward);
+            Assert.That((cut.Indoors, cut.Plate(1), cut.Plate(2)), Is.EqualTo((true, CutState.Hidden, CutState.Shown)));
+        }
+
         // Fading follows the line from the camera: the south wall fades when the unit is behind it and not when the unit is in
         // front of it; no player, or a dead one, cuts nothing.
         [Test]
@@ -134,18 +165,21 @@ namespace WarCore.Tests
                     Is.All.EqualTo(CutState.Shown));
         }
 
-        // The demo house with a 2 m wall standing on the first floor at cell (9, 6) (bottom 3 m), one as high at cell (20, 3)
-        // away from the house, or both.
-        private static MapDesc WithWalls(bool upperWall, bool farWall)
+        // The demo house with any of: a 2 m wall standing on the first floor at cell (9, 6) (bottom 3 m); one as high at cell
+        // (20, 3) away from the house; a plate at 6 m (bottom 5.5 m) on cells x 15..16, z 3..5, meeting the first floor at its
+        // corner (15, 6) only.
+        private static MapDesc WithExtras(bool upperWall, bool farWall, bool cornerPlate)
         {
             MapDesc d = PlateDemoMap.Desc();
             var extra = new System.Collections.Generic.List<MapWall>();
             if (upperWall) extra.Add(new MapWall(6, "wall", "walls", new MapXZ(9, 6), new MapXZ(1, 1), 2 * M, null, null, 3 * M));
             if (farWall) extra.Add(new MapWall(7, "wall", "walls", new MapXZ(20, 3), new MapXZ(1, 1), 2 * M, null, null, 3 * M));
             var walls = d.Walls.Concat(extra).ToArray();
+            var plates = d.Plates.ToList();
+            if (cornerPlate) plates.Add(new MapPlate(3, new MapXZ(15, 3), new MapXZ(2, 3), 6 * M, null, M / 2));
             return new MapDesc(d.Id, d.Content, d.Pack, d.Size, d.Origin, d.FloorRaw, d.CeilingRaw, d.Layers.ToArray(), null, null,
-                d.Plates.ToArray(), d.Cutouts.ToArray(), walls, d.Points.ToArray(), d.Bases.ToArray(), d.Units.ToArray(), d.Run,
-                d.Owners.ToArray(), null, null, d.Stamps.ToArray(), d.Removed.ToArray(), new MapNext(8, 3, 3, 5, 3, 2));
+                plates.ToArray(), d.Cutouts.ToArray(), walls, d.Points.ToArray(), d.Bases.ToArray(), d.Units.ToArray(), d.Run,
+                d.Owners.ToArray(), null, null, d.Stamps.ToArray(), d.Removed.ToArray(), new MapNext(8, 3, 3, 5, 4, 2));
         }
     }
 }

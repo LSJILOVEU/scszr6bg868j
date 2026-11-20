@@ -1,8 +1,8 @@
 # ML-10: the plates for the picture (ViewPlates, layers in the view), the layer cut and fading (LayerCut), picking with
 # plates (AimPick, the mapper), the plate self-check (PlateCheck) and the plate mesh (PlateMesh). Filter: ML-10 tests.
-# Not listed: PlateRay.TryTop's solid-cell skip (the millimetre check behind it refuses the same cells); LayerCut's corner
-# rule for touching rectangles (no demo map has plates meeting at a corner only); LayerCut's `if (indoors)` guard, a
-# shortcut (outdoors no plate is in the building, so dropping it changes nothing); Unity code (no Unity here).
+# Not listed: PlateRay.TryTop's solid-cell skip (the millimetre check behind it refuses the same cells); LayerCut's
+# `if (indoors)` guard, a shortcut (outdoors no plate is in the building, so dropping it changes nothing); Unity code (no
+# Unity here).
 [ml10-view-solid-ignored]
 file = Assets/WarCore/Presentation/Bridge/Features/ViewPlates.cs
 filter = FullyQualifiedName~Ml10
@@ -97,7 +97,7 @@ original:
 replacement:
 | if (wallStates[w] == CutState.Shown && true || PlateRay.CrossesBox(
 
-[ml10-cut-no-head-line]
+[ml10-cut-no-feet-line]
 file = Assets/WarCore/Presentation/Camera/LayerCut.cs
 filter = FullyQualifiedName~Ml10
 expect = WarCore.Tests.Ml10CutTests.FadingFollowsTheLine
@@ -106,6 +106,36 @@ original:
 | foreach (float lift in new[] { FootLift, AimPick.BodyHeight })
 replacement:
 | foreach (float lift in new[] { AimPick.BodyHeight })
+
+[ml10-cut-no-head-line]
+file = Assets/WarCore/Presentation/Camera/LayerCut.cs
+filter = FullyQualifiedName~Ml10
+expect = WarCore.Tests.Ml10CutTests.TheHeadLineFadesWhatTheFeetPassUnder
+note = only the feet line fades (the head line is dropped)
+original:
+| foreach (float lift in new[] { FootLift, AimPick.BodyHeight })
+replacement:
+| foreach (float lift in new[] { FootLift })
+
+[ml10-cut-indoors-equal]
+file = Assets/WarCore/Presentation/Camera/LayerCut.cs
+filter = FullyQualifiedName~Ml10
+expect = WarCore.Tests.Ml10CutTests.TheIndoorsEdge
+note = a plate bottom level with the feet counts as over the unit
+original:
+| top - p.Thick > me.Y)
+replacement:
+| top - p.Thick >= me.Y)
+
+[ml10-cut-corner-joins]
+file = Assets/WarCore/Presentation/Camera/LayerCut.cs
+filter = FullyQualifiedName~Ml10
+expect = WarCore.Tests.Ml10CutTests.ACornerAloneDoesNotJoinTheBuilding
+note = rectangles meeting at a corner join the building
+original:
+|             return x >= 0 && z >= 0 && (x > 0 || z > 0);
+replacement:
+|             return x >= 0 && z >= 0;
 
 [ml10-cut-faded-pickable]
 file = Assets/WarCore/Presentation/Camera/LayerCut.cs
