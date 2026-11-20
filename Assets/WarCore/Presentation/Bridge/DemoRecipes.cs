@@ -52,9 +52,11 @@ namespace WarCore.Presentation
         }
 
         public static byte[] M7MapBytes() => M7DemoMap.Bytes();
-        public static WorldRecipe MpDemo()
+        public static WorldRecipe MpDemo() => MpDemo(WarCore.Content.Rwr.RwrPack.Load(WarCore.Content.Rwr.RwrPack.M6Layer));
+
+        public static WorldRecipe MpDemo(ContentPack content)
         {
-            WorldRecipe recipe = M7();
+            WorldRecipe recipe = M7(content);
             // WorldRecipe sorts Units by Key; reserves must never become the initial player.
             foreach (UnitSpawn unit in recipe.Units)
                 if (unit.Team == 1 && !unit.Reserve) return recipe.WithPlayer(unit.Key);
@@ -63,17 +65,26 @@ namespace WarCore.Presentation
 
         // F5u: the MP demo with one block spec that only the player's unit carries, so the HUD can show a held block.
         // Every other field of the recipe and its combat pack is copied from MpDemo; no block AI is added.
-        public static WorldRecipe MpBlockDemo() =>
-            WithPlayerBlock(MpDemo(), new WarCore.Combat.BlockSpec(500, 1000)); // PLACEHOLDER: front +-60 degrees, stops all of the blow.
+        public static WorldRecipe MpBlockDemo() => MpBlockDemo(WarCore.Content.Rwr.RwrPack.Load(WarCore.Content.Rwr.RwrPack.M6Layer));
+
+        public static WorldRecipe MpBlockDemo(ContentPack content) =>
+            WithPlayerBlock(MpDemo(content), new WarCore.Combat.BlockSpec(500, 1000)); // PLACEHOLDER: front +-60 degrees, stops all of the blow.
 
         // C2: the MP block demo with player respawn on, so a death shows the countdown and play goes on in a reserve.
         // C1c: the new unit takes no combat damage for 90 ticks after the switch.
-        public static WorldRecipe MpRespawnDemo() => WithRespawnGuard(WithRespawn(MpBlockDemo(), 300), 90); // PLACEHOLDER: 10 s and 3 s at 30 Hz.
+        public static WorldRecipe MpRespawnDemo() => MpRespawnDemo(WarCore.Content.Rwr.RwrPack.Load(WarCore.Content.Rwr.RwrPack.M6Layer));
 
-        // PF1: the playtest recipe, the MP respawn demo with the AI rules of content layer rwr-m7-playtest. WithAiRules comes last:
-        // WithPlayerBlock rebuilds the recipe without the AI pack.
+        public static WorldRecipe MpRespawnDemo(ContentPack content) =>
+            WithRespawnGuard(WithRespawn(MpBlockDemo(content), 300), 90); // PLACEHOLDER: 10 s and 3 s at 30 Hz.
+
+        // PF1: the playtest recipe, the MP respawn demo built from content layer rwr-m7-playtest (weapons, match rules) with that
+        // layer's AI rules. WithAiRules comes last: WithPlayerBlock rebuilds the recipe without the AI pack.
         public const string PlaytestLayer = "rwr-m7-playtest";
-        public static WorldRecipe MpPlaytest() => MpRespawnDemo().WithAiRules(WarCore.Content.Rwr.RwrPack.Load(PlaytestLayer));
+        public static WorldRecipe MpPlaytest()
+        {
+            ContentPack layer = WarCore.Content.Rwr.RwrPack.Load(PlaytestLayer);
+            return MpRespawnDemo(layer).WithAiRules(layer);
+        }
 
         // The recipe with its match rules rebuilt from every field of the old ones and only the respawn delay replaced.
         internal static WorldRecipe WithRespawn(WorldRecipe source, int ticks)
