@@ -14,13 +14,16 @@ namespace WarCore.Content.MapTools
         public long XMm { get; }
         public long ZMm { get; }
         public bool Reserve { get; }
-        public MapSoldier(ulong key, string type, int team, int squad, long xMm, long zMm, bool reserve)
+        // 0 = the ground; 1..N = a floor plate in baked order.
+        public int Layer { get; }
+        public MapSoldier(ulong key, string type, int team, int squad, long xMm, long zMm, bool reserve, int layer = 0)
         {
-            Key = key; Type = type; Team = team; Squad = squad; XMm = xMm; ZMm = zMm; Reserve = reserve;
+            Key = key; Type = type; Team = team; Squad = squad; XMm = xMm; ZMm = zMm; Reserve = reserve; Layer = layer;
         }
     }
 
-    // Match and run data baked from a description: control points and base anchors (Y on the ground), soldiers, run settings.
+    // Match and run data baked from a description: control points and base anchors (Y on the ground, or on the plate top with
+    // its layer), soldiers, run settings.
     public sealed class MapSetup
     {
         private readonly ControlPointDef[] points;

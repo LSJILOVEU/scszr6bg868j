@@ -36,19 +36,19 @@ namespace WarCore.Content.MapTools
 
         internal static readonly MapEditKind<MapPoint> Point = new MapEditKind<MapPoint>("point", 1, int.MaxValue,
             p => (ulong)p.Id, p => p.Owner, p => p.Src,
-            (p, id, owner, src) => new MapPoint((int)id, p.At, p.RadiusMm, p.InitialOwner, p.Spawn, owner, src),
+            (p, id, owner, src) => new MapPoint((int)id, p.At, p.RadiusMm, p.InitialOwner, p.Spawn, owner, src, p.SpawnPlate),
             (p, origin) => MmCell(p.At, origin),
             (p, d) => OnMap(p.At, d) && (!p.Spawn.HasValue || OnMap(p.Spawn.Value, d)));
 
         internal static readonly MapEditKind<MapBase> Base = new MapEditKind<MapBase>("base", 2, int.MaxValue,
             b => (ulong)b.Id, b => b.Owner, b => b.Src,
-            (b, id, owner, src) => new MapBase((int)id, b.Team, b.At, owner, src),
+            (b, id, owner, src) => new MapBase((int)id, b.Team, b.At, owner, src, b.Plate),
             (b, origin) => MmCell(b.At, origin),
             (b, d) => OnMap(b.At, d));
 
         internal static readonly MapEditKind<MapUnit> Unit = new MapEditKind<MapUnit>("unit", 3, ulong.MaxValue,
             u => u.Key, u => u.Owner, u => u.Src,
-            (u, id, owner, src) => new MapUnit(id, u.Type, u.Team, u.Squad, u.At, u.Reserve, owner, src),
+            (u, id, owner, src) => new MapUnit(id, u.Type, u.Team, u.Squad, u.At, u.Reserve, owner, src, u.Plate),
             (u, origin) => MmCell(u.At, origin),
             (u, d) => OnMap(u.At, d));
 

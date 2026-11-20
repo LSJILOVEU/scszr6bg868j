@@ -5,7 +5,7 @@ using WarCore.Sim;
 namespace WarCore.Presentation
 {
     // The floor plates of a map as the bridge reads them: the layered graph (layer 0 = the ground, 1..N = the plates in baked
-    // order) and each plate's floored top surface (K11). A point (x, z) falls in the cell whose minimum edges contain it.
+    // order) and each plate's floored top surface (K11). The cell of a point is MapCells.TryCell's.
     internal sealed class PlateWorld
     {
         private readonly WcMap map;
@@ -30,9 +30,8 @@ namespace WarCore.Presentation
         {
             y = default;
             if (layer < 1 || layer >= Nav.LayerCount) return false;
-            long cx = (x.Raw - map.Min.X.Raw) >> 16, cz = (z.Raw - map.Min.Z.Raw) >> 16;
-            if (cx < 0 || cz < 0 || cx >= Nav.Width || cz >= Nav.Depth) return false;
-            if (!Nav.TryNode(layer, (int)cx, (int)cz, out int node) || walkable && !Nav.IsPassable(node)) return false;
+            if (!MapCells.TryCell(map, x, z, out int cx, out int cz)) return false;
+            if (!Nav.TryNode(layer, cx, cz, out int node) || walkable && !Nav.IsPassable(node)) return false;
             return tops[layer - 1].TryHeightAt(x, z, out y);
         }
     }

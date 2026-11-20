@@ -31,7 +31,7 @@ namespace WarCore.Presentation
             AiRules ai = (terrainRules ? recipe.TerrainPack : recipe.AiPack)?.Section<AiRules>();
             var capture = new CaptureSystem(combat, recipe.Match);
             var adapter = new BattleAdapter(sim, a.Locomotion, recipe, new DeployGround(terrain != null ? terrain.Nav : WcMapNavigation.Create(a.Map), terrain, a.GroundRaw), a.GroundRaw, a.Standing,
-                a.Plates != null ? a.Verticals : (ComponentType<VerticalState>?)null);
+                a.Plates != null ? a.Verticals : (ComponentType<VerticalState>?)null, a.Plates);
             var reinforce = new ReinforceSystem(combat, recipe.Match, capture, adapter);
             var match = new MatchSystem(combat, recipe.Match, capture, a.Mode);
             a.Mode.Bind(match);
@@ -111,14 +111,16 @@ namespace WarCore.Presentation
         private readonly ComponentType<Combatant> combatants;
         private readonly ComponentType<SquadStanding>? standing;
         private readonly ComponentType<VerticalState>? verticals;
+        private readonly PlateWorld plates;
         private static readonly SimFix Radius = SimFix.Ratio(1, 4);
         private readonly SimFix unitHeight;
         public ulong PolicyKey { get; }
         internal BattleAdapter(Simulation sim, InterimLocomotion locomotion, WorldRecipe recipe, DeployGround ground, long groundRaw, ComponentType<SquadStanding>? standing = null,
-            ComponentType<VerticalState>? verticals = null)
+            ComponentType<VerticalState>? verticals = null, PlateWorld plates = null)
         {
             this.standing = standing;
             this.verticals = verticals;
+            this.plates = plates;
             unitHeight = WorldAssembly.UnitHeight(recipe.Combat);
             this.sim = sim; this.locomotion = locomotion; this.ground = ground; this.groundRaw = groundRaw;
             stage = new EntityStage(sim.Entities); spawns = recipe.Units.ToArray(); ids = new StableId[spawns.Length];
@@ -149,6 +151,22 @@ namespace WarCore.Presentation
         {
             StableId stable = sim.Entities.StableOf(unit); unit = Resolve(stable);
             if (!ground.TryGround(at, out at) || !ground.CanStand(at)) return false;
+            return Place(stable, unit, at, 0);
+        }
+
+        // On a plate (layer > 0): a walkable cell of that plate, Y on its top; the ground's footprint and stand rules are not
+        // read (the footprint on a plate is the movers' business). Layer 0 is the ground deployment.
+        public bool TryDeploy(EntityId unit, SimVec3 at, int layer)
+        {
+            if (layer == 0) return TryDeploy(unit, at);
+            if (plates == null) throw new NotSupportedException("Deployment on layer " + layer + " needs a world with floor plates.");
+            StableId stable = sim.Entities.StableOf(unit); unit = Resolve(stable);
+            if (!plates.TryFloor(layer, at.X, at.Z, true, out SimFix y)) return false;
+            return Place(stable, unit, new SimVec3(at.X, y, at.Z), layer);
+        }
+
+        private bool Place(StableId stable, EntityId unit, SimVec3 at, int layer)
+        {
             foreach (EntityId other in stage.Capture())
             {
                 if (!sim.Entities.TryGet(combatants, other, out _) || !sim.Entities.TryGet(positions, other, out Position position)
@@ -162,8 +180,8 @@ namespace WarCore.Presentation
             sim.Entities.Set(colliders, unit, new Collider(Radius, unitHeight));
             sim.Entities.Set(intents, unit, new MoveIntent(at, SimFix.Ratio(spawn.SpeedMmPerSec, 1000 * SimClock.TickRate), spawn.Squad, false));
             sim.Entities.Set(waypoints, unit, default);
-            // Deployment is on the ground: a unit that stood on a plate before comes back on layer 0.
-            if (verticals.HasValue) sim.Entities.Set(verticals.Value, unit, new VerticalState(0, 0));
+            // The deployment's layer: a unit that stood on a plate before and comes back on the ground is on layer 0 again.
+            if (verticals.HasValue) sim.Entities.Set(verticals.Value, unit, new VerticalState(layer, 0));
             return true;
         }
     }

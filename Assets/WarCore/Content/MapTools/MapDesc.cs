@@ -92,9 +92,12 @@ namespace WarCore.Content.MapTools
         public MapMm? Spawn { get; }
         public int? Owner { get; }
         public MapSrc Src { get; }
-        public MapPoint(int id, MapMm at, int radiusMm, int initialOwner, MapMm? spawn = null, int? owner = null, MapSrc src = null)
+        // The plate id the spawn stands on (version 2; only with a spawn); null = the ground.
+        public ulong? SpawnPlate { get; }
+        public MapPoint(int id, MapMm at, int radiusMm, int initialOwner, MapMm? spawn = null, int? owner = null, MapSrc src = null,
+            ulong? spawnPlate = null)
         {
-            Id = id; At = at; RadiusMm = radiusMm; InitialOwner = initialOwner; Spawn = spawn; Owner = owner; Src = src;
+            Id = id; At = at; RadiusMm = radiusMm; InitialOwner = initialOwner; Spawn = spawn; Owner = owner; Src = src; SpawnPlate = spawnPlate;
         }
     }
 
@@ -105,9 +108,11 @@ namespace WarCore.Content.MapTools
         public MapMm At { get; }
         public int? Owner { get; }
         public MapSrc Src { get; }
-        public MapBase(int id, int team, MapMm at, int? owner = null, MapSrc src = null)
+        // The plate id the base stands on (version 2); null = the ground.
+        public ulong? Plate { get; }
+        public MapBase(int id, int team, MapMm at, int? owner = null, MapSrc src = null, ulong? plate = null)
         {
-            Id = id; Team = team; At = at; Owner = owner; Src = src;
+            Id = id; Team = team; At = at; Owner = owner; Src = src; Plate = plate;
         }
     }
 
@@ -121,9 +126,11 @@ namespace WarCore.Content.MapTools
         public bool Reserve { get; }
         public int? Owner { get; }
         public MapSrc Src { get; }
-        public MapUnit(ulong key, string type, int team, int squad, MapMm at, bool reserve, int? owner = null, MapSrc src = null)
+        // The plate id the unit stands on (version 2; not for reserves); null = the ground.
+        public ulong? Plate { get; }
+        public MapUnit(ulong key, string type, int team, int squad, MapMm at, bool reserve, int? owner = null, MapSrc src = null, ulong? plate = null)
         {
-            Key = key; Type = type; Team = team; Squad = squad; At = at; Reserve = reserve; Owner = owner; Src = src;
+            Key = key; Type = type; Team = team; Squad = squad; At = at; Reserve = reserve; Owner = owner; Src = src; Plate = plate;
         }
     }
 
@@ -293,6 +300,12 @@ namespace WarCore.Content.MapTools
                     if (IsVersion2Kind(row.Kind)) return true;
                 foreach (MapSrc row in Removed)
                     if (IsVersion2Kind(row.Kind)) return true;
+                foreach (MapPoint point in Points)
+                    if (point.SpawnPlate.HasValue) return true;
+                foreach (MapBase anchor in Bases)
+                    if (anchor.Plate.HasValue) return true;
+                foreach (MapUnit unit in Units)
+                    if (unit.Plate.HasValue) return true;
                 return Next.Plate > 1 || Next.Cutout > 1;
             }
         }
