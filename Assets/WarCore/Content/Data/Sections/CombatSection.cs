@@ -64,6 +64,11 @@ namespace WarCore.Content
             ContentEntry body = cr.ObjectOrNull("body");
             cr.Done();
             if (body != null) b.Body = Body(b.Pack, body);
+            // PROJ-1: a projectile starts at the muzzle, so a pack with a projectile weapon must have the body.
+            for (int i = 0; i < b.ProjectileSpeeds.Length && body == null; i++)
+                if (b.ProjectileSpeeds[i] != 0)
+                    throw new ContentException("content pack '" + b.Pack + "' weapon '" + b.WeaponIds[i] + "' field '" + WeaponsSection.ProjectileField
+                        + "': a projectile weapon needs the combat section's body");
             b.MaxHealthRaw = maxHealth.Raw; b.ResolverId = resolver; b.SelectorId = selector;
             b.FriendlyFire = friendlyFire; b.FriendlyFireLocked = friendlyFireLocked; b.AllyCheckMissRaw = (int)missRate.Raw; b.AllyHoldMilli = holdMilli;
         }
