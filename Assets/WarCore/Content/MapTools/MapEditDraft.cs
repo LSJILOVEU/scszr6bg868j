@@ -84,7 +84,8 @@ namespace WarCore.Content.MapTools
     }
 
     // Mutable working copy of one description. Every editor step fills a fresh draft from Current and builds a new MapDesc
-    // only when the whole step succeeded, so a step that throws leaves Current as it was.
+    // only when the whole step succeeded, so a step that throws leaves Current as it was. A batch (MapEdit.Batch) keeps one
+    // draft for all its steps and builds once at the end.
     internal sealed class MapEditDraft
     {
         internal const string Base64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -95,10 +96,13 @@ namespace WarCore.Content.MapTools
 
         private readonly MapDesc d;
         internal readonly int Width, Depth;
-        internal readonly int[][] Heights;
-        internal readonly char[][] SurfaceRows;
-        internal readonly char[][] HeightOwner;
-        internal readonly char[][] SurfaceOwner;
+        // Not readonly: EnableHeights and EnableSurfaces create them on a description that has none.
+        internal int[][] Heights;
+        internal char[][] SurfaceRows;
+        internal char[][] HeightOwner;
+        internal char[][] SurfaceOwner;
+        // Ordinal-ascending surface names (null without a surface table); AddSurfaceName inserts here.
+        internal List<string> SurfaceNames;
         internal readonly List<string> Owners;
         internal readonly List<MapStamp> Stamps;
         internal readonly List<MapSrc> Removed;
@@ -128,6 +132,7 @@ namespace WarCore.Content.MapTools
             {
                 SurfaceRows = Grid(desc.Surfaces.Rows, Depth, Width);
                 SurfaceOwner = Grid(desc.SurfaceOwner, Depth, Width);
+                SurfaceNames = new List<string>(desc.Surfaces.Names);
             }
             Owners = new List<string>(desc.Owners);
             Stamps = new List<MapStamp>(desc.Stamps);
@@ -168,7 +173,7 @@ namespace WarCore.Content.MapTools
         {
             int[][] heights = Heights;
             MapSurfaces surfaces = null;
-            if (SurfaceRows != null) surfaces = new MapSurfaces(Copy(d.Surfaces.Names), Rows(SurfaceRows));
+            if (SurfaceRows != null) surfaces = new MapSurfaces(SurfaceNames.ToArray(), Rows(SurfaceRows));
             return new MapDesc(d.Id, d.Content, d.Pack, d.Size, d.Origin, d.FloorRaw, d.CeilingRaw, Copy(d.Layers), heights,
                 surfaces, Plates.ToArray(), Cutouts.ToArray(), Walls.ToArray(), Points.ToArray(), Bases.ToArray(), Units.ToArray(), d.Run,
                 Owners.ToArray(), HeightOwner == null ? null : Rows(HeightOwner), SurfaceOwner == null ? null : Rows(SurfaceOwner),
@@ -176,7 +181,7 @@ namespace WarCore.Content.MapTools
         }
 
         // A missing owner grid is all '.'.
-        private static char[][] Grid(IReadOnlyList<string> rows, int count, int length)
+        internal static char[][] Grid(IReadOnlyList<string> rows, int count, int length)
         {
             var grid = new char[count][];
             for (int j = 0; j < count; j++)
