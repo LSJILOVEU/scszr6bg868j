@@ -15,6 +15,8 @@ namespace WarCore.Combat
         public SimVec3 Point(EntityId entity) => Entities.Read(positions, entity).Value;
         public Combatant Unit(EntityId entity) => Entities.Read(combatants, entity);
         public bool IsDead(EntityId entity) => sim.GameplayLife(Entities.StableOf(entity)).State == GameplayLifeState.Dead;
+        // The unit's health as stored now (resource 1 of CombatPack.BuildSchema): during a step, before this tick's damage lands.
+        public long HealthRaw(StableId unit) => sim.GameplayResource(unit, 1);
         // The legacy eye: a point on the ground lifted 0.5 m. Kept with its meaning; the body-aware points are below.
         public static SimVec3 AimPoint(SimVec3 point) => point + new SimVec3(default, SimFix.Ratio(1, 2), default);
         public static SimVec3 Horizontal(SimVec3 delta) => new SimVec3(delta.X, default, delta.Z);

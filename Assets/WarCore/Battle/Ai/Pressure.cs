@@ -8,11 +8,15 @@ namespace WarCore.Battle
     // The numbers of the pressure system. Pressure runs from 0 to Pressure.Max; the shocks and the three lines are in that
     // unit. Radii are horizontal, in millimetres. DecayPermille is the share of the current pressure lost every tick, in
     // thousandths.
+    // FallOnKill says what counts as a teammate brought down. False (the default): any enemy fire record with damage. That
+    // is right for a resolver that either kills or does nothing (RWR's). True: only a unit whose damage this tick (fire
+    // records plus landed melee strikes) reaches its health, for content whose hits wound before they kill.
     public readonly struct PressureRules
     {
         public readonly int DeathRadiusMm, DeathShock, NearRadiusMm, NearShock, DecayPermille, BrokenAt, RecoverAt, PinnedAt, SpreadPermille, BreakSharePermille;
+        public readonly bool FallOnKill;
         public PressureRules(int deathRadiusMm, int deathShock, int nearRadiusMm, int nearShock, int decayPermille,
-            int brokenAt, int recoverAt, int pinnedAt, int spreadPermille, int breakSharePermille)
+            int brokenAt, int recoverAt, int pinnedAt, int spreadPermille, int breakSharePermille, bool fallOnKill = false)
         {
             if (deathRadiusMm < 0) throw new ArgumentOutOfRangeException(nameof(deathRadiusMm));
             if (deathShock < 0 || deathShock > Pressure.Max) throw new ArgumentOutOfRangeException(nameof(deathShock));
@@ -26,7 +30,7 @@ namespace WarCore.Battle
             if (breakSharePermille < 0 || breakSharePermille > 1000) throw new ArgumentOutOfRangeException(nameof(breakSharePermille));
             DeathRadiusMm = deathRadiusMm; DeathShock = deathShock; NearRadiusMm = nearRadiusMm; NearShock = nearShock;
             DecayPermille = decayPermille; BrokenAt = brokenAt; RecoverAt = recoverAt; PinnedAt = pinnedAt; SpreadPermille = spreadPermille;
-            BreakSharePermille = breakSharePermille;
+            BreakSharePermille = breakSharePermille; FallOnKill = fallOnKill;
         }
     }
 
@@ -35,9 +39,9 @@ namespace WarCore.Battle
     //    that grows with how much fire there is, and falls by half in a fixed time once the fire stops;
     // 2. it rises by NearShock when an enemy shot of this tick ended within NearRadiusMm of the unit (once a tick, however
     //    many shots), and by DeathShock for every teammate brought down this tick within DeathRadiusMm (a fire record
-    //    with damage; damage lands after the combat step, so the record is all there is to read, and the RWR resolver
-    //    either kills or does nothing). The rise is scaled per unit: 1000 + (Permille(key) - 500) * SpreadPermille / 500
-    //    thousandths, so some units shake more than others;
+    //    with damage; with FallOnKill only when the target's damage this tick reaches its health: damage lands after the
+    //    combat step, so the health read here is still the value before this tick's hits). The rise is scaled per unit:
+    //    1000 + (Permille(key) - 500) * SpreadPermille / 500 thousandths, so some units shake more than others;
     // 3. the unit is Broken from BrokenAt until the number is back at RecoverAt, and Pinned at or above PinnedAt. Only
     //    BreakSharePermille thousandths of the units (picked by key) can break; the rest stop at Pinned, so a whole team
     //    never runs.
@@ -91,7 +95,8 @@ namespace WarCore.Battle
 
         public int Order => 32;
         public string StateTypeId => "battle.ai-pressure";
-        public int StateVersion => sources ? 2 : 1;
+        // FallOnKill adds 2 (the version is hashed, so the hash tells the rules apart; the saved rules carry a flag).
+        public int StateVersion => (sources ? 2 : 1) + (rules.FallOnKill ? 2 : 0);
         internal int Count => entries.Count;
         internal bool Sources => sources;
 
@@ -140,6 +145,7 @@ namespace WarCore.Battle
                     || !store.TryGet(combatants, (EntityId)target, out Combatant victim) || !store.TryGet(positions, (EntityId)target, out Position at)) continue;
                 bool counted = false;
                 for (int i = 0; i < fallenCount; i++) if (fallen[i].Key == fire.Target.Value) { counted = true; break; }
+                if (!counted && rules.FallOnKill && !Kills(fire.Target, fires, combat.Strikes, combat.HealthRaw(fire.Target))) continue;
                 // From is a point on the ground (it goes to WallWithin later): the record's origin turned back to the shooter's ground (ML-3).
                 if (!counted) fallen[fallenCount++] = new Fallen { Key = fire.Target.Value, Team = victim.Team, At = at.Value, From = combat.GroundOfFireOrigin(in fire) };
             }
@@ -188,11 +194,22 @@ namespace WarCore.Battle
             foreach (ulong key in drop) entries.Remove(key);
         }
 
+        // Whether this tick's damage to the unit (fire records with damage plus landed melee strikes) reaches healthRaw, its
+        // health before the tick's damage lands.
+        public static bool Kills(StableId unit, ReadOnlySpan<FireRecord> fires, ReadOnlySpan<StrikeRecord> strikes, long healthRaw)
+        {
+            long damage = 0;
+            foreach (ref readonly FireRecord fire in fires) if (fire.DamageRaw > 0 && fire.Target.Value == unit.Value) damage += fire.DamageRaw;
+            foreach (ref readonly StrikeRecord strike in strikes) if (strike.Kind == StrikeKind.Landed && strike.Target.Value == unit.Value) damage += strike.DamageRaw;
+            return damage >= healthRaw;
+        }
+
         private void WriteRules(SimStateWriter writer)
         {
             writer.Int32(rules.DeathRadiusMm); writer.Int32(rules.DeathShock); writer.Int32(rules.NearRadiusMm); writer.Int32(rules.NearShock);
             writer.Int32(rules.DecayPermille); writer.Int32(rules.BrokenAt); writer.Int32(rules.RecoverAt); writer.Int32(rules.PinnedAt);
             writer.Int32(rules.SpreadPermille); writer.Int32(rules.BreakSharePermille);
+            if (rules.FallOnKill) writer.Bool(true);
         }
 
         public void SaveState(SimStateWriter writer)
@@ -213,6 +230,7 @@ namespace WarCore.Battle
             same &= reader.Int32() == rules.DecayPermille; same &= reader.Int32() == rules.BrokenAt;
             same &= reader.Int32() == rules.RecoverAt; same &= reader.Int32() == rules.PinnedAt;
             same &= reader.Int32() == rules.SpreadPermille; same &= reader.Int32() == rules.BreakSharePermille;
+            if (rules.FallOnKill) same &= reader.Bool();
             SimStateReader.Require(same, "AI pressure rules differ.");
             int count = reader.Count(combat.Entities.Capacity);
             entries.Clear();
