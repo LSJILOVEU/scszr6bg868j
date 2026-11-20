@@ -67,7 +67,7 @@ namespace WarCore.Presentation
                 any |= cells[key] != SurfaceDef.MaxConcealMilli;
             }
             if (!any) return pack;
-            return pack.WithSelector(new ConcealedSight(pack.Selector, terrain.Nav, cells));
+            return pack.WithSelector(new ConcealedSight(pack.Selector, terrain.Nav, cells, PlateLayers.Of(a)));
         }
     }
 

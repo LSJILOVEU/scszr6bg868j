@@ -68,12 +68,14 @@ namespace WarCore.Content
                 ai.FrontArcMm, ai.FlankSideMm, ai.RearOutMm, ai.FlankMinMm, ai.AnchorMm, ai.ArriveMm)
             : (IAiPlacement)new NearestSlotPlacement();
 
-        // Zones touch when the horizontal centre distance is below (radius_i + ring) + (radius_j + ring) + spacing.
+        // Zones touch when the horizontal centre distance is below (radius_i + ring) + (radius_j + ring) + spacing. ML-9b: two
+        // points whose centres are on different layers never share slots, so they are not compared.
         private static void CheckZones(AiRules ai, ReadOnlySpan<ControlPointDef> points, long spacing, long ring)
         {
             for (int i = 0; i < points.Length; i++)
                 for (int j = i + 1; j < points.Length; j++)
                 {
+                    if (points[i].Layer != points[j].Layer) continue;
                     SimFix gap = points[i].Radius + points[j].Radius + SimFix.FromRaw(2 * ring + spacing);
                     SimWide distance = CombatSystem.Horizontal(points[i].Center - points[j].Center).LengthSquared;
                     if (distance < new SimVec3(gap, default, default).LengthSquared)

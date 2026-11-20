@@ -14,13 +14,17 @@ namespace WarCore.Battle
         public readonly bool HasSpawn;
         // The layer the spawn stands on: 0 = the ground, 1..N = a floor plate (only with a spawn).
         public readonly int SpawnLayer;
+        // ML-9b: the layer the centre stands on: 0 = the ground, 1..N = a floor plate. Only units on this layer are in the circle.
+        public readonly int Layer;
         public ControlPointDef(int id, SimVec3 center, SimFix radius, int initialOwner = 0, bool hasSpawn = false, SimVec3 spawn = default,
-            int spawnLayer = 0)
+            int spawnLayer = 0, int layer = 0)
         {
             if (radius.Raw <= 0) throw new ArgumentOutOfRangeException(nameof(radius));
             if (initialOwner < 0 || initialOwner > 2) throw new ArgumentOutOfRangeException(nameof(initialOwner));
             if (spawnLayer < 0 || spawnLayer > MatchPack.MaxLayer) throw new ArgumentOutOfRangeException(nameof(spawnLayer));
             if (spawnLayer != 0 && !hasSpawn) throw new ArgumentException("A spawn layer needs a spawn.", nameof(spawnLayer));
+            if (layer < 0 || layer > MatchPack.MaxLayer) throw new ArgumentOutOfRangeException(nameof(layer));
+            Layer = layer;
             Id = id; Center = center; Radius = radius; InitialOwner = initialOwner; HasSpawn = hasSpawn; Spawn = spawn; SpawnLayer = spawnLayer;
         }
         internal void WriteState(StateHash hash)
@@ -119,12 +123,24 @@ namespace WarCore.Battle
                 foreach (var point in this.points) hash.Add(point.SpawnLayer);
                 foreach (var anchor in this.bases) hash.Add(anchor.Layer);
             }
+            // ML-9b: only when some centre is on a plate, so a pack with ground centres keeps its digest.
+            if (HasCenterLayers())
+            {
+                hash.Add("battle.pack.center-layers.v1");
+                foreach (var point in this.points) hash.Add(point.Layer);
+            }
             PolicyDigest = hash.Value;
         }
         private bool HasLayers()
         {
             foreach (var point in points) if (point.SpawnLayer != 0) return true;
             foreach (var anchor in bases) if (anchor.Layer != 0) return true;
+            return false;
+        }
+        // ML-9b: some point's centre stands on a plate.
+        public bool HasCenterLayers()
+        {
+            foreach (var point in points) if (point.Layer != 0) return true;
             return false;
         }
         internal void Check(SimStateReader reader)

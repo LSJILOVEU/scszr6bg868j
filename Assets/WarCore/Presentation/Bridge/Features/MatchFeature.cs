@@ -29,7 +29,9 @@ namespace WarCore.Presentation
             // A map with plates only may run on the terrain branch without a terrain pack; its AI rules then come from the AI pack.
             bool terrainRules = terrain != null && recipe.TerrainPack != null;
             AiRules ai = (terrainRules ? recipe.TerrainPack : recipe.AiPack)?.Section<AiRules>();
-            var capture = new CaptureSystem(combat, recipe.Match);
+            // ML-9b: on a map with plates the match systems read layers (null without plates: the old rules).
+            PlateLayers layers = PlateLayers.Of(a);
+            var capture = new CaptureSystem(combat, recipe.Match, layers);
             var adapter = new BattleAdapter(sim, a.Locomotion, recipe, new DeployGround(terrain != null ? terrain.Nav : WcMapNavigation.Create(a.Map), terrain, a.GroundRaw), a.GroundRaw, a.Standing,
                 a.Plates != null ? a.Verticals : (ComponentType<VerticalState>?)null, a.Plates);
             var reinforce = new ReinforceSystem(combat, recipe.Match, capture, adapter);
@@ -39,7 +41,7 @@ namespace WarCore.Presentation
             // A positive match.respawnTicks with a player: the player takes over a reserve after the delay (PlayerFeature then adds no fallback).
             if (recipe.Match.RespawnTicks > 0 && a.Controlled != null)
             {
-                var respawn = new RespawnSystem(sim, combat, recipe.Match, capture, adapter, a.Controlled);
+                var respawn = new RespawnSystem(sim, combat, recipe.Match, capture, adapter, a.Controlled, layers);
                 sim.RegisterGameplay("battle.respawn", respawn, SimSystemPhase.Requests);
                 if (recipe.Match.RespawnGuardTicks > 0) combat.SetDamageGuard(respawn);
             }
@@ -87,7 +89,7 @@ namespace WarCore.Presentation
             int meleeChaseRange = terrainRules ? recipe.TerrainPack.Section<AiRules>().MeleeChaseRange : 0;
             if (!terrainRules && ai != null) meleeChaseRange = ai.MeleeChaseRange;
             bool fair = recipe.TerrainPack != null && recipe.TerrainPack.Section<AiRules>().FairDecisions;
-            sim.RegisterGameplay("battle.ai", new SimpleAiSystem(combat, recipe.Combat, recipe.Match, capture, adapter, a.Controlled, memory, contacts, search, suppress, meleeChaseRange, fair, recipe.Seed, ContentPolicies.Parts(ai, recipe.Match.Points, recipe.Match.ThinkInterval, terrain == null), pressure), SimSystemPhase.Requests);
+            sim.RegisterGameplay("battle.ai", new SimpleAiSystem(combat, recipe.Combat, recipe.Match, capture, adapter, a.Controlled, memory, contacts, search, suppress, meleeChaseRange, fair, recipe.Seed, ContentPolicies.Parts(ai, recipe.Match.Points, recipe.Match.ThinkInterval, terrain == null), pressure, layers), SimSystemPhase.Requests);
             sim.RegisterGameplay("battle.capture", capture, SimSystemPhase.Queries);
             sim.RegisterGameplay("battle.match", match, SimSystemPhase.Queries);
             a.Capture = capture; a.Reinforce = reinforce; a.Match = match; a.Pressure = pressure;
@@ -165,12 +167,16 @@ namespace WarCore.Presentation
             return Place(stable, unit, new SimVec3(at.X, y, at.Z), layer);
         }
 
+        private int LayerOf(EntityId unit) => sim.Entities.TryGet(verticals.Value, unit, out VerticalState state) ? state.Layer : 0;
+
         private bool Place(StableId stable, EntityId unit, SimVec3 at, int layer)
         {
             foreach (EntityId other in stage.Capture())
             {
                 if (!sim.Entities.TryGet(combatants, other, out _) || !sim.Entities.TryGet(positions, other, out Position position)
                     || sim.GameplayLife(sim.Entities.StableOf(other)).State == GameplayLifeState.Dead) continue;
+                // ML-9b: on a map with plates only units on the same layer keep their distance (one under a floor does not count).
+                if (verticals.HasValue && LayerOf(other) != layer) continue;
                 Collider collider = sim.Entities.Read(colliders, other);
                 SimFix gap = (Radius + collider.Radius) * SimFix.FromInt(2);
                 if (CombatSystem.Horizontal(at - position.Value).LengthSquared < new SimVec3(gap, default, default).LengthSquared) return false;
