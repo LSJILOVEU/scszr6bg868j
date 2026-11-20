@@ -1,0 +1,522 @@
+# ML-6: the layered walkable graph (Sim/LayeredNav), its A* (Sim/LayeredPathfinder) and the bridge from a .wcmap. Filter: the ML-6 tests.
+# Not listed as equivalent: the neighbour order (eight cells, then seams ascending) changes no result, since a parent changes only on a
+# strictly smaller cost (dispatch N-d); the bridge's "solid" (a walkable bit is always solid, PLATE_NAV_MISMATCH) and "surface passable"
+# (a blocked surface already has cost 0, so the cell is not walkable either way); the smallest-cost fallback 1 (only used with no walkable
+# node, where every query is Rejected); the heap's initial capacity.
+
+[ml6-01-step-strict]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6VectorTests.CorridorOverALowPlate
+note = a 19660 step joins
+original:
+| if (Abs(HeightAt(la, i0, j0) - HeightAt(lb, i0, j0)) > StepRaw) continue;
+replacement:
+| if (Abs(HeightAt(la, i0, j0) - HeightAt(lb, i0, j0)) >= StepRaw) continue;
+
+[ml6-02-step-up]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6VectorTests.CorridorOverALowPlate
+note = step 19661
+original:
+| public const long StepRaw = 19660;
+replacement:
+| public const long StepRaw = 19661;
+
+[ml6-03-step-down]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6VectorTests.CorridorOverALowPlate
+note = step 19659
+original:
+| public const long StepRaw = 19660;
+replacement:
+| public const long StepRaw = 19659;
+
+[ml6-04-first-end-only]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6VectorTests.BothEndPointsOfTheEdge
+note = second end point not checked
+original:
+|                         if (Abs(HeightAt(la, i1, j1) - HeightAt(lb, i1, j1)) > StepRaw) continue;
+replacement:
+
+[ml6-05-second-end-only]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6VectorTests.BothEndPointsOfTheEdge
+note = first end point not checked
+original:
+|                         if (Abs(HeightAt(la, i0, j0) - HeightAt(lb, i0, j0)) > StepRaw) continue;
+replacement:
+
+[ml6-06-same-layer-seam]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6VectorTests.PublicQueries
+note = seams inside one plate
+original:
+|                         if (lb == la) continue;
+replacement:
+
+[ml6-07-diagonal-seam]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6OracleTests.MatchesTheOracle
+note = east seam replaced by north-east
+original:
+|                     int dz = direction == 0 ? 1 : direction == 2 ? -1 : 0;
+replacement:
+|                     int dz = direction == 0 || direction == 1 ? 1 : direction == 2 ? -1 : 0;
+
+[ml6-08-seam-from-blocked]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6OracleTests.MatchesTheOracle
+note = blocked plate node gets seams
+original:
+|                 if (Cost[a] == 0) continue;
+|                 int x = NodeX[a]
+replacement:
+|                 int x = NodeX[a]
+
+[ml6-09-seam-to-blocked]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6OracleTests.MatchesTheOracle
+note = seam to a blocked node
+original:
+|                         if (Cost[b] == 0) continue;
+replacement:
+
+[ml6-10-flat-zero]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6VectorTests.FlatGroundHeight
+note = flat ground at 0
+original:
+| this.flatGroundRaw = ground.Ground == null ? flatGroundRaw : 0;
+replacement:
+| this.flatGroundRaw = 0;
+
+[ml6-11-node-rect]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6VectorTests.RightOfADeepPlate
+note = plate x bound not checked
+original:
+| if (lx < 0 || lz < 0 || lx >= p.Width || lz >= p.Depth) return -1;
+replacement:
+| if (lx < 0 || lz < 0 || lz >= p.Depth) return -1;
+
+[ml6-12-holes-numbered]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6VectorTests.PublicQueries
+note = cutout cells counted as nodes
+original:
+|                         if (!p.IsSolid(i, j)) continue;
+|                         plateNodes++;
+replacement:
+|                         plateNodes++;
+
+[ml6-13-ctor-count]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6ConstructorTests.PlateCounts
+note = 4097 plates
+original:
+| if (plates.Count > MaxPlates)
+replacement:
+| if (plates.Count > MaxPlates + 1)
+
+[ml6-14-ctor-per-cell]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6ConstructorTests.PlateCounts
+note = 65 in a cell
+original:
+| > MaxPerCell)
+replacement:
+| > MaxPerCell + 1)
+
+[ml6-15-ctor-nodes]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6ConstructorTests.PlateCounts
+note = one plate node too many
+original:
+| if (plateNodes > GroundCount)
+replacement:
+| if (plateNodes > GroundCount + 1)
+
+[ml6-16-ctor-nodes-equal]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6ConstructorTests.PlateCounts
+note = as many plate nodes as ground cells
+original:
+| if (plateNodes > GroundCount)
+replacement:
+| if (plateNodes >= GroundCount)
+
+[ml6-17-ctor-id-zero]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6ConstructorTests.IdsAndPlace
+note = id 0
+original:
+| if (p.Id == 0 || (k > 0
+replacement:
+| if ((k > 0
+
+[ml6-18-ctor-id-rise]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6ConstructorTests.IdsAndPlace
+note = equal ids
+original:
+| p.Id <= this.plates[k - 1].Id
+replacement:
+| p.Id < this.plates[k - 1].Id
+
+[ml6-19-ctor-inside-x]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6ConstructorTests.IdsAndPlace
+note = one cell past the map in x
+original:
+| p.X + p.Width > Width
+replacement:
+| p.X + p.Width > Width + 1
+
+[ml6-20-ctor-inside-low]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6ConstructorTests.IdsAndPlace
+note = negative x
+original:
+| if (p.X < 0 || p.Z < 0 ||
+replacement:
+| if (p.Z < 0 ||
+
+[ml6-21-ctor-table-size]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6ConstructorTests.Tables
+note = cost table size
+original:
+| if (c.Length != p.Width * p.Depth || s.Length
+replacement:
+| if (s.Length
+
+[ml6-22-ctor-table-count]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6ConstructorTests.Tables
+note = one table per plate
+original:
+| if (costs.Count != plates.Count || speeds.Count != plates.Count)
+replacement:
+| if (speeds.Count < plates.Count)
+
+[ml6-23-ctor-zero-together]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6ConstructorTests.Tables
+note = cost and speed zero together
+original:
+|                         if ((c[at] != 0) != (s[at] != 0)) throw
+replacement:
+|                         if (false) throw
+
+[ml6-24-ctor-not-solid]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6ConstructorTests.Tables
+note = walkable cutout cell
+original:
+| if (!p.IsSolid(i, j) && c[at] != 0) throw
+replacement:
+| if (false && c[at] != 0) throw
+
+[ml6-25-ctor-speed]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6ConstructorTests.Tables
+note = speed 2000 refused
+original:
+| if (s[at] > TerrainTables.MaxSpeedMilli)
+replacement:
+| if (s[at] >= TerrainTables.MaxSpeedMilli)
+
+[ml6-26-ctor-height]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6ConstructorTests.Heights
+note = plate height 2^29
+original:
+| if (h <= -HeightField.HeightLimitRaw || h >= HeightField.HeightLimitRaw) throw new ArgumentException("Plate "
+replacement:
+| if (h <= -HeightField.HeightLimitRaw || h > HeightField.HeightLimitRaw) throw new ArgumentException("Plate "
+
+[ml6-27-ctor-flat-height]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6ConstructorTests.Heights
+note = flat height checked with a field
+original:
+| if (ground.Ground == null && (flatGroundRaw
+replacement:
+| if ((flatGroundRaw
+
+[ml6-28-digest-flat]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6ConstructorTests.DigestFollowsEveryInput
+note = flat height left out
+original:
+|             hash.Add(flatGroundRaw);
+replacement:
+
+[ml6-29-digest-flat-always]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6ConstructorTests.DigestFollowsEveryInput
+note = flat height kept with a height field
+original:
+| this.flatGroundRaw = ground.Ground == null ? flatGroundRaw : 0;
+replacement:
+| this.flatGroundRaw = flatGroundRaw;
+
+[ml6-30-digest-ground]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6ConstructorTests.DigestFollowsEveryInput
+note = ground digest left out
+original:
+|             hash.Add(Ground.Digest);
+replacement:
+
+[ml6-31-digest-points]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6ConstructorTests.DigestFollowsEveryInput
+note = top points left out
+original:
+|                 foreach (int h in p.Points) hash.Add(h);
+replacement:
+
+[ml6-32-digest-solid]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6ConstructorTests.DigestFollowsEveryInput
+note = solid bits left out
+original:
+|                     for (int i = 0; i < p.Width; i++) hash.Add(p.IsSolid(i, j));
+replacement:
+|                     for (int i = 0; i < p.Width; i++) { }
+
+[ml6-33-digest-cost]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6ConstructorTests.DigestFollowsEveryInput
+note = costs left out
+original:
+| { hash.Add(Cost[node]); hash.Add((int)speed[node]); }
+replacement:
+| { hash.Add((int)speed[node]); }
+
+[ml6-34-digest-speed]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6ConstructorTests.DigestFollowsEveryInput
+note = speeds left out
+original:
+| { hash.Add(Cost[node]); hash.Add((int)speed[node]); }
+replacement:
+| { hash.Add(Cost[node]); }
+
+[ml6-35-seam-leaving]
+file = Assets/WarCore/Sim/LayeredPathfinder.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6VectorTests.SeamCostIsTheEnteredCell
+note = seam priced by the cell left
+original:
+| Relax(current, next, 1000 * (long)nav.Cost[next], target);
+replacement:
+| Relax(current, next, 1000 * (long)nav.Cost[current.Key], target);
+
+[ml6-36-seam-diagonal-price]
+file = Assets/WarCore/Sim/LayeredPathfinder.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6VectorTests.SeamCostIsTheEnteredCell
+note = seam priced as a diagonal
+original:
+| Relax(current, next, 1000 * (long)nav.Cost[next], target);
+replacement:
+| Relax(current, next, 1414 * (long)nav.Cost[next], target);
+
+[ml6-37-diag-x]
+file = Assets/WarCore/Sim/LayeredPathfinder.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6VectorTests.DiagonalsStayOnOnePlate
+note = diagonal without the x cell
+original:
+| (Walkable(layer, x + dx, z) < 0 || Walkable(layer, x, z + dz) < 0)
+replacement:
+| (Walkable(layer, x, z + dz) < 0)
+
+[ml6-38-diag-z]
+file = Assets/WarCore/Sim/LayeredPathfinder.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6VectorTests.DiagonalsStayOnOnePlate
+note = diagonal without the z cell
+original:
+| (Walkable(layer, x + dx, z) < 0 || Walkable(layer, x, z + dz) < 0)
+replacement:
+| (Walkable(layer, x + dx, z) < 0)
+
+[ml6-39-heuristic-key]
+file = Assets/WarCore/Sim/LayeredPathfinder.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6VectorTests.HeuristicUsesTheCheapestLayerAndTheNodeTable
+note = cells read off the node number
+original:
+|             int dx = nav.NodeX[key] - nav.NodeX[target];
+|             int dz = nav.NodeZ[key] - nav.NodeZ[target];
+replacement:
+|             int dx = key % nav.Width - target % nav.Width;
+|             int dz = key / nav.Width - target / nav.Width;
+
+[ml6-40-min-ground]
+file = Assets/WarCore/Sim/LayeredPathfinder.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6VectorTests.HeuristicUsesTheCheapestLayerAndTheNodeTable
+note = smallest cost on the ground only
+original:
+|             for (int node = 0; node < count; node++)
+|                 if (nav.Cost[node] != 0 && nav.Cost[node] < min)
+replacement:
+|             for (int node = 0; node < nav.GroundCount; node++)
+|                 if (nav.Cost[node] != 0 && nav.Cost[node] < min)
+
+[ml6-41-order-h]
+file = Assets/WarCore/Sim/LayeredPathfinder.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6VectorTests.SmallerHLeavesFirst
+note = heap order without H
+original:
+|             if (a.H != b.H) return a.H < b.H;
+replacement:
+
+[ml6-42-order-key]
+file = Assets/WarCore/Sim/LayeredPathfinder.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6EquivalenceTests.ZeroPlatesIsGridPathfinder
+note = heap order without the node
+original:
+|             if (a.Key != b.Key) return a.Key < b.Key;
+replacement:
+
+[ml6-43-limit]
+file = Assets/WarCore/Sim/LayeredPathfinder.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6VectorTests.FindWithinTheLimit
+note = limit exclusive
+original:
+| if (current.F > limitCost) return
+replacement:
+| if (current.F >= limitCost) return
+
+[ml6-44-status-swap]
+file = Assets/WarCore/Sim/LayeredPathfinder.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6VectorTests.RejectedAndUnreachable
+note = start and target status swapped
+original:
+|             if (!nav.IsPassable(start)) return GridPathStatus.Rejected;
+|             if (!nav.IsPassable(target)) return GridPathStatus.Unreachable;
+replacement:
+|             if (!nav.IsPassable(start)) return GridPathStatus.Unreachable;
+|             if (!nav.IsPassable(target)) return GridPathStatus.Rejected;
+
+[ml6-45-walk-blocked]
+file = Assets/WarCore/Sim/LayeredPathfinder.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6VectorTests.DiagonalsStayOnOnePlate
+note = blocked cells walked
+original:
+| return node >= 0 && nav.Cost[node] != 0 ? node : -1;
+replacement:
+| return node;
+
+[ml6-46-stale]
+file = Assets/WarCore/Sim/LayeredPathfinder.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6EquivalenceTests.ZeroPlatesIsGridPathfinder
+note = stale entries expanded
+original:
+|                 if (current.G != costs[current.Key]) continue;
+replacement:
+
+[ml6-47-bridge-walkable-bit]
+file = Assets/WarCore/Content/WcMapLayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6BridgeTests.DemoHouse
+note = walkable bit ignored
+original:
+| !solid[at] || !p.IsWalkable(i, j) ||
+replacement:
+| !solid[at] ||
+
+[ml6-48-bridge-slope]
+file = Assets/WarCore/Content/WcMapLayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6BridgeTests.PackSlope
+note = slope ignored
+original:
+|  || !top.CellWithinSlope(i, j, slopeNum, slopeDen)) continue;
+replacement:
+| ) continue;
+
+[ml6-49-bridge-slope-two]
+file = Assets/WarCore/Content/WcMapLayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6BridgeTests.PackSlope
+note = 2/1 instead of the pack
+original:
+| int slopeNum = rules?.MaxWalkableNum ?? HeightField.MaxSlopeNumerator, slopeDen = rules?.MaxWalkableDen ?? HeightField.MaxSlopeDenominator;
+replacement:
+| int slopeNum = HeightField.MaxSlopeNumerator, slopeDen = HeightField.MaxSlopeDenominator;
+
+[ml6-50-bridge-no-surface]
+file = Assets/WarCore/Content/WcMapLayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6BridgeTests.PlateSurfaces
+note = no surface takes the ground cell
+original:
+| if (p.Surface != WcMapPlate.NoSurface) rules.TryFind(map.SurfaceNames[p.Surface], out def);
+replacement:
+| if (map.HasSurfaceTable) rules.TryFind(map.SurfaceNames[p.Surface != WcMapPlate.NoSurface ? p.Surface : map.SurfaceCells[p.Z * (int)map.Width + p.X]], out def);
+
+[ml6-51-bridge-min-y]
+file = Assets/WarCore/Content/WcMapLayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6BridgeTests.FlatGroundIsMinY
+note = flat ground passed as 0
+original:
+| return new LayeredNav(ground, map.Min.Y.Raw, slabs, costs, speeds);
+replacement:
+| return new LayeredNav(ground, 0, slabs, costs, speeds);
+
+[ml6-52-bridge-empty]
+file = Assets/WarCore/Content/WcMapLayeredNav.cs
+filter = FullyQualifiedName~Ml6
+expect = WarCore.Tests.Ml6BridgeTests.NoPlatesGroundAndLimits
+note = no plates still built
+original:
+|             if (map.Plates.Count == 0) return null;
+replacement:
