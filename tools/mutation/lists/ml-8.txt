@@ -7,7 +7,9 @@
 # PlateSpeedMilli's node-missing fallback (a unit's own cell always has a node on its layer); the player's long-step path
 # check (player steps are shorter than the radius, so the end test decides); the binding's foot-anchored mask (no Ml8 world
 # has an ML-3 body; BodiesOverlapByTheirVerticalRanges binds it directly); AiFireFeature's pack choice (IsActive already
-# reads it with ?.; only a plate map with AI fire rules and no terrain pack differs); Standable's ring limit.
+# reads it with ?.; only a plate map with AI fire rules and no terrain pack differs); Standable's ring limit; the
+# ground field's !layered guard in Grounded (Settle and OnLayer set Y on plate worlds after it); Standable's ring-only skip
+# (inner cells were already searched by smaller rings, so the first hit is the same).
 
 [ml8-into-seam-first]
 file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
@@ -156,6 +158,7 @@ filter = FullyQualifiedName~Ml8
 expect = WarCore.Tests.Ml8EntryTests.FootprintsStandOnOpenCells
 expect = WarCore.Tests.Ml8EntryTests.AnLShapedCornerIsNotCut
 expect = WarCore.Tests.Ml8DemoTests.AUnitClimbsToTheFirstFloorAndBack
+expect = WarCore.Tests.Ml8DemoTests.SquadSlotsStandOnTheFloor
 note = the way is judged by the end cell only
 original:
 |             openCells.Set(layer, a, entered, b);
@@ -201,6 +204,7 @@ file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
 filter = FullyQualifiedName~Ml8
 expect = WarCore.Tests.Ml8EntryTests.FootprintsStandOnOpenCells
 expect = WarCore.Tests.Ml8DemoTests.AUnitClimbsToTheFirstFloorAndBack
+expect = WarCore.Tests.Ml8DemoTests.SquadSlotsStandOnTheFloor
 note = the open cells of the start are dropped
 original:
 | public bool IsPassable(int x, int z) => owner.Open(layerA, ownA, x, z) || owner.Open(layerB, ownB, x, z);
@@ -255,18 +259,6 @@ original:
 | private SimVec3 Planar(SimVec3 v) => ground != null || layered ?
 replacement:
 | private SimVec3 Planar(SimVec3 v) => ground != null ?
-
-[ml8-grounded-on-plates]
-file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
-filter = FullyQualifiedName~Ml8
-expect = WarCore.Tests.Ml8MoveTests.BackOnTheGroundTheHeightIsTheGrounds
-expect = WarCore.Tests.Ml8MoveTests.TheStairAndFloorGiveTheHeightAndTheStep
-expect = WarCore.Tests.Ml8DemoTests.EveryUnitStandsOnItsFloor
-note = the ground height field places plate candidates
-original:
-| !layered && ground != null && ground.TryHeightAt(p.X, p.Z, out SimFix y)
-replacement:
-| ground != null && ground.TryHeightAt(p.X, p.Z, out SimFix y)
 
 [ml8-step-ground-speed]
 file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
@@ -331,6 +323,7 @@ replacement:
 [ml8-tail-grid-keys]
 file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
 filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8DemoTests.TheRouteTailCountsLayeredSteps
 expect = WarCore.Tests.Ml8DemoTests.AUnitClimbsToTheFirstFloorAndBack
 expect = WarCore.Tests.Ml8DemoTests.EveryUnitStandsOnItsFloor
 expect = WarCore.Tests.Ml8DemoTests.SquadSlotsStandOnTheFloor
@@ -343,6 +336,7 @@ replacement:
 [ml8-crowd-tail-grid-keys]
 file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
 filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8DemoTests.TheRouteTailCountsLayeredSteps
 expect = WarCore.Tests.Ml8DemoTests.AUnitClimbsToTheFirstFloorAndBack
 expect = WarCore.Tests.Ml8DemoTests.EveryUnitStandsOnItsFloor
 expect = WarCore.Tests.Ml8DemoTests.SquadSlotsStandOnTheFloor
@@ -626,15 +620,6 @@ original:
 | return grid.SegmentClear(p, p, UnitFootprint, openCells) ? p : NodeCentre(own);
 replacement:
 | return NodeCentre(own);
-
-[ml8-slot-ring-inner]
-file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
-filter = FullyQualifiedName~Ml8
-expect = WarCore.Tests.Ml8DemoTests.SquadSlotsStandOnTheFloor
-note = the ring includes its inside cells
-original:
-|                         if (z != cz - r && z != cz + r && x != cx - r && x != cx + r) continue;
-replacement:
 
 [ml8-version-no-plates]
 file = Assets/WarCore/Interim/InterimLocomotion.cs

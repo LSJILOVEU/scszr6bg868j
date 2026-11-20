@@ -81,6 +81,21 @@ namespace WarCore.Tests
             Assert.That(layers, Is.EqualTo(new[] { 2, 1, 0 }));
         }
 
+        // The route length still to go reads node coordinates, not node ids as grid cells: from the cell before the stair's foot
+        // to floor cell (12, 7) the tail after the first waypoint is three stair steps and the seam, then (14, 8) (the corner over
+        // the cutout is not cut), one diagonal and one straight step. All these node ids share id / 24, so read as grid cells
+        // every step would be straight.
+        [TestCase(MoverKind.InterimCrowd)]
+        [TestCase(MoverKind.InterimPath)]
+        public void TheRouteTailCountsLayeredSteps(MoverKind mover)
+        {
+            SimSession s = Walk(Demo, new[] { Unit(1, 1, 9500, 9500) }, null, mover);
+            InterimLocomotion l = M3TestWorld.Locomotion(s);
+            l.Order(M3TestWorld.Unit(s), M3TestWorld.Point(12500, 7500), 2);
+            s.StepOnce();
+            Assert.That(Field<long>(l, "routeTail"), Is.EqualTo(6 * SimFix.Scale + 92682L));
+        }
+
         // The demo run: four soldiers from the open ground up to the first floor, then back. M-i 3: every tick every unit
         // stands on its layer's floor.
         internal static readonly UnitSpawn[] Squad = { Unit(1, 1, 1500, 2000), Unit(2, 1, 3000, 2000), Unit(3, 1, 1500, 3500), Unit(4, 1, 3000, 3500) };

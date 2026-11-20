@@ -12,7 +12,7 @@ namespace WarCore.Tests
     {
         private const long S = SimFix.Scale;
 
-        // Hand-built graph, 8 x 4 cells, flat ground at 0. Ground blocked on (2, 1), (2, 2), (3, 1).
+        // Hand-built graph, 8 x 4 cells, flat ground at 0. Ground blocked on (2, 1), (2, 2), (3, 1), (5, 2), (4, 3).
         //   Plate 1 (layer 1): one cell (2, 1) at 0.25 m: seams with the ground cells round it that are open, (1, 1) and (2, 0).
         //   Plate 2 (layer 2): one cell (6, 1) at 0.25 m over ground that stays walkable: a seam from ground (5, 1) lands on a
         //     cell the ground itself still walks.
@@ -20,7 +20,7 @@ namespace WarCore.Tests
         {
             s = Ml8Worlds.Walk(Bytes(Ml4Maps.Make(8, 4, Ml4Maps.Flat(1, 6, 2, 2, 2, 3 * M))), new[] { Unit(1, 1, 500, 500) });
             PlateSlab p1 = Ml5Plates.Flat(1, 2, 1, 1, 1, S / 4, S / 8), p2 = Ml5Plates.Flat(2, 6, 1, 1, 1, S / 4, S / 8);
-            LayeredNav nav = Ml6Nav.Nav(Ml6Nav.Open(8, 4, (2, 1), (2, 2), (3, 1)), p1, p2);
+            LayeredNav nav = Ml6Nav.Nav(Ml6Nav.Open(8, 4, (2, 1), (2, 2), (3, 1), (5, 2), (4, 3)), p1, p2);
             Rebind(s, nav, p1, p2);
             return M3TestWorld.Locomotion(s);
         }
@@ -54,6 +54,7 @@ namespace WarCore.Tests
             Assert.That(E(0, (3, 0), (2, 1)), Is.EqualTo((true, 1)), "x first: (2, 0) then the seam; z first would cross blocked (3, 1)");
             Assert.That(E(0, (1, 2), (2, 1)), Is.EqualTo((true, 1)), "x first crosses blocked (2, 2); z first: (1, 1) then the seam");
             Assert.That(E(0, (3, 2), (2, 1)), Is.EqualTo((false, 0)), "both ways blocked: (2, 2) and (3, 1)");
+            Assert.That(E(0, (4, 2), (5, 3)), Is.EqualTo((true, 0)), "walkable on this layer: entered though both splits, (5, 2) and (4, 3), are blocked");
             Assert.That(E(1, (2, 1), (1, 0)), Is.EqualTo((true, 0)), "off the plate diagonally");
             Assert.That(E(1, (2, 1), (3, 2)), Is.EqualTo((false, 1)), "off the plate where no seam is");
         }
@@ -88,6 +89,8 @@ namespace WarCore.Tests
             Assert.That(Step(0, P(9800, 0, 9500), P(10200, 0, 9500)), Is.EqualTo((true, 1, top102)), "from the cell before the stair's foot onto it");
             Assert.That(Step(1, P(10200, top102, 9500), P(9800, 0, 9500)), Is.EqualTo((true, 0, 0L)), "and back down");
             Assert.That(Step(1, P(13800, top138, 9500), P(14200, 0, 9500)), Is.EqualTo((true, 2, 3 * M)), "from the stair's top onto the floor cell it faces");
+            Assert.That(Step(1, P(13900, StairTop(13900 * S / 1000), 9300), P(14150, 0, 9200)), Is.EqualTo((true, 2, 3 * M)),
+                "the way there opens both ends' cells: the end footprint covers floor cells (13, 8) and (14, 8), closed for the stair");
             Assert.That((Open(l, 24, 1, (13, 9), 14, 9), Open(l, 24, 1, (13, 9), 14, 8), Open(l, 24, 1, (13, 9), 13, 8)), Is.EqualTo((true, false, false)),
                 "the stair's top: the faced floor cell is open, its diagonal and its side are not");
             Assert.That((Open(l, 24, 2, (14, 9), 14, 8), Open(l, 24, 2, (14, 9), 13, 9), Open(l, 24, 2, (14, 9), 12, 9)), Is.EqualTo((true, true, false)),
