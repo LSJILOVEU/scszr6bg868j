@@ -105,9 +105,9 @@ filter = FullyQualifiedName~M7b|FullyQualifiedName~PF1|FullyQualifiedName~F5uKey
 expect = WarCore.Tests.Dash.M7bDashInputTests.M7bInput_KeyEqualityAndLiveCopy
 note = the aim overload drops dash
 original:
-| flat.Block, flat.Throw, flat.SkillSlot, lastAimYMm, flat.Dash);
+| flat.Block, flat.Throw, flat.SkillSlot, lastAimYMm, lastAimLayer, dash: flat.Dash);
 replacement:
-| flat.Block, flat.Throw, flat.SkillSlot, lastAimYMm);
+| flat.Block, flat.Throw, flat.SkillSlot, lastAimYMm, lastAimLayer);
 
 [m7b-12-equals-ignores]
 file = Assets/WarCore/Presentation/Bridge/PlayerInput.cs
@@ -115,9 +115,9 @@ filter = FullyQualifiedName~M7b|FullyQualifiedName~PF1|FullyQualifiedName~F5uKey
 expect = WarCore.Tests.Dash.M7bDashInputTests.M7bInput_KeyEqualityAndLiveCopy
 note = Equals ignores Dash
 original:
-|             && Dash == other.Dash;
+|             && AimLayer == other.AimLayer && Dash == other.Dash;
 replacement:
-|             ;
+|             && AimLayer == other.AimLayer;
 
 [m7b-13-hash-ignores]
 file = Assets/WarCore/Presentation/Bridge/PlayerInput.cs
@@ -125,7 +125,7 @@ filter = FullyQualifiedName~M7b|FullyQualifiedName~PF1|FullyQualifiedName~F5uKey
 expect = WarCore.Tests.Dash.M7bDashInputTests.M7bInput_KeyEqualityAndLiveCopy
 note = GetHashCode ignores Dash
 original:
-| return hash * 397 ^ Dash.GetHashCode();
+| return Dash ? hash * 397 ^ 1 : hash;
 replacement:
 | return hash;
 
@@ -145,9 +145,9 @@ filter = FullyQualifiedName~M7b|FullyQualifiedName~PF1|FullyQualifiedName~F5uKey
 expect = WarCore.Tests.Dash.M7bDashInputTests.M7bInput_KeyEqualityAndLiveCopy
 note = the click copy drops dash
 original:
-| input.AimXMm, input.AimZMm, true, input.Block, input.Throw, input.SkillSlot, input.AimYMm, input.Dash));
+| aimLayer: input.AimLayer, dash: input.Dash));
 replacement:
-| input.AimXMm, input.AimZMm, true, input.Block, input.Throw, input.SkillSlot, input.AimYMm));
+| aimLayer: input.AimLayer));
 
 [m7b-16-key-missing]
 file = Assets/WarCore/Presentation/Camera/PlayerKeys.cs
@@ -206,3 +206,22 @@ original:
 replacement:
 | if (false)
 
+[m7b-22-hash-always-mixes]
+file = Assets/WarCore/Presentation/Bridge/PlayerInput.cs
+filter = FullyQualifiedName~M7b|FullyQualifiedName~PF1|FullyQualifiedName~F5uKeyTable
+expect = WarCore.Tests.Dash.M7bDashInputTests.M7bInput_NoDashKeepsTheHashCode
+note = an input without a dash changes its hash code
+original:
+| return Dash ? hash * 397 ^ 1 : hash;
+replacement:
+| return hash * 397 ^ (Dash ? 1 : 0);
+
+[m7b-23-live-drops-layer]
+file = Assets/WarCore/Presentation/Bridge/LivePlayerInput.cs
+filter = FullyQualifiedName~M7b|FullyQualifiedName~PF1|FullyQualifiedName~F5uKeyTable
+expect = WarCore.Tests.Dash.M7bDashInputTests.M7bInput_LiveCopyKeepsTheAimLayer
+note = the click copy drops the aim layer
+original:
+| aimLayer: input.AimLayer, dash: input.Dash));
+replacement:
+| dash: input.Dash));

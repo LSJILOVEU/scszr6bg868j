@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using NUnit.Framework;
+using WarCore.Battle;
 using WarCore.Interim;
 using WarCore.Presentation;
 using WarCore.Sim;
@@ -231,7 +232,10 @@ namespace WarCore.Tests.Dash
         {
             var down = new HashSet<string> { "LeftShift" };
             PlayerInput mapped = new PlayerInputMapper(PlayerKeys.Default).Map(new IsoCamera(10), 0, 0, 50, 50, 100, 100, true, false, k => down.Contains(k));
-            Assert.That((mapped.Dash, mapped.Block, mapped.Throw, mapped.SkillSlot), Is.EqualTo((true, false, false, 0)));
+            Assert.That(mapped.Dash, Is.True);
+            Assert.That(mapped.Block, Is.False);
+            Assert.That(mapped.Throw, Is.False);
+            Assert.That(mapped.SkillSlot, Is.EqualTo(0));
             PlayerInput aimed = new PlayerInputMapper(PlayerKeys.Default).Map(new IsoCamera(10), 0, 0, 50, 50, 100, 100, true, false,
                 k => down.Contains(k), new AimTarget(AimKind.Ground, 6f, 0.2f, 7f, 200, 0));
             Assert.That(aimed.Dash, Is.True);
@@ -249,6 +253,30 @@ namespace WarCore.Tests.Dash
             s.StepOnce();
             Assert.That(s.PlayerLog[0].Input.Primary, Is.True);
             Assert.That(s.PlayerLog[0].Input.Dash, Is.True);
+        }
+
+        // The live adapter's click copy keeps the aim layer, so an upstairs aim does not drop to the ground on the click tick.
+        [Test]
+        public void M7bInput_LiveCopyKeepsTheAimLayer()
+        {
+            MatchPack pack = RespawnWorld.Pack(RespawnWorld.Points(RespawnWorld.Spawn(1, 24, 20)),
+                RespawnWorld.Bases(new SpawnAnchor(1, RespawnWorld.P(5, 38))), 300);
+            WorldRecipe recipe = RespawnWorld.Recipe(RespawnWorld.Units(), pack).WithPlatesPreview();
+            SimSession s = new M6World(recipe, Ml7Worlds.Arena(true)).Session;
+            var live = new LivePlayerInput();
+            live.Apply(s, new PlayerInput(0, 0, 40500, 30500, aimLayer: 1, dash: true), true);
+            s.StepOnce();
+            Assert.That(s.PlayerLog[0].Input.Primary, Is.True);
+            Assert.That(s.PlayerLog[0].Input.AimLayer, Is.EqualTo(1));
+            Assert.That(s.PlayerLog[0].Input.Dash, Is.True);
+        }
+
+        // An input without a dash keeps the hash code it had before the dash existed; a dash changes it.
+        [Test]
+        public void M7bInput_NoDashKeepsTheHashCode()
+        {
+            Assert.That(new PlayerInput(1, 2, 3, 4).GetHashCode(), Is.EqualTo(-1835463628));
+            Assert.That(new PlayerInput(1, 2, 3, 4, dash: true).GetHashCode(), Is.Not.EqualTo(-1835463628));
         }
     }
 }
