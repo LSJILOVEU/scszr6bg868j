@@ -19,9 +19,10 @@ namespace WarCore.Replay
                 return 0;
             }
             if (args.Length == 1 && args[0] == "--selftest") { UseProjectRoot(); return SelfTest.Run(); }
+            if (args.Length == 5 && args[0] == "--map") return RunMap(args[1], args[2], args[3], args[4]);
             if ((args.Length != 4 && args.Length != 5) || !Recipes.All.ContainsKey(args[0]))
             {
-                Console.Error.WriteLine("usage: WarCore.Replay <setup> <maxTicks> <every> <output.json> [lanesSeed] | --list | --selftest");
+                Console.Error.WriteLine("usage: WarCore.Replay <setup> <maxTicks> <every> <output.json> [lanesSeed] | --map <map.json> <maxTicks> <every> <output.json> | --list | --selftest");
                 return 2;
             }
             // A fifth argument reseeds the three-lane setups (the other setups ignore it), to see one change over several matches.
@@ -29,6 +30,20 @@ namespace WarCore.Replay
             string output = Path.GetFullPath(args[3]);
             UseProjectRoot();
             string json = Export(args[0], int.Parse(args[1], CultureInfo.InvariantCulture), int.Parse(args[2], CultureInfo.InvariantCulture), out string summary);
+            File.WriteAllText(output, json);
+            Console.WriteLine(summary);
+            return 0;
+        }
+
+        // Runs a map description file as it stands (its own seed, the content layer it names, found in the cartridges).
+        private static int RunMap(string mapFile, string maxTicks, string every, string outputFile)
+        {
+            string input = Path.GetFullPath(mapFile), output = Path.GetFullPath(outputFile);
+            UseProjectRoot();
+            MapRunSetup setup = MapRunSetup.From(File.ReadAllBytes(input));
+            string name = System.Text.RegularExpressions.Regex.Replace(Path.GetFileName(input), "[^A-Za-z0-9._-]", "_");
+            var entry = new Recipes.Entry("Map file " + name, () => setup.Recipe, () => setup.Bake.WcMapBytes);
+            string json = Export("map:" + name, entry, int.Parse(maxTicks, CultureInfo.InvariantCulture), int.Parse(every, CultureInfo.InvariantCulture), out string summary);
             File.WriteAllText(output, json);
             Console.WriteLine(summary);
             return 0;
@@ -43,10 +58,11 @@ namespace WarCore.Replay
             Directory.SetCurrentDirectory(directory.FullName);
         }
 
-        public static string Export(string setup, int maxTicks, int every, out string summary)
+        public static string Export(string setup, int maxTicks, int every, out string summary) => Export(setup, Recipes.All[setup], maxTicks, every, out summary);
+
+        private static string Export(string setup, Recipes.Entry entry, int maxTicks, int every, out string summary)
         {
             if (maxTicks < 0 || every < 1) throw new ArgumentOutOfRangeException(nameof(every));
-            Recipes.Entry entry = Recipes.All[setup];
             WorldRecipe recipe = entry.Recipe();
             SimSession session = SimSession.Create(recipe, entry.Map());
             var keys = new List<ulong>(); var teams = new List<int>();
