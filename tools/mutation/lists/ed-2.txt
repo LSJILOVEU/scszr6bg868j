@@ -1,0 +1,315 @@
+# ED-2: terrain brushes and their legalization (Content/MapTools/MapBrush.cs) and the facade (Presentation/Maps/MapDocument.Brush.cs).
+# Filter: the ED-2 tests.
+# Not listed: the falloff edge test d2 > r2 (the weight there is 0 either way); clamping the wanted height to the range (the
+# interval is cut by the same range, so it cannot be seen); the bank band's c^2 <= B (weight 0 at B); Smooth reading the start
+# heights (nothing changes before Legalize, so there is no updated value to read).
+
+[ed2-weight-r4]
+file = Assets/WarCore/Content/MapTools/MapBrush.cs
+filter = FullyQualifiedName~Ed2
+expect = WarCore.Tests.Ed2BrushTests
+note = falloff divides by r^2 instead of r^4
+original:
+| return (int)(Full * k * k / (r2 * r2));
+replacement:
+| return (int)(Full * k * k / r2);
+
+[ed2-raise-floor]
+file = Assets/WarCore/Content/MapTools/MapBrush.cs
+filter = FullyQualifiedName~Ed2
+expect = WarCore.Tests.Ed2BrushTests
+note = raise rounds toward negative infinity
+original:
+| work.Disc(i, j, radius, (h, w) => h + (long)amount * w / Full);
+replacement:
+| work.Disc(i, j, radius, (h, w) => h + FloorDiv((long)amount * w, Full));
+
+[ed2-flatten-floor]
+file = Assets/WarCore/Content/MapTools/MapBrush.cs
+filter = FullyQualifiedName~Ed2
+expect = WarCore.Tests.Ed2BrushTests
+note = flatten rounds toward negative infinity
+original:
+| work.Disc(i, j, radius, (h, w) => h + (target - h) * w / Full);
+replacement:
+| work.Disc(i, j, radius, (h, w) => h + FloorDiv((target - h) * w, Full));
+
+[ed2-smooth-trunc]
+file = Assets/WarCore/Content/MapTools/MapBrush.cs
+filter = FullyQualifiedName~Ed2
+expect = WarCore.Tests.Ed2BrushTests
+note = smooth mean rounds toward zero
+original:
+|                 return FloorDiv(sum, count);
+replacement:
+|                 return sum / count;
+
+[ed2-smooth-count]
+file = Assets/WarCore/Content/MapTools/MapBrush.cs
+filter = FullyQualifiedName~Ed2
+expect = WarCore.Tests.Ed2BrushTests
+note = smooth forgets to count the left neighbour
+original:
+| if (i > 0) { sum += H(i - 1, j); count++; }
+replacement:
+| if (i > 0) { sum += H(i - 1, j); }
+
+[ed2-ramp-end]
+file = Assets/WarCore/Content/MapTools/MapBrush.cs
+filter = FullyQualifiedName~Ed2
+expect = WarCore.Tests.Ed2RampTests
+note = the ramp end is not on the ramp
+original:
+| work.Line(i0, j0, i1, j1, halfWidth, (i, j, t, c) => t >= 0 && t <= l2 && c * c <= band, (t, c, h) => ramp(t));
+replacement:
+| work.Line(i0, j0, i1, j1, halfWidth, (i, j, t, c) => t >= 0 && t < l2 && c * c <= band, (t, c, h) => ramp(t));
+
+[ed2-ramp-band]
+file = Assets/WarCore/Content/MapTools/MapBrush.cs
+filter = FullyQualifiedName~Ed2
+expect = WarCore.Tests.Ed2BrushTests
+note = the ramp band edge is not on the ramp
+original:
+| work.Line(i0, j0, i1, j1, halfWidth, (i, j, t, c) => t >= 0 && t <= l2 && c * c <= band, (t, c, h) => ramp(t));
+replacement:
+| work.Line(i0, j0, i1, j1, halfWidth, (i, j, t, c) => t >= 0 && t <= l2 && c * c < band, (t, c, h) => ramp(t));
+
+[ed2-ramp-trunc]
+file = Assets/WarCore/Content/MapTools/MapBrush.cs
+filter = FullyQualifiedName~Ed2
+expect = WarCore.Tests.Ed2BrushTests
+note = ramp heights round toward zero
+original:
+| Func<long, long> ramp = t => h0 + FloorDiv(((long)h1 - h0) * Math.Max(0, Math.Min(l2, t)), l2);
+replacement:
+| Func<long, long> ramp = t => h0 + ((long)h1 - h0) * Math.Max(0, Math.Min(l2, t)) / l2;
+
+[ed2-ramp-no-walk-check]
+file = Assets/WarCore/Content/MapTools/MapBrush.cs
+filter = FullyQualifiedName~Ed2
+expect = WarCore.Tests.Ed2RampTests
+note = the walkable check is gone
+original:
+|             work.CheckWalkable(walkNum, walkDen);
+|
+replacement:
+|
+|
+
+[ed2-ramp-no-fit-check]
+file = Assets/WarCore/Content/MapTools/MapBrush.cs
+filter = FullyQualifiedName~Ed2
+expect = WarCore.Tests.Ed2RampTests
+note = a ramp that did not reach its heights is written
+original:
+|             if (!work.Reached(core))
+replacement:
+|             if (false)
+
+[ed2-ramp-no-skirt]
+file = Assets/WarCore/Content/MapTools/MapBrush.cs
+filter = FullyQualifiedName~Ed2
+expect = WarCore.Tests.Ed2BrushTests
+note = no skirt
+original:
+|             if (skirt > 0)
+replacement:
+|             if (false)
+
+[ed2-ramp-skirt-floor]
+file = Assets/WarCore/Content/MapTools/MapBrush.cs
+filter = FullyQualifiedName~Ed2
+expect = WarCore.Tests.Ed2BrushTests
+note = skirt width rounds down
+original:
+| long skirt = Math.Min(MaxRadius, (work.MaxChange() + S - 1) / S);
+replacement:
+| long skirt = Math.Min(MaxRadius, work.MaxChange() / S);
+
+[ed2-bank-zero-side]
+file = Assets/WarCore/Content/MapTools/MapBrush.cs
+filter = FullyQualifiedName~Ed2
+expect = WarCore.Tests.Ed2BrushTests
+note = the bank includes the segment itself
+original:
+| (i, j, t, c) => t >= 0 && t <= l2 && c > 0 && c * c <= band,
+replacement:
+| (i, j, t, c) => t >= 0 && t <= l2 && c >= 0 && c * c <= band,
+
+[ed2-bank-flat]
+file = Assets/WarCore/Content/MapTools/MapBrush.cs
+filter = FullyQualifiedName~Ed2
+expect = WarCore.Tests.Ed2BrushTests
+note = the bank has no falloff
+original:
+| (t, c, h) => h + (long)amount * (Full * (band - c * c) / band) / Full);
+replacement:
+| (t, c, h) => h + (long)amount);
+
+[ed2-circle-strict]
+file = Assets/WarCore/Content/MapTools/MapBrush.cs
+filter = FullyQualifiedName~Ed2
+expect = WarCore.Tests.Ed2SurfaceTests
+note = circle leaves out its rim
+original:
+| if (circle && ax * ax + az * az > r2) continue;
+replacement:
+| if (circle && ax * ax + az * az >= r2) continue;
+
+[ed2-surface-write-all]
+file = Assets/WarCore/Content/MapTools/MapBrush.cs
+filter = FullyQualifiedName~Ed2
+expect = WarCore.Tests.Ed2SurfaceTests
+note = cells already named are written
+original:
+| if (!string.Equals(now, name, StringComparison.Ordinal)) writes.Add
+replacement:
+| if (true) writes.Add
+
+[ed2-one-edge-f]
+file = Assets/WarCore/Content/MapTools/MapBrush.cs
+filter = FullyQualifiedName~Ed2
+expect = WarCore.Tests.Ed2LegalTests
+note = one-edge interval ignores the other edge
+original:
+| long m = SlopeLimit - f * f;
+replacement:
+| long m = SlopeLimit;
+
+[ed2-two-edges-limit]
+file = Assets/WarCore/Content/MapTools/MapBrush.cs
+filter = FullyQualifiedName~Ed2
+expect = WarCore.Tests.Ed2LegalTests
+note = two-edge interval uses the one-edge limit
+original:
+| long m = 2 * SlopeLimit - (p - q) * (p - q);
+replacement:
+| long m = SlopeLimit - (p - q) * (p - q);
+
+[ed2-two-edges-round]
+file = Assets/WarCore/Content/MapTools/MapBrush.cs
+filter = FullyQualifiedName~Ed2
+expect = WarCore.Tests.Ed2LegalTests
+note = two-edge lower bound floors instead of ceils
+original:
+| lo = Math.Max(lo, -((s - p - q) >> 1));
+replacement:
+| lo = Math.Max(lo, (p + q - s) >> 1);
+
+[ed2-one-edge-empty]
+file = Assets/WarCore/Content/MapTools/MapBrush.cs
+filter = FullyQualifiedName~Ed2
+expect = WarCore.Tests.Ed2LegalTests
+note = an empty one-edge interval is ignored
+original:
+| if (m < 0) { lo = 1; hi = 0; return; }
+|             long r = ISqrt(m);
+replacement:
+| if (m < 0) { return; }
+|             long r = ISqrt(m);
+
+[ed2-missing-triangle]
+file = Assets/WarCore/Content/MapTools/MapBrush.cs
+filter = FullyQualifiedName~Ed2
+expect = WarCore.Tests.Ed2LegalTests
+note = a corner forgets triangle B
+original:
+|                         OneEdge(h01, h11 - h01, ref lo, ref hi);
+|
+replacement:
+|
+|
+
+[ed2-no-range]
+file = Assets/WarCore/Content/MapTools/MapBrush.cs
+filter = FullyQualifiedName~Ed2
+expect = WarCore.Tests.Ed2LegalTests
+note = the interval is not cut by the range
+original:
+| long lo = floor, hi = ceiling;
+replacement:
+| long lo = long.MinValue / 4, hi = long.MaxValue / 4;
+
+[ed2-one-pass]
+file = Assets/WarCore/Content/MapTools/MapBrush.cs
+filter = FullyQualifiedName~Ed2
+expect = WarCore.Tests.Ed2LegalTests
+note = only one pass
+original:
+| for (int pass = 0; pass < MaxPasses; pass++)
+replacement:
+| for (int pass = 0; pass < 1; pass++)
+
+[ed2-reverse-order]
+file = Assets/WarCore/Content/MapTools/MapBrush.cs
+filter = FullyQualifiedName~Ed2
+expect = WarCore.Tests.Ed2RampTests
+note = passes go in reverse order (skirt before ramp)
+original:
+| int n = s;
+replacement:
+| int n = points.Count - 1 - s;
+
+[ed2-frozen-moves]
+file = Assets/WarCore/Content/MapTools/MapBrush.cs
+filter = FullyQualifiedName~Ed2
+expect = WarCore.Tests.Ed2LegalTests
+note = a point outside its interval moves anyway
+original:
+|                         if (h < lo || h > hi) continue;
+|
+replacement:
+|
+|
+
+[ed2-write-unchanged]
+file = Assets/WarCore/Content/MapTools/MapBrush.cs
+filter = FullyQualifiedName~Ed2
+expect = WarCore.Tests.Ed2
+note = unchanged points are written
+original:
+| if (seen.Add(k) && now[k] != start[k])
+replacement:
+| if (seen.Add(k))
+
+[ed2-line-bound]
+file = Assets/WarCore/Content/MapTools/MapBrush.cs
+filter = FullyQualifiedName~Ed2
+expect = WarCore.Tests.Ed2BrushTests
+note = end points one beyond the bound pass
+original:
+| if (i0 < -MaxOutside || i1 < -MaxOutside
+replacement:
+| if (i0 < -MaxOutside - 1 || i1 < -MaxOutside
+
+[ed2-height-bound]
+file = Assets/WarCore/Content/MapTools/MapBrush.cs
+filter = FullyQualifiedName~Ed2
+expect = WarCore.Tests.Ed2BrushTests
+note = a height of 2^29 passes
+original:
+| if (raw <= -MapDescReader.HeightLimit - 1 || raw >= MapDescReader.HeightLimit + 1) throw new ArgumentOutOfRangeException(name);
+replacement:
+| if (raw <= -MapDescReader.HeightLimit - 1 || raw >= MapDescReader.HeightLimit + 2) throw new ArgumentOutOfRangeException(name);
+
+[ed2-facade-name-always]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Brush.cs
+filter = FullyQualifiedName~Ed2
+expect = WarCore.Tests.Ed2SurfaceTests
+note = the facade adds the name even when no cell changes
+original:
+|             if (writes.Length == 0) return;
+|
+replacement:
+|
+|
+
+[ed2-facade-walk]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Brush.cs
+filter = FullyQualifiedName~Ed2
+expect = WarCore.Tests.Ed2RampTests
+note = the facade uses the wrong walkable slope
+original:
+| rules.MaxWalkableNum, rules.MaxWalkableDen));
+replacement:
+| rules.MaxWalkableDen, rules.MaxWalkableDen));
