@@ -72,7 +72,7 @@ namespace WarCore.Sim
                 stableWriter.String(gameplay != null ? "warcore-state-retained-v6" : Placed != null ? "warcore-state-retained-v5" : Entities.UsesRetainedProtocol ? "warcore-state-retained-v4" : "warcore-state-stable-v3");
                 WriteStableConfiguration(stableWriter);
                 stableWriter.Int64(Clock.Tick);
-                stableInput.Save(stableWriter);
+                stableInput.Save(stableWriter,inputLayers);
                 stableWriter.Bool(started);
                 stableWriter.Bool(faulted);
                 stableWriter.String(modeId);
@@ -151,7 +151,7 @@ namespace WarCore.Sim
             Entities.SaveStableEntities(writer);
             Spawns.Save(writer);
             Activations.Save(writer);
-            stableInput.Save(writer);
+            stableInput.Save(writer,inputLayers);
             Rng.SaveRandom(writer);
             Scheduler.SaveStableScheduler(writer);
             events.SaveStableEvents(writer);
@@ -189,7 +189,7 @@ namespace WarCore.Sim
             Entities.LoadStableEntities(reader,reverseAllocation,observer);
             Spawns.Load(reader);
             Activations.Load(reader,tick);
-            stableInput = StableInputFrame.Read(reader);
+            stableInput = StableInputFrame.Read(reader,inputLayers);
             Context.RestoreInput(stableInput.Bind(Entities));
             Rng.LoadRandom(reader);
             Scheduler.LoadStableScheduler(reader,tick);

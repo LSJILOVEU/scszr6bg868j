@@ -31,14 +31,18 @@ namespace WarCore.Presentation
         public int DashTicks { get; }
         public int DashCooldownTicks { get; }
         public bool HasDash => DashTicks > 0;
+        // The layer the unit is placed on: 0 = the ground, 1..N = a floor plate of the map (worlds with plates only).
+        public int Layer { get; }
 
         // Placeholder bound: ten metres per tick at 30 ticks per second. A step this long is still swept in full by the movers.
         public const long MaxSpeedMmPerSec = ContentPack.MaxUnitSpeedMmPerSec;
+        // The highest layer number a spawn, command or aim may name: the plate limit of a map (4096, the same as the Sim's).
+        public const int MaxLayer = 4096;
 
-        public static UnitSpawn OfType(ulong key, ContentPack pack, string unitTypeId, int squad, int team, long xMm, long zMm, bool reserve = false)
+        public static UnitSpawn OfType(ulong key, ContentPack pack, string unitTypeId, int squad, int team, long xMm, long zMm, bool reserve = false, int layer = 0)
         {
             var type = pack.SpawnOfUnitType(unitTypeId);
-            var spawn = new UnitSpawn(key, type.Archetype, squad, xMm, zMm, type.SpeedMmPerSec, team, type.Weapon, reserve, type.Melee, type.Block);
+            var spawn = new UnitSpawn(key, type.Archetype, squad, xMm, zMm, type.SpeedMmPerSec, team, type.Weapon, reserve, type.Melee, type.Block, layer);
             UnitDash? dash = pack.Section<UnitDashes>().Of(unitTypeId);
             return dash.HasValue ? spawn.WithDash(dash.Value.DistanceMm, dash.Value.Ticks, dash.Value.CooldownTicks) : spawn;
         }
@@ -62,8 +66,10 @@ namespace WarCore.Presentation
             DashDistanceMm = dashDistanceMm; DashTicks = dashTicks; DashCooldownTicks = dashCooldownTicks;
         }
 
-        public UnitSpawn(ulong key, int archetype, int squad, long xMm, long zMm, long speedMmPerSec, int team = 0, int weapon = -1, bool reserve = false, int melee = -1, int block = -1)
+        public UnitSpawn(ulong key, int archetype, int squad, long xMm, long zMm, long speedMmPerSec, int team = 0, int weapon = -1, bool reserve = false, int melee = -1, int block = -1, int layer = 0)
         {
+            if (layer < 0 || layer > UnitSpawn.MaxLayer) throw new ArgumentOutOfRangeException(nameof(layer), "A layer is 0 to 4096.");
+            Layer = layer;
             if (melee < -1) throw new ArgumentOutOfRangeException(nameof(melee));
             if (block < -1) throw new ArgumentOutOfRangeException(nameof(block));
             Block = block;
@@ -102,6 +108,16 @@ namespace WarCore.Presentation
         public bool Motion => HasOption(WorldOptions.Motion.OptionId);
         // Opens the per-unit standing-order component (hold, follow, move in progress), same rule: off by default, and a world without it is unchanged.
         public bool Standing => HasOption(WorldOptions.Standing.OptionId);
+        // Opens maps with floor plates before units can walk on them (tests only). Only the builder's own option instance counts.
+        internal bool PlatesPreview
+        {
+            get
+            {
+                foreach (IWorldOption option in options)
+                    if (ReferenceEquals(option, WorldOptions.PlatesPreview)) return true;
+                return false;
+            }
+        }
         // Adds the block AI (units raise a block against incoming swings, by their block spec's chance). Needs block specs and facing.
         public bool BlockAi { get; private set; }
         // The rules a map with terrain is derived under; null for flat maps. Not part of the recipe's seed or rule-set id.
@@ -200,6 +216,8 @@ namespace WarCore.Presentation
         }
 
         public WorldRecipe WithFacing() => With(WorldOptions.Facing);
+
+        internal WorldRecipe WithPlatesPreview() => With(WorldOptions.PlatesPreview);
 
         public WorldRecipe WithMotion() => With(WorldOptions.Motion);
 

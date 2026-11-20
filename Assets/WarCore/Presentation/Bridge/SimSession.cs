@@ -44,6 +44,8 @@ namespace WarCore.Presentation
         // Terrain tables and the rules they were derived under; both null on flat maps. Read by TerrainCheck only.
         internal TerrainTables Terrain;
         internal TerrainRules TerrainRules;
+        // The plates of a map with floor plates; null otherwise.
+        internal PlateWorld Plates;
     }
 
     /// <summary>
@@ -77,6 +79,7 @@ namespace WarCore.Presentation
         private readonly List<PlayerInputRecord> playerLog = new List<PlayerInputRecord>();
         private PlayerInput heldPlayerInput;
         private readonly long groundRaw;
+        private readonly PlateWorld plates;
         private readonly long maxHealthRaw;
         private readonly WcMap map;
         private readonly uint wallMask;
@@ -119,6 +122,7 @@ namespace WarCore.Presentation
             combat = parts.Combat;
             matchPack = parts.MatchPack; capture = parts.Capture; reinforce = parts.Reinforce; match = parts.Match; pressure = parts.Pressure;
             groundRaw = parts.GroundRaw;
+            plates = parts.Plates;
             map = parts.Map;
             wallMask = parts.WallMask;
             Map = parts.View;
@@ -251,7 +255,10 @@ namespace WarCore.Presentation
             if (command.AtTick <= Tick)
                 throw new ArgumentOutOfRangeException(nameof(command), "Command must target a future tick.");
             if (command.Kind == BridgeCommandKind.MoveTo)
+            {
                 Target(command.XMm, command.ZMm, groundRaw);
+                CheckLayer(command.XMm, command.ZMm, command.Layer, "Command target", nameof(command));
+            }
             else if (command.Kind == BridgeCommandKind.Follow && !HasUnit(command.TargetKey))
                 throw new ArgumentException("Follow target is not a unit of this session.", nameof(command));
             int index = 0;
@@ -268,6 +275,7 @@ namespace WarCore.Presentation
                 throw new ArgumentOutOfRangeException(nameof(atTick), "Input must target a future tick.");
             if (controlled == null)
                 throw new InvalidOperationException("This session has no player control source.");
+            CheckLayer(input.AimXMm, input.AimZMm, input.AimLayer, "Aim point", nameof(input));
             int index = 0;
             while (index < pendingPlayer.Count && pendingPlayer[index].AtTick < atTick)
                 index++;
@@ -312,7 +320,9 @@ namespace WarCore.Presentation
                 BridgeCommand command = pending[0];
                 squad = command.Kind switch
                 {
-                    BridgeCommandKind.MoveTo => new SquadCommand(SquadCommandKind.MoveTo, command.Squad, Target(command.XMm, command.ZMm, groundRaw), default),
+                    BridgeCommandKind.MoveTo => command.Layer == 0
+                        ? new SquadCommand(SquadCommandKind.MoveTo, command.Squad, Target(command.XMm, command.ZMm, groundRaw), default)
+                        : new SquadCommand(SquadCommandKind.MoveTo, command.Squad, PlateTarget(command.XMm, command.ZMm, command.Layer), default, command.Layer),
                     BridgeCommandKind.Hold => new SquadCommand(SquadCommandKind.Hold, command.Squad, default, default),
                     _ => new SquadCommand(SquadCommandKind.Follow, command.Squad, default, default)
                 };
@@ -329,9 +339,10 @@ namespace WarCore.Presentation
                     new SimVec3(SimFix.Ratio(nextPlayerInput.MoveXMilli, 1000), default, SimFix.Ratio(nextPlayerInput.MoveZMilli, 1000)),
                     nextPlayerInput.AimYMm.HasValue
                         ? TargetAt(nextPlayerInput.AimXMm, nextPlayerInput.AimYMm.Value, nextPlayerInput.AimZMm)
+                        : nextPlayerInput.AimLayer > 0 ? PlateTarget(nextPlayerInput.AimXMm, nextPlayerInput.AimZMm, nextPlayerInput.AimLayer)
                         : Target(nextPlayerInput.AimXMm, nextPlayerInput.AimZMm, groundRaw),
                     primaryAttack: nextPlayerInput.Primary, block: nextPlayerInput.Block,
-                    @throw: nextPlayerInput.Throw, skillSlot: nextPlayerInput.SkillSlot, squad: squad);
+                    @throw: nextPlayerInput.Throw, skillSlot: nextPlayerInput.SkillSlot, squad: squad, aimLayer: nextPlayerInput.AimLayer);
             }
             if (StepTimingEnabled && stepSampleCount < stepSamples.Length)
             {
@@ -434,6 +445,28 @@ namespace WarCore.Presentation
             const long limitMm = SimVec3.WorldLimitMetres * 1000L;
             if (yMm < -limitMm || yMm > limitMm)
                 throw new ArgumentOutOfRangeException("aimYMm", "Aim height exceeds the world bounds.");
+        }
+
+        // A point on a layer above the ground must lie on a solid cell of that plate of this map.
+        private void CheckLayer(long xMm, long zMm, int layer, string what, string parameter)
+        {
+            if (layer == 0) return;
+            if (plates == null)
+                throw new ArgumentException(what + " names layer " + layer + " on a map without floor plates.", parameter);
+            if (layer >= plates.LayerCount)
+                throw new ArgumentException(what + " names layer " + layer + " of a map with " + (plates.LayerCount - 1) + " plates.", parameter);
+            SimVec3 point = Target(xMm, zMm);
+            if (!plates.TryFloor(layer, point.X, point.Z, false, out _))
+                throw new ArgumentException(what + " is not on layer " + layer + ".", parameter);
+        }
+
+        // The point on a plate: (x, z) on the plate's floored surface (checked when the command or input was taken).
+        private SimVec3 PlateTarget(long xMm, long zMm, int layer)
+        {
+            SimVec3 point = Target(xMm, zMm);
+            if (!plates.TryFloor(layer, point.X, point.Z, false, out SimFix y))
+                throw new InvalidOperationException("The point is not on layer " + layer + ".");
+            return new SimVec3(point.X, y, point.Z);
         }
 
         internal static SimVec3 Target(long xMm, long zMm, long groundRaw = 0)

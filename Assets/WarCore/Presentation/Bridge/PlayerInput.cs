@@ -16,10 +16,12 @@ namespace WarCore.Presentation
         public int SkillSlot { get; }
         /// <summary>Height of the aim point in millimetres; null = no height (the map's ground height is used).</summary>
         public long? AimYMm { get; }
+        /// <summary>Layer of the aim point: 0 = the ground, 1..N = a floor plate of the map (worlds with plates only).</summary>
+        public int AimLayer { get; }
 
         // Parameters may only be appended at the end.
         public PlayerInput(int moveXMilli, int moveZMilli, long aimXMm = 0, long aimZMm = 0, bool primary = false,
-            bool block = false, bool @throw = false, int skillSlot = 0, long? aimYMm = null)
+            bool block = false, bool @throw = false, int skillSlot = 0, long? aimYMm = null, int aimLayer = 0)
         {
             if (moveXMilli < -1000 || moveXMilli > 1000)
                 throw new ArgumentOutOfRangeException(nameof(moveXMilli));
@@ -27,6 +29,9 @@ namespace WarCore.Presentation
                 throw new ArgumentOutOfRangeException(nameof(moveZMilli));
             if (skillSlot < 0)
                 throw new ArgumentOutOfRangeException(nameof(skillSlot));
+            if (aimLayer < 0 || aimLayer > UnitSpawn.MaxLayer)
+                throw new ArgumentOutOfRangeException(nameof(aimLayer), "A layer is 0 to 4096.");
+            AimLayer = aimLayer;
             SimSession.Target(aimXMm, aimZMm);
             if (aimYMm.HasValue) SimSession.CheckAimY(aimYMm.Value);
             MoveXMilli = moveXMilli; MoveZMilli = moveZMilli;
@@ -36,7 +41,8 @@ namespace WarCore.Presentation
 
         public bool Equals(PlayerInput other) => MoveXMilli == other.MoveXMilli && MoveZMilli == other.MoveZMilli
             && AimXMm == other.AimXMm && AimZMm == other.AimZMm && Primary == other.Primary
-            && Block == other.Block && Throw == other.Throw && SkillSlot == other.SkillSlot && AimYMm == other.AimYMm;
+            && Block == other.Block && Throw == other.Throw && SkillSlot == other.SkillSlot && AimYMm == other.AimYMm
+            && AimLayer == other.AimLayer;
         public override bool Equals(object obj) => obj is PlayerInput other && Equals(other);
         public override int GetHashCode()
         {
@@ -50,7 +56,9 @@ namespace WarCore.Presentation
                 hash = hash * 397 ^ Block.GetHashCode();
                 hash = hash * 397 ^ Throw.GetHashCode();
                 hash = hash * 397 ^ SkillSlot;
-                return hash * 397 ^ AimYMm.GetHashCode();
+                hash = hash * 397 ^ AimYMm.GetHashCode();
+                // Layer 0 keeps the hash code of an input without layers.
+                return AimLayer == 0 ? hash : hash * 397 ^ AimLayer;
             }
         }
     }

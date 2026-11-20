@@ -31,15 +31,24 @@ namespace WarCore.Sim
             get;
         }
 
-        public SquadCommand(SquadCommandKind kind, int squad, SimVec3 targetPoint, EntityId targetEntity)
+        // The layer of the target point (0 = the ground, 1..4096 = a floor plate); non-zero only in worlds with plates.
+        public int TargetLayer
+        {
+            get;
+        }
+
+        public SquadCommand(SquadCommandKind kind, int squad, SimVec3 targetPoint, EntityId targetEntity, int targetLayer = 0)
         {
             if (kind < SquadCommandKind.MoveTo || kind > SquadCommandKind.Follow)
                 throw new ArgumentOutOfRangeException(nameof(kind));
             targetPoint.ValidateWorld();
+            if (targetLayer < 0 || targetLayer > PlateField.MaxPlates)
+                throw new ArgumentOutOfRangeException(nameof(targetLayer));
             Kind = kind;
             Squad = squad;
             TargetPoint = targetPoint;
             TargetEntity = targetEntity;
+            TargetLayer = targetLayer;
         }
 
         public void WriteState(StateHash hash)
@@ -111,16 +120,22 @@ namespace WarCore.Sim
         internal GameplayInputCommand[] SkillCommandArray => skillCommands;
         public long GameplayTick { get; }
         public int SkillCommandCount { get; }
+        // The layer of the aim point (0 = the ground, 1..4096 = a floor plate); non-zero only in worlds with plates.
+        public int AimLayer { get; }
         public ReadOnlySpan<GameplayInputCommand> SkillCommands => skillCommands == null ? ReadOnlySpan<GameplayInputCommand>.Empty : skillCommands.AsSpan(0, SkillCommandCount);
+        internal bool HasLayers => AimLayer != 0 || (Squad.HasValue && Squad.Value.TargetLayer != 0);
         internal bool HasValidSkillCommandShape => SkillCommandCount >= 0 && (skillCommands != null ? SkillCommandCount <= skillCommands.Length : SkillCommandCount == 0);
         internal GameplayInputCommand SkillCommandAt(int index) => skillCommands[index];
 
         // The frame borrows its bounded input block until Step starts; Step copies it before running systems.
         public InputFrame(SimVec3 move, SimVec3 aim, bool primaryAttack = false, bool block = false, bool @throw = false, int skillSlot = 0, SquadCommand? squad = null,
-            long gameplayTick = 0, GameplayInputCommand[] skillCommands = null, int skillCommandCount = -1)
+            long gameplayTick = 0, GameplayInputCommand[] skillCommands = null, int skillCommandCount = -1, int aimLayer = 0)
         {
             if (skillSlot < 0)
                 throw new ArgumentOutOfRangeException(nameof(skillSlot));
+            if (aimLayer < 0 || aimLayer > PlateField.MaxPlates)
+                throw new ArgumentOutOfRangeException(nameof(aimLayer));
+            AimLayer = aimLayer;
             Move = move;
             Aim = aim;
             PrimaryAttack = primaryAttack;

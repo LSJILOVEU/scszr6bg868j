@@ -33,8 +33,9 @@ namespace WarCore.Presentation
         public override void PlaceUnit(WorldAssembly a, int index, EntityId unit)
         {
             UnitSpawn spawn = a.Recipe.Units[index];
-            // A terrain world never places a unit where its footprint touches blocked ground or leaves the map.
-            if (a.IsDeployedAtStart(spawn))
+            // A terrain world never places a unit where its footprint touches blocked ground or leaves the map. A unit placed on a
+            // plate stands above that ground: the plate installer checks its cell.
+            if (a.IsDeployedAtStart(spawn) && spawn.Layer == 0)
             {
                 SimVec3 point = a.SpawnPoint(spawn);
                 if (!a.Terrain.Nav.SegmentClear(point, point, InterimLocomotion.UnitFootprint))

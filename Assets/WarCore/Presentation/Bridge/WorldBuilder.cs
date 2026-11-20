@@ -36,8 +36,9 @@ namespace WarCore.Presentation
             if (recipe.PlayerKey.HasValue && (!crowd || recipe.Combat == null || recipe.Match == null))
                 throw new ArgumentException("Player control requires InterimCrowd, Combat and Match.", nameof(recipe));
             WcMap map = mapBytes == null ? null : WcMapReader.Read(mapBytes);
-            if (map != null && map.Plates.Count > 0)
+            if (map != null && map.Plates.Count > 0 && !recipe.PlatesPreview)
                 throw new NotSupportedException("Maps with floor plates are not supported by the runtime yet.");
+            PlateFeature.CheckSpawnLayers(recipe, map);
             assembly.Map = map;
             FeatureTable.RunPrepare(assembly);
             long groundRaw = map == null ? 0 : map.FlatHeight.Raw;
@@ -103,6 +104,7 @@ namespace WarCore.Presentation
                 MatchPack = recipe.Match, Capture = assembly.Capture, Reinforce = assembly.Reinforce, Match = assembly.Match, Pressure = assembly.Pressure,
                 MaxHealthRaw = recipe.Combat?.MaxHealthRaw ?? 0, Controlled = assembly.Controlled, CombatPack = recipe.Combat,
                 Facings = facings, Terrain = assembly.Terrain, TerrainRules = recipe.TerrainPack?.Terrain,
+                Plates = assembly.Plates,
             });
             foreach (BridgeCommand command in recipe.Script)
                 session.Enqueue(command);

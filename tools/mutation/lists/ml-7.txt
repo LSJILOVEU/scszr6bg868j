@@ -1,0 +1,707 @@
+# ML-7: the vertical state (Interim/VerticalState), layer orders, layer numbers on the Sim input and the plate installer. Filter: ML-7 tests.
+# Not listed: the snapshot save and read call sites of the input frame (one side alone misaligns the reader, which fails with an
+# exception, not an assertion; the hash call site is listed); Bind's AimLayer (no system reads the aim layer yet); the ILocomotion
+# default body (InterimLocomotion implements the method itself); PlateWorld's ">> 16" against "/ Scale" (points on the map are never
+# negative) and its layer and bounds guards (every caller checks the layer count and the bridge's world bounds first); the walkable
+# flag of WorldAssembly.SpawnPoint (the plate installer refuses the same cell, with its own message, before a unit stands there);
+# the feature table order.
+
+[ml7-step-check]
+file = Assets/WarCore/Sim/Sim.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7InputTests.WithoutTheSwitchLayersAreRefused
+note = Step takes layers without the switch
+original:
+|             CheckInputLayers(input);
+replacement:
+
+[ml7-stepstable-check]
+file = Assets/WarCore/Sim/StableInput.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7InputTests.WithoutTheSwitchLayersAreRefused
+note = StepStable takes layers without the switch
+original:
+|             CheckInputLayers(input.Payload);
+replacement:
+
+[ml7-has-layers-aim-only]
+file = Assets/WarCore/Sim/InputFrame.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7InputTests.WithoutTheSwitchLayersAreRefused
+note = the squad layer is not seen
+original:
+| internal bool HasLayers => AimLayer != 0 || (Squad.HasValue && Squad.Value.TargetLayer != 0);
+replacement:
+| internal bool HasLayers => AimLayer != 0;
+
+[ml7-has-layers-squad-only]
+file = Assets/WarCore/Sim/InputFrame.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7InputTests.WithoutTheSwitchLayersAreRefused
+note = the aim layer is not seen
+original:
+| internal bool HasLayers => AimLayer != 0 || (Squad.HasValue && Squad.Value.TargetLayer != 0);
+replacement:
+| internal bool HasLayers => Squad.HasValue && Squad.Value.TargetLayer != 0;
+
+[ml7-check-ignores-switch]
+file = Assets/WarCore/Sim/StableInput.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7InputTests.TheSwitchIsSetBeforeWarmup
+note = the switch is ignored
+original:
+|             if (!inputLayers && input.HasLayers)
+replacement:
+|             if (input.HasLayers)
+
+[ml7-switch-any-world]
+file = Assets/WarCore/Sim/StableInput.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7InputTests.WithoutTheSwitchLayersAreRefused
+note = a legacy world takes the switch
+original:
+|             Entities.RequireStableWorld();
+|             if (warmed)
+replacement:
+|             if (warmed)
+
+[ml7-switch-after-warmup]
+file = Assets/WarCore/Sim/StableInput.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7InputTests.TheSwitchIsSetBeforeWarmup
+note = the switch after warmup
+original:
+|             if (warmed) throw new InvalidOperationException("Input layers are enabled before warmup.");
+replacement:
+
+[ml7-switch-noop]
+file = Assets/WarCore/Sim/StableInput.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7InputTests.TheSwitchIsSetBeforeWarmup
+note = the switch sets nothing
+original:
+|             inputLayers = true;
+replacement:
+
+[ml7-save-no-target]
+file = Assets/WarCore/Sim/StableInput.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7InputTests.LayeredBytesAppendTheTargetLayerThenTheAimLayer
+note = the target layer is not written
+original:
+| if (layers) writer.Int32(value.TargetLayer);
+replacement:
+| if (false) writer.Int32(value.TargetLayer);
+
+[ml7-save-target-always]
+file = Assets/WarCore/Sim/StableInput.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7InputTests.LayeredBytesAppendTheTargetLayerThenTheAimLayer
+note = the target layer is always written
+original:
+| if (layers) writer.Int32(value.TargetLayer);
+replacement:
+| writer.Int32(value.TargetLayer);
+
+[ml7-save-no-aim]
+file = Assets/WarCore/Sim/StableInput.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7InputTests.LayeredBytesAppendTheTargetLayerThenTheAimLayer
+note = the aim layer is not written
+original:
+| if (layers) writer.Int32(Payload.AimLayer);
+replacement:
+| if (false) writer.Int32(Payload.AimLayer);
+
+[ml7-save-aim-always]
+file = Assets/WarCore/Sim/StableInput.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7InputTests.LayeredBytesAppendTheTargetLayerThenTheAimLayer
+note = the aim layer is always written
+original:
+| if (layers) writer.Int32(Payload.AimLayer);
+replacement:
+| writer.Int32(Payload.AimLayer);
+
+[ml7-read-no-target]
+file = Assets/WarCore/Sim/StableInput.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7InputTests.LayeredBytesAppendTheTargetLayerThenTheAimLayer
+note = the target layer is not read
+original:
+| squad = new SquadCommand(kind,squadId,point,default,layers ? Layer(reader) : 0);
+replacement:
+| squad = new SquadCommand(kind,squadId,point,default,0);
+
+[ml7-read-no-aim]
+file = Assets/WarCore/Sim/StableInput.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7InputTests.LayeredBytesAppendTheTargetLayerThenTheAimLayer
+note = the aim layer is not read
+original:
+| int aimLayer = layers ? Layer(reader) : 0;
+replacement:
+| int aimLayer = 0;
+
+[ml7-read-range]
+file = Assets/WarCore/Sim/StableInput.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7InputTests.LayeredBytesAppendTheTargetLayerThenTheAimLayer
+note = 4097 is read
+original:
+| SimStateReader.Require(layer >= 0 && layer <= PlateField.MaxPlates,"Invalid input layer.");
+replacement:
+| SimStateReader.Require(layer >= 0,"Invalid input layer.");
+
+[ml7-hash-no-layers]
+file = Assets/WarCore/Sim/StableSimState.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7InputTests.ALayerChangesItsTicksHash
+note = the hash leaves the layers out
+original:
+| stableInput.Save(stableWriter,inputLayers);
+replacement:
+| stableInput.Save(stableWriter,false);
+
+[ml7-bind-drops-target]
+file = Assets/WarCore/Sim/StableInput.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.AStableFrameCarriesTheLayer
+note = the bound command loses its layer
+original:
+| squad = new SquadCommand(value.Kind,value.Squad,value.TargetPoint,target,value.TargetLayer);
+replacement:
+| squad = new SquadCommand(value.Kind,value.Squad,value.TargetPoint,target);
+
+[ml7-squad-range-negative]
+file = Assets/WarCore/Sim/InputFrame.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7InputTests.LayersAreBounded
+note = -1 accepted
+original:
+|             if (targetLayer < 0 || targetLayer > PlateField.MaxPlates)
+replacement:
+|             if (targetLayer > PlateField.MaxPlates)
+
+[ml7-squad-range-top]
+file = Assets/WarCore/Sim/InputFrame.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7InputTests.LayersAreBounded
+note = 4096 refused
+original:
+|             if (targetLayer < 0 || targetLayer > PlateField.MaxPlates)
+replacement:
+|             if (targetLayer < 0 || targetLayer >= PlateField.MaxPlates)
+
+[ml7-squad-no-assign]
+file = Assets/WarCore/Sim/InputFrame.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7InputTests.LayersAreBounded
+note = the layer is dropped
+original:
+|             TargetLayer = targetLayer;
+replacement:
+|             TargetLayer = 0;
+
+[ml7-aim-range-negative]
+file = Assets/WarCore/Sim/InputFrame.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7InputTests.LayersAreBounded
+note = -1 accepted
+original:
+|             if (aimLayer < 0 || aimLayer > PlateField.MaxPlates)
+replacement:
+|             if (aimLayer > PlateField.MaxPlates)
+
+[ml7-aim-range-top]
+file = Assets/WarCore/Sim/InputFrame.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7InputTests.LayersAreBounded
+note = 4097 accepted
+original:
+|             if (aimLayer < 0 || aimLayer > PlateField.MaxPlates)
+replacement:
+|             if (aimLayer < 0)
+
+[ml7-ground-order-keeps-layer]
+file = Assets/WarCore/Interim/InterimLocomotion.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.ATwoArgumentOrderIsOnTheGround
+expect = WarCore.Tests.Ml7SessionTests.AnOrderOntoAPlateStopsTheUnit
+note = a two-argument order keeps the layer
+original:
+|             if (layered) SetTargetLayer(unit, 0);
+replacement:
+
+[ml7-plate-order-walks]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.AnOrderOntoAPlateStopsTheUnit
+note = no stop
+original:
+|             Stop(unit);
+replacement:
+
+[ml7-plate-order-unrecorded]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.ATwoArgumentOrderIsOnTheGround
+expect = WarCore.Tests.Ml7SessionTests.AnOrderOntoAPlateStopsTheUnit
+note = the layer is not recorded
+original:
+|             SetTargetLayer(unit, layer);
+replacement:
+
+[ml7-layer-zero-stops]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.ATwoArgumentOrderIsOnTheGround
+expect = WarCore.Tests.Ml7SessionTests.GroundOrdersMoveAsWithoutPlates
+expect = WarCore.Tests.Ml7SessionTests.AnOrderOntoAPlateStopsTheUnit
+note = layer 0 takes the plate path
+original:
+|             if (layer == 0) { Order(unit, target); return; }
+replacement:
+
+[ml7-unlayered-accepts]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.ATwoArgumentOrderIsOnTheGround
+note = no NotSupportedException
+original:
+|             if (!layered) throw new NotSupportedException("Layer orders need a world with floor plates.");
+replacement:
+
+[ml7-order-range-late]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.ATwoArgumentOrderIsOnTheGround
+note = range after the world check
+original:
+|             VerticalState.Checked(layer, nameof(layer));
+replacement:
+
+[ml7-slot-order-ground]
+file = Assets/WarCore/Interim/InterimOrders.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.AnOrderOntoAPlateStopsTheUnit
+note = crowd slots lose the layer
+original:
+| SlotOffset(rank, n, slotSpacing), command.TargetLayer);
+replacement:
+| SlotOffset(rank, n, slotSpacing), 0);
+
+[ml7-unit-order-ground]
+file = Assets/WarCore/Interim/InterimOrders.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.AnOrderOntoAPlateStopsTheUnit
+note = path orders lose the layer
+original:
+| locomotion.Order(unit, command.TargetPoint, command.TargetLayer);
+replacement:
+| locomotion.Order(unit, command.TargetPoint, 0);
+
+[ml7-readable-no-air]
+file = Assets/WarCore/Interim/VerticalState.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.TheSerializerReadsLayersAndAir
+note = air refused
+original:
+| value <= PlateField.MaxPlates || value == Air;
+replacement:
+| value <= PlateField.MaxPlates;
+
+[ml7-readable-top]
+file = Assets/WarCore/Interim/VerticalState.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.TheSerializerReadsLayersAndAir
+note = 4096 refused
+original:
+| value >= 0 && value <= PlateField.MaxPlates || value == Air;
+replacement:
+| value >= 0 && value < PlateField.MaxPlates || value == Air;
+
+[ml7-readable-negative]
+file = Assets/WarCore/Interim/VerticalState.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.TheSerializerReadsLayersAndAir
+note = -1 read
+original:
+| value >= 0 && value <= PlateField.MaxPlates || value == Air;
+replacement:
+| value <= PlateField.MaxPlates || value == Air;
+
+[ml7-read-target-unchecked]
+file = Assets/WarCore/Interim/VerticalState.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.TheSerializerReadsLayersAndAir
+note = the target is not checked
+original:
+| VerticalState.Readable(layer) && VerticalState.Readable(target)
+replacement:
+| VerticalState.Readable(layer)
+
+[ml7-checked-air]
+file = Assets/WarCore/Interim/VerticalState.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.TheSerializerReadsLayersAndAir
+note = air on input
+original:
+| if (layer < 0 || layer > PlateField.MaxPlates) throw
+replacement:
+| if (layer < 0 || layer > Air) throw
+
+[ml7-checked-negative]
+file = Assets/WarCore/Interim/VerticalState.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.ATwoArgumentOrderIsOnTheGround
+note = -1 on input
+original:
+| if (layer < 0 || layer > PlateField.MaxPlates) throw
+replacement:
+| if (layer > PlateField.MaxPlates) throw
+
+[ml7-preview-by-id]
+file = Assets/WarCore/Presentation/Bridge/WorldRecipe.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.ThePreviewOpensPlateMaps
+note = an option with the id counts
+original:
+| if (ReferenceEquals(option, WorldOptions.PlatesPreview)) return true;
+replacement:
+| if (option.OptionId == WorldOptions.PlatesPreview.OptionId) return true;
+
+[ml7-builder-open]
+file = Assets/WarCore/Presentation/Bridge/WorldBuilder.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.ThePreviewOpensPlateMaps
+note = plate maps without the preview
+original:
+| if (map != null && map.Plates.Count > 0 && !recipe.PlatesPreview)
+replacement:
+| if (false)
+
+[ml7-builder-closed]
+file = Assets/WarCore/Presentation/Bridge/WorldBuilder.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.ThePreviewOpensPlateMaps
+note = the preview opens nothing
+original:
+| if (map != null && map.Plates.Count > 0 && !recipe.PlatesPreview)
+replacement:
+| if (map != null && map.Plates.Count > 0)
+
+[ml7-mover-any]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateFeature.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.ThePreviewOpensPlateMaps
+note = any mover
+original:
+|             if (!a.Path)
+replacement:
+|             if (false)
+
+[ml7-no-content-key]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateFeature.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.ThePreviewOpensPlateMaps
+note = no plates.nav key
+original:
+|             a.ContentKeys.Add(new StableContentKey("plates.nav", nav.Digest));
+replacement:
+
+[ml7-no-input-switch]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateFeature.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.ThePreviewOpensPlateMaps
+note = the plate world refuses layered input
+original:
+|             a.Sim.EnableInputLayers();
+replacement:
+
+[ml7-placed-on-ground]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateFeature.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.UnitsStandOnTheirLayers
+note = the state says ground
+original:
+| new VerticalState(spawn.Layer, 0)
+replacement:
+| new VerticalState(0, 0)
+
+[ml7-place-solid-only]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateFeature.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.SpawnsOffTheirLayerAreRefused
+note = a solid, unwalkable cell is accepted by the installer
+original:
+| if (!a.Plates.TryFloor(spawn.Layer, point.X, point.Z, true, out _))
+replacement:
+| if (!a.Plates.TryFloor(spawn.Layer, point.X, point.Z, false, out _))
+
+[ml7-place-count]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateFeature.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.SpawnsOffTheirLayerAreRefused
+note = layer N+1 reaches the cell check
+original:
+| if (spawn.Layer >= a.Plates.LayerCount)
+replacement:
+| if (spawn.Layer > a.Plates.LayerCount)
+
+[ml7-spawn-point-ground]
+file = Assets/WarCore/Presentation/Bridge/Features/WorldAssembly.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.UnitsStandOnTheirLayers
+note = a plate unit at ground height
+original:
+|             if (spawn.Layer > 0)
+replacement:
+|             if (false)
+
+[ml7-terrain-checks-plates]
+file = Assets/WarCore/Presentation/Bridge/Features/TerrainFeature.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.APlateUnitSkipsTheGroundFootprint
+note = the ground footprint for a plate unit
+original:
+| if (a.IsDeployedAtStart(spawn) && spawn.Layer == 0)
+replacement:
+| if (a.IsDeployedAtStart(spawn))
+
+[ml7-deploy-keeps-layer]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.DeploymentIsOnTheGround
+note = no reset on deploy
+original:
+|             if (verticals.HasValue) sim.Entities.Set(verticals.Value, unit, new VerticalState(0, 0));
+replacement:
+
+[ml7-deploy-no-verticals]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.DeploymentIsOnTheGround
+note = the adapter gets no state
+original:
+| a.Plates != null ? a.Verticals : (ComponentType<VerticalState>?)null);
+replacement:
+| (ComponentType<VerticalState>?)null);
+
+[ml7-spawn-no-plates]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateFeature.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.SpawnsOffTheirLayerAreRefused
+note = a layer on a map without plates
+original:
+|                 if (!plates)
+replacement:
+|                 if (false)
+
+[ml7-spawn-reserve]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateFeature.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.SpawnsOffTheirLayerAreRefused
+note = a reserve on a plate
+original:
+|                 if (spawn.Reserve)
+replacement:
+|                 if (false)
+
+[ml7-spawn-ground-checked]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateFeature.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.SpawnsOffTheirLayerAreRefused
+note = layer 0 is checked too
+original:
+|                 if (spawn.Layer == 0) continue;
+replacement:
+
+[ml7-floor-unwalkable]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateWorld.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.SpawnsOffTheirLayerAreRefused
+note = walkable is ignored
+original:
+| || walkable && !Nav.IsPassable(node)) return false;
+replacement:
+| ) return false;
+
+[ml7-floor-first-plate]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateWorld.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.UnitsStandOnTheirLayers
+note = every layer reads plate 1
+original:
+| return tops[layer - 1].TryHeightAt(x, z, out y);
+replacement:
+| return tops[0].TryHeightAt(x, z, out y);
+
+[ml7-floor-rounds]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateWorld.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.CommandsOffTheirLayerAreRefused
+note = the cell rounds instead of flooring
+original:
+| long cx = (x.Raw - map.Min.X.Raw) >> 16
+replacement:
+| long cx = (x.Raw - map.Min.X.Raw + 32768) >> 16
+
+[ml7-check-ground]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.CommandsOffTheirLayerAreRefused
+note = layer 0 is checked
+original:
+|             if (layer == 0) return;
+replacement:
+
+[ml7-check-no-plates]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.CommandsOffTheirLayerAreRefused
+expect = WarCore.Tests.Ml7SessionTests.TheAimCarriesItsLayer
+note = no message without plates
+original:
+|             if (plates == null)
+|                 throw new ArgumentException(what + " names layer " + layer + " on a map without floor plates.", parameter);
+replacement:
+
+[ml7-check-count]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.CommandsOffTheirLayerAreRefused
+expect = WarCore.Tests.Ml7SessionTests.TheAimCarriesItsLayer
+note = layer N+1 reaches the cell check
+original:
+|             if (layer >= plates.LayerCount)
+replacement:
+|             if (layer > plates.LayerCount)
+
+[ml7-check-walkable]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.CommandsOffTheirLayerAreRefused
+note = a wall cell refused
+original:
+| if (!plates.TryFloor(layer, point.X, point.Z, false, out _))
+replacement:
+| if (!plates.TryFloor(layer, point.X, point.Z, true, out _))
+
+[ml7-command-ground]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.MoveCommandsCarryTheirLayer
+note = every command on the ground
+original:
+| BridgeCommandKind.MoveTo => command.Layer == 0
+replacement:
+| BridgeCommandKind.MoveTo => true
+
+[ml7-command-no-layer]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.MoveCommandsCarryTheirLayer
+note = the plate point without its layer
+original:
+| PlateTarget(command.XMm, command.ZMm, command.Layer), default, command.Layer),
+replacement:
+| PlateTarget(command.XMm, command.ZMm, command.Layer), default, 0),
+
+[ml7-aim-ground]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.TheAimCarriesItsLayer
+note = the aim at ground height
+original:
+| : nextPlayerInput.AimLayer > 0 ? PlateTarget(
+replacement:
+| : false ? PlateTarget(
+
+[ml7-aim-no-layer]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.TheAimCarriesItsLayer
+note = the frame without the aim layer
+original:
+| squad: squad, aimLayer: nextPlayerInput.AimLayer);
+replacement:
+| squad: squad);
+
+[ml7-aim-unchecked]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.TheAimCarriesItsLayer
+note = SetPlayerInput takes any layer
+original:
+|             CheckLayer(input.AimXMm, input.AimZMm, input.AimLayer, "Aim point", nameof(input));
+replacement:
+
+[ml7-command-unchecked]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.CommandsOffTheirLayerAreRefused
+note = Enqueue takes any layer
+original:
+|                 CheckLayer(command.XMm, command.ZMm, command.Layer, "Command target", nameof(command));
+replacement:
+
+[ml7-input-equals]
+file = Assets/WarCore/Presentation/Bridge/PlayerInput.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.TheAimCarriesItsLayer
+note = Equals ignores the layer
+original:
+|             && AimLayer == other.AimLayer;
+replacement:
+|             && true;
+
+[ml7-input-hash]
+file = Assets/WarCore/Presentation/Bridge/PlayerInput.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.TheAimCarriesItsLayer
+note = layer 0 changes the hash code
+original:
+| return AimLayer == 0 ? hash : hash * 397 ^ AimLayer;
+replacement:
+| return hash * 397 ^ AimLayer;
+
+[ml7-input-range]
+file = Assets/WarCore/Presentation/Bridge/PlayerInput.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.TheAimCarriesItsLayer
+note = 4097 accepted
+original:
+|             if (aimLayer < 0 || aimLayer > UnitSpawn.MaxLayer)
+replacement:
+|             if (aimLayer < 0)
+
+[ml7-command-range]
+file = Assets/WarCore/Presentation/Bridge/BridgeCommand.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.MoveCommandsCarryTheirLayer
+note = 4097 accepted
+original:
+|             if (layer < 0 || layer > UnitSpawn.MaxLayer)
+replacement:
+|             if (layer < 0)
+
+[ml7-spawn-range]
+file = Assets/WarCore/Presentation/Bridge/WorldRecipe.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.SpawnsOffTheirLayerAreRefused
+note = -1 accepted
+original:
+| if (layer < 0 || layer > UnitSpawn.MaxLayer) throw
+replacement:
+| if (layer > UnitSpawn.MaxLayer) throw
+
+[ml7-max-layer]
+file = Assets/WarCore/Presentation/Bridge/WorldRecipe.cs
+filter = FullyQualifiedName~Ml7
+expect = WarCore.Tests.Ml7SessionTests.TheSerializerReadsLayersAndAir
+note = the bridge limit differs
+original:
+| public const int MaxLayer = 4096;
+replacement:
+| public const int MaxLayer = 4095;
