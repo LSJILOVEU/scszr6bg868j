@@ -23,7 +23,9 @@ SELF_CHECKS = ("automerge",)
 OTHER_OK = ("success", "skipped")
 # Rule files, the merge logic itself and code that runs with secrets stay a human decision.
 # Agent instruction files count at any depth.
-PROTECTED_PREFIXES = (".github/", "tools/pii-guard/", "tools/automerge/", "tools/open-pr/")
+# The mutation tools that judge a pull request in CI (mutation lists in tools/mutation/lists/ stay automatic).
+MUTATION_TOOLS = ("tools/mutation/mutate.py", "tools/mutation/hygiene.py", "tools/mutation/ci/")
+PROTECTED_PREFIXES = (".github/", "tools/pii-guard/", "tools/automerge/", "tools/open-pr/") + MUTATION_TOOLS
 PROTECTED_DIRS = (".claude",)  # any path segment, case-insensitive
 PROTECTED_NAMES = ("claude.md", "claude.local.md")  # file name at any depth, case-insensitive
 

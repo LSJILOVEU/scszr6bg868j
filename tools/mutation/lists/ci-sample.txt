@@ -1,0 +1,21 @@
+# CI sample list: two small mutations the E1b tests catch (about 15 s each in CI).
+
+[ci-hash-hex-upper]
+file = Assets/WarCore/Presentation/Maps/MapDocument.cs
+filter = FullyQualifiedName~E1b|FullyQualifiedName~E1a
+expect = WarCore.Tests.E1bDocumentTests.RepositoryDescriptionRoundTripsByteForByte
+note = hash hex upper case
+original:
+|                 foreach (byte b in hash) hex.Append(b.ToString("x2"));
+replacement:
+|                 foreach (byte b in hash) hex.Append(b.ToString("X2"));
+
+[ci-reserve-false]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~E1b|FullyQualifiedName~E1a
+expect = WarCore.Tests.E1bRecipeTests.SoldiersMapFieldByField
+note = reserve always false
+original:
+|                     pack.WeaponOfUnitType(s.Type), s.Reserve, pack.MeleeOfUnitType(s.Type), layer: s.Layer);
+replacement:
+|                     pack.WeaponOfUnitType(s.Type), false, pack.MeleeOfUnitType(s.Type), layer: s.Layer);

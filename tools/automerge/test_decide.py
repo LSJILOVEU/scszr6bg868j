@@ -135,6 +135,16 @@ class Decide(unittest.TestCase):
         checks = base_checks() + [{"id": 60, "name": "automerge", "status": "in_progress", "conclusion": None}]
         self.assertEqual(run(checks=checks)[0], decide.MERGE)
 
+    def test_mutation_tools_need_human(self):
+        for path in ("tools/mutation/mutate.py", "tools/mutation/hygiene.py", "tools/mutation/ci/plan.py"):
+            with self.subTest(path=path):
+                self.assertEqual(run(files=base_files() + [{"filename": path}])[0], decide.MANUAL)
+
+    def test_mutation_lists_and_docs_merge(self):
+        files = [{"filename": "tools/mutation/lists/ml-4.txt"}, {"filename": "tools/mutation/README.md"},
+                 {"filename": "tools/mutation/selftest/selftest.py"}]
+        self.assertEqual(run(files=files)[0], decide.MERGE)
+
     def test_paths_that_only_look_protected_merge(self):
         files = [{"filename": "docs/CLAUDE.md.bak"}, {"filename": "docs/.github-notes.md"},
                  {"filename": "tools/pii-guardian.txt"}, {"filename": "docs/.claude-notes.md"}]

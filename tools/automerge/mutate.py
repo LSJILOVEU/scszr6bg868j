@@ -27,6 +27,10 @@ MUTANTS = [
     ("tools/open-pr/ unprotected", ', "tools/open-pr/")', ')'),
     ("CLAUDE.md only at root", 'if parts[-1].lower() in PROTECTED_NAMES:', 'if path in ("CLAUDE.md", "CLAUDE.local.md"):'),
     (".claude/ only at root", 'for seg in parts[:-1]):', 'for seg in parts[:1]):'),
+    ("mutate.py unprotected", '("tools/mutation/mutate.py", ', '('),
+    ("hygiene.py unprotected", '"tools/mutation/hygiene.py", ', ''),
+    ("tools/mutation/ci/ unprotected", ', "tools/mutation/ci/")', ')'),
+    ("mutation tools unprotected", '"tools/open-pr/") + MUTATION_TOOLS', '"tools/open-pr/")'),
     ("truncated file list ignored", 'if pr.get("changedFiles") != len(files):', 'if False:'),
 ]
 

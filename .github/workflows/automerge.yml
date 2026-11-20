@@ -2,15 +2,15 @@ name: automerge
 
 # Squash-merge a pull request into main once it carries `reviewed`, has no `hold`, and every check on its current head
 # is green: test (ubuntu-latest), test (windows-latest), guard and gate must be success, any other check success or
-# skipped. Pull requests touching .github/, tools/pii-guard/, tools/automerge/, tools/open-pr/, or CLAUDE.md, CLAUDE.local.md
-# or .claude/ at any depth are left for a human.
+# skipped. Pull requests touching .github/, tools/pii-guard/, tools/automerge/, tools/open-pr/, the mutation tools
+# (tools/mutation/mutate.py, hygiene.py, ci/), or CLAUDE.md, CLAUDE.local.md or .claude/ at any depth are left for a human.
 # workflow_run and pull_request_target run the copy on the default branch and never check out pull request code, so a
 # pull request cannot change how it gets merged. privacy-gate.yml drops `reviewed` on new pushes; this file does not.
 # Merges made with GITHUB_TOKEN do not trigger push workflows; the pull request run is the verification.
 # Decision logic: tools/automerge/decide.py (offline tests: tools/automerge/test_decide.py).
 on:
   workflow_run:
-    workflows: [headless-tests, pii-guard, privacy-gate, unity-compat]
+    workflows: [headless-tests, pii-guard, privacy-gate, unity-compat, mutation]
     types: [completed]
   pull_request_target:
     types: [labeled]
