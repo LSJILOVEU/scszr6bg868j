@@ -59,7 +59,7 @@ namespace WarCore.Unity
             }
             Material wall = NewMaterial(new Color(0.45f, 0.42f, 0.4f));
             GameObject mapRoot = MapView.Build(session.Map, NewMaterial(new Color(0.62f, 0.66f, 0.48f)), wall);
-            plateViews = new PlateViews(mapRoot.transform, session.Plates, session.Map, NewMaterial(new Color(0.7f, 0.6f, 0.45f)), wall);
+            plateViews = new PlateViews(mapRoot.transform, session.Map.Plates, session.Map, NewMaterial(new Color(0.7f, 0.6f, 0.45f)), wall);
             var palette = new[] { new Color(0.2f, 0.5f, 1f), new Color(1f, 0.85f, 0.2f) };
             views = new EntityViews(transform, new Vector3(0.5f, 1f, 0.5f), 0.5f, palette);
             points = new PointViews(transform, ViewGround.For(session.Map));
@@ -107,7 +107,7 @@ namespace WarCore.Unity
                 try
                 {
                     aim = AimPick.Pick(isoCamera, mouse.x, mouse.y, w, h, ViewGround.For(session.Map), shown, session.ControlledKey,
-                        session.Plates, cut);
+                        session.Map.Plates, cut);
                 }
                 catch (ArgumentOutOfRangeException) { aim = null; } // a pick outside the world bounds: keep the last aim
             }
@@ -143,7 +143,7 @@ namespace WarCore.Unity
             ViewEntity? me = Player(shown);
             if (me.HasValue)
                 isoCamera.Follow(me.Value.X, me.Value.Z);
-            cut = LayerCut.Run(session.Plates, session.Map, me, isoCamera.Forward);
+            cut = LayerCut.Run(session.Map.Plates, session.Map, me, isoCamera.Forward);
             plateViews.Apply(cut);
             points.Apply(current);
             views.Apply(previous, current, alpha, cut);

@@ -22,7 +22,7 @@ namespace WarCore.Tests
         public void ThePlatesForThePictureAreSims()
         {
             SimSession s = Demo();
-            ViewPlates view = s.Plates;
+            ViewPlates view = s.Map.Plates;
             PlateWorld sim = s.PlateWorldForCheck;
             Assert.That((view.Count, sim.LayerCount), Is.EqualTo((2, 3)));
             Assert.That((view[0].Layer, view[0].Id, view[0].X, view[0].Z, view[0].Width, view[0].Depth), Is.EqualTo((1, 1UL, 10, 9, 4, 1)), "the stair");
@@ -90,7 +90,7 @@ namespace WarCore.Tests
             byte[] other = Ml7Worlds.Plates;
             Assert.That(PlateCheck.Run(ViewPlates.From(WcMapReader.Read(other)), s).ShapeMismatch, Is.True, "another map's plates");
             SimSession flat = SimSession.Create(Ml7Worlds.Recipe(new[] { Ml7Worlds.Unit(1, 1, 500, 500) }, preview: false), Ml7Worlds.NoPlates);
-            Assert.That((flat.Plates, PlateCheck.Run(null, flat).IsClean), Is.EqualTo(((ViewPlates)null, true)), "no plates on either side");
+            Assert.That((flat.Map.Plates, PlateCheck.Run(null, flat).IsClean), Is.EqualTo(((ViewPlates)null, true)), "no plates on either side");
         }
 
         // 3: while the player walks the demo script (in, up the stair, onto the floor), the view's layer is the vertical
@@ -124,7 +124,7 @@ namespace WarCore.Tests
         {
             SimSession s = SimSession.Create(Ml7Worlds.Recipe(new[] { Ml7Worlds.Unit(1, 1, 500, 500), Ml7Worlds.Unit(2, 2, 3500, 2500) },
                 new[] { BridgeCommand.MoveTo(1, 1, 9500, 4500) }, preview: false), Ml7Worlds.NoPlates);
-            Assert.That(s.Plates, Is.Null);
+            Assert.That(s.Map.Plates, Is.Null);
             for (int tick = 0; tick < 60; tick++)
             {
                 Assert.That(s.Current.Entities.ToArray().All(e => e.Layer == 0), Is.True);

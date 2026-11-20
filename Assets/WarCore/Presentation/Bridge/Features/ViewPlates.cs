@@ -101,7 +101,7 @@ namespace WarCore.Presentation
         private static float Metres(long raw) => (float)raw / SimFix.Scale;
     }
 
-    // ML-10: the floor plates of a map for the picture, picking and the self-check; SimSession.Plates (null without plates).
+    // ML-10: the floor plates of a map for the picture, picking and the self-check; ViewMap.Plates (null without plates).
     // Index k holds layer k + 1.
     public sealed class ViewPlates
     {

@@ -43,6 +43,8 @@ namespace WarCore.Presentation
         internal long MinXRaw { get; }
         internal long MinZRaw { get; }
         public ReadOnlySpan<ViewWall> Walls => walls;
+        // ML-10: the map's floor plates as the picture reads them; null on a map without plates.
+        public ViewPlates Plates { get; }
 
         private ViewMap(WcMap map, string fileHash)
         {
@@ -70,6 +72,7 @@ namespace WarCore.Presentation
             passability = new byte[map.Passability.Count];
             for (int i = 0; i < passability.Length; i++)
                 passability[i] = map.Passability[i];
+            Plates = ViewPlates.From(map);
             walls = new ViewWall[map.Walls.Count];
             for (int i = 0; i < walls.Length; i++)
             {

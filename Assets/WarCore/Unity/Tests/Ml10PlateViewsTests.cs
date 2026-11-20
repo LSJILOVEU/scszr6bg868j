@@ -33,7 +33,7 @@ namespace WarCore.Unity.Tests
         {
             SimSession session = SimSession.Create(PlateDemo.Recipe(), PlateDemo.MapBytes());
             var scene = new Scene { Session = session, Map = MapView.Build(session.Map, null, null), Units = new GameObject("ML-10 units") };
-            scene.Plates = new PlateViews(scene.Map.transform, session.Plates, session.Map, null, null);
+            scene.Plates = new PlateViews(scene.Map.transform, session.Map.Plates, session.Map, null, null);
             new PointViews(scene.Units.transform, ViewGround.For(session.Map)).Apply(session.Current);
             return scene;
         }
@@ -87,10 +87,10 @@ namespace WarCore.Unity.Tests
             using (Scene s = Build())
             {
                 var down = new ViewEntity(1, 0, 11.5f, 0f, 7.5f, team: 1);
-                s.Plates.Apply(LayerCut.Run(s.Session.Plates, s.Session.Map, down, new IsoCamera(12f).Forward));
+                s.Plates.Apply(LayerCut.Run(s.Session.Map.Plates, s.Session.Map, down, new IsoCamera(12f).Forward));
                 Assert.That(s.Map.transform.Find(PlateViews.Prefix + "2").GetComponent<Renderer>().enabled, Is.False);
                 var up = new ViewEntity(1, 0, 11.5f, 3f, 7.5f, team: 1, layer: 2);
-                s.Plates.Apply(LayerCut.Run(s.Session.Plates, s.Session.Map, up, new IsoCamera(12f).Forward));
+                s.Plates.Apply(LayerCut.Run(s.Session.Map.Plates, s.Session.Map, up, new IsoCamera(12f).Forward));
                 Assert.That(s.Map.transform.Find(PlateViews.Prefix + "2").GetComponent<Renderer>().enabled, Is.True);
             }
         }

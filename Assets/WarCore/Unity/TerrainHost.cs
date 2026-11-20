@@ -196,12 +196,12 @@ namespace WarCore.Unity
             if (!terrain.IsClean)
                 lines.Append("terrain ").Append(OneLine(terrain.ToString())).Append('\n');
 
-            if (session.Plates != null)
+            if (session.Map?.Plates != null)
             {
-                string drawnPlates = PlateViews.Verify(session.Plates, mapRoot);
+                string drawnPlates = PlateViews.Verify(session.Map.Plates, mapRoot);
                 if (drawnPlates != "")
                     lines.Append("plates ").Append(OneLine(drawnPlates)).Append('\n');
-                PlateCheckResult plateCheck = PlateCheck.Run(session.Plates, session);
+                PlateCheckResult plateCheck = PlateCheck.Run(session.Map.Plates, session);
                 if (!plateCheck.IsClean)
                     lines.Append("plates ").Append(OneLine(plateCheck.ToString())).Append('\n');
             }

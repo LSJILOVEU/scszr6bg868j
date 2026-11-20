@@ -4,7 +4,7 @@
 # rule for touching rectangles (no demo map has plates meeting at a corner only); LayerCut's `if (indoors)` guard, a
 # shortcut (outdoors no plate is in the building, so dropping it changes nothing); Unity code (no Unity here).
 [ml10-view-solid-ignored]
-file = Assets/WarCore/Presentation/Bridge/ViewPlates.cs
+file = Assets/WarCore/Presentation/Bridge/Features/ViewPlates.cs
 filter = FullyQualifiedName~Ml10
 expect = WarCore.Tests.Ml10ViewTests.ThePlatesForThePictureAreSims
 expect = WarCore.Tests.Ml10ViewTests.PlateCheckReportsEachRule
