@@ -216,14 +216,22 @@ The switches are not passed to child processes.
    and other files are ignored. Each list is cut, in entry order, into `ceil(n/10)` shards whose sizes differ by at
    most one; lists are never mixed. At most 24 shards per change. Errors exit 2 with the id on the first stderr line:
    `bad-name`, `bad-id` (list or id outside `[A-Za-z0-9._-]`), `empty-list`, `duplicate-id`, `too-many-shards`,
-   `git`, `bad-args`.
+   `git`, `bad-args`. A list renamed with identical content is not re-run.
 2. `hygiene`: `hygiene.py BASE HEAD` on the whole change.
-3. `shard (<list> i/k)`: one Ubuntu job per shard, at most 6 at a time, 180 minutes each:
-   `mutate.py <list> --only <ids>`. The table and log are printed and added to the job summary.
+3. `shard (<list> i/k)`: one Ubuntu job per shard, at most 6 at a time: `mutate.py <list> --only <ids> --timeout 600`.
+   The table and log are printed and added to the job summary (logs of a public repository are public).
+   The job limit of 180 minutes is the real bound (each mutation may take up to 3 x 600 s: mutant build and test,
+   restore build, restore test); a shard over it is cancelled and counts as failed. Measured: about 1 minute of
+   checkout, setup and baseline per shard, then 15 to 20 s per mutation with a narrow filter.
 4. `mutation`: fails unless planning and hygiene passed and every shard passed (or none was planned).
 
+Repository variable `MUTATION_CI` (Settings, Variables; not a secret, a pull request cannot change it): `off` skips
+the shards with a notice, planning, hygiene and the final check still run. Then post local `mutate.py` results in
+the pull request as before.
+
 `mutate.py`, `hygiene.py` and `plan.py` come from the base commit (checked out as `base/`); the pull request
-(`pr/`) only supplies code, tests and lists. A change to these tools is judged by the old copy until it is merged.
+(`pr/`) only supplies code, tests and lists. A change to these tools is judged by the old copy until it is merged,
+and `tools/automerge/decide.py` leaves pull requests touching them (`mutate.py`, `hygiene.py`, `ci/`) for a human.
 When the base has no `plan.py` (only the pull request adding it) the pull request copy is used, with a notice.
 List names and ids reach the shell only through environment variables.
 

@@ -4,7 +4,7 @@
 plan.py --base REV [--head REV] [--repo DIR] [--github-output FILE]
 
 Reads `git diff --name-status -M BASE HEAD` for files directly in tools/mutation/lists/ named *.txt (deleted files
-and other paths are ignored), reads each list as of HEAD, takes its entry ids in order and cuts every list into
+, lists only renamed with identical content and other paths are ignored), reads each list as of HEAD, takes its entry ids in order and cuts every list into
 ceil(n/10) shards whose sizes differ by at most one. Lists are never mixed in a shard.
 
 Prints {"include": [{"list", "ids", "label"}, ...]} on stdout (a GitHub matrix); with --github-output also appends
@@ -55,7 +55,7 @@ def changed_lists(repo, base, head):
         else:
             path = fields[i + 1]
             i += 2
-        if status[:1] == "D":
+        if status[:1] == "D" or status == "R100":
             continue
         if not path.startswith(LISTS_DIR) or not path.endswith(".txt"):
             continue

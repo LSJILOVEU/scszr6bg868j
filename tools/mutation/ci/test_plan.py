@@ -178,6 +178,10 @@ class A3Scope(PlanCase):
         })
         self.assertEqual(shards, [])
 
+    def test_pure_rename_is_not_planned(self):
+        shards = self.ok({LISTS + "a.txt": entries("a", 3)}, renames=[(LISTS + "a.txt", LISTS + "b.txt")])
+        self.assertEqual(shards, [])
+
     def test_deleted_list_is_ignored(self):
         shards = self.ok({LISTS + "gone.txt": entries("g", 3), "docs/a.md": "a\n"}, {LISTS + "gone.txt": None})
         self.assertEqual(shards, [])
@@ -263,6 +267,13 @@ class A6Workflow(unittest.TestCase):
         self.assertIn("base/tools/mutation/hygiene.py", blocks)
         self.assertNotIn("pr/tools/mutation/mutate.py", blocks)
         self.assertNotIn("pr/tools/mutation/hygiene.py", blocks)
+
+    def test_repository_variable_can_switch_shards_off(self):
+        self.assertIn("MUTATION_CI: ${{ vars.MUTATION_CI }}", self.text)
+        plan_block = [b for b in run_blocks(self.text) if "plan.py" in b]
+        self.assertEqual(len(plan_block), 1)
+        self.assertIn('if [ "${MUTATION_CI:-}" = off ]; then', plan_block[0])
+        self.assertIn("count=0", plan_block[0])
 
     def test_run_block_parser_sees_block_scalars(self):
         self.assertEqual(run_blocks("steps:\n  - run: |\n      a ${{ x }}\n      b\n  - run: c\n"),

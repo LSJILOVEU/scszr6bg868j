@@ -8,6 +8,7 @@ name: mutation
 # cannot change the tools that judge it; only its code, tests and lists (checked out under pr/) are used. When the base
 # has no plan.py yet (the pull request adding it), the pull request copy is used and a notice says so.
 # Values from the pull request reach scripts through env:, never through ${{ }} inside run:.
+# Repository variable MUTATION_CI=off skips the shards (planning, hygiene and the final check still run).
 # Docs: tools/mutation/README.md (CI). Offline tests: tools/mutation/ci/test_plan.py.
 on:
   pull_request:
@@ -57,8 +58,14 @@ jobs:
         id: plan
         env:
           BASE: ${{ steps.base.outputs.sha }}
+          MUTATION_CI: ${{ vars.MUTATION_CI }}
         run: |
           set -eu
+          if [ "${MUTATION_CI:-}" = off ]; then
+            echo "::notice::mutation shards are off (repository variable MUTATION_CI=off): post local mutate.py results in the pull request"
+            printf 'matrix={"include":[]}\ncount=0\n' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           planner=base/tools/mutation/ci/plan.py
           if [ ! -f "$planner" ]; then
             planner=pr/tools/mutation/ci/plan.py
@@ -96,7 +103,8 @@ jobs:
       max-parallel: 6
       matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
     runs-on: ubuntu-latest
-    # 10 mutations x 900 s each at most, plus the baseline build and test.
+    # The real bound of a shard (mutate.py allows up to 3 x 600 s per mutation); a shard over it is cancelled and the
+    # final check fails. Measured: about 15 s per mutation plus about 1 minute of baseline.
     timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4
@@ -117,7 +125,7 @@ jobs:
           LIST: ${{ matrix.list }}
           IDS: ${{ matrix.ids }}
         run: >-
-          python3 -I base/tools/mutation/mutate.py "pr/$LIST" --repo pr --only "$IDS"
+          python3 -I base/tools/mutation/mutate.py "pr/$LIST" --repo pr --only "$IDS" --timeout 600
           --out "$RUNNER_TEMP/mutation.md" --log "$RUNNER_TEMP/mutation.log"
       - name: Details
         if: always()
@@ -146,5 +154,5 @@ jobs:
           if [ "$COUNT" = 0 ]; then
             [ "$SHARDS" = skipped ] || { echo "::error::no shards planned but shard job is $SHARDS"; exit 1; }
           else
-            [ "$SHARDS" = success ] || { echo "::error::a shard did not pass"; exit 1; }
+            [ "$SHARDS" = success ] || { echo "::error::a shard did not pass (failed, timed out or cancelled); a shard over 180 minutes: split the list"; exit 1; }
           fi
