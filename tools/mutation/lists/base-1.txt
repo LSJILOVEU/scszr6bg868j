@@ -1,0 +1,161 @@
+# BASE-1: what counts as a teammate brought down for the pressure system (pressureFall: hit | kill). Filter: AiS3 fall tests.
+# Not listed: CombatSystem.HealthRaw (one line, read by pf-kill-full-health's test through a real battle).
+[pf-kill-check-gone]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiS3Tests.Fall
+expect = WarCore.Tests.AiS3Tests.Fall_KillRuleCountsOnlyDamageThatReachesHealth
+note = the kill rule counts wounds
+original:
+|                 if (!counted && rules.FallOnKill && !Kills(fire.Target, fires, combat.Strikes, combat.HealthRaw(fire.Target))) continue;
+replacement:
+|                 if (!counted && false && !Kills(fire.Target, fires, combat.Strikes, combat.HealthRaw(fire.Target))) continue;
+
+[pf-kill-check-always]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiS3Tests.Fall
+expect = WarCore.Tests.AiS3Tests.Fall_HitRuleCountsAnyDamage
+note = the hit rule checks health too
+original:
+|                 if (!counted && rules.FallOnKill && !Kills(fire.Target, fires, combat.Strikes, combat.HealthRaw(fire.Target))) continue;
+replacement:
+|                 if (!counted && !Kills(fire.Target, fires, combat.Strikes, combat.HealthRaw(fire.Target))) continue;
+
+[pf-kill-full-health]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiS3Tests.Fall
+expect = WarCore.Tests.AiS3Tests.Fall_KillRuleIgnoresWoundsInABattle
+note = health is taken as full, not read from the unit
+original:
+|                 if (!counted && rules.FallOnKill && !Kills(fire.Target, fires, combat.Strikes, combat.HealthRaw(fire.Target))) continue;
+replacement:
+|                 if (!counted && rules.FallOnKill && !Kills(fire.Target, fires, combat.Strikes, combat.Pack.MaxHealthRaw)) continue;
+
+[pf-kills-strict]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiS3Tests.Fall
+expect = WarCore.Tests.AiS3Tests.Fall_KillsAddsShotsAndLandedStrikesOfThatUnitOnly
+note = damage equal to health is not a kill
+original:
+|             return damage >= healthRaw;
+replacement:
+|             return damage > healthRaw;
+
+[pf-kills-no-strikes]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiS3Tests.Fall
+expect = WarCore.Tests.AiS3Tests.Fall_KillsAddsShotsAndLandedStrikesOfThatUnitOnly
+note = landed strikes are not added
+original:
+|             foreach (ref readonly StrikeRecord strike in strikes) if (strike.Kind == StrikeKind.Landed && strike.Target.Value == unit.Value) damage += strike.DamageRaw;
+replacement:
+|             foreach (ref readonly StrikeRecord strike in strikes) if (false) damage += strike.DamageRaw;
+
+[pf-kills-any-strike]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiS3Tests.Fall
+expect = WarCore.Tests.AiS3Tests.Fall_KillsAddsShotsAndLandedStrikesOfThatUnitOnly
+note = strikes of every kind are added
+original:
+|             foreach (ref readonly StrikeRecord strike in strikes) if (strike.Kind == StrikeKind.Landed && strike.Target.Value == unit.Value) damage += strike.DamageRaw;
+replacement:
+|             foreach (ref readonly StrikeRecord strike in strikes) if (strike.Target.Value == unit.Value) damage += strike.DamageRaw;
+
+[pf-kills-strike-any-unit]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiS3Tests.Fall
+expect = WarCore.Tests.AiS3Tests.Fall_KillsAddsShotsAndLandedStrikesOfThatUnitOnly
+note = strikes on other units are added
+original:
+|             foreach (ref readonly StrikeRecord strike in strikes) if (strike.Kind == StrikeKind.Landed && strike.Target.Value == unit.Value) damage += strike.DamageRaw;
+replacement:
+|             foreach (ref readonly StrikeRecord strike in strikes) if (strike.Kind == StrikeKind.Landed) damage += strike.DamageRaw;
+
+[pf-kills-fire-any-unit]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiS3Tests.Fall
+expect = WarCore.Tests.AiS3Tests.Fall_KillsAddsShotsAndLandedStrikesOfThatUnitOnly
+note = shots on other units are added
+original:
+|             foreach (ref readonly FireRecord fire in fires) if (fire.DamageRaw > 0 && fire.Target.Value == unit.Value) damage += fire.DamageRaw;
+replacement:
+|             foreach (ref readonly FireRecord fire in fires) if (fire.DamageRaw > 0) damage += fire.DamageRaw;
+
+[pf-kills-negative]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiS3Tests.Fall
+expect = WarCore.Tests.AiS3Tests.Fall_KillsAddsShotsAndLandedStrikesOfThatUnitOnly
+note = negative damage is subtracted
+original:
+|             foreach (ref readonly FireRecord fire in fires) if (fire.DamageRaw > 0 && fire.Target.Value == unit.Value) damage += fire.DamageRaw;
+replacement:
+|             foreach (ref readonly FireRecord fire in fires) if (fire.Target.Value == unit.Value) damage += fire.DamageRaw;
+
+[pf-version]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiS3Tests.Fall
+expect = WarCore.Tests.AiS3Tests.Fall_RuleIsSavedHashedAndChecked
+note = the rule does not change the version
+original:
+|         public int StateVersion => (sources ? 2 : 1) + (rules.FallOnKill ? 2 : 0);
+replacement:
+|         public int StateVersion => (sources ? 2 : 1);
+
+[pf-save-flag]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiS3Tests.Fall
+expect = WarCore.Tests.AiS3Tests.Fall_RuleIsSavedHashedAndChecked
+note = the saved rules lack the flag
+original:
+|             if (rules.FallOnKill) writer.Bool(true);
+replacement:
+| 
+
+[pf-load-flag]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiS3Tests.Fall
+expect = WarCore.Tests.AiS3Tests.Fall_RuleIsSavedHashedAndChecked
+note = loading does not check the flag
+original:
+|             if (rules.FallOnKill) same &= reader.Bool();
+replacement:
+| 
+
+[pf-content-default]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiS3Tests.Fall
+expect = WarCore.Tests.AiS3Tests.Fall_ContentFieldPicksTheRule
+note = an absent field means kill
+original:
+|             string fall = r.StrOrNull("pressureFall", out ContentField fallField) ?? FallOnHit;
+replacement:
+|             string fall = r.StrOrNull("pressureFall", out ContentField fallField) ?? FallOnKill;
+
+[pf-content-unchecked]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiS3Tests.Fall
+expect = WarCore.Tests.AiS3Tests.Fall_ContentFieldPicksTheRule
+note = an unknown value is taken as hit
+original:
+|                     if (fall != FallOnHit && fall != FallOnKill) throw
+replacement:
+|                     if (false) throw
+
+[pf-content-kill-ignored]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiS3Tests.Fall
+expect = WarCore.Tests.AiS3Tests.Fall_ContentFieldPicksTheRule
+note = kill is read as hit
+original:
+|                         fall == FallOnKill);
+replacement:
+|                         false);
+
+[pf-content-alone]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiS3Tests.Fall
+expect = WarCore.Tests.AiS3Tests.Fall_ContentFieldPicksTheRule
+note = the field alone is not named as needing the others
+original:
+|                 else if (r.Has("pressureFall")) throw
+replacement:
+|                 else if (false) throw
