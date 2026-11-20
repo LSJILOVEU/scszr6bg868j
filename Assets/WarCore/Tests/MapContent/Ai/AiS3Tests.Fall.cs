@@ -141,13 +141,14 @@ namespace WarCore.Tests
             return new M6World(recipe, Flat());
         }
 
-        // Counts the ticks on which a unit's pressure rose, split by whether a teammate of it died on that tick.
-        private static (int withDeath, int withoutDeath, int wounds) Rises(bool killRule, int ticks)
+        // Counts the ticks on which a unit's pressure rose, split by whether a teammate of it died on that tick, and the
+        // living units that did not rise on a tick a teammate died (every fall reaches the whole team).
+        private static (int withDeath, int withoutDeath, int wounds, int missed) Rises(bool killRule, int ticks)
         {
             M6World w = WoundField(killRule);
             const int units = Attackers + Defenders;
             var value = new int[units + 1]; var dead = new bool[units + 1];
-            int withDeath = 0, withoutDeath = 0, wounds = 0;
+            int withDeath = 0, withoutDeath = 0, wounds = 0, missed = 0;
             for (int tick = 1; tick <= ticks; tick++)
             {
                 w.Step();
@@ -163,23 +164,25 @@ namespace WarCore.Tests
                 for (ulong key = 1; key <= units; key++)
                 {
                     int now = dead[key] ? 0 : w.System<Pressure>().Value(Id(w, key));
-                    if (!dead[key] && now > Math.Max(0, Decayed(value[key], 12)))
-                    { if (died[key <= Attackers ? 1 : 2]) withDeath++; else withoutDeath++; }
+                    bool rose = now > Math.Max(0, Decayed(value[key], 12)), teamDied = died[key <= Attackers ? 1 : 2];
+                    if (!dead[key] && rose) { if (teamDied) withDeath++; else withoutDeath++; }
+                    if (!dead[key] && teamDied && !rose) missed++;
                     value[key] = now;
                 }
             }
-            return (withDeath, withoutDeath, wounds);
+            return (withDeath, withoutDeath, wounds, missed);
         }
 
         // In a real battle with wounding shots, kill presses only on ticks a teammate died; hit also presses on wounds.
         [Test]
         public void Fall_KillRuleIgnoresWoundsInABattle()
         {
-            var (killDeath, killWound, killWounds) = Rises(true, 900);
+            var (killDeath, killWound, killWounds, killMissed) = Rises(true, 900);
             Assert.That(killWounds, Is.GreaterThan(0), "some shots only wounded");
             Assert.That(killDeath, Is.GreaterThan(0), "a fall pressed somebody");
             Assert.That(killWound, Is.EqualTo(0), "no rise without a teammate dying");
-            var (_, hitWound, _) = Rises(false, 900);
+            Assert.That(killMissed, Is.EqualTo(0), "a wounded unit's last shot is a fall too: health is read, not assumed full");
+            var (_, hitWound, _, _) = Rises(false, 900);
             Assert.That(hitWound, Is.GreaterThan(0), "under the hit rule a wound presses too");
         }
 
@@ -222,7 +225,7 @@ namespace WarCore.Tests
             // Each loads its own state; neither loads the other's.
             byte[] hitSaved = Save(hit), killSaved = Save(kill);
             var copy = new Pressure(w.Combat, killRules);
-            copy.LoadState(new SimStateReader(killSaved));
+            Assert.DoesNotThrow(() => copy.LoadState(new SimStateReader(killSaved)));
             var copyHash = new StateHash(); copy.WriteState(copyHash);
             Assert.That(copyHash.Value, Is.EqualTo(killHash.Value));
             Assert.That(Save(copy), Is.EqualTo(killSaved));
@@ -239,7 +242,7 @@ namespace WarCore.Tests
             straight.Step(150);
             byte[] saved = straight.Sim.SaveRetainedSnapshot();
             straight.Step(150);
-            resumed.Sim.RestoreRetainedSnapshot(saved);
+            Assert.DoesNotThrow(() => resumed.Sim.RestoreRetainedSnapshot(saved));
             resumed.Step(150);
             Assert.That(resumed.Hash, Is.EqualTo(straight.Hash));
             // The hit-rule battle refuses the kill-rule snapshot.
