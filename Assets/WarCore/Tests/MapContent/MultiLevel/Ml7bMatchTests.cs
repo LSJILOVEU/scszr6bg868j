@@ -46,10 +46,10 @@ namespace WarCore.Tests
         [Test]
         public void AnchorLayersAreChecked()
         {
-            Assert.That(new SpawnAnchor(1, default, 4096).Layer, Is.EqualTo(4096));
+            Assert.DoesNotThrow(() => Assert.That(new SpawnAnchor(1, default, 4096).Layer, Is.EqualTo(4096)));
             Assert.Throws<ArgumentOutOfRangeException>(() => new SpawnAnchor(1, default, 4097));
             Assert.Throws<ArgumentOutOfRangeException>(() => new SpawnAnchor(1, default, -1));
-            Assert.That(new ControlPointDef(1, default, SimFix.FromInt(1), 0, true, default, 4096).SpawnLayer, Is.EqualTo(4096));
+            Assert.DoesNotThrow(() => Assert.That(new ControlPointDef(1, default, SimFix.FromInt(1), 0, true, default, 4096).SpawnLayer, Is.EqualTo(4096)));
             Assert.Throws<ArgumentOutOfRangeException>(() => new ControlPointDef(1, default, SimFix.FromInt(1), 0, true, default, 4097));
             Assert.Throws<ArgumentOutOfRangeException>(() => new ControlPointDef(1, default, SimFix.FromInt(1), 0, true, default, -1));
             Assert.That(Assert.Throws<ArgumentException>(() => new ControlPointDef(1, default, SimFix.FromInt(1), 0, false, default, 1)).Message,
@@ -95,7 +95,7 @@ namespace WarCore.Tests
             var flat = World(pack, plates: false);
             Assert.Throws<NotSupportedException>(() => Field<IUnitDeployer>(flat.Reinforce, "deployer").TryDeploy(flat.Unit(Ally), Flat(41500, 32500), 1));
             IUnitDeployer ground = new GroundOnly();
-            Assert.That(ground.TryDeploy(default, default, 0), Is.True);
+            Assert.DoesNotThrow(() => Assert.That(ground.TryDeploy(default, default, 0), Is.True));
             Assert.That(((GroundOnly)ground).Calls, Is.EqualTo(1));
             Assert.Throws<NotSupportedException>(() => ground.TryDeploy(default, default, 1));
         }

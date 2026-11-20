@@ -85,6 +85,7 @@ note = a unit plate alone keeps version 1
 original:
 |                     if (unit.Plate.HasValue) return true;
 replacement:
+|                     if (unit.Plate == 0UL) return true;
 
 [ml7b-uses-point]
 file = Assets/WarCore/Content/MapTools/MapDescReader.cs
@@ -526,6 +527,7 @@ note = spawns are not checked
 original:
 |                 if (point.HasSpawn) yield return ("spawn of point " + point.Id, point.SpawnLayer, point.Spawn);
 replacement:
+|                 if (point.HasSpawn && point.SpawnLayer < 0) yield return ("spawn of point " + point.Id, point.SpawnLayer, point.Spawn);
 
 [ml7b-recipe-layer]
 file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs

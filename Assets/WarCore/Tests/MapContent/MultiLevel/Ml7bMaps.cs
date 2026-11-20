@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -45,11 +46,19 @@ namespace WarCore.Tests
 
         internal static byte[] Bytes(MapDesc d) => MapDescJson.Write(d);
         internal static string Text(MapDesc d) => Encoding.UTF8.GetString(Bytes(d));
-        internal static MapDesc Read(string text) => MapDescJson.Read(Encoding.UTF8.GetBytes(text));
-        internal static string Error(string text) => Assert.Throws<InvalidDataException>(() => Read(text)).Message;
+        // A throw where a test expects a value is an assertion failure, not an error.
+        internal static T NoThrow<T>(Func<T> f)
+        {
+            T value = default;
+            Assert.DoesNotThrow(() => value = f());
+            return value;
+        }
+        private static MapDesc Raw(string text) => MapDescJson.Read(Encoding.UTF8.GetBytes(text));
+        internal static MapDesc Read(string text) => NoThrow(() => Raw(text));
+        internal static string Error(string text) => Assert.Throws<InvalidDataException>(() => Raw(text)).Message;
         internal static string BakeError(MapDesc d) => Assert.Throws<InvalidDataException>(() => MapBake.Run(Bytes(d))).Message;
-        internal static MapSetup Setup(MapDesc d) => MapBake.Run(Bytes(d)).Setup;
-        internal static IReadOnlyList<MapProblem> Gate(MapDesc d) => MapGate.Check(Bytes(d), RwrPack.Load(d.Pack));
+        internal static MapSetup Setup(MapDesc d) => NoThrow(() => MapBake.Run(Bytes(d)).Setup);
+        internal static IReadOnlyList<MapProblem> Gate(MapDesc d) => NoThrow(() => MapGate.Check(Bytes(d), RwrPack.Load(d.Pack)));
         internal static int Line(string text, string fragment, int skip = 0) => Ml4DescTests.Line(text, fragment, skip);
     }
 }
