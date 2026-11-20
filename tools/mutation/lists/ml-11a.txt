@@ -1,0 +1,1151 @@
+# ML-11a: the AI by layer. One slot index over ground and plate slots, arriving and orders with a layer, points compared by
+# walking cost (LayeredReach per point and per base), points out of reach passed over, the refusals on a map with plates,
+# the digest tag. Filter: the ML-11a tests and the re-recorded ML-9b match test.
+# Not listed: GuardSlots.AllAt and AllCanonical with "<=" at the table boundary (the mutant reads past the ground table: an
+# exception, not an assertion; AllLayerOf carries the boundary); the squared cost replaced by the cost (same order); "<"
+# for "<=" in the relaxation (the same value written once more); a spread from the front-line point falling back to the unit
+# (a front-line point reaches a point by definition); the scheduler's arrays sized by Total (an exception).
+
+[ml11a-sa-arrive-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = arriving at the order does not compare layers
+original:
+| if (moving && layer == orderLayer && Arrived(here, target)
+replacement:
+| if (moving && Arrived(here, target)
+
+[ml11a-sa-arrive-find-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = the arrived order is looked up on the ground table
+original:
+| Arrived(here, target) && slots.TryFindAll(orderLayer, target, -1, out _))
+replacement:
+| Arrived(here, target) && slots.TryFindAll(0, target, -1, out _))
+
+[ml11a-sa-fair-retained-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a fair decision keeps the order's slot by the ground table
+original:
+| slots.TryFindAll(orderLayer, target, -1, out int retained)
+replacement:
+| slots.TryFindAll(0, target, -1, out int retained)
+
+[ml11a-sa-fair-retained-standing]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = the keeper's standing slot is read on the ground
+original:
+| Slot = retained, Standing = slots.NearestAll(layer, here) }
+replacement:
+| Slot = retained, Standing = slots.NearestAll(0, here) }
+
+[ml11a-sa-thinker-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = the parts are told layer 0
+original:
+| AiNerve.Calm, layer);
+replacement:
+| AiNerve.Calm, 0);
+
+[ml11a-sa-layer-of]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = every unit is on layer 0
+original:
+| layers != null ? layers.LayerOf(entity) : 0;
+replacement:
+| 0;
+
+[ml11a-sa-base-arrive-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = at the base on the plane counts as at the base
+original:
+| (layer == homeLayer && Arrived(here, home))
+replacement:
+| (Arrived(here, home))
+
+[ml11a-sa-base-reach]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a base out of reach is walked to
+original:
+| !(field.ReachesBase(unit.Team, here, layer) && moves.CanStandAt(home, homeLayer))
+replacement:
+| !(moves.CanStandAt(home, homeLayer))
+
+[ml11a-sa-base-stand]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a base nobody stands on is walked to
+original:
+| !(field.ReachesBase(unit.Team, here, layer) && moves.CanStandAt(home, homeLayer))
+replacement:
+| !(field.ReachesBase(unit.Team, here, layer))
+
+[ml11a-sa-base-plates-only]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = the base checks also run without plates
+original:
+| || (layers != null && !(field.ReachesBase
+replacement:
+| || (!(field.ReachesBase
+
+[ml11a-sa-base-onway-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = an order to the same spot on another layer counts as on the way home
+original:
+| else if (!moving || orderLayer != homeLayer || target.X.Raw
+replacement:
+| else if (!moving || target.X.Raw
+
+[ml11a-sa-base-order-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = the walk home is ordered on layer 0
+original:
+| OrderUnit(id, here, moving, target, home, homeLayer, -1);
+replacement:
+| OrderUnit(id, here, moving, target, home, 0, -1);
+
+[ml11a-sa-slot-arrive-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = standing under or over the slot counts as arrived
+original:
+| if (layer == slotLayer && Arrived(here, destination))
+replacement:
+| if (Arrived(here, destination))
+
+[ml11a-sa-slot-onway-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = an order to the same spot on another layer counts as on the way
+original:
+| if (!moving || orderLayer != slotLayer || !target.Equals(destination))
+replacement:
+| if (!moving || !target.Equals(destination))
+
+[ml11a-sa-slot-order-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = the walk to a slot is ordered on layer 0
+original:
+| destination, slotLayer, slots.AllCanonical(slot)); }
+replacement:
+| destination, 0, slots.AllCanonical(slot)); }
+
+[ml11a-sa-slot-layer-of]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = every slot is on layer 0
+original:
+| int slotLayer = slots.AllLayerOf(slot);
+replacement:
+| int slotLayer = 0;
+
+[ml11a-sa-refuge-plane]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = the refuge is the nearest on the plane
+original:
+| if (field.Owner(i) != team || !field.TrySpan(here, layer, i, out SimWide distance)) continue;
+replacement:
+| if (field.Owner(i) != team) continue; SimWide distance = CombatSystem.Horizontal(field.Center(i) - here).LengthSquared;
+
+[ml11a-sa-refuge-keeps-unreached]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a point out of reach stays a refuge
+original:
+| || !field.TrySpan(here, layer, i, out SimWide distance)) continue;
+replacement:
+| || (!field.TrySpan(here, layer, i, out SimWide distance) && i < 0)) continue;
+
+[ml11a-sa-refuge-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = the refuge is measured from layer 0
+original:
+| field.TrySpan(here, layer, i, out SimWide distance)
+replacement:
+| field.TrySpan(here, 0, i, out SimWide distance)
+
+[ml11a-sa-rebuild-reserved-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a loaded order reserves on the ground table
+original:
+| slots.TryFindAll(targetLayer, target, -1, out int reserved)
+replacement:
+| slots.TryFindAll(0, target, -1, out int reserved)
+
+[ml11a-sa-rebuild-standing-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a loaded unit stands on the ground table
+original:
+| slots.NearestAll(LayerOf(entity), position.Value)
+replacement:
+| slots.NearestAll(0, position.Value)
+
+[ml11a-sa-keeps-find-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = the kept slot is looked up on the ground table
+original:
+| slots.TryFindAll(orderLayer, target, point, out int slot) && Available(slot, id)
+replacement:
+| slots.TryFindAll(0, target, point, out int slot) && Available(slot, id)
+
+[ml11a-sa-keeps-stand-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = the kept slot is checked on the ground
+original:
+| moves.CanStandAt(target, orderLayer);
+replacement:
+| moves.CanStandAt(target, 0);
+
+[ml11a-sa-find-stand-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a candidate slot is checked on the ground
+original:
+| moves.CanStandAt(slots.AllAt(slot), slots.AllLayerOf(slot))
+replacement:
+| moves.CanStandAt(slots.AllAt(slot), 0)
+
+[ml11a-sa-intent-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a fair proposal carries layer 0
+original:
+| Kind = 2, Destination = destination, Layer = to,
+replacement:
+| Kind = 2, Destination = destination, Layer = 0,
+
+[ml11a-sa-intent-slot-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a fair proposal names its slot by the ground table
+original:
+| Slot = slots.TryFindAll(to, destination, -1, out int proposed)
+replacement:
+| Slot = slots.TryFindAll(0, destination, -1, out int proposed)
+
+[ml11a-sa-intent-standing-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a fair proposal's standing slot is read on the ground
+original:
+| MemorySlot = memorySlot, Standing = slots.NearestAll(layer, here) };
+replacement:
+| MemorySlot = memorySlot, Standing = slots.NearestAll(0, here) };
+
+[ml11a-sa-order-release-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a new order releases the old one on the ground table
+original:
+| moving && slots.TryFindAll(orderLayer, oldTarget, -1, out int old)
+replacement:
+| moving && slots.TryFindAll(0, oldTarget, -1, out int old)
+
+[ml11a-sa-order-standing-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a new order releases the standing slot on the ground table
+original:
+| Release(standingHas, standingBy, slots.NearestAll(layer, here), id);
+replacement:
+| Release(standingHas, standingBy, slots.NearestAll(0, here), id);
+
+[ml11a-sa-order-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = every order goes to layer 0
+original:
+| moves.Order(id, destination, to);
+replacement:
+| moves.Order(id, destination, 0);
+
+[ml11a-sa-order-claim-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = an order reserves on the ground table
+original:
+| if (slots.TryFindAll(to, destination, -1, out int slot)) Claim(
+replacement:
+| if (slots.TryFindAll(0, destination, -1, out int slot)) Claim(
+
+[ml11a-sa-stop-fair-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a fair stop names its slot on the ground
+original:
+| Kind = 1, Slot = slots.NearestAll(layer, here) };
+replacement:
+| Kind = 1, Slot = slots.NearestAll(0, here) };
+
+[ml11a-sa-stop-release-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a stop releases the order on the ground table
+original:
+| if (slots.TryFindAll(orderLayer, oldTarget, -1, out int old)) Release(
+replacement:
+| if (slots.TryFindAll(0, oldTarget, -1, out int old)) Release(
+
+[ml11a-sa-stop-standing-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a stop stands on the ground table
+original:
+| int standing = slots.NearestAll(layer, here);
+replacement:
+| int standing = slots.NearestAll(0, here);
+
+[ml11a-sa-apply-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a fair winner is ordered on layer 0
+original:
+| moves.Order(proposal.Id, proposal.Destination, proposal.Layer);
+replacement:
+| moves.Order(proposal.Id, proposal.Destination, 0);
+
+[ml11a-sa-tag-dropped]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = the digest does not name the layers
+original:
+| hash.Add("battle.ai.layers.v1"); hash.Add(policyDigest);
+replacement:
+| hash.Add(policyDigest);
+
+[ml11a-sa-tag-always]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = the digest names the layers without plates
+original:
+| if (layers != null)
+replacement:
+| if (layers != null || reach == null)
+
+[ml11a-sa-pair-reach]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = layers without walking costs are taken
+original:
+| if ((layers == null) != (reach == null) || (layers == null) != (slotFloor == null))
+replacement:
+| if ((layers == null) != (slotFloor == null))
+
+[ml11a-sa-pair-floor]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = layers without the plates' floor are taken
+original:
+| if ((layers == null) != (reach == null) || (layers == null) != (slotFloor == null))
+replacement:
+| if ((layers == null) != (reach == null))
+
+[ml11a-gs-all-total]
+file = Assets/WarCore/Battle/GuardSlots.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = the plate slots are not counted
+original:
+| public int AllTotal => ground.Positions.Length + plates.Positions.Length;
+replacement:
+| public int AllTotal => ground.Positions.Length;
+
+[ml11a-gs-all-start]
+file = Assets/WarCore/Battle/GuardSlots.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a plate point's run starts without the ground's total
+original:
+| plates.Count[point] != 0 ? Total + plates.Start[point] : ground.Start[point];
+replacement:
+| plates.Count[point] != 0 ? plates.Start[point] : ground.Start[point];
+
+[ml11a-gs-all-count]
+file = Assets/WarCore/Battle/GuardSlots.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a plate point counts the ground table
+original:
+| plates.Count[point] != 0 ? plates.Count[point] : ground.Count[point];
+replacement:
+| ground.Count[point];
+
+[ml11a-gs-all-layer-zero]
+file = Assets/WarCore/Battle/GuardSlots.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = every slot is on layer 0
+original:
+| slot < Total ? 0 : plates.Layers[slot - Total];
+replacement:
+| 0;
+
+[ml11a-gs-all-layer-bound]
+file = Assets/WarCore/Battle/GuardSlots.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = the first plate slot reads as a ground slot
+original:
+| public int AllLayerOf(int slot) => slot < Total ?
+replacement:
+| public int AllLayerOf(int slot) => slot <= Total ?
+
+[ml11a-gs-all-canonical]
+file = Assets/WarCore/Battle/GuardSlots.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a plate slot's record lacks the ground's total
+original:
+| Total + plates.Canonical[slot - Total];
+replacement:
+| plates.Canonical[slot - Total];
+
+[ml11a-gs-find-total]
+file = Assets/WarCore/Battle/GuardSlots.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a found plate slot lacks the ground's total
+original:
+| if (found) slot += Total;
+replacement:
+|
+
+[ml11a-gs-find-ground]
+file = Assets/WarCore/Battle/GuardSlots.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = every layer is looked up on the ground table
+original:
+| if (layer == 0) return ground.TryFind(
+replacement:
+| if (layer >= 0) return ground.TryFind(
+
+[ml11a-gs-nearest-total]
+file = Assets/WarCore/Battle/GuardSlots.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = the nearest plate slot lacks the ground's total
+original:
+| return slot < 0 ? -1 : slot + Total;
+replacement:
+| return slot < 0 ? -1 : slot;
+
+[ml11a-gs-nearest-ground]
+file = Assets/WarCore/Battle/GuardSlots.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = every layer stands on the ground table
+original:
+| if (layer == 0) return ground.Nearest(
+replacement:
+| if (layer >= 0) return ground.Nearest(
+
+[ml11a-ap-span-plane]
+file = Assets/WarCore/Battle/Ai/AiParts.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = with plates the span is still the plane's
+original:
+| if (reach == null) { span =
+replacement:
+| if (reach == null || fromLayer >= 0) { span =
+
+[ml11a-ap-span-unreached]
+file = Assets/WarCore/Battle/Ai/AiParts.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a point out of reach has a span
+original:
+| return found;
+replacement:
+| return true;
+
+[ml11a-ap-reaches-base]
+file = Assets/WarCore/Battle/Ai/AiParts.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = every base is in reach
+original:
+| reach == null || reach.TryBaseCost(team, from, fromLayer, out _);
+replacement:
+| reach == null || reach.TryBaseCost(team, from, fromLayer, out _) || team >= 0;
+
+[ml11a-ap-frontline-keeps-unreached]
+file = Assets/WarCore/Battle/Ai/AiParts.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a pair out of reach makes a front line
+original:
+| if (!TrySpan(pack.Points[i].Center, pack.Points[i].Layer, j, out SimWide distance)) continue;
+replacement:
+| TrySpan(pack.Points[i].Center, pack.Points[i].Layer, j, out SimWide distance);
+
+[ml11a-ap-frontline-layer]
+file = Assets/WarCore/Battle/Ai/AiParts.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = the front line is measured from layer 0
+original:
+| pack.Points[i].Layer, j, out SimWide distance)
+replacement:
+| 0, j, out SimWide distance)
+
+[ml11a-ap-base-layer]
+file = Assets/WarCore/Battle/Ai/AiParts.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = the base is on layer 0
+original:
+| { at = anchor.Point; layer = anchor.Layer; return true; }
+replacement:
+| { at = anchor.Point; layer = 0; return true; }
+
+[ml11a-ap-point-layer]
+file = Assets/WarCore/Battle/Ai/AiParts.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = every point is on layer 0
+original:
+| public int Layer(int point) => pack.Points[point].Layer;
+replacement:
+| public int Layer(int point) => 0;
+
+[ml11a-nd-pick-keeps-unreached]
+file = Assets/WarCore/Battle/Ai/NearestDispatch.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a point out of reach is picked
+original:
+| if (!field.TrySpan(unit.Here, unit.Layer, i, out SimWide distance)) continue;
+replacement:
+| field.TrySpan(unit.Here, unit.Layer, i, out SimWide distance);
+
+[ml11a-nd-pick-layer]
+file = Assets/WarCore/Battle/Ai/NearestDispatch.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = the nearest point is measured from layer 0
+original:
+| field.TrySpan(unit.Here, unit.Layer, i, out SimWide distance)
+replacement:
+| field.TrySpan(unit.Here, 0, i, out SimWide distance)
+
+[ml11a-nd-final-ask]
+file = Assets/WarCore/Battle/Ai/NearestDispatch.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = the answer is not asked of the unit itself
+original:
+| if (nearest >= 0 && field.TrySpan(unit.Here, unit.Layer, nearest, out _)) return nearest;
+replacement:
+| if (nearest >= 0) return nearest;
+
+[ml11a-nd-final-layer]
+file = Assets/WarCore/Battle/Ai/NearestDispatch.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = the answer is asked from layer 0
+original:
+| field.TrySpan(unit.Here, unit.Layer, nearest, out _)
+replacement:
+| field.TrySpan(unit.Here, 0, nearest, out _)
+
+[ml11a-nd-spread-unit-layer]
+file = Assets/WarCore/Battle/Ai/NearestDispatch.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a spread from the unit starts on layer 0
+original:
+| SpreadTarget(unit.Team, unit.Here, unit.Layer, unit.Id.Value, field);
+replacement:
+| SpreadTarget(unit.Team, unit.Here, 0, unit.Id.Value, field);
+
+[ml11a-nd-spread-front-layer]
+file = Assets/WarCore/Battle/Ai/NearestDispatch.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a spread from the front line keeps the unit's layer
+original:
+| { from = field.Center(front); layer = field.Layer(front); }
+replacement:
+| { from = field.Center(front); }
+
+[ml11a-nd-spread-base-layer]
+file = Assets/WarCore/Battle/Ai/NearestDispatch.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a spread from the base keeps the unit's layer
+original:
+| { from = anchor; layer = anchorLayer; }
+replacement:
+| { from = anchor; }
+
+[ml11a-nd-spread-no-recount]
+file = Assets/WarCore/Battle/Ai/NearestDispatch.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a base that reaches nothing is not replaced by the unit
+original:
+| if (count == 0) { from = here; layer = unitLayer; count = Count(team, from, layer, field); }
+replacement:
+|
+
+[ml11a-nd-spread-rank-unreached]
+file = Assets/WarCore/Battle/Ai/NearestDispatch.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = the ranking takes points out of reach
+original:
+| if (field.Owner(i) == team || !field.TrySpan(from, layer, i, out SimWide distance)) continue;
+replacement:
+| if (field.Owner(i) == team) continue; field.TrySpan(from, layer, i, out SimWide distance);
+
+[ml11a-nd-count-unreached]
+file = Assets/WarCore/Battle/Ai/NearestDispatch.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = the spread counts points out of reach
+original:
+| if (field.Owner(i) != team && field.TrySpan(from, layer, i, out _)) count++;
+replacement:
+| if (field.Owner(i) != team) count++;
+
+[ml11a-mp-default-stand]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = the default stands on any layer
+original:
+| bool CanStandAt(SimVec3 at, int layer) => layer == 0 && CanStandAt(at);
+replacement:
+| bool CanStandAt(SimVec3 at, int layer) => CanStandAt(at);
+
+[ml11a-mp-default-order]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = the default orders to any layer
+original:
+| if (layer != 0) throw new NotSupportedException("Layer orders need a world with floor plates.");
+replacement:
+|
+
+[ml11a-mp-default-order-layer]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = the default order is on layer 1
+original:
+| { layer = 0; return TryGetOrder(unit, out target); }
+replacement:
+| { layer = 1; return TryGetOrder(unit, out target); }
+
+[ml11a-mf-stand-any]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = every place on a plate can be stood at
+original:
+| layer == 0 ? ground.CanStand(at) : plates != null && locomotion.CanStandOn(layer, at);
+replacement:
+| layer == 0 ? ground.CanStand(at) : plates != null;
+
+[ml11a-mf-stand-ground]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a place on a plate is checked on the ground
+original:
+| layer == 0 ? ground.CanStand(at) : plates != null && locomotion.CanStandOn(layer, at);
+replacement:
+| ground.CanStand(at);
+
+[ml11a-mf-order-layer]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = the bridge orders to layer 0
+original:
+| locomotion.Order(Resolve(unit), target, layer);
+replacement:
+| locomotion.Order(Resolve(unit), target, 0);
+
+[ml11a-mf-order-read-layer]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = the bridge reads every order on layer 0
+original:
+| out VerticalState state) ? state.TargetLayer : 0;
+replacement:
+| out VerticalState state) ? 0 : 0;
+
+[ml11a-mf-parts-plates]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = the parts are not told about the plates
+original:
+| , layers != null), pressure, layers, layers,
+replacement:
+| , false), pressure, layers, layers,
+
+[ml11a-iv-layer-zero]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = layer 0 is taken for a plate
+original:
+| if (!layered || layer < 1) throw
+replacement:
+| if (!layered) throw
+
+[ml11a-iv-footprint]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = only the cell is checked, not the footprint
+original:
+| return grid.SegmentClear(at, at, UnitFootprint, openCells);
+replacement:
+| return at.X.Raw == at.X.Raw;
+
+[ml11a-cp-without-plates]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = the parts are refused without plates
+original:
+| if (plates && ai != null) CheckPlates(ai);
+replacement:
+| if (ai != null) CheckPlates(ai);
+
+[ml11a-cp-search-taken]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = search is not refused
+original:
+| if (ai.SearchTicks > 0) throw Refused(ai, "searchTicks");
+replacement:
+|
+
+[ml11a-cp-suppress-taken]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = suppress is not refused
+original:
+| if (ai.SuppressTicks > 0) throw Refused(ai, "suppressTicks");
+replacement:
+|
+
+[ml11a-cp-melee-taken]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = melee is not refused
+original:
+| if (ai.MeleeChaseRange > 0) throw Refused(ai, "meleeChaseRange");
+replacement:
+|
+
+[ml11a-cp-pressure-taken]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = pressure is not refused
+original:
+| if (ai.Pressure != null) throw Refused(ai, "pressureNearRadiusMm");
+replacement:
+|
+
+[ml11a-cp-engage-taken]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = engage is not refused
+original:
+| if (ai.Engage == BoundEngage) throw Refused(ai, "engage");
+replacement:
+|
+
+[ml11a-cp-scatter-taken]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = scatter is not refused
+original:
+| if (ai.Placement == Scatter || ai.Placement == AssaultRoles)
+replacement:
+| if (ai.Placement == AssaultRoles)
+
+[ml11a-cp-roles-taken]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = assault-roles is not refused
+original:
+| if (ai.Placement == Scatter || ai.Placement == AssaultRoles)
+replacement:
+| if (ai.Placement == Scatter)
+
+[ml11a-cp-search-zero]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = searchTicks 0 is refused
+original:
+| if (ai.SearchTicks > 0)
+replacement:
+| if (ai.SearchTicks >= 0)
+
+[ml11a-cp-suppress-zero]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = suppressTicks 0 is refused
+original:
+| if (ai.SuppressTicks > 0)
+replacement:
+| if (ai.SuppressTicks >= 0)
+
+[ml11a-cp-melee-zero]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = meleeChaseRange 0 is refused
+original:
+| if (ai.MeleeChaseRange > 0)
+replacement:
+| if (ai.MeleeChaseRange >= 0)
+
+[ml11a-cp-code-rules]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = rules built in code are asked for a place in a pack
+original:
+| => ai.FieldError != null
+replacement:
+| => ai.FieldError != null || field != null
+
+[ml11a-lr-diagonal-cost]
+file = Assets/WarCore/Sim/LayeredReach.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a diagonal step costs an orthogonal one
+original:
+| (diagonal ? 1414 : 1000) * enter
+replacement:
+| (diagonal ? 1000 : 1000) * enter
+
+[ml11a-lr-cost-of-leaver]
+file = Assets/WarCore/Sim/LayeredReach.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a step costs what the cell left costs
+original:
+| cost + (diagonal ? 1414 : 1000) * enter);
+replacement:
+| cost + (diagonal ? 1414 : 1000) * nav.Cost[u]);
+
+[ml11a-lr-diagonal-corners]
+file = Assets/WarCore/Sim/LayeredReach.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a diagonal cuts a blocked corner
+original:
+| if (diagonal && (Walkable(nav, layer, x + dx, z) < 0 || Walkable(nav, layer, x, z + dz) < 0)) continue;
+replacement:
+|
+
+[ml11a-lr-no-seams]
+file = Assets/WarCore/Sim/LayeredReach.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = seams are not crossed
+original:
+| Relax(heap, nodes, ref size, nav.Seams[s], cost + 1000 * enter);
+replacement:
+| { }
+
+[ml11a-lr-blocked-neighbour]
+file = Assets/WarCore/Sim/LayeredReach.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a blocked cell is walked from
+original:
+| return node >= 0 && nav.Cost[node] != 0 ? node : -1;
+replacement:
+| return node >= 0 ? node : -1;
+
+[ml11a-lr-blocked-target]
+file = Assets/WarCore/Sim/LayeredReach.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a blocked target is walked to
+original:
+| if (nav.Cost[target] == 0) return;
+replacement:
+|
+
+[ml11a-lr-target-range]
+file = Assets/WarCore/Sim/LayeredReach.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a target outside the graph is not refused by name
+original:
+| if (target < 0 || target >= nav.Count) throw new ArgumentOutOfRangeException(nameof(target));
+replacement:
+|
+
+[ml11a-pl-node-layer]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateLayers.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a place is read on layer 0
+original:
+| grid.TryCell(at, out int key) && nav.TryNode(layer, key % grid.Width, key / grid.Width, out node);
+replacement:
+| grid.TryCell(at, out int key) && nav.TryNode(0, key % grid.Width, key / grid.Width, out node);
+
+[ml11a-pl-no-node]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateLayers.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a place that is no cell reaches the point at cost 0
+original:
+| if (table == null || !TryNode(from, fromLayer, out int node)) return false;
+replacement:
+| if (table == null) return false; if (!TryNode(from, fromLayer, out int node)) return true;
+
+[ml11a-pl-no-route]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateLayers.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a cell without a route reaches the point
+original:
+| if (cost >= 0) return true;
+replacement:
+| if (cost >= -1) return true;
+
+[ml11a-pl-centre-blocked]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateLayers.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a blocked centre cell is the target
+original:
+| if (TryNode(point.Center, point.Layer, out target) && nav.IsPassable(target)) return true;
+replacement:
+| if (TryNode(point.Center, point.Layer, out target)) return true;
+
+[ml11a-pl-outside-circle]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateLayers.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = a cell outside the circle is the target
+original:
+| if (distance > limit || (target >= 0 && distance >= best)) continue;
+replacement:
+| if (target >= 0 && distance >= best) continue;
+
+[ml11a-pl-first-cell]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateLayers.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = the first cell in the circle is the target
+original:
+| if (distance > limit || (target >= 0 && distance >= best)) continue;
+replacement:
+| if (distance > limit || target >= 0) continue;
+
+[ml11a-pl-farthest-cell]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateLayers.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = the farthest cell is the target
+original:
+| (target >= 0 && distance >= best)
+replacement:
+| (target >= 0 && distance <= best)
+
+[ml11a-pl-tie-higher]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateLayers.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = equally near cells go to the higher cell
+original:
+| (target >= 0 && distance >= best)
+replacement:
+| (target >= 0 && distance > best)
+
+[ml11a-pl-last-anchor]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateLayers.cs
+filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
+expect = WarCore.Tests.Ml11a
+expect = WarCore.Tests.Ml9bMatchTests.
+note = the base is the team's last anchor
+original:
+| if (seen[anchor.Team]) continue;
+replacement:
+|
