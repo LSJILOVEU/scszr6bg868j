@@ -5,6 +5,10 @@
 #   the same unit and launch tick; kept as a guard, not testable by behaviour.
 # - registering the system without a projectile weapon: the constructor refuses such a pack, so every built world
 #   throws (the full suite).
+# - the load's 'weapon is a projectile weapon' check: an instant weapon has 0 flights, so the k range check
+#   (0 <= k < flights) refuses it as well; kept for a clearer refusal.
+# - an instant weapon of a mixed pack taking the projectile path throws (zero step), never a wrong landing;
+#   InstantWeaponInAMixedPackStaysInstant shows the instant weapon stays instant.
 # - removal reordering the pool: the compaction keeps order by construction; RollsFollowTheFiringOrder and the
 #   save order check (BadSavesAreRefused) cover the observable order.
 
@@ -181,7 +185,7 @@ replacement:
 [proj1-17-moves-on-launch-tick]
 file = Assets/WarCore/Combat/ProjectileSystem.cs
 filter = FullyQualifiedName~WarCore.Tests.Projectile
-expect = WarCore.Tests.Projectile.Proj1FlightTests.LandsOnTheHandWorkedTick
+expect = WarCore.Tests.Projectile.Proj1FlightTests.NothingFliesOnTheFiringTick
 note = the launch tick flies a segment (k from 0)
 original:
 | if (tick > launchTicks[i] && Land(c, i, tick)) continue;
@@ -412,16 +416,6 @@ original:
 replacement:
 | SimStateReader.Require(reader.UInt64() != 0,
 
-[proj1-40-load-instant-weapon]
-file = Assets/WarCore/Combat/ProjectileSystem.cs
-filter = FullyQualifiedName~WarCore.Tests.Projectile
-expect = WarCore.Tests.Projectile.Proj1StateTests.BadSavesAreRefused
-note = the load takes an instant weapon
-original:
-| && pack.IsProjectile(weapon), 
-replacement:
-| && true, 
-
 [proj1-41-not-removed]
 file = Assets/WarCore/Combat/ProjectileSystem.cs
 filter = FullyQualifiedName~WarCore.Tests.Projectile
@@ -453,15 +447,15 @@ original:
 replacement:
 | ) return;
 
-[proj1-44-every-weapon-launches]
+[proj1-44-projectile-fires-instantly]
 file = Assets/WarCore/Combat/CombatSystem.cs
 filter = FullyQualifiedName~WarCore.Tests.Projectile
-expect = WarCore.Tests.Projectile.Proj1LaunchTests.InstantWeaponInAMixedPackStaysInstant
-note = an instant weapon of a mixed pack launches
+expect = WarCore.Tests.Projectile.Proj1LaunchTests.LaunchSpendsTheShotAndLandsNothing
+note = a projectile weapon on the aimed and automatic path fires instantly
 original:
 | if (pack.IsProjectile(unit.Weapon)) LaunchRay(
 replacement:
-| if (pack.HasProjectiles) LaunchRay(
+| if (false) LaunchRay(
 
 [proj1-45-phase]
 file = Assets/WarCore/Presentation/Bridge/Features/CombatFeature.cs

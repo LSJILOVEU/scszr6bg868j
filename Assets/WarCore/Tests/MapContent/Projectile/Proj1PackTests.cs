@@ -43,10 +43,11 @@ namespace WarCore.Tests.Projectile
         [TestCase("ancient")]
         public void ShippedPacksHaveNoProjectiles(string id) => Assert.That(Proj1DigestTests.Shipped(id).BuildCombat().HasProjectiles, Is.False);
 
+        // A falloffEnd of 20 m keeps every flight short (999 mm/s: 601 ticks), so only the speed itself can be refused.
         [TestCase("999")]
         [TestCase("1000001")]
         [TestCase("-1")]
-        public void SpeedOutsideItsRangeIsRefused(string speed) => Refused(() => Load(speed));
+        public void SpeedOutsideItsRangeIsRefused(string speed) => Refused(() => Load(speed, start: "10", end: "20"));
 
         [Test]
         public void SpeedBoundsLoad()
@@ -78,7 +79,8 @@ namespace WarCore.Tests.Projectile
         public void PackRefusesWhatContentRefuses()
         {
             Assert.Throws<ArgumentException>(() => Proj1World.Pack(100000, noBody: true));
-            Assert.Throws<ArgumentOutOfRangeException>(() => Proj1World.Pack(999));
+            Assert.Throws<ArgumentOutOfRangeException>(() => Proj1World.Pack(999, Proj1World.Weapon(falloffEnd: 20)));
+            Assert.DoesNotThrow(() => Proj1World.Pack(1000, Proj1World.Weapon(falloffEnd: 20)));
             Assert.Throws<ArgumentOutOfRangeException>(() => Proj1World.Pack(1_000_001));
             Assert.Throws<ArgumentOutOfRangeException>(() => Proj1World.Pack(30000, Proj1World.Weapon(falloffEnd: 901)));
             Assert.DoesNotThrow(() => Proj1World.Pack(30000, Proj1World.Weapon(falloffEnd: 900)));

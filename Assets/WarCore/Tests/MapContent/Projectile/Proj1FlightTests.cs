@@ -47,6 +47,19 @@ namespace WarCore.Tests.Projectile
             Assert.That(w.Health(1), Is.EqualTo(after), "no second landing");
         }
 
+        // Nothing moves on the firing tick: an enemy 0.6 m behind the muzzle is never struck (a segment on the firing tick would
+        // run from 1 m behind the muzzle to it); the projectile lands on the target ahead on tick 11.
+        [Test]
+        public void NothingFliesOnTheFiringTick()
+        {
+            Proj1World w = World(30000, new[] { Proj1World.U(0, 0, 1), Proj1World.U(10 * M, 0, 2, -1), Proj1World.U(-3 * M / 5, 0, 2, -1) });
+            long full = w.Health(2);
+            AimAt(w, 1);
+            (long tick, ProjectileImpact hit) = w.StepUntilImpact();
+            Assert.That((tick, hit.Outcome, hit.Target), Is.EqualTo((11L, FireOutcome.Hit, w.Id(1))));
+            Assert.That(w.Health(2), Is.EqualTo(full));
+        }
+
         // The position after k ticks is origin + k * step, never accumulated: at 100 000 mm/s after 2 ticks 2 x 218 453 raw.
         [Test]
         public void PositionIsAMultipleOfTheStep()
