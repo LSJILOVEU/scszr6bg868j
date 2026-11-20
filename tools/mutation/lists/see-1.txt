@@ -1,0 +1,272 @@
+# SEE-1: the zone round the player (SeeZone, LayerCut's ring switch) and the silhouettes (Silhouettes). Filter: See1 tests.
+# Not listed: SeeZone's `length <= 0` guard (highest is at least the eye, so it never holds); Silhouettes' skip of the plate
+# under the unit (a head line meets its own plate only on a stair steeper than the camera's line, and then the floor above
+# covers the unit anyway in the demo house); Unity code (no Unity here).
+
+[see1-ring-switch-off]
+file = Assets/WarCore/Presentation/Camera/LayerCut.cs
+filter = FullyQualifiedName~See1
+expect = WarCore.Tests.See1ZoneTests.TheRingFadesWhatShadowsASample
+note = the ring never runs
+original:
+| if (seeRadius > 0) SeeZone.Fade(
+replacement:
+| if (seeRadius < 0) SeeZone.Fade(
+
+[see1-inner-ring-dropped]
+file = Assets/WarCore/Presentation/Camera/SeeZone.cs
+filter = FullyQualifiedName~See1
+expect = WarCore.Tests.See1ZoneTests.BothRingsAndAllEightDirectionsAreUsed
+note = only the outer samples
+original:
+| for (int ring = 1; ring <= 2; ring++)
+replacement:
+| for (int ring = 2; ring <= 2; ring++)
+
+[see1-outer-ring-halved]
+file = Assets/WarCore/Presentation/Camera/SeeZone.cs
+filter = FullyQualifiedName~See1
+expect = WarCore.Tests.See1ZoneTests.TheRingFadesWhatShadowsASample
+note = the rings at a quarter and a half of the radius
+original:
+| double reach = radius * ring / 2,
+replacement:
+| double reach = radius * ring / 4,
+
+[see1-four-directions]
+file = Assets/WarCore/Presentation/Camera/SeeZone.cs
+filter = FullyQualifiedName~See1
+expect = WarCore.Tests.See1ZoneTests.BothRingsAndAllEightDirectionsAreUsed
+note = the diagonals are lost
+original:
+| private const int Directions = 8;
+replacement:
+| private const int Directions = 4;
+
+[see1-sample-not-seen-check-dropped]
+file = Assets/WarCore/Presentation/Camera/SeeZone.cs
+filter = FullyQualifiedName~See1
+expect = WarCore.Tests.See1ZoneTests.WhatTheUnitCannotSeeIsNotSampled
+note = samples inside and behind walls count
+original:
+| if (!Seen(map, me.X, eye, me.Z, sx - me.X, sz - me.Z)) continue;
+replacement:
+| if (!Seen(map, me.X, eye, me.Z, sx - me.X, sz - me.Z) && false) continue;
+
+[see1-sample-seen-from-the-feet]
+file = Assets/WarCore/Presentation/Camera/SeeZone.cs
+filter = FullyQualifiedName~See1
+expect = WarCore.Tests.See1ZoneTests.TheEyeNotTheFeetSeesTheSample
+note = the level line starts at the feet height
+original:
+| double eye = me.Y + AimPick.BodyHeight,
+replacement:
+| double eye = me.Y + LayerCut.FootLift,
+
+[see1-sample-line-from-the-eye]
+file = Assets/WarCore/Presentation/Camera/SeeZone.cs
+filter = FullyQualifiedName~See1
+expect = WarCore.Tests.See1ZoneTests.TheRingFadesWhatShadowsASample
+note = the line back from a sample starts at the body height
+original:
+| start = me.Y + LayerCut.FootLift;
+replacement:
+| start = me.Y + AimPick.BodyHeight;
+
+[see1-wall-height-rule-dropped]
+file = Assets/WarCore/Presentation/Camera/SeeZone.cs
+filter = FullyQualifiedName~See1
+expect = WarCore.Tests.See1ZoneTests.LowWallsDoNotFlicker
+note = low walls fade too
+original:
+| if (wallStates[w] == CutState.Shown && wall.CenterY + wall.SizeY / 2 - me.Y > LayerCut.MinSeeHeight
+replacement:
+| if (wallStates[w] == CutState.Shown
+
+[see1-wall-height-edge]
+file = Assets/WarCore/Presentation/Camera/SeeZone.cs
+filter = FullyQualifiedName~See1
+expect = WarCore.Tests.See1ZoneTests.LowWallsDoNotFlicker
+note = a wall exactly 1.5 m over the feet fades
+original:
+| wall.CenterY + wall.SizeY / 2 - me.Y > LayerCut.MinSeeHeight
+replacement:
+| wall.CenterY + wall.SizeY / 2 - me.Y >= LayerCut.MinSeeHeight
+
+[see1-wall-height-from-the-ground]
+file = Assets/WarCore/Presentation/Camera/SeeZone.cs
+filter = FullyQualifiedName~See1
+expect = WarCore.Tests.See1ZoneTests.TheHeightIsOverTheFeet
+note = the wall's top is not measured from the unit's feet
+original:
+| wall.CenterY + wall.SizeY / 2 - me.Y > LayerCut.MinSeeHeight
+replacement:
+| wall.CenterY + wall.SizeY / 2 > LayerCut.MinSeeHeight
+
+[see1-min-height-lowered]
+file = Assets/WarCore/Presentation/Camera/LayerCut.cs
+filter = FullyQualifiedName~See1
+expect = WarCore.Tests.See1ZoneTests.LowWallsDoNotFlicker
+note = 1.0 m instead of 1.5 m
+original:
+| public const float MinSeeHeight = 1.5f;
+replacement:
+| public const float MinSeeHeight = 1.0f;
+
+[see1-plate-height-rule-dropped]
+file = Assets/WarCore/Presentation/Camera/SeeZone.cs
+filter = FullyQualifiedName~See1
+expect = WarCore.Tests.See1ZoneTests.LowPlatformsStayAndHighOnesFade
+note = low plates fade too
+original:
+| && plateTops[k] - me.Y > LayerCut.MinSeeHeight
+replacement:
+|
+
+[see1-hidden-wall-faded]
+file = Assets/WarCore/Presentation/Camera/SeeZone.cs
+filter = FullyQualifiedName~See1
+expect = WarCore.Tests.See1ZoneTests.HiddenStaysHidden
+note = a hidden wall is faded by the ring
+original:
+| if (wallStates[w] == CutState.Shown && wall.CenterY
+replacement:
+| if (wallStates[w] != CutState.Faded && wall.CenterY
+
+[see1-hidden-plate-faded]
+file = Assets/WarCore/Presentation/Camera/SeeZone.cs
+filter = FullyQualifiedName~See1
+expect = WarCore.Tests.See1ZoneTests.TheDemoHouseFadesTheSouthAndTheWestPiece
+note = a hidden plate is faded by the ring
+original:
+| if (plateStates[k] == CutState.Shown && k + 1 != me.Layer
+replacement:
+| if (plateStates[k] != CutState.Faded && k + 1 != me.Layer
+
+[see1-own-plate-faded]
+file = Assets/WarCore/Presentation/Camera/SeeZone.cs
+filter = FullyQualifiedName~See1
+expect = WarCore.Tests.See1ZoneTests.ThePlateUnderTheUnitStays
+note = the plate under the unit is faded by the ring
+original:
+| if (plateStates[k] == CutState.Shown && k + 1 != me.Layer && plateTops
+replacement:
+| if (plateStates[k] == CutState.Shown && plateTops
+
+[see1-silhouette-other-team]
+file = Assets/WarCore/Presentation/Camera/Silhouettes.cs
+filter = FullyQualifiedName~See1
+expect = WarCore.Tests.See1SilhouetteTests.OnlyCoveredLivingTeamMatesAreDrawn
+note = enemies instead of team mates
+original:
+| unit.Team != me.Team ||
+replacement:
+| unit.Team == me.Team ||
+
+[see1-silhouette-dead]
+file = Assets/WarCore/Presentation/Camera/Silhouettes.cs
+filter = FullyQualifiedName~See1
+expect = WarCore.Tests.See1SilhouetteTests.OnlyCoveredLivingTeamMatesAreDrawn
+note = the dead are drawn
+original:
+| if (!unit.Alive || unit.Team == 0
+replacement:
+| if (unit.Team == 0
+
+[see1-silhouette-team-zero]
+file = Assets/WarCore/Presentation/Camera/Silhouettes.cs
+filter = FullyQualifiedName~See1
+expect = WarCore.Tests.See1SilhouetteTests.UnitsWithoutATeamAreNeverDrawn
+note = a player without a team (0) draws the covered units of team 0
+original:
+| unit.Team == 0 || unit.Team != me.Team
+replacement:
+| unit.Team != me.Team
+
+[see1-silhouette-player-himself]
+file = Assets/WarCore/Presentation/Camera/Silhouettes.cs
+filter = FullyQualifiedName~See1
+expect = WarCore.Tests.See1SilhouetteTests.NotThePlayerHimself
+note = the player is his own silhouette
+original:
+| || unit.Key == me.Key
+replacement:
+|
+
+[see1-silhouette-faded-wall-covers]
+file = Assets/WarCore/Presentation/Camera/Silhouettes.cs
+filter = FullyQualifiedName~See1
+expect = WarCore.Tests.See1SilhouetteTests.AFadedWallCoversNobody
+note = a faded wall still covers
+original:
+| if (cut.Wall(w) == CutState.Shown && PlateRay.CrossesBox(
+replacement:
+| if (cut.Wall(w) != CutState.Hidden && PlateRay.CrossesBox(
+
+[see1-silhouette-faded-plate-covers]
+file = Assets/WarCore/Presentation/Camera/Silhouettes.cs
+filter = FullyQualifiedName~See1
+expect = WarCore.Tests.See1SilhouetteTests.AFadedFloorCoversNobody
+note = a faded floor still covers
+original:
+| if (cut.Plate(k) == CutState.Shown && k + 1
+replacement:
+| if (cut.Plate(k) != CutState.Hidden && k + 1
+
+[see1-silhouette-hidden-floor-unchecked]
+file = Assets/WarCore/Presentation/Camera/Silhouettes.cs
+filter = FullyQualifiedName~See1
+expect = WarCore.Tests.See1SilhouetteTests.ATeamMateOnAHiddenFloorIsNotDrawn
+note = a unit on a hidden floor is drawn
+original:
+| || cut.IsHidden(unit)) continue;
+replacement:
+| ) continue;
+
+[see1-silhouette-feet-line]
+file = Assets/WarCore/Presentation/Camera/Silhouettes.cs
+filter = FullyQualifiedName~See1
+expect = WarCore.Tests.See1SilhouetteTests.OnlyCoveredLivingTeamMatesAreDrawn
+note = the line back starts at the feet
+original:
+| double oy = unit.Y + AimPick.BodyHeight;
+replacement:
+| double oy = unit.Y + LayerCut.FootLift;
+
+[see1-silhouette-plates-ignored]
+file = Assets/WarCore/Presentation/Camera/Silhouettes.cs
+filter = FullyQualifiedName~See1
+expect = WarCore.Tests.See1SilhouetteTests.AFloorCoversATeamMateUnderIt
+note = floors cover nobody
+original:
+| for (int k = 0; k < plateCount; k++)
+|                 if (cut.Plate(k)
+replacement:
+| for (int k = 0; k < 0; k++)
+|                 if (cut.Plate(k)
+
+[see1-silhouette-walls-ignored]
+file = Assets/WarCore/Presentation/Camera/Silhouettes.cs
+filter = FullyQualifiedName~See1
+expect = WarCore.Tests.See1SilhouetteTests.OnlyCoveredLivingTeamMatesAreDrawn
+note = walls cover nobody
+original:
+| for (int w = 0; w < wallCount; w++)
+|             {
+|                 ViewWall wall = map.Walls[w];
+|                 if (cut.Wall(w)
+replacement:
+| for (int w = 0; w < 0; w++)
+|             {
+|                 ViewWall wall = map.Walls[w];
+|                 if (cut.Wall(w)
+
+[see1-silhouette-no-player]
+file = Assets/WarCore/Presentation/Camera/Silhouettes.cs
+filter = FullyQualifiedName~See1
+expect = WarCore.Tests.See1SilhouetteTests.NoPlayerNoSilhouettes
+note = without a player the team of a default player is used
+original:
+| if (!player.HasValue || !player.Value.Alive) return set;
+replacement:
+| if (!player.HasValue) return set;
