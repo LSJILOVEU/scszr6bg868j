@@ -278,7 +278,7 @@ filter = FullyQualifiedName~Ml6
 expect = WarCore.Tests.Ml6ConstructorTests.DigestFollowsEveryInput
 note = flat height left out
 original:
-|             if (Ground.Ground == null) hash.Add(flatGroundRaw);
+|             hash.Add(flatGroundRaw);
 replacement:
 
 [ml6-29-digest-flat-always]
