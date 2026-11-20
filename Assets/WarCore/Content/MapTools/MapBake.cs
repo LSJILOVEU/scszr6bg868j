@@ -223,9 +223,10 @@ namespace WarCore.Content.MapTools
             for (int i = 0; i < points.Length; i++)
             {
                 MapPoint p = d.Points[i];
-                int spawnLayer = LayerOf(p.SpawnPlate);
-                points[i] = new ControlPointDef(p.Id, Ground(p.At), SimFix.Ratio(p.RadiusMm, 1000), p.InitialOwner,
-                    p.Spawn.HasValue, p.Spawn.HasValue ? On(spawnLayer, p.Spawn.Value, Name("spawn", (ulong)p.Id)) : default, spawnLayer);
+                int spawnLayer = LayerOf(p.SpawnPlate), layer = LayerOf(p.Plate);
+                // ML-9b: a centre with a plate id stands on that plate's top (a solid cell), on its layer.
+                points[i] = new ControlPointDef(p.Id, On(layer, p.At, Name("point", (ulong)p.Id)), SimFix.Ratio(p.RadiusMm, 1000), p.InitialOwner,
+                    p.Spawn.HasValue, p.Spawn.HasValue ? On(spawnLayer, p.Spawn.Value, Name("spawn", (ulong)p.Id)) : default, spawnLayer, layer);
             }
             var bases = new SpawnAnchor[d.Bases.Count];
             for (int i = 0; i < bases.Length; i++)

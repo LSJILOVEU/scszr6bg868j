@@ -25,9 +25,13 @@ namespace WarCore.Battle
         private readonly ComponentType<Combatant> combatants;
         private StableId guarded;
         private long guardEnd;
+        private readonly IUnitLayers layers;
 
-        public RespawnSystem(Simulation sim, CombatSystem combat, MatchPack pack, CaptureSystem capture, IUnitDeployer deployer, IControlTarget controlled)
+        // layers: on a map with floor plates (ML-9b) an enemy contests a point only on the point's layer; null keeps the old rule.
+        public RespawnSystem(Simulation sim, CombatSystem combat, MatchPack pack, CaptureSystem capture, IUnitDeployer deployer, IControlTarget controlled,
+            IUnitLayers layers = null)
         {
+            this.layers = layers;
             this.sim = sim; this.combat = combat; this.pack = pack; this.capture = capture; this.deployer = deployer; this.controlled = controlled;
             stage = new EntityStage(combat.Entities); positions = combat.Entities.Resolve<Position>(); combatants = combat.Entities.Resolve<Combatant>();
         }
@@ -76,13 +80,14 @@ namespace WarCore.Battle
         }
 
         // Contested: a living unit of the other team with a position stands inside the point's capture circle (centre and radius,
-        // horizontal only, boundary included), counted like CaptureSystem counts units. Read before this tick's movement.
+        // horizontal only, boundary included; ML-9b: with layers, on the point's layer too), counted like CaptureSystem counts units.
+        // Read before this tick's movement.
         // PointState.Capturing is not used: under InterruptMode.Pause it outlives the enemy that set it.
         private bool Contested(int team, in ControlPointDef point)
         {
             foreach (EntityId entity in stage.Capture())
                 if (combat.Entities.TryGet(combatants, entity, out Combatant unit) && unit.Team == 3 - team
-                    && combat.Entities.TryGet(positions, entity, out Position at) && !combat.IsDead(entity) && CaptureSystem.Inside(at.Value, point))
+                    && combat.Entities.TryGet(positions, entity, out Position at) && !combat.IsDead(entity) && CaptureSystem.Inside(layers, entity, at.Value, point))
                     return true;
             return false;
         }

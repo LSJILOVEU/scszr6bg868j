@@ -94,10 +94,13 @@ namespace WarCore.Content.MapTools
         public MapSrc Src { get; }
         // The plate id the spawn stands on (version 2; only with a spawn); null = the ground.
         public ulong? SpawnPlate { get; }
+        // The plate id the centre stands on (version 2, ML-9b); null = the ground.
+        public ulong? Plate { get; }
         public MapPoint(int id, MapMm at, int radiusMm, int initialOwner, MapMm? spawn = null, int? owner = null, MapSrc src = null,
-            ulong? spawnPlate = null)
+            ulong? spawnPlate = null, ulong? plate = null)
         {
             Id = id; At = at; RadiusMm = radiusMm; InitialOwner = initialOwner; Spawn = spawn; Owner = owner; Src = src; SpawnPlate = spawnPlate;
+            Plate = plate;
         }
     }
 
@@ -301,7 +304,7 @@ namespace WarCore.Content.MapTools
                 foreach (MapSrc row in Removed)
                     if (IsVersion2Kind(row.Kind)) return true;
                 foreach (MapPoint point in Points)
-                    if (point.SpawnPlate.HasValue) return true;
+                    if (point.SpawnPlate.HasValue || point.Plate.HasValue) return true;
                 foreach (MapBase anchor in Bases)
                     if (anchor.Plate.HasValue) return true;
                 foreach (MapUnit unit in Units)

@@ -69,6 +69,8 @@ namespace WarCore.Presentation
             ControlPointDef[] points = match.Points.ToArray();
             foreach (ControlPointDef point in points)
                 if (point.HasSpawn) yield return ("spawn of point " + point.Id, point.SpawnLayer, point.Spawn);
+            // ML-9b: a point's centre on a plate.
+            foreach (ControlPointDef point in points) yield return ("centre of point " + point.Id, point.Layer, point.Center);
             SpawnAnchor[] bases = match.Bases.ToArray();
             for (int i = 0; i < bases.Length; i++) yield return ("base " + i, bases[i].Layer, bases[i].Point);
         }

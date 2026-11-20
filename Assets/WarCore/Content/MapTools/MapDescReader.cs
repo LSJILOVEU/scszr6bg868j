@@ -96,7 +96,7 @@ namespace WarCore.Content.MapTools
         }
 
         // The bare-tree form of MapDesc.NeedsVersion2: a wall "baseRaw"; non-empty "plates" or "cutouts"; more than 64 owners;
-        // a stamps or removed row of kind "plate" or "cutout"; a point "spawnPlate", a base or unit "plate"; next.plate or
+        // a stamps or removed row of kind "plate" or "cutout"; a point "spawnPlate" or "plate", a base or unit "plate"; next.plate or
         // next.cutout other than 1.
         private static bool UsesVersion2(JsonNode root)
         {
@@ -108,7 +108,7 @@ namespace WarCore.Content.MapTools
             JsonNode owners = root.Find("owners");
             if (owners != null && owners.Kind == JsonKind.Array && owners.Items.Count > MapDesc.MaxOwnersVersion1) return true;
             if (HasVersion2Kind(root.Find("stamps")) || HasVersion2Kind(root.Find("removed"))) return true;
-            if (HasKey(root.Find("points"), "spawnPlate") || HasKey(root.Find("bases"), "plate") || HasKey(root.Find("units"), "plate")) return true;
+            if (HasKey(root.Find("points"), "spawnPlate") || HasKey(root.Find("points"), "plate") || HasKey(root.Find("bases"), "plate") || HasKey(root.Find("units"), "plate")) return true;
             JsonNode next = root.Find("next");
             if (next == null || next.Kind != JsonKind.Object) return false;
             return NotOne(next.Find("plate")) || NotOne(next.Find("cutout"));
@@ -387,7 +387,7 @@ namespace WarCore.Content.MapTools
                 JsonNode e = pointsNode.Items[i];
                 Enter("point", e, "id", false);
                 Item(e, JsonKind.Object);
-                if (Version2) Keys(e, "id", "at", "radiusMm", "initialOwner", "spawn", "spawnPlate", "owner", "src");
+                if (Version2) Keys(e, "id", "at", "radiusMm", "initialOwner", "spawn", "spawnPlate", "plate", "owner", "src");
                 else Keys(e, "id", "at", "radiusMm", "initialOwner", "spawn", "owner", "src");
                 int pointId = Int(Req(e, "id", JsonKind.Number), 1, int.MaxValue, IdCode);
                 MapMm at = MmPair(Req(e, "at", JsonKind.Array));
@@ -395,7 +395,7 @@ namespace WarCore.Content.MapTools
                 int initialOwner = Int(Req(e, "initialOwner", JsonKind.Number), 0, 2, Team);
                 JsonNode spawnNode = Opt(e, "spawn", JsonKind.Array);
                 MapMm? spawn = spawnNode == null ? (MapMm?)null : MmPair(spawnNode);
-                points[i] = new MapPoint(pointId, at, radius, initialOwner, spawn, Owner(e), OptSrc(e), PlateRef(e, "spawnPlate"));
+                points[i] = new MapPoint(pointId, at, radius, initialOwner, spawn, Owner(e), OptSrc(e), PlateRef(e, "spawnPlate"), PlateRef(e, "plate"));
                 Leave();
             }
 

@@ -8,6 +8,7 @@ namespace WarCore.Battle
     // L * k / 1000, where L is the distance the wrapped selector would use. The factor of the target's cell counts, not the
     // shooter's; a point outside the grid has no cover. Otherwise the choice is NearestVisibleEnemy's: nearest, ties to the
     // lower StableId, visible only. Wraps NearestVisibleEnemy or SightLimited(NearestVisibleEnemy, s) and nothing else.
+    // ML-9b: with layers (a map with floor plates), a target standing on a plate (layer above 0) has no ground cover (1000).
     public sealed class ConcealedSight : ITargetSelector
     {
         private const ulong NearestKey = 0x4E45415245535401UL;
@@ -15,10 +16,13 @@ namespace WarCore.Battle
         private readonly short[] conceal;
         private readonly bool limited;
         private readonly SimFix sight;
+        private readonly IUnitLayers layers;
         public ulong PolicyKey { get; }
 
-        public ConcealedSight(ITargetSelector inner, NavGrid grid, short[] concealMilli)
+        // The key does not change with layers: the behaviour differs only on plate maps, which their content keys tell apart.
+        public ConcealedSight(ITargetSelector inner, NavGrid grid, short[] concealMilli, IUnitLayers layers = null)
         {
+            this.layers = layers;
             if (inner == null) throw new ArgumentNullException(nameof(inner));
             this.grid = grid ?? throw new ArgumentNullException(nameof(grid));
             if (concealMilli == null) throw new ArgumentNullException(nameof(concealMilli));
@@ -55,7 +59,7 @@ namespace WarCore.Battle
                 EntityId candidate = hit.Entity;
                 if (!world.IsEnemy(shooter, candidate)) continue;
                 SimVec3 at = world.Point(candidate);
-                int k = grid.TryCell(at, out int key) ? conceal[key] : 1000;
+                int k = layers != null && layers.LayerOf(candidate) != 0 ? 1000 : grid.TryCell(at, out int key) ? conceal[key] : 1000;
                 SimWide cap = new SimVec3(SimFix.FromRaw(Scaled(limit.Raw, k)), default, default).LengthSquared;
                 SimWide distance = world.SpanSquared(world.Point(shooter), at);
                 StableId id = world.Entities.StableOf(candidate);

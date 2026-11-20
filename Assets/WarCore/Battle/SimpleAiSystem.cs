@@ -50,7 +50,7 @@ namespace WarCore.Battle
         public SimpleAiSystem(CombatSystem combat, CombatPack weapons, MatchPack pack, CaptureSystem capture, IMoveOrders moves,
             IControlTarget controlled = null, FailedSlotMemory memory = null, TargetMemory contacts = null,
             TargetSearch search = null, TargetSuppress suppress = null, int meleeChaseRange = 0,
-            bool fairDecisions = false, ulong decisionSeed = 0, AiParts parts = null, Pressure pressure = null)
+            bool fairDecisions = false, ulong decisionSeed = 0, AiParts parts = null, Pressure pressure = null, ISlotFloor slotFloor = null)
         {
             this.combat = combat; this.weapons = weapons; this.pack = pack; this.capture = capture; this.moves = moves;
             this.controlled = controlled; this.memory = memory; this.contacts = contacts; this.search = search; this.suppress = suppress;
@@ -58,7 +58,8 @@ namespace WarCore.Battle
             this.meleeChaseRange = SimFix.FromInt(meleeChaseRange);
             this.fairDecisions = fairDecisions; seedSalt = AiParts.Mix(decisionSeed); policyDigest = pack.PolicyDigest;
             parts = parts ?? new AiParts();
-            slots = new GuardSlots(pack.Points, parts.SlotSpacingRaw, parts.SlotRingRaw);
+            // ML-9b: the plates' floor for points on a plate (their slots are not read by this AI; ML-11).
+            slots = new GuardSlots(pack.Points, parts.SlotSpacingRaw, parts.SlotRingRaw, slotFloor);
             if (fairDecisions)
             {
                 intents = new Intent[combat.Entities.Capacity]; winners = new int[slots.Total];

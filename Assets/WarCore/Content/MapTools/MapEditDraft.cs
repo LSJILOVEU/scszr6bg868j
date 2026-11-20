@@ -36,7 +36,7 @@ namespace WarCore.Content.MapTools
 
         internal static readonly MapEditKind<MapPoint> Point = new MapEditKind<MapPoint>("point", 1, int.MaxValue,
             p => (ulong)p.Id, p => p.Owner, p => p.Src,
-            (p, id, owner, src) => new MapPoint((int)id, p.At, p.RadiusMm, p.InitialOwner, p.Spawn, owner, src, p.SpawnPlate),
+            (p, id, owner, src) => new MapPoint((int)id, p.At, p.RadiusMm, p.InitialOwner, p.Spawn, owner, src, p.SpawnPlate, p.Plate),
             (p, origin) => MmCell(p.At, origin),
             (p, d) => OnMap(p.At, d) && (!p.Spawn.HasValue || OnMap(p.Spawn.Value, d)));
 

@@ -137,7 +137,7 @@ namespace WarCore.Content.MapTools
             root.Add("points", Many(d.Points, p => new Obj()
                 .Add("id", Num(p.Id)).Add("at", Pair(p.At.X, p.At.Z)).Add("radiusMm", Num(p.RadiusMm))
                 .Add("initialOwner", Num(p.InitialOwner)).Add("spawn", p.Spawn.HasValue ? Pair(p.Spawn.Value.X, p.Spawn.Value.Z) : null)
-                .Add("spawnPlate", OptNum(p.SpawnPlate)).Add("owner", OptNum(p.Owner)).Add("src", Src(p.Src))));
+                .Add("spawnPlate", OptNum(p.SpawnPlate)).Add("plate", OptNum(p.Plate)).Add("owner", OptNum(p.Owner)).Add("src", Src(p.Src))));
             root.Add("bases", Many(d.Bases, b => new Obj()
                 .Add("id", Num(b.Id)).Add("team", Num(b.Team)).Add("at", Pair(b.At.X, b.At.Z))
                 .Add("plate", OptNum(b.Plate)).Add("owner", OptNum(b.Owner)).Add("src", Src(b.Src))));

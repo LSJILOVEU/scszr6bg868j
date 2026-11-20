@@ -74,6 +74,7 @@ namespace WarCore.Content.MapTools
                     if (!point.Spawn.HasValue) throw Fail(PointCode, e.Find("spawnPlate").Line);
                     PlateKnown(plateIds, point.SpawnPlate.Value, e.Find("spawnPlate"));
                 }
+                if (point.Plate.HasValue) PlateKnown(plateIds, point.Plate.Value, e.Find("plate"));
                 Tail(d, e, point.Owner, point.Src, "point");
             }
 

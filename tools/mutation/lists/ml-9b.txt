@@ -1,0 +1,412 @@
+# ML-9b: a point's centre on a floor plate (description key, bake, gate, match data, world build); capture, respawn and
+# deployment by layer; guard slots by plate; no ground cover on a plate; slot-zone spacing by layer. Filter: ML-9b tests.
+# Not listed: the reader's own copy of the key (PlateRef(e, "plate")) is the round trip itself; PlateLayers.TryFloor's
+# walkable flag is the deployment's (ML-7b) and not read by any ML-9b rule but the slots, where the floor is faked.
+[ml9b-desc-never-writes]
+file = Assets/WarCore/Content/MapTools/MapDescJson.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bDescBakeTests.ThePlateKeyRoundTrips
+note = the key is never written
+original:
+| .Add("plate", OptNum(p.Plate)).Add("owner", OptNum(p.Owner))
+replacement:
+| .Add("plate", OptNum((ulong?)null)).Add("owner", OptNum(p.Owner))
+
+[ml9b-desc-always-writes]
+file = Assets/WarCore/Content/MapTools/MapDescJson.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bDescBakeTests.ThePlateKeyRoundTrips
+note = the key is written without an id
+original:
+| .Add("plate", OptNum(p.Plate)).Add("owner", OptNum(p.Owner))
+replacement:
+| .Add("plate", OptNum(p.Plate ?? 1UL)).Add("owner", OptNum(p.Owner))
+
+[ml9b-desc-model-version]
+file = Assets/WarCore/Content/MapTools/MapDesc.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bDescBakeTests.TheKeyAloneNeedsVersionTwo
+note = the model's version ignores the point's plate
+original:
+| if (point.SpawnPlate.HasValue || point.Plate.HasValue) return true;
+replacement:
+| if (point.SpawnPlate.HasValue) return true;
+
+[ml9b-desc-tree-version]
+file = Assets/WarCore/Content/MapTools/MapDescReader.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bDescBakeTests.TheKeyAloneNeedsVersionTwo
+note = the bare tree's version ignores the point's plate
+original:
+| || HasKey(root.Find("points"), "plate") ||
+replacement:
+| ||
+
+[ml9b-desc-unknown-id]
+file = Assets/WarCore/Content/MapTools/MapDescCross.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bDescBakeTests.AnUnknownPlateIsRefused
+note = an unknown plate id passes
+original:
+| if (point.Plate.HasValue) PlateKnown(plateIds, point.Plate.Value, e.Find("plate"));
+replacement:
+|
+
+[ml9b-editor-drops]
+file = Assets/WarCore/Content/MapTools/MapEditDraft.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bDescBakeTests.TheEditorKeepsThePlate
+note = the editor's copy drops the plate
+original:
+| owner, src, p.SpawnPlate, p.Plate),
+replacement:
+| owner, src, p.SpawnPlate, null),
+
+[ml9b-bake-index]
+file = Assets/WarCore/Content/MapTools/MapBake.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bDescBakeTests.TheCentreBakesOntoThePlate
+note = the centre's layer is the table index, not index + 1
+original:
+| layer = LayerOf(p.Plate);
+replacement:
+| layer = LayerOf(p.Plate) - (p.Plate.HasValue ? 1 : 0);
+
+[ml9b-bake-listed-order]
+file = Assets/WarCore/Content/MapTools/MapBake.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bDescBakeTests.TheCentreBakesOntoThePlate
+note = the centre's layer follows the description's order
+original:
+| layer = LayerOf(p.Plate);
+replacement:
+| layer = p.Plate.HasValue ? d.Plates.Select((q, k) => (q, k)).First(e => e.q.Id == p.Plate.Value).k + 1 : 0;
+
+[ml9b-bake-centre-on-ground]
+file = Assets/WarCore/Content/MapTools/MapBake.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bDescBakeTests.TheCentreBakesOntoThePlate
+expect = WarCore.Tests.Ml9bDescBakeTests.ACentreOffASolidCellIsRefused
+note = the centre stays on the ground, unchecked
+original:
+| points[i] = new ControlPointDef(p.Id, On(layer, p.At, Name("point", (ulong)p.Id)),
+replacement:
+| points[i] = new ControlPointDef(p.Id, Ground(p.At),
+
+[ml9b-bake-centre-unchecked]
+file = Assets/WarCore/Content/MapTools/MapBake.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bDescBakeTests.ACentreOffASolidCellIsRefused
+note = the centre takes the plate's height without the solid-cell check
+original:
+| points[i] = new ControlPointDef(p.Id, On(layer, p.At, Name("point", (ulong)p.Id)),
+replacement:
+| points[i] = new ControlPointDef(p.Id, layer == 0 ? Ground(p.At) : new SimVec3(MapCells.Mm(p.At.X), SimFix.FromInt(3), MapCells.Mm(p.At.Z)),
+
+[ml9b-bake-layer-dropped]
+file = Assets/WarCore/Content/MapTools/MapBake.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bDescBakeTests.TheCentreBakesOntoThePlate
+note = the centre's layer is not handed on
+original:
+| : default, spawnLayer, layer);
+replacement:
+| : default, spawnLayer);
+
+[ml9b-pack-upper]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bMatchTests.CentreLayersAreChecked
+note = layer 4096 is refused
+original:
+| if (layer < 0 || layer > MatchPack.MaxLayer) throw new ArgumentOutOfRangeException(nameof(layer));
+|             Layer = layer;
+replacement:
+| if (layer < 0 || layer >= MatchPack.MaxLayer) throw new ArgumentOutOfRangeException(nameof(layer));
+|             Layer = layer;
+
+[ml9b-pack-lower]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bMatchTests.CentreLayersAreChecked
+note = a negative layer passes
+original:
+| if (layer < 0 || layer > MatchPack.MaxLayer) throw new ArgumentOutOfRangeException(nameof(layer));
+|             Layer = layer;
+replacement:
+| if (layer > MatchPack.MaxLayer) throw new ArgumentOutOfRangeException(nameof(layer));
+|             Layer = layer;
+
+[ml9b-digest-always]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bMatchTests.OnlyCentreLayersChangeTheDigest
+note = the centre layers are always hashed
+original:
+| if (HasCenterLayers())
+replacement:
+| if (true)
+
+[ml9b-digest-never]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bMatchTests.OnlyCentreLayersChangeTheDigest
+note = the centre layers are never hashed
+original:
+| if (HasCenterLayers())
+replacement:
+| if (false)
+
+[ml9b-digest-skips-last]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bMatchTests.OnlyCentreLayersChangeTheDigest
+note = the last point's layer is left out
+original:
+| foreach (var point in this.points) hash.Add(point.Layer);
+replacement:
+| for (int k = 0; k < this.points.Length - 1; k++) hash.Add(this.points[k].Layer);
+
+[ml9b-capture-any-layer]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bMatchTests.OnlyTheSameLayerCaptures
+note = the layer is not compared
+original:
+| => layer == def.Layer && Inside(point, def);
+replacement:
+| => Inside(point, def);
+
+[ml9b-capture-any-plate]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bMatchTests.OnlyTheSameLayerCaptures
+note = any plate layer counts for a point on a plate
+original:
+| => layer == def.Layer && Inside(point, def);
+replacement:
+| => (layer != 0) == (def.Layer != 0) && Inside(point, def);
+
+[ml9b-capture-null-same-layer]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bMatchTests.TheLayerRuleNeedsLayers
+note = without layers every unit counts as layer 0
+original:
+| layers == null ? Inside(point, def) :
+replacement:
+| layers == null ? Inside(point, 0, def) :
+
+[ml9b-capture-not-wired]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bMatchTests.OnlyTheSameLayerCaptures
+note = the bridge gives capture no layers
+original:
+| var capture = new CaptureSystem(combat, recipe.Match, layers);
+replacement:
+| var capture = new CaptureSystem(combat, recipe.Match, null);
+
+[ml9b-layers-always-ground]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateLayers.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bMatchTests.OnlyTheSameLayerCaptures
+note = every unit reads as layer 0
+original:
+| ? state.Layer : 0;
+replacement:
+| ? 0 : 0;
+
+[ml9b-respawn-any-layer]
+file = Assets/WarCore/Battle/RespawnSystem.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bMatchTests.AnEnemyUnderTheFloorDoesNotContest
+note = an enemy under the floor contests the point
+original:
+| CaptureSystem.Inside(layers, entity, at.Value, point))
+replacement:
+| CaptureSystem.Inside(at.Value, point))
+
+[ml9b-respawn-not-wired]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bMatchTests.AnEnemyUnderTheFloorDoesNotContest
+note = the bridge gives respawn no layers
+original:
+| capture, adapter, a.Controlled, layers);
+replacement:
+| capture, adapter, a.Controlled, null);
+
+[ml9b-slots-unfiltered]
+file = Assets/WarCore/Battle/GuardSlots.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bSlotTests.PlateSlotsStandOnTheFloor
+note = every lattice slot is kept
+original:
+| if (floor.TryFloor(layer, slot.X, slot.Z, out SimFix y)) kept.Add(new SimVec3(slot.X, y, slot.Z));
+replacement:
+| { floor.TryFloor(layer, slot.X, slot.Z, out SimFix y); kept.Add(new SimVec3(slot.X, y, slot.Z)); }
+
+[ml9b-slots-centre-height]
+file = Assets/WarCore/Battle/GuardSlots.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bSlotTests.PlateSlotsStandOnTheFloor
+note = a plate slot keeps the centre's height
+original:
+| if (floor.TryFloor(layer, slot.X, slot.Z, out SimFix y)) kept.Add(new SimVec3(slot.X, y, slot.Z));
+replacement:
+| if (floor.TryFloor(layer, slot.X, slot.Z, out SimFix y)) kept.Add(slot);
+
+[ml9b-slots-old-ports-see-plates]
+file = Assets/WarCore/Battle/GuardSlots.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bSlotTests.PlateSlotsStandOnTheFloor
+expect = WarCore.Tests.Ml9bSlotTests.TheOldPortsSeeOnlyTheGround
+expect = WarCore.Tests.Ml9bMatchTests.TheAiDoesNotLeadSoldiersOffTheFloor
+note = the ports with the old signatures see plate slots
+original:
+| ground.Add(p, 0, Array.Empty<SimVec3>(), points[p].Center, reachSquared);
+|                 plates.Add(p, layer, kept.ToArray(), points[p].Center, reachSquared);
+replacement:
+| ground.Add(p, 0, kept.ToArray(), points[p].Center, reachSquared);
+|                 plates.Add(p, layer, kept.ToArray(), points[p].Center, reachSquared);
+
+[ml9b-slots-sort-ignores-layer]
+file = Assets/WarCore/Battle/GuardSlots.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bSlotTests.LayersKeepSlotsApart
+note = the sort compares X and Z only
+original:
+| layerA != layerB ? layerA.CompareTo(layerB) : a.X.Raw
+replacement:
+| a.X.Raw
+
+[ml9b-slots-merge-ignores-layer]
+file = Assets/WarCore/Battle/GuardSlots.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bSlotTests.LayersKeepSlotsApart
+note = slots on two layers at one plane position merge
+original:
+| Layers[slot] == layer && Positions[slot].X.Raw == b.X.Raw
+replacement:
+| Positions[slot].X.Raw == b.X.Raw
+
+[ml9b-slots-nearest-any-layer]
+file = Assets/WarCore/Battle/GuardSlots.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bSlotTests.TheOldPortsSeeOnlyTheGround
+note = Nearest does not filter the layer
+original:
+| if (Canonical[s] != s || Layers[s] != layer) continue;
+replacement:
+| if (Canonical[s] != s) continue;
+
+[ml9b-slots-no-floor-passes]
+file = Assets/WarCore/Battle/GuardSlots.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bSlotTests.APlatePointNeedsTheFloor
+note = a plate point without the floor is not refused
+original:
+| if (floor == null) throw new ArgumentException("Guard slots of a point on a floor plate need the plates' floor.", nameof(floor));
+replacement:
+|
+
+[ml9b-slots-not-wired]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bMatchTests.TheAiDoesNotLeadSoldiersOffTheFloor
+note = the bridge gives the AI's slots no floor
+original:
+| terrain == null), pressure, layers), SimSystemPhase.Requests);
+replacement:
+| terrain == null), pressure, null), SimSystemPhase.Requests);
+
+[ml9b-cover-on-plate]
+file = Assets/WarCore/Battle/ConcealedSight.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bConcealTests.TheFloorHasNoGroundCover
+note = a unit on a plate keeps the ground cell's cover
+original:
+| int k = layers != null && layers.LayerOf(candidate) != 0 ? 1000 : grid.TryCell
+replacement:
+| int k = grid.TryCell
+
+[ml9b-cover-not-wired]
+file = Assets/WarCore/Presentation/Bridge/Features/CombatFeature.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bConcealTests.TheBridgeHandsTheLayersToCover
+note = the bridge gives cover no layers
+original:
+| new ConcealedSight(pack.Selector, terrain.Nav, cells, PlateLayers.Of(a))
+replacement:
+| new ConcealedSight(pack.Selector, terrain.Nav, cells, null)
+
+[ml9b-zones-across-layers]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bSlotTests.SlotZonesOnOtherLayersAreNotCompared
+note = zones on two layers are compared
+original:
+| if (points[i].Layer != points[j].Layer) continue;
+replacement:
+|
+
+[ml9b-deploy-any-layer]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bMatchTests.DeploymentKeepsItsDistanceOnItsLayer
+note = a deployment keeps its distance from every layer
+original:
+| if (verticals.HasValue && LayerOf(other) != layer) continue;
+replacement:
+|
+
+[ml9b-gate-goal-ground]
+file = Assets/WarCore/Content/MapTools/MapGate.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bDescBakeTests.TheGateWalksUpToTheCentre
+note = the path ends on the ground under the centre
+original:
+| Node(layered, map, point.Plate, point.At, out int goal)
+replacement:
+| Node(layered, map, null, point.At, out int goal)
+
+[ml9b-gate-ground-grid]
+file = Assets/WarCore/Content/MapTools/MapGate.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bDescBakeTests.TheGateWalksUpToTheCentre
+note = a ground base walks the ground grid to a centre on a plate
+original:
+| if (!b.Plate.HasValue && !point.Plate.HasValue) found
+replacement:
+| if (!b.Plate.HasValue) found
+
+[ml9b-gate-no-graph]
+file = Assets/WarCore/Content/MapTools/MapGate.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bDescBakeTests.TheGateWalksUpToTheCentre
+note = a description whose only plate id is a centre's builds no layered graph
+original:
+| p => p.SpawnPlate.HasValue || p.Plate.HasValue);
+replacement:
+| p => p.SpawnPlate.HasValue);
+
+[ml9b-gate-centre-ground]
+file = Assets/WarCore/Content/MapTools/MapGate.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bDescBakeTests.TheGateNeedsAWalkableCentre
+note = a centre on a plate is checked on the ground
+original:
+| if (point.Plate.HasValue ? OnPlate(layered, map, point.Plate.Value, point.At, out _) : Standable(nav, point.At))
+replacement:
+| if (Standable(nav, point.At))
+
+[ml9b-world-centre-unchecked]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateFeature.cs
+filter = FullyQualifiedName~Ml9b
+expect = WarCore.Tests.Ml9bMatchTests.TheWorldBuildChecksTheCentre
+note = the world build does not check the centre
+original:
+| foreach (ControlPointDef point in points) yield return ("centre of point " + point.Id, point.Layer, point.Center);
+replacement:
+|

@@ -27,9 +27,11 @@ namespace WarCore.Battle
         private readonly int[] counts;
         private readonly CaptureRecord[] changes;
         private int changeCount;
-        public CaptureSystem(CombatSystem combat, MatchPack pack)
+        private readonly IUnitLayers layers;
+        // layers: on a map with floor plates (ML-9b), a unit counts in a circle only on the point's layer; null keeps the old rule.
+        public CaptureSystem(CombatSystem combat, MatchPack pack, IUnitLayers layers = null)
         {
-            this.combat = combat; this.pack = pack; stage = new EntityStage(combat.Entities);
+            this.combat = combat; this.pack = pack; this.layers = layers; stage = new EntityStage(combat.Entities);
             positions = combat.Entities.Resolve<Position>(); combatants = combat.Entities.Resolve<Combatant>();
             states = new PointState[pack.Points.Length]; counts = new int[states.Length * 2]; changes = new CaptureRecord[states.Length];
             for (int i = 0; i < states.Length; i++) states[i] = new PointState(pack.Points[i].InitialOwner, 0, 0);
@@ -41,6 +43,11 @@ namespace WarCore.Battle
         public ReadOnlySpan<CaptureRecord> Changes => changes.AsSpan(0, changeCount);
         public static bool Inside(SimVec3 point, in ControlPointDef def) =>
             CombatSystem.Horizontal(point - def.Center).LengthSquared <= new SimVec3(def.Radius, default, default).LengthSquared;
+        // ML-9b (K2): in the circle on the plane and on the point's own layer.
+        public static bool Inside(SimVec3 point, int layer, in ControlPointDef def) => layer == def.Layer && Inside(point, def);
+        // A unit in the circle: with layers, on the point's layer too; without, the plane alone.
+        public static bool Inside(IUnitLayers layers, EntityId unit, SimVec3 point, in ControlPointDef def) =>
+            layers == null ? Inside(point, def) : Inside(point, layers.LayerOf(unit), def);
         public void Step(SimContext c)
         {
             changeCount = 0; Array.Clear(counts, 0, counts.Length);
@@ -48,7 +55,7 @@ namespace WarCore.Battle
             {
                 if (!combat.Entities.TryGet(combatants, unit, out Combatant value) || value.Team < 1 || value.Team > 2
                     || !combat.Entities.TryGet(positions, unit, out Position position) || combat.IsDead(unit)) continue;
-                for (int i = 0; i < states.Length; i++) if (Inside(position.Value, pack.Points[i])) counts[2 * i + value.Team - 1]++;
+                for (int i = 0; i < states.Length; i++) if (Inside(layers, unit, position.Value, pack.Points[i])) counts[2 * i + value.Team - 1]++;
             }
             for (int i = 0; i < states.Length; i++)
             {
