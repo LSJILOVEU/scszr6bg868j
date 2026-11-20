@@ -156,7 +156,8 @@ namespace WarCore.Tests
             if (changes >= 1) counts.ViaSeam++;
             if (changes >= 2) counts.TwoChanges++;
             Assert.That(finder.FindWithin(start, target, dist[target]), Is.EqualTo(GridPathStatus.Found));
-            Assert.That((Path(finder), finder.TotalCostWide), Is.EqualTo((path, dist[target])), "within the exact limit");
+            Assert.That(Path(finder), Is.EqualTo(path), "within the exact limit");
+            Assert.That(finder.TotalCostWide, Is.EqualTo(dist[target]), "within the exact limit");
             if (dist[target] > 0) Assert.That(finder.FindWithin(start, target, dist[target] - 1), Is.EqualTo(GridPathStatus.Unreachable));
         }
     }
