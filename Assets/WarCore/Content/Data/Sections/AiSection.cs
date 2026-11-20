@@ -114,6 +114,10 @@ namespace WarCore.Content
         internal const int MaxBoundMinRangeMm = 512000; // PLACEHOLDER: maximum map side length.
         internal const int MaxPressureRadiusMm = 512000; // PLACEHOLDER: maximum map side length.
         internal const int MinCoverRadiusMm = 1000, MaxCoverRadiusMm = 30000, MinCoverStepMm = 250, MaxCoverStepMm = 5000, MinCoverDepthMm = 250, MaxCoverDepthMm = 10000; // PLACEHOLDER bounds.
+        // What counts as a teammate brought down (pressureFall, optional, only with the ten fields): "hit" (the default) any
+        // enemy shot with damage, right for rules where a hit either kills or does nothing; "kill" only a unit whose damage
+        // this tick reaches its health, for rules where hits wound first.
+        internal const string FallOnHit = "hit", FallOnKill = "kill";
         // The pressure system's fields: written all ten or none.
         internal static readonly string[] PressureFields =
         {
@@ -249,8 +253,12 @@ namespace WarCore.Content
                     int recoverAt = r.Int("pressureRecoverAt", 0, max), pinnedAt = r.Int("pressurePinnedAt", 1, max);
                     int courage = r.Int("pressureSpreadPermille", 0, 1000), breakShare = r.Int("pressureBreakSharePermille", 0, 1000);
                     if (recoverAt >= brokenAt) throw r.Bad(r.FieldOf("pressureRecoverAt"), "must be below pressureBrokenAt (" + brokenAt + ")");
-                    pressure = new WarCore.Battle.PressureRules(deathRadius, deathShock, nearRadius, nearShock, decay, brokenAt, recoverAt, pinnedAt, courage, breakShare);
+                    string fall = r.StrOrNull("pressureFall", out ContentField fallField) ?? FallOnHit;
+                    if (fall != FallOnHit && fall != FallOnKill) throw r.Bad(fallField, "unknown value '" + fall + "', allowed: " + FallOnHit + ", " + FallOnKill);
+                    pressure = new WarCore.Battle.PressureRules(deathRadius, deathShock, nearRadius, nearShock, decay, brokenAt, recoverAt, pinnedAt, courage, breakShare,
+                        fall == FallOnKill);
                 }
+                else if (r.Has("pressureFall")) throw r.Bad(r.FieldOf("pressureFall"), "needs the pressure fields (pressureDeathRadiusMm ...)");
                 // Any of the three written makes all three required. Only a pressed unit takes cover, so the pressure fields must be there.
                 if (r.Has("coverRadiusMm") || r.Has("coverStepMm") || r.Has("coverDepthMm"))
                 {
