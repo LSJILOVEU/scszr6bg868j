@@ -7,23 +7,23 @@ using WarCore.Sim;
 
 namespace WarCore.Tests
 {
-    // ANC-2: the ancient cartridge plus one layer (spear, spearman) that lives next to the tests, not in the cartridge folder.
-    // A layer file in Content/Ancient/Data would be listed by the editor catalog and change a locked catalog test.
+    // ANC-2: the ancient cartridge plus one layer (spear, spearman), both in the cartridge folder.
     internal static class Anc2
     {
-        internal const string FieldDirectory = "Assets/WarCore/Tests/MapContent/Ancient/Data";
         internal const string ShippedDirectory = "Assets/WarCore/Content/Ancient/Data";
+        // The spear layer is in the cartridge folder now; the name stays for tests that read the layer file.
+        internal const string FieldDirectory = ShippedDirectory;
 
-        // Reads a layer from the test folder first, then from the shipped cartridge. edit (layer id, text) -> text changes the
-        // text in memory before it is parsed; the files on disk are never touched.
+        // Reads a layer from the cartridge folder. edit (layer id, text) -> text changes the text in memory before it is
+        // parsed; the files on disk are never touched.
         private sealed class Source : IContentSource
         {
-            private readonly IContentSource field = new FileContentSource(FieldDirectory), shipped = new FileContentSource(ShippedDirectory);
+            private readonly IContentSource shipped = new FileContentSource(ShippedDirectory);
             private readonly Func<string, string, string> edit;
             internal Source(Func<string, string, string> edit) { this.edit = edit; }
             public bool TryRead(string layerId, out string text, out string location)
             {
-                if (!field.TryRead(layerId, out text, out location) && !shipped.TryRead(layerId, out text, out location)) return false;
+                if (!shipped.TryRead(layerId, out text, out location)) return false;
                 if (edit != null) text = edit(layerId, text);
                 return true;
             }
