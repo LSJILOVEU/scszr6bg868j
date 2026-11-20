@@ -5,9 +5,8 @@ using WarCore.Sim;
 
 namespace WarCore.Presentation
 {
-    // Floor plates: the layered graph of a map with plates, every unit's vertical state, and layer numbers on the input. On only
-    // for such maps, which the builder still refuses unless the recipe opens the internal preview; units do not walk onto
-    // plates yet.
+    // Floor plates: the layered graph of a map with plates, every unit's vertical state, layer numbers on the input, and the
+    // movers' plate binding. On only for such maps, which the builder still refuses unless the recipe opens the internal preview.
     internal sealed class PlateFeature : WorldFeature
     {
         internal static readonly PlateFeature Instance = new PlateFeature();
@@ -64,6 +63,9 @@ namespace WarCore.Presentation
             a.Sim.Entities.Set(a.Verticals, unit, new VerticalState(spawn.Layer, 0));
         }
 
-        public override void RegisterSystems(WorldAssembly a) => a.Locomotion.BindVertical(a.Verticals);
+        // The plate world moves on the terrain branch: its floors are the ground (height field, or the flat height units spawn at) and
+        // each plate's top field; the layered graph routes and decides every change of layer.
+        public override void RegisterSystems(WorldAssembly a) =>
+            a.Locomotion.BindPlates(a.Verticals, a.Plates.Nav, a.Plates.Tops(), a.Map.FlatHeight, a.Sim.FootAnchoredLayers);
     }
 }

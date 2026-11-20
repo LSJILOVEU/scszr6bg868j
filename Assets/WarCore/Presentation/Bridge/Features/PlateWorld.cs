@@ -21,6 +21,9 @@ namespace WarCore.Presentation
             for (int k = 0; k < tops.Length; k++) tops[k] = map.Plates[k].TopField(map.Min.X, map.Min.Z);
         }
 
+        // A copy of each plate's top field, in baked order (index k = layer k + 1).
+        internal HeightField[] Tops() => (HeightField[])tops.Clone();
+
         // The plate surface under (x, z) on a layer 1..N: false off the map, off the plate, on a cutout cell, or (walkable) on a
         // cell that is not walkable.
         internal bool TryFloor(int layer, SimFix x, SimFix z, bool walkable, out SimFix y)

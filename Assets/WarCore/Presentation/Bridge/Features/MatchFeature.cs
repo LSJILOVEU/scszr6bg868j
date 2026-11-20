@@ -26,7 +26,9 @@ namespace WarCore.Presentation
             WorldRecipe recipe = a.Recipe;
             CombatSystem combat = a.Combat;
             TerrainTables terrain = a.Terrain;
-            AiRules ai = (terrain != null ? recipe.TerrainPack : recipe.AiPack)?.Section<AiRules>();
+            // A map with plates only may run on the terrain branch without a terrain pack; its AI rules then come from the AI pack.
+            bool terrainRules = terrain != null && recipe.TerrainPack != null;
+            AiRules ai = (terrainRules ? recipe.TerrainPack : recipe.AiPack)?.Section<AiRules>();
             var capture = new CaptureSystem(combat, recipe.Match);
             var adapter = new BattleAdapter(sim, a.Locomotion, recipe, new DeployGround(terrain != null ? terrain.Nav : WcMapNavigation.Create(a.Map), terrain, a.GroundRaw), a.GroundRaw, a.Standing,
                 a.Plates != null ? a.Verticals : (ComponentType<VerticalState>?)null);
@@ -82,8 +84,8 @@ namespace WarCore.Presentation
                 pressure = new Pressure(combat, ai.Pressure.Value, ai.CoverRadiusMm > 0);
                 sim.RegisterGameplay("battle.ai-pressure", pressure, SimSystemPhase.Queries);
             }
-            int meleeChaseRange = terrain != null ? recipe.TerrainPack.Section<AiRules>().MeleeChaseRange : 0;
-            if (terrain == null && ai != null) meleeChaseRange = ai.MeleeChaseRange;
+            int meleeChaseRange = terrainRules ? recipe.TerrainPack.Section<AiRules>().MeleeChaseRange : 0;
+            if (!terrainRules && ai != null) meleeChaseRange = ai.MeleeChaseRange;
             bool fair = recipe.TerrainPack != null && recipe.TerrainPack.Section<AiRules>().FairDecisions;
             sim.RegisterGameplay("battle.ai", new SimpleAiSystem(combat, recipe.Combat, recipe.Match, capture, adapter, a.Controlled, memory, contacts, search, suppress, meleeChaseRange, fair, recipe.Seed, ContentPolicies.Parts(ai, recipe.Match.Points, recipe.Match.ThinkInterval, terrain == null), pressure), SimSystemPhase.Requests);
             sim.RegisterGameplay("battle.capture", capture, SimSystemPhase.Queries);

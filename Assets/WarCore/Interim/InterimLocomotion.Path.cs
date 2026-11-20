@@ -15,10 +15,19 @@ namespace WarCore.Interim
         public bool TryRouteCost(SimVec3 from, SimVec3 to, long limitCost, out long cost)
         {
             cost = 0;
+            if (layered) return LayeredRouteCost(from, to, limitCost, out cost);
             if (pathfinder == null || pathfinder.FindWithin(from, to, limitCost) != GridPathStatus.Found) return false;
             cost = pathfinder.TotalCostWide;
             return true;
         }
+
+        // The route helpers every mover with a unit at hand uses: on a plate world over the layered graph from the unit's layer
+        // to its target layer, otherwise the grid search.
+        private bool TryRoute(EntityId unit, SimVec3 point, SimVec3 target, out SimVec3 waypoint) =>
+            layered ? LayeredWaypoint(unit, point, target, out waypoint) : TryWaypoint(point, target, out waypoint);
+
+        private bool TryCrowdRoute(EntityId unit, SimVec3 point, SimVec3 target, out SimVec3 waypoint) =>
+            layered ? LayeredCrowdWaypoint(unit, point, target, out waypoint) : TryCrowdWaypoint(point, target, out waypoint);
 
         private bool TryWaypoint(SimVec3 point, SimVec3 target, out SimVec3 waypoint)
         {

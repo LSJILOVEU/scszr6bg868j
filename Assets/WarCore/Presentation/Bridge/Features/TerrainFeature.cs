@@ -6,23 +6,26 @@ using WarCore.Sim;
 namespace WarCore.Presentation
 {
     // Terrain: the tables derived from a map with a height field or a surface table, the progress component of movers on it,
-    // and the check that no unit is placed where its footprint would stand on blocked ground. On only for such maps.
+    // and the check that no unit is placed where its footprint would stand on blocked ground. On for such maps and for every map
+    // with floor plates (a plate world always moves on the terrain branch, even over flat ground).
     internal sealed class TerrainFeature : WorldFeature
     {
         internal static readonly TerrainFeature Instance = new TerrainFeature();
 
         public override string OptionId => "world.terrain";
 
-        public override bool IsActive(WorldAssembly a) => a.Map != null && a.Map.HasTerrain;
+        public override bool IsActive(WorldAssembly a) => a.Map != null && (a.Map.HasTerrain || a.Map.Plates.Count > 0);
 
         public override void Prepare(WorldAssembly a)
         {
             // Order matters (the tests pin it): mover kind, then a missing pack, then the derivation.
             if (!a.Path)
                 throw new NotSupportedException("Terrain maps (height field or surface table) need a path or crowd mover.");
-            if (a.Recipe.TerrainPack == null)
+            if (a.Recipe.TerrainPack == null && a.Map.HasTerrain)
                 throw new ArgumentException("A terrain map needs a content pack with terrain rules (WorldRecipe.WithTerrainRules).", "recipe");
-            a.Terrain = TerrainDerivation.Derive(a.Map, a.Recipe.TerrainPack);
+            // A map with plates only (no height field, no surface table) and no pack takes the default rules, as its layered graph does.
+            a.Terrain = a.Recipe.TerrainPack != null ? TerrainDerivation.Derive(a.Map, a.Recipe.TerrainPack)
+                : TerrainDerivation.Derive(a.Map, null, a.Map.ContentId);
             // The terrain digest names the exact (map, rules) pair, so a snapshot cannot be restored under other heights or rules.
             a.ContentKeys.Add(new StableContentKey("terrain.tables", a.Terrain.Digest));
         }
