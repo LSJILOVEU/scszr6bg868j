@@ -44,7 +44,8 @@ namespace WarCore.Tests
         [Test]
         public void Damage_IsAContentPolicy()
         {
-            CombatPack damage = Load("damage").BuildCombat(), rwr = Load("rwr.hit").BuildCombat();
+            CombatPack damage = null, rwr = Load("rwr.hit").BuildCombat();
+            Assert.DoesNotThrow(() => damage = Load("damage").BuildCombat());
             Assert.That(damage.Resolver, Is.TypeOf<DamageResolver>());
             Assert.That(rwr.Resolver, Is.TypeOf<RwrHitResolver>());
             Assert.That(rwr.Resolver.PolicyKey, Is.EqualTo(0x5257524849540001UL));
