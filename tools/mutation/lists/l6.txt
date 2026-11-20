@@ -23,9 +23,8 @@ replacement:
 
 [l6-03-points-winner-swapped]
 file = Assets/WarCore/Battle/MatchRules.cs
-filter = FullyQualifiedName~WarCore.Tests.L6
-expect = WarCore.Tests.L6BaselineTests.L6Baseline_TimeLimitDecidesOnPoints
-expect = WarCore.Tests.L6BaselineTests.L6Baseline_MatchesTheRecording
+filter = FullyQualifiedName~WarCore.Tests.L6|FullyQualifiedName~WarCore.Tests.MatchRuleTests
+expect = WarCore.Tests.MatchRuleTests.TimeLimit_MorePoints_ThenMoreAlive_ElseADraw
 note = the time limit gives the win to the team with fewer points
 original:
 | most = Math.Max(most, points[team - 1]); }

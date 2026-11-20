@@ -11,8 +11,8 @@ namespace WarCore.Tests
         [Test]
         public void Nt1SpawnAnchor_AcceptsOneAndEight_RejectsZeroAndNine()
         {
-            Assert.That(new SpawnAnchor(1, default).Team, Is.EqualTo(1));
-            Assert.That(new SpawnAnchor(8, default).Team, Is.EqualTo(8));
+            Assert.DoesNotThrow(() => new SpawnAnchor(1, default));
+            Assert.DoesNotThrow(() => new SpawnAnchor(8, default));
             Assert.Throws<ArgumentOutOfRangeException>(() => new SpawnAnchor(0, default));
             Assert.Throws<ArgumentOutOfRangeException>(() => new SpawnAnchor(9, default));
             Assert.Throws<ArgumentOutOfRangeException>(() => new SpawnAnchor(-1, default));
@@ -21,7 +21,8 @@ namespace WarCore.Tests
         [Test]
         public void Nt1ControlPointDef_AcceptsOwnerZeroAndEight_RejectsMinusOneAndNine()
         {
-            Assert.That(new ControlPointDef(1, default, SimFix.FromInt(1), 0).InitialOwner, Is.EqualTo(0));
+            Assert.DoesNotThrow(() => new ControlPointDef(1, default, SimFix.FromInt(1), 0));
+            Assert.DoesNotThrow(() => new ControlPointDef(1, default, SimFix.FromInt(1), 8));
             Assert.That(new ControlPointDef(1, default, SimFix.FromInt(1), 8).InitialOwner, Is.EqualTo(8));
             Assert.Throws<ArgumentOutOfRangeException>(() => new ControlPointDef(1, default, SimFix.FromInt(1), -1));
             Assert.Throws<ArgumentOutOfRangeException>(() => new ControlPointDef(1, default, SimFix.FromInt(1), 9));

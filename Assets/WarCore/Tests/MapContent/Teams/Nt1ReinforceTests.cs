@@ -40,7 +40,7 @@ namespace WarCore.Tests
             w.Step(Interval - 1);
             Assert.That(w.Reinforce.Deployed.Length, Is.Zero);
             Assert.That(w.Reinforce.Attempts(3), Is.Zero);
-            w.Step();
+            Assert.DoesNotThrow(() => w.Step(), "three deployments on one tick");
             Assert.That(w.Sim.Clock.Tick, Is.EqualTo(Interval));
             Assert.That(w.Reinforce.Deployed.Length, Is.EqualTo(3));
             for (int t = 1; t <= 3; t++)

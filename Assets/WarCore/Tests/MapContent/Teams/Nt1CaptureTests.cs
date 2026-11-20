@@ -84,15 +84,15 @@ namespace WarCore.Tests
         [Test]
         public void Nt1Capture_FourOneTwoAtOneToOne_FirstTeamCaptures() => Captures(World(new[] { 4, 1, 2 }, num: 1), 1);
 
-        // The second point's counts sit at their own offset: 1, 2, 5 there gives it to team 3, the first point stays neutral.
+        // The second point's counts sit at their own offset: 1, 5, 2 there gives it to team 2, the first point stays neutral.
         [Test]
-        public void Nt1Capture_SecondPoint_ThirdTeamCapturesIt()
+        public void Nt1Capture_SecondPoint_SecondTeamCapturesIt()
         {
-            var w = World(new[] { 1, 2, 5 }, second: true);
+            var w = World(new[] { 1, 5, 2 }, second: true);
             w.Step(Ticks);
             Assert.That((w.Capture.Points[0].Owner, w.Capture.Points[0].Capturing), Is.EqualTo((0, 0)));
-            Assert.That(w.Capture.Points[1].Owner, Is.EqualTo(3));
-            Assert.That((w.Capture.Changes.Length, w.Capture.Changes[0].PointId, w.Capture.Changes[0].NewOwner), Is.EqualTo((1, 8, 3)));
+            Assert.That(w.Capture.Points[1].Owner, Is.EqualTo(2));
+            Assert.That((w.Capture.Changes.Length, w.Capture.Changes[0].PointId, w.Capture.Changes[0].NewOwner), Is.EqualTo((1, 8, 2)));
         }
 
         [Test]
@@ -108,7 +108,8 @@ namespace WarCore.Tests
         public void Nt1Capture_TeamNineUnitsDoNotCount()
         {
             var w = World(new[] { 2, 1, 0 }, teamNine: 5);
-            Captures(w, 1);
+            Assert.DoesNotThrow(() => w.Step(), "team 9 units are skipped");
+            Assert.That((w.Capture.Points[0].Owner, w.Capture.Points[0].Capturing, w.Capture.Points[0].Progress), Is.EqualTo((0, 1, 1)));
         }
     }
 }

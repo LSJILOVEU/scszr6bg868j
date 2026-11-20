@@ -197,7 +197,7 @@ replacement:
 [nt1-capture-write-stride]
 file = Assets/WarCore/Battle/CaptureSystem.cs
 filter = FullyQualifiedName~WarCore.Tests.Nt1
-expect = WarCore.Tests.Nt1CaptureTests.Nt1Capture_SecondPoint_ThirdTeamCapturesIt
+expect = WarCore.Tests.Nt1CaptureTests.Nt1Capture_SecondPoint_SecondTeamCapturesIt
 note = counts are written with a stride of 2
 original:
 | counts[teams * i + value.Team - 1]++;
@@ -207,7 +207,7 @@ replacement:
 [nt1-capture-read-stride]
 file = Assets/WarCore/Battle/CaptureSystem.cs
 filter = FullyQualifiedName~WarCore.Tests.Nt1
-expect = WarCore.Tests.Nt1CaptureTests.Nt1Capture_SecondPoint_ThirdTeamCapturesIt
+expect = WarCore.Tests.Nt1CaptureTests.Nt1Capture_SecondPoint_SecondTeamCapturesIt
 note = counts are read with a stride of 2
 original:
 |                     int count = counts[teams * i + t];
@@ -390,7 +390,7 @@ replacement:
 [nt1-default-three]
 file = Assets/WarCore/Battle/MatchMode.cs
 filter = FullyQualifiedName~WarCore.Tests.Nt1
-expect = WarCore.Tests.Nt1RuleTests.Nt1AllPoints_TwoTeamsReportEveryPoint_HigherTeamWins
+expect = WarCore.Tests.Nt1RuleTests.Nt1DefaultSpanCount_FillsTwoSlotsAndClearsTheRest
 note = a reader without TeamCount reports three teams
 original:
 |         int TeamCount => 2;

@@ -60,10 +60,9 @@ namespace WarCore.Tests
         {
             var w = new M6World(Nt1Worlds.ThreeTeams(alive: 3, reserves: 2, interval: 100000, endless: true));
             Assert.That(w.Match.TeamCount, Is.EqualTo(3));
-            Span<int> alive = stackalloc int[8];
-            alive.Fill(7);
-            w.Match.CountAlive(alive);
-            Assert.That(alive.ToArray(), Is.EqualTo(new[] { 5, 5, 5, 0, 0, 0, 0, 0 }));
+            var counted = new int[8];
+            Assert.DoesNotThrow(() => { Span<int> slots = counted; slots.Fill(7); w.Match.CountAlive(slots); }, "team 9 is skipped");
+            Assert.That(counted, Is.EqualTo(new[] { 5, 5, 5, 0, 0, 0, 0, 0 }));
             w.Match.CountAlive(out int one, out int two);
             Assert.That((one, two), Is.EqualTo((5, 5)));
         }
@@ -78,8 +77,11 @@ namespace WarCore.Tests
             var pack = M6World.Pack(new[] { new ControlPointDef(7, M6World.P(40), SimFix.FromInt(2)) }, bases: bases);
             var w = new M6World(M6World.RecipeOf(units, pack, M6World.Guns(new ZeroResolver())));
             w.Sim.RegisterGameplay("test.death", new M6Damage(w, 5, 2), SimSystemPhase.Queries);
-            w.Step(4);
-            Assert.That(w.Match.Winner, Is.Zero, "teams 1 and 3 stand");
+            for (int tick = 1; tick <= 4; tick++)
+            {
+                w.Step();
+                Assert.That(w.Match.Winner, Is.Zero, "teams 1 and 3 stand, tick " + tick);
+            }
             for (int i = 0; i < 3 && w.Match.Winner == 0; i++) w.Step();
             Assert.That(w.Dead(2), Is.True);
             Assert.That((w.Match.Winner, w.Match.EndReason), Is.EqualTo((1, MatchEndReason.Exhausted)));

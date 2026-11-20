@@ -151,9 +151,9 @@ namespace WarCore.Tests
             IMatchReader two = new TwoTeamFake { AliveOne = 4, AliveTwo = 7 };
             Span<int> alive = stackalloc int[8];
             alive.Fill(9);
+            Assert.That(two.TeamCount, Is.EqualTo(2));
             two.CountAlive(alive);
             Assert.That(alive.ToArray(), Is.EqualTo(new[] { 4, 7, 0, 0, 0, 0, 0, 0 }));
-            Assert.That(two.TeamCount, Is.EqualTo(2));
         }
     }
 }
