@@ -256,12 +256,12 @@ original:
 | for (int w = 0; w < wallCount; w++)
 |             {
 |                 ViewWall wall = map.Walls[w];
-|                 if (cut.Wall(w)
+|                 if (wall.CenterX
 replacement:
 | for (int w = 0; w < 0; w++)
 |             {
 |                 ViewWall wall = map.Walls[w];
-|                 if (cut.Wall(w)
+|                 if (wall.CenterX
 
 [see1-silhouette-no-player]
 file = Assets/WarCore/Presentation/Camera/Silhouettes.cs
