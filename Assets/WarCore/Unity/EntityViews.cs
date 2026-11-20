@@ -25,7 +25,10 @@ namespace WarCore.Unity
         // Combat units colour by team; older demos have no team and keep colouring by squad.
         private static int Colour(ViewEntity entity) => entity.Team != 0 ? entity.Team : entity.Squad;
 
-        public void Apply(FrameView previous, FrameView current, float alpha)
+        public void Apply(FrameView previous, FrameView current, float alpha) => Apply(previous, current, alpha, null);
+
+        // ML-10: a unit the layer cut hides (on a hidden plate) is kept but not shown.
+        public void Apply(FrameView previous, FrameView current, float alpha, LayerCutResult cut)
         {
             removed.Clear();
             foreach (var pair in cubes)
@@ -56,6 +59,8 @@ namespace WarCore.Unity
                     cube.transform.localScale = new Vector3(scale.x, scale.y * 0.2f, scale.z);
                 }
                 cube.transform.position = new Vector3(entity.X, entity.Y + lift, entity.Z);
+                bool shown = cut == null || !cut.IsHidden(entity);
+                if (cube.activeSelf != shown) cube.SetActive(shown);
             }
         }
     }
