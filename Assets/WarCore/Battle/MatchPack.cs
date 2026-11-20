@@ -20,7 +20,7 @@ namespace WarCore.Battle
             int spawnLayer = 0, int layer = 0)
         {
             if (radius.Raw <= 0) throw new ArgumentOutOfRangeException(nameof(radius));
-            if (initialOwner < 0 || initialOwner > 2) throw new ArgumentOutOfRangeException(nameof(initialOwner));
+            if (initialOwner < 0 || initialOwner > MatchPack.MaxTeams) throw new ArgumentOutOfRangeException(nameof(initialOwner));
             if (spawnLayer < 0 || spawnLayer > MatchPack.MaxLayer) throw new ArgumentOutOfRangeException(nameof(spawnLayer));
             if (spawnLayer != 0 && !hasSpawn) throw new ArgumentException("A spawn layer needs a spawn.", nameof(spawnLayer));
             if (layer < 0 || layer > MatchPack.MaxLayer) throw new ArgumentOutOfRangeException(nameof(layer));
@@ -39,7 +39,7 @@ namespace WarCore.Battle
         public readonly int Layer;
         public SpawnAnchor(int team, SimVec3 point, int layer = 0)
         {
-            if (team < 1 || team > 2) throw new ArgumentOutOfRangeException(nameof(team));
+            if (team < 1 || team > MatchPack.MaxTeams) throw new ArgumentOutOfRangeException(nameof(team));
             if (layer < 0 || layer > MatchPack.MaxLayer) throw new ArgumentOutOfRangeException(nameof(layer));
             Team = team; Point = point; Layer = layer;
         }
@@ -72,6 +72,11 @@ namespace WarCore.Battle
         // Ticks after a respawn switch during which combat deals the new unit no damage; 0 turns it off. Needs a positive delay.
         public int RespawnGuardTicks { get; }
         public ulong PolicyDigest { get; }
+        // NT-1: teams 1..TeamCount take part; 0 is no team. At least 2, else the highest team a base anchor or an initial owner
+        // names. Fixed by the pack (never by the units), so state sized by it is known when the world is built. Not hashed:
+        // the digest already covers every anchor team and initial owner.
+        public int TeamCount { get; }
+        public const int MaxTeams = 8;
         public const int MaxRespawnTicks = 36000;
         // The highest layer an anchor may name: the plate limit of a map (as UnitSpawn.MaxLayer and the Sim's).
         public const int MaxLayer = 4096;
@@ -96,6 +101,10 @@ namespace WarCore.Battle
             for (int i = 0; i < this.rules.Length; i++)
                 if (!MatchMode.RuleFactories.ContainsKey(this.rules[i])) throw new ArgumentException("rules contains unknown id '" + this.rules[i] + "'.", nameof(rules));
             this.points = (ControlPointDef[])points.Clone(); this.bases = (SpawnAnchor[])bases.Clone();
+            int teams = 2;
+            foreach (var anchor in this.bases) teams = Math.Max(teams, anchor.Team);
+            foreach (var point in this.points) teams = Math.Max(teams, point.InitialOwner);
+            TeamCount = teams;
             for (int i = 0; i < points.Length; i++)
             {
                 if (points[i].Radius.Raw <= 0) throw new ArgumentException("Point radius must be positive.");

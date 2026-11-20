@@ -28,9 +28,9 @@ expect = WarCore.Tests.L6BaselineTests.L6Baseline_TimeLimitDecidesOnPoints
 expect = WarCore.Tests.L6BaselineTests.L6Baseline_MatchesTheRecording
 note = the time limit gives the win to the team with fewer points
 original:
-| winner = pointsOne != pointsTwo ? (pointsOne > pointsTwo ? 1 : 2) : one != two ? (one > two ? 1 : 2) : -1;
+| most = Math.Max(most, points[team - 1]); }
 replacement:
-| winner = pointsOne != pointsTwo ? (pointsOne > pointsTwo ? 2 : 1) : one != two ? (one > two ? 1 : 2) : -1;
+| most = team == 1 ? points[0] : Math.Min(most, points[team - 1]); }
 
 [l6-04-ridge-no-spawn]
 file = Assets/WarCore/Content/TerrainDemoMap.cs

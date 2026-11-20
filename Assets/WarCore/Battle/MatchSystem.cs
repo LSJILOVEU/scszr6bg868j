@@ -1,3 +1,4 @@
+using System;
 using WarCore.Combat;
 using WarCore.Sim;
 
@@ -31,6 +32,15 @@ namespace WarCore.Battle
             foreach (EntityId entity in stage.Capture())
                 if (combat.Entities.TryGet(combatants, entity, out Combatant unit) && !combat.IsDead(entity))
                 { if (unit.Team == 1) teamOne++; else if (unit.Team == 2) teamTwo++; }
+        }
+        public int TeamCount => pack.TeamCount;
+        public void CountAlive(Span<int> alive)
+        {
+            int teams = pack.TeamCount;
+            alive.Clear();
+            foreach (EntityId entity in stage.Capture())
+                if (combat.Entities.TryGet(combatants, entity, out Combatant unit) && !combat.IsDead(entity) && unit.Team >= 1 && unit.Team <= teams)
+                    alive[unit.Team - 1]++;
         }
         public int PointsOwnedBy(int team)
         {
