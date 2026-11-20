@@ -1,7 +1,8 @@
 # ML-10: the plates for the picture (ViewPlates, layers in the view), the layer cut and fading (LayerCut), picking with
 # plates (AimPick, the mapper), the plate self-check (PlateCheck) and the plate mesh (PlateMesh). Filter: ML-10 tests.
 # Not listed: PlateRay.TryTop's solid-cell skip (the millimetre check behind it refuses the same cells); LayerCut's corner
-# rule for touching rectangles (no demo map has plates meeting at a corner only); Unity code (no Unity here).
+# rule for touching rectangles (no demo map has plates meeting at a corner only); LayerCut's `if (indoors)` guard, a
+# shortcut (outdoors no plate is in the building, so dropping it changes nothing); Unity code (no Unity here).
 [ml10-view-solid-ignored]
 file = Assets/WarCore/Presentation/Bridge/ViewPlates.cs
 filter = FullyQualifiedName~Ml10
@@ -68,16 +69,12 @@ replacement:
 [ml10-cut-wall-anywhere]
 file = Assets/WarCore/Presentation/Camera/LayerCut.cs
 filter = FullyQualifiedName~Ml10
-expect = WarCore.Tests.Ml10CutTests.TheHeadroomEdges
-note = a high wall hides outdoors too
+expect = WarCore.Tests.Ml10CutTests.AHighWallAwayFromTheHouseStays
+note = any high wall hides indoors, near the building or not
 original:
-|             if (indoors)
-|             {
-|                 var queue
+| if (building[k] && Covers(plates[k], wall))
 replacement:
-|             if (true)
-|             {
-|                 var queue
+| if (building[k])
 
 [ml10-cut-fades-own-plate]
 file = Assets/WarCore/Presentation/Camera/LayerCut.cs

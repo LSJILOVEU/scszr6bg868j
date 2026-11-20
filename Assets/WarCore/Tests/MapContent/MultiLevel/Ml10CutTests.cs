@@ -18,9 +18,9 @@ namespace WarCore.Tests
 
         private static ViewEntity At(float x, float y, float z, int layer = 0) => new ViewEntity(1, 0, x, y, z, team: 1, layer: layer);
 
-        private static (ViewPlates Plates, ViewMap Map) House(bool upperWall = false)
+        private static (ViewPlates Plates, ViewMap Map) House(bool upperWall = false, bool farWall = false)
         {
-            byte[] bytes = upperWall ? MapBake.Run(MapDescJson.Write(WithUpperWall())).WcMapBytes : PlateDemo.MapBytes();
+            byte[] bytes = upperWall || farWall ? MapBake.Run(MapDescJson.Write(WithWalls(upperWall, farWall))).WcMapBytes : PlateDemo.MapBytes();
             return (ViewPlates.From(WcMapReader.Read(bytes)), ViewMap.Parse(bytes));
         }
 
@@ -102,6 +102,18 @@ namespace WarCore.Tests
             Assert.That(LayerCut.Run(plates, map, At(4.5f, 0f, 8.5f), Forward).Wall(upper), Is.EqualTo(CutState.Shown), "outdoors");
         }
 
+        // A wall as high as the floor's wall but away from the house (2 m tall, bottom 3 m, at cell (20, 3)) is not part of
+        // the building: under the floor it stays while the wall on the floor hides.
+        [Test]
+        public void AHighWallAwayFromTheHouseStays()
+        {
+            var (plates, map) = House(upperWall: true, farWall: true);
+            int upper = Enumerable.Range(0, map.Walls.Length).Single(w => map.Walls[w].CenterX == 9.5f && map.Walls[w].CenterY == 4f);
+            int far = Enumerable.Range(0, map.Walls.Length).Single(w => map.Walls[w].CenterX == 20.5f);
+            LayerCutResult cut = LayerCut.Run(plates, map, At(11.5f, 0, 7.5f), Forward);
+            Assert.That((cut.Indoors, cut.Wall(upper), cut.Wall(far)), Is.EqualTo((true, CutState.Hidden, CutState.Shown)));
+        }
+
         // Fading follows the line from the camera: the south wall fades when the unit is behind it and not when the unit is in
         // front of it; no player, or a dead one, cuts nothing.
         [Test]
@@ -122,14 +134,18 @@ namespace WarCore.Tests
                     Is.All.EqualTo(CutState.Shown));
         }
 
-        // The demo house with a 2 m wall standing on the first floor at cell (9, 6) (bottom 3 m).
-        private static MapDesc WithUpperWall()
+        // The demo house with a 2 m wall standing on the first floor at cell (9, 6) (bottom 3 m), one as high at cell (20, 3)
+        // away from the house, or both.
+        private static MapDesc WithWalls(bool upperWall, bool farWall)
         {
             MapDesc d = PlateDemoMap.Desc();
-            var walls = d.Walls.Concat(new[] { new MapWall(6, "wall", "walls", new MapXZ(9, 6), new MapXZ(1, 1), 2 * M, null, null, 3 * M) }).ToArray();
+            var extra = new System.Collections.Generic.List<MapWall>();
+            if (upperWall) extra.Add(new MapWall(6, "wall", "walls", new MapXZ(9, 6), new MapXZ(1, 1), 2 * M, null, null, 3 * M));
+            if (farWall) extra.Add(new MapWall(7, "wall", "walls", new MapXZ(20, 3), new MapXZ(1, 1), 2 * M, null, null, 3 * M));
+            var walls = d.Walls.Concat(extra).ToArray();
             return new MapDesc(d.Id, d.Content, d.Pack, d.Size, d.Origin, d.FloorRaw, d.CeilingRaw, d.Layers.ToArray(), null, null,
                 d.Plates.ToArray(), d.Cutouts.ToArray(), walls, d.Points.ToArray(), d.Bases.ToArray(), d.Units.ToArray(), d.Run,
-                d.Owners.ToArray(), null, null, d.Stamps.ToArray(), d.Removed.ToArray(), new MapNext(7, 3, 3, 5, 3, 2));
+                d.Owners.ToArray(), null, null, d.Stamps.ToArray(), d.Removed.ToArray(), new MapNext(8, 3, 3, 5, 3, 2));
         }
     }
 }

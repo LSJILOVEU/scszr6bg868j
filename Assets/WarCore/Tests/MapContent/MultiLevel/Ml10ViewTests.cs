@@ -58,7 +58,7 @@ namespace WarCore.Tests
             Assert.That(view.TryTopRaw(0, 11 * M, 7 * M, out _) || view.TryTopRaw(3, 11 * M, 7 * M, out _), Is.False, "layers 1..N only");
         }
 
-        // Each rule of PlateCheck: a top changed at one corner (one cell), a hole dug, a cutout filled, a walkable bit
+        // Each rule of PlateCheck: a top changed at one corner (one cell; at a corner off the split's diagonal too), a hole dug, a cutout filled, a walkable bit
         // flipped, and a view of another map.
         [Test]
         public void PlateCheckReportsEachRule()
@@ -69,6 +69,10 @@ namespace WarCore.Tests
             ViewPlates top = Fresh();
             SetTop(top[1], 0, 0, 3 * M + M / 4);
             Assert.That(PlateCheck.Run(top, s).ToString(), Is.EqualTo("shape ok\nhole 0\ntop 1 2:9,6\nwalk 0\n"));
+            // The plate's south-east corner belongs to one cell, (14, 6), and only to the triangle of its split away from the diagonal.
+            ViewPlates side = Fresh();
+            SetTop(side[1], 6, 0, 3 * M + M / 4);
+            Assert.That(PlateCheck.Run(side, s).ToString(), Is.EqualTo("shape ok\nhole 0\ntop 1 2:14,6\nwalk 0\n"));
 
             ViewPlates dug = Fresh();
             Flags(dug[1], "solid")[1 * 6 + 2] = false;
