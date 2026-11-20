@@ -73,6 +73,16 @@ namespace WarCore.Interim
             return p;
         }
 
+        // ML-11a, read only: a unit can stand at this point of a plate's layer (1..N) as it is, that is an order to it keeps the
+        // point (Standable's first case): its cell is walkable on that layer and its footprint stands on cells open for that cell.
+        public bool CanStandOn(int layer, SimVec3 at)
+        {
+            if (!layered || layer < 1) throw new NotSupportedException("Standing on a layer needs a world with floor plates and a plate's layer.");
+            if (!grid.TryCell(at, out int key) || !layers.TryNode(layer, key % grid.Width, key / grid.Width, out int own) || !layers.IsPassable(own)) return false;
+            openCells.Set(layer, key, layer, key);
+            return grid.SegmentClear(at, at, UnitFootprint, openCells);
+        }
+
         private void SetTargetLayer(EntityId unit, int layer) =>
             entities.Set(vertical, unit, entities.Read(vertical, unit).WithTarget(layer));
 

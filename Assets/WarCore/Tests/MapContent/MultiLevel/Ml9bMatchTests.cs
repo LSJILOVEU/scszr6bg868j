@@ -165,7 +165,8 @@ namespace WarCore.Tests
         // 6b: the AI thinks every 10 ticks and goes for the only point, a neutral one of radius 1 m (today's AI walks to the slots
         // of a point it goes for, not of one it owns). Team 1's four soldiers start at the floor's corners, outside the circle;
         // team 2 waits far away on the ground. On the ground (the control: the point and the soldiers under the floor) they walk
-        // to the slots; upstairs the AI of today has no slots (ML-11 gives it plate slots), so none moves and none leaves the floor.
+        // to the slots. Upstairs (ML-11a: the AI has the plate's slots; capture is long enough for all four to arrive first) each
+        // walks to a slot of its own on the floor and stops there; none leaves the floor.
         [TestCase(0)]
         [TestCase(1)]
         public void TheAiDoesNotLeadSoldiersOffTheFloor(int layer)
@@ -177,11 +178,13 @@ namespace WarCore.Tests
                 Walker(10, 70000, 10000, 2, 0), Walker(11, 72000, 10000, 2, 0),
             };
             var point = new ControlPointDef(1, layer == 1 ? Up(41500, 32500) : Flat(41500, 32500), SimFix.FromInt(1), 0, false, default, 0, layer);
-            MatchPack pack = M6World.Pack(new[] { point }, interval: 1000000, think: 10, bases: Bases(new SpawnAnchor(1, P(5, 30))));
+            MatchPack pack = M6World.Pack(new[] { point }, ticks: layer == 1 ? 400 : 3, interval: 1000000, think: 10, bases: Bases(new SpawnAnchor(1, P(5, 30))));
             M6World w = Ml7bMaps.NoThrow(() => new M6World(M6World.Endless(Recipe(units, pack, false)).WithPlatesPreview(), Arena()));
             var start = new SimVec3[5];
             for (ulong key = 1; key <= 4; key++) start[key] = w.Read<Position>(key).Value;
             long moved = 0;
+            var walking = new bool[5];
+            var stopped = new HashSet<int>();
             for (int t = 0; t < 300; t++)
             {
                 w.Step();
@@ -190,10 +193,20 @@ namespace WarCore.Tests
                     SimVec3 at = w.Read<Position>(key).Value;
                     Assert.That((w.Read<VerticalState>(key).Layer, at.Y.Raw), Is.EqualTo(((ushort)layer, layer * 3 * M)), "tick " + t + ", unit " + key);
                     moved = Math.Max(moved, Math.Abs(at.X.Raw - start[key].X.Raw) + Math.Abs(at.Z.Raw - start[key].Z.Raw));
+                    if (layer == 0) continue;
+                    bool ordered = Ml11aWorld.Ordered(w, key);
+                    if (walking[key] && !ordered)
+                    {
+                        int slot = Ml11aWorld.Slots(w).NearestAll(1, at);
+                        Assert.That(slot >= Ml11aWorld.Slots(w).Total, Is.True, "unit " + key + " stops at a slot of the floor, tick " + t);
+                        Assert.That(Ml11aWorld.AtSpot(at, Ml11aWorld.Slots(w).AllAt(slot)), Is.True, "unit " + key);
+                        Assert.That(stopped.Add(slot), Is.True, "unit " + key + " stops at a slot of its own");
+                    }
+                    walking[key] = ordered;
                 }
             }
-            if (layer == 0) Assert.That(moved, Is.GreaterThan(M), "on the ground the AI walks them to the slots");
-            else Assert.That(moved, Is.EqualTo(0L), "upstairs nobody is sent anywhere");
+            Assert.That(moved, Is.GreaterThan(M), layer == 0 ? "on the ground the AI walks them to the slots" : "upstairs the AI walks them to the floor's slots");
+            if (layer == 1) Assert.That(stopped.Count, Is.EqualTo(4), "all four have stopped at a slot");
         }
 
         // Invariant 2: team 1 takes the point upstairs at tick 200 while an enemy stands under the floor; a snapshot at 150 resumes

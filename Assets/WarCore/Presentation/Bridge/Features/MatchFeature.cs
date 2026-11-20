@@ -89,7 +89,8 @@ namespace WarCore.Presentation
             int meleeChaseRange = terrainRules ? recipe.TerrainPack.Section<AiRules>().MeleeChaseRange : 0;
             if (!terrainRules && ai != null) meleeChaseRange = ai.MeleeChaseRange;
             bool fair = recipe.TerrainPack != null && recipe.TerrainPack.Section<AiRules>().FairDecisions;
-            sim.RegisterGameplay("battle.ai", new SimpleAiSystem(combat, recipe.Combat, recipe.Match, capture, adapter, a.Controlled, memory, contacts, search, suppress, meleeChaseRange, fair, recipe.Seed, ContentPolicies.Parts(ai, recipe.Match.Points, recipe.Match.ThinkInterval, terrain == null), pressure, layers), SimSystemPhase.Requests);
+            sim.RegisterGameplay("battle.ai", new SimpleAiSystem(combat, recipe.Combat, recipe.Match, capture, adapter, a.Controlled, memory, contacts, search, suppress, meleeChaseRange, fair, recipe.Seed, ContentPolicies.Parts(ai, recipe.Match.Points, recipe.Match.ThinkInterval, terrain == null, layers != null), pressure, layers, layers,
+                PointReach.Of(a, recipe.Match)), SimSystemPhase.Requests);
             sim.RegisterGameplay("battle.capture", capture, SimSystemPhase.Queries);
             sim.RegisterGameplay("battle.match", match, SimSystemPhase.Queries);
             a.Capture = capture; a.Reinforce = reinforce; a.Match = match; a.Pressure = pressure;
@@ -146,6 +147,17 @@ namespace WarCore.Presentation
             target = intent.Target; return found;
         }
         public bool CanStandAt(SimVec3 at) => ground.CanStand(at);
+        // ML-11a: the same ports with a layer; layer 0 is the ground's port.
+        public bool CanStandAt(SimVec3 at, int layer) => layer == 0 ? ground.CanStand(at) : plates != null && locomotion.CanStandOn(layer, at);
+        public void Order(StableId unit, SimVec3 target, int layer) => locomotion.Order(Resolve(unit), target, layer);
+        public bool TryGetOrder(StableId unit, out SimVec3 target, out int layer)
+        {
+            EntityId entity = Resolve(unit);
+            bool found = sim.Entities.TryGet(intents, entity, out MoveIntent intent) && intent.Active;
+            target = intent.Target;
+            layer = found && verticals.HasValue && sim.Entities.TryGet(verticals.Value, entity, out VerticalState state) ? state.TargetLayer : 0;
+            return found;
+        }
         public bool HasFailed(StableId unit) => locomotion.HasFailed(Resolve(unit));
         public bool TryRouteCost(SimVec3 from, SimVec3 to, long limitCost, out long cost) => locomotion.TryRouteCost(from, to, limitCost, out cost);
         public bool IsCommanded(StableId unit) => standing.HasValue && sim.Entities.TryGet(standing.Value, Resolve(unit), out _);

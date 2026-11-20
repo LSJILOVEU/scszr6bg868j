@@ -75,6 +75,30 @@ namespace WarCore.Battle
         public int PlatePointOf(int slot) => plates.PointOf[slot];
         public int PlateCanonical(int slot) => plates.Canonical[slot];
 
+        // ML-11a: both tables in one index space, for the AI: [0, Total) are the ground slots under their own indices, then the
+        // plate slots at Total + their plate index. A point's slots are in one table only (the one of its centre's layer), so
+        // each point has one run. Without a point on a plate these ports equal the ground ports.
+        public int AllTotal => ground.Positions.Length + plates.Positions.Length;
+        public int AllStart(int point) => plates.Count[point] != 0 ? Total + plates.Start[point] : ground.Start[point];
+        public int AllCount(int point) => plates.Count[point] != 0 ? plates.Count[point] : ground.Count[point];
+        public SimVec3 AllAt(int slot) => slot < Total ? ground.Positions[slot] : plates.Positions[slot - Total];
+        public int AllLayerOf(int slot) => slot < Total ? 0 : plates.Layers[slot - Total];
+        public int AllCanonical(int slot) => slot < Total ? ground.Canonical[slot] : Total + plates.Canonical[slot - Total];
+        // TryFind and Nearest on the layer's table: layer 0 is the ground table, any other layer the plate table.
+        public bool TryFindAll(int layer, SimVec3 target, int point, out int slot)
+        {
+            if (layer == 0) return ground.TryFind(0, target, point, out slot);
+            bool found = plates.TryFind(layer, target, point, out slot);
+            if (found) slot += Total;
+            return found;
+        }
+        public int NearestAll(int layer, SimVec3 position)
+        {
+            if (layer == 0) return ground.Nearest(0, position, adjacentSquared);
+            int slot = plates.Nearest(layer, position, adjacentSquared);
+            return slot < 0 ? -1 : slot + Total;
+        }
+
         /// <summary>Lattice slots inside the circle, ring by ring; slot 0 is the center (for a point on the ground; a point on a
         /// plate keeps only the slots on walkable cells, so it may have no slot at its centre). Neighbours are spacingRaw apart; a row
         /// r steps up holds dz = spacingRaw * r * 866025 / 1000000 (integer division, truncated toward zero).</summary>
