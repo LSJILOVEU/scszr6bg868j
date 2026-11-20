@@ -46,6 +46,9 @@ namespace WarCore.Presentation
         internal TerrainRules TerrainRules;
         // The plates of a map with floor plates; null otherwise.
         internal PlateWorld Plates;
+        // ML-10: the plates for the picture and each unit's layer; both null without plates.
+        internal ViewPlates ViewPlates;
+        internal WarCore.Battle.IUnitLayers Layers;
     }
 
     /// <summary>
@@ -80,6 +83,7 @@ namespace WarCore.Presentation
         private PlayerInput heldPlayerInput;
         private readonly long groundRaw;
         private readonly PlateWorld plates;
+        private readonly WarCore.Battle.IUnitLayers layers;
         private readonly long maxHealthRaw;
         private readonly WcMap map;
         private readonly uint wallMask;
@@ -123,6 +127,8 @@ namespace WarCore.Presentation
             matchPack = parts.MatchPack; capture = parts.Capture; reinforce = parts.Reinforce; match = parts.Match; pressure = parts.Pressure;
             groundRaw = parts.GroundRaw;
             plates = parts.Plates;
+            layers = parts.Layers;
+            Plates = parts.ViewPlates;
             map = parts.Map;
             wallMask = parts.WallMask;
             Map = parts.View;
@@ -142,6 +148,11 @@ namespace WarCore.Presentation
         public static SimSession Create(WorldRecipe recipe) => WorldBuilder.Create(recipe);
         public static SimSession Create(WorldRecipe recipe, byte[] mapBytes) => WorldBuilder.Create(recipe, mapBytes);
         public ViewMap Map { get; }
+        // ML-10: the map's floor plates as the picture reads them; null on a map without plates.
+        public ViewPlates Plates { get; }
+        // The plates and the map Sim runs on; read by PlateCheck only.
+        internal PlateWorld PlateWorldForCheck => plates;
+        internal WcMap MapForCheck => map;
         internal TerrainTables Terrain { get; }
         internal TerrainRules TerrainRules { get; }
         // The match the session runs (null without one); read by PointCheck.
@@ -391,7 +402,8 @@ namespace WarCore.Presentation
                 views.Add(new ViewEntity(spawns[i].Key, spawns[i].Archetype,
                     (float)point.X.Raw / SimFix.Scale, (float)point.Y.Raw / SimFix.Scale,
                     (float)point.Z.Raw / SimFix.Scale, spawns[i].Squad,
-                    team, alive, pressure != null && alive ? (int)pressure.Level(sim.Entities.StableOf(unit)) : 0));
+                    team, alive, pressure != null && alive ? (int)pressure.Level(sim.Entities.StableOf(unit)) : 0,
+                    layers == null ? 0 : layers.LayerOf(unit)));
             }
             var fires = new ViewFire[combat == null ? 0 : combat.Fires.Length];
             for (int i = 0; i < fires.Length; i++)

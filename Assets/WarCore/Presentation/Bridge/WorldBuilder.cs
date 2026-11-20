@@ -104,7 +104,7 @@ namespace WarCore.Presentation
                 MatchPack = recipe.Match, Capture = assembly.Capture, Reinforce = assembly.Reinforce, Match = assembly.Match, Pressure = assembly.Pressure,
                 MaxHealthRaw = recipe.Combat?.MaxHealthRaw ?? 0, Controlled = assembly.Controlled, CombatPack = recipe.Combat,
                 Facings = facings, Terrain = assembly.Terrain, TerrainRules = recipe.TerrainPack?.Terrain,
-                Plates = assembly.Plates,
+                Plates = assembly.Plates, ViewPlates = map == null ? null : ViewPlates.From(map), Layers = PlateLayers.Of(assembly),
             });
             foreach (BridgeCommand command in recipe.Script)
                 session.Enqueue(command);

@@ -352,7 +352,7 @@ namespace WarCore.Unity
         };
 
         // White text on a black box in the top-left corner (ReadPixels rows start at the bottom).
-        private static void Stamp(Texture2D image, string[] lines)
+        internal static void Stamp(Texture2D image, string[] lines)
         {
             int cell = 4 * LabelScale, row = 7 * LabelScale, top = image.height - 1, width = 0;
             foreach (string line in lines)

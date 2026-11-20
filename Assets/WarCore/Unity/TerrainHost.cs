@@ -132,6 +132,8 @@ namespace WarCore.Unity
         //   ground  height field: VerifyGround; flat: the Ground slab bounds (top at FloorY, X and Z start, width, depth);
         //   wall    a ViewWall without its box, a box off its centre, size or rotation (local, 1e-3), or more "Wall " boxes than walls;
         //   terrain TerrainCheck (view data against Sim) is not clean;
+        //   plates  ML-10, maps with plates only: a drawn plate is missing or not exactly PlateMesh's (PlateViews.Verify), or
+        //           PlateCheck (the session's plates for the picture against Sim's) is not clean;
         //   points  PointCheck (Sim and drawn points against the match) is not clean;
         //   disc    a drawn point without its disc, or a disc not exactly at (X, ground + 0.02, Z).
         // It never stops the editor; the caller decides.
@@ -193,6 +195,16 @@ namespace WarCore.Unity
             TerrainCheckResult terrain = TerrainCheck.Run(drawn, session);
             if (!terrain.IsClean)
                 lines.Append("terrain ").Append(OneLine(terrain.ToString())).Append('\n');
+
+            if (session.Plates != null)
+            {
+                string drawnPlates = PlateViews.Verify(session.Plates, mapRoot);
+                if (drawnPlates != "")
+                    lines.Append("plates ").Append(OneLine(drawnPlates)).Append('\n');
+                PlateCheckResult plateCheck = PlateCheck.Run(session.Plates, session);
+                if (!plateCheck.IsClean)
+                    lines.Append("plates ").Append(OneLine(plateCheck.ToString())).Append('\n');
+            }
 
             PointCheckResult check = PointCheck.Run(frame, session);
             if (!check.IsClean)
