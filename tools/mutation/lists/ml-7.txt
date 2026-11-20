@@ -2,8 +2,9 @@
 # Not listed: the snapshot save and read call sites of the input frame (one side alone misaligns the reader, which fails with an
 # exception, not an assertion; the hash call site is listed); Bind's AimLayer (no system reads the aim layer yet); the ILocomotion
 # default body (InterimLocomotion implements the method itself); PlateWorld's ">> 16" against "/ Scale" (points on the map are never
-# negative) and its layer and bounds guards (every caller checks the layer count and the bridge's world bounds first); the feature
-# table order.
+# negative) and its layer and bounds guards (every caller checks the layer count and the bridge's world bounds first); the walkable
+# flag of WorldAssembly.SpawnPoint (the plate installer refuses the same cell, with its own message, before a unit stands there);
+# the feature table order.
 
 [ml7-step-check]
 file = Assets/WarCore/Sim/Sim.cs
@@ -165,7 +166,7 @@ replacement:
 [ml7-bind-drops-target]
 file = Assets/WarCore/Sim/StableInput.cs
 filter = FullyQualifiedName~Ml7
-expect = WarCore.Tests.Ml7SessionTests.AnOrderOntoAPlateStopsTheUnit
+expect = WarCore.Tests.Ml7SessionTests.AStableFrameCarriesTheLayer
 note = the bound command loses its layer
 original:
 | squad = new SquadCommand(value.Kind,value.Squad,value.TargetPoint,target,value.TargetLayer);
@@ -200,6 +201,7 @@ note = the layer is dropped
 original:
 |             TargetLayer = targetLayer;
 replacement:
+|             TargetLayer = 0;
 
 [ml7-aim-range-negative]
 file = Assets/WarCore/Sim/InputFrame.cs
@@ -456,16 +458,6 @@ original:
 |             if (spawn.Layer > 0)
 replacement:
 |             if (false)
-
-[ml7-spawn-point-solid]
-file = Assets/WarCore/Presentation/Bridge/Features/WorldAssembly.cs
-filter = FullyQualifiedName~Ml7
-expect = WarCore.Tests.Ml7SessionTests.SpawnsOffTheirLayerAreRefused
-note = spawn point on a solid, unwalkable cell
-original:
-| if (!Plates.TryFloor(spawn.Layer, point.X, point.Z, true, out SimFix floor))
-replacement:
-| if (!Plates.TryFloor(spawn.Layer, point.X, point.Z, false, out SimFix floor))
 
 [ml7-terrain-checks-plates]
 file = Assets/WarCore/Presentation/Bridge/Features/TerrainFeature.cs

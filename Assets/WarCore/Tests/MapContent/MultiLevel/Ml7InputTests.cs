@@ -24,8 +24,10 @@ namespace WarCore.Tests
         [Test]
         public void LayersAreBounded()
         {
-            Assert.That(Move(4096).TargetLayer, Is.EqualTo(4096));
-            Assert.That(new InputFrame(default, default, aimLayer: 4096).AimLayer, Is.EqualTo(4096));
+            int target = 0, aim = 0;
+            Assert.DoesNotThrow(() => target = Move(4096).TargetLayer);
+            Assert.DoesNotThrow(() => aim = new InputFrame(default, default, aimLayer: 4096).AimLayer);
+            Assert.That((target, aim), Is.EqualTo((4096, 4096)));
             Assert.Throws<ArgumentOutOfRangeException>(() => Move(4097));
             Assert.Throws<ArgumentOutOfRangeException>(() => Move(-1));
             Assert.Throws<ArgumentOutOfRangeException>(() => new InputFrame(default, default, aimLayer: 4097));

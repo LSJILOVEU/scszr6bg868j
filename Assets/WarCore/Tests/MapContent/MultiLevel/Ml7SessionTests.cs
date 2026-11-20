@@ -62,7 +62,8 @@ namespace WarCore.Tests
         [Test]
         public void UnitsStandOnTheirLayers()
         {
-            SimSession s = World(Plates, Three);
+            SimSession s = null;
+            Assert.DoesNotThrow(() => s = World(Plates, Three));
             Assert.That((Vertical(s, 1).Layer, Vertical(s, 2).Layer, Vertical(s, 3).Layer), Is.EqualTo(((ushort)0, (ushort)1, (ushort)2)));
             Assert.That((Vertical(s, 1).TargetLayer, Vertical(s, 2).TargetLayer, Vertical(s, 3).TargetLayer), Is.EqualTo(((ushort)0, (ushort)0, (ushort)0)));
             Assert.That((M3TestWorld.Position(s, 1).Y.Raw, M3TestWorld.Position(s, 2).Y.Raw, M3TestWorld.Position(s, 3).Y.Raw), Is.EqualTo((0L, Top1, Slope25)));
@@ -186,6 +187,17 @@ namespace WarCore.Tests
             Assert.DoesNotThrow(() => M3TestWorld.Locomotion(flat).Order(M3TestWorld.Unit(flat, 1), M3TestWorld.Point(1500, 500), 0));
             Assert.Throws<ArgumentOutOfRangeException>(() => M3TestWorld.Locomotion(flat).Order(M3TestWorld.Unit(flat, 1), M3TestWorld.Point(500, 500), 4097),
                 "the range comes before the world");
+        }
+
+        // A stable frame (Sim.StepStable) carries the command's layer through its binding to the order.
+        [Test]
+        public void AStableFrameCarriesTheLayer()
+        {
+            SimSession s = World(Plates, Three);
+            SimVec3 point = new SimVec3(M3TestWorld.Point(6500, 1500).X, SimFix.FromRaw(Top1), M3TestWorld.Point(6500, 1500).Z);
+            var frame = new InputFrame(default, default, squad: new SquadCommand(SquadCommandKind.MoveTo, 1, point, default, 1));
+            M3TestWorld.Sim(s).StepStable(new StableInputFrame(frame));
+            Assert.That(Vertical(s, 1).TargetLayer, Is.EqualTo((ushort)1));
         }
 
         // V-f 2: with ground orders only, a world with a high plate moves its units exactly as the same map without plates.
