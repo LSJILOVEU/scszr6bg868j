@@ -15,6 +15,23 @@ namespace WarCore.Tests
         // The lift of the line tested against ground and plates: 0.5 m without a body, none with one.
         private static long Lift(CombatBody? body) => body.HasValue ? 0 : M / 2;
 
+        // Exactly one shot (an assertion, so a missing shot fails the test instead of throwing).
+        private static FireRecord One(FireRecord[] fires)
+        {
+            Assert.That(fires.Length, Is.EqualTo(1), "one shot");
+            return fires[0];
+        }
+
+        // How far (metres) the point a lies off the line from o through b: a blocked shot's recorded end lies on the line the
+        // unblocked shot flies (the lift moves the tested line parallel and is taken off again).
+        private static double OffLine(SimVec3 o, SimVec3 a, SimVec3 b)
+        {
+            double ax = a.X.Raw - o.X.Raw, ay = a.Y.Raw - o.Y.Raw, az = a.Z.Raw - o.Z.Raw;
+            double bx = b.X.Raw - o.X.Raw, by = b.Y.Raw - o.Y.Raw, bz = b.Z.Raw - o.Z.Raw;
+            double cx = ay * bz - az * by, cy = az * bx - ax * bz, cz = ax * by - ay * bx;
+            return Math.Sqrt(cx * cx + cy * cy + cz * cz) / Math.Sqrt(bx * bx + by * by + bz * bz) / M;
+        }
+
         private static Ml9World World(CombatBody? body, bool plates, params Ml3World.Unit[] units) =>
             new Ml9World(Pack(body), units, plates ? Floor() : null);
 
@@ -52,24 +69,32 @@ namespace WarCore.Tests
             long low = Bottom - Lift(body) - 1, high = Top - Lift(body);
             var w = World(body, true, U(10500, 0, 10500, 1), U(14500, Top, 14500, 2), U(9500, Top, 9500, 1));
             w.Produce = c => w.Combat.Submit(c, FireIntent.Aimed(w.Id(0), w.Point(1)));
-            FireRecord up = w.StepFires(0).Single();
+            FireRecord up = One(w.StepFires(0));
             Assert.That(up.Outcome, Is.EqualTo(FireOutcome.WallBlocked), "up");
             Assert.That(up.End.Y.Raw, Is.InRange(low, high), "up: the end at the plate");
+            var open = World(body, false, U(10500, 0, 10500, 1), U(14500, Top, 14500, 2), U(9500, Top, 9500, 1));
+            open.Produce = c => open.Combat.Submit(c, FireIntent.Aimed(open.Id(0), open.Point(1)));
+            FireRecord free = One(open.StepFires(0));
+            Assert.That(OffLine(up.Origin, up.End, free.End), Is.LessThan(0.001), "up: the end on the shot's own line");
 
             w = World(body, true, U(10500, 0, 10500, 1), U(14500, Top, 14500, 2), U(9500, Top, 9500, 1));
             w.Produce = c => w.Combat.Submit(c, FireIntent.Aimed(w.Id(1), w.Point(0)));
-            FireRecord down = w.StepFires(1).Single();
+            FireRecord down = One(w.StepFires(1));
             Assert.That(down.Outcome, Is.EqualTo(FireOutcome.WallBlocked), "down");
             Assert.That(down.End.Y.Raw, Is.InRange(low, high), "down: the end at the plate");
+            open = World(body, false, U(10500, 0, 10500, 1), U(14500, Top, 14500, 2), U(9500, Top, 9500, 1));
+            open.Produce = c => open.Combat.Submit(c, FireIntent.Aimed(open.Id(1), open.Point(0)));
+            free = One(open.StepFires(1));
+            Assert.That(OffLine(down.Origin, down.End, free.End), Is.LessThan(0.001), "down: the end on the shot's own line");
 
             w = World(body, true, U(10500, 0, 10500, 1), U(14500, Top, 14500, 2), U(9500, Top, 9500, 1));
             w.Produce = c => w.Combat.Submit(c, FireIntent.Aimed(w.Id(1), w.Point(2)));
-            FireRecord level = w.StepFires(1).Single();
+            FireRecord level = One(w.StepFires(1));
             Assert.That((level.Outcome, level.Target), Is.EqualTo((FireOutcome.Hit, w.Id(2))), "floor to floor");
 
             var flat = World(body, false, U(10500, 0, 10500, 1), U(14500, Top, 14500, 2));
             flat.Produce = c => flat.Combat.Submit(c, FireIntent.Aimed(flat.Id(0), flat.Point(1)));
-            Assert.That(flat.StepFires(0).Single().Outcome, Is.EqualTo(FireOutcome.Hit), "without plates");
+            Assert.That(One(flat.StepFires(0)).Outcome, Is.EqualTo(FireOutcome.Hit), "without plates");
         }
 
         // Acceptance 4 on a flat plate map: no ground field at all, the plates alone (the Trace entry condition).
@@ -78,7 +103,7 @@ namespace WarCore.Tests
         {
             var w = new Ml9World(Pack(null), new[] { U(10500, 0, 10500, 1), U(14500, Top, 14500, 2) }, Floor(), ground: null);
             w.Produce = c => w.Combat.Submit(c, FireIntent.Aimed(w.Id(0), w.Point(1)));
-            Assert.That(w.StepFires(0).Single().Outcome, Is.EqualTo(FireOutcome.WallBlocked));
+            Assert.That(One(w.StepFires(0)).Outcome, Is.EqualTo(FireOutcome.WallBlocked));
         }
 
         // With a flat ground at 0 under the plate both are tested; the plate comes first.
@@ -88,7 +113,7 @@ namespace WarCore.Tests
             var ground = new HeightField(32, 32, default, default, new int[33 * 33]);
             var w = new Ml9World(Pack(Ml3World.Rwr), new[] { U(10500, 0, 10500, 1), U(14500, Top, 14500, 2) }, Floor(), ground: ground);
             w.Produce = c => w.Combat.Submit(c, FireIntent.Aimed(w.Id(0), w.Point(1)));
-            FireRecord shot = w.StepFires(0).Single();
+            FireRecord shot = One(w.StepFires(0));
             Assert.That(shot.Outcome, Is.EqualTo(FireOutcome.WallBlocked));
             Assert.That(shot.End.Y.Raw, Is.InRange(Bottom - 1, Top));
         }
@@ -101,12 +126,12 @@ namespace WarCore.Tests
             var units = new[] { U(4000, 2750 * M / 1000 - Ml3World.Rwr.Muzzle.Raw, 10500, 1), U(8250, 2750 * M / 1000 - Ml3World.Rwr.Eye.Raw, 10500, 2) };
             var w = new Ml9World(Pack(Ml3World.Rwr), units, Floor());
             w.Produce = c => w.Combat.Submit(c, FireIntent.Aimed(w.Id(0), w.Point(1)));
-            FireRecord shot = w.StepFires(0).Single();
+            FireRecord shot = One(w.StepFires(0));
             Assert.That(shot.Outcome, Is.EqualTo(FireOutcome.WallBlocked));
             Assert.That(shot.End.X.Raw, Is.EqualTo(8 * M));
             var flat = new Ml9World(Pack(Ml3World.Rwr), units, null);
             flat.Produce = c => flat.Combat.Submit(c, FireIntent.Aimed(flat.Id(0), flat.Point(1)));
-            Assert.That(flat.StepFires(0).Single().Outcome, Is.EqualTo(FireOutcome.Hit), "without the plate the unit is hit");
+            Assert.That(One(flat.StepFires(0)).Outcome, Is.EqualTo(FireOutcome.Hit), "without the plate the unit is hit");
         }
 
         // 6: straight up and down. An aimed point or a target straight above, at another height on a plate map, is shot along the
@@ -116,21 +141,21 @@ namespace WarCore.Tests
         {
             var w = World(body, true, U(12500, 0, 12500, 1), U(12500, Top, 12500, 2));
             w.Produce = c => w.Combat.Submit(c, FireIntent.Aimed(w.Id(0), w.Point(1)));
-            FireRecord hole = w.StepFires(0).Single();
+            FireRecord hole = One(w.StepFires(0));
             Assert.That((hole.Outcome, hole.End.X.Raw, hole.End.Z.Raw), Is.EqualTo((FireOutcome.Hit, 12500 * M / 1000, 12500 * M / 1000)), "aimed, through the cutout");
 
             w = World(body, true, U(10500, 0, 10500, 1), U(10500, Top, 10500, 2));
             w.Produce = c => w.Combat.Submit(c, FireIntent.Aimed(w.Id(0), w.Point(1)));
-            Assert.That(w.StepFires(0).Single().Outcome, Is.EqualTo(FireOutcome.WallBlocked), "aimed, into the floor");
+            Assert.That(One(w.StepFires(0)).Outcome, Is.EqualTo(FireOutcome.WallBlocked), "aimed, into the floor");
 
             // Down: a point straight below through the cutout is hit, through the floor the shot stops in it.
             w = World(body, true, U(12500, 0, 12500, 2), U(12500, Top, 12500, 1));
             w.Produce = c => w.Combat.Submit(c, FireIntent.Aimed(w.Id(1), w.Point(0)));
-            FireRecord down = w.StepFires(1).Single();
+            FireRecord down = One(w.StepFires(1));
             Assert.That((down.Outcome, down.End.X.Raw, down.End.Z.Raw), Is.EqualTo((FireOutcome.Hit, 12500 * M / 1000, 12500 * M / 1000)), "aimed down, through the cutout");
             w = World(body, true, U(10500, 0, 10500, 2), U(10500, Top, 10500, 1));
             w.Produce = c => w.Combat.Submit(c, FireIntent.Aimed(w.Id(1), w.Point(0)));
-            FireRecord floor = w.StepFires(1).Single();
+            FireRecord floor = One(w.StepFires(1));
             Assert.That((floor.Outcome, floor.End.X.Raw, floor.End.Z.Raw), Is.EqualTo((FireOutcome.WallBlocked, 10500 * M / 1000, 10500 * M / 1000)), "aimed down, into the floor");
 
             // Eye above the muzzle: aiming at its own spot gives a short vertical line, which only another height may fire along.
@@ -151,18 +176,18 @@ namespace WarCore.Tests
             var spread = new WeaponDef(30000, 30, 60000, SimFix.FromInt(30), SimFix.FromInt(60), 10 * M, new SpreadSpec(5000, 0, 0, 5000));
             var pack = new CombatPack(new[] { spread }, new ZeroResolver(), new NearestVisibleEnemy(), 100 * M, body: body);
             var w = new Ml9World(pack, new[] { U(12500, 0, 12500, 1), U(12500, Top, 12500, 2, -1) }, Floor());
-            FireRecord up = w.StepFires(0).Single();
+            FireRecord up = One(w.StepFires(0));
             Assert.That((up.Outcome, up.Target), Is.EqualTo((FireOutcome.Hit, w.Id(1))));
             Assert.That((up.End.X.Raw, up.End.Z.Raw), Is.EqualTo((12500 * M / 1000, 12500 * M / 1000)), "straight up, spread or not");
 
             var flat = new Ml9World(pack, new[] { U(12500, 0, 12500, 1), U(12500, Top, 12500, 2, -1) }, null);
-            FireRecord plus = flat.StepFires(0).Single();
+            FireRecord plus = One(flat.StepFires(0));
             Assert.That(plus.End.X.Raw, Is.GreaterThan(plus.Origin.X.Raw), "without plates: along +X (turned by the spread)");
 
             // The same spot and height on a plate map, eye above the muzzle (a short vertical line): along +X, as before.
             var rifle = new CombatPack(new[] { Ml3World.Rifle() }, new ZeroResolver(), new NearestVisibleEnemy(), 100 * M, body: Ml3World.Body(114688, 104858, 91750));
             var same = new Ml9World(rifle, new[] { U(4500, 0, 4500, 1), U(4500, 0, 4500, 2, -1) }, Floor());
-            FireRecord level = same.StepFires(0).Single();
+            FireRecord level = One(same.StepFires(0));
             Assert.That(level.End.Y, Is.EqualTo(level.Origin.Y), "the same height on a plate map: a level shot, as before");
         }
 
