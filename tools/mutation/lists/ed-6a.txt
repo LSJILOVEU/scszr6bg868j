@@ -1,0 +1,520 @@
+# ED-6a: entry facade (Presentation/Maps/MapEntrySteps.cs, MapDocument.Entries.cs).
+# Filter: the ED-6a tests.
+# Not listed (equivalent through the facade): a copy carrying src (MapEdit.Add drops it); WithEntryEdits applied without
+# Batch (Edited discards the editor on a refusal either way, as in ED-1); a step reading the document from before the batch
+# (steps only see MapEdit.Current, locked by ed1-current-stale; covered by Ed6aBatchTests fixed sequences); the cell and
+# millimetre overflow guards (a wrapped value is off the map, so MapEdit refuses it with the same exception type); the
+# formation spacing (WorldBuilder, not this package); the version after the last plate goes (MapDesc rule, ML-4 lists).
+
+[ed6a-replace-id-lost]
+file = Assets/WarCore/Presentation/Maps/MapEntrySteps.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aReadTests.EveryEntry
+expect = WarCore.Tests.Ed6aIdTests.Replace
+note = Replace looks up id 0 instead of the record's id
+original:
+| return e => e.ReplaceWall(MapEntryConvert.ToWall(w, w.Id));
+replacement:
+| return e => e.ReplaceWall(MapEntryConvert.ToWall(w, 0));
+
+[ed6a-copy-replaces]
+file = Assets/WarCore/Presentation/Maps/MapEntrySteps.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aIdTests.Copies
+expect = WarCore.Tests.Ed6aIdTests.CopyMoves
+note = a copy overwrites the source instead of taking the next id
+original:
+| case "wall": e.AddWall(Shift(Find(d.Walls, w => w.Id, id, kind), dx, dz)); break;
+replacement:
+| case "wall": e.ReplaceWall(Shift(Find(d.Walls, w => w.Id, id, kind), dx, dz)); break;
+
+[ed6a-nextid-point]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Entries.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aIdTests.NextIdReadsEachKind
+note = NextId of points reads the wall counter
+original:
+| case "point": return (ulong)desc.Next.Point;
+replacement:
+| case "point": return desc.Next.Wall;
+
+[ed6a-nextid-cutout]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Entries.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aIdTests.NextIdReadsEachKind
+note = NextId of cutouts reads the plate counter
+original:
+| case "cutout": return desc.Next.Cutout;
+replacement:
+| case "cutout": return desc.Next.Plate;
+
+[ed6a-nextid-unknown]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Entries.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aIdTests.NextIdRefusesOtherKinds
+note = NextId of an unknown kind returns a value
+original:
+| default: throw new ArgumentException("unknown entry kind: " + kind, nameof(kind));
+replacement:
+| default: return 0;
+
+[ed6a-cells-plate-branch]
+file = Assets/WarCore/Presentation/Maps/MapEntrySteps.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aIdTests.CellMovesTake
+note = cell moves refuse plates
+original:
+| case "plate": e.ReplacePlate(Shift(Find(d.Plates, p => p.Id, id, kind), dx, dz)); break;
+replacement:
+| case "plates": break;
+
+[ed6a-cells-cutout-branch]
+file = Assets/WarCore/Presentation/Maps/MapEntrySteps.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aIdTests.CellMovesTake
+note = cell moves refuse cutouts
+original:
+| case "cutout": e.ReplaceCutout(Shift(Find(d.Cutouts, c => c.Id, id, kind), dx, dz)); break;
+replacement:
+| case "cutouts": break;
+
+[ed6a-cells-default]
+file = Assets/WarCore/Presentation/Maps/MapEntrySteps.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aIdTests.CellMovesTake
+expect = WarCore.Tests.Ed6aIdTests.MovesAndCopiesRefuse
+note = cell moves accept other kinds silently
+original:
+| default: throw new ArgumentException("not a wall, plate or cutout: " + kind, nameof(kind));
+replacement:
+| default: break;
+
+[ed6a-mm-base-branch]
+file = Assets/WarCore/Presentation/Maps/MapEntrySteps.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aIdTests.MillimetreMovesTake
+note = millimetre moves refuse bases
+original:
+| case "base": e.ReplaceBase(Shift(Find(d.Bases, b => (ulong)b.Id, id, kind), dxMm, dzMm)); break;
+replacement:
+| case "bases": break;
+
+[ed6a-mm-unit-branch]
+file = Assets/WarCore/Presentation/Maps/MapEntrySteps.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aIdTests.MillimetreMovesTake
+note = millimetre moves refuse units
+original:
+| case "unit": e.ReplaceUnit(Shift(Find(d.Units, u => u.Key, id, kind), dxMm, dzMm)); break;
+replacement:
+| case "units": break;
+
+[ed6a-mm-default]
+file = Assets/WarCore/Presentation/Maps/MapEntrySteps.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aIdTests.MillimetreMovesTake
+expect = WarCore.Tests.Ed6aIdTests.MovesAndCopiesRefuse
+note = millimetre moves accept other kinds silently
+original:
+| default: throw new ArgumentException("not a point, base or unit: " + kind, nameof(kind));
+replacement:
+| default: break;
+
+[ed6a-cells-dx-dz-swap]
+file = Assets/WarCore/Presentation/Maps/MapEntrySteps.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aIdTests.ReplaceMove
+expect = WarCore.Tests.Ed6aIdTests.CopyMoves
+note = cell moves swap dx and dz
+original:
+| new MapXZ(AddCells(cell.X, dx), AddCells(cell.Z, dz));
+replacement:
+| new MapXZ(AddCells(cell.X, dz), AddCells(cell.Z, dx));
+
+[ed6a-copy-point-as-cells]
+file = Assets/WarCore/Presentation/Maps/MapEntrySteps.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aIdTests.CopyMoves
+note = a point copy moves by cells, not millimetres
+original:
+| private static MapPoint Shift(MapPoint p, long dx, long dz) => new MapPoint(p.Id, Mm(p.At, dx, dz),
+replacement:
+| private static MapPoint Shift(MapPoint p, long dx, long dz) => new MapPoint(p.Id, Mm(p.At, dx * 1000, dz * 1000),
+
+[ed6a-move-without-spawn]
+file = Assets/WarCore/Presentation/Maps/MapEntrySteps.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aIdTests.ReplaceMove
+expect = WarCore.Tests.Ed6aIdTests.CopyMoves
+note = a point moves without its spawn
+original:
+| p.Spawn.HasValue ? Mm(p.Spawn.Value, dx, dz) : (MapMm?)null
+replacement:
+| p.Spawn
+
+[ed6a-read-hasbase]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Entries.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aReadTests.Synthetic
+note = HasBase read inverted
+original:
+| w.HeightRaw, w.BaseRaw.HasValue,
+replacement:
+| w.HeightRaw, !w.BaseRaw.HasValue,
+
+[ed6a-read-hasspawn]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Entries.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aReadTests.Synthetic
+expect = WarCore.Tests.Ed6aIdTests.ReplaceMove
+note = HasSpawn read inverted
+original:
+| p.Spawn.HasValue, p.Spawn?.X ?? 0
+replacement:
+| !p.Spawn.HasValue, p.Spawn?.X ?? 0
+
+[ed6a-read-hasspawnplate]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Entries.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aReadTests.Synthetic
+note = HasSpawnPlate read inverted
+original:
+| p.SpawnPlate.HasValue, p.SpawnPlate ?? 0
+replacement:
+| !p.SpawnPlate.HasValue, p.SpawnPlate ?? 0
+
+[ed6a-read-point-hasplate]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Entries.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aReadTests.Synthetic
+note = point HasPlate read inverted
+original:
+| p.Plate.HasValue, p.Plate ?? 0,
+|             Owner(d, p.Owner)
+replacement:
+| !p.Plate.HasValue, p.Plate ?? 0,
+|             Owner(d, p.Owner)
+
+[ed6a-read-base-hasplate]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Entries.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aReadTests.Synthetic
+note = base HasPlate read inverted
+original:
+| b.At.Z, b.Plate.HasValue
+replacement:
+| b.At.Z, !b.Plate.HasValue
+
+[ed6a-read-unit-hasplate]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Entries.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aReadTests.Synthetic
+note = unit HasPlate read inverted
+original:
+|             u.Plate.HasValue, u.Plate ?? 0
+replacement:
+|             !u.Plate.HasValue, u.Plate ?? 0
+
+[ed6a-read-sloped]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Entries.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aReadTests.Synthetic
+expect = WarCore.Tests.Ed6aIdTests.PlatesAnd
+note = Sloped read inverted
+original:
+| p.Slope != null,
+replacement:
+| p.Slope == null,
+
+[ed6a-write-base-dropped]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Entries.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aReadTests.Synthetic
+note = writing drops a wall's baseRaw
+original:
+| w.HasBase ? w.BaseRaw : (long?)null
+replacement:
+| (long?)null
+
+[ed6a-write-spawnplate-dropped]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Entries.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aReadTests.Synthetic
+note = writing drops a point's spawn plate
+original:
+| p.HasSpawnPlate ? p.SpawnPlate : (ulong?)null
+replacement:
+| (ulong?)null
+
+[ed6a-write-unit-plate-dropped]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Entries.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aReadTests.Synthetic
+note = writing drops a unit's plate
+original:
+| u.Reserve,
+|             null, null, u.HasPlate ? u.Plate : (ulong?)null
+replacement:
+| u.Reserve,
+|             null, null, (ulong?)null
+
+[ed6a-write-surface-dropped]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Entries.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aReadTests.Synthetic
+note = writing drops a plate's surface
+original:
+| p.Surface.Length == 0 ? null : p.Surface
+replacement:
+| null
+
+[ed6a-owner-unowned-hand]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Entries.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aReadTests.OwnerAndStamp
+note = an unowned entry reads as hand
+original:
+| owner.HasValue ? d.Owners[owner.Value] : ""
+replacement:
+| owner.HasValue ? d.Owners[owner.Value] : "hand"
+
+[ed6a-stamp-null-throws]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Entries.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aReadTests.OwnerAndStamp
+expect = WarCore.Tests.Ed6aM6Tests
+note = an entry without src cannot be read
+original:
+| src == null ? "" : src.Instance
+replacement:
+| src.Instance
+
+[ed6a-squad-rank-count-swap]
+file = Assets/WarCore/Presentation/Maps/MapEntrySteps.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aSquadTests
+expect = WarCore.Tests.Ed6aM6Tests
+note = formation rank and count passed the other way
+original:
+| WorldBuilder.FormationOffsetMm(rank, count);
+replacement:
+| WorldBuilder.FormationOffsetMm(count - 1 - rank, count);
+
+[ed6a-squad-team-squad-swap]
+file = Assets/WarCore/Presentation/Maps/MapEntrySteps.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aSquadTests.TeamSquad
+note = team and squad swapped
+original:
+| new MapUnit(0, type, team, squad,
+replacement:
+| new MapUnit(0, type, squad, team,
+
+[ed6a-squad-min]
+file = Assets/WarCore/Presentation/Maps/MapEntrySteps.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aSquadTests.CountOutside
+note = a squad of 0 is accepted
+original:
+| if (count < 1 || count > MaxSquad)
+replacement:
+| if (count < 0 || count > MaxSquad)
+
+[ed6a-squad-max]
+file = Assets/WarCore/Presentation/Maps/MapEntrySteps.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aSquadTests.CountOutside
+note = a squad of 101 is accepted
+original:
+| if (count < 1 || count > MaxSquad)
+replacement:
+| if (count < 1 || count > MaxSquad + 1)
+
+[ed6a-name-from-zero]
+file = Assets/WarCore/Presentation/Maps/MapEntrySteps.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aStampTests
+note = instance numbers start at 0
+original:
+| for (int n = 1; ; n++)
+replacement:
+| for (int n = 0; ; n++)
+
+[ed6a-name-no-skip]
+file = Assets/WarCore/Presentation/Maps/MapEntrySteps.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aStampTests
+note = instance names are not checked for use
+original:
+| if (!taken.Contains(name)) return name;
+replacement:
+| return name;
+
+[ed6a-name-owner-prefix]
+file = Assets/WarCore/Presentation/Maps/MapEntrySteps.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aStampTests.DoorNameSkipsOwnerRows
+note = owner rows are read with the wrong prefix length
+original:
+| taken.Add(owner.Substring(6));
+replacement:
+| taken.Add(owner.Substring(5));
+
+[ed6a-name-ignores-tombstones]
+file = Assets/WarCore/Presentation/Maps/MapEntrySteps.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aStampTests.DoorNameSkipsTombstones
+note = tombstones do not take a name
+original:
+| foreach (MapSrc row in d.Removed) taken.Add(row.Instance);
+replacement:
+
+[ed6a-name-ignores-stamps-rows]
+file = Assets/WarCore/Presentation/Maps/MapEntrySteps.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aStampTests.DoorNameSkipsTombstones
+note = stamps rows do not take a name
+original:
+| foreach (MapStamp row in d.Stamps) taken.Add(row.Instance);
+replacement:
+
+[ed6a-name-ignores-sources]
+file = Assets/WarCore/Presentation/Maps/MapEntrySteps.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aStampTests.DoorNameSkipsTombstones
+note = entry sources do not take a name
+original:
+| foreach (MapWall w in d.Walls) Take(taken, w.Src);
+replacement:
+
+[ed6a-unstamp-by-owner]
+file = Assets/WarCore/Presentation/Maps/MapEntrySteps.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aStampTests.WithoutStampAlsoRemovesHand
+note = WithoutStamp removes by owner, not by src
+original:
+| foreach (MapWall w in d.Walls) if (From(w.Src, instance)) found.Add(("wall", w.Id));
+replacement:
+| foreach (MapWall w in d.Walls) if (w.Owner.HasValue && d.Owners[w.Owner.Value] == "stamp:" + instance) found.Add(("wall", w.Id));
+
+[ed6a-unstamp-skips-one]
+file = Assets/WarCore/Presentation/Maps/MapEntrySteps.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aStampTests
+note = WithoutStamp leaves one entry
+original:
+| foreach ((string kind, ulong id) in found) e.Remove(kind, id);
+replacement:
+| foreach ((string kind, ulong id) in found.GetRange(1, found.Count - 1)) e.Remove(kind, id);
+
+[ed6a-unstamp-none-accepted]
+file = Assets/WarCore/Presentation/Maps/MapEntrySteps.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aStampTests.WithoutStampOfAnUnknown
+note = WithoutStamp of an unknown instance changes nothing instead of throwing
+original:
+| if (found.Count == 0) throw
+replacement:
+| if (found.Count < 0) throw
+
+[ed6a-window-fixed-body]
+file = Assets/WarCore/Presentation/Maps/MapEntrySteps.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aStampTests.Window
+note = the window reads a fixed layer's body, not the description's
+original:
+| CombatBody body = BodyOf(d.Pack);
+replacement:
+| CombatBody body = BodyOf("ed6a-body");
+
+[ed6a-window-no-body-check]
+file = Assets/WarCore/Presentation/Maps/MapEntrySteps.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aStampTests.WindowWithoutABody
+note = a layer without a body is not refused clearly
+original:
+| if (!body.HasValue)
+replacement:
+| if (false)
+
+[ed6a-entries-x0]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Entries.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aReadTests.EntriesInIncludesBothEdges
+note = left edge excluded
+original:
+| x >= x0 &&
+replacement:
+| x > x0 &&
+
+[ed6a-entries-x1]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Entries.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aReadTests.EntriesInIncludesBothEdges
+note = right edge excluded
+original:
+| x <= x1 &&
+replacement:
+| x < x1 &&
+
+[ed6a-entries-z0]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Entries.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aReadTests.EntriesInIncludesBothEdges
+note = near edge excluded
+original:
+| z >= z0 &&
+replacement:
+| z > z0 &&
+
+[ed6a-entries-z1]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Entries.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aReadTests.EntriesInIncludesBothEdges
+note = far edge excluded
+original:
+| z <= z1;
+replacement:
+| z < z1;
+
+[ed6a-entries-trunc]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Entries.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aReadTests.EntriesInFloors
+note = millimetres round toward zero
+original:
+| return mm % 1000 < 0 ? q - 1 : q;
+replacement:
+| return q;
+
+[ed6a-entries-empty-box]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Entries.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aReadTests.EntriesInRefusesBadBoxes
+note = a box with z0 > z1 is accepted
+original:
+| if (x0 > x1 || z0 > z1) throw
+replacement:
+| if (x0 > x1) throw
+
+[ed6a-entries-order]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Entries.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aReadTests.EntriesInLists
+note = units listed before bases
+original:
+| foreach (MapBase b in desc.Bases) if (In(MmCellX(b.At), MmCellZ(b.At))) found.Add(new MapEntryRef("base", (ulong)b.Id));
+|             foreach (MapUnit u in desc.Units) if (In(MmCellX(u.At), MmCellZ(u.At))) found.Add(new MapEntryRef("unit", u.Key));
+replacement:
+| foreach (MapUnit u in desc.Units) if (In(MmCellX(u.At), MmCellZ(u.At))) found.Add(new MapEntryRef("unit", u.Key));
+|             foreach (MapBase b in desc.Bases) if (In(MmCellX(b.At), MmCellZ(b.At))) found.Add(new MapEntryRef("base", (ulong)b.Id));
+
+[ed6a-small-id]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Entries.cs
+filter = FullyQualifiedName~Ed6a
+expect = WarCore.Tests.Ed6aReadTests.PointAndBaseIds
+note = a point id above int.MaxValue wraps instead of being refused
+original:
+| if (id > int.MaxValue) throw
+replacement:
+| if (id > (ulong)int.MaxValue + 1) throw
