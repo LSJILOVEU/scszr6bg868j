@@ -3,6 +3,12 @@ using System;
 namespace WarCore.Sim
 {
     // Immutable one-metre cells. Bit one is passable; node keys increase along X, then Z.
+    // Which cells a clearance test treats as passable (NavGrid.SegmentClear with a custom rule).
+    public interface ICellPassability
+    {
+        bool IsPassable(int x, int z);
+    }
+
     public sealed class NavGrid
     {
         private readonly byte[] bitmap;
@@ -76,7 +82,11 @@ namespace WarCore.Sim
         // R^2 * L2 <= 2^28 * 2^31 = 2^59 < 2^60 <= cross^2, so that corner does not block. This skips only that one corner;
         // the query goes on with the remaining corners and edges. Interval bounds are compared as fractions n/d with
         // |n| <= 2^18 and d <= 2^15, so cross products of fractions are <= 2^33.
-        public bool SegmentClear(SimVec3 from, SimVec3 to, SimFix radius)
+        public bool SegmentClear(SimVec3 from, SimVec3 to, SimFix radius) => SegmentClear(from, to, radius, null);
+
+        // The same test with another notion of a passable cell (floor plates, ML-8): `cells` answers for cells inside the map;
+        // null is this grid's own bitmap. The map edge stays this grid's.
+        public bool SegmentClear(SimVec3 from, SimVec3 to, SimFix radius, ICellPassability cells)
         {
             long r = radius.Raw;
             if (r <= 0 || r > MaxClearRadiusRaw) throw new ArgumentOutOfRangeException(nameof(radius));
@@ -100,7 +110,7 @@ namespace WarCore.Sim
             for (int z = cz0; z <= cz1; z++)
                 for (int x = cx0; x <= cx1; x++)
                 {
-                    if (IsPassable(x, z)) continue;
+                    if (cells == null ? IsPassable(x, z) : cells.IsPassable(x, z)) continue;
                     long x0 = OriginX.Raw + x * SimFix.Scale - fx, z0 = OriginZ.Raw + z * SimFix.Scale - fz;
                     long x1 = x0 + SimFix.Scale, z1 = z0 + SimFix.Scale;
                     if (MeetsBox(dx, dz, x0 - r, true, x1 + r, true, z0, false, z1, false)

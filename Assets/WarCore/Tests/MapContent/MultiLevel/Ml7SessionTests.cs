@@ -52,7 +52,10 @@ namespace WarCore.Tests
             SimSession s = World(Plates, units);
             WcMap map = WcMapReader.Read(Plates);
             ulong nav = WcMapLayeredNav.Build(map, null, map.ContentId).Digest;
-            Assert.That(M3TestWorld.Sim(s).StableContent.Digest, Is.EqualTo(new StableContentManifest(1, new StableContentKey("plates.nav", nav)).Digest));
+            // ML-8: a plate world runs on the terrain branch, so its tables (default rules without a pack) add their own key.
+            ulong tables = TerrainDerivation.Derive(map, null, map.ContentId).Digest;
+            Assert.That(M3TestWorld.Sim(s).StableContent.Digest, Is.EqualTo(new StableContentManifest(1, new StableContentKey("plates.nav", nav),
+                new StableContentKey("terrain.tables", tables)).Digest));
             Assert.That(Snapshot(s), Does.Contain(VerticalState.ComponentId));
             Assert.DoesNotThrow(() => SimSession.Create(Recipe(units, mover: MoverKind.InterimPath), Plates));
             Assert.DoesNotThrow(() => M3TestWorld.Sim(s).Step(new InputFrame(default, default, aimLayer: 1)), "the input carries layers");

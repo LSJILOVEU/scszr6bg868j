@@ -1,0 +1,672 @@
+# ML-8: units walk over floor plates (Interim/InterimLocomotion.Vertical.cs and its use in the path, crowd and player movers),
+# the plate binding and the terrain branch for plate maps. Filter: ML-8 tests.
+# Not listed: SeamInto's lowest-layer choice (plates in one cell are kept apart by the clearance rules, so at most one seam
+# lands on a cell); TryEnter's same-cell shortcut (the orthogonal rule gives the same answer for a cell the unit stands on);
+# the save and load of the graph digest (one side alone fails with an exception) and its hash line (the content manifest
+# already carries plates.nav, the same digest); LayeredRouteCost (AI only; on layer 0 it equals the grid search on these maps);
+# PlateSpeedMilli's node-missing fallback (a unit's own cell always has a node on its layer); the player's long-step path
+# check (player steps are shorter than the radius, so the end test decides); the binding's foot-anchored mask (no Ml8 world
+# has an ML-3 body; BodiesOverlapByTheirVerticalRanges binds it directly); AiFireFeature's pack choice (IsActive already
+# reads it with ?.; only a plate map with AI fire rules and no terrain pack differs); Standable's ring limit; the
+# ground field's !layered guard in Grounded (Settle and OnLayer set Y on plate worlds after it); Standable's ring-only skip
+# (inner cells were already searched by smaller rings, so the first hit is the same).
+
+[ml8-into-seam-first]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8EntryTests.TheEntryFunctionKeepsOrChangesTheLayer
+note = a seam wins over the own walkable layer
+original:
+| return Walkable(layer, bx, bz) || SeamInto(layer, ax, az, bx, bz, out next);
+replacement:
+| return SeamInto(layer, ax, az, bx, bz, out next) || Walkable(layer, bx, bz);
+
+[ml8-seam-any-x]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8EntryTests.TheEntryFunctionKeepsOrChangesTheLayer
+note = a seam to another cell of the row counts
+original:
+| if (layers.XOf(node) != bx || layers.ZOf(node) != bz) continue;
+replacement:
+| if (layers.ZOf(node) != bz) continue;
+
+[ml8-seam-any-z]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8EntryTests.TheEntryFunctionKeepsOrChangesTheLayer
+note = a seam to another cell of the column counts
+original:
+| if (layers.XOf(node) != bx || layers.ZOf(node) != bz) continue;
+replacement:
+| if (layers.XOf(node) != bx) continue;
+
+[ml8-far-step]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8EntryTests.TheEntryFunctionKeepsOrChangesTheLayer
+note = two cells apart is entered
+original:
+|             if (dx < -1 || dx > 1 || dz < -1 || dz > 1) return false;
+replacement:
+
+[ml8-orth-fail-layer]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8EntryTests.TheEntryFunctionKeepsOrChangesTheLayer
+note = a failed orthogonal entry leaves the seam scan result
+original:
+|                 if (Into(layer, fx, fz, tx, tz, out newLayer)) return true;
+|                 newLayer = layer;
+replacement:
+|                 if (Into(layer, fx, fz, tx, tz, out newLayer)) return true;
+
+[ml8-diag-no-x-first]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8EntryTests.ADiagonalStepIsTwoOrthogonalOnes
+note = the X-first split is not tried
+original:
+|             if (Into(layer, fx, fz, tx, fz, out int mid) && Into(mid, tx, fz, tx, tz, out newLayer)) return true;
+|             if (Into(layer, fx, fz, fx, tz, out mid)
+replacement:
+|             int mid;
+|             if (Into(layer, fx, fz, fx, tz, out mid)
+
+[ml8-diag-no-z-first]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8EntryTests.ADiagonalStepIsTwoOrthogonalOnes
+note = the Z-first split is not tried
+original:
+|             if (Into(layer, fx, fz, fx, tz, out mid) && Into(mid, fx, tz, tx, tz, out newLayer)) return true;
+replacement:
+
+[ml8-diag-fail-true]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8EntryTests.ADiagonalStepIsTwoOrthogonalOnes
+note = a diagonal with both splits blocked is entered
+original:
+|             newLayer = layer;
+|             return false;
+|         }
+| 
+|         // Places a candidate
+replacement:
+|             newLayer = layer;
+|             return true;
+|         }
+| 
+|         // Places a candidate
+
+[ml8-diag-walkable-skip]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8EntryTests.ADiagonalStepIsTwoOrthogonalOnes
+note = a walkable diagonal on this layer is split anyway
+original:
+|             if (Walkable(layer, tx, tz)) return true;
+replacement:
+
+[ml8-settle-old-layer]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8DemoTests.AUnitClimbsToTheFirstFloorAndBack
+expect = WarCore.Tests.Ml8EntryTests.TheCellEdgeDecidesTheLayer
+note = the candidate keeps the old layer
+original:
+|             candidateLayer = entered;
+replacement:
+
+[ml8-settle-no-y]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8DemoTests.EveryUnitStandsOnItsFloor
+expect = WarCore.Tests.Ml8DemoTests.AUnitClimbsToTheFirstFloorAndBack
+note = the candidate keeps its height
+original:
+|             next = new SimVec3(next.X, y, next.Z);
+replacement:
+
+[ml8-settle-no-end-check]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8EntryTests.FootprintsStandOnOpenCells
+note = the end footprint is not checked on the new layer alone
+original:
+|             if (!grid.SegmentClear(next, next, UnitFootprint, openCells)) return false;
+replacement:
+
+[ml8-settle-start-only]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8EntryTests.FootprintsStandOnOpenCells
+expect = WarCore.Tests.Ml8EntryTests.AnLShapedCornerIsNotCut
+expect = WarCore.Tests.Ml8DemoTests.AUnitClimbsToTheFirstFloorAndBack
+note = the way is judged by the start cell only
+original:
+|             openCells.Set(layer, a, entered, b);
+|             return true;
+replacement:
+|             openCells.Set(layer, a, layer, a);
+|             return true;
+
+[ml8-settle-end-only]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8EntryTests.FootprintsStandOnOpenCells
+expect = WarCore.Tests.Ml8EntryTests.AnLShapedCornerIsNotCut
+expect = WarCore.Tests.Ml8DemoTests.AUnitClimbsToTheFirstFloorAndBack
+expect = WarCore.Tests.Ml8DemoTests.SquadSlotsStandOnTheFloor
+note = the way is judged by the end cell only
+original:
+|             openCells.Set(layer, a, entered, b);
+|             return true;
+replacement:
+|             openCells.Set(entered, b, entered, b);
+|             return true;
+
+[ml8-open-no-seam]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8EntryTests.FootprintsStandOnOpenCells
+expect = WarCore.Tests.Ml8EntryTests.AnLShapedCornerIsNotCut
+note = seam targets are not open
+original:
+| Walkable(layer, x, z) || SeamInto(layer, ownKey % grid.Width, ownKey / grid.Width, x, z, out _);
+replacement:
+| Walkable(layer, x, z);
+
+[ml8-open-other-plate]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8EntryTests.AnLShapedCornerIsNotCut
+note = the whole other plate is open
+original:
+| Walkable(layer, x, z) || SeamInto(layer, ownKey % grid.Width, ownKey / grid.Width, x, z, out _);
+replacement:
+| Walkable(layer, x, z) || Walkable(layer == 1 ? 2 : 1, x, z) || SeamInto(layer, ownKey % grid.Width, ownKey / grid.Width, x, z, out _);
+
+[ml8-cells-start-only]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8EntryTests.FootprintsStandOnOpenCells
+expect = WarCore.Tests.Ml8DemoTests.AUnitClimbsToTheFirstFloorAndBack
+note = the open cells of the end are dropped
+original:
+| public bool IsPassable(int x, int z) => owner.Open(layerA, ownA, x, z) || owner.Open(layerB, ownB, x, z);
+replacement:
+| public bool IsPassable(int x, int z) => owner.Open(layerA, ownA, x, z);
+
+[ml8-cells-end-only]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8EntryTests.FootprintsStandOnOpenCells
+expect = WarCore.Tests.Ml8DemoTests.AUnitClimbsToTheFirstFloorAndBack
+expect = WarCore.Tests.Ml8DemoTests.SquadSlotsStandOnTheFloor
+note = the open cells of the start are dropped
+original:
+| public bool IsPassable(int x, int z) => owner.Open(layerA, ownA, x, z) || owner.Open(layerB, ownB, x, z);
+replacement:
+| public bool IsPassable(int x, int z) => owner.Open(layerB, ownB, x, z);
+
+[ml8-floor-flat-zero]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8MoveTests.BackOnTheGroundTheHeightIsTheGrounds
+note = the flat ground is at 0, not the map floor
+original:
+|             y = flatFloor;
+replacement:
+|             y = default;
+
+[ml8-floor-no-field]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8MoveTests.BackOnTheGroundTheHeightIsTheGrounds
+note = a height field is ignored on the ground
+original:
+|             if (ground != null) return ground.TryHeightAt(x, z, out y);
+replacement:
+
+[ml8-node-centre-ground]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8DemoTests.AUnitClimbsToTheFirstFloorAndBack
+note = route waypoints on plates sit at the ground height
+original:
+| if (!Floor(layers.LayerOf(node), centre.X, centre.Z, out SimFix y))
+replacement:
+| if (!Floor(0, centre.X, centre.Z, out SimFix y))
+
+[ml8-order-grounded]
+file = Assets/WarCore/Interim/InterimLocomotion.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8MoveTests.BackOnTheGroundTheHeightIsTheGrounds
+note = a ground order on a plate world keeps the target height
+original:
+| Route(unit, intent, layered ? OnLayer(0, target) : Grounded(target));
+replacement:
+| Route(unit, intent, Grounded(target));
+
+[ml8-planar-keeps-y]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8MoveTests.TheStairAndFloorGiveTheHeightAndTheStep
+note = directions include the height on a flat plate map
+original:
+| private SimVec3 Planar(SimVec3 v) => ground != null || layered ?
+replacement:
+| private SimVec3 Planar(SimVec3 v) => ground != null ?
+
+[ml8-step-ground-speed]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8MoveTests.TheStairAndFloorGiveTheHeightAndTheStep
+note = the step reads the ground under the plate
+original:
+| long milli = layered ? PlateSpeedMilli(layer, point) : grid.TryCell(point, out int cell) ? terrain.SpeedMilliAt(cell) : 1000;
+replacement:
+| long milli = grid.TryCell(point, out int cell) ? terrain.SpeedMilliAt(cell) : 1000;
+
+[ml8-step-layer-zero]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8MoveTests.TheStairAndFloorGiveTheHeightAndTheStep
+note = the path step reads layer 0
+original:
+| SimFix step = StepOf(point, motion.StepSpeed(unit, intent.SpeedPerTick), layer);
+replacement:
+| SimFix step = StepOf(point, motion.StepSpeed(unit, intent.SpeedPerTick), 0);
+
+[ml8-search-from-target]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8DemoTests.AUnitClimbsToTheFirstFloorAndBack
+note = the route starts on the target layer
+original:
+| if (!layers.TryNode(state.Layer, a % grid.Width, a / grid.Width, out int start)
+replacement:
+| if (!layers.TryNode(state.TargetLayer, a % grid.Width, a / grid.Width, out int start)
+
+[ml8-search-to-own]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8DemoTests.AUnitClimbsToTheFirstFloorAndBack
+expect = WarCore.Tests.Ml8DemoTests.EveryUnitStandsOnItsFloor
+note = the route ends on the unit's own layer
+original:
+| || !layers.TryNode(state.TargetLayer, b % grid.Width, b / grid.Width, out int end)
+replacement:
+| || !layers.TryNode(state.Layer, b % grid.Width, b / grid.Width, out int end)
+
+[ml8-merge-over-seam]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8DemoTests.AUnitClimbsToTheFirstFloorAndBack
+note = a run of steps merges across a layer change (first step)
+original:
+| bool flat = layers.LayerOf(route[1]) == layers.LayerOf(route[0]);
+replacement:
+| bool flat = true;
+
+[ml8-merge-over-seam-run]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8DemoTests.AUnitClimbsToTheFirstFloorAndBack
+note = a run of steps merges across a layer change (later steps)
+original:
+|                 && layers.LayerOf(route[vertex + 1]) == layers.LayerOf(route[vertex])
+replacement:
+
+[ml8-tail-grid-keys]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8DemoTests.TheRouteTailCountsLayeredSteps
+expect = WarCore.Tests.Ml8DemoTests.AUnitClimbsToTheFirstFloorAndBack
+expect = WarCore.Tests.Ml8DemoTests.EveryUnitStandsOnItsFloor
+expect = WarCore.Tests.Ml8DemoTests.SquadSlotsStandOnTheFloor
+note = the remaining route length reads node ids as grid cells
+original:
+|             NoteLayeredTail(route, vertex);
+replacement:
+|             NoteTail(route, vertex);
+
+[ml8-crowd-tail-grid-keys]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8DemoTests.TheRouteTailCountsLayeredSteps
+expect = WarCore.Tests.Ml8DemoTests.AUnitClimbsToTheFirstFloorAndBack
+expect = WarCore.Tests.Ml8DemoTests.EveryUnitStandsOnItsFloor
+expect = WarCore.Tests.Ml8DemoTests.SquadSlotsStandOnTheFloor
+note = the crowd route length reads node ids as grid cells
+original:
+|             NoteLayeredTail(route, route.Length == 1 ? 0 : 1);
+replacement:
+|             NoteTail(route, route.Length == 1 ? 0 : 1);
+
+[ml8-path-route-grid]
+file = Assets/WarCore/Interim/InterimLocomotion.Path.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8DemoTests.AUnitClimbsToTheFirstFloorAndBack
+note = the path mover routes on the ground grid
+original:
+| layered ? LayeredWaypoint(unit, point, target, out waypoint) : TryWaypoint(point, target, out waypoint);
+replacement:
+| TryWaypoint(point, target, out waypoint);
+
+[ml8-crowd-route-grid]
+file = Assets/WarCore/Interim/InterimLocomotion.Path.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8DemoTests.AUnitClimbsToTheFirstFloorAndBack
+note = the crowd routes on the ground grid
+original:
+| layered ? LayeredCrowdWaypoint(unit, point, target, out waypoint) : TryCrowdWaypoint(point, target, out waypoint);
+replacement:
+| TryCrowdWaypoint(point, target, out waypoint);
+
+[ml8-path-no-commit]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8DemoTests.AUnitClimbsToTheFirstFloorAndBack
+note = the path mover never writes the new layer
+original:
+|             if (PathClear(layer, point, ref next) && !WallHit(context, unit, point, next))
+|             {
+|                 if (layered) CommitLayer(unit);
+replacement:
+|             if (PathClear(layer, point, ref next) && !WallHit(context, unit, point, next))
+|             {
+
+[ml8-crowd-no-commit]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8DemoTests.AUnitClimbsToTheFirstFloorAndBack
+note = the crowd never writes the new layer
+original:
+|             if (moved)
+|             {
+|                 if (layered) CommitLayer(unit);
+replacement:
+|             if (moved)
+|             {
+
+[ml8-crowd-commit-late]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8DemoTests.AUnitClimbsToTheFirstFloorAndBack
+note = the crowd writes the new layer after the re-plan
+original:
+|             if (moved)
+|             {
+|                 if (layered) CommitLayer(unit);
+|                 context.SubmitMovement(unit, next);
+replacement:
+|             if (moved)
+|             {
+|                 int committed = candidateLayer;
+|                 context.SubmitMovement(unit, next);
+
+[ml8-player-no-commit]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8MoveTests.ThePlayerClimbsAndStaysOnTheFloor
+note = the player never writes the new layer
+original:
+|             }
+|             if (layered) CommitLayer(unit);
+|             context.SubmitMovement(unit, next);
+|             Face(unit, point, next);
+|             provisional[i].Point = next;
+replacement:
+|             }
+|             context.SubmitMovement(unit, next);
+|             Face(unit, point, next);
+|             provisional[i].Point = next;
+
+[ml8-commit-no-write]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8DemoTests.AUnitClimbsToTheFirstFloorAndBack
+expect = WarCore.Tests.Ml8MoveTests.ThePlayerClimbsAndStaysOnTheFloor
+note = the commit writes nothing
+original:
+| if (state.Layer != candidateLayer) entities.Set(vertical, unit, VerticalState.Raw((ushort)candidateLayer, state.TargetLayer));
+replacement:
+| if (false) entities.Set(vertical, unit, VerticalState.Raw((ushort)candidateLayer, state.TargetLayer));
+
+[ml8-commit-clears-target]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8DemoTests.AUnitClimbsToTheFirstFloorAndBack
+expect = WarCore.Tests.Ml8DemoTests.SquadSlotsStandOnTheFloor
+expect = WarCore.Tests.Ml8DemoTests.EveryUnitStandsOnItsFloor
+note = the commit clears the target layer
+original:
+| VerticalState.Raw((ushort)candidateLayer, state.TargetLayer)
+replacement:
+| VerticalState.Raw((ushort)candidateLayer, 0)
+
+[ml8-path-ground-clear]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8DemoTests.AUnitClimbsToTheFirstFloorAndBack
+note = the path footprint uses the ground grid
+original:
+| return Settle(layer, point, ref next) && grid.SegmentClear(point, next, UnitFootprint, openCells);
+replacement:
+| return Settle(layer, point, ref next) && grid.SegmentClear(point, next, UnitFootprint);
+
+[ml8-crowd-no-settle]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8DemoTests.AUnitClimbsToTheFirstFloorAndBack
+expect = WarCore.Tests.Ml8DemoTests.EveryUnitStandsOnItsFloor
+note = crowd candidates are not settled
+original:
+|             if (layered && !Settle(LayerOf(provisional[i].Unit), provisional[i].Point, ref next)) return false;
+replacement:
+
+[ml8-player-no-settle]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8MoveTests.ThePlayerClimbsAndStaysOnTheFloor
+note = player candidates are not settled
+original:
+| (!layered || Settle(LayerOf(provisional[i].Unit), provisional[i].Point, ref next)) && ControlledAllows(context, i, next);
+replacement:
+| ControlledAllows(context, i, next);
+
+[ml8-crowd-ground-cells]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8DemoTests.AUnitClimbsToTheFirstFloorAndBack
+expect = WarCore.Tests.Ml8DemoTests.EveryUnitStandsOnItsFloor
+note = crowd terrain checks use the ground grid
+original:
+|             if (layered) { if (!grid.SegmentClear(provisional[i].Point, next, UnitFootprint, openCells)) return false; }
+|             else
+replacement:
+|             if (false) { }
+|             else
+
+[ml8-player-ground-cells]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8MoveTests.ThePlayerClimbsAndStaysOnTheFloor
+note = the player's near cells use the ground grid
+original:
+| if (layered ? openCells.IsPassable(x, z) : grid.IsPassable(x, z)) continue;
+replacement:
+| if (grid.IsPassable(x, z)) continue;
+
+[ml8-overlap-touching]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8MoveTests.BodiesOverlapByTheirVerticalRanges
+note = touching ranges overlap
+original:
+| return d < halfA + halfB;
+replacement:
+| return d <= halfA + halfB;
+
+[ml8-overlap-signed]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8MoveTests.BodiesOverlapByTheirVerticalRanges
+note = the difference keeps its sign
+original:
+|             if (d < 0) d = -d;
+replacement:
+
+[ml8-lift-never]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8MoveTests.BodiesOverlapByTheirVerticalRanges
+note = foot-anchored bodies are not lifted
+original:
+| (collider.Layer & footAnchoredLayers) != 0 ? collider.WorldHalfExtents.Y : default;
+replacement:
+| default(SimFix);
+
+[ml8-lift-always]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8MoveTests.BodiesOverlapByTheirVerticalRanges
+note = every body is lifted
+original:
+| (collider.Layer & footAnchoredLayers) != 0 ? collider.WorldHalfExtents.Y : default;
+replacement:
+| collider.WorldHalfExtents.Y;
+
+[ml8-table-no-half]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8MoveTests.BodiesOverlapByTheirVerticalRanges
+expect = WarCore.Tests.Ml8MoveTests.UnitsOnTheStairStillGiveWay
+note = the crowd table has no half heights
+original:
+| Half = layered ? collider.WorldHalfExtents.Y.Raw : 0,
+replacement:
+| Half = 0,
+
+[ml8-table-no-lift]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8MoveTests.BodiesOverlapByTheirVerticalRanges
+note = the crowd table has no lifts
+original:
+| Lift = layered ? BodyLift(collider).Raw : 0 };
+replacement:
+| Lift = 0 };
+
+[ml8-vertical-rule-off]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8MoveTests.UnitsAboveAndBelowPassEachOther
+note = units above and below block each other
+original:
+|                 if (layered && !BodiesOverlap(next.Y.Raw + provisional[i].Lift, provisional[i].Half,
+|                     provisional[j].Point.Y.Raw + provisional[j].Lift, provisional[j].Half)) continue;
+replacement:
+
+[ml8-vertical-rule-always]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8MoveTests.HighPlatesChangeNothingOnTheGround
+note = the vertical rule runs without plates
+original:
+|                 if (layered && !BodiesOverlap(
+replacement:
+|                 if (!BodiesOverlap(
+
+[ml8-ground-order-plate-floor]
+file = Assets/WarCore/Interim/InterimLocomotion.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8DemoTests.AUnitClimbsToTheFirstFloorAndBack
+expect = WarCore.Tests.Ml8DemoTests.EveryUnitStandsOnItsFloor
+note = a ground order keeps the old target layer
+original:
+|             if (layered) SetTargetLayer(unit, 0);
+replacement:
+
+[ml8-slot-not-snapped]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8DemoTests.SquadSlotsStandOnTheFloor
+note = plate order points are not moved
+original:
+| Route(unit, intent, Standable(layer, OnLayer(layer, target)));
+replacement:
+| Route(unit, intent, OnLayer(layer, target));
+
+[ml8-slot-edge-kept]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8DemoTests.SquadSlotsStandOnTheFloor
+note = a point over the edge is kept
+original:
+| return grid.SegmentClear(p, p, UnitFootprint, openCells) ? p : NodeCentre(own);
+replacement:
+| return p;
+
+[ml8-slot-edge-centre]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8DemoTests.SquadSlotsStandOnTheFloor
+note = a standable point moves to its cell centre
+original:
+| return grid.SegmentClear(p, p, UnitFootprint, openCells) ? p : NodeCentre(own);
+replacement:
+| return NodeCentre(own);
+
+[ml8-version-no-plates]
+file = Assets/WarCore/Interim/InterimLocomotion.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8MoveTests.OnlyPlateWorldsChangeTheVersion
+note = plates leave the version alone
+original:
+|             + (layered ? 200 : 0);
+replacement:
+|             + 0;
+
+[ml8-terrain-feature-off]
+file = Assets/WarCore/Presentation/Bridge/Features/TerrainFeature.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8MoveTests.OnlyPlateWorldsChangeTheVersion
+note = a flat plate map stays off the terrain branch
+original:
+| (a.Map.HasTerrain || a.Map.Plates.Count > 0)
+replacement:
+| a.Map.HasTerrain
+
+[ml8-terrain-pack-required]
+file = Assets/WarCore/Presentation/Bridge/Features/TerrainFeature.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8MoveTests.OnlyPlateWorldsChangeTheVersion
+note = a plate map needs a terrain pack
+original:
+| if (a.Recipe.TerrainPack == null && a.Map.HasTerrain)
+replacement:
+| if (a.Recipe.TerrainPack == null)
+
+[ml8-plate-flat-default]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateFeature.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8MoveTests.BackOnTheGroundTheHeightIsTheGrounds
+note = the binding passes 0 for the flat floor
+original:
+| a.Plates.Tops(), a.Map.FlatHeight, a.Sim.FootAnchoredLayers);
+replacement:
+| a.Plates.Tops(), default, a.Sim.FootAnchoredLayers);
+
+[ml8-match-pack-terrain]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Ml8
+expect = WarCore.Tests.Ml8MoveTests.ThePlayerClimbsAndStaysOnTheFloor
+note = the match reads the terrain pack whenever there are terrain tables
+original:
+| bool terrainRules = terrain != null && recipe.TerrainPack != null;
+replacement:
+| bool terrainRules = terrain != null;

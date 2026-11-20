@@ -61,21 +61,24 @@ namespace WarCore.Interim
 
         // Step length after the surface under the unit: floor(base x speedMilli / 1000), at least one raw so a unit
         // never freezes. The base is checked before the product.
-        private SimFix StepOf(SimVec3 point, SimFix baseStep)
+        // On a plate world the surface is the unit's own layer's (the plate's own speed, not the blocked ground under it).
+        private SimFix StepOf(SimVec3 point, SimFix baseStep, int layer = 0)
         {
             if (baseStep.Raw > MaxTerrainStepRaw) throw new InvalidOperationException("Terrain worlds cap a unit step at 0.25 m per tick.");
-            long milli = grid.TryCell(point, out int cell) ? terrain.SpeedMilliAt(cell) : 1000;
+            long milli = layered ? PlateSpeedMilli(layer, point) : grid.TryCell(point, out int cell) ? terrain.SpeedMilliAt(cell) : 1000;
             long scaled = baseStep.Raw * milli / 1000;
             if (scaled < 1) scaled = 1;
             if (scaled > MaxEffectiveStepRaw) throw new InvalidOperationException("Terrain step exceeds 0.5 m.");
             return SimFix.FromRaw(scaled);
         }
 
-        // On a height field the ground decides Y; outside its domain (or without one) the point is unchanged.
+        // On a height field the ground decides Y; outside its domain (or without one) the point is unchanged. On a plate world
+        // the candidate's layer decides Y later (Settle), so the point is left as it is here.
         private SimVec3 Grounded(SimVec3 p) =>
-            ground != null && ground.TryHeightAt(p.X, p.Z, out SimFix y) ? new SimVec3(p.X, y, p.Z) : p;
+            !layered && ground != null && ground.TryHeightAt(p.X, p.Z, out SimFix y) ? new SimVec3(p.X, y, p.Z) : p;
 
-        private SimVec3 Planar(SimVec3 v) => ground != null ? new SimVec3(v.X, default, v.Z) : v;
+        // Horizontal part: with a height field or floor plates every distance and direction is horizontal.
+        private SimVec3 Planar(SimVec3 v) => ground != null || layered ? new SimVec3(v.X, default, v.Z) : v;
 
         private SimVec3 Centre(int cell, SimFix y) => Grounded(grid.Center(cell, y));
 
@@ -127,14 +130,16 @@ namespace WarCore.Interim
         private void StepPathTerrain(SimContext context, EntityId unit, MoveIntent intent, SimVec3 point)
         {
             SimVec3 waypoint = entities.Get(waypoints, unit).Point;
-            SimFix step = StepOf(point, motion.StepSpeed(unit, intent.SpeedPerTick));
+            int layer = layered ? LayerOf(unit) : 0;
+            SimFix step = StepOf(point, motion.StepSpeed(unit, intent.SpeedPerTick), layer);
             SimVec3 delta = Planar(waypoint - point);
             SimWide stepSquared = new SimVec3(step, default, default).LengthSquared;
             bool arrived = delta.LengthSquared <= stepSquared;
             SimVec3 next = arrived ? waypoint : Advance(point, delta, step);
             SimVec3 now = point;
-            if (grid.SegmentClear(point, next, UnitFootprint) && !WallHit(context, unit, point, next))
+            if (PathClear(layer, point, ref next) && !WallHit(context, unit, point, next))
             {
+                if (layered) CommitLayer(unit);
                 context.SubmitMovement(unit, next);
                 Face(unit, point, next);
                 now = next;
@@ -142,12 +147,20 @@ namespace WarCore.Interim
                 {
                     if (waypoint.Equals(intent.Target)) Stop(unit);
                     // Movement commits later; compute from the submitted point, not the old Position component.
-                    else if (TryWaypoint(next, intent.Target, out SimVec3 following))
+                    else if (TryRoute(unit, next, intent.Target, out SimVec3 following))
                         entities.Set(waypoints, unit, new MoveWaypoint(following, true));
                     else Stop(unit);
                 }
             }
             Account(unit, waypoint, now, step, crowdMode: false);
+        }
+
+        // The path mover's clearance: on a plate world the candidate is first placed on its layer, then tested against the cells
+        // open for the start and the end of the step.
+        private bool PathClear(int layer, SimVec3 point, ref SimVec3 next)
+        {
+            if (!layered) return grid.SegmentClear(point, next, UnitFootprint);
+            return Settle(layer, point, ref next) && grid.SegmentClear(point, next, UnitFootprint, openCells);
         }
 
         private bool WallHit(SimContext context, EntityId unit, SimVec3 from, SimVec3 to)
@@ -169,12 +182,12 @@ namespace WarCore.Interim
             if (!intent.Active) return;
             SimVec3 point = provisional[i].Point;
             SimVec3 waypoint = entities.Get(waypoints, unit).Point;
-            SimFix step = StepOf(point, motion.StepSpeed(unit, intent.SpeedPerTick));
+            SimFix step = StepOf(point, motion.StepSpeed(unit, intent.SpeedPerTick), layered ? LayerOf(unit) : 0);
             SimVec3 delta = Planar(waypoint - point);
             SimWide stepSquared = new SimVec3(step, default, default).LengthSquared;
             SimVec3 next = delta.LengthSquared <= stepSquared ? waypoint : Advance(point, delta, step);
             bool moved = true;
-            if (!UnitsAllow(i, next, out int blocker) || !TerrainAllows(context, i, next))
+            if (!Allows(context, i, ref next, out int blocker))
             {
                 if (blocker < 0)
                 {
@@ -187,7 +200,7 @@ namespace WarCore.Interim
                         if (back.LengthSquared.Sign != 0)
                         {
                             next = back.LengthSquared <= stepSquared ? centre : Advance(point, back, step);
-                            moved = UnitsAllow(i, next, out _) && TerrainAllows(context, i, next);
+                            moved = Allows(context, i, ref next, out _);
                         }
                     }
                 }
@@ -201,17 +214,18 @@ namespace WarCore.Interim
                     SimVec3 side = perpendicular.Normalized * step;
                     if (SimVec3.Dot(side, delta).Sign < 0) { side = default(SimVec3) - side; perpendicular = default(SimVec3) - perpendicular; }
                     next = Nudge(point, point + side, perpendicular);
-                    moved = UnitsAllow(i, next, out _) && TerrainAllows(context, i, next);
+                    moved = Allows(context, i, ref next, out _);
                     if (!moved)
                     {
                         next = Nudge(point, point - side, default(SimVec3) - perpendicular);
-                        moved = UnitsAllow(i, next, out _) && TerrainAllows(context, i, next);
+                        moved = Allows(context, i, ref next, out _);
                     }
                 }
             }
             SimVec3 now = point;
             if (moved)
             {
+                if (layered) CommitLayer(unit);
                 context.SubmitMovement(unit, next);
                 Face(unit, point, next);
                 provisional[i].Point = next;
@@ -224,7 +238,7 @@ namespace WarCore.Interim
                     grid.TryCell(next, out int after);
                     if (before != after)
                     {
-                        if (TryCrowdWaypoint(next, intent.Target, out SimVec3 following))
+                        if (TryCrowdRoute(unit, next, intent.Target, out SimVec3 following))
                             entities.Set(waypoints, unit, new MoveWaypoint(following, true));
                         else Stop(unit);
                     }
@@ -269,8 +283,8 @@ namespace WarCore.Interim
                 if (p.Retries < MaxRetries)
                 {
                     p.Retries++; p.Stall = 0;
-                    bool routed = crowdMode ? TryCrowdWaypoint(now, intent.Target, out SimVec3 again)
-                        : TryWaypoint(now, intent.Target, out again);
+                    bool routed = crowdMode ? TryCrowdRoute(unit, now, intent.Target, out SimVec3 again)
+                        : TryRoute(unit, now, intent.Target, out again);
                     if (routed)
                     {
                         entities.Set(waypoints, unit, new MoveWaypoint(again, true));
@@ -298,22 +312,35 @@ namespace WarCore.Interim
             EntityId unit = provisional[i].Unit;
             if (entities.Get(intents, unit).SpeedPerTick.Raw > MaxTerrainStepRaw)
                 throw new InvalidOperationException("Terrain worlds cap a unit step at 0.25 m per tick.");
-            long milli = grid.TryCell(point, out int cell) ? terrain.SpeedMilliAt(cell) : 1000;
+            long milli = layered ? PlateSpeedMilli(LayerOf(unit), point) : grid.TryCell(point, out int cell) ? terrain.SpeedMilliAt(cell) : 1000;
             var d = new SimVec3(SimFix.FromRaw(displacement.X.Raw * milli / 1000), default, SimFix.FromRaw(displacement.Z.Raw * milli / 1000));
             if (d.X.Raw == 0 && d.Z.Raw == 0) return;
             SimVec3 next = Grounded(point + d);
-            if (!ControlledAllows(context, i, next))
+            if (!ControlledTry(context, i, ref next))
             {
                 next = Grounded(point + new SimVec3(d.X, default, default));
-                if (d.X.Raw == 0 || !ControlledAllows(context, i, next))
+                if (d.X.Raw == 0 || !ControlledTry(context, i, ref next))
                 {
                     next = Grounded(point + new SimVec3(default, default, d.Z));
-                    if (d.Z.Raw == 0 || !ControlledAllows(context, i, next)) return;
+                    if (d.Z.Raw == 0 || !ControlledTry(context, i, ref next)) return;
                 }
             }
+            if (layered) CommitLayer(unit);
             context.SubmitMovement(unit, next);
             Face(unit, point, next);
             provisional[i].Point = next;
         }
+    
+        // A terrain candidate of crowd member i: placed on its layer first on a plate world, then units, then terrain (the
+        // order and short circuit of the flat rule's UnitsAllow || TerrainAllows).
+        private bool Allows(SimContext context, int i, ref SimVec3 next, out int blocker)
+        {
+            blocker = -1;
+            if (layered && !Settle(LayerOf(provisional[i].Unit), provisional[i].Point, ref next)) return false;
+            return UnitsAllow(i, next, out blocker) && TerrainAllows(context, i, next);
+        }
+
+        private bool ControlledTry(SimContext context, int i, ref SimVec3 next) =>
+            (!layered || Settle(LayerOf(provisional[i].Unit), provisional[i].Point, ref next)) && ControlledAllows(context, i, next);
     }
 }

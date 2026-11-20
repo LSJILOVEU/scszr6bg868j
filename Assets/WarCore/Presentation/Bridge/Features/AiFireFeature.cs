@@ -17,7 +17,7 @@ namespace WarCore.Presentation
 
         public override bool IsActive(WorldAssembly a)
         {
-            AiRules ai = (a.Terrain != null ? a.Recipe.TerrainPack : a.Recipe.AiPack)?.Section<AiRules>();
+            AiRules ai = (a.Terrain != null && a.Recipe.TerrainPack != null ? a.Recipe.TerrainPack : a.Recipe.AiPack)?.Section<AiRules>();
             if (ai == null) return false;
             return ai.ReactionTicks > 0 || ai.SenseTicks > 1 || ai.BurstShots > 0;
         }
@@ -25,7 +25,7 @@ namespace WarCore.Presentation
         public override void RegisterRules(WorldAssembly a)
         {
             if (a.Combat == null) throw new ArgumentException("The AI reaction time needs combat.");
-            AiRules ai = (a.Terrain != null ? a.Recipe.TerrainPack : a.Recipe.AiPack).Section<AiRules>();
+            AiRules ai = (a.Terrain != null && a.Recipe.TerrainPack != null ? a.Recipe.TerrainPack : a.Recipe.AiPack).Section<AiRules>();
             BurstCadence cadence = null;
             if (ai.BurstPauseFollowsShooter && ai.BurstShots > 0)
             {

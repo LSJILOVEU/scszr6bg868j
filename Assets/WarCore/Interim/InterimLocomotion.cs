@@ -55,17 +55,23 @@ namespace WarCore.Interim
         int ISimSystem.Order => 20;
         public string StateTypeId => "interim.locomotion";
         // A terrain world adds 100 to the version of the same movement kind and appends the terrain digest to its payload.
-        public int StateVersion => (crowd ? (pass != null ? 5 : 4) : grid != null ? 3 : wallMask == 0 ? 1 : 2) + (terrain != null ? 100 : 0);
+        // Floor plates add another 200 and append the layered graph's digest.
+        public int StateVersion => (crowd ? (pass != null ? 5 : 4) : grid != null ? 3 : wallMask == 0 ? 1 : 2) + (terrain != null ? 100 : 0)
+            + (layered ? 200 : 0);
 
         public void Order(EntityId unit, SimVec3 target)
         {
             MoveIntent intent = RequireIntent(unit);
             if (layered) SetTargetLayer(unit, 0);
-            target = Grounded(target);
+            Route(unit, intent, layered ? OnLayer(0, target) : Grounded(target));
+        }
+
+        private void Route(EntityId unit, MoveIntent intent, SimVec3 target)
+        {
             if (grid != null)
             {
                 SimVec3 point = entities.Get(positions, unit).Value;
-                if (!(crowd ? TryCrowdWaypoint(point, target, out SimVec3 waypoint) : TryWaypoint(point, target, out waypoint)))
+                if (!(crowd ? TryCrowdRoute(unit, point, target, out SimVec3 waypoint) : TryRoute(unit, point, target, out waypoint)))
                 {
                     Stop(unit);
                     if (terrain != null) BeginProgress(unit, point, default, target, false);
@@ -142,6 +148,7 @@ namespace WarCore.Interim
             if (grid != null) writer.UInt64(grid.Digest);
             if (pass != null) writer.UInt64(pass.Digest);
             if (terrain != null) writer.UInt64(terrain.Digest);
+            if (layered) writer.UInt64(layers.Digest);
         }
 
         public void LoadState(SimStateReader reader)
@@ -154,6 +161,8 @@ namespace WarCore.Interim
                 throw new InvalidOperationException("Crowd pass rule differs from the saved configuration.");
             if (terrain != null && reader.UInt64() != terrain.Digest)
                 throw new InvalidOperationException("Terrain tables differ from the saved configuration.");
+            if (layered && reader.UInt64() != layers.Digest)
+                throw new InvalidOperationException("Floor plates differ from the saved configuration.");
         }
 
         public void WriteState(StateHash hash)
@@ -165,6 +174,7 @@ namespace WarCore.Interim
             if (grid != null) hash.Add(grid.Digest);
             if (pass != null) hash.Add(pass.Digest);
             if (terrain != null) hash.Add(terrain.Digest);
+            if (layered) hash.Add(layers.Digest);
         }
     }
 }

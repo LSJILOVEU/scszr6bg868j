@@ -36,6 +36,8 @@ namespace WarCore.Interim
             internal SimFix Radius;
             // Snapshot of MoveIntent.Active taken when the table is built, so the answer does not change within one step.
             internal bool Active;
+            // Plate worlds only: the body's half height and the lift from the foot to the body centre (raw), as ML-3 builds them.
+            internal long Half, Lift;
         }
 
         private void StepCrowd(SimContext context)
@@ -49,7 +51,8 @@ namespace WarCore.Interim
                     throw new InvalidOperationException("Crowd requires capsules on a separate mover layer.");
                 if (memberCount == provisional.Length)
                     Array.Resize(ref provisional, memberCount < 8 ? 16 : memberCount * 2);
-                provisional[memberCount++] = new CrowdMember { Unit = unit, Point = position.Value, Radius = collider.Radius, Active = memberIntent.Active };
+                provisional[memberCount++] = new CrowdMember { Unit = unit, Point = position.Value, Radius = collider.Radius, Active = memberIntent.Active,
+                    Half = layered ? collider.WorldHalfExtents.Y.Raw : 0, Lift = layered ? BodyLift(collider).Raw : 0 };
             }
             // Keep the member table in stable order: blocker ties and all AI processing retain that order.
             int controlledIndex = -1;
@@ -167,7 +170,7 @@ namespace WarCore.Interim
             for (long k = 1; k <= pieces; k++)
             {
                 var end = k == pieces ? next : new SimVec3(SimFix.FromRaw(from.X.Raw + dx * k / pieces), from.Y, SimFix.FromRaw(from.Z.Raw + dz * k / pieces));
-                if (!grid.SegmentClear(start, end, radius)) return false;
+                if (!grid.SegmentClear(start, end, radius, layered ? openCells : null)) return false;
                 start = end;
             }
             return true;
@@ -185,7 +188,7 @@ namespace WarCore.Interim
             for (int z = cz - 1; z <= cz + 1; z++)
                 for (int x = cx - 1; x <= cx + 1; x++)
                 {
-                    if (grid.IsPassable(x, z)) continue;
+                    if (layered ? openCells.IsPassable(x, z) : grid.IsPassable(x, z)) continue;
                     long left = grid.OriginX.Raw + x * SimFix.Scale;
                     long bottom = grid.OriginZ.Raw + z * SimFix.Scale;
                     long dx = MaxRaw(0, MaxRaw(left - next.X.Raw, next.X.Raw - (left + SimFix.Scale)));
@@ -209,8 +212,13 @@ namespace WarCore.Interim
 
         private bool TerrainAllows(SimContext context, int i, SimVec3 next)
         {
-            if (!grid.TryCell(next, out int cell) || !grid.IsPassable(cell % grid.Width, cell / grid.Width)) return false;
-            if (terrain != null && !grid.SegmentClear(provisional[i].Point, next, UnitFootprint)) return false;
+            // On a plate world the candidate was settled first: its cell is open on its layer, and the footprint uses that rule.
+            if (layered) { if (!grid.SegmentClear(provisional[i].Point, next, UnitFootprint, openCells)) return false; }
+            else
+            {
+                if (!grid.TryCell(next, out int cell) || !grid.IsPassable(cell % grid.Width, cell / grid.Width)) return false;
+                if (terrain != null && !grid.SegmentClear(provisional[i].Point, next, UnitFootprint)) return false;
+            }
             return wallMask == 0 || !context.SpatialQuery.Any(SpatialQueries.Capsule(
                 provisional[i].Point, next, SimFix.FromRaw(MaxRaw(0, provisional[i].Radius.Raw - 1)), wallMask));
         }
@@ -234,6 +242,9 @@ namespace WarCore.Interim
                     if (jx - r >= highX || jx + r <= lowX || jz - r >= highZ || jz + r <= lowZ) continue;
                 }
                 if (pass != null && !provisional[j].Active && pass.MayPass(provisional[i].Unit, provisional[j].Unit)) continue;
+                // Plate worlds: bodies whose vertical ranges do not overlap pass each other (one above, one below).
+                if (layered && !BodiesOverlap(next.Y.Raw + provisional[i].Lift, provisional[i].Half,
+                    provisional[j].Point.Y.Raw + provisional[j].Lift, provisional[j].Half)) continue;
                 SimWide oldDistance = Planar(provisional[i].Point - provisional[j].Point).LengthSquared;
                 SimWide newDistance = Planar(next - provisional[j].Point).LengthSquared;
                 SimFix radius = provisional[i].Radius + provisional[j].Radius;
