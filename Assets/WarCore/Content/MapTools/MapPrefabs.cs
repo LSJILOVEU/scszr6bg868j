@@ -127,7 +127,9 @@ namespace WarCore.Content.MapTools
         // there within LayeredNav.StepRaw (the far edge's points may differ by at most that much). Thickness is
         // max(MinRampThickRaw, doorTopRaw - the lowest ground point under the ramp), so the underside is never above the
         // ground. Every top point must be at or above the ground point under it (plate rule 3), and the ramp must keep the
-        // stack clearance from every plate of the description (plate rule 4).
+        // stack clearance from every plate of the description (plate rule 4) except the one this stamp source already placed
+        // (stamping it again replaces that plate). The far edge must lie inside the map, so a row of ground cells is outside
+        // the foot to walk on from. Walls, the solid cell budget and the other plate rules are left to MapGate.Check.
         public const int MaxRampCells = 16;
         public const long MinRampThickRaw = SimFix.Scale / 2;
 
@@ -138,7 +140,9 @@ namespace WarCore.Content.MapTools
             if (width < 1) throw new ArgumentException("the ramp is narrower than one cell", nameof(width));
             if (slopeDen < 1 || slopeDen > HeightField.MaxWalkableDenominator || slopeNum < 0 || slopeNum > HeightField.MaxSlopeNumerator * slopeDen)
                 throw new ArgumentOutOfRangeException(nameof(slopeNum), "the walkable slope is out of range");
+            if (outward > MapSide.MinusZ) throw new ArgumentOutOfRangeException(nameof(outward));
             if (doorTopRaw > map.CeilingRaw) throw new ArgumentException("the doorway is above the ceiling", nameof(doorTopRaw));
+            if (doorTopRaw > MapDescReader.HeightLimit) throw new ArgumentOutOfRangeException(nameof(doorTopRaw), "the doorway is above the description's height limit");
             long num = slopeNum, den = slopeDen;
             if (num * MapGate.PlateSlopeDen > MapGate.PlateSlopeNum * den) { num = MapGate.PlateSlopeNum; den = MapGate.PlateSlopeDen; }
 
@@ -169,7 +173,8 @@ namespace WarCore.Content.MapTools
             for (int cells = 1; cells <= MaxRampCells && length == 0; cells++)
             {
                 long far = (long)door + sign * cells;
-                if (far < 0 || far > sizeAlong) throw new ArgumentException("the ramp leaves the map", nameof(first));
+                // far starts one line beyond the doorway line (0..sizeAlong) and moves by one: it meets an edge before leaving.
+                if (far <= 0 || far >= sizeAlong) throw new ArgumentException("the ramp's foot reaches the map edge: no ground outside it", nameof(first));
                 long high = Low(cells, out long lowest);
                 if (cells == 1 && doorTopRaw <= high)
                     throw new ArgumentException("the ground outside is as high as the doorway: no drop to ramp down (flatten it)", nameof(doorTopRaw));
@@ -192,11 +197,12 @@ namespace WarCore.Content.MapTools
                         throw new ArgumentException("the ramp would dip below the ground (plates must not be buried)", nameof(first));
                 }
             long thick = Math.Max(MinRampThickRaw, doorTopRaw - lowestGround);
+            if (thick > MapDescReader.HeightLimit) throw new ArgumentException("the ramp would be thicker than the description's height limit", nameof(doorTopRaw));
 
             MapXZ cell = alongX ? new MapXZ(along0, across0) : new MapXZ(across0, along0);
             MapXZ size = alongX ? new MapXZ(length, width) : new MapXZ(width, length);
             var plate = new MapPlate(0, cell, size, null, new MapSlope(alongX ? "x" : "z", from, to), thick);
-            ulong close = TooClose(map, plate);
+            ulong close = TooClose(map, plate, instance, part);
             if (close != 0) throw new ArgumentException("the ramp is closer to plate " + close + " than the stack clearance", nameof(first));
             return new MapStampPlan(instance, Array.Empty<MapHeightWrite>(), Array.Empty<MapSurfaceWrite>(), Array.Empty<MapStampEntry<MapWall>>(),
                 Array.Empty<MapStampEntry<MapPoint>>(), Array.Empty<MapStampEntry<MapBase>>(), Array.Empty<MapStampEntry<MapUnit>>(),
@@ -206,10 +212,14 @@ namespace WarCore.Content.MapTools
         // Ceiling of a / b for b > 0 (a may be negative or zero).
         private static long CeilDiv(long a, long b) => -PlateSpan.FloorDiv(-a, b);
 
-        // The id of the first plate of the description that breaks plate rule 4 with the new plate, or 0.
-        private static ulong TooClose(MapDesc map, MapPlate plate)
+        // The id of the first plate of the description that breaks plate rule 4 with the new plate, or 0. The plate stamp source
+        // (instance, part) placed before is left out: a stamp replaces it.
+        private static ulong TooClose(MapDesc map, MapPlate plate, string instance, ulong part)
         {
+            var own = new HashSet<ulong>(map.Plates.Where(p => p.Src != null && p.Src.Instance == instance
+                && p.Src.Kind == MapEditKinds.Plate.Name && p.Src.Src == part).Select(p => p.Id));
             List<PlateGeom> geoms = MapBake.PlateGeoms(map);
+            geoms.RemoveAll(g => own.Contains(g.Id));
             int ramp = geoms.Count;
             long floor = map.FloorRaw;
             geoms.Add(new PlateGeom(ulong.MaxValue, plate.Cell.X, plate.Cell.Z, plate.Size.X, plate.Size.Z,

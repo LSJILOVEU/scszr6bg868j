@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using NUnit.Framework;
 using WarCore.Content;
 using WarCore.Content.MapTools;
 using WarCore.Content.Rwr;
@@ -45,6 +46,14 @@ namespace WarCore.Tests
         }
 
         internal static ContentPack Pack => RwrPack.Load("rwr-m6");
+
+        // The call's result, failing the test on an assertion (not an escaped exception) when it throws.
+        internal static T Ok<T>(Func<T> call)
+        {
+            T result = default;
+            Assert.DoesNotThrow(() => result = call());
+            return result;
+        }
 
         internal static LayeredNav Nav(MapDesc d) => WcMapLayeredNav.Build(Ml4Maps.Bake(d), Pack);
 

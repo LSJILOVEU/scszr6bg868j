@@ -50,7 +50,7 @@ namespace WarCore.Tests
         public void TheFootTakesTheHigherPointWithinAStep()
         {
             MapDesc d = Ground(16, 8, (i, j) => i == 7 && j == 3 ? Step : 0, 10 * M);
-            Shape(Plate(Ramp(d, 6, 2, 1, MapSide.PlusX, 30000)), 6, 2, 1, 1, "x", 30000, Step, 32768);
+            Shape(Plate(Ok(() => Ramp(d, 6, 2, 1, MapSide.PlusX, 30000))), 6, 2, 1, 1, "x", 30000, Step, 32768);
             MapDesc uneven = Ground(16, 8, (i, j) => i == 7 && j == 3 ? Step + 1 : 0, 10 * M);
             Refused(() => Ramp(uneven, 6, 2, 1, MapSide.PlusX, 30000), "differs too much");
         }
@@ -64,18 +64,23 @@ namespace WarCore.Tests
             Refused(() => Ramp(Ground(16, 8, (i, j) => i == 6 && j == 3 ? 58983 : 0, 10 * M), 6, 2, 2, MapSide.PlusX, 58982), "below the ground");
         }
 
-        // T1-07: leaving the map at any length tried, and the stack clearance to another plate (bottom of the upper plate at
-        // least 2 m above the ramp's highest corner in a shared cell: 58982 + 131072 + 32768 = 222822 for a 0.5 m plate).
+        // T1-07: leaving the map at any length tried, a foot on the map's edge (no ground cell outside it to step from), and
+        // the stack clearance to another plate (bottom of the upper plate at least 2 m above the ramp's highest corner in a
+        // shared cell: 58982 + 131072 + 32768 = 222822 for a 0.5 m plate).
         [Test]
         public void TheRampStaysOnTheMapAndClearOfPlates()
         {
-            Refused(() => Ramp(Flat16(), 15, 2, 2, MapSide.PlusX, 58982), "leaves the map");   // one cell fits, too steep; two leave
+            Refused(() => Ramp(Flat16(), 15, 2, 2, MapSide.PlusX, 58982), "map edge");   // one cell already ends on x = 16
             Refused(() => Ramp(Flat16(), 16, 2, 2, MapSide.PlusX, 58982), "leaves the map");
             Refused(() => Ramp(Flat16(), 6, 7, 2, MapSide.PlusX, 58982), "leaves the map");
-            Refused(() => Ramp(Flat16(), 0, 2, 2, MapSide.MinusX, 58982), "leaves the map");
+            Refused(() => Ramp(Flat16(), 0, 2, 2, MapSide.MinusX, 58982), "map edge");   // one cell already ends on x = 0
             Refused(() => Ramp(Flat16(), 6, -1, 2, MapSide.PlusX, 58982), "leaves the map");
-            Assert.That(Plate(Ramp(Flat16(), 14, 2, 2, MapSide.PlusX, 58982)).Cell.X, Is.EqualTo(14), "a ramp may end on the map's edge");
-            Assert.That(Plate(Ramp(Flat16(), 1, 2, 2, MapSide.MinusX, 58982)).Cell.X, Is.EqualTo(0), "also at x = 0");
+            Refused(() => Ramp(Flat16(), 14, 2, 2, MapSide.PlusX, 58982), "map edge");   // foot on x = 16
+            Refused(() => Ramp(Flat16(), 1, 2, 2, MapSide.MinusX, 58982), "map edge");   // foot on x = 0
+            Refused(() => Ramp(Flat16(), 6, 6, 2, MapSide.PlusZ, 58982), "map edge");    // foot on z = 8
+            Assert.That(Plate(Ok(() => Ramp(Flat16(), 13, 2, 2, MapSide.PlusX, 58982))).Cell.X, Is.EqualTo(13), "foot on x = 15, one cell in");
+            Assert.That(Plate(Ok(() => Ramp(Flat16(), 2, 2, 2, MapSide.MinusX, 58982))).Cell.X, Is.EqualTo(1), "foot on x = 1");
+            Assert.That(Plate(Ok(() => Ramp(Flat16(), 6, 5, 2, MapSide.PlusZ, 58982))).Cell.Z, Is.EqualTo(5), "foot on z = 7");
             Refused(() => Ramp(Flat(16, 8, Ml4Maps.Flat(1, 6, 2, 2, 2, 222821)), 6, 2, 2, MapSide.PlusX, 58982), "plate 1");
             Assert.DoesNotThrow(() => Ramp(Flat(16, 8, Ml4Maps.Flat(1, 6, 2, 2, 2, 222822)), 6, 2, 2, MapSide.PlusX, 58982));
         }
@@ -87,7 +92,14 @@ namespace WarCore.Tests
             Refused(() => Ramp(Flat16(), 6, 2, 2, MapSide.PlusX, 0), "no drop");
             Assert.DoesNotThrow(() => Ramp(Flat16(), 6, 2, 2, MapSide.PlusX, 1));
             Refused(() => Ramp(Flat16(), 6, 2, 2, MapSide.PlusX, 10 * M + 1), "ceiling");
-            Assert.That(Plate(Ramp(Flat(32, 8), 6, 2, 2, MapSide.PlusX, 10 * M)).Size.X, Is.EqualTo(14), "a door at the ceiling: ceil(655360 / 49152) = 14 cells");
+            Assert.That(Plate(Ok(() => Ramp(Flat(32, 8), 6, 2, 2, MapSide.PlusX, 10 * M))).Size.X, Is.EqualTo(14), "a door at the ceiling: ceil(655360 / 49152) = 14 cells");
+            Assert.Throws<ArgumentOutOfRangeException>(() => Ramp(Flat16(), 6, 2, 2, (MapSide)4, 58982));
+            // The description's height limit is 2^29 - 1 = 536870911: a doorway 1 raw above it is refused even under a
+            // higher ceiling; ground at -536870911 one cell out makes a 2-cell ramp (foot at 536000000) thicker than it.
+            MapDesc high = Ml4Maps.Make(536870911, 16, 8, null, new MapPlate[0], ceilingRaw: 536936447);
+            Assert.Throws<ArgumentOutOfRangeException>(() => Ramp(high, 6, 2, 2, MapSide.PlusX, 536870912));
+            MapDesc pit = Ground(16, 8, (i, j) => i == 7 ? -536870911 : 536000000, 537000000);
+            Refused(() => Ramp(pit, 6, 2, 2, MapSide.PlusX, 536058982), "thicker");
             Assert.Throws<ArgumentOutOfRangeException>(() => Ramp(Flat16(), 6, 2, 2, MapSide.PlusX, 58982, 3, 0));
             Assert.Throws<ArgumentOutOfRangeException>(() => Ramp(Flat16(), 6, 2, 2, MapSide.PlusX, 58982, 3, 4097));
             Assert.Throws<ArgumentOutOfRangeException>(() => Ramp(Flat16(), 6, 2, 2, MapSide.PlusX, 58982, -1, 4));
@@ -108,7 +120,23 @@ namespace WarCore.Tests
             Shape(Plate(Ramp(Flat16(), 9, 2, 2, MapSide.MinusX, 58982)), 8, 2, 2, 2, "x", 0, 58982, 58982);
             Shape(Plate(Ramp(Flat16(), 6, 2, 2, MapSide.PlusZ, 58982)), 6, 2, 2, 2, "z", 58982, 0, 58982);
             Shape(Plate(Ramp(Flat16(), 6, 5, 2, MapSide.MinusZ, 58982)), 6, 4, 2, 2, "z", 0, 58982, 58982);
+            Shape(Plate(Ramp(Flat16(), 6, 2, 1, MapSide.PlusZ, 58982)), 6, 2, 1, 2, "z", 58982, 0, 58982);
+            Shape(Plate(Ramp(Flat16(), 9, 2, 1, MapSide.MinusX, 58982)), 8, 2, 2, 1, "x", 0, 58982, 58982);
             Assert.That(Points(Plate(Ramp(Flat16(), 9, 2, 2, MapSide.MinusX, 58982))), Is.EqualTo(new long[] { 0, 29491, 58982 }));
+        }
+
+        // Stamping the same instance and part again replaces its plate, so the clearance check leaves that plate out; another
+        // instance, or another part of the same one, on the same cells is too close to it.
+        [Test]
+        public void TheSameStampSourceMayBeStampedAgain()
+        {
+            MapDesc once = Stamp(Flat16(), Ramp(Flat16(), 6, 2, 1, MapSide.PlusX, 58982));
+            MapDesc twice = Stamp(once, Ok(() => Ramp(once, 6, 2, 1, MapSide.PlusX, 58982)));
+            Assert.That(twice.Plates.Count, Is.EqualTo(1));
+            Assert.That(Ml4Maps.Gate(twice), Is.Empty);
+            ulong id = once.Plates.Single().Id;
+            Refused(() => MapPrefabs.Ramp(once, "other", new MapXZ(6, 2), 1, MapSide.PlusX, 58982, 3, 4), "plate " + id);
+            Refused(() => MapPrefabs.Ramp(once, "ramp", new MapXZ(6, 2), 1, MapSide.PlusX, 58982, 3, 4, 2), "plate " + id);
         }
 
         [Test]
@@ -124,7 +152,9 @@ namespace WarCore.Tests
             MapDesc d = Ground(32, 8, (i, j) => 6554L * Math.Max(0, 22 - i), 10 * M);
             Shape(Plate(Ramp(d, 6, 2, 2, MapSide.PlusX, 163846)), 6, 2, 2, 2, "x", 163846, 91756, 72090);
             // At 1/16 a cell rises at most 4096: 65536 needs exactly 16 cells (15 would rise 4370 somewhere).
-            Assert.That(Plate(Ramp(Flat(32, 8), 6, 2, 2, MapSide.PlusX, 65536, 1, 16)).Size.X, Is.EqualTo(MapPrefabs.MaxRampCells));
+            Assert.That(Plate(Ok(() => Ramp(Flat(32, 8), 6, 2, 2, MapSide.PlusX, 65536, 1, 16))).Size.X, Is.EqualTo(16));
+            Refused(() => Ramp(Flat(32, 8), 6, 2, 2, MapSide.PlusX, 65537, 1, 16), "more than 16 cells");   // needs 17
+            Assert.That(MapPrefabs.MaxRampCells, Is.EqualTo(16));
             MapDesc steep = Ground(32, 4, (i, j) => 45875L * Math.Max(0, 23 - i), 2000000);
             Refused(() => Ramp(steep, 6, 1, 2, MapSide.PlusX, 45875L * 17 + 58982), "more than 16 cells");
         }

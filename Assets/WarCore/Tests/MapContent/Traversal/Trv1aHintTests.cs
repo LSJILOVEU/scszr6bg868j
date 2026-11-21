@@ -20,7 +20,7 @@ namespace WarCore.Tests
         // T1-14: nothing on the ground reaches the floor; the order is z, x, plate, side (PlusX, MinusX, PlusZ, MinusZ).
         [TestCase(Trv1aMaps.Step + 1)]
         [TestCase(58982)]
-        [TestCase(MapGate.HintMaxGapRaw)]
+        [TestCase(98304)]
         public void AFloorTheGroundCannotReachIsNamedSideBySide(long g)
         {
             var hints = Hints(Bare(g));
@@ -34,8 +34,12 @@ namespace WarCore.Tests
 
         // 0.3 m is a seam (the floor is reached); above 1.5 m it is a storey, not a doorway.
         [TestCase(Trv1aMaps.Step)]
-        [TestCase(MapGate.HintMaxGapRaw + 1)]
-        public void OutsideTheBandNothingIsNamed(long g) => Assert.That(Hints(Bare(g)), Is.Empty);
+        [TestCase(98305)]
+        public void OutsideTheBandNothingIsNamed(long g)
+        {
+            Assert.That(Hints(Bare(g)), Is.Empty);
+            Assert.That(MapGate.HintMaxGapRaw, Is.EqualTo(98304));
+        }
 
         // A wall on the ground cells west of the floor closes that side: two hints fewer.
         [Test]
@@ -84,13 +88,22 @@ namespace WarCore.Tests
         [Test]
         public void WhatCheckReportsGivesNoHints()
         {
-            Assert.That(MapGate.Hints(Encoding.UTF8.GetBytes("{"), Pack), Is.Empty, "does not read");
-            Assert.That(Hints(Ml4Maps.Buried()), Is.Empty, "does not bake");
+            Assert.That(Ok(() => MapGate.Hints(Encoding.UTF8.GetBytes("{"), Pack)), Is.Empty, "does not read");
+            Assert.That(Ok(() => Hints(Ml4Maps.Buried())), Is.Empty, "does not bake");
             Assert.That(Ml4Maps.Gate(Ml4Maps.Buried()), Is.Not.Empty);
-            Assert.That(Hints(Flat(16, 10)), Is.Empty, "no plates");
+            Assert.That(Ok(() => Hints(Flat(16, 10))), Is.Empty, "no plates");
             Assert.Throws<ArgumentException>(() => MapGate.Hints(Ml4Maps.Bytes(Bare(58982)), RwrPack.Load("rwr")));
             Assert.Throws<ArgumentNullException>(() => MapGate.Hints(null, Pack));
             Assert.Throws<ArgumentNullException>(() => MapGate.Hints(Ml4Maps.Bytes(Bare(58982)), null));
+        }
+
+        // Flat ground at -2^29 reads and passes Check, but the walking graph refuses it: no hints instead of a throw.
+        [Test]
+        public void GroundTheWalkingGraphRefusesGivesNoHints()
+        {
+            MapDesc d = Ml4Maps.Make(-536870912, 3, 3, null, new[] { Ml4Maps.Flat(1, 1, 1, 1, 1, -536811930, 32768) }, ceilingRaw: -536805376);
+            Assert.That(Ml4Maps.Gate(d), Is.Empty);
+            Assert.That(Ok(() => Hints(d)), Is.Empty);
         }
     }
 }

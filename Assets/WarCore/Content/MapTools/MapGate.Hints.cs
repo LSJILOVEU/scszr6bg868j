@@ -39,7 +39,7 @@ namespace WarCore.Content.MapTools
         // so it reaches nothing more), beside a walkable ground cell across one of its four edges, where the larger height
         // difference at the edge's two end points is in (LayeredNav.StepRaw, HintMaxGapRaw]. One hint per (cell, side), in
         // the order z, x, plate id, side. Empty when the description does not read, does not bake, names a surface the pack
-        // lacks, or has no plates: Check reports those.
+        // lacks, or has no plates (Check reports those), or when the walking graph cannot be built for it.
         public static IReadOnlyList<MapHint> Hints(byte[] descBytes, ContentPack pack)
         {
             if (descBytes == null) throw new ArgumentNullException(nameof(descBytes));
@@ -54,7 +54,10 @@ namespace WarCore.Content.MapTools
             if (desc.Surfaces != null && desc.Surfaces.Names.Any(name => pack.Terrain == null || !pack.Terrain.TryFind(name, out _))) return none;
             WcMap map = Bake(desc, new List<MapProblem>());
             if (map == null) return none;
-            LayeredNav nav = WcMapLayeredNav.Build(map, pack);
+            LayeredNav nav;
+            // The walking graph refuses flat ground at the height limit, which Check lets through: nothing to hint on.
+            try { nav = WcMapLayeredNav.Build(map, pack); }
+            catch (ArgumentOutOfRangeException) { return none; }
 
             bool[] reached = Reached(nav);
             var hints = new List<MapHint>();

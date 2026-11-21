@@ -1,6 +1,6 @@
 # TRV-1a: the ramp prefab (MapPrefabs.Ramp) and door hints (MapGate.Hints). Filter: Trv1a tests.
-# Not listed: the hint band's lower end (gap > StepRaw) is equivalent: a ground cell and a plate cell, both walkable,
-# whose edge ends are both within StepRaw always have a seam, so the plate cell is reached and never named.
+# Not listed: the hint band's lower end made inclusive (gap >= StepRaw) is equivalent: a ground cell and a plate cell,
+# both walkable, whose edge ends are both within StepRaw always have a seam, so the plate cell is reached and never named.
 
 [trv1a-slope-strict]
 file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
@@ -71,7 +71,7 @@ note = the 16-cell cap moves out
 original:
 | for (int cells = 1; cells <= MaxRampCells && length == 0; cells++)
 replacement:
-| for (int cells = 1; cells <= MaxRampCells + 2 && length == 0; cells++)
+| for (int cells = 1; cells <= MaxRampCells + 1 && length == 0; cells++)
 
 [trv1a-length-cap-short]
 file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
@@ -143,33 +143,23 @@ original:
 replacement:
 | if (PlateSpan.TopPoint(PlateAxis.X, from, to, length, 1, a, 0) <= g)
 
-[trv1a-map-far-high]
+[trv1a-map-edge-far]
 file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
 filter = FullyQualifiedName~Trv1a
 expect = WarCore.Tests.Trv1aRampTests.TheRampStaysOnTheMapAndClearOfPlates
-note = no check past the far side of the map
+note = a foot on the far map edge (x = width or z = depth) is let through
 original:
-| if (far < 0 || far > sizeAlong)
+| if (far <= 0 || far >= sizeAlong)
 replacement:
-| if (far < 0)
+| if (far <= 0 || far > sizeAlong)
 
-[trv1a-map-far-low]
+[trv1a-map-edge-near]
 file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
 filter = FullyQualifiedName~Trv1a
 expect = WarCore.Tests.Trv1aRampTests.TheRampStaysOnTheMapAndClearOfPlates
-note = no check before the near side of the map
+note = a foot on the near map edge (x = 0 or z = 0) is let through
 original:
-| if (far < 0 || far > sizeAlong)
-replacement:
-| if (far > sizeAlong)
-
-[trv1a-map-far-edge]
-file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
-filter = FullyQualifiedName~Trv1a
-expect = WarCore.Tests.Trv1aRampTests.TheRampStaysOnTheMapAndClearOfPlates
-note = a ramp ending on the map edge is refused
-original:
-| if (far < 0 || far > sizeAlong)
+| if (far <= 0 || far >= sizeAlong)
 replacement:
 | if (far < 0 || far >= sizeAlong)
 
@@ -404,3 +394,73 @@ original:
 | return Sorted(problems);
 replacement:
 | problems.AddRange(Hints(descBytes, pack).Select(h => new MapProblem(h.Code))); return Sorted(problems);
+
+[trv1a-hint-min-up]
+file = Assets/WarCore/Content/MapTools/MapGate.Hints.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aHintTests.AFloorTheGroundCannotReachIsNamedSideBySide
+note = a gap of 0.3 m plus 1 raw is not named
+original:
+| if (gap > LayeredNav.StepRaw && gap <= HintMaxGapRaw)
+replacement:
+| if (gap > LayeredNav.StepRaw + 1 && gap <= HintMaxGapRaw)
+
+[trv1a-self-restamp]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.TheSameStampSourceMayBeStampedAgain
+note = the clearance check counts the plate this stamp source placed before
+original:
+| geoms.RemoveAll(g => own.Contains(g.Id));
+replacement:
+| geoms.RemoveAll(g => false);
+
+[trv1a-self-other-part]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.TheSameStampSourceMayBeStampedAgain
+note = another part of the same instance is left out of the clearance check
+original:
+| && p.Src.Kind == MapEditKinds.Plate.Name && p.Src.Src == part)
+replacement:
+| && p.Src.Kind == MapEditKinds.Plate.Name)
+
+[trv1a-side-range]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.EachRefusalSaysWhy
+note = an undefined side is read as -z
+original:
+| if (outward > MapSide.MinusZ) throw new ArgumentOutOfRangeException(nameof(outward));
+replacement:
+| if (outward > MapSide.MinusZ + 1) throw new ArgumentOutOfRangeException(nameof(outward));
+
+[trv1a-door-limit]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.EachRefusalSaysWhy
+note = a doorway above the description's height limit is let through
+original:
+| if (doorTopRaw > MapDescReader.HeightLimit) throw
+replacement:
+| if (doorTopRaw > MapDescReader.HeightLimit + 1) throw
+
+[trv1a-thick-limit]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.EachRefusalSaysWhy
+note = a ramp thicker than the description's height limit is let through
+original:
+| if (thick > MapDescReader.HeightLimit) throw
+replacement:
+| if (thick > 2L * MapDescReader.HeightLimit + 2) throw
+
+[trv1a-hint-nav-refused]
+file = Assets/WarCore/Content/MapTools/MapGate.Hints.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aHintTests.GroundTheWalkingGraphRefusesGivesNoHints
+note = a description the walking graph refuses throws out of Hints
+original:
+| catch (ArgumentOutOfRangeException) { return none; }
+replacement:
+| catch (ArgumentOutOfRangeException) { throw; }
