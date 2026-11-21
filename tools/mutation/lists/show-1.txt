@@ -1,0 +1,383 @@
+# SHOW-1: the showcase stages (Showcase), the projectile view data (SimSession.ReadProjectiles) and the HUD text (ShowcaseHud).
+# Filter: Show1Tests. Not listed: the null guards of ReadProjectiles and the recipe switches whose removal makes a stage
+# throw on start (a crash is not an assertion); the content layers (JSON has no assembly); Unity code (no Unity here).
+
+[show1-fresh-is-launch-tick]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.AFreshProjectileSitsAtTheShootersMuzzleAndThenMovesFiveMetresATick
+note = a projectile fired on the committed tick is not fresh
+original:
+| bool fresh = view.LaunchTick >= tick;
+replacement:
+| bool fresh = view.LaunchTick > tick;
+
+[show1-before-is-one-tick-back]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.AFreshProjectileSitsAtTheShootersMuzzleAndThenMovesFiveMetresATick
+note = the earlier position is the current one
+original:
+| view.PositionAt(tick - 1);
+replacement:
+| view.PositionAt(tick);
+
+[show1-every-projectile-listed]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.AFreshProjectileSitsAtTheShootersMuzzleAndThenMovesFiveMetresATick
+note = the last projectile in flight is left out
+original:
+| flying != null && i < system.Count; i++)
+replacement:
+| flying != null && i < system.Count - 1; i++)
+
+[show1-projectile-team]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.AFreshProjectileSitsAtTheShootersMuzzleAndThenMovesFiveMetresATick
+note = the projectile's team is one too high
+original:
+|                     view.Team, fresh));
+replacement:
+|                     view.Team + 1, fresh));
+
+[show1-metres]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.AFreshProjectileSitsAtTheShootersMuzzleAndThenMovesFiveMetresATick
+note = positions are twice as far out
+original:
+| private static float Metres(SimFix value) => (float)value.Raw / SimFix.Scale;
+replacement:
+| private static float Metres(SimFix value) => (float)value.Raw * 2 / SimFix.Scale;
+
+[show1-struck-either-outcome]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.TheBulletsStageFliesProjectilesInsteadOfInstantHits
+note = no landing counts as a body hit
+original:
+| impact.Outcome == FireOutcome.Hit || impact.Outcome == FireOutcome.FriendHit
+replacement:
+| impact.Outcome == FireOutcome.Hit && impact.Outcome == FireOutcome.FriendHit
+
+[show1-damaged-needs-damage]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.TheBulletsStageFliesProjectilesInsteadOfInstantHits
+note = every landing counts as damage
+original:
+| impact.DamageRaw > 0));
+replacement:
+| impact.DamageRaw >= 0));
+
+[show1-house-reserves]
+file = Assets/WarCore/Presentation/Bridge/Showcase.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.AStageStartsWithItsForcesAndThePlayerInTeamOne
+note = one reserve fewer a side in the house
+original:
+| private const int HouseReserves = 12,
+replacement:
+| private const int HouseReserves = 11,
+
+[show1-house-respawn]
+file = Assets/WarCore/Presentation/Bridge/Showcase.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.TheHouseHasFloorsAndThePlayerComesBackFromTheReserve
+note = the fallen player waits far longer than the test plays
+original:
+| RespawnTicks = 150,
+replacement:
+| RespawnTicks = 15000,
+
+[show1-terrain-reserves]
+file = Assets/WarCore/Presentation/Bridge/Showcase.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.AStageStartsWithItsForcesAndThePlayerInTeamOne
+note = one reserve fewer a side on the terrain
+original:
+| private const int TerrainReserves = 30;
+replacement:
+| private const int TerrainReserves = 29;
+
+[show1-terrain-deployed]
+file = Assets/WarCore/Presentation/Bridge/Showcase.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.AStageStartsWithItsForcesAndThePlayerInTeamOne
+note = the tenth soldier of a side starts in reserve
+original:
+| rank >= 10);
+replacement:
+| rank >= 9);
+
+[show1-ancient-reserves]
+file = Assets/WarCore/Presentation/Bridge/Showcase.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.AStageStartsWithItsForcesAndThePlayerInTeamOne
+note = one reserve fewer a side in the melee
+original:
+| private const int AncientReserves = 30;
+replacement:
+| private const int AncientReserves = 29;
+
+[show1-ancient-deployed]
+file = Assets/WarCore/Presentation/Bridge/Showcase.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.AStageStartsWithItsForcesAndThePlayerInTeamOne
+note = the sixtieth soldier of a side starts in reserve
+original:
+| bool reserve = i >= 60;
+replacement:
+| bool reserve = i >= 59;
+
+[show1-ancient-player]
+file = Assets/WarCore/Presentation/Bridge/Showcase.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.AStageStartsWithItsForcesAndThePlayerInTeamOne
+note = the melee player is the second unit
+original:
+|                 .WithPlayer(1);
+replacement:
+|                 .WithPlayer(2);
+
+[show1-first-deployed-team]
+file = Assets/WarCore/Presentation/Bridge/Showcase.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.AStageStartsWithItsForcesAndThePlayerInTeamOne
+note = the player starts in team 2
+original:
+| if (unit.Team == 1 && !unit.Reserve) return unit.Key;
+replacement:
+| if (unit.Team == 2 && !unit.Reserve) return unit.Key;
+
+[show1-battle-unit-types]
+file = Assets/WarCore/Presentation/Bridge/Showcase.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.TheBattlePlayerHasADashAndABlockAndTheScriptUsesBoth
+note = the battle ignores the layer's unit types (no block)
+original:
+| useUnitTypes: true)
+replacement:
+| useUnitTypes: false)
+
+[show1-battle-ai-rules]
+file = Assets/WarCore/Presentation/Bridge/Showcase.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.TheBattleFormsSquadsAndPinsAndBreaksSoldiers
+note = the battle runs without the layer's AI rules
+original:
+|                 .WithAiRules(ContentCatalog.Find().Load(layer)).WithFacing();
+replacement:
+|                 .WithFacing();
+
+[show1-bullets-layer]
+file = Assets/WarCore/Presentation/Bridge/Showcase.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.TheBulletsStageFliesProjectilesInsteadOfInstantHits
+note = the bullets stage plays the battle layer
+original:
+| () => Lanes(BulletsLayer).WcMapBytes, () => Battle(BulletsLayer), BattleScript),
+replacement:
+| () => Lanes(BattleLayer).WcMapBytes, () => Battle(BattleLayer), BattleScript),
+
+[show1-script-dash]
+file = Assets/WarCore/Presentation/Bridge/Showcase.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.TheBattlePlayerHasADashAndABlockAndTheScriptUsesBoth
+note = the script never dashes
+original:
+| (180L, new PlayerInput(1000, 0, 100000, 70000, dash: true)),
+replacement:
+| (180L, new PlayerInput(1000, 0, 100000, 70000, dash: false)),
+
+[show1-script-block]
+file = Assets/WarCore/Presentation/Bridge/Showcase.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.TheBattlePlayerHasADashAndABlockAndTheScriptUsesBoth
+note = the script never blocks
+original:
+| (300L, new PlayerInput(0, 0, 100000, 70000, block: true)),
+replacement:
+| (300L, new PlayerInput(0, 0, 100000, 70000, block: false)),
+
+[show1-ancient-script-block]
+file = Assets/WarCore/Presentation/Bridge/Showcase.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.TheMeleePlayerIsAGuardWithAShieldAndNoGun
+note = the melee script never raises the shield
+original:
+| (240L, new PlayerInput(0, 0, 66000, 22000, block: true)),
+replacement:
+| (240L, new PlayerInput(0, 0, 66000, 22000, block: false)),
+
+[show1-team-colours]
+file = Assets/WarCore/Presentation/Bridge/Showcase.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.TheColoursComeFromTheCartridgePalette
+note = every team gets the first team's colour
+original:
+| teams[i] = palette.Team[i];
+replacement:
+| teams[i] = palette.Team[0];
+
+[show1-seconds-round-up]
+file = Assets/WarCore/Presentation/Camera/ShowcaseHud.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.SecondsRoundUpToTheNextTenthAndTheClockCountsMinutes
+note = seconds round down
+original:
+| * 10 + SimSession.TickRate - 1) / SimSession.TickRate;
+replacement:
+| * 10) / SimSession.TickRate;
+
+[show1-seconds-not-negative]
+file = Assets/WarCore/Presentation/Camera/ShowcaseHud.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.SecondsRoundUpToTheNextTenthAndTheClockCountsMinutes
+note = a negative wait is printed
+original:
+| long tenths = (Math.Max(0, ticks) * 10
+replacement:
+| long tenths = (ticks * 10
+
+[show1-clock-not-negative]
+file = Assets/WarCore/Presentation/Camera/ShowcaseHud.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.SecondsRoundUpToTheNextTenthAndTheClockCountsMinutes
+note = a negative tick is printed
+original:
+| long seconds = Math.Max(0, tick) / SimSession.TickRate;
+replacement:
+| long seconds = tick / SimSession.TickRate;
+
+[show1-clock-minutes]
+file = Assets/WarCore/Presentation/Camera/ShowcaseHud.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.SecondsRoundUpToTheNextTenthAndTheClockCountsMinutes
+note = a minute has 61 seconds
+original:
+| {seconds / 60}:{seconds % 60:00}
+replacement:
+| {seconds / 61}:{seconds % 61:00}
+
+[show1-bullets-line-only-in-flight]
+file = Assets/WarCore/Presentation/Camera/ShowcaseHud.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.TheStatusText
+note = the bullets line shows with none in the air
+original:
+| if (inFlight > 0)
+replacement:
+| if (inFlight >= 0)
+
+[show1-down-when-not-alive]
+file = Assets/WarCore/Presentation/Camera/ShowcaseHud.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.TheStatusTextShowsReloadDashBlockBulletsAndDown
+note = a dead player still shows health and ammo
+original:
+| if (key.HasValue && status.HasValue && alive)
+replacement:
+| if (key.HasValue && status.HasValue)
+
+[show1-reloading-word]
+file = Assets/WarCore/Presentation/Camera/ShowcaseHud.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.TheStatusText
+note = ready and reloading are swapped
+original:
+| .Append(s.Reloading ? "reloading " + Seconds(s.WaitTicksLeft) : "ready");
+replacement:
+| .Append(!s.Reloading ? "reloading " + Seconds(s.WaitTicksLeft) : "ready");
+
+[show1-dash-ready-at-zero]
+file = Assets/WarCore/Presentation/Camera/ShowcaseHud.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.TheStatusText
+note = a ready dash shows a wait
+original:
+| s.DashTicksLeft > 0 ? Seconds(s.DashTicksLeft) : "ready"
+replacement:
+| s.DashTicksLeft >= 0 ? Seconds(s.DashTicksLeft) : "ready"
+
+[show1-blocking-word]
+file = Assets/WarCore/Presentation/Camera/ShowcaseHud.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.TheStatusText
+note = BLOCKING shows when not blocking
+original:
+| if (s.Blocking)
+replacement:
+| if (!s.Blocking)
+
+[show1-match-over-line]
+file = Assets/WarCore/Presentation/Camera/ShowcaseHud.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.TheStatusText
+note = MATCH OVER shows while the match runs
+original:
+| if (m.IsFinished)
+replacement:
+| if (!m.IsFinished)
+
+[show1-point-owner]
+file = Assets/WarCore/Presentation/Camera/ShowcaseHud.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.TheStatusTextOfTheFirstFrame
+note = owned and neutral points are swapped
+original:
+| p.Owner == 0 ? "-" : "T" + p.Owner
+replacement:
+| p.Owner != 0 ? "-" : "T" + p.Owner
+
+[show1-stage-number]
+file = Assets/WarCore/Presentation/Camera/ShowcaseHud.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.TheStatusTextOfTheFirstFrame
+note = stages count from zero
+original:
+| STAGE {index + 1}/{count}
+replacement:
+| STAGE {index}/{count}
+
+[show1-squad-none]
+file = Assets/WarCore/Presentation/Camera/ShowcaseHud.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.TheSquadLineCountsTheLivingMembersAndNamesTheLeader
+note = a unit in a squad reads as in none
+original:
+| if (me.Band == 0) return "SQUAD  none\n";
+replacement:
+| if (me.Band != 0) return "SQUAD  none\n";
+
+[show1-squad-dead-unit]
+file = Assets/WarCore/Presentation/Camera/ShowcaseHud.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.TheSquadLineCountsTheLivingMembersAndNamesTheLeader
+note = a dead unit still gets a squad line
+original:
+| || !me.Alive) return "";
+replacement:
+| ) return "";
+
+[show1-squad-leader]
+file = Assets/WarCore/Presentation/Camera/ShowcaseHud.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.TheSquadLineCountsTheLivingMembersAndNamesTheLeader
+note = leader and member lines are swapped
+original:
+| return me.Band == me.Key ?
+replacement:
+| return me.Band != me.Key ?
+
+[show1-squad-counts-living]
+file = Assets/WarCore/Presentation/Camera/ShowcaseHud.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.TheSquadLineCountsTheLivingMembersAndNamesTheLeader
+note = every unit counts as a squad member
+original:
+| if (e.Alive && e.Band == me.Band) alive++;
+replacement:
+| if (e.Alive) alive++;
