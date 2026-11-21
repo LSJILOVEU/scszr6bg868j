@@ -1,0 +1,542 @@
+# BLAST-1: blasts (content, falloff, walls, queue, state, limits, scripted command). Filter: the BLAST-1 tests and the PROJ-1
+# limit tests; worlds without blasts are checked by the full suite (digests, limits, goldens).
+# Not listed (equivalent or caught only by the full suite):
+# - DamageAt's 'distance >= OuterRaw' to '>': at the outer radius the formula gives 0 anyway and 0 issues nothing.
+# - DamageAt's 'distance <= InnerRaw' to '<': at the inner radius the formula gives the full damage.
+# - registering the blast system without blasts (CombatFeature): the BlastSystem constructor refuses such a pack, so every
+#   world throws (the full suite).
+# - dropping the StableId dedup in Detonate: the grid query already returns each body once (it marks the bodies it visited),
+#   so a unit on a cell corner is hit once either way (B4 checks that).
+# - the digest section written without blasts: the section reads the rules object, which is null then (it would throw).
+
+[blast1-01-denominator]
+file = Assets/WarCore/Combat/BlastSpec.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1DamageTests.DamageFallsOffWithDistance
+note = the falloff divides by the outer radius instead of the ring width
+original:
+| DamageRaw * (OuterRaw - distanceRaw) / (OuterRaw - InnerRaw)
+replacement:
+| DamageRaw * (OuterRaw - distanceRaw) / OuterRaw
+
+[blast1-02-numerator]
+file = Assets/WarCore/Combat/BlastSpec.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1DamageTests.DamageFallsOffWithDistance
+note = the falloff counts from the inner radius outward (reversed)
+original:
+| DamageRaw * (OuterRaw - distanceRaw) / (OuterRaw - InnerRaw)
+replacement:
+| DamageRaw * (distanceRaw - InnerRaw) / (OuterRaw - InnerRaw)
+
+[blast1-03-round-up]
+file = Assets/WarCore/Combat/BlastSpec.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1DamageTests.NothingAtTheEdge
+note = the falloff rounds up
+original:
+| DamageRaw * (OuterRaw - distanceRaw) / (OuterRaw - InnerRaw)
+replacement:
+| (DamageRaw * (OuterRaw - distanceRaw) + OuterRaw - InnerRaw - 1) / (OuterRaw - InnerRaw)
+
+[blast1-04-mm-to-raw]
+file = Assets/WarCore/Combat/BlastSpec.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1DamageTests.DamageFallsOffWithDistance
+expect = WarCore.Tests.Blast1.Blast1PackTests.TheShippedLayerReadsBack
+note = the outer radius converted with the wrong scale
+original:
+| OuterRaw = SimFix.Ratio(outerMm, 1000).Raw;
+replacement:
+| OuterRaw = SimFix.Ratio(outerMm, 1001).Raw;
+
+[blast1-05-zero-issues]
+file = Assets/WarCore/Combat/CombatSystem.Blast.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1DamageTests.NothingAtTheEdge
+note = a damage of 0 still issues a command
+original:
+| if (damage == 0) continue;
+replacement:
+| if (damage < 0) continue;
+
+[blast1-06-foot]
+file = Assets/WarCore/Combat/CombatSystem.Blast.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1DamageTests.DamageFallsOffWithDistance
+expect = WarCore.Tests.Blast1.Blast1DamageTests.DistanceIsThreeDimensionalToTheBodyCentre
+note = the distance is measured to the foot
+original:
+| SimVec3 centre = Center(Point(entity));
+replacement:
+| SimVec3 centre = Point(entity);
+
+[blast1-07-horizontal]
+file = Assets/WarCore/Combat/CombatSystem.Blast.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1DamageTests.DistanceIsThreeDimensionalToTheBodyCentre
+note = the distance is horizontal only
+original:
+| long distance = (centre - point).Length.Raw;
+replacement:
+| long distance = Horizontal(centre - point).Length.Raw;
+
+[blast1-08-no-walls]
+file = Assets/WarCore/Combat/CombatSystem.Blast.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1DamageTests.Walls
+expect = WarCore.Tests.Blast1.Blast1DamageTests.SlopeAndRidge
+expect = WarCore.Tests.Blast1.Blast1DamageTests.APlateStopsIt
+note = walls are never tested
+original:
+| if (spec.Walls && !LineClear(from, centre)) continue;
+replacement:
+| if (false && !LineClear(from, centre)) continue;
+
+[blast1-09-walls-flag]
+file = Assets/WarCore/Combat/CombatSystem.Blast.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1DamageTests.Walls
+note = the walls flag is read inverted
+original:
+| if (spec.Walls && !LineClear(from, centre)) continue;
+replacement:
+| if (!spec.Walls && !LineClear(from, centre)) continue;
+
+[blast1-10-no-lift]
+file = Assets/WarCore/Combat/CombatSystem.Blast.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1DamageTests.SlopeAndRidge
+note = the line starts at the blast point itself
+original:
+| SimVec3 from = Lift(point, BlastLiftRaw);
+replacement:
+| SimVec3 from = point;
+
+[blast1-11-big-lift]
+file = Assets/WarCore/Combat/CombatSystem.Blast.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1DamageTests.TheLiftIsAQuarterMetre
+note = the line starts 3 m over the blast point
+original:
+| internal const long BlastLiftRaw = SimFix.Scale / 4;
+replacement:
+| internal const long BlastLiftRaw = SimFix.Scale * 3;
+
+[blast1-12-friendly-inverted]
+file = Assets/WarCore/Combat/CombatSystem.Blast.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1DamageTests.FriendlyHitsBothTeamsAndTheSource
+expect = WarCore.Tests.Blast1.Blast1DamageTests.UnfriendlyHitsOnlyTheOtherTeam
+note = the friendly flag is read inverted
+original:
+| if (!spec.Friendly && unit.Team == team) continue;
+replacement:
+| if (spec.Friendly && unit.Team == team) continue;
+
+[blast1-13-unfriendly-source]
+file = Assets/WarCore/Combat/CombatSystem.Blast.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1DamageTests.UnfriendlyHitsOnlyTheOtherTeam
+note = an unfriendly blast still hits its own source
+original:
+| if (!spec.Friendly && unit.Team == team) continue;
+replacement:
+| if (!spec.Friendly && unit.Team == team && !Entities.StableOf(entity).Equals(source)) continue;
+
+[blast1-14-team-zero]
+file = Assets/WarCore/Combat/CombatSystem.Blast.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1DamageTests.FriendlyHitsBothTeamsAndTheSource
+expect = WarCore.Tests.Blast1.Blast1DamageTests.AScriptedBlastHitsEveryTeam
+note = team 0 is hit
+original:
+| || unit.Team == 0 || IsDead(entity)) continue;
+replacement:
+| || IsDead(entity)) continue;
+
+[blast1-15-dead]
+file = Assets/WarCore/Combat/CombatSystem.Blast.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1DamageTests.TheDeadAreNotHit
+note = the dead are hit
+original:
+| || unit.Team == 0 || IsDead(entity)) continue;
+replacement:
+| || unit.Team == 0) continue;
+
+[blast1-17-order]
+file = Assets/WarCore/Combat/CombatSystem.Blast.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1DamageTests.HitsAreInStableIdOrder
+note = victims in query order (nearest first), not StableId order
+original:
+| Array.Sort(blastOrder, blastUnits, 0, n);
+replacement:
+
+[blast1-18-key-serial]
+file = Assets/WarCore/Combat/CombatSystem.Blast.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1DamageTests.TwoBlastsOfOneSourceBothLand
+expect = WarCore.Tests.Blast1.Blast1DamageTests.ScriptedBlastsCarryNoSource
+note = the serial is not in the damage key
+original:
+| var key = new GameplayApplyKey(source, (ulong)serial, 0, source, (ulong)serial, BlastActionOrdinal);
+replacement:
+| var key = new GameplayApplyKey(source, (ulong)tick, 0, source, (ulong)tick, BlastActionOrdinal);
+
+[blast1-19-shield]
+file = Assets/WarCore/Combat/CombatSystem.Blast.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1DamageTests.AShieldedUnitTakesZero
+note = a shielded unit takes the damage
+original:
+| if (Shielded(victim, tick)) damageRaw = 0;
+replacement:
+
+[blast1-20-shield-no-command]
+file = Assets/WarCore/Combat/CombatSystem.Blast.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1DamageTests.AShieldedUnitTakesZero
+note = a shielded unit gets no command
+original:
+| if (Shielded(victim, tick)) damageRaw = 0;
+replacement:
+| if (Shielded(victim, tick)) return 0;
+
+[blast1-21-record-damage]
+file = Assets/WarCore/Combat/CombatSystem.Blast.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1DamageTests.AShieldedUnitTakesZero
+note = the record keeps the damage before the shield
+original:
+| damages[offset + written] = applied;
+replacement:
+| damages[offset + written] = damage;
+
+[blast1-22-per-tick-unlimited]
+file = Assets/WarCore/Combat/BlastSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1QueueTests.FourATickInOrder
+expect = WarCore.Tests.Blast1.Blast1QueueTests.TheRingKeepsTheOrder
+note = every queued blast goes off at once
+original:
+| int go = Math.Min(count, rules.PerTick);
+replacement:
+| int go = count;
+
+[blast1-23-per-tick-one-more]
+file = Assets/WarCore/Combat/BlastSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1QueueTests.FourATickInOrder
+expect = WarCore.Tests.Blast1.Blast1QueueTests.TheRingKeepsTheOrder
+note = one blast more than PerTick a tick
+original:
+| int go = Math.Min(count, rules.PerTick);
+replacement:
+| int go = Math.Min(count, rules.PerTick + 1);
+
+[blast1-24-order-after]
+file = Assets/WarCore/Combat/BlastSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1QueueTests.QueuedAfterTheSystemWaitsATick
+expect = WarCore.Tests.Blast1.Blast1QueueTests.OnlyAPackWithBlastsGetsTheSystem
+note = the system runs after Order 33
+original:
+| public int Order => 28;
+replacement:
+| public int Order => 34;
+
+[blast1-25-ring-head]
+file = Assets/WarCore/Combat/BlastSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1QueueTests.TheRingKeepsTheOrder
+expect = WarCore.Tests.Blast1.Blast1QueueTests.FourATickInOrder
+note = the queue head does not move
+original:
+| head = (head + 1) % points.Length;
+replacement:
+| head = head % points.Length;
+
+[blast1-26-victim-count]
+file = Assets/WarCore/Combat/BlastSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1DamageTests.DamageFallsOffWithDistance
+expect = WarCore.Tests.Blast1.Blast1DamageTests.AShieldedUnitTakesZero
+note = the record says nobody was hit
+original:
+| serials[at], hitCount, written);
+replacement:
+| serials[at], hitCount, 0);
+
+[blast1-27-full-queue]
+file = Assets/WarCore/Combat/BlastSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1QueueTests.AFullQueueThrows
+note = the full-queue check is off by one
+original:
+| if (count == points.Length) throw
+replacement:
+| if (count > points.Length) throw
+
+[blast1-28-save-serial]
+file = Assets/WarCore/Combat/BlastSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1QueueTests.AnEmptyQueueKeepsTheSerial
+note = the serial is not saved when nothing waits (with blasts waiting it equals the last one's serial)
+original:
+|             writer.Int64(serial);
+|             writer.Int32(count);
+replacement:
+|             writer.Int64(count == 0 ? 0 : serial);
+|             writer.Int32(count);
+
+[blast1-29-save-order]
+file = Assets/WarCore/Combat/BlastSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1QueueTests.TheSavedBytesAreTheQueueInOrder
+note = the queue is saved in reverse
+original:
+|             for (int i = 0; i < count; i++)
+|             {
+|                 int at = Slot(i);
+|                 writer.Int64
+replacement:
+|             for (int i = 0; i < count; i++)
+|             {
+|                 int at = Slot(count - 1 - i);
+|                 writer.Int64
+
+[blast1-30-load-kind]
+file = Assets/WarCore/Combat/BlastSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1QueueTests.BadSavesAreRefused
+note = a kind one past the pack's loads
+original:
+| kind >= 0 && kind < rules.Kinds.Length
+replacement:
+| kind >= 0 && kind <= rules.Kinds.Length
+
+[blast1-31-load-team]
+file = Assets/WarCore/Combat/BlastSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1QueueTests.BadSavesAreRefused
+note = a negative team loads
+original:
+| SimStateReader.Require(team >= 0, "Blast team is negative.");
+replacement:
+
+[blast1-32-load-rising]
+file = Assets/WarCore/Combat/BlastSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1QueueTests.BadSavesAreRefused
+note = repeated serials load
+original:
+| SimStateReader.Require(s > last && s <= savedSerial,
+replacement:
+| SimStateReader.Require(s >= last && s <= savedSerial,
+
+[blast1-33-load-above]
+file = Assets/WarCore/Combat/BlastSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1QueueTests.BadSavesAreRefused
+note = a serial above the saved one loads
+original:
+| SimStateReader.Require(s > last && s <= savedSerial,
+replacement:
+| SimStateReader.Require(s > last,
+
+[blast1-34-load-range]
+file = Assets/WarCore/Combat/BlastSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1QueueTests.BadSavesAreRefused
+note = points out of range load
+original:
+| && z >= -MaxCoordinateRaw && z <= MaxCoordinateRaw, "Blast point is out of range.");
+replacement:
+| , "Blast point is out of range.");
+
+[blast1-35-hash-queue]
+file = Assets/WarCore/Combat/BlastSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1QueueTests.TheQueueIsInTheHash
+note = the queue's points are not hashed
+original:
+|                 hash.Add(points[at].X.Raw); hash.Add(points[at].Y.Raw); hash.Add(points[at].Z.Raw);
+|
+replacement:
+
+[blast1-36-commands]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1QueueTests.LimitsGrowByB
+expect = WarCore.Tests.Blast1.Blast1QueueTests.FourBlastsOnFiftyUnitsAllSettle
+note = B is not added to the damage commands
+original:
+| checked(unitCount * MaxHitsPerAction + projectiles + blastCommands),
+replacement:
+| checked(unitCount * MaxHitsPerAction + projectiles),
+
+[blast1-37-events]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1QueueTests.LimitsGrowByB
+note = B is not added to the events
+original:
+| checked(unitCount * (MaxHitsPerAction + 2) + projectiles + blastCommands)
+replacement:
+| checked(unitCount * (MaxHitsPerAction + 2) + projectiles)
+
+[blast1-38-staging]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1QueueTests.TheSettlementBoundIsChecked
+note = B is not counted in the settlement staging
+original:
+| long staging = 2 * (units * MaxHitsPerAction + projectiles + blasts) + 2 * units + 1;
+replacement:
+| long staging = 2 * (units * MaxHitsPerAction + projectiles) + 2 * units + 1;
+
+[blast1-39-default]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Projectile.Proj1CapacityTests.LimitsGrowByP
+note = the new limit parameter defaults to 1
+original:
+| public GameplaySchema BuildSchema(int unitCount, int projectiles = 0, int blastCommands = 0)
+replacement:
+| public GameplaySchema BuildSchema(int unitCount, int projectiles = 0, int blastCommands = 1)
+
+[blast1-40-digest]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1PackTests.Digest
+note = the blasts are not in the pack digest
+original:
+| if (blasts != null) blasts.WriteState(hash);
+replacement:
+
+[blast1-41-with-selector]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1PackTests.WithSelectorKeepsTheBlasts
+note = WithSelector drops the blasts
+original:
+| projectileSpeeds.Length == 0 ? null : projectileSpeeds, MoveSpread, ManualReload, Blasts);
+replacement:
+| projectileSpeeds.Length == 0 ? null : projectileSpeeds, MoveSpread, ManualReload);
+
+[blast1-42-digest-queue]
+file = Assets/WarCore/Combat/BlastSpec.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1PackTests.Digest
+note = the queue bound is not in the digest
+original:
+| hash.Add(PerTick); hash.Add(Queue);
+replacement:
+| hash.Add(PerTick);
+
+[blast1-43-content-inner]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1PackTests.ABadKindIsRefused
+note = innerMm equal to outerMm passes the reader
+original:
+| if (inner >= outer) throw
+replacement:
+| if (inner > outer) throw
+
+[blast1-44-content-orphan]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1PackTests.TheListItselfIsChecked
+note = blastPerTick without blasts is accepted
+original:
+|                     if (cr.Has(name)) throw cr.Bad(cr.FieldOf(name), "needs the combat section's " + BlastsField);
+|
+replacement:
+
+[blast1-45-content-default]
+file = Assets/WarCore/Combat/BlastSpec.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1PackTests.DefaultsAndExplicitLimits
+note = the default blasts per tick is 5
+original:
+| DefaultPerTick = 4,
+replacement:
+| DefaultPerTick = 5,
+
+[blast1-46-content-count]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1PackTests.TheListItselfIsChecked
+note = 33 kinds pass the reader's count
+original:
+| if (count < 1 || count > BlastRules.MaxKinds)
+replacement:
+| if (count < 1 || count > BlastRules.MaxKinds + 1)
+
+[blast1-47-session-squad]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1SessionTests.TheCommandGoesOffOnItsTick
+note = a blast command falls into the squad switch
+original:
+| if (hasCommand && !blast)
+replacement:
+| if (hasCommand)
+
+[blast1-48-session-ground]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1SessionTests.OnTerrainTheBlastLiesOnTheGround
+note = the blast ignores the terrain height
+original:
+|             return new SimVec3(point.X, y, point.Z);
+|         }
+|
+|         // A point on a layer
+replacement:
+|             return point;
+|         }
+|
+|         // A point on a layer
+
+[blast1-49-session-plate]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1SessionTests.OnAPlateTheBlastLiesOnThePlate
+note = the layer form blasts on the ground
+original:
+| if (layer > 0) return PlateTarget(xMm, zMm, layer);
+replacement:
+
+[blast1-50-view-radius]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1SessionTests.TheCommandGoesOffOnItsTick
+note = the view shows the inner radius
+original:
+| blasts.Rules.Kinds[record.Blast].OuterRaw / SimFix.Scale
+replacement:
+| blasts.Rules.Kinds[record.Blast].InnerRaw / SimFix.Scale
+
+[blast1-51-interpolate]
+file = Assets/WarCore/Presentation/Bridge/FrameView.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1SessionTests.TheCommandGoesOffOnItsTick
+note = interpolated frames drop the blasts
+original:
+| current.Match, current.Respawn, current.blasts);
+replacement:
+| current.Match, current.Respawn);
+
+[blast1-52-load-serial]
+file = Assets/WarCore/Combat/BlastSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1QueueTests.AnEmptyQueueKeepsTheSerial
+note = a restore takes the last waiting serial instead of the saved one
+original:
+| head = 0; count = n; serial = savedSerial;
+replacement:
+| head = 0; count = n; serial = last;

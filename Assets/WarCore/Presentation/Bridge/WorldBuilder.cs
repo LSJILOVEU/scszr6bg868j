@@ -62,15 +62,15 @@ namespace WarCore.Presentation
             var catalog = new PlacedCatalog(content, placements);
             // The map path sizes the entity table to walls plus units; the plain path keeps the M1 default.
             SimConfig config = map == null ? null : new SimConfig(entityCapacity: placements.Length);
-            int projectiles = CombatFeature.ProjectileCapacity(recipe);
-            if (recipe.Combat != null) config = recipe.Combat.BuildConfig(placements.Length, recipe.Units.Length, projectiles);
+            int projectiles = CombatFeature.ProjectileCapacity(recipe), blasts = CombatFeature.BlastCommands(recipe, projectiles);
+            if (recipe.Combat != null) config = recipe.Combat.BuildConfig(placements.Length, recipe.Units.Length, projectiles, blasts);
             // The match installer made the mode in Prepare, one fresh instance per world; it is bound once the match systems exist.
             MatchMode mode = assembly.Mode;
             var sim = recipe.Match == null
                 ? Simulation.CreateRetainedWorld(recipe.Seed, catalog, config, content: content,
-                    gameplaySchema: recipe.Combat?.BuildSchema(recipe.Units.Length, projectiles))
+                    gameplaySchema: recipe.Combat?.BuildSchema(recipe.Units.Length, projectiles, blasts))
                 : Simulation.CreateRetainedWorld(recipe.Seed, catalog, config, content: content, mode: mode, modeId: mode.RuleSetId,
-                    gameplaySchema: recipe.Combat?.BuildSchema(recipe.Units.Length, projectiles));
+                    gameplaySchema: recipe.Combat?.BuildSchema(recipe.Units.Length, projectiles, blasts));
             assembly.Sim = sim;
             FeatureTable.RunComponents(assembly);
             sim.ConfigureSpatial(assembly.Positions, assembly.Colliders, SimFix.FromInt(2),

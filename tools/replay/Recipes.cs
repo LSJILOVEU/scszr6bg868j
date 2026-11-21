@@ -87,6 +87,8 @@ namespace WarCore.Replay
             // move-spread band, 3000) or stands too ("-still"). The first 300 ticks are Tests/MapContent/Aim1 A9.
             ["aim-run"] = new Entry("rwr-aim, team 2 runs across 30 m in front", () => AimRun(true), AimRunMap),
             ["aim-run-still"] = new Entry("rwr-aim, both teams stand", () => AimRun(false), AimRunMap),
+            // BLAST-1: a scripted rwr.frag on tick 60 next to a 3 m wall; four units on its side, four behind the wall.
+            ["blast-wall"] = new Entry("Blast next to a 3 m wall (rwr-blast)", () => BlastDemo.Recipe(), BlastDemo.MapBytes),
         };
 
         private const string SquadAi = "\"squadMinSize\": 4, \"squadMaxSize\": 9, \"squadSkirmisherPermille\": 300, \"squadRecruitRadiusMm\": 30000, "

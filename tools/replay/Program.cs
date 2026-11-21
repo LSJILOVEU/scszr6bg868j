@@ -107,7 +107,7 @@ namespace WarCore.Replay
             first = true;
             foreach (var p in points) { if (!first) sb.Append(','); first = false; sb.Append('[').Append(F((float)p.x)).Append(',').Append(F((float)p.z)).Append(',').Append(F((float)p.r)).Append(']'); }
             sb.Append("],\"frames\":[");
-            var shots = new List<int>(); first = true;
+            var shots = new List<int>(); var blasts = new List<int>(); first = true;
             for (int tick = 0; tick <= maxTicks; tick++)
             {
                 if (tick > 0) { if (session.IsFinished) break; session.StepOnce(); }
@@ -119,6 +119,8 @@ namespace WarCore.Replay
                 }
                 foreach (ViewFire fire in frame.Fires)
                 { shots.Add(D(fire.X0)); shots.Add(D(fire.Z0)); shots.Add(D(fire.X1)); shots.Add(D(fire.Z1)); shots.Add(fire.Team); shots.Add(fire.Lethal ? 1 : 0); }
+                foreach (ViewBlast blast in frame.Blasts)
+                { blasts.Add(D(blast.X)); blasts.Add(D(blast.Z)); blasts.Add(D(blast.Radius)); blasts.Add(blast.Team); }
                 if (tick % every != 0 && !session.IsFinished) continue;
                 if (!first) sb.Append(','); first = false;
                 sb.Append("{\"t\":").Append(frame.Tick).Append(",\"o\":[");
@@ -194,9 +196,11 @@ namespace WarCore.Replay
                 if (broken.Count > 0) sb.Append("],\"b\":[").Append(string.Join(",", broken));
                 // Each unit's squad leader by unit index (-1 = in no squad; a leader names itself); written only when somebody is in a squad.
                 if (banded) sb.Append("],\"q\":[").Append(string.Join(",", bands));
+                // Blasts since the previous recorded frame (x, z, outer radius in decimetres, team); written only when there are any.
+                if (blasts.Count > 0) sb.Append("],\"x\":[").Append(string.Join(",", blasts));
                 sb.Append("],\"s\":[").Append(string.Join(",", shots)).Append("],\"a\":[").Append(frame.Match.AliveOne).Append(',').Append(frame.Match.AliveTwo)
                   .Append(',').Append(frame.Match.ReserveOne).Append(',').Append(frame.Match.ReserveTwo).Append("],\"h\":\"").Append(session.StateHash.ToString("X16")).Append("\"}");
-                shots.Clear();
+                shots.Clear(); blasts.Clear();
             }
             bool decided = session.IsFinished && session.Winner != 0;
             sb.Append("],\"metrics\":{\"attackRange\":").Append(N(Metrics.AttackRange)).Append(",\"slotRing\":").Append(N(ring)).Append(",\"decidedTick\":").Append(decided ? session.EndTick.ToString(CultureInfo.InvariantCulture) : "null");

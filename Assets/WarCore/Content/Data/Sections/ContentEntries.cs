@@ -75,20 +75,23 @@ namespace WarCore.Content
         }
 
         // An object section keeps its single entry as the only element of the list.
-        internal static void Object(List<ContentEntry> target, JsonNode node, string section, string layer, System.Predicate<string> nested = null)
+        internal static void Object(List<ContentEntry> target, JsonNode node, string section, string layer, System.Predicate<string> nested = null,
+            string[] nestedArrays = null)
         {
             if (node.Kind != JsonKind.Object) throw new ContentException("content layer '" + layer + "' " + section + " must be an object");
             if (target.Count == 0) target.Add(new ContentEntry(section, null, layer));
-            Overlay(target[0], node, layer, nested);
+            Overlay(target[0], node, layer, nested, nestedArrays);
         }
 
-        // nested: the field names allowed to hold an object; such an object is kept whole, so a child layer replaces all of it.
-        private static void Overlay(ContentEntry entry, JsonNode node, string layer, System.Predicate<string> nested = null)
+        // nested: the field names allowed to hold an object; nestedArrays: the field names allowed to hold an array. Both are
+        // kept whole, so a child layer replaces all of it.
+        private static void Overlay(ContentEntry entry, JsonNode node, string layer, System.Predicate<string> nested = null, string[] nestedArrays = null)
         {
             foreach (var member in node.Members)
             {
                 if (member.Name == "id" && entry.Id != null) continue;
-                bool whole = member.Value.Kind == JsonKind.Object && nested != null && nested(member.Name);
+                bool whole = member.Value.Kind == JsonKind.Object && nested != null && nested(member.Name)
+                    || member.Value.Kind == JsonKind.Array && nestedArrays != null && System.Array.IndexOf(nestedArrays, member.Name) >= 0;
                 if (!whole && (member.Value.Kind == JsonKind.Object || member.Value.Kind == JsonKind.Array))
                     throw new ContentException("content layer '" + layer + "' " + entry.Label + " field '" + member.Name + "' must be a number, string or boolean");
                 entry.Fields.RemoveAll(f => f.Name == member.Name);
