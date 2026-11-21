@@ -567,3 +567,13 @@ original:
 |                     old.X + dx * alpha, old.Y + dy * alpha, old.Z + dz * alpha, next.Squad, next.Team, next.Alive, layer: next.Layer, band: next.Band, stance: next.Stance);
 replacement:
 |                     old.X + dx * alpha, old.Y + dy * alpha, old.Z + dz * alpha, next.Squad, next.Team, next.Alive, layer: next.Layer, band: next.Band);
+
+[cs-spread-gear]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1SpreadTests.S9_ShotAngleTakesTheStanceRow
+note = the stance is not a gear of ShotAngle
+original:
+|             AddSpreadGear(system);
+replacement:
+|             // AddSpreadGear(system);
