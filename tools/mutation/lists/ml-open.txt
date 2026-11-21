@@ -1,0 +1,45 @@
+# ML-OPEN: MapRecipe.From adds the plates switch when the baked map has floor plates. Filter: the ML-OPEN tests.
+# Not listed: the refactor that reads the map once (the old terrain line, now on a local): ml-8 and the terrain tests
+# keep it.
+
+[mlopen-drop]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~MlOpenTests
+expect = WarCore.Tests.MlOpenTests.ThePlateDemoStartsFromItsFile
+expect = WarCore.Tests.MlOpenTests.TheAssaultSquadTakesThePointUpstairsThroughTheFile
+note = the file route no longer adds the switch
+original:
+|             if (map.Plates.Count > 0) recipe = recipe.WithPlatesPreview();
+replacement:
+|
+
+[mlopen-negate]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~MlOpenTests
+expect = WarCore.Tests.MlOpenTests.ThePlateDemoStartsFromItsFile
+expect = WarCore.Tests.MlOpenTests.AMapWithoutPlatesGetsNoSwitch
+note = the switch goes to maps without plates
+original:
+|             if (map.Plates.Count > 0) recipe = recipe.WithPlatesPreview();
+replacement:
+|             if (map.Plates.Count == 0) recipe = recipe.WithPlatesPreview();
+
+[mlopen-always]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~MlOpenTests
+expect = WarCore.Tests.MlOpenTests.AMapWithoutPlatesGetsNoSwitch
+note = every map file gets the switch
+original:
+|             if (map.Plates.Count > 0) recipe = recipe.WithPlatesPreview();
+replacement:
+|             if (map.Plates.Count >= 0) recipe = recipe.WithPlatesPreview();
+
+[mlopen-other-switch]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~MlOpenTests
+expect = WarCore.Tests.MlOpenTests.ThePlateDemoStartsFromItsFile
+note = another switch instead of the plates switch
+original:
+|             if (map.Plates.Count > 0) recipe = recipe.WithPlatesPreview();
+replacement:
+|             if (map.Plates.Count > 0) recipe = recipe.WithFacing();
