@@ -65,6 +65,11 @@ namespace WarCore.Content
         // looks for a spot behind a wall, the spacing of the spots it tries, and how close in front of the spot the wall
         // must stand. 0 = no cover.
         public int CoverRadiusMm { get; internal set; }
+        // AI-M1 (meleeNerve): a melee unit that is pressed asks the engage part before it chases. meleeNerveFightMm (only
+        // with meleeNerve on): a unit the part tells to take cover still goes for an enemy within this distance. 0, the
+        // default, leaves only an enemy on the unit's own spot within it.
+        public bool MeleeNerve { get; internal set; }
+        public int MeleeNerveFightMm { get; internal set; }
         public int CoverStepMm { get; internal set; }
         public int CoverDepthMm { get; internal set; }
         // The squad system's numbers (the seven squad* fields, all or none); null leaves squads out of the battle.
@@ -176,6 +181,7 @@ namespace WarCore.Content
         {
             ContentEntry entry = b.Single(Key);
             int failed = 0, memory = 0, search = 0, reaction = 0, sense = 1, burst = 0, pause = 0, suppress = 0, chase = 0, hold = 0, spread = 1;
+            bool meleeNerve = false; int meleeFight = 0;
             int spacing = AiRules.DefaultSlotSpacingMm, scatter = 0, ring = 0;
             System.Func<string, ContentException> ringError = null;
             bool follows = false;
@@ -270,10 +276,25 @@ namespace WarCore.Content
                     if (recoverAt >= brokenAt) throw r.Bad(r.FieldOf("pressureRecoverAt"), "must be below pressureBrokenAt (" + brokenAt + ")");
                     string fall = r.StrOrNull("pressureFall", out ContentField fallField) ?? FallOnHit;
                     if (fall != FallOnHit && fall != FallOnKill) throw r.Bad(fallField, "unknown value '" + fall + "', allowed: " + FallOnHit + ", " + FallOnKill);
+                    // AI-M1 (pressureStrikes, optional): melee presses too. False is the same as not written.
+                    bool strikes = r.Has("pressureStrikes") && r.Bool("pressureStrikes");
                     pressure = new WarCore.Battle.PressureRules(deathRadius, deathShock, nearRadius, nearShock, decay, brokenAt, recoverAt, pinnedAt, courage, breakShare,
-                        fall == FallOnKill);
+                        fall == FallOnKill, strikes);
                 }
                 else if (r.Has("pressureFall")) throw r.Bad(r.FieldOf("pressureFall"), "needs the pressure fields (pressureDeathRadiusMm ...)");
+                else if (r.Has("pressureStrikes")) throw r.Bad(r.FieldOf("pressureStrikes"), "needs the pressure fields (pressureDeathRadiusMm ...)");
+                // AI-M1 (meleeNerve, optional): only a pressed unit is asked, and only one that chases. False is the same as not written.
+                if (r.Has("meleeNerve"))
+                {
+                    meleeNerve = r.Bool("meleeNerve");
+                    if (!pressed) throw r.Bad(r.FieldOf("meleeNerve"), "needs the pressure fields (pressureDeathRadiusMm ...)");
+                    if (chase <= 0) throw r.Bad(r.FieldOf("meleeNerve"), "needs meleeChaseRange");
+                }
+                if (r.Has("meleeNerveFightMm"))
+                {
+                    meleeFight = r.Int("meleeNerveFightMm", 0, MaxPressureRadiusMm);
+                    if (!meleeNerve) throw r.Bad(r.FieldOf("meleeNerveFightMm"), "needs meleeNerve");
+                }
                 // Any of the three written makes all three required. Only a pressed unit takes cover, so the pressure fields must be there.
                 if (r.Has("coverRadiusMm") || r.Has("coverStepMm") || r.Has("coverDepthMm"))
                 {
@@ -299,7 +320,7 @@ namespace WarCore.Content
                 r.Done();
             }
             b.Publish(new AiRules(failed, memory, search, reaction, sense, burst, pause, suppress, chase, fair, follows, hold, spread, dispatch, placement, spacing, scatter, ring,
-                engage, boundMove, boundFire, boundShare, boundMinRange, assault, traits) { SlotRingError = ringError, FieldError = fieldError, Pressure = pressure, CoverRadiusMm = coverRadius, CoverStepMm = coverStep, CoverDepthMm = coverDepth, Squads = squads });
+                engage, boundMove, boundFire, boundShare, boundMinRange, assault, traits) { SlotRingError = ringError, FieldError = fieldError, Pressure = pressure, MeleeNerve = meleeNerve, MeleeNerveFightMm = meleeFight, CoverRadiusMm = coverRadius, CoverStepMm = coverStep, CoverDepthMm = coverDepth, Squads = squads });
         }
     }
 }
