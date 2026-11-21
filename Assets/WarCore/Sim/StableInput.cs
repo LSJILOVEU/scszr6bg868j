@@ -28,11 +28,12 @@ namespace WarCore.Sim
                     diagnostics?.Record(StableRequestKind.InputTarget,SquadTarget);
                 squad = new SquadCommand(value.Kind,value.Squad,value.TargetPoint,target,value.TargetLayer);
             }
-            return new InputFrame(Payload.Move,Payload.Aim,Payload.PrimaryAttack,Payload.Block,Payload.Throw,Payload.SkillSlot,squad,Payload.GameplayTick,Payload.SkillCommandArray,Payload.SkillCommandCount,Payload.AimLayer);
+            return new InputFrame(Payload.Move,Payload.Aim,Payload.PrimaryAttack,Payload.Block,Payload.Throw,Payload.SkillSlot,squad,Payload.GameplayTick,Payload.SkillCommandArray,Payload.SkillCommandCount,Payload.AimLayer,Payload.Actions);
         }
         // layers: the world carries layer numbers (Sim.EnableInputLayers). Without them the bytes are the original ones; with them
-        // the squad command's TargetLayer follows its link and the AimLayer comes last.
-        internal void Save(SimStateWriter writer,bool layers)
+        // the squad command's TargetLayer follows its link and the AimLayer comes last. actions: the world carries action bits
+        // (Sim.EnableInputActions); then one UInt32 follows everything else.
+        internal void Save(SimStateWriter writer,bool layers,bool actions = false)
         {
             SnapshotValues.Vector(writer,Payload.Move);
             SnapshotValues.Vector(writer,Payload.Aim);
@@ -51,8 +52,9 @@ namespace WarCore.Sim
                 if (layers) writer.Int32(value.TargetLayer);
             }
             if (layers) writer.Int32(Payload.AimLayer);
+            if (actions) writer.Int32(unchecked((int)Payload.Actions)); // four bytes, read back as uint
         }
-        internal static StableInputFrame Read(SimStateReader reader,bool layers)
+        internal static StableInputFrame Read(SimStateReader reader,bool layers,bool actions = false)
         {
             SimVec3 move = SnapshotValues.Vector(reader);
             SimVec3 aim = SnapshotValues.Vector(reader);
@@ -71,7 +73,8 @@ namespace WarCore.Sim
                 squad = new SquadCommand(kind,squadId,point,default,layers ? Layer(reader) : 0);
             }
             int aimLayer = layers ? Layer(reader) : 0;
-            return new StableInputFrame(new InputFrame(move,aim,attack,block,throwing,skill,squad,aimLayer:aimLayer),target);
+            uint bits = actions ? Actions(reader) : 0;
+            return new StableInputFrame(new InputFrame(move,aim,attack,block,throwing,skill,squad,aimLayer:aimLayer,actions:bits),target);
         }
         private static int Layer(SimStateReader reader)
         {
@@ -79,12 +82,19 @@ namespace WarCore.Sim
             SimStateReader.Require(layer >= 0 && layer <= PlateField.MaxPlates,"Invalid input layer.");
             return layer;
         }
+        private static uint Actions(SimStateReader reader)
+        {
+            uint bits = unchecked((uint)reader.Int32());
+            SimStateReader.Require(InputActions.IsValid(bits),"Invalid input action bits.");
+            return bits;
+        }
     }
 
     public sealed partial class Sim
     {
         private StableInputFrame stableInput;
         private bool inputLayers;
+        private bool inputActions;
         // Lets the input carry layer numbers (SquadCommand.TargetLayer, InputFrame.AimLayer): a world with floor plates turns it on
         // before warmup. Without it a frame with a non-zero layer is refused and the input bytes are the original ones.
         public void EnableInputLayers()
@@ -98,11 +108,26 @@ namespace WarCore.Sim
             if (!inputLayers && input.HasLayers)
                 throw new SimBoundaryException("This world's input carries no layer numbers.");
         }
+        private void CheckInputActions(in InputFrame input)
+        {
+            if (!inputActions && input.Actions != 0)
+                throw new SimBoundaryException("This world's input carries no action bits.");
+        }
+        // Lets the input carry action bits (InputFrame.Actions): turned on before warmup by the code that builds the world, every
+        // time (the switch is not saved). Without it a frame with non-zero bits is refused and the input bytes are the original
+        // ones; with it every saved and hashed input ends with one UInt32, after the layer numbers.
+        public void EnableInputActions()
+        {
+            Entities.RequireStableWorld();
+            if (warmed) throw new InvalidOperationException("Input actions are enabled before warmup.");
+            inputActions = true;
+        }
         public void StepStable(StableInputFrame input)
         {
             Entities.RequireStableWorld();
             RequireActivationBoundary();
             CheckInputLayers(input.Payload);
+            CheckInputActions(input.Payload);
             InputFrame bound = input.Bind(Entities,RequestDiagnostics);
             stableInput = input;
             StepCore(bound);
