@@ -30,8 +30,8 @@ namespace WarCore.Combat
 
         // ML-3 muzzle of a unit: where its aimed and automatic shots start (new mode: foot + muzzle height; without a body:
         // the foot).
-        public SimVec3 MuzzlePoint(EntityId unit) => Lift(Point(unit), muzzleRaw);
-        internal SimVec3 MuzzleOver(SimVec3 foot) => Lift(foot, muzzleRaw);
+        public SimVec3 MuzzlePoint(EntityId unit) => Lift(Point(unit), MuzzleOf(unit));
+        internal SimVec3 MuzzleOver(SimVec3 foot, EntityId unit) => Lift(foot, MuzzleOf(unit));
 
         // ML-3 where the built-in aimed and automatic lines at a unit end (new mode: its viewpoint; without a body: its foot).
         // A game-layer IAutoFire aims along ShotEnd(target) - MuzzlePoint(shooter), as the built-in decision does.
@@ -40,13 +40,20 @@ namespace WarCore.Combat
         // ML-3: a fire record's origin turned back into the point on the ground under the shooter. New mode: Origin minus the
         // muzzle height (all three shot paths record the muzzle). Without a body: Origin as recorded, including the 0.5 m an
         // explicit target shot has always recorded.
-        public SimVec3 GroundOfFireOrigin(in FireRecord fire) => bodied ? Lift(fire.Origin, -muzzleRaw) : fire.Origin;
+        // STANCE-1: with stances the record carries the muzzle height the shot left at (FireRecord.MuzzleRaw), so a shooter who
+        // changed stance since is still traced back to the foot it fired from.
+        public SimVec3 GroundOfFireOrigin(in FireRecord fire) => bodied ? Lift(fire.Origin, -(stances != null ? fire.MuzzleRaw : muzzleRaw)) : fire.Origin;
 
         // One body per pack (v1): a unit's eye and aim end are the pack's. A line that ends on a unit uses that unit's own
-        // value, a line that ends on a ground point the pack's standing default (D3); both are the same number until a pack
-        // carries postures or several bodies, when the ground-point readers need an explicit height.
-        private long EyeRaw(EntityId unit) => eyeRaw;
-        private long AimEndRaw(EntityId unit) => aimEndRaw;
+        // value, a line that ends on a ground point the pack's standing default (D3).
+        // STANCE-1: with stances a unit's eye, aim end (its eye) and muzzle are those of its stance now; ground points keep the
+        // standing default.
+        private long EyeRaw(EntityId unit) => stances != null ? stances.EyeRaw(unit) : eyeRaw;
+        private long AimEndRaw(EntityId unit) => stances != null ? stances.EyeRaw(unit) : aimEndRaw;
+        private long MuzzleOf(EntityId unit) => stances != null ? stances.MuzzleRaw(unit) : muzzleRaw;
+        // STANCE-1 (C-e): the spread factor of the unit's stance in permille: the stance now, the wider of the two while changing,
+        // 1000 without stances. Read only; the shot paths' spread is AIM-1's (ShotAngle takes it as its stance row).
+        public int StanceSpreadPermille(EntityId unit) => stances != null ? stances.SpreadPermille(unit) : 1000;
         private SimVec3 Eye(SimVec3 ground) => Lift(ground, eyeRaw);
         private SimVec3 Eye(SimVec3 foot, EntityId unit) => Lift(foot, EyeRaw(unit));
 

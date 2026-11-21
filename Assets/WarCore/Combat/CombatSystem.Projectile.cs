@@ -24,11 +24,12 @@ namespace WarCore.Combat
 
         // Fires a projectile from origin along direction. The pool is filled first, so a full pool (a broken capacity bound)
         // throws before the shooter's state changes.
-        private void Launch(EntityId shooter, in Combatant unit, in WeaponDef weapon, long tick, SimVec3 origin, SimVec3 direction,
+        // muzzleRaw: how far above the shooter's foot origin lies (kept with the projectile in a world with stances).
+        private void Launch(EntityId shooter, in Combatant unit, in WeaponDef weapon, long tick, SimVec3 origin, long muzzleRaw, SimVec3 direction,
             int spreadStored, long spreadLast)
         {
             if (projectileSystem == null) throw new InvalidOperationException("A projectile weapon fired but no projectile system is attached.");
-            projectileSystem.Add(Entities.StableOf(shooter), unit.Team, unit.Weapon, tick, origin, direction);
+            projectileSystem.Add(Entities.StableOf(shooter), unit.Team, unit.Weapon, tick, origin, direction, muzzleRaw);
             Entities.Set(combatants, shooter, Settle(in unit, in weapon, tick, spreadStored, spreadLast));
         }
 
@@ -37,7 +38,7 @@ namespace WarCore.Combat
         {
             int stored = weapon.Spread.IsNone ? 0 : weapon.Spread.StoredAfter(angle);
             long last = weapon.Spread.IsNone ? 0 : tick * 1000;
-            Launch(shooter, in unit, in weapon, tick, origin, direction, stored, last);
+            Launch(shooter, in unit, in weapon, tick, origin, MuzzleOf(shooter), direction, stored, last);
         }
 
         internal enum Landing : byte { Flying, Wall, Enemy, Friend }

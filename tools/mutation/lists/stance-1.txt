@@ -1,0 +1,566 @@
+# STANCE-1 (WP-26): stances, their state machine, sight, muzzle, speed line, action gate, command and view. Filter: the Stance1 tests.
+# Not listed: the projectile muzzle range check on restore and the muzzle in the projectile hash (no test forges a save or
+# compares two pools that differ only in a muzzle); the IsTransitioning test of Begin (the gate denies Stance while changing,
+# so removing it alone is equivalent; st-changing-deny covers the gate side).
+
+[st-changing-deny]
+file = Assets/WarCore/Combat/StanceSystem.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1StateTests.Gate_StanceDenyAndChangingDeny
+note = a changing unit may start another change (gate side)
+original:
+|         public const UnitAction ChangingDeny = UnitAction.Stance | UnitAction.Dash | UnitAction.Traverse;
+replacement:
+|         public const UnitAction ChangingDeny = UnitAction.Dash | UnitAction.Traverse;
+
+[st-same-level]
+file = Assets/WarCore/Combat/StanceSystem.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1StateTests.S4_RefusalsWriteNothing
+note = asking for the own level starts a change
+original:
+|             if (posture.IsTransitioning || posture.CurrentId == level || !Gate.Allows(unit, UnitAction.Stance)) return false;
+replacement:
+|             if (posture.IsTransitioning || !Gate.Allows(unit, UnitAction.Stance)) return false;
+
+[st-gate]
+file = Assets/WarCore/Combat/StanceSystem.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1CommandTests.S4_ADashingUnitMayNotChangeStance
+note = the gate is not asked
+original:
+|             if (posture.IsTransitioning || posture.CurrentId == level || !Gate.Allows(unit, UnitAction.Stance)) return false;
+replacement:
+|             if (posture.IsTransitioning || posture.CurrentId == level) return false;
+
+[st-reach]
+file = Assets/WarCore/Combat/StanceSystem.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1StateTests.S4_CostsAddUpAcrossLevels
+note = stand to prone costs only the prone ticks
+original:
+|             for (int i = 0; i < stances.Length; i++) reach[i + 1] = reach[i] + stances[i].Ticks;
+replacement:
+|             for (int i = 0; i < stances.Length; i++) reach[i + 1] = stances[i].Ticks;
+
+[st-abs]
+file = Assets/WarCore/Combat/StanceSystem.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1StateTests.S4_CostsAddUpAcrossLevels
+note = going up costs a negative time
+original:
+|         public long Cost(int from, int to) => Math.Abs(reach[Check(to)] - reach[Check(from)]);
+replacement:
+|         public long Cost(int from, int to) => reach[Check(to)] - reach[Check(from)];
+
+[st-level-high]
+file = Assets/WarCore/Combat/StanceSystem.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1StateTests.S4_RefusalsWriteNothing
+note = level 3 is not refused
+original:
+|             if (level < 0 || level >= Levels) throw new ArgumentOutOfRangeException(nameof(level), "A level is 0 to " + (Levels - 1) + ".");
+replacement:
+|             if (level < 0 || level > Levels) throw new ArgumentOutOfRangeException(nameof(level), "A level is 0 to " + (Levels - 1) + ".");
+
+[st-level-low]
+file = Assets/WarCore/Combat/StanceSystem.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1StateTests.S4_RefusalsWriteNothing
+note = level -1 is not refused
+original:
+|             if (level < 0 || level >= Levels) throw new ArgumentOutOfRangeException(nameof(level), "A level is 0 to " + (Levels - 1) + ".");
+replacement:
+|             if (level < -1 || level >= Levels) throw new ArgumentOutOfRangeException(nameof(level), "A level is 0 to " + (Levels - 1) + ".");
+
+[st-between-start]
+file = Assets/WarCore/Combat/StanceSystem.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1StateTests.S4_StandToCrouchTakesSixTicksCountedFromTheNextTick
+expect = WarCore.Tests.Stance.Stance1StateTests.S4_InStepAndBetweenStepsGiveTheSameDueTick
+note = a change between steps counts from the last tick
+original:
+|         public bool TryStance(EntityId unit, int level) => Begin(unit, level, checked(sim.Clock.Tick + 1));
+replacement:
+|         public bool TryStance(EntityId unit, int level) => Begin(unit, level, sim.Clock.Tick);
+
+[st-instep-start]
+file = Assets/WarCore/Combat/StanceSystem.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1StateTests.S4_InStepAndBetweenStepsGiveTheSameDueTick
+note = a change in the step counts from the next tick
+original:
+|             return Begin(unit, level, context.Clock.Tick);
+replacement:
+|             return Begin(unit, level, context.Clock.Tick + 1);
+
+[st-force-cancel]
+file = Assets/WarCore/Combat/StanceSystem.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1StateTests.S4_ForceStanceInTheRequestsPhase
+note = ForceStance keeps the running change
+original:
+|             inner.CancelTransition(sim.Context, unit);
+replacement:
+|             
+
+[st-dead]
+file = Assets/WarCore/Combat/StanceSystem.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1StateTests.S4_ADeadUnitIsRefused
+note = a dead unit may change stance
+original:
+|             entities.TryGet(positions, unit, out _) && sim.GameplayLife(entities.StableOf(unit)).State != GameplayLifeState.Dead;
+replacement:
+|             entities.TryGet(positions, unit, out _);
+
+[st-eye]
+file = Assets/WarCore/Combat/StanceSystem.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1SightTests.S5_Table
+note = the eye stays standing
+original:
+|         public long EyeRaw(EntityId unit) => BodyOf(Level(unit)).Eye.Raw;
+replacement:
+|         public long EyeRaw(EntityId unit) => body.Eye.Raw;
+
+[st-muzzle]
+file = Assets/WarCore/Combat/StanceSystem.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1SightTests.S7_AutoShot_OriginIsTheStanceMuzzle
+note = the muzzle stays standing
+original:
+|         public long MuzzleRaw(EntityId unit) => BodyOf(Level(unit)).Muzzle.Raw;
+replacement:
+|         public long MuzzleRaw(EntityId unit) => body.Muzzle.Raw;
+
+[st-speed-min]
+file = Assets/WarCore/Combat/StanceSystem.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1MoveTests.S8_WhileChanging_TheSlowerSpeed
+note = while changing the faster speed
+original:
+|             return view.IsChanging ? Math.Min(now, SpeedOf(view.Target)) : now;
+replacement:
+|             return view.IsChanging ? Math.Max(now, SpeedOf(view.Target)) : now;
+
+[st-spread-max]
+file = Assets/WarCore/Combat/StanceSystem.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1StateTests.S9_StanceSpreadPermille
+note = while changing the narrower spread
+original:
+|             return view.IsChanging ? Math.Max(now, SpreadOf(view.Target)) : now;
+replacement:
+|             return view.IsChanging ? Math.Min(now, SpreadOf(view.Target)) : now;
+
+[st-deny]
+file = Assets/WarCore/Combat/StanceSystem.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1CommandTests.S11_CrouchedDoesNotDash
+note = a stance denies nothing
+original:
+|             UnitAction denied = posture.CurrentId == 0 ? UnitAction.None : stances[posture.CurrentId - 1].Deny;
+replacement:
+|             UnitAction denied = posture.CurrentId == 0 ? UnitAction.None : UnitAction.None;
+
+[st-deny-changing]
+file = Assets/WarCore/Combat/StanceSystem.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1CommandTests.S11_ChangingDoesNotDash
+note = a changing unit may dash
+original:
+|             return posture.IsTransitioning ? denied | ChangingDeny : denied;
+replacement:
+|             return posture.IsTransitioning ? denied : denied;
+
+[st-body-swap]
+file = Assets/WarCore/Combat/StanceSystem.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1SightTests.S7_AutoShot_OriginIsTheStanceMuzzle
+note = prone uses the crouch body
+original:
+|         private CombatBody BodyOf(int level) => level == 0 ? body : stances[level - 1].Body;
+replacement:
+|         private CombatBody BodyOf(int level) => level == 0 ? body : stances[0].Body;
+
+[def-speed-high]
+file = Assets/WarCore/Combat/StanceDef.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1ContentTests.S1_PackChecks
+note = 1001 passes the definition
+original:
+|             if (speedPermille < MinSpeedPermille || speedPermille > MaxSpeedPermille) throw new ArgumentOutOfRangeException(nameof(speedPermille));
+replacement:
+|             if (speedPermille < MinSpeedPermille || speedPermille > MaxSpeedPermille + 1) throw new ArgumentOutOfRangeException(nameof(speedPermille));
+
+[def-spread-high]
+file = Assets/WarCore/Combat/StanceDef.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1ContentTests.S1_PackChecks
+note = 4000 is refused
+original:
+|             if (spreadPermille < MinSpreadPermille || spreadPermille > MaxSpreadPermille) throw new ArgumentOutOfRangeException(nameof(spreadPermille));
+replacement:
+|             if (spreadPermille < MinSpreadPermille || spreadPermille >= MaxSpreadPermille) throw new ArgumentOutOfRangeException(nameof(spreadPermille));
+
+[def-ticks-low]
+file = Assets/WarCore/Combat/StanceDef.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1ContentTests.S1_PackChecks
+note = 0 ticks pass
+original:
+|             if (ticks < MinTicks || ticks > MaxTicks) throw new ArgumentOutOfRangeException(nameof(ticks));
+replacement:
+|             if (ticks < 0 || ticks > MaxTicks) throw new ArgumentOutOfRangeException(nameof(ticks));
+
+[def-deny-move]
+file = Assets/WarCore/Combat/StanceDef.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1ContentTests.S1_PackChecks
+note = a stance may deny move
+original:
+|             if ((deny & ~Deniable) != UnitAction.None) throw new ArgumentOutOfRangeException(nameof(deny), "A stance may not deny Move or Stance.");
+replacement:
+|             if (false) throw new ArgumentOutOfRangeException(nameof(deny), "A stance may not deny Move or Stance.");
+
+[def-hash-deny]
+file = Assets/WarCore/Combat/StanceDef.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1ContentTests.S2_StancesAndEveryNumberChangeTheDigest
+note = the deny list is not in the digest
+original:
+|             hash.Add(SpeedPermille); hash.Add(SpreadPermille); hash.Add(Ticks); hash.Add((int)Deny);
+replacement:
+|             hash.Add(SpeedPermille); hash.Add(SpreadPermille); hash.Add(Ticks);
+
+[def-hash-ticks]
+file = Assets/WarCore/Combat/StanceDef.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1ContentTests.S2_StancesAndEveryNumberChangeTheDigest
+note = the ticks are not in the digest
+original:
+|             hash.Add(SpeedPermille); hash.Add(SpreadPermille); hash.Add(Ticks); hash.Add((int)Deny);
+replacement:
+|             hash.Add(SpeedPermille); hash.Add(SpreadPermille); hash.Add((int)Deny);
+
+[pack-max]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1ContentTests.S1_PackChecks
+note = seven stances are refused
+original:
+|             if (stances.Length > MaxStances) throw new ArgumentException("At most " + MaxStances + " stances.", nameof(stances));
+replacement:
+|             if (stances.Length >= MaxStances) throw new ArgumentException("At most " + MaxStances + " stances.", nameof(stances));
+
+[pack-lower]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1ContentTests.S1_PackChecks
+note = a stance as tall as the one above passes
+original:
+|                 if (stances[i].Body.Height.Raw >= above) throw new ArgumentException("Stance '" + stances[i].Id + "' is not lower than the one above it.", nameof(stances));
+replacement:
+|                 if (stances[i].Body.Height.Raw > above) throw new ArgumentException("Stance '" + stances[i].Id + "' is not lower than the one above it.", nameof(stances));
+
+[pack-digest]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1ContentTests.S2_StancesAndEveryNumberChangeTheDigest
+note = the table is not in the digest
+original:
+|             { hash.Add("combat.pack.stances.v1"); hash.Add(this.stances.Length); foreach (var stance in this.stances) stance.WriteState(hash); }
+replacement:
+|             { hash.Add("combat.pack.stances.v1"); hash.Add(this.stances.Length); }
+
+[pack-config]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1ContentTests.S2_ConfigGrowsOnlyWithStances
+note = the event limit does not grow
+original:
+|             int changes = stances.Length == 0 ? 0 : unitCount;
+replacement:
+|             int changes = stances.Length == 0 ? 0 : 0;
+
+[cs-count]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1ContentTests.S1_Count
+note = an empty table passes
+original:
+|             if (items.Count < 1 || items.Count > CombatPack.MaxStances)
+replacement:
+|             if (items.Count < 0 || items.Count > CombatPack.MaxStances)
+
+[cs-lower]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1ContentTests.S1_Heights
+note = a stance as tall as the one above passes content
+original:
+|                 if (height.Raw >= above)
+replacement:
+|                 if (height.Raw > above)
+
+[cs-eye]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1ContentTests.S1_Heights
+note = an eye at the top of the stance passes
+original:
+|                 Within(e, "eye", eye.Raw, UnitRadiusRaw, height.Raw - UnitRadiusRaw);
+replacement:
+|                 Within(e, "eye", eye.Raw, UnitRadiusRaw, height.Raw);
+
+[cs-ticks]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1ContentTests.S1_Numbers
+note = 301 ticks fail without naming the field
+original:
+|                 int ticks = e.Int("ticks", StanceDef.MinTicks, StanceDef.MaxTicks);
+replacement:
+|                 int ticks = e.Int("ticks", StanceDef.MinTicks, StanceDef.MaxTicks + 1);
+
+[cs-default-deny]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1ContentTests.S1_TheShippedLayerReadsAsTheCardSays
+note = an absent deny denies nothing
+original:
+|                 UnitAction deny = e.Has("deny") ? Deny(e) : StanceDef.DefaultDeny;
+replacement:
+|                 UnitAction deny = e.Has("deny") ? Deny(e) : UnitAction.None;
+
+[sg-ground]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1SightTests.S7_AutoShot_OriginIsTheStanceMuzzle
+note = the foot is found with the standing muzzle
+original:
+|         public SimVec3 GroundOfFireOrigin(in FireRecord fire) => bodied ? Lift(fire.Origin, -(stances != null ? fire.MuzzleRaw : muzzleRaw)) : fire.Origin;
+replacement:
+|         public SimVec3 GroundOfFireOrigin(in FireRecord fire) => bodied ? Lift(fire.Origin, -(muzzleRaw)) : fire.Origin;
+
+[sg-eye]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1SightTests.S5_Table
+note = the sight line starts at the standing eye
+original:
+|         private long EyeRaw(EntityId unit) => stances != null ? stances.EyeRaw(unit) : eyeRaw;
+replacement:
+|         private long EyeRaw(EntityId unit) => eyeRaw;
+
+[sg-aim]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1SightTests.S5_Table
+note = shots aim at the standing eye
+original:
+|         private long AimEndRaw(EntityId unit) => stances != null ? stances.EyeRaw(unit) : aimEndRaw;
+replacement:
+|         private long AimEndRaw(EntityId unit) => aimEndRaw;
+
+[sg-muzzle]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1SightTests.S7_AutoShot_OriginIsTheStanceMuzzle
+note = shots leave the standing muzzle
+original:
+|         private long MuzzleOf(EntityId unit) => stances != null ? stances.MuzzleRaw(unit) : muzzleRaw;
+replacement:
+|         private long MuzzleOf(EntityId unit) => muzzleRaw;
+
+[sg-spread-none]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1StateTests.S9_StanceSpreadPermille
+note = without stances the factor is 0
+original:
+|         public int StanceSpreadPermille(EntityId unit) => stances != null ? stances.SpreadPermille(unit) : 1000;
+replacement:
+|         public int StanceSpreadPermille(EntityId unit) => stances != null ? stances.SpreadPermille(unit) : 0;
+
+[rs-target]
+file = Assets/WarCore/Combat/CombatSystem.Resolve.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1SightTests.S7_TargetShot_OriginIsTheStanceMuzzle
+note = the explicit target shot leaves 0.5 m up
+original:
+|             long from = stances != null ? stances.MuzzleRaw(shooter) : targetOriginRaw;
+replacement:
+|             long from = targetOriginRaw;
+
+[ps-add]
+file = Assets/WarCore/Combat/ProjectileSystem.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1SightTests.S7_ProjectileKeepsItsLaunchFoot
+note = a projectile keeps the standing muzzle
+original:
+|             Put(count++, launcher, team, weapon, tick, origin, step, stanced ? muzzleRaw : combat.MuzzleRaw);
+replacement:
+|             Put(count++, launcher, team, weapon, tick, origin, step, combat.MuzzleRaw);
+
+[ps-foot]
+file = Assets/WarCore/Combat/ProjectileSystem.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1SightTests.S7_ProjectileKeepsItsLaunchFoot
+note = the launch foot is the muzzle point
+original:
+|         private SimVec3 FootOf(int i) => origins[i] - new SimVec3(default, SimFix.FromRaw(muzzles[i]), default);
+replacement:
+|         private SimVec3 FootOf(int i) => origins[i];
+
+[ps-save]
+file = Assets/WarCore/Combat/ProjectileSystem.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1SightTests.S7_ProjectileKeepsItsLaunchFoot
+note = the muzzle is not saved
+original:
+|                 if (stanced) writer.Int64(muzzles[i]);
+replacement:
+|                 
+
+[sl-floor]
+file = Assets/WarCore/Interim/SpeedLine.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1MoveTests.S8_ASlowUnitProneStillMoves
+expect = WarCore.Tests.Stance.Stance1MoveTests.SpeedLine_ScalesOnceAndNeverToZero
+note = a slow prone unit stops
+original:
+|             return SimFix.FromRaw(own.Raw > 0 && scaled < 1 ? 1 : scaled);
+replacement:
+|             return SimFix.FromRaw(scaled);
+
+[sl-limit]
+file = Assets/WarCore/Interim/SpeedLine.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1MoveTests.SpeedLine_SevenGearsThenThrows
+note = the eighth gear is not refused as an argument
+original:
+|             if (count == gears.Length) throw new ArgumentException("A speed line takes at most " + StatLine.MaxFactors + " gears.", nameof(gear));
+replacement:
+|             if (count > gears.Length) throw new ArgumentException("A speed line takes at most " + StatLine.MaxFactors + " gears.", nameof(gear));
+
+[sl-duplicate]
+file = Assets/WarCore/Interim/SpeedLine.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1MoveTests.SpeedLine_RefusesNullAndTheSameGearTwice
+note = a gear goes on twice
+original:
+|                 if (ReferenceEquals(gears[i], gear)) throw new ArgumentException("This gear is already on the line.", nameof(gear));
+replacement:
+|                 if (false) throw new ArgumentException("This gear is already on the line.", nameof(gear));
+
+[pl-wanted]
+file = Assets/WarCore/Control/PlayerStep.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1MoveTests.S8_Player_StepsTheScaledSpeed
+note = the player ignores the stance
+original:
+|             displacement = move * (speed == null ? intent.SpeedPerTick : speed.Wanted(unit, intent.SpeedPerTick));
+replacement:
+|             displacement = move * (intent.SpeedPerTick);
+
+[sf-player]
+file = Assets/WarCore/Presentation/Bridge/Features/StanceFeature.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1MoveTests.S8_Player_StepsTheScaledSpeed
+note = the player step gets no line
+original:
+|             a.PlayerStep?.BindSpeed(line);
+replacement:
+|             
+
+[sf-dashing]
+file = Assets/WarCore/Presentation/Bridge/Features/StanceFeature.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1CommandTests.S4_ADashingUnitMayNotChangeStance
+note = a dashing unit may change stance
+original:
+|             if (DashFeature.Instance.IsActive(a)) a.Gate.Add(new DashingLimit(a.Locomotion));
+replacement:
+|             
+
+[sf-dashing-throw]
+file = Assets/WarCore/Presentation/Bridge/Features/StanceFeature.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1CommandTests.S4_ADashingUnitMayNotChangeStance
+note = a dashing unit may throw
+original:
+|         internal const UnitAction WhileDashing = UnitAction.Dash | UnitAction.Stance | UnitAction.Traverse | UnitAction.Throw | UnitAction.Interact;
+replacement:
+|         internal const UnitAction WhileDashing = UnitAction.Dash | UnitAction.Stance | UnitAction.Traverse | UnitAction.Interact;
+
+[se-dash-gate]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1CommandTests.S11_CrouchedDoesNotDash
+note = the dash key ignores the gate
+original:
+|                         && (gate == null || gate.Allows(unit, UnitAction.Dash)))
+replacement:
+|                         )
+
+[se-skip-player]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1CommandTests.S11_TheCommandSkipsThePlayer
+note = the command asks the player too
+original:
+|                 if (controlled != null && unit.Equals(controlled.Current)) continue;
+replacement:
+|                 
+
+[se-not-squad]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1CommandTests.S11_TheCommandAsksTheLivingUnitsOfTheSquad
+note = the stance command becomes a squad order
+original:
+|             if (hasCommand && pending[0].Kind == BridgeCommandKind.Stance)
+replacement:
+|             if (false)
+
+[se-key-order]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1CommandTests.S11_TheCommandAsksTheLivingUnitsOfTheSquad
+note = the walk starts at the largest key and asks only that unit
+original:
+|                     if (spawns[i].Squad == command.Squad && (first || spawns[i].Key > last) && (next < 0 || spawns[i].Key < spawns[next].Key))
+replacement:
+|                     if (spawns[i].Squad == command.Squad && (first || spawns[i].Key > last) && (next < 0 || spawns[i].Key > spawns[next].Key))
+
+[se-enqueue]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1CommandTests.S11_TheLevelIsChecked
+note = a level one past the last is queued
+original:
+|             else if (command.Kind == BridgeCommandKind.Stance && command.Level >= (stances?.Levels ?? 1))
+replacement:
+|             else if (command.Kind == BridgeCommandKind.Stance && command.Level > (stances?.Levels ?? 1))
+
+[se-view]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1CommandTests.S11_TheCommandAsksTheLivingUnitsOfTheSquad
+note = the frame shows no stance
+original:
+|                     stances == null ? 0 : stances.StanceOf(unit).Level));
+replacement:
+|                     0));
+
+[fv-stance]
+file = Assets/WarCore/Presentation/Bridge/FrameView.cs
+filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1CommandTests.S11_TheCommandAsksTheLivingUnitsOfTheSquad
+note = an interpolated frame drops the stance
+original:
+|                     old.X + dx * alpha, old.Y + dy * alpha, old.Z + dz * alpha, next.Squad, next.Team, next.Alive, layer: next.Layer, band: next.Band, stance: next.Stance);
+replacement:
+|                     old.X + dx * alpha, old.Y + dy * alpha, old.Z + dz * alpha, next.Squad, next.Team, next.Alive, layer: next.Layer, band: next.Band);

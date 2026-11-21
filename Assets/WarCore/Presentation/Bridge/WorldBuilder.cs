@@ -73,7 +73,7 @@ namespace WarCore.Presentation
                     gameplaySchema: recipe.Combat?.BuildSchema(recipe.Units.Length, projectiles));
             assembly.Sim = sim;
             FeatureTable.RunComponents(assembly);
-            sim.ConfigureSpatial(assembly.Positions, assembly.Colliders, SimFix.FromInt(2),
+            sim.ConfigureSpatial(assembly.Positions, assembly.Colliders, SimFix.FromInt(2), postures: assembly.Postures,
                 footAnchoredLayers: WorldAssembly.FootAnchoredLayers(recipe.Combat));
             if (map != null)
             {
@@ -108,6 +108,7 @@ namespace WarCore.Presentation
                 Facings = facings, Terrain = assembly.Terrain, TerrainRules = recipe.TerrainPack?.Terrain,
                 Plates = assembly.Plates, Layers = PlateLayers.Of(assembly),
                 Dash = dash ? assembly.Locomotion : null, DashStates = dash ? sim.Entities.Resolve<DashState>() : (ComponentType<DashState>?)null,
+                Stances = assembly.Stances, Gate = assembly.Gate,
             });
             foreach (BridgeCommand command in recipe.Script)
                 session.Enqueue(command);

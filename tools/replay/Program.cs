@@ -72,6 +72,9 @@ namespace WarCore.Replay
             var indexOf = new Dictionary<ulong, int>();
             for (int i = 0; i < keys.Count; i++) indexOf[keys[i]] = i;
             var bands = new int[keys.Count]; var inSquads = new int[2];
+            // STANCE-1: each unit's stance level per frame (0 = standing, 1 = crouched, 2 = prone), written only for a combat pack with stances.
+            bool stanced = recipe.Combat != null && recipe.Combat.HasStances;
+            var stanceOf = new int[keys.Count];
             var leash = new[] { new List<double>(), new List<double>() };
 
             var points = new List<(double x, double z, double r)>();
@@ -135,8 +138,10 @@ namespace WarCore.Replay
                 {
                     if (i > 0) sb.Append(',');
                     bands[i] = -1;
+                    stanceOf[i] = 0;
                     if (frame.TryGet(keys[i], out ViewEntity e))
                     {
+                        stanceOf[i] = e.Stance;
                         if (e.Band != 0 && indexOf.TryGetValue(e.Band, out int lead))
                         {
                             bands[i] = lead; banded = true;
@@ -194,6 +199,7 @@ namespace WarCore.Replay
                 if (broken.Count > 0) sb.Append("],\"b\":[").Append(string.Join(",", broken));
                 // Each unit's squad leader by unit index (-1 = in no squad; a leader names itself); written only when somebody is in a squad.
                 if (banded) sb.Append("],\"q\":[").Append(string.Join(",", bands));
+                if (stanced) sb.Append("],\"p\":[").Append(string.Join(",", stanceOf));
                 sb.Append("],\"s\":[").Append(string.Join(",", shots)).Append("],\"a\":[").Append(frame.Match.AliveOne).Append(',').Append(frame.Match.AliveTwo)
                   .Append(',').Append(frame.Match.ReserveOne).Append(',').Append(frame.Match.ReserveTwo).Append("]}");
                 shots.Clear();

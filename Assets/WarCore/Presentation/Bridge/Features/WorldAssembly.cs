@@ -79,6 +79,13 @@ namespace WarCore.Presentation
         internal MatchSystem Match { get; set; }
         internal Pressure Pressure { get; set; }
         internal Squads Squads { get; set; }
+        // STANCE-1, written by the stance installer (a pack with stances only; null otherwise): the posture geometry the spatial
+        // index takes, the stance system and the action gate of the world.
+        internal PostureGeometry Postures { get; set; }
+        internal StanceSystem Stances { get; set; }
+        internal ActionGate Gate { get; set; }
+        // Written by the movement installer: the player's step, or null without player control.
+        internal PlayerStep PlayerStep { get; set; }
 
         // Where a unit stands when it is placed: the map's flat floor, or the terrain surface where the map has a height field;
         // on a plate (layer above 0, checked by the plate installer) the plate's floored surface.
