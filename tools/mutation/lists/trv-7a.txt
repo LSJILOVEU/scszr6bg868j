@@ -3,6 +3,8 @@
 # static sight: units never block it, plates do). Filter: the TRV-7a tests.
 # Not listed: the appendix row "three costs added for a walk through an entry" (TRV-7b). Ring bounds are checked on whole
 # metres in the map tests and on raw values in T7-10; a cell 1 raw off a bound does not exist on a 1 m grid.
+# Not listed: dropping the "walkable side in front and behind" check. A run with one side has no representative for the
+# other, so the build throws (10 tests fail with an error, not an assertion); the harness counts that as invalid.
 
 [trv7a-narrow-width-lt]
 file = Assets/WarCore/Sim/EntryTable.cs
@@ -33,16 +35,6 @@ original:
 | if (cells.AnyAcross(first, -ux, -uz) || cells.AnyAcross(last, ux, uz)) continue;
 replacement:
 | if (cells.AnyAcross(first, -ux, -uz) && cells.AnyAcross(last, ux, uz)) continue;
-
-[trv7a-front-or-back]
-file = Assets/WarCore/Sim/EntryTable.cs
-filter = FullyQualifiedName~Trv7a
-expect = WarCore.Tests.Trv7a
-note = a walkable side in front or behind is enough
-original:
-| if (!front || !back) continue;
-replacement:
-| if (!front && !back) continue;
 
 [trv7a-merge-none]
 file = Assets/WarCore/Sim/EntryTable.cs
