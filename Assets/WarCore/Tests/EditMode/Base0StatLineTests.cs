@@ -42,6 +42,12 @@ namespace WarCore.Tests
         [Test]
         public void V3_UpperBounds()
         {
+            // The bounds themselves are valid: a refusal must fail here as an assertion, not as an exception.
+            Assert.That(() => StatLine.Scale(StatLine.MaxBase, Many(4000, 7)), Throws.Nothing, "largest base, seven factors of 4000");
+            Assert.That(() => StatLine.Scale(-StatLine.MaxBase, Many(4000, 7)), Throws.Nothing);
+            Assert.That(() => StatLine.Apply(StatLine.MaxBase, Many(4000, 3), Many(4000, 4), 0, 0), Throws.Nothing, "3 gears + 4 drags");
+            Assert.That(() => StatLine.Apply(StatLine.MaxBase, Many(4000, 7), None, 0, 0), Throws.Nothing, "7 gears");
+            Assert.That(() => StatLine.Apply(StatLine.MaxBase, None, Many(4000, 7), 0, 4000), Throws.Nothing, "7 drags");
             Assert.That(StatLine.Scale(2147483647, Many(4000, 5)), Is.EqualTo(2199023254528L));
             Assert.That(StatLine.Scale(2147483647, Many(4000, 6)), Is.EqualTo(8796093018112L));
             Assert.That(StatLine.Scale(2147483647, Many(4000, 7)), Is.EqualTo(35184372072448L));
@@ -198,7 +204,9 @@ namespace WarCore.Tests
                 Rejects(() => StatLine.Apply(100, new[] { bad }, None, 0, 0), "gears");
                 Rejects(() => StatLine.Apply(100, None, new[] { bad }, 0, 0), "drags");
             }
-            Assert.That(StatLine.Scale(1000, new[] { 1, 4000 }), Is.EqualTo(4), "1 and 4000 are valid");
+            Assert.That(() => StatLine.Scale(1000, new[] { 1, 4000 }), Throws.Nothing, "1 and 4000 are valid");
+            Assert.That(() => StatLine.Apply(1000, new[] { 4000 }, new[] { 1 }, 0, 0), Throws.Nothing);
+            Assert.That(StatLine.Scale(1000, new[] { 1, 4000 }), Is.EqualTo(4));
             Rejects(() => StatLine.Scale(2147483648L, None), "baseValue");
             Rejects(() => StatLine.Scale(-2147483648L, None), "baseValue");
             Rejects(() => StatLine.Apply(2147483648L, None, None, 0, 0), "baseValue");
@@ -210,7 +218,10 @@ namespace WarCore.Tests
             Rejects(() => StatLine.Apply(1, Many(1000, 4), Many(1000, 4), 0, 0), "drags");
             Rejects(() => StatLine.Apply(1, Many(1000, 8), None, 0, 0), "gears");
             Rejects(() => StatLine.Apply(1, None, Many(1000, 8), 0, 0), "drags");
-            Assert.That(StatLine.Apply(1, Many(1000, 4), Many(1000, 3), 0, 0), Is.EqualTo(1), "4 + 3 is valid");
+            Assert.That(() => StatLine.Apply(1, Many(1000, 4), Many(1000, 3), 0, 0), Throws.Nothing, "4 + 3 is valid");
+            Assert.That(() => StatLine.Scale(1, Many(1000, 7)), Throws.Nothing, "seven factors are valid");
+            Assert.That(() => StatLine.Scale(StatLine.MaxBase, None), Throws.Nothing, "the largest base is valid");
+            Assert.That(StatLine.Apply(1, Many(1000, 4), Many(1000, 3), 0, 0), Is.EqualTo(1));
             Rejects(() => StatLine.Apply(1, None, new[] { 1000 }, 4001, 0), "dragFloorPermille");
             Rejects(() => StatLine.Apply(1, None, new[] { 1000 }, -1, 0), "dragFloorPermille");
             Rejects(() => StatLine.Apply(1, None, new[] { 1000 }, 0, 4001), "dragCeilPermille");
