@@ -62,8 +62,7 @@ namespace WarCore.Presentation
             var catalog = new PlacedCatalog(content, placements);
             // The map path sizes the entity table to walls plus units; the plain path keeps the M1 default.
             SimConfig config = map == null ? null : new SimConfig(entityCapacity: placements.Length);
-            int projectiles = CombatFeature.ProjectileCapacity(recipe);
-            int blasts = CombatFeature.BlastCommands(recipe, projectiles);
+            int projectiles = CombatFeature.ProjectileCapacity(recipe), blasts = CombatFeature.BlastCommands(recipe, projectiles);
             if (recipe.Combat != null) config = recipe.Combat.BuildConfig(placements.Length, recipe.Units.Length, projectiles, blasts);
             // The match installer made the mode in Prepare, one fresh instance per world; it is bound once the match systems exist.
             MatchMode mode = assembly.Mode;
