@@ -25,13 +25,13 @@ namespace WarCore.Battle
         private readonly ComponentType<Combatant> combatants;
         private StableId guarded;
         private long guardEnd;
-        private readonly IUnitLayers layers;
+        private readonly PointPresence presence;
 
         // layers: on a map with floor plates (ML-9b) an enemy contests a point only on the point's layer; null keeps the old rule.
         public RespawnSystem(Simulation sim, CombatSystem combat, MatchPack pack, CaptureSystem capture, IUnitDeployer deployer, IControlTarget controlled,
             IUnitLayers layers = null)
         {
-            this.layers = layers;
+            presence = new PointPresence(combat, pack.TeamCount, layers);
             this.sim = sim; this.combat = combat; this.pack = pack; this.capture = capture; this.deployer = deployer; this.controlled = controlled;
             stage = new EntityStage(combat.Entities); positions = combat.Entities.Resolve<Position>(); combatants = combat.Entities.Resolve<Combatant>();
         }
@@ -72,25 +72,17 @@ namespace WarCore.Battle
         {
             anchor = default; layer = 0; SimWide best = default; bool found = false;
             for (int i = 0; i < pack.Points.Length; i++)
-                if (capture.Points[i].Owner == team && pack.Points[i].HasSpawn && !Contested(team, pack.Points[i]))
+                if (capture.Points[i].Owner == team && pack.Points[i].HasSpawn && !presence.Contested(team, pack.Points[i]))
                     Closer(pack.Points[i].Spawn, pack.Points[i].SpawnLayer, origin, ref anchor, ref layer, ref best, ref found);
             if (found) return true;
             foreach (var spawn in pack.Bases) if (spawn.Team == team) Closer(spawn.Point, spawn.Layer, origin, ref anchor, ref layer, ref best, ref found);
             return found;
         }
 
-        // Contested: a living unit of another team (1..TeamCount, NT-1) with a position stands inside the point's capture circle (centre and radius,
-        // horizontal only, boundary included; ML-9b: with layers, on the point's layer too), counted like CaptureSystem counts units.
-        // Read before this tick's movement.
+        // Contested (PointPresence, RESPAWN-AI-1: the same rule capture counts by and reinforcement skips by): a unit of another
+        // team that is not dead and has a position stands in the point's circle (boundary included; with layers, on the point's
+        // layer too). Read before this tick's movement.
         // PointState.Capturing is not used: under InterruptMode.Pause it outlives the enemy that set it.
-        private bool Contested(int team, in ControlPointDef point)
-        {
-            foreach (EntityId entity in stage.Capture())
-                if (combat.Entities.TryGet(combatants, entity, out Combatant unit) && unit.Team != team && unit.Team >= 1 && unit.Team <= pack.TeamCount
-                    && combat.Entities.TryGet(positions, entity, out Position at) && !combat.IsDead(entity) && CaptureSystem.Inside(layers, entity, at.Value, point))
-                    return true;
-            return false;
-        }
 
         private static void Closer(SimVec3 point, int pointLayer, SimVec3 origin, ref SimVec3 anchor, ref int layer, ref SimWide best, ref bool found)
         {

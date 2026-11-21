@@ -16,24 +16,55 @@ namespace WarCore.Battle
         public CaptureRecord(long tick, int pointId, int oldOwner, int newOwner)
         { Tick = tick; PointId = pointId; OldOwner = oldOwner; NewOwner = newOwner; }
     }
-    public sealed class CaptureSystem : IRetainedGameplaySystem
+    // RESPAWN-AI-1: who stands on a point, one rule for capture counting, player respawn and reinforcement. A unit stands when
+    // its team is 1..TeamCount (NT-1), it has a position and it is not dead: a downed unit is not dead, so it counts. It is in a
+    // point's circle as CaptureSystem.Inside says (ML-9b: with layers, on the point's layer too). Reads the units as they are now.
+    public sealed class PointPresence
     {
         private readonly CombatSystem combat;
         private readonly EntityStage stage;
         private readonly ComponentType<Position> positions;
         private readonly ComponentType<Combatant> combatants;
+        private readonly int teams;
+        private readonly IUnitLayers layers;
+        // layers: null without floor plates (the plane alone decides).
+        public PointPresence(CombatSystem combat, int teams, IUnitLayers layers)
+        {
+            this.combat = combat; this.teams = teams; this.layers = layers; stage = new EntityStage(combat.Entities);
+            positions = combat.Entities.Resolve<Position>(); combatants = combat.Entities.Resolve<Combatant>();
+        }
+        public bool Stands(EntityId unit, out int team, out SimVec3 at)
+        {
+            team = 0; at = default;
+            if (!combat.Entities.TryGet(combatants, unit, out Combatant value) || value.Team < 1 || value.Team > teams
+                || !combat.Entities.TryGet(positions, unit, out Position position) || combat.IsDead(unit)) return false;
+            team = value.Team; at = position.Value; return true;
+        }
+        public bool Inside(EntityId unit, SimVec3 at, in ControlPointDef point) => CaptureSystem.Inside(layers, unit, at, point);
+        // Contested for team: a unit of another team stands in the point's circle.
+        public bool Contested(int team, in ControlPointDef point)
+        {
+            foreach (EntityId unit in stage.Capture())
+                if (Stands(unit, out int other, out SimVec3 at) && other != team && Inside(unit, at, point)) return true;
+            return false;
+        }
+    }
+
+    public sealed class CaptureSystem : IRetainedGameplaySystem
+    {
+        private readonly EntityStage stage;
+        private readonly PointPresence presence;
         private readonly MatchPack pack;
         private readonly PointState[] states;
         private readonly int[] counts;
         private readonly int teams;
         private readonly CaptureRecord[] changes;
         private int changeCount;
-        private readonly IUnitLayers layers;
         // layers: on a map with floor plates (ML-9b), a unit counts in a circle only on the point's layer; null keeps the old rule.
         public CaptureSystem(CombatSystem combat, MatchPack pack, IUnitLayers layers = null)
         {
-            this.combat = combat; this.pack = pack; this.layers = layers; stage = new EntityStage(combat.Entities);
-            positions = combat.Entities.Resolve<Position>(); combatants = combat.Entities.Resolve<Combatant>();
+            this.pack = pack; stage = new EntityStage(combat.Entities);
+            presence = new PointPresence(combat, pack.TeamCount, layers);
             states = new PointState[pack.Points.Length]; teams = pack.TeamCount; counts = new int[states.Length * teams]; changes = new CaptureRecord[states.Length];
             for (int i = 0; i < states.Length; i++) states[i] = new PointState(pack.Points[i].InitialOwner, 0, 0);
         }
@@ -54,9 +85,8 @@ namespace WarCore.Battle
             changeCount = 0; Array.Clear(counts, 0, counts.Length);
             foreach (EntityId unit in stage.Capture())
             {
-                if (!combat.Entities.TryGet(combatants, unit, out Combatant value) || value.Team < 1 || value.Team > teams
-                    || !combat.Entities.TryGet(positions, unit, out Position position) || combat.IsDead(unit)) continue;
-                for (int i = 0; i < states.Length; i++) if (Inside(layers, unit, position.Value, pack.Points[i])) counts[teams * i + value.Team - 1]++;
+                if (!presence.Stands(unit, out int team, out SimVec3 at)) continue;
+                for (int i = 0; i < states.Length; i++) if (presence.Inside(unit, at, pack.Points[i])) counts[teams * i + team - 1]++;
             }
             for (int i = 0; i < states.Length; i++)
             {

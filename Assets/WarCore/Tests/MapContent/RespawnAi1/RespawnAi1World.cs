@@ -64,7 +64,7 @@ namespace WarCore.Tests
             var list = new List<(long, ulong, SimVec3)>();
             for (int t = 0; t < ticks; t++)
             {
-                w.Step();
+                Assert.DoesNotThrow(() => w.Step());
                 foreach (DeployRecord r in w.Reinforce.Deployed)
                     if (r.Team == team) list.Add((r.Tick, KeyOf(w, r.Unit), r.Point));
                 each?.Invoke(w);
@@ -102,7 +102,7 @@ namespace WarCore.Tests
             ulong h = 14695981039346656037UL;
             for (int t = 0; t < ticks; t++)
             {
-                w.Step();
+                Assert.DoesNotThrow(() => w.Step());
                 ulong v = w.Hash;
                 for (int b = 0; b < 8; b++) { h ^= (byte)(v >> (8 * b)); h *= 1099511628211UL; }
             }
