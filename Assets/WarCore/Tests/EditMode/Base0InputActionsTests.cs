@@ -71,13 +71,8 @@ namespace WarCore.Tests
             return head.Concat(writer.ToArray()).ToArray();
         }
 
-        // Matrix row 1 and the hash of a world without the switch: a locked 300-tick baseline keeps every hash.
-        [Test]
-        public void V19_Row1_AnExistingWorldKeepsItsLockedHashes()
-        {
-            ulong[] hashes = F5BaselineLockTests.Run(out _);
-            Assert.That(hashes, Is.EqualTo(F5BaselineData.Hashes));
-        }
+        // Matrix row 1 (an existing world keeps its locked hashes) is Base0LockedWorldTests under Tests/MapContent/Input: it runs
+        // a MapContent baseline, which the EditMode-only symbol binding in tools/headless cannot see.
 
         // Row 2: a world without the switch and zero bits writes the original bytes.
         [Test]

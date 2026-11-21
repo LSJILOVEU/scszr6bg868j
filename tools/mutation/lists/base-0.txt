@@ -588,7 +588,7 @@ replacement:
 [save-always]
 file = Assets/WarCore/Sim/StableInput.cs
 filter = FullyQualifiedName~Base0
-expect = WarCore.Tests.Base0InputActionsTests.V19_Row1
+expect = WarCore.Tests.Base0LockedWorldTests.V19_Row1
 expect = WarCore.Tests.Base0InputActionsTests.V19_Row2
 expect = WarCore.Tests.Base0InputActionsTests.V19_Row4
 expect = WarCore.Tests.Base0InputActionsTests.V19_Row6
@@ -661,7 +661,7 @@ replacement:
 [hash-always]
 file = Assets/WarCore/Sim/StableSimState.cs
 filter = FullyQualifiedName~Base0
-expect = WarCore.Tests.Base0InputActionsTests.V19_Row1
+expect = WarCore.Tests.Base0LockedWorldTests.V19_Row1
 expect = WarCore.Tests.Base0InputActionsTests.V19_Row2
 note = the hash writes the bits in every world
 original:
