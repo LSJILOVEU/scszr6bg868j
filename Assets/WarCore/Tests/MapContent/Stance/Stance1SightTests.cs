@@ -19,12 +19,16 @@ namespace WarCore.Tests.Stance
         private static Box Wall(long x0, long x1, long top) => new Box(x0, 6000, x1, 10000, top);
 
         // Hurt records in 90 steps with A and B put in their stances before the first step.
-        private static int Hurt90(int a, int b, params Box[] walls)
+        private static int Hurt90(int a, int b, params Box[] walls) => Fires90(a, b, walls).Hurt;
+
+        // All fire records and the hurt ones in 90 steps.
+        private static (int All, int Hurt) Fires90(int a, int b, params Box[] walls)
         {
             SimSession s = World(Pack(), Pair(), Map(walls));
             if (a != 0) Force(s, 1, a);
             if (b != 0) Force(s, 2, b);
-            return Hurt(Fires(s, 90));
+            List<FireRecord> fires = Fires(s, 90);
+            return (fires.Count, Hurt(fires));
         }
 
         // ---- S5: the card's table (line heights on the two wall faces in its last comment) ----
@@ -39,8 +43,13 @@ namespace WarCore.Tests.Stance
         [TestCase(false, OneMetre, 1, 1, false, TestName = "S5 row 8 mid 1.0 crouch-crouch (0.75, 0.75)")]
         [TestCase(true, HalfMetre, 0, 2, false, TestName = "S5 row 9 near 0.5 stand-prone (0.4375, 0.3125)")]
         [TestCase(true, HalfMetre, 0, 1, true, TestName = "S5 row 10 near 0.5 stand-crouch (0.8625, 0.7875)")]
-        public void S5_Table(bool near, long top, int a, int b, bool hurt) =>
-            Assert.That(Hurt90(a, b, Wall(near ? NearX0 : MidX0, near ? NearX1 : MidX1, top)) > 0, Is.EqualTo(hurt));
+        public void S5_Table(bool near, long top, int a, int b, bool hurt)
+        {
+            (int all, int hurtCount) = Fires90(a, b, Wall(near ? NearX0 : MidX0, near ? NearX1 : MidX1, top));
+            Assert.That(hurtCount > 0, Is.EqualTo(hurt));
+            // Where nobody is hurt the eye line is cut: neither sees the other, so nobody fires at all.
+            if (!hurt) Assert.That(all, Is.EqualTo(0), "fire records");
+        }
 
         // Control: with no wall all nine pairs of stances hurt someone.
         [Test]
