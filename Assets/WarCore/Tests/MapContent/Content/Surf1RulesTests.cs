@@ -17,22 +17,7 @@ namespace WarCore.Tests
         internal static readonly string[] Names =
             { "asphalt", "bush", "grass", "mud", "road", "rock", "sand", "snow", "water-deep", "water-shallow" };
 
-        // id, passable (1/0), speedMilli, cost, concealMilli. A blocked surface is stored as speed 0, cost 0.
-        private static readonly (string Id, int Passable, int Speed, int Cost, int Conceal)[] Table =
-        {
-            ("asphalt", 1, 1250, 1, 1000),
-            ("bush", 1, 800, 2, 500),
-            ("grass", 1, 1000, 1, 1000),
-            ("mud", 1, 500, 3, 1000),
-            ("road", 1, 1250, 1, 1000),
-            ("rock", 1, 900, 2, 1000),
-            ("sand", 1, 800, 2, 1000),
-            ("snow", 1, 700, 3, 1000),
-            ("water-deep", 0, 0, 0, 1000),
-            ("water-shallow", 1, 500, 4, 1000),
-        };
-
-        // S1
+        // S1 (rows: id, passable 1/0, speedMilli, cost, concealMilli; a blocked surface is stored as speed 0, cost 0)
         [Test]
         public void Layer_LoadsWithTenSurfacesInOrdinalOrder()
         {
@@ -48,15 +33,22 @@ namespace WarCore.Tests
             Assert.That(pack.HasMatch, Is.True);
         }
 
-        [TestCaseSource(nameof(Rows))]
-        public void Layer_EachSurfaceHasItsFields((string Id, int Passable, int Speed, int Cost, int Conceal) row)
+        [TestCase("asphalt", 1, 1250, 1, 1000)]
+        [TestCase("bush", 1, 800, 2, 500)]
+        [TestCase("grass", 1, 1000, 1, 1000)]
+        [TestCase("mud", 1, 500, 3, 1000)]
+        [TestCase("road", 1, 1250, 1, 1000)]
+        [TestCase("rock", 1, 900, 2, 1000)]
+        [TestCase("sand", 1, 800, 2, 1000)]
+        [TestCase("snow", 1, 700, 3, 1000)]
+        [TestCase("water-deep", 0, 0, 0, 1000)]
+        [TestCase("water-shallow", 1, 500, 4, 1000)]
+        public void Layer_EachSurfaceHasItsFields(string id, int passable, int speed, int cost, int conceal)
         {
-            Assert.That(RwrPack.Load(Layer).Terrain.TryFind(row.Id, out SurfaceDef s), Is.True, row.Id);
+            Assert.That(RwrPack.Load(Layer).Terrain.TryFind(id, out SurfaceDef s), Is.True, id);
             Assert.That(new[] { s.Passable ? 1 : 0, s.SpeedMilli, s.Cost, s.ConcealMilli },
-                Is.EqualTo(new[] { row.Passable, row.Speed, row.Cost, row.Conceal }), row.Id);
+                Is.EqualTo(new[] { passable, speed, cost, conceal }), id);
         }
-
-        private static object[] Rows() => Table.Select(r => (object)r).ToArray();
 
         // S2: the old layers are untouched.
         [Test]
