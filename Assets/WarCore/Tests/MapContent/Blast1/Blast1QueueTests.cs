@@ -23,7 +23,7 @@ namespace WarCore.Tests.Blast1
         {
             var w = new Blast1World(Blast1World.Pack(Blast1World.Rules()), new[] { Blast1World.U(X + 4 * M, Z, 2) });
             for (int i = 0; i < 6; i++) Assert.That(w.Blast(X, C, Z), Is.EqualTo(i + 1L));
-            w.Step();
+            Assert.DoesNotThrow(() => w.Step());
             Assert.That(Serials(w), Is.EqualTo(new[] { 1L, 2L, 3L, 4L }));
             Assert.That(w.Blasts.Count, Is.EqualTo(2));
             Assert.That(w.Blasts.Waiting(0).Serial, Is.EqualTo(5L));
@@ -82,13 +82,17 @@ namespace WarCore.Tests.Blast1
             }
         }
 
-        private static Blast1World Busy(ulong seed = 41, bool reverse = false)
-        {
-            var w = new Blast1World(Blast1World.Pack(new BlastRules(new[] { Blast1World.Frag(), Blast1World.Frag(false, id: "t.mine") }, 1, 8)), new[]
+        // The busy world without blasts queued.
+        private static Blast1World Quiet(ulong seed = 41, bool reverse = false) =>
+            new Blast1World(Blast1World.Pack(new BlastRules(new[] { Blast1World.Frag(), Blast1World.Frag(false, id: "t.mine") }, 1, 8)), new[]
             {
                 Blast1World.U(X + M, Z, 1), Blast1World.U(X + 3 * M, Z, 2), Blast1World.U(X - 5 * M, Z, 2), Blast1World.U(X, Z + 4 * M, 1),
                 Blast1World.U(X + 10 * M, Z, 2),
             }, seed: seed, reverse: reverse);
+
+        private static Blast1World Busy(ulong seed = 41, bool reverse = false)
+        {
+            Blast1World w = Quiet(seed, reverse);
             w.Blast(X + 6 * M, C, Z, 1, w.Id(3), 1);
             w.Blast(X, C, Z + M, 0, w.Id(1), 2);
             w.Blast(X - M, C, Z - M);
@@ -124,15 +128,41 @@ namespace WarCore.Tests.Blast1
             Assert.That(b.Sim.StateHashRetained(), Is.EqualTo(a.Sim.StateHashRetained()));
         }
 
-        // B9: the queue is in the hash: the same world with the last two blasts swapped hashes differently.
+        // B9: saved with nothing waiting after three blasts, restored into a fresh world: the serial goes on from 3.
+        [Test]
+        public void AnEmptyQueueKeepsTheSerial()
+        {
+            Blast1World a = Busy();
+            for (int t = 0; t < 3; t++) a.Step();
+            Assert.That((a.Blasts.Count, a.Blasts.Serial), Is.EqualTo((0, 3L)));
+            Blast1World b = Quiet();
+            b.Sim.RestoreRetainedSnapshot(a.Sim.SaveRetainedSnapshot());
+            Assert.That((b.Blasts.Count, b.Blasts.Serial), Is.EqualTo((0, 3L)));
+            Assert.That(b.Blast(X, C, Z), Is.EqualTo(4L));
+        }
+
+        // B9: the queue is in the hash: one more blast, or the same count with a point 1 raw apart, hashes differently, in the
+        // world's hash (the saved bytes) and in the system's own hash.
         [Test]
         public void TheQueueIsInTheHash()
         {
             Blast1World a = Busy(), b = Busy();
             b.Blast(X, C, Z);
             Assert.That(b.Sim.StateHashRetained(), Is.Not.EqualTo(a.Sim.StateHashRetained()));
+            Assert.That(Own(b), Is.Not.EqualTo(Own(a)));
             a.Blast(X + 1, C, Z);
             Assert.That(b.Sim.StateHashRetained(), Is.Not.EqualTo(a.Sim.StateHashRetained()));
+            Assert.That(Own(b), Is.Not.EqualTo(Own(a)));
+            Blast1World c = Busy();
+            c.Blast(X, C, Z);
+            Assert.That(Own(c), Is.EqualTo(Own(b)));
+        }
+
+        private static ulong Own(Blast1World w)
+        {
+            var hash = new StateHash();
+            w.Blasts.WriteState(hash);
+            return hash.Value;
         }
 
         // B9: two runs from one seed match; a world whose units were created in reverse hits every unit the same.

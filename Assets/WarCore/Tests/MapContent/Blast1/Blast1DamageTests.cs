@@ -144,6 +144,21 @@ namespace WarCore.Tests.Blast1
             Assert.That(w.HitUnits(), Is.EqualTo(new[] { 0, 1 }));
         }
 
+        // B4 and C3: one blast's hits are recorded in StableId order, not in the query's order (nearest first). Both ways round:
+        // in one of the two worlds the nearer unit has the larger StableId.
+        [TestCase(false)]
+        [TestCase(true)]
+        public void HitsAreInStableIdOrder(bool swap)
+        {
+            long near = M, far = 3 * M;
+            var w = new Blast1World(Blast1World.Pack(Blast1World.Rules()),
+                new[] { Blast1World.U(X + (swap ? far : near), Z, 2), Blast1World.U(X - (swap ? near : far), Z, 2) });
+            w.Blast(X, C, Z);
+            w.Step();
+            Assert.That(w.Blasts.HitCount, Is.EqualTo(2));
+            Assert.That(w.Blasts.Hit(0).Victim.Value, Is.LessThan(w.Blasts.Hit(1).Victim.Value));
+        }
+
         // B5: a 3 m wall between the blast on the ground and a unit 4 m away stops it; a 0.5 m wall does not; without walls
         // the 3 m wall does not either.
         [TestCase(3 * M, true, false)]

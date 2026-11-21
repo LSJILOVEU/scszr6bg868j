@@ -88,7 +88,9 @@ namespace WarCore.Tests.Blast1
             for (int i = 0; i < kinds.Length; i++) kinds[i] = Frag.Replace("t.frag", "t.frag" + i);
             StringAssert.Contains("'blasts'", Assert.Throws<ContentException>(() => Load(Blasts(kinds))).Message);
             StringAssert.Contains("'blastPerTick'", Assert.Throws<ContentException>(() => Load("\"blastPerTick\": 4")).Message);
+            StringAssert.Contains("needs the combat section's blasts", Assert.Throws<ContentException>(() => Load("\"blastPerTick\": 4")).Message);
             StringAssert.Contains("'blastQueue'", Assert.Throws<ContentException>(() => Load("\"blastQueue\": 64")).Message);
+            StringAssert.Contains("needs the combat section's blasts", Assert.Throws<ContentException>(() => Load("\"blastQueue\": 64")).Message);
             StringAssert.Contains("'blasts'", Assert.Throws<ContentException>(() => Load("\"blasts\": 3")).Message);
             // Another array in the combat section stays refused.
             StringAssert.Contains("'other'", Assert.Throws<ContentException>(() => Load(Blasts(Frag) + ", \"other\": [ 1 ]")).Message);

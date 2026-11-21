@@ -5,6 +5,8 @@
 # - DamageAt's 'distance <= InnerRaw' to '<': at the inner radius the formula gives the full damage.
 # - registering the blast system without blasts (CombatFeature): the BlastSystem constructor refuses such a pack, so every
 #   world throws (the full suite).
+# - dropping the StableId dedup in Detonate: the grid query already returns each body once (it marks the bodies it visited),
+#   so a unit on a cell corner is hit once either way (B4 checks that).
 # - the digest section written without blasts: the section reads the rules object, which is null then (it would throw).
 
 [blast1-01-denominator]
@@ -163,20 +165,11 @@ original:
 replacement:
 | || unit.Team == 0) continue;
 
-[blast1-16-dedup]
-file = Assets/WarCore/Combat/CombatSystem.Blast.cs
-filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
-expect = WarCore.Tests.Blast1.Blast1DamageTests.AUnitOnACellCornerIsHitOnce
-note = a unit the sphere query returns twice is hit twice
-original:
-| if (i > 0 && blastOrder[i] == blastOrder[i - 1]) continue;
-replacement:
-
 [blast1-17-order]
 file = Assets/WarCore/Combat/CombatSystem.Blast.cs
 filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
-expect = WarCore.Tests.Blast1.Blast1QueueTests.SameSeedSameRunAndCreationOrderDoesNotMatter
-note = victims in query order, not StableId order
+expect = WarCore.Tests.Blast1.Blast1DamageTests.HitsAreInStableIdOrder
+note = victims in query order (nearest first), not StableId order
 original:
 | Array.Sort(blastOrder, blastUnits, 0, n);
 replacement:
@@ -289,13 +282,13 @@ replacement:
 [blast1-28-save-serial]
 file = Assets/WarCore/Combat/BlastSystem.cs
 filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
-expect = WarCore.Tests.Blast1.Blast1QueueTests.TheSavedBytesAreTheQueueInOrder
-note = the serial is not saved
+expect = WarCore.Tests.Blast1.Blast1QueueTests.AnEmptyQueueKeepsTheSerial
+note = the serial is not saved when nothing waits (with blasts waiting it equals the last one's serial)
 original:
 |             writer.Int64(serial);
 |             writer.Int32(count);
 replacement:
-|             writer.Int64(count == 0 ? serial : serials[Slot(count - 1)]);
+|             writer.Int64(count == 0 ? 0 : serial);
 |             writer.Int32(count);
 
 [blast1-29-save-order]
@@ -537,3 +530,13 @@ original:
 | current.Match, current.Respawn, current.blasts);
 replacement:
 | current.Match, current.Respawn);
+
+[blast1-52-load-serial]
+file = Assets/WarCore/Combat/BlastSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1CapacityTests
+expect = WarCore.Tests.Blast1.Blast1QueueTests.AnEmptyQueueKeepsTheSerial
+note = a restore takes the last waiting serial instead of the saved one
+original:
+| head = 0; count = n; serial = savedSerial;
+replacement:
+| head = 0; count = n; serial = last;
