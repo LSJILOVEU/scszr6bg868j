@@ -21,7 +21,11 @@ namespace WarCore.Content.MapTools
         public const long MaxStep = L;
         private const long S = SimFix.Scale;
 
-        public static MapStampPlan Compose(MapDesc desc, MapGenSpec spec, TerrainRules rules)
+        public static MapStampPlan Compose(MapDesc desc, MapGenSpec spec, TerrainRules rules) => Compose(desc, spec, rules, null);
+
+        // ED-3c-1: tile is the height tile of spec.Base (null when the spec has no base). It must match the fingerprint and
+        // cover the whole map (no extrapolation).
+        public static MapStampPlan Compose(MapDesc desc, MapGenSpec spec, TerrainRules rules, MapDemTile tile)
         {
             if (desc == null) throw new ArgumentNullException(nameof(desc));
             if (spec == null) throw new ArgumentNullException(nameof(spec));
@@ -41,6 +45,8 @@ namespace WarCore.Content.MapTools
                 if (!hasHeights && s.ChangesHeights) throw new ArgumentException("stamp " + k + " (" + s.Kind + ") changes heights but the map has no heights");
                 if (!hasSurfaces && s.Kind == "patch") throw new ArgumentException("stamp " + k + " (patch) needs surfaces but the map has none");
             }
+            if (spec.Base == null && tile != null) throw new ArgumentException("a dem tile is given but gen has no base");
+            if (spec.Base != null) Window(spec, tile);
             if (spec.Ground != null) Known(rules, spec.Ground, desc.Pack);
             foreach (MapGenStamp s in spec.Stamps)
                 if (s.Surface != null) Known(rules, s.Surface, desc.Pack);
@@ -48,7 +54,7 @@ namespace WarCore.Content.MapTools
             MapHeightWrite[] heights = new MapHeightWrite[0];
             if (hasHeights)
             {
-                long[] t = Heights(desc, spec, rules);
+                long[] t = Heights(desc, spec, rules, tile);
                 int cols = spec.Width + 1;
                 heights = new MapHeightWrite[t.Length];
                 for (int p = 0; p < t.Length; p++) heights[p] = new MapHeightWrite(p % cols, p / cols, (int)t[p]);
@@ -71,7 +77,7 @@ namespace WarCore.Content.MapTools
 
         // ---- heights ----
 
-        private static long[] Heights(MapDesc desc, MapGenSpec spec, TerrainRules rules)
+        private static long[] Heights(MapDesc desc, MapGenSpec spec, TerrainRules rules, MapDemTile tile)
         {
             int width = spec.Width, depth = spec.Depth, cols = width + 1, rows = depth + 1;
             long lo = Math.Max(desc.FloorRaw, -MapDescReader.HeightLimit), hi = Math.Min(desc.CeilingRaw, MapDescReader.HeightLimit);
@@ -79,6 +85,7 @@ namespace WarCore.Content.MapTools
             var t = new long[cols * rows];
             long baseRaw = MapGenSpec.MmToRaw(spec.BaseMm.Value);
             for (int p = 0; p < t.Length; p++) t[p] = baseRaw;
+            if (spec.Base != null) AddBase(t, width, depth, spec.Base, tile);
             for (int k = 0; k < spec.Stamps.Count; k++)
             {
                 MapGenStamp s = spec.Stamps[k];
@@ -109,6 +116,52 @@ namespace WarCore.Content.MapTools
             if (anyRoad) Settle(t, fixedBy, cols, rows);
             Check(t, fixedBy, width, depth, lo, hi, rules);
             return t;
+        }
+
+        // ---- base layer (ED-3c-1) ----
+
+        private static void Window(MapGenSpec spec, MapDemTile tile)
+        {
+            MapGenBase b = spec.Base;
+            if (tile == null) throw new ArgumentException("gen base needs a dem tile");
+            if (!string.Equals(tile.Fingerprint, b.Sha256, StringComparison.Ordinal))
+                throw new ArgumentException("the dem tile fingerprint does not match gen base sha256");
+            if (b.X0Mm + (long)spec.Width * b.ScaleMilli > (long)(tile.Cols - 1) * tile.StepMm)
+                throw new ArgumentException("gen base window leaves the dem tile along x");
+            if (b.Z0Mm + (long)spec.Depth * b.ScaleMilli > (long)(tile.Rows - 1) * tile.StepMm)
+                throw new ArgumentException("gen base window leaves the dem tile along z");
+        }
+
+        // t += floor((r - datum) e 65536 / (scale 1000)), r = floor(bilinear / s^2) the real height in mm at map point (i, j),
+        // which sits at (x0 + i scale, z0 + j scale) mm of the tile. Two floors, in this order.
+        private static void AddBase(long[] t, int width, int depth, MapGenBase b, MapDemTile tile)
+        {
+            int cols = width + 1;
+            long s = tile.StepMm;
+            for (int j = 0; j <= depth; j++)
+            {
+                long z = b.Z0Mm + (long)j * b.ScaleMilli;
+                int cb = (int)Math.Min(z / s, tile.Rows - 2);
+                long fz = z - cb * s;
+                for (int i = 0; i <= width; i++)
+                {
+                    long x = b.X0Mm + (long)i * b.ScaleMilli;
+                    int ca = (int)Math.Min(x / s, tile.Cols - 2);
+                    long fx = x - ca * s;
+                    long n = tile.HeightMm(ca, cb) * (s - fx) * (s - fz) + tile.HeightMm(ca + 1, cb) * fx * (s - fz)
+                        + tile.HeightMm(ca, cb + 1) * (s - fx) * fz + tile.HeightMm(ca + 1, cb + 1) * fx * fz;
+                    long r = FloorDiv(n, s * s);
+                    t[j * cols + i] += FloorDiv((r - b.DatumMm) * b.ExaggerationMilli * 65536, (long)b.ScaleMilli * 1000);
+                }
+            }
+        }
+
+        // n / d toward negative infinity (d > 0).
+        private static long FloorDiv(long n, long d)
+        {
+            long q = n / d;
+            if (n % d != 0 && n < 0) q--;
+            return q;
         }
 
         // t += h W(r, d^2) / 1024 (toward zero) over the on-map points of the disc.

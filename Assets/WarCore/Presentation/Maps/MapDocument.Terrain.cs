@@ -12,12 +12,16 @@ namespace WarCore.Presentation
     // failure nothing changes. It reads and writes no file.
     public sealed partial class MapDocument
     {
-        public MapTerrainResult WithTerrain(string genJson)
+        public MapTerrainResult WithTerrain(string genJson) => WithTerrain(genJson, null);
+
+        // ED-3c-1: demJson is the .dem.json text of the spec's base tile (null when the spec has no base).
+        public MapTerrainResult WithTerrain(string genJson, string demJson)
         {
             MapGenSpec spec = MapGenSpec.Read(genJson);
+            MapDemTile tile = demJson == null ? null : MapDemTile.Read(demJson);
             TerrainRules rules = ContentCatalog.Find().Load(PackId).Terrain;
             if (rules == null) throw new InvalidOperationException("layer " + PackId + " has no terrain rules");
-            MapStampPlan plan = MapTerrain.Compose(desc, spec, rules);
+            MapStampPlan plan = MapTerrain.Compose(desc, spec, rules, tile);
             var edit = new MapEdit(desc);
             MapStampResult result = null;
             edit.Batch(b =>
