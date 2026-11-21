@@ -6,7 +6,7 @@ using static WarCore.Tests.See1Field;
 
 namespace WarCore.Tests
 {
-    // SEE-1 acceptance 10: the mean time of LayerCut.Run (radius 5) and Silhouettes.Run together over 100 runs on 2000 one-cell walls
+    // SEE-1 acceptance 10: the mean time of LayerCut.Run (the default radius) and Silhouettes.Run together over 100 runs on 2000 one-cell walls
     // (3 to 9 m high) and 500 units, half of them team mates. Run by hand ("Manual"); it prints the mean and sets no time limit.
     public sealed class See1PerformanceTests
     {

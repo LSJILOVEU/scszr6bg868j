@@ -29,6 +29,7 @@ namespace WarCore.Unity.Tests
                 var palette = new[] { new Color(0.2f, 0.5f, 1f), new Color(1f, 0.85f, 0.2f) };
                 scene.Entities = new EntityViews(scene.Units.transform, new Vector3(0.5f, 1f, 0.5f), 0.5f, palette);
                 scene.previous = session.Current;
+                new PointViews(scene.Units.transform, ViewGround.For(session.Map)).Apply(session.Current);
                 return scene;
             }
 
@@ -45,7 +46,7 @@ namespace WarCore.Unity.Tests
                 LayerCutResult cut = LayerCut.Run(Session.Map.Plates, Session.Map, me, forward, LayerCut.SeeRadius);
                 HashSet<ulong> covered = Silhouettes.Run(Session.Map.Plates, Session.Map, cut, me, Session.Current.Entities, forward);
                 Views.Apply(cut);
-                Entities.Apply(previous, Session.Current, 1f, cut, covered);
+                Entities.Apply(previous, Session.Current, 0.5f, cut, covered);
             }
 
             public Transform Silhouette(ulong key) => Units.transform.Find(EntityViews.SilhouettePrefix + key);

@@ -37,7 +37,7 @@ namespace WarCore.Tests
             Assert.That(s.Map.Walls.ToArray().Select(w => w.CenterY + w.SizeY / 2), Is.EqualTo(new[] { 6f, 9f, 1.2f }).Within(0.001f));
         }
 
-        // Tick 0, the player at (4.5, 19): the ring (5 m) reaches x 9.5, short of every shadow: nothing fades; the team mates behind
+        // Tick 0, the player at (4.5, 19): the ring (2 m) reaches x 6.5, short of every shadow: nothing fades; the team mates behind
         // the two buildings are silhouettes, the one in the open and the enemies are not.
         [Test]
         public void AtTheStartBothBuildingsCoverTheirTeamMates()

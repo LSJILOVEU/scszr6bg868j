@@ -42,7 +42,7 @@ namespace WarCore.Presentation
         public const float Headroom = 2.0f;  // K5 clear height
         public const float FootLift = 0.1f;  // PLACEHOLDER: the low end of the unit seen through walls
         public const float FadeAlpha = 0.3f; // PLACEHOLDER: tune after play
-        public const float SeeRadius = 5f;   // SEE-1 PLACEHOLDER: the radius the player scenes pass (Run's own default is 0 = off)
+        public const float SeeRadius = 2f;   // SEE-1 PLACEHOLDER: the radius the player scenes pass (Run's own default is 0 = off); 5 m faded walls 5 to 7 m early
         public const float MinSeeHeight = 1.5f; // SEE-1 PLACEHOLDER: a wall or plate must top the feet by more than this to fade by the ring
 
         // Nothing hidden or faded (no player, or a map without plates or walls).
