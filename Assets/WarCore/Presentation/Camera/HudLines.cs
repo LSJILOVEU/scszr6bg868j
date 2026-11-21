@@ -17,12 +17,17 @@ namespace WarCore.Presentation
         public bool HasWeapon { get; }
         // The unit is holding a block in the Sim at the committed tick (not whether a block key is down).
         public bool Blocking { get; }
+        // M7b: the unit has a dash, and the ticks until a dash request is accepted (0 = ready), at the committed tick.
+        public bool HasDash { get; }
+        public long DashTicksLeft { get; }
         // Parameters may only be appended at the end.
         public UnitStatus(float health, float maxHealth, int ammo, long waitTicksLeft = 0,
-            bool reloading = false, bool alive = true, bool hasWeapon = true, bool blocking = false)
+            bool reloading = false, bool alive = true, bool hasWeapon = true, bool blocking = false,
+            bool hasDash = false, long dashTicksLeft = 0)
         {
             Health = health; MaxHealth = maxHealth; Ammo = ammo; WaitTicksLeft = waitTicksLeft;
             Reloading = reloading; Alive = alive; HasWeapon = hasWeapon; Blocking = blocking;
+            HasDash = hasDash; DashTicksLeft = dashTicksLeft;
         }
     }
 
@@ -38,6 +43,10 @@ namespace WarCore.Presentation
                 text.Append(FormattableString.Invariant($"Follow #{followKey.Value}  HP {status.Value.Health:F0}/{status.Value.MaxHealth:F0}  Ammo {status.Value.Ammo}\n"));
                 if (status.Value.Blocking)
                     text.Append("Blocking\n");
+                // M7b: no line for a unit without a dash or a dead one.
+                if (status.Value.HasDash && status.Value.Alive)
+                    text.Append(status.Value.DashTicksLeft > 0
+                        ? FormattableString.Invariant($"Dash in {status.Value.DashTicksLeft} ticks\n") : "Dash ready\n");
             }
             else
                 text.Append("Follow -\n");
