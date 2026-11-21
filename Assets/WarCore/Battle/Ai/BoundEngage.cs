@@ -51,5 +51,12 @@ namespace WarCore.Battle
 
         public AiEngage Unseen(in AiUnit unit, AiField field) =>
             unit.Nerve == AiNerve.Broken ? AiEngage.Fallback : unit.Nerve == AiNerve.Pinned ? AiEngage.Cover : AiEngage.Advance;
+
+        // A melee unit with an enemy to chase: the move and fire cycle means nothing to it, only its nerve does.
+        public AiEngage Melee(in AiUnit unit, SimVec3 enemy, AiField field)
+        {
+            AiNerve nerve = unit.Nerve;
+            return nerve == AiNerve.Broken ? AiEngage.Fallback : nerve == AiNerve.Pinned ? AiEngage.Cover : AiEngage.Advance;
+        }
     }
 }

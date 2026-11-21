@@ -1,0 +1,870 @@
+# AI-M1: melee presses (PressureRules.Strikes, content field pressureStrikes) and a pressed melee unit asks the engage part
+# before it chases (content field meleeNerve); told to take cover, it still goes for an enemy within meleeNerveFightMm. Filters: the AI-M1 unit tests (pressure, scheduler, content and state).
+# Not listed: the damage test of a landed strike (a strike without damage adds nothing to the sum, so the unit falls or
+# not as without the test); the shots left out of the sum for a unit the strikes hit (a unit the fire hit is counted by
+# then, or its shots and strikes together fall short, so the strikes alone give the same answer); Kills itself
+# (pf-kills-* in base-1.txt); a strike whose striker or target is gone read as
+# present (the lookup throws: an exception, not an assertion); the saved flag not read back (the reader runs out of step:
+# an exception); the melee-nerve tag folded after the layers tag (the pressure fields are refused on floor plates, so no
+# world has both).
+
+[m1-pr-strikes-off]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiM1PressureTests
+expect = WarCore.Tests.AiM1PressureTests
+note = the strikes are never read
+original:
+|             bool melee = rules.Strikes && strikes.Length > 0;
+replacement:
+|             bool melee = false;
+
+[m1-pr-strikes-always]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiM1PressureTests
+expect = WarCore.Tests.AiM1PressureTests
+note = the strikes press without the rule
+original:
+|             bool melee = rules.Strikes && strikes.Length > 0;
+replacement:
+|             bool melee = strikes.Length > 0;
+
+[m1-pr-fall-blocked]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiM1PressureTests
+expect = WarCore.Tests.AiM1PressureTests
+note = a blocked strike brings down, a landed one does not
+original:
+|                     if (strike.Kind != StrikeKind.Landed || strike.DamageRaw <= 0 || !store.TryResolve(strike.Target, out EntityRef target)
+replacement:
+|                     if (strike.Kind != StrikeKind.Blocked || strike.DamageRaw <= 0 || !store.TryResolve(strike.Target, out EntityRef target)
+
+[m1-pr-fall-any-kind]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiM1PressureTests
+expect = WarCore.Tests.AiM1PressureTests
+note = a strike of any kind brings down
+original:
+|                     if (strike.Kind != StrikeKind.Landed || strike.DamageRaw <= 0 || !store.TryResolve(strike.Target, out EntityRef target)
+replacement:
+|                     if (strike.DamageRaw <= 0 || !store.TryResolve(strike.Target, out EntityRef target)
+
+[m1-pr-wound-falls]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiM1PressureTests
+expect = WarCore.Tests.AiM1PressureTests
+note = a wound by a strike is a fall
+original:
+|                     if (counted || !Kills(strike.Target, fires, strikes, combat.HealthRaw(strike.Target))) continue;
+replacement:
+|                     if (counted) continue;
+
+[m1-pr-fall-follows-rule]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiM1PressureTests
+expect = WarCore.Tests.AiM1PressureTests
+note = under the hit rule a wound by a strike is a fall
+original:
+|                     if (counted || !Kills(strike.Target, fires, strikes, combat.HealthRaw(strike.Target))) continue;
+replacement:
+|                     if (counted || (rules.FallOnKill && !Kills(strike.Target, fires, strikes, combat.HealthRaw(strike.Target)))) continue;
+
+[m1-pr-full-health]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiM1PressureTests
+expect = WarCore.Tests.AiM1PressureTests
+note = the health is taken as full, not read from the unit
+original:
+|                     if (counted || !Kills(strike.Target, fires, strikes, combat.HealthRaw(strike.Target))) continue;
+replacement:
+|                     if (counted || !Kills(strike.Target, fires, strikes, combat.Pack.MaxHealthRaw)) continue;
+
+[m1-pr-counted-twice]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiM1PressureTests
+expect = WarCore.Tests.AiM1PressureTests
+note = a unit cut down by two strikes falls twice
+original:
+|                     for (int i = 0; i < fallenCount; i++) if (fallen[i].Key == strike.Target.Value) { counted = true; break; }
+replacement:
+|                     for (int i = 0; i < fallenCount; i++) if (fallen[i].Key == strike.Target.Value) { counted = false; break; }
+
+[m1-pr-fall-source-target]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiM1PressureTests
+expect = WarCore.Tests.AiM1PressureTests
+note = the source of a fall is where the fallen stood
+original:
+|                     fallen[fallenCount++] = new Fallen { Key = strike.Target.Value, Team = victim.Team, At = at.Value, From = strike.Origin };
+replacement:
+|                     fallen[fallenCount++] = new Fallen { Key = strike.Target.Value, Team = victim.Team, At = at.Value, From = at.Value };
+
+[m1-pr-fall-blade-first]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiM1PressureTests
+expect = WarCore.Tests.AiM1PressureTests
+note = a fall by a strike comes before the falls by fire
+original:
+|                     fallen[fallenCount++] = new Fallen { Key = strike.Target.Value, Team = victim.Team, At = at.Value, From = strike.Origin };
+replacement:
+|                     for (int j = fallenCount; j > 0; j--) fallen[j] = fallen[j - 1];
+|                     fallenCount++;
+|                     fallen[0] = new Fallen { Key = strike.Target.Value, Team = victim.Team, At = at.Value, From = strike.Origin };
+
+[m1-pr-gate-fire-only]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiM1PressureTests
+expect = WarCore.Tests.AiM1PressureTests
+note = a tick with strikes and no fire is skipped
+original:
+|             if (fires.Length > 0 || melee)
+replacement:
+|             if (fires.Length > 0)
+
+[m1-pr-near-strike-off]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiM1PressureTests
+expect = WarCore.Tests.AiM1PressureTests
+note = a strike nearby is no near shot
+original:
+|                     if (melee && shock == 0 && NearStrike(strikes, unit.Team, here, out SimVec3 struck))
+replacement:
+|                     if (false && shock == 0 && NearStrike(strikes, unit.Team, here, out SimVec3 struck))
+
+[m1-pr-near-blade-source]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiM1PressureTests
+expect = WarCore.Tests.AiM1PressureTests
+note = with a shot and a strike the source is the strike
+original:
+|                     if (melee && shock == 0 && NearStrike(strikes, unit.Team, here, out SimVec3 struck))
+replacement:
+|                     if (melee && NearStrike(strikes, unit.Team, here, out SimVec3 struck))
+
+[m1-pr-near-twice]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiM1PressureTests
+expect = WarCore.Tests.AiM1PressureTests
+note = a shot and a strike near one unit press twice
+original:
+|                     if (melee && shock == 0 && NearStrike(strikes, unit.Team, here, out SimVec3 struck))
+|                     { shock = rules.NearShock; from = struck; sourced = true; }
+replacement:
+|                     if (melee && NearStrike(strikes, unit.Team, here, out SimVec3 struck))
+|                     { shock += rules.NearShock; from = struck; sourced = true; }
+
+[m1-pr-near-unsourced]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiM1PressureTests
+expect = WarCore.Tests.AiM1PressureTests
+note = a near strike leaves no source
+original:
+|                     { shock = rules.NearShock; from = struck; sourced = true; }
+replacement:
+|                     { shock = rules.NearShock; }
+
+[m1-pr-near-landed-only]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiM1PressureTests
+expect = WarCore.Tests.AiM1PressureTests
+note = a blocked strike is no near shot
+original:
+|                 if (strike.Kind != StrikeKind.Landed && strike.Kind != StrikeKind.Blocked) continue;
+replacement:
+|                 if (strike.Kind != StrikeKind.Landed) continue;
+
+[m1-pr-near-blocked-only]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiM1PressureTests
+expect = WarCore.Tests.AiM1PressureTests
+note = a landed strike is no near shot
+original:
+|                 if (strike.Kind != StrikeKind.Landed && strike.Kind != StrikeKind.Blocked) continue;
+replacement:
+|                 if (strike.Kind != StrikeKind.Blocked) continue;
+
+[m1-pr-near-whiffed]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiM1PressureTests
+expect = WarCore.Tests.AiM1PressureTests
+note = a swing in the air is a near shot
+original:
+|                 if (strike.Kind != StrikeKind.Landed && strike.Kind != StrikeKind.Blocked) continue;
+replacement:
+|                 if (strike.Kind != StrikeKind.Landed && strike.Kind != StrikeKind.Blocked && strike.Kind != StrikeKind.Whiffed) continue;
+
+[m1-pr-near-started]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiM1PressureTests
+expect = WarCore.Tests.AiM1PressureTests
+note = a swing that started is a near shot
+original:
+|                 if (strike.Kind != StrikeKind.Landed && strike.Kind != StrikeKind.Blocked) continue;
+replacement:
+|                 if (strike.Kind != StrikeKind.Landed && strike.Kind != StrikeKind.Blocked && strike.Kind != StrikeKind.Started) continue;
+
+[m1-pr-near-own-team]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiM1PressureTests
+expect = WarCore.Tests.AiM1PressureTests
+note = the strikes of teammates press, those of enemies do not
+original:
+|                 if (!store.TryResolve(strike.Striker, out EntityRef striker) || !store.TryGet(combatants, (EntityId)striker, out Combatant by) || by.Team == team) continue;
+replacement:
+|                 if (!store.TryResolve(strike.Striker, out EntityRef striker) || !store.TryGet(combatants, (EntityId)striker, out Combatant by) || by.Team != team) continue;
+
+[m1-pr-near-any-team]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiM1PressureTests
+expect = WarCore.Tests.AiM1PressureTests
+note = the strikes of teammates press too
+original:
+|                 if (!store.TryResolve(strike.Striker, out EntityRef striker) || !store.TryGet(combatants, (EntityId)striker, out Combatant by) || by.Team == team) continue;
+replacement:
+|                 if (!store.TryResolve(strike.Striker, out EntityRef striker) || !store.TryGet(combatants, (EntityId)striker, out Combatant by)) continue;
+
+[m1-pr-near-radius-strict]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiM1PressureTests
+expect = WarCore.Tests.AiM1PressureTests
+note = a unit at the near radius is not pressed
+original:
+|                     || CombatSystem.Horizontal(at.Value - here).LengthSquared > nearSquared) continue;
+replacement:
+|                     || CombatSystem.Horizontal(at.Value - here).LengthSquared >= nearSquared) continue;
+
+[m1-pr-near-not-self]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiM1PressureTests
+expect = WarCore.Tests.AiM1PressureTests
+note = the struck unit itself is not pressed
+original:
+|                     || CombatSystem.Horizontal(at.Value - here).LengthSquared > nearSquared) continue;
+replacement:
+|                     || CombatSystem.Horizontal(at.Value - here).LengthSquared > nearSquared || (at.Value.X.Raw == here.X.Raw && at.Value.Z.Raw == here.Z.Raw)) continue;
+
+[m1-pr-near-from-striker-now]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiM1PressureTests
+expect = WarCore.Tests.AiM1PressureTests
+note = the near radius is measured from the striker
+original:
+|                     || CombatSystem.Horizontal(at.Value - here).LengthSquared > nearSquared) continue;
+replacement:
+|                     || !store.TryGet(positions, (EntityId)striker, out Position stood) || CombatSystem.Horizontal(stood.Value - here).LengthSquared > nearSquared) continue;
+
+[m1-pr-near-source-target]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiM1PressureTests
+expect = WarCore.Tests.AiM1PressureTests
+note = the source of a near strike is where the struck unit stands
+original:
+|                 from = strike.Origin;
+|                 return true;
+replacement:
+|                 from = at.Value;
+|                 return true;
+
+[m1-pr-step-no-strikes]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiM1PressureTests
+expect = WarCore.Tests.AiM1PressureTests
+note = Step gives the pressure no strikes
+original:
+|         public void Advance(ReadOnlySpan<FireRecord> fires) => Advance(fires, combat.Strikes);
+replacement:
+|         public void Advance(ReadOnlySpan<FireRecord> fires) => Advance(fires, default);
+
+[m1-st-version-none]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiM1StateTests
+expect = WarCore.Tests.AiM1StateTests
+note = strikes do not change the version
+original:
+|         public int StateVersion => (sources ? 2 : 1) + (rules.FallOnKill ? 2 : 0) + (rules.Strikes ? 4 : 0);
+replacement:
+|         public int StateVersion => (sources ? 2 : 1) + (rules.FallOnKill ? 2 : 0);
+
+[m1-st-version-two]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiM1StateTests
+expect = WarCore.Tests.AiM1StateTests
+note = strikes add 2 like the kill rule
+original:
+|         public int StateVersion => (sources ? 2 : 1) + (rules.FallOnKill ? 2 : 0) + (rules.Strikes ? 4 : 0);
+replacement:
+|         public int StateVersion => (sources ? 2 : 1) + (rules.FallOnKill ? 2 : 0) + (rules.Strikes ? 2 : 0);
+
+[m1-st-flag-not-written]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiM1StateTests
+expect = WarCore.Tests.AiM1StateTests
+note = the saved rules carry no flag for strikes
+original:
+|             if (rules.Strikes) writer.Bool(true);
+replacement:
+|             if (false) writer.Bool(true);
+
+[m1-st-flag-always]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiM1StateTests
+expect = WarCore.Tests.AiM1StateTests
+note = the saved rules always carry the flag
+original:
+|             if (rules.Strikes) writer.Bool(true);
+replacement:
+|             if (true) writer.Bool(true);
+
+[m1-st-flag-false]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiM1StateTests
+expect = WarCore.Tests.AiM1StateTests
+note = the flag is written as false
+original:
+|             if (rules.Strikes) writer.Bool(true);
+replacement:
+|             if (rules.Strikes) writer.Bool(false);
+
+[m1-st-flag-unchecked]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiM1StateTests
+expect = WarCore.Tests.AiM1StateTests
+note = a false flag is read as the same rules
+original:
+|             if (rules.Strikes) same &= reader.Bool();
+replacement:
+|             if (rules.Strikes) reader.Bool();
+
+[m1-st-rule-dropped]
+file = Assets/WarCore/Battle/Ai/Pressure.cs
+filter = FullyQualifiedName~AiM1StateTests
+expect = WarCore.Tests.AiM1StateTests
+note = the rules never carry strikes
+original:
+|             BreakSharePermille = breakSharePermille; FallOnKill = fallOnKill; Strikes = strikes;
+replacement:
+|             BreakSharePermille = breakSharePermille; FallOnKill = fallOnKill; Strikes = false;
+
+[m1-ai-field-inverted]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = the part is asked only without the field
+original:
+|                     AiEngage nerve = meleeNerve && thinker.Nerve != AiNerve.Calm ? this.engage.Melee(in thinker, enemy, field) : AiEngage.Advance;
+replacement:
+|                     AiEngage nerve = !meleeNerve && thinker.Nerve != AiNerve.Calm ? this.engage.Melee(in thinker, enemy, field) : AiEngage.Advance;
+
+[m1-ai-field-ignored]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = the part is asked without the field
+original:
+|                     AiEngage nerve = meleeNerve && thinker.Nerve != AiNerve.Calm ? this.engage.Melee(in thinker, enemy, field) : AiEngage.Advance;
+replacement:
+|                     AiEngage nerve = thinker.Nerve != AiNerve.Calm ? this.engage.Melee(in thinker, enemy, field) : AiEngage.Advance;
+
+[m1-ai-calm-asked]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = a calm unit asks too
+original:
+|                     AiEngage nerve = meleeNerve && thinker.Nerve != AiNerve.Calm ? this.engage.Melee(in thinker, enemy, field) : AiEngage.Advance;
+replacement:
+|                     AiEngage nerve = meleeNerve ? this.engage.Melee(in thinker, enemy, field) : AiEngage.Advance;
+
+[m1-ai-never-asked]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = the part is never asked
+original:
+|                     AiEngage nerve = meleeNerve && thinker.Nerve != AiNerve.Calm ? this.engage.Melee(in thinker, enemy, field) : AiEngage.Advance;
+replacement:
+|                     AiEngage nerve = false ? this.engage.Melee(in thinker, enemy, field) : AiEngage.Advance;
+
+[m1-ai-fallback-stands]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = Fallback stands instead of going back
+original:
+|                     if (nerve == AiEngage.Fallback) routed = true;
+replacement:
+|                     if (false) routed = true;
+
+[m1-ai-fallback-chases]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = Fallback chases
+original:
+|                     if (nerve == AiEngage.Fallback) routed = true;
+replacement:
+|                     if (nerve == AiEngage.Fallback) nerve = AiEngage.Advance;
+|                     if (false) routed = true;
+
+[m1-ai-hold-routs]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = Hold goes back
+original:
+|                     if (nerve == AiEngage.Fallback) routed = true;
+replacement:
+|                     if (nerve == AiEngage.Fallback || nerve == AiEngage.Hold) routed = true;
+
+[m1-ai-cover-routs]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = Cover goes back
+original:
+|                     if (nerve == AiEngage.Fallback) routed = true;
+replacement:
+|                     if (nerve == AiEngage.Fallback || nerve == AiEngage.Cover) routed = true;
+
+[m1-ai-cover-not-taken]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = Cover never takes cover
+original:
+|                         if (nerve == AiEngage.Cover && TakesCover(entity, id, here, moving, target)) continue;
+replacement:
+|                         if (false && TakesCover(entity, id, here, moving, target)) continue;
+
+[m1-ai-hold-takes-cover]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = Hold takes cover too
+original:
+|                         if (nerve == AiEngage.Cover && TakesCover(entity, id, here, moving, target)) continue;
+replacement:
+|                         if (nerve != AiEngage.Advance && TakesCover(entity, id, here, moving, target)) continue;
+
+[m1-ai-cover-chases]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = Cover that finds no cover chases
+original:
+|                         if (nerve != AiEngage.Advance) { if (moving) StopUnit(id, here, target); continue; }
+replacement:
+|                         if (nerve == AiEngage.Hold) { if (moving) StopUnit(id, here, target); continue; }
+
+[m1-ai-hold-chases]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = Hold chases
+original:
+|                         if (nerve != AiEngage.Advance) { if (moving) StopUnit(id, here, target); continue; }
+replacement:
+|                         if (nerve == AiEngage.Cover) { if (moving) StopUnit(id, here, target); continue; }
+
+[m1-ai-stand-keeps-walking]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = a unit told to stand keeps its order
+original:
+|                         if (nerve != AiEngage.Advance) { if (moving) StopUnit(id, here, target); continue; }
+replacement:
+|                         if (nerve != AiEngage.Advance) { continue; }
+
+[m1-ai-routed-asked-again]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = a unit sent back is asked again by Unseen
+original:
+|                 else if (!routed && thinker.Nerve != AiNerve.Calm)
+replacement:
+|                 else if (thinker.Nerve != AiNerve.Calm)
+
+[m1-ai-routed-not-back]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = a unit sent back goes on to its point
+original:
+|                 bool advance = false, fallback = routed, stand = false;
+replacement:
+|                 bool advance = false, fallback = false, stand = false;
+
+[m1-ai-digest-never]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = the field never changes the digest
+original:
+|             this.meleeNerve = meleeNerve;
+|             if (meleeNerve)
+replacement:
+|             this.meleeNerve = meleeNerve;
+|             if (false)
+
+[m1-ai-digest-always]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = the digest changes without the field
+original:
+|             this.meleeNerve = meleeNerve;
+|             if (meleeNerve)
+replacement:
+|             this.meleeNerve = meleeNerve;
+|             if (true)
+
+[m1-ai-field-not-kept]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = the scheduler drops the field
+original:
+|             this.meleeNerve = meleeNerve;
+|             if (meleeNerve)
+replacement:
+|             this.meleeNerve = false;
+|             if (meleeNerve)
+
+[m1-part-bound-swapped]
+file = Assets/WarCore/Battle/Ai/BoundEngage.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = bound: a broken unit takes cover, a pinned one goes back
+original:
+|             return nerve == AiNerve.Broken ? AiEngage.Fallback : nerve == AiNerve.Pinned ? AiEngage.Cover : AiEngage.Advance;
+replacement:
+|             return nerve == AiNerve.Broken ? AiEngage.Cover : nerve == AiNerve.Pinned ? AiEngage.Fallback : AiEngage.Advance;
+
+[m1-part-bound-pinned-holds]
+file = Assets/WarCore/Battle/Ai/BoundEngage.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = bound: a pinned unit holds
+original:
+|             return nerve == AiNerve.Broken ? AiEngage.Fallback : nerve == AiNerve.Pinned ? AiEngage.Cover : AiEngage.Advance;
+replacement:
+|             return nerve == AiNerve.Broken ? AiEngage.Fallback : nerve == AiNerve.Pinned ? AiEngage.Hold : AiEngage.Advance;
+
+[m1-part-bound-pinned-chases]
+file = Assets/WarCore/Battle/Ai/BoundEngage.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = bound: a pinned unit chases
+original:
+|             return nerve == AiNerve.Broken ? AiEngage.Fallback : nerve == AiNerve.Pinned ? AiEngage.Cover : AiEngage.Advance;
+replacement:
+|             return nerve == AiNerve.Broken ? AiEngage.Fallback : nerve == AiNerve.Pinned ? AiEngage.Advance : AiEngage.Advance;
+
+[m1-part-bound-broken-chases]
+file = Assets/WarCore/Battle/Ai/BoundEngage.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = bound: a broken unit chases
+original:
+|             return nerve == AiNerve.Broken ? AiEngage.Fallback : nerve == AiNerve.Pinned ? AiEngage.Cover : AiEngage.Advance;
+replacement:
+|             return nerve == AiNerve.Broken ? AiEngage.Advance : nerve == AiNerve.Pinned ? AiEngage.Cover : AiEngage.Advance;
+
+[m1-part-hold-holds]
+file = Assets/WarCore/Battle/Ai/HoldEngage.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = hold: a melee unit stands
+original:
+|         public AiEngage Melee(in AiUnit unit, SimVec3 enemy, AiField field) => AiEngage.Advance;
+replacement:
+|         public AiEngage Melee(in AiUnit unit, SimVec3 enemy, AiField field) => AiEngage.Hold;
+
+[m1-part-hold-by-nerve]
+file = Assets/WarCore/Battle/Ai/HoldEngage.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = hold: a broken melee unit goes back
+original:
+|         public AiEngage Melee(in AiUnit unit, SimVec3 enemy, AiField field) => AiEngage.Advance;
+replacement:
+|         public AiEngage Melee(in AiUnit unit, SimVec3 enemy, AiField field) => unit.Nerve == AiNerve.Broken ? AiEngage.Fallback : AiEngage.Advance;
+
+[m1-ct-strikes-false-on]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiM1StateTests
+expect = WarCore.Tests.AiM1StateTests
+note = pressureStrikes false turns strikes on
+original:
+|                     bool strikes = r.Has("pressureStrikes") && r.Bool("pressureStrikes");
+replacement:
+|                     bool strikes = r.Has("pressureStrikes") && (r.Bool("pressureStrikes") || true);
+
+[m1-ct-strikes-ignored]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiM1StateTests
+expect = WarCore.Tests.AiM1StateTests
+note = pressureStrikes is read and dropped
+original:
+|                     bool strikes = r.Has("pressureStrikes") && r.Bool("pressureStrikes");
+replacement:
+|                     bool strikes = r.Has("pressureStrikes") && r.Bool("pressureStrikes") && false;
+
+[m1-ct-strikes-alone]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiM1StateTests
+expect = WarCore.Tests.AiM1StateTests
+note = pressureStrikes without the pressure fields is accepted
+original:
+|                 else if (r.Has("pressureStrikes")) throw r.Bad(r.FieldOf("pressureStrikes"), "needs the pressure fields (pressureDeathRadiusMm ...)");
+replacement:
+|                 else if (false) throw r.Bad(r.FieldOf("pressureStrikes"), "needs the pressure fields (pressureDeathRadiusMm ...)");
+
+[m1-ct-nerve-false-on]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiM1StateTests
+expect = WarCore.Tests.AiM1StateTests
+note = meleeNerve false turns the field on
+original:
+|                     meleeNerve = r.Bool("meleeNerve");
+replacement:
+|                     r.Bool("meleeNerve"); meleeNerve = true;
+
+[m1-ct-nerve-ignored]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiM1StateTests
+expect = WarCore.Tests.AiM1StateTests
+note = meleeNerve is not read
+original:
+|                     meleeNerve = r.Bool("meleeNerve");
+replacement:
+|                     r.Bool("meleeNerve"); meleeNerve = false;
+
+[m1-ct-nerve-without-pressure]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiM1StateTests
+expect = WarCore.Tests.AiM1StateTests
+note = meleeNerve without the pressure fields is accepted
+original:
+|                     if (!pressed) throw r.Bad(r.FieldOf("meleeNerve"), "needs the pressure fields (pressureDeathRadiusMm ...)");
+replacement:
+|                     if (false) throw r.Bad(r.FieldOf("meleeNerve"), "needs the pressure fields (pressureDeathRadiusMm ...)");
+
+[m1-ct-nerve-without-chase]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiM1StateTests
+expect = WarCore.Tests.AiM1StateTests
+note = meleeNerve without a chase range is accepted
+original:
+|                     if (chase <= 0) throw r.Bad(r.FieldOf("meleeNerve"), "needs meleeChaseRange");
+replacement:
+|                     if (false) throw r.Bad(r.FieldOf("meleeNerve"), "needs meleeChaseRange");
+
+[m1-ct-nerve-chase-zero]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiM1StateTests
+expect = WarCore.Tests.AiM1StateTests
+note = meleeNerve with a chase range of 0 is accepted
+original:
+|                     if (chase <= 0) throw r.Bad(r.FieldOf("meleeNerve"), "needs meleeChaseRange");
+replacement:
+|                     if (chase < 0) throw r.Bad(r.FieldOf("meleeNerve"), "needs meleeChaseRange");
+
+[m1-ct-nerve-not-passed]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~AiM1StateTests
+expect = WarCore.Tests.AiM1StateTests
+note = the field does not reach the scheduler
+original:
+| ai != null && ai.MeleeNerve, ai != null ? ai.MeleeNerveFightMm : 0), SimSystemPhase.Requests);
+replacement:
+| false, ai != null ? ai.MeleeNerveFightMm : 0), SimSystemPhase.Requests);
+
+[m1-ai-fight-never]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = a close enemy is hidden from as a far one
+original:
+|                     if (nerve == AiEngage.Cover && combat.SpanSquared(here, enemy) <= meleeFightSquared) nerve = AiEngage.Advance;
+replacement:
+|                     if (false && combat.SpanSquared(here, enemy) <= meleeFightSquared) nerve = AiEngage.Advance;
+
+[m1-ai-fight-always]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = Cover chases whatever the distance
+original:
+|                     if (nerve == AiEngage.Cover && combat.SpanSquared(here, enemy) <= meleeFightSquared) nerve = AiEngage.Advance;
+replacement:
+|                     if (nerve == AiEngage.Cover) nerve = AiEngage.Advance;
+
+[m1-ai-fight-strict]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = an enemy exactly at the fight range is not fought
+original:
+|                     if (nerve == AiEngage.Cover && combat.SpanSquared(here, enemy) <= meleeFightSquared) nerve = AiEngage.Advance;
+replacement:
+|                     if (nerve == AiEngage.Cover && combat.SpanSquared(here, enemy) < meleeFightSquared) nerve = AiEngage.Advance;
+
+[m1-ai-fight-beyond]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = an enemy beyond the fight range is fought
+original:
+|                     if (nerve == AiEngage.Cover && combat.SpanSquared(here, enemy) <= meleeFightSquared) nerve = AiEngage.Advance;
+replacement:
+|                     if (nerve == AiEngage.Cover && combat.SpanSquared(here, enemy) >= meleeFightSquared) nerve = AiEngage.Advance;
+
+[m1-ai-fight-hold]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = Hold fights a close enemy too
+original:
+|                     if (nerve == AiEngage.Cover && combat.SpanSquared(here, enemy) <= meleeFightSquared) nerve = AiEngage.Advance;
+replacement:
+|                     if (nerve != AiEngage.Fallback && combat.SpanSquared(here, enemy) <= meleeFightSquared) nerve = AiEngage.Advance;
+
+[m1-ai-fight-fallback]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = Fallback fights a close enemy too
+original:
+|                     if (nerve == AiEngage.Cover && combat.SpanSquared(here, enemy) <= meleeFightSquared) nerve = AiEngage.Advance;
+replacement:
+|                     if (nerve != AiEngage.Hold && combat.SpanSquared(here, enemy) <= meleeFightSquared) nerve = AiEngage.Advance;
+
+[m1-ai-fight-after-cover]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = cover is looked for before the close enemy
+original:
+|                     if (nerve == AiEngage.Cover && combat.SpanSquared(here, enemy) <= meleeFightSquared) nerve = AiEngage.Advance;
+|                     if (nerve == AiEngage.Fallback) routed = true;
+|                     else
+|                     {
+|                         if (nerve == AiEngage.Cover && TakesCover(entity, id, here, moving, target)) continue;
+replacement:
+|                     if (nerve == AiEngage.Fallback) routed = true;
+|                     else
+|                     {
+|                         if (nerve == AiEngage.Cover && TakesCover(entity, id, here, moving, target)) continue;
+|                         if (nerve == AiEngage.Cover && combat.SpanSquared(here, enemy) <= meleeFightSquared) nerve = AiEngage.Advance;
+
+[m1-ai-fight-metres]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = the fight range is read in metres
+original:
+|                 meleeFightSquared = new SimVec3(SimFix.Ratio(meleeNerveFightMm, 1000), default, default).LengthSquared;
+replacement:
+|                 meleeFightSquared = new SimVec3(SimFix.FromInt(meleeNerveFightMm), default, default).LengthSquared;
+
+[m1-ai-digest-no-fight]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = the fight range is not part of the digest
+original:
+| hash.Add(policyDigest); hash.Add(meleeNerveFightMm);
+replacement:
+| hash.Add(policyDigest); hash.Add(0);
+
+[m1-ct-fight-not-passed]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = the fight range does not reach the scheduler
+original:
+| ai != null ? ai.MeleeNerveFightMm : 0), SimSystemPhase.Requests);
+replacement:
+| 0), SimSystemPhase.Requests);
+
+[m1-ct-fight-not-kept]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiM1StateTests
+expect = WarCore.Tests.AiM1StateTests
+note = the fight range is read and dropped
+original:
+|                     meleeFight = r.Int("meleeNerveFightMm", 0, MaxPressureRadiusMm);
+replacement:
+|                     meleeFight = r.Int("meleeNerveFightMm", 0, MaxPressureRadiusMm) * 0;
+
+[m1-ct-fight-negative]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiM1StateTests
+expect = WarCore.Tests.AiM1StateTests
+note = a negative fight range is accepted
+original:
+|                     meleeFight = r.Int("meleeNerveFightMm", 0, MaxPressureRadiusMm);
+replacement:
+|                     meleeFight = r.Int("meleeNerveFightMm", -1, MaxPressureRadiusMm);
+
+[m1-ct-fight-zero-refused]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiM1StateTests
+expect = WarCore.Tests.AiM1StateTests
+note = a fight range of 0 is refused
+original:
+|                     meleeFight = r.Int("meleeNerveFightMm", 0, MaxPressureRadiusMm);
+replacement:
+|                     meleeFight = r.Int("meleeNerveFightMm", 1, MaxPressureRadiusMm);
+
+[m1-ct-fight-above-max]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiM1StateTests
+expect = WarCore.Tests.AiM1StateTests
+note = a fight range above the largest radius is accepted
+original:
+|                     meleeFight = r.Int("meleeNerveFightMm", 0, MaxPressureRadiusMm);
+replacement:
+|                     meleeFight = r.Int("meleeNerveFightMm", 0, MaxPressureRadiusMm + 1);
+
+[m1-ct-fight-max-refused]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiM1StateTests
+expect = WarCore.Tests.AiM1StateTests
+note = the largest fight range is refused
+original:
+|                     meleeFight = r.Int("meleeNerveFightMm", 0, MaxPressureRadiusMm);
+replacement:
+|                     meleeFight = r.Int("meleeNerveFightMm", 0, MaxPressureRadiusMm - 1);
+
+[m1-ct-fight-alone]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiM1StateTests
+expect = WarCore.Tests.AiM1StateTests
+note = a fight range without meleeNerve is accepted
+original:
+|                     if (!meleeNerve) throw r.Bad(r.FieldOf("meleeNerveFightMm"), "needs meleeNerve");
+replacement:
+|                     if (false) throw r.Bad(r.FieldOf("meleeNerveFightMm"), "needs meleeNerve");
+
+[m1-ct-fight-nerve-false]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiM1StateTests
+expect = WarCore.Tests.AiM1StateTests
+note = a fight range next to meleeNerve false is accepted
+original:
+|                     if (!meleeNerve) throw r.Bad(r.FieldOf("meleeNerveFightMm"), "needs meleeNerve");
+replacement:
+|                     if (!meleeNerve && !r.Has("meleeNerve")) throw r.Bad(r.FieldOf("meleeNerveFightMm"), "needs meleeNerve");
+
+[m1-ct-fight-not-published]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiM1StateTests
+expect = WarCore.Tests.AiM1StateTests
+note = the rules do not carry the fight range
+original:
+| MeleeNerveFightMm = meleeFight, CoverRadiusMm
+replacement:
+| MeleeNerveFightMm = 0, CoverRadiusMm
