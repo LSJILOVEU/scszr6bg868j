@@ -66,6 +66,32 @@ namespace WarCore.Content.MapTools
         internal void SetPoints(MapXZ[] points) { Points = Array.AsReadOnly((MapXZ[])points.Clone()); }
     }
 
+    // ED-3c-1 base layer of a generation spec: a height tile (MapDemTile) scaled under the map, between baseMm and the
+    // stamps. Tile is the tile's file name for the editor (never opened here); Sha256 its fingerprint; the map's point (0, 0)
+    // sits at (X0Mm, Z0Mm) of the tile; one map metre is ScaleMilli / 1000 real metres; real heights are multiplied by
+    // ExaggerationMilli / 1000; real height DatumMm sits at baseMm.
+    public sealed class MapGenBase
+    {
+        public const int MaxOffsetMm = 51200000, MinScaleMilli = 100, MaxScaleMilli = 100000, MaxExaggerationMilli = 100000,
+            MaxDatumMm = 9000000;
+
+        internal static readonly string[] Keys = { "tile", "sha256", "x0Mm", "z0Mm", "scaleMilli", "exaggerationMilli", "datumMm" };
+
+        public string Tile { get; }
+        public string Sha256 { get; }
+        public int X0Mm { get; }
+        public int Z0Mm { get; }
+        public int ScaleMilli { get; }
+        public int ExaggerationMilli { get; }
+        public int DatumMm { get; }
+
+        internal MapGenBase(string tile, string sha256, int x0Mm, int z0Mm, int scaleMilli, int exaggerationMilli, int datumMm)
+        {
+            Tile = tile; Sha256 = sha256; X0Mm = x0Mm; Z0Mm = z0Mm; ScaleMilli = scaleMilli; ExaggerationMilli = exaggerationMilli;
+            DatumMm = datumMm;
+        }
+    }
+
     // ED-3a terrain generation spec (<map id>.gen.json, next to the map). Editor only: never baked, never hashed, and the map
     // description format does not change. Read rejects unknown keys and out-of-range values with ArgumentException; Write
     // gives canonical bytes (fixed key order, integers, two-space indent, "\n" line ends), so Write(Read(Write(s))) == Write(s).
@@ -87,7 +113,7 @@ namespace WarCore.Content.MapTools
             { "road", new[] { "points", "halfWidth", "surface" } },
         };
 
-        private static readonly string[] TopKeys = { "version", "width", "depth", "pack", "seed", "baseMm", "ground", "stamps" };
+        private static readonly string[] TopKeys = { "version", "width", "depth", "pack", "seed", "baseMm", "base", "ground", "stamps" };
 
         public int Width { get; }
         public int Depth { get; }
@@ -95,22 +121,23 @@ namespace WarCore.Content.MapTools
         public ulong Seed { get; }
         public int? BaseMm { get; }
         public string Ground { get; }
+        public MapGenBase Base { get; }
         public IReadOnlyList<MapGenStamp> Stamps { get; }
 
         // A spec without stamps (the starting spec of a map); the same top-level checks as Read.
         public MapGenSpec(int width, int depth, string pack, ulong seed, int? baseMm, string ground)
-            : this(width, depth, pack, seed, baseMm, ground, new MapGenStamp[0])
+            : this(width, depth, pack, seed, baseMm, null, ground, new MapGenStamp[0])
         {
         }
 
-        private MapGenSpec(int width, int depth, string pack, ulong seed, int? baseMm, string ground, MapGenStamp[] stamps)
+        private MapGenSpec(int width, int depth, string pack, ulong seed, int? baseMm, MapGenBase genBase, string ground, MapGenStamp[] stamps)
         {
             if (width < 1 || width > WcMapValidation.MaxSide) throw Bad("width", "must be in [1, " + WcMapValidation.MaxSide + "]");
             if (depth < 1 || depth > WcMapValidation.MaxSide) throw Bad("depth", "must be in [1, " + WcMapValidation.MaxSide + "]");
             Text(pack, "pack");
             if (baseMm.HasValue && (baseMm.Value < -MaxMm || baseMm.Value > MaxMm)) throw Bad("baseMm", "must be in [-" + MaxMm + ", " + MaxMm + "]");
             if (ground != null) Text(ground, "ground");
-            Width = width; Depth = depth; Pack = pack; Seed = seed; BaseMm = baseMm; Ground = ground;
+            Width = width; Depth = depth; Pack = pack; Seed = seed; BaseMm = baseMm; Base = genBase; Ground = ground;
             Stamps = Array.AsReadOnly((MapGenStamp[])stamps.Clone());
         }
 
@@ -140,12 +167,40 @@ namespace WarCore.Content.MapTools
             JsonNode baseNode = root.Find("baseMm"), groundNode = root.Find("ground");
             int? baseMm = baseNode == null ? (int?)null : (int)Int(baseNode, "baseMm", -MaxMm, MaxMm);
             string ground = groundNode == null ? null : Str(groundNode, "ground");
+            JsonNode genBaseNode = root.Find("base");
+            MapGenBase genBase = genBaseNode == null ? null : ReadBase(genBaseNode);
+            if (genBase != null && !baseMm.HasValue) throw Bad("base", "needs baseMm");
             JsonNode list = Need(root, "stamps", "");
             if (list.Kind != JsonKind.Array) throw Bad("stamps", "must be an array");
             if (list.Items.Count > MaxStamps) throw Bad("stamps", "has more than " + MaxStamps + " stamps");
             var stamps = new MapGenStamp[list.Items.Count];
             for (int k = 0; k < stamps.Length; k++) stamps[k] = ReadStamp(list.Items[k], "stamps[" + k + "]", width, depth);
-            return new MapGenSpec(width, depth, pack, seed, baseMm, ground, stamps);
+            return new MapGenSpec(width, depth, pack, seed, baseMm, genBase, ground, stamps);
+        }
+
+        private static MapGenBase ReadBase(JsonNode node)
+        {
+            if (node.Kind != JsonKind.Object) throw Bad("base", "must be an object");
+            Known(node, MapGenBase.Keys, "base");
+            string tile = Str(Need(node, "tile", "base"), "base.tile");
+            if (tile.IndexOf('/') >= 0 || tile.IndexOf('\\') >= 0 || tile == "." || tile == "..")
+                throw Bad("base.tile", "must be a file name without / or \\, not . or ..");
+            JsonNode shaNode = Need(node, "sha256", "base");
+            if (shaNode.Kind != JsonKind.String || !IsSha256(shaNode.Text)) throw Bad("base.sha256", "must be 64 characters 0-9 a-f");
+            int x0 = (int)Int(Need(node, "x0Mm", "base"), "base.x0Mm", 0, MapGenBase.MaxOffsetMm);
+            int z0 = (int)Int(Need(node, "z0Mm", "base"), "base.z0Mm", 0, MapGenBase.MaxOffsetMm);
+            int scale = (int)Int(Need(node, "scaleMilli", "base"), "base.scaleMilli", MapGenBase.MinScaleMilli, MapGenBase.MaxScaleMilli);
+            int exag = (int)Int(Need(node, "exaggerationMilli", "base"), "base.exaggerationMilli", 1, MapGenBase.MaxExaggerationMilli);
+            int datum = (int)Int(Need(node, "datumMm", "base"), "base.datumMm", -MapGenBase.MaxDatumMm, MapGenBase.MaxDatumMm);
+            return new MapGenBase(tile, shaNode.Text, x0, z0, scale, exag, datum);
+        }
+
+        private static bool IsSha256(string s)
+        {
+            if (s.Length != 64) return false;
+            foreach (char c in s)
+                if (!(c >= '0' && c <= '9') && !(c >= 'a' && c <= 'f')) return false;
+            return true;
         }
 
         private static MapGenStamp ReadStamp(JsonNode node, string at, int width, int depth)
@@ -271,6 +326,7 @@ namespace WarCore.Content.MapTools
             sb.Append("  \"pack\": "); Quote(sb, Pack); sb.Append(",\n");
             sb.Append("  \"seed\": ").Append(Seed.ToString(CultureInfo.InvariantCulture)).Append(",\n");
             if (BaseMm.HasValue) sb.Append("  \"baseMm\": ").Append(BaseMm.Value.ToString(CultureInfo.InvariantCulture)).Append(",\n");
+            if (Base != null) WriteBase(sb, Base);
             if (Ground != null) { sb.Append("  \"ground\": "); Quote(sb, Ground); sb.Append(",\n"); }
             if (Stamps.Count == 0) sb.Append("  \"stamps\": []\n");
             else
@@ -285,6 +341,17 @@ namespace WarCore.Content.MapTools
             }
             sb.Append("}\n");
             return sb.ToString();
+        }
+
+        private static void WriteBase(StringBuilder sb, MapGenBase b)
+        {
+            sb.Append("  \"base\": { \"tile\": "); Quote(sb, b.Tile);
+            sb.Append(", \"sha256\": "); Quote(sb, b.Sha256);
+            sb.Append(", \"x0Mm\": ").Append(b.X0Mm.ToString(CultureInfo.InvariantCulture));
+            sb.Append(", \"z0Mm\": ").Append(b.Z0Mm.ToString(CultureInfo.InvariantCulture));
+            sb.Append(", \"scaleMilli\": ").Append(b.ScaleMilli.ToString(CultureInfo.InvariantCulture));
+            sb.Append(", \"exaggerationMilli\": ").Append(b.ExaggerationMilli.ToString(CultureInfo.InvariantCulture));
+            sb.Append(", \"datumMm\": ").Append(b.DatumMm.ToString(CultureInfo.InvariantCulture)).Append(" },\n");
         }
 
         private static void WriteStamp(StringBuilder sb, MapGenStamp s)

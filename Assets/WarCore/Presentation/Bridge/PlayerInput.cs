@@ -18,10 +18,13 @@ namespace WarCore.Presentation
         public long? AimYMm { get; }
         /// <summary>Layer of the aim point: 0 = the ground, 1..N = a floor plate of the map (worlds with plates only).</summary>
         public int AimLayer { get; }
+        /// <summary>The dash key is held. The bridge asks for a dash on the tick it goes down (held -> no repeat).</summary>
+        public bool Dash { get; }
 
         // Parameters may only be appended at the end.
         public PlayerInput(int moveXMilli, int moveZMilli, long aimXMm = 0, long aimZMm = 0, bool primary = false,
-            bool block = false, bool @throw = false, int skillSlot = 0, long? aimYMm = null, int aimLayer = 0)
+            bool block = false, bool @throw = false, int skillSlot = 0, long? aimYMm = null, int aimLayer = 0,
+            bool dash = false)
         {
             if (moveXMilli < -1000 || moveXMilli > 1000)
                 throw new ArgumentOutOfRangeException(nameof(moveXMilli));
@@ -36,13 +39,13 @@ namespace WarCore.Presentation
             if (aimYMm.HasValue) SimSession.CheckAimY(aimYMm.Value);
             MoveXMilli = moveXMilli; MoveZMilli = moveZMilli;
             AimXMm = aimXMm; AimZMm = aimZMm; Primary = primary;
-            Block = block; Throw = @throw; SkillSlot = skillSlot; AimYMm = aimYMm;
+            Block = block; Throw = @throw; SkillSlot = skillSlot; AimYMm = aimYMm; Dash = dash;
         }
 
         public bool Equals(PlayerInput other) => MoveXMilli == other.MoveXMilli && MoveZMilli == other.MoveZMilli
             && AimXMm == other.AimXMm && AimZMm == other.AimZMm && Primary == other.Primary
             && Block == other.Block && Throw == other.Throw && SkillSlot == other.SkillSlot && AimYMm == other.AimYMm
-            && AimLayer == other.AimLayer;
+            && AimLayer == other.AimLayer && Dash == other.Dash;
         public override bool Equals(object obj) => obj is PlayerInput other && Equals(other);
         public override int GetHashCode()
         {
@@ -58,7 +61,9 @@ namespace WarCore.Presentation
                 hash = hash * 397 ^ SkillSlot;
                 hash = hash * 397 ^ AimYMm.GetHashCode();
                 // Layer 0 keeps the hash code of an input without layers.
-                return AimLayer == 0 ? hash : hash * 397 ^ AimLayer;
+                if (AimLayer != 0) hash = hash * 397 ^ AimLayer;
+                // No dash keeps the hash code of an input without a dash.
+                return Dash ? hash * 397 ^ 1 : hash;
             }
         }
     }

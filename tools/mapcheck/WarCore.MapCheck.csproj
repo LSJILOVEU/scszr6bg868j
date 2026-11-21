@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Map health check: runs the map gate on a description file and writes a one-page web view of the map and its problems.
+       Not part of CI (like tools/replay); the logic lives in Presentation (MapPreview). -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <AssemblyName>WarCore.MapCheck</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../headless/Presentation/WarCore.Presentation.csproj" />
+    <ProjectReference Include="../headless/Content/WarCore.Content.csproj" />
+    <None Include="mapcheck.html" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
