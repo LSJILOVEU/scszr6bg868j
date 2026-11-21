@@ -23,9 +23,12 @@ folder, or the files named in `?files=a.json,b.json`.
 Computed on every recorded frame for each team's alive, deployed units; `metrics` in the JSON holds the mean and peak
 over the match, `m` on each frame holds `[share1, share2, nn1, nn2, spread1, spread2, close1, close2, idle1, idle2,
 closeNear1, closeNear2, enemy20_1, enemy20_2, idleNoEnemy1, idleNoEnemy2, pinned1, pinned2, broken1, broken2,
-pinnedHidden1, pinnedHidden2, pinnedMoving1, pinnedMoving2, pinnedAtWall1, pinnedAtWall2]` (`null` = undefined).
+pinnedHidden1, pinnedHidden2, pinnedMoving1, pinnedMoving2, pinnedAtWall1, pinnedAtWall2, squadShare1, squadShare2,
+squadLeash1, squadLeash2, squadLeashP90_1, squadLeashP90_2]` (`null` = undefined).
 A frame also lists the indices of the pinned (`n`) and broken (`b`) units when there are any; the page draws a thin
-ring round a pinned unit and a thick yellow one round a broken unit.
+ring round a pinned unit and a thick yellow one round a broken unit. When somebody is in an AI squad the frame has `q`:
+for each unit the unit index of its squad's leader (`-1` = in no squad, a leader names itself); the page draws a square
+round a leader and a thin line from each member to its leader.
 
 | Key | Meaning | Reads |
 |---|---|---|
@@ -42,9 +45,14 @@ ring round a pinned unit and a thick yellow one round a broken unit.
 | `pinnedHidden` | Share of the team's pinned units that no enemy (alive, on the field) within 68 m has a wall-free line to (walls only, from above) | high = pinned units are out of the enemy's sight |
 | `pinnedMoving` | Share of the team's pinned units whose position differs from the previous recorded frame | walking to cover and pushing at each other both count |
 | `pinnedAtWall` | Share of the team's pinned units within 2.5 m of a wall | high = pinned units stand at walls |
+| `squadShare` | Share of the team that is in an AI squad, leaders included (read from the squads system) | undefined without squads |
+| `squadLeash` | Median distance in metres from a squad member to its leader, over the team's members whose leader is alive on the field | low = squads stay together |
+| `squadLeashP90` | The same, 90th percentile | high = some members are far from their leader |
 | `decidedTick` | Tick the match was won; `null` if not decided within `maxTicks` | |
 
 - `pinnedHidden`, `pinnedMoving` and `pinnedAtWall` are undefined on a frame with fewer than 5 pinned units of the team.
+- `squadLeash` and `squadLeashP90` are undefined on a frame with fewer than 5 such members of the team; `squadShare` on a
+  frame where nobody of either team is in a squad.
 - Undefined when fewer than 10 units are on the field (share, nn, close, idle, enemy20, idleNoEnemy, pinned, broken), fewer than 10 units near points
   (closeNear) or fewer than 5 attackers (spread).
 - The slot ring of `idleOutside` is the setup's `ai.slotRingMm` (the `RingMm` of its `Recipes.cs` entry), 0 by default.

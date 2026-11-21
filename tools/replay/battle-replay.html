@@ -70,6 +70,7 @@ canvas { width: 100%; aspect-ratio: 160 / 100; max-width: 100%; display: block; 
     <span>圆圈是据点，颜色是归属，圈边的两个数字是圈内两队人数</span>
     <span>细线是开火</span>
     <span>细圈是被压住的兵，黄色粗圈是在后撤的兵（开了压力系统才有）</span>
+    <span>方框是小队队长，细线把队员连到自己的队长（开了小队才有）</span>
   </div>
 
   <div class="notes">
@@ -114,6 +115,8 @@ canvas { width: 100%; aspect-ratio: 160 / 100; max-width: 100%; display: block; 
     return pair("单圈最大占比", 0, "maxPointShare") + pair("最近邻离散", 2, "nnSpread") + pair("进攻方位分散", 4, "attackSpread") +
       pair("贴身占比", 6, "closeShare") + pair("圈外发呆", 8, "idleOutside") + pair("据点附近贴身", 10, "closeShareNearPoints") +
       pair("20米内有敌", 12, "enemyWithin20") + pair("无敌发呆", 14, "idleNoEnemy") +
+      (g.team1 && g.team1.squadShare && (g.team1.squadShare.mean !== null || g.team2.squadShare.mean !== null)
+        ? pair("在队占比", 26, "squadShare") + pair("离队长（米，中位）", 28, "squadLeash") : "") +
       '<span><b>分胜负 tick</b> ' + (g.decidedTick === null || g.decidedTick === undefined ? "未分" : g.decidedTick) + '</span>';
   }
 
@@ -134,13 +137,14 @@ canvas { width: 100%; aspect-ratio: 160 / 100; max-width: 100%; display: block; 
 
     const pinned = new Set(a.n || []), broken = new Set(a.b || []);
     const inside = r.points.map(() => [0, 0, 0]);
-    const units = [];
+    const units = [], where = [];
     for (let u = 0; u < r.teams.length; u++) {
       const s0 = a.u[u * 3 + 2], s1 = b.u[u * 3 + 2];
       if (s0 === 0) continue;
       let x = a.u[u * 3] / 10, z = a.u[u * 3 + 1] / 10;
       if (s0 === 1 && s1 === 1) { x += (b.u[u * 3] / 10 - x) * blend; z += (b.u[u * 3 + 1] / 10 - z) * blend; }
-      units.push([x, z, r.teams[u], s0, broken.has(u) ? 2 : pinned.has(u) ? 1 : 0]);
+      units.push([x, z, r.teams[u], s0, broken.has(u) ? 2 : pinned.has(u) ? 1 : 0, u]);
+      where[u] = s0 === 1 ? [x, z] : null;
       if (s0 !== 1) continue;
       for (let p = 0; p < r.points.length; p++) {
         const dx = x - r.points[p][0], dz = z - r.points[p][1];
@@ -166,6 +170,21 @@ canvas { width: 100%; aspect-ratio: 160 / 100; max-width: 100%; display: block; 
     ctx.globalAlpha = 1;
 
     const radius = Math.max(1.6 * ratio, 0.45 * scale);
+    // Squads (frame.q: each unit's leader by unit index, -1 = none): a thin line from a member to its leader, a square round a leader.
+    if (a.q) {
+      ctx.lineWidth = 1 * ratio; ctx.globalAlpha = 0.45;
+      for (const unit of units) {
+        const lead = a.q[unit[5]];
+        if (unit[3] !== 1 || lead < 0 || lead === unit[5] || !where[lead]) continue;
+        ctx.strokeStyle = colors[unit[2]];
+        ctx.beginPath(); ctx.moveTo(X(unit[0]), Z(unit[1])); ctx.lineTo(X(where[lead][0]), Z(where[lead][1])); ctx.stroke();
+      }
+      ctx.globalAlpha = 1; ctx.strokeStyle = token("--fg"); ctx.lineWidth = 1.5 * ratio;
+      for (const unit of units) {
+        if (unit[3] !== 1 || a.q[unit[5]] !== unit[5]) continue;
+        ctx.strokeRect(X(unit[0]) - radius * 1.7, Z(unit[1]) - radius * 1.7, radius * 3.4, radius * 3.4);
+      }
+    }
     for (const unit of units) {
       ctx.fillStyle = colors[unit[2]];
       if (unit[3] === 2) { ctx.globalAlpha = 0.25; ctx.fillRect(X(unit[0]) - radius * 0.6, Z(unit[1]) - radius * 0.6, radius * 1.2, radius * 1.2); ctx.globalAlpha = 1; continue; }

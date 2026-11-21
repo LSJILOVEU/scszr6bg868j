@@ -37,6 +37,7 @@ namespace WarCore.Presentation
         internal ReinforceSystem Reinforce;
         internal MatchSystem Match;
         internal Pressure Pressure;
+        internal Squads Squads;
         internal long MaxHealthRaw;
         internal IControlTarget Controlled;
         internal CombatPack CombatPack;
@@ -65,6 +66,9 @@ namespace WarCore.Presentation
         private readonly Simulation sim;
         private readonly CombatSystem combat;
         private readonly Pressure pressure;
+        private readonly Squads squads;
+        // Stable identity -> spawn key, built on first use: the view names a squad by its leader's spawn key.
+        private System.Collections.Generic.Dictionary<ulong, ulong> spawnKeys;
         private readonly CombatPack combatPack;
         private readonly IControlTarget controlled;
         private readonly StableId[] units;
@@ -123,7 +127,7 @@ namespace WarCore.Presentation
             controlled = parts.Controlled;
             maxHealthRaw = parts.MaxHealthRaw;
             combat = parts.Combat;
-            matchPack = parts.MatchPack; capture = parts.Capture; reinforce = parts.Reinforce; match = parts.Match; pressure = parts.Pressure;
+            matchPack = parts.MatchPack; capture = parts.Capture; reinforce = parts.Reinforce; match = parts.Match; pressure = parts.Pressure; squads = parts.Squads;
             groundRaw = parts.GroundRaw;
             plates = parts.Plates;
             layers = parts.Layers;
@@ -379,6 +383,18 @@ namespace WarCore.Presentation
             }
         }
 
+        // The spawn key of the unit with this stable identity; 0 for 0 (no squad) and for an identity that is no unit's.
+        private ulong BandKey(ulong leader)
+        {
+            if (leader == 0) return 0;
+            if (spawnKeys == null)
+            {
+                spawnKeys = new System.Collections.Generic.Dictionary<ulong, ulong>(units.Length);
+                for (int i = 0; i < units.Length; i++) spawnKeys[units[i].Value] = spawns[i].Key;
+            }
+            return spawnKeys.TryGetValue(leader, out ulong key) ? key : 0;
+        }
+
         private FrameView Capture()
         {
             var views = new List<ViewEntity>(units.Length);
@@ -399,7 +415,8 @@ namespace WarCore.Presentation
                     (float)point.X.Raw / SimFix.Scale, (float)point.Y.Raw / SimFix.Scale,
                     (float)point.Z.Raw / SimFix.Scale, spawns[i].Squad,
                     team, alive, pressure != null && alive ? (int)pressure.Level(sim.Entities.StableOf(unit)) : 0,
-                    layers == null ? 0 : layers.LayerOf(unit)));
+                    layers == null ? 0 : layers.LayerOf(unit),
+                    squads != null && alive ? BandKey(squads.SquadOf(sim.Entities.StableOf(unit))) : 0));
             }
             var fires = new ViewFire[combat == null ? 0 : combat.Fires.Length];
             for (int i = 0; i < fires.Length; i++)
