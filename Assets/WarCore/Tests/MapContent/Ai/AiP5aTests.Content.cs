@@ -26,7 +26,9 @@ namespace WarCore.Tests
             foreach (string none in new[] { null, "{}", "{ \"holdSharePermille\": 300 }" })
                 Assert.That(Pack(none).Section<AiRules>().Squads, Is.Null, none);
             int[] values = { 2, 7, 250, 31000, 12, 1500, 6000 };
-            SquadRules read = Pack(Json(values, "\"holdSharePermille\": 300")).Section<AiRules>().Squads.Value;
+            SquadRules? written = Pack(Json(values, "\"holdSharePermille\": 300")).Section<AiRules>().Squads;
+            Assert.That(written, Is.Not.Null);
+            SquadRules read = written.Value;
             Assert.That(new[] { read.MinSize, read.MaxSize, read.SkirmisherPermille, read.RecruitRadiusMm, read.FormTicks, read.SpreadMinMm, read.SpreadMaxMm }, Is.EqualTo(values));
             for (int skip = 0; skip < Fields.Length; skip++)
             {
@@ -67,6 +69,7 @@ namespace WarCore.Tests
                 int[] values = (int[])wide.Clone(); values[index] = beyond;
                 var e = Assert.Throws<ContentException>(() => Pack(Json(values)));
                 Assert.That(e.Message, Does.StartWith(Head + "field '" + Fields[index] + "': "), beyond.ToString());
+                Assert.That(e.Message, Does.Not.Contain("must be at least squad"), "the field's own range refuses " + beyond);
             }
         }
 

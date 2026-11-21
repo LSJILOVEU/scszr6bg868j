@@ -7,8 +7,10 @@
 # - dropping `counts[leader]++` in Recruit: a squad is served once per Form and Count runs on the next Step.
 # - `unit.Team < 1` -> `< 0`: Form starts at team 1, a team 0 unit is never free.
 # - keeping squads whose leader is gone, or members whose squad is gone, in Clean; dropping `served[best] = true`;
-#   dropping `free[pick] = false`; dropping the sort in Gather: these end in an exception or never return, which
-#   the tool reports as invalid, not as killed.
+#   dropping `free[pick] = false`: these end in an exception or never return, which the tool reports as invalid, not
+#   as killed.
+# - dropping the sort in Gather, or reading `foundTeams[i]` / `foundAt[i]` instead of `[from[i]]`: a battle's entity
+#   store hands its units out in stable id order already, so the sort moves nothing and no test can tell.
 
 [ai-p5a-order]
 file = Assets/WarCore/Battle/Ai/Squads.cs
@@ -18,7 +20,7 @@ note = the squads system is no longer the first system of the tick
 original:
 | public int Order => 3;
 replacement:
-| public int Order => 13;
+| public int Order => 15;
 
 [ai-p5a-target-share]
 file = Assets/WarCore/Battle/Ai/Squads.cs
@@ -87,26 +89,6 @@ original:
 | if (moves.IsCommanded(id)) continue;
 replacement:
 
-[ai-p5a-gather-teams-unsorted]
-file = Assets/WarCore/Battle/Ai/Squads.cs
-filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
-expect = WarCore.Tests.AiP5aTests.EachTeamFormsItsOwnSquads
-note = teams are read in the order found, not in key order
-original:
-| teams[i] = foundTeams[from[i]];
-replacement:
-| teams[i] = foundTeams[i];
-
-[ai-p5a-gather-places-unsorted]
-file = Assets/WarCore/Battle/Ai/Squads.cs
-filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
-expect = WarCore.Tests.AiP5aTests.TenMenMakeASquadOfFiveAndASquadOfTwo
-note = places are read in the order found, not in key order
-original:
-| at[i] = foundAt[from[i]];
-replacement:
-| at[i] = foundAt[i];
-
 [ai-p5a-clean-keeps-gone-member]
 file = Assets/WarCore/Battle/Ai/Squads.cs
 filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
@@ -130,7 +112,8 @@ replacement:
 [ai-p5a-form-leaders-not-bodies]
 file = Assets/WarCore/Battle/Ai/Squads.cs
 filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
-expect = WarCore.Tests.AiP5aTests.SquadsDoNotGrowPastTheTarget
+expect = WarCore.Tests.AiP5aTests.ASquadShortOfManyTakesOnlyThePlacesLeft
+expect = WarCore.Tests.AiP5aTests.SwappingTheTeamsKeysSwapsTheirSquads
 note = leaders are not counted among the men in squads
 original:
 | if (sizes.ContainsKey(keys[i]) || leaderOf.ContainsKey(keys[i])) bodies++;
@@ -642,7 +625,7 @@ replacement:
 [ai-p5a-hash-no-members]
 file = Assets/WarCore/Battle/Ai/Squads.cs
 filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
-expect = WarCore.Tests.AiP5aTests.State_OtherTablesHashDifferently
+expect = WarCore.Tests.AiP5aTests.State_TheSevenNumbersAndBothTablesInKeyOrder
 note = the members are not in the hash
 original:
 | hash.Add(members[i]); hash.Add(theirs[i]);
@@ -852,7 +835,7 @@ replacement:
 [ai-p5a-offset-x-z]
 file = Assets/WarCore/Battle/Ai/SquadParts.cs
 filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
-expect = WarCore.Tests.AiP5aTests.ThreeOffsetsArePinned
+expect = WarCore.Tests.AiP5aTests.TheOffsetFollowsTheRule
 note = x and z are swapped
 original:
 | new SimVec3(SimFix.Ratio(u, 1000), default, SimFix.Ratio(v, 1000));
@@ -862,7 +845,7 @@ replacement:
 [ai-p5a-offset-tight-salt]
 file = Assets/WarCore/Battle/Ai/SquadParts.cs
 filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
-expect = WarCore.Tests.AiP5aTests.ThreeOffsetsArePinned
+expect = WarCore.Tests.AiP5aTests.TheOffsetFollowsTheRule
 note = another width salt
 original:
 | TightSalt = 0x2ad7d2bb4c1a9e37UL
@@ -872,7 +855,7 @@ replacement:
 [ai-p5a-offset-salt]
 file = Assets/WarCore/Battle/Ai/SquadParts.cs
 filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
-expect = WarCore.Tests.AiP5aTests.ThreeOffsetsArePinned
+expect = WarCore.Tests.AiP5aTests.TheOffsetFollowsTheRule
 note = another offset salt
 original:
 | OffsetSalt = 0xe07c265404be4294UL
@@ -882,7 +865,7 @@ replacement:
 [ai-p5a-offset-sloppy-salt]
 file = Assets/WarCore/Battle/Ai/SquadParts.cs
 filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
-expect = WarCore.Tests.AiP5aTests.ThreeOffsetsArePinned
+expect = WarCore.Tests.AiP5aTests.TheOffsetFollowsTheRule
 note = another scale salt
 original:
 | SloppySalt = 0x76f988da831153b5UL
@@ -1170,7 +1153,7 @@ note = two of the seven numbers are swapped
 original:
 | new WarCore.Battle.SquadRules(min, max, skirmishers, radius, form, spreadMin, spreadMax);
 replacement:
-| new WarCore.Battle.SquadRules(min, max, skirmishers, radius, form, spreadMax, spreadMin);
+| new WarCore.Battle.SquadRules(min, max, skirmishers, form, radius, spreadMin, spreadMax);
 
 [ai-p5a-content-squads-dropped]
 file = Assets/WarCore/Content/Data/Sections/AiSection.cs

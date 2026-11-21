@@ -44,6 +44,8 @@ namespace WarCore.Tests
             int[] values = With(SpreadMin, 1500, SpreadMax, 6000);
             M6World w = Ten(out ulong[] k, values);
             Assert.That(Save(w), Is.EqualTo(Payload(values, new (ulong, int)[0], new (ulong, ulong)[0])));
+            int[] uneven = With(Min, 2, Max, 6);
+            Assert.That(Save(Ten(out _, uneven)), Is.EqualTo(Payload(uneven, new (ulong, int)[0], new (ulong, ulong)[0])), "each of the seven in its place");
             To(w, Form);
             TenTables(k, out var squads, out var members);
             Assert.That(Save(w), Is.EqualTo(Payload(values, squads, members)));

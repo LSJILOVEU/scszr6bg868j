@@ -166,6 +166,12 @@ namespace WarCore.Tests
             for (ulong key = 1; key <= 10; key++) seen.Add(1 + (int)(AiParts.Mix(Stable(key) ^ SizeSalt) % 3UL));
             Assert.That(seen, Is.EquivalentTo(new[] { 1, 2, 3 }));
             Bodies(w, 1);
+            // With sizes 1..4 the same leader's size is below the largest.
+            M6World four = Ten(out _, With(Min, 1, Max, 4, Skirmishers, 0));
+            To(four, Form);
+            int below = 1 + (int)(AiParts.Mix(Stable(k[0]) ^ SizeSalt) % 4UL);
+            Assert.That(below, Is.LessThan(4));
+            Assert.That(Sq(four).SizeOf(Id(four, k[0])), Is.EqualTo(below));
         }
 
         // 2b. The recruit radius is inclusive: a man exactly 30 m away is taken, one a millimetre farther is not, and then
