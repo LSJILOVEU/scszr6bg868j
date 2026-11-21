@@ -196,7 +196,7 @@ replacement:
 [mm-forget-zero]
 file = Assets/WarCore/Combat/MoveMark.cs
 filter = FullyQualifiedName~WarCore.Tests.Aim1
-expect = WarCore.Tests.Aim1.Aim1ShotAngleTests
+expect = WarCore.Tests.Aim1.Aim1WorldTests
 note = an empty table claims tick 0
 original:
 | private void Forget() { for (int i = 0; i < tickOf.Length; i++) tickOf[i] = -1; }

@@ -66,6 +66,9 @@ namespace WarCore.Tests.Aim1
             Assert.That(t.PermilleFor(0, far + 1), Is.EqualTo(3000));
             Assert.That(t.PermilleFor(0, -far - 1), Is.EqualTo(3000));
             Assert.That(t.PermilleFor(long.MaxValue, long.MinValue), Is.EqualTo(3000), "no overflow");
+            // z alone far: long.MaxValue squared wraps to 1 and long.MinValue squared to 0, so only the guard gives the top band.
+            Assert.That(t.PermilleFor(0, long.MaxValue), Is.EqualTo(3000), "no overflow on z");
+            Assert.That(t.PermilleFor(0, long.MinValue), Is.EqualTo(3000), "no overflow on z, towards -z");
             Assert.That(t.PermilleFor(far, far), Is.EqualTo(3000), "2^24 on both axes is squared: 2^49 fits");
             // The top band of a one-band table whose threshold is above 256 m per tick is impossible, so the guard picks it.
             var one = new MoveSpreadTable(new[] { 300000 }, new[] { 2000 });

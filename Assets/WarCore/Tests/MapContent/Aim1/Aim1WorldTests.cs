@@ -118,8 +118,10 @@ namespace WarCore.Tests.Aim1
         public void A8_TheMoveMarkKeepsNothing()
         {
             SimSession s = Skirmish();
-            for (int i = 0; i < 5; i++) s.StepOnce();
             MoveMark mark = CombatOf(s).MoveMark;
+            // A new table claims no tick: not even tick 0 for an id whose generation the empty table also holds (0).
+            Assert.That(mark.TryBefore(new EntityId(Id(s, 3).Id, 0), 0, out _, out _), Is.False, "an empty table claims tick 0");
+            for (int i = 0; i < 5; i++) s.StepOnce();
             Assert.That((mark.Order, mark.Phase, mark.StateTypeId, mark.StateVersion), Is.EqualTo((19, SimSystemPhase.Movement, "combat.move-mark", 1)));
             var writer = new SimStateWriter();
             mark.SaveState(writer);
