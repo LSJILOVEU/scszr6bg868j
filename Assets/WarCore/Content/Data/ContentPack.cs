@@ -101,6 +101,14 @@ namespace WarCore.Content
             throw new ContentException("content pack '" + Id + "' has no section of type " + typeof(T).Name);
         }
 
+        // The same lookup for an optional section that publishes nothing when no layer wrote it (TRV-2 traversal): null then.
+        public T SectionOrNull<T>() where T : class
+        {
+            foreach (object value in sections)
+                if (value is T typed) return typed;
+            return null;
+        }
+
         public int WeaponIndex(string weaponId)
         {
             int index = Array.IndexOf(weaponIds, weaponId);
