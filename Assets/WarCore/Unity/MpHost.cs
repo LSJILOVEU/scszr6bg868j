@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using WarCore.Presentation;
@@ -33,6 +34,7 @@ namespace WarCore.Unity
         private PlayerKeyPoller keys;
         private readonly LivePlayerInput liveInput = new LivePlayerInput();
         private PlayerTracker tracker;
+        private PlateViews wallViews;
         private string hud = "";
         private GUIStyle style;
 
@@ -64,6 +66,14 @@ namespace WarCore.Unity
                 return;
             }
             isoCamera = new IsoCamera(20f, session.Map.FloorY);
+            // SEE-1: the baked walls fade and the covered team mates show as silhouettes (the walls keep their baked material).
+            Material wallMaterial = null;
+            foreach (Transform child in baked.transform)
+            {
+                Renderer drawn = child.name.StartsWith("Wall ", StringComparison.Ordinal) ? child.GetComponent<Renderer>() : null;
+                if (drawn != null) { wallMaterial = drawn.sharedMaterial; break; }
+            }
+            wallViews = new PlateViews(baked.transform, session.Map.Plates, session.Map, wallMaterial, wallMaterial);
             var palette = new[] { new Color(0.2f, 0.5f, 1f), new Color(1f, 0.85f, 0.2f) };
             views = new EntityViews(transform, new Vector3(0.5f, 1f, 0.5f), 0.5f, palette);
             points = new PointViews(transform, ViewGround.For(session.Map));
@@ -101,11 +111,15 @@ namespace WarCore.Unity
             bool lostPlayer = tracker.Update(current, key);
             bool alive = tracker.Alive;
 
-            points.Apply(current);
-            views.Apply(session.Previous, current, session.Alpha);
             FrameView shown = FrameView.Interpolate(session.Previous, current, session.Alpha);
-            if (key.HasValue && shown.TryGet(key.Value, out ViewEntity followed))
-                isoCamera.Follow(followed.X, followed.Z);
+            ViewEntity? followed = key.HasValue && shown.TryGet(key.Value, out ViewEntity me) ? me : (ViewEntity?)null;
+            if (followed.HasValue)
+                isoCamera.Follow(followed.Value.X, followed.Value.Z);
+            LayerCutResult cut = LayerCut.Run(session.Map.Plates, session.Map, followed, isoCamera.Forward, LayerCut.SeeRadius);
+            HashSet<ulong> covered = Silhouettes.Run(session.Map.Plates, session.Map, cut, followed, shown.Entities, isoCamera.Forward);
+            wallViews.Apply(cut);
+            points.Apply(current);
+            views.Apply(session.Previous, current, session.Alpha, cut, covered);
             IsoCameraInput.Apply(isoCamera, Camera.main);
 
             Vector3 mouse = Input.mousePosition;

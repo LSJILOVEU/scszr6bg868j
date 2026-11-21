@@ -142,7 +142,9 @@ namespace WarCore.Tests
         {
             var f = new LayeredPathfinder(Corridor(19660));
             Assert.That(f.FindWithin(0, 5, 5000), Is.EqualTo(GridPathStatus.Found));
-            Assert.That((Path(f), f.TotalCostWide, f.TotalCost), Is.EqualTo((new[] { 0, 1, 6, 7, 4, 5 }, 5000L, 5000)));
+            Assert.That(Path(f), Is.EqualTo(new[] { 0, 1, 6, 7, 4, 5 }));
+            Assert.That(f.TotalCostWide, Is.EqualTo(5000L));
+            Assert.That(f.TotalCost, Is.EqualTo(5000));
             Assert.That(f.FindWithin(0, 5, 4999), Is.EqualTo(GridPathStatus.Unreachable));
             Assert.That(f.Path.Length, Is.EqualTo(0));
         }

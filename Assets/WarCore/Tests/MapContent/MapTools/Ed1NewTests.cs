@@ -33,7 +33,9 @@ namespace WarCore.Tests
             Assert.That(d.Surfaces == null, Is.EqualTo(surface == null));
             Assert.That((d.Walls.Count, d.Points.Count, d.Bases.Count, d.Units.Count, d.Plates.Count), Is.EqualTo((0, 0, 0, 0, 0)));
             Assert.That((d.Next.Wall, d.Next.Point, d.Next.Base, d.Next.Unit), Is.EqualTo((1ul, 1, 1, 1ul)));
-            Assert.That((d.Origin.X, d.Origin.Z, d.Run.Seed), Is.EqualTo((0L, 0L, 9ul)));
+            Assert.That(d.Origin.X, Is.EqualTo(0L));
+            Assert.That(d.Origin.Z, Is.EqualTo(0L));
+            Assert.That(d.Run.Seed, Is.EqualTo(9ul));
             Assert.DoesNotThrow(() => MapBake.Run(bytes));
         }
 

@@ -1,0 +1,1701 @@
+# ED-4: single-line mutations of the map preview, message table, palette, terrain figures and catalog name.
+
+[ed4-fallback-hash-seed]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = fallback hash starts from another seed
+original:
+|             uint hash = 2166136261u;
+replacement:
+|             uint hash = 2166136260u;
+
+[ed4-fallback-hash-prime]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = fallback hash multiplies by another prime
+original:
+|             foreach (byte b in Encoding.UTF8.GetBytes(name)) hash = (hash ^ b) * 16777619u;
+replacement:
+|             foreach (byte b in Encoding.UTF8.GetBytes(name)) hash = (hash ^ b) * 16777618u;
+
+[ed4-fallback-fnv1-order]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = fallback hash multiplies before it mixes (FNV-1)
+original:
+|             foreach (byte b in Encoding.UTF8.GetBytes(name)) hash = (hash ^ b) * 16777619u;
+replacement:
+|             foreach (byte b in Encoding.UTF8.GetBytes(name)) hash = (hash * 16777619u) ^ b;
+
+[ed4-fallback-ascii]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = fallback hashes ASCII instead of UTF-8
+original:
+|             foreach (byte b in Encoding.UTF8.GetBytes(name)) hash = (hash ^ b) * 16777619u;
+replacement:
+|             foreach (byte b in Encoding.ASCII.GetBytes(name)) hash = (hash ^ b) * 16777619u;
+
+[ed4-fallback-utf16]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = fallback hashes UTF-16 instead of UTF-8
+original:
+|             foreach (byte b in Encoding.UTF8.GetBytes(name)) hash = (hash ^ b) * 16777619u;
+replacement:
+|             foreach (byte b in Encoding.Unicode.GetBytes(name)) hash = (hash ^ b) * 16777619u;
+
+[ed4-fallback-red-mask]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = fallback red keeps 4 bits
+original:
+|             int red = 112 + (int)(hash & 31), green = 112 + (int)(hash >> 8 & 31), blue = 112 + (int)(hash >> 16 & 31);
+replacement:
+|             int red = 112 + (int)(hash & 15), green = 112 + (int)(hash >> 8 & 31), blue = 112 + (int)(hash >> 16 & 31);
+
+[ed4-fallback-green-shift]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = fallback green reads one bit too high
+original:
+|             int red = 112 + (int)(hash & 31), green = 112 + (int)(hash >> 8 & 31), blue = 112 + (int)(hash >> 16 & 31);
+replacement:
+|             int red = 112 + (int)(hash & 31), green = 112 + (int)(hash >> 9 & 31), blue = 112 + (int)(hash >> 16 & 31);
+
+[ed4-fallback-blue-shift]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = fallback blue reads one bit too high
+original:
+|             int red = 112 + (int)(hash & 31), green = 112 + (int)(hash >> 8 & 31), blue = 112 + (int)(hash >> 16 & 31);
+replacement:
+|             int red = 112 + (int)(hash & 31), green = 112 + (int)(hash >> 8 & 31), blue = 112 + (int)(hash >> 17 & 31);
+
+[ed4-fallback-red-base]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = fallback red base moves by one
+original:
+|             int red = 112 + (int)(hash & 31), green = 112 + (int)(hash >> 8 & 31), blue = 112 + (int)(hash >> 16 & 31);
+replacement:
+|             int red = 113 + (int)(hash & 31), green = 112 + (int)(hash >> 8 & 31), blue = 112 + (int)(hash >> 16 & 31);
+
+[ed4-fallback-green-base]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = fallback green base moves by one
+original:
+|             int red = 112 + (int)(hash & 31), green = 112 + (int)(hash >> 8 & 31), blue = 112 + (int)(hash >> 16 & 31);
+replacement:
+|             int red = 112 + (int)(hash & 31), green = 113 + (int)(hash >> 8 & 31), blue = 112 + (int)(hash >> 16 & 31);
+
+[ed4-fallback-blue-base]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = fallback blue base moves by one
+original:
+|             int red = 112 + (int)(hash & 31), green = 112 + (int)(hash >> 8 & 31), blue = 112 + (int)(hash >> 16 & 31);
+replacement:
+|             int red = 112 + (int)(hash & 31), green = 112 + (int)(hash >> 8 & 31), blue = 113 + (int)(hash >> 16 & 31);
+
+[ed4-fallback-channel-order]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = fallback colour is BGR
+original:
+|             return red << 16 | green << 8 | blue;
+replacement:
+|             return blue << 16 | green << 8 | red;
+
+[ed4-noground-colour]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = the no-surface-table colour moves
+original:
+|         public int NoGround => 0x9A9A8C;
+replacement:
+|         public int NoGround => 0x9A9A8D;
+
+[ed4-default-cliff]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = default cliff colour moves
+original:
+|             new MapPalette(new Dictionary<string, int>(StringComparer.Ordinal), 0x8A8378, 0xA39E95, 0xB8B3AA, new[] { 0x2F6FD6, 0xD6452F }, 0xE8E4D8);
+replacement:
+|             new MapPalette(new Dictionary<string, int>(StringComparer.Ordinal), 0x8A8379, 0xA39E95, 0xB8B3AA, new[] { 0x2F6FD6, 0xD6452F }, 0xE8E4D8);
+
+[ed4-default-side]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = default structure side colour moves
+original:
+|             new MapPalette(new Dictionary<string, int>(StringComparer.Ordinal), 0x8A8378, 0xA39E95, 0xB8B3AA, new[] { 0x2F6FD6, 0xD6452F }, 0xE8E4D8);
+replacement:
+|             new MapPalette(new Dictionary<string, int>(StringComparer.Ordinal), 0x8A8378, 0xA39E96, 0xB8B3AA, new[] { 0x2F6FD6, 0xD6452F }, 0xE8E4D8);
+
+[ed4-default-top]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = default structure top colour moves
+original:
+|             new MapPalette(new Dictionary<string, int>(StringComparer.Ordinal), 0x8A8378, 0xA39E95, 0xB8B3AA, new[] { 0x2F6FD6, 0xD6452F }, 0xE8E4D8);
+replacement:
+|             new MapPalette(new Dictionary<string, int>(StringComparer.Ordinal), 0x8A8378, 0xA39E95, 0xB8B3AB, new[] { 0x2F6FD6, 0xD6452F }, 0xE8E4D8);
+
+[ed4-default-team1]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = default team 1 colour moves
+original:
+|             new MapPalette(new Dictionary<string, int>(StringComparer.Ordinal), 0x8A8378, 0xA39E95, 0xB8B3AA, new[] { 0x2F6FD6, 0xD6452F }, 0xE8E4D8);
+replacement:
+|             new MapPalette(new Dictionary<string, int>(StringComparer.Ordinal), 0x8A8378, 0xA39E95, 0xB8B3AA, new[] { 0x2F6FD7, 0xD6452F }, 0xE8E4D8);
+
+[ed4-default-team2]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = default team 2 colour moves
+original:
+|             new MapPalette(new Dictionary<string, int>(StringComparer.Ordinal), 0x8A8378, 0xA39E95, 0xB8B3AA, new[] { 0x2F6FD6, 0xD6452F }, 0xE8E4D8);
+replacement:
+|             new MapPalette(new Dictionary<string, int>(StringComparer.Ordinal), 0x8A8378, 0xA39E95, 0xB8B3AA, new[] { 0x2F6FD6, 0xD6452E }, 0xE8E4D8);
+
+[ed4-default-neutral]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = default neutral colour moves
+original:
+|             new MapPalette(new Dictionary<string, int>(StringComparer.Ordinal), 0x8A8378, 0xA39E95, 0xB8B3AA, new[] { 0x2F6FD6, 0xD6452F }, 0xE8E4D8);
+replacement:
+|             new MapPalette(new Dictionary<string, int>(StringComparer.Ordinal), 0x8A8378, 0xA39E95, 0xB8B3AA, new[] { 0x2F6FD6, 0xD6452F }, 0xE8E4D9);
+
+[ed4-default-one-team]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = default has one team colour
+original:
+|             new MapPalette(new Dictionary<string, int>(StringComparer.Ordinal), 0x8A8378, 0xA39E95, 0xB8B3AA, new[] { 0x2F6FD6, 0xD6452F }, 0xE8E4D8);
+replacement:
+|             new MapPalette(new Dictionary<string, int>(StringComparer.Ordinal), 0x8A8378, 0xA39E95, 0xB8B3AA, new[] { 0x2F6FD6 }, 0xE8E4D8);
+
+[ed4-fallback-flag-inverted]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = fallback flag is inverted
+original:
+|             fallback = !ground.TryGetValue(name, out int color);
+replacement:
+|             fallback = ground.TryGetValue(name, out int color);
+
+[ed4-ground-lookup-swapped]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = listed names get the fallback
+original:
+|             return fallback ? FallbackColor(name) : color;
+replacement:
+|             return fallback ? color : FallbackColor(name);
+
+[ed4-missing-file-other-default]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = a missing palette file gives an all-black palette
+original:
+|             if (!File.Exists(path)) return Default;
+replacement:
+|             if (!File.Exists(path)) return new MapPalette(new Dictionary<string, int>(), 0, 0, 0, new[] { 0, 0 }, 0);
+
+[ed4-error-without-cartridge]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = errors do not name the cartridge
+original:
+|             string where = cartridge + " " + FileName;
+replacement:
+|             string where = FileName;
+
+[ed4-parse-error-not-wrapped]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = a JSON syntax error escapes as ContentException
+original:
+|             catch (ContentException e) { throw new InvalidDataException(e.Message, e); }
+replacement:
+|             catch (ContentException e) { throw; }
+
+[ed4-root-check-inverted]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = root object check inverted
+original:
+|             if (root.Kind != JsonKind.Object) throw Bad(where, "(root)", "must be a JSON object");
+replacement:
+|             if (root.Kind == JsonKind.Object) throw Bad(where, "(root)", "must be a JSON object");
+
+[ed4-version-text]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = version 1 refused
+original:
+|             if (version != null && (version.Kind != JsonKind.Number || version.Text != "1")) throw Bad(where, "version", "must be the integer 1");
+replacement:
+|             if (version != null && (version.Kind != JsonKind.Number || version.Text != "2")) throw Bad(where, "version", "must be the integer 1");
+
+[ed4-version-kind-ignored]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = version "1" as a string accepted
+original:
+|             if (version != null && (version.Kind != JsonKind.Number || version.Text != "1")) throw Bad(where, "version", "must be the integer 1");
+replacement:
+|             if (version != null && (false || version.Text != "1")) throw Bad(where, "version", "must be the integer 1");
+
+[ed4-ground-array-check]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = ground value need not be an array
+original:
+|                     if (m.Value.Kind != JsonKind.Array || m.Value.Items.Count < 1 || m.Value.Items.Count > 2)
+replacement:
+|                     if (false || m.Value.Items.Count < 1 || m.Value.Items.Count > 2)
+
+[ed4-ground-min-colours]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = ground may hold no colour
+original:
+|                     if (m.Value.Kind != JsonKind.Array || m.Value.Items.Count < 1 || m.Value.Items.Count > 2)
+replacement:
+|                     if (m.Value.Kind != JsonKind.Array || m.Value.Items.Count < 0 || m.Value.Items.Count > 2)
+
+[ed4-ground-max-colours]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = ground may hold three colours
+original:
+|                     if (m.Value.Kind != JsonKind.Array || m.Value.Items.Count < 1 || m.Value.Items.Count > 2)
+replacement:
+|                     if (m.Value.Kind != JsonKind.Array || m.Value.Items.Count < 1 || m.Value.Items.Count > 3)
+
+[ed4-ground-second-unchecked]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = the second ground colour is not checked
+original:
+|                     for (int i = 1; i < m.Value.Items.Count; i++) Color(m.Value.Items[i], where, path + "[" + i + "]");
+replacement:
+|                     for (int i = 2; i < m.Value.Items.Count; i++) Color(m.Value.Items[i], where, path + "[" + i + "]");
+
+[ed4-ground-path-name]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = ground errors lose the section name
+original:
+|                     string path = "ground." + m.Name;
+replacement:
+|                     string path = m.Name;
+
+[ed4-ground-not-object]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = ground may be an array
+original:
+|                 if (groundNode.Kind != JsonKind.Object) throw Bad(where, "ground", "must be an object of surface name to colours");
+replacement:
+|                 if (groundNode.Kind == JsonKind.Number) throw Bad(where, "ground", "must be an object of surface name to colours");
+
+[ed4-cliff-key]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = cliff read from another key
+original:
+|             int cliff = Optional(root, "cliff", d.Cliff, where);
+replacement:
+|             int cliff = Optional(root, "cliffs", d.Cliff, where);
+
+[ed4-neutral-key]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = neutral read from another key
+original:
+|             return new MapPalette(ground, cliff, side, top, team, Optional(root, "neutral", d.Neutral, where));
+replacement:
+|             return new MapPalette(ground, cliff, side, top, team, Optional(root, "neutrals", d.Neutral, where));
+
+[ed4-struct-key]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = struct read from another key
+original:
+|             JsonNode structure = root.Find("struct");
+replacement:
+|             JsonNode structure = root.Find("structs");
+
+[ed4-struct-slot]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = struct slot 2 read instead of 1
+original:
+|                 JsonNode slot = structure.Find("1");
+replacement:
+|                 JsonNode slot = structure.Find("2");
+
+[ed4-struct-side-key]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = struct side read from another key
+original:
+|                     side = Optional(slot, "side", side, where, "struct.1.");
+replacement:
+|                     side = Optional(slot, "sides", side, where, "struct.1.");
+
+[ed4-struct-top-key]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = struct top read from another key
+original:
+|                     top = Optional(slot, "top", top, where, "struct.1.");
+replacement:
+|                     top = Optional(slot, "tops", top, where, "struct.1.");
+
+[ed4-struct-side-path]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = struct error path loses the slot
+original:
+|                     side = Optional(slot, "side", side, where, "struct.1.");
+replacement:
+|                     side = Optional(slot, "side", side, where, "struct.");
+
+[ed4-struct-slot-not-object]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = struct slot may be a string
+original:
+|                     if (slot.Kind != JsonKind.Object) throw Bad(where, "struct.1", "must be an object with side and top");
+replacement:
+|                     if (slot.Kind == JsonKind.Number) throw Bad(where, "struct.1", "must be an object with side and top");
+
+[ed4-struct-not-object]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = struct may be a list
+original:
+|                 if (structure.Kind != JsonKind.Object) throw Bad(where, "struct", "must be an object");
+replacement:
+|                 if (structure.Kind == JsonKind.Number) throw Bad(where, "struct", "must be an object");
+
+[ed4-team-min]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = one team colour accepted
+original:
+|         private const int MinTeams = 2, MaxTeams = 4;
+replacement:
+|         private const int MinTeams = 1, MaxTeams = 4;
+
+[ed4-team-max]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = five team colours accepted
+original:
+|         private const int MinTeams = 2, MaxTeams = 4;
+replacement:
+|         private const int MinTeams = 2, MaxTeams = 5;
+
+[ed4-team-min-edge]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = exactly two team colours refused
+original:
+|                 if (teamNode.Kind != JsonKind.Array || teamNode.Items.Count < MinTeams || teamNode.Items.Count > MaxTeams)
+replacement:
+|                 if (teamNode.Kind != JsonKind.Array || teamNode.Items.Count <= MinTeams || teamNode.Items.Count > MaxTeams)
+
+[ed4-team-max-edge]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = exactly four team colours refused
+original:
+|                 if (teamNode.Kind != JsonKind.Array || teamNode.Items.Count < MinTeams || teamNode.Items.Count > MaxTeams)
+replacement:
+|                 if (teamNode.Kind != JsonKind.Array || teamNode.Items.Count < MinTeams || teamNode.Items.Count >= MaxTeams)
+
+[ed4-team-not-array]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = team may be a string
+original:
+|                 if (teamNode.Kind != JsonKind.Array || teamNode.Items.Count < MinTeams || teamNode.Items.Count > MaxTeams)
+replacement:
+|                 if (false || teamNode.Items.Count < MinTeams || teamNode.Items.Count > MaxTeams)
+
+[ed4-team-path]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = team error path loses the index
+original:
+|                 for (int i = 0; i < team.Length; i++) team[i] = Color(teamNode.Items[i], where, "team[" + i + "]");
+replacement:
+|                 for (int i = 0; i < team.Length; i++) team[i] = Color(teamNode.Items[i], where, "team");
+
+[ed4-colour-length]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = a colour longer than 7 is accepted
+original:
+|             if (s == null || s.Length != 7 || s[0] != '#') throw Bad(where, path, "must be a colour written #RRGGBB");
+replacement:
+|             if (s == null || s.Length < 7 || s[0] != '#') throw Bad(where, path, "must be a colour written #RRGGBB");
+
+[ed4-colour-hash]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = colour needs no hash sign
+original:
+|             if (s == null || s.Length != 7 || s[0] != '#') throw Bad(where, path, "must be a colour written #RRGGBB");
+replacement:
+|             if (s == null || s.Length != 7) throw Bad(where, path, "must be a colour written #RRGGBB");
+
+[ed4-colour-digit-count]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = last colour digit ignored
+original:
+|             for (int i = 1; i < 7; i++)
+replacement:
+|             for (int i = 1; i < 6; i++)
+
+[ed4-colour-digit-9]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = digit 9 refused
+original:
+|                 int digit = c >= '0' && c <= '9' ? c - '0' : c >= 'A' && c <= 'F' ? c - 'A' + 10 : c >= 'a' && c <= 'f' ? c - 'a' + 10 : -1;
+replacement:
+|                 int digit = c >= '0' && c < '9' ? c - '0' : c >= 'A' && c <= 'F' ? c - 'A' + 10 : c >= 'a' && c <= 'f' ? c - 'a' + 10 : -1;
+
+[ed4-colour-digit-0]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = digit 0 refused
+original:
+|                 int digit = c >= '0' && c <= '9' ? c - '0' : c >= 'A' && c <= 'F' ? c - 'A' + 10 : c >= 'a' && c <= 'f' ? c - 'a' + 10 : -1;
+replacement:
+|                 int digit = c > '0' && c <= '9' ? c - '0' : c >= 'A' && c <= 'F' ? c - 'A' + 10 : c >= 'a' && c <= 'f' ? c - 'a' + 10 : -1;
+
+[ed4-colour-upper-F]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = upper F refused
+original:
+|                 int digit = c >= '0' && c <= '9' ? c - '0' : c >= 'A' && c <= 'F' ? c - 'A' + 10 : c >= 'a' && c <= 'f' ? c - 'a' + 10 : -1;
+replacement:
+|                 int digit = c >= '0' && c <= '9' ? c - '0' : c >= 'A' && c < 'F' ? c - 'A' + 10 : c >= 'a' && c <= 'f' ? c - 'a' + 10 : -1;
+
+[ed4-colour-upper-A]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = upper A refused
+original:
+|                 int digit = c >= '0' && c <= '9' ? c - '0' : c >= 'A' && c <= 'F' ? c - 'A' + 10 : c >= 'a' && c <= 'f' ? c - 'a' + 10 : -1;
+replacement:
+|                 int digit = c >= '0' && c <= '9' ? c - '0' : c > 'A' && c <= 'F' ? c - 'A' + 10 : c >= 'a' && c <= 'f' ? c - 'a' + 10 : -1;
+
+[ed4-colour-upper-value]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = upper letters one too low
+original:
+|                 int digit = c >= '0' && c <= '9' ? c - '0' : c >= 'A' && c <= 'F' ? c - 'A' + 10 : c >= 'a' && c <= 'f' ? c - 'a' + 10 : -1;
+replacement:
+|                 int digit = c >= '0' && c <= '9' ? c - '0' : c >= 'A' && c <= 'F' ? c - 'A' + 9 : c >= 'a' && c <= 'f' ? c - 'a' + 10 : -1;
+
+[ed4-colour-lower-f]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = lower f refused
+original:
+|                 int digit = c >= '0' && c <= '9' ? c - '0' : c >= 'A' && c <= 'F' ? c - 'A' + 10 : c >= 'a' && c <= 'f' ? c - 'a' + 10 : -1;
+replacement:
+|                 int digit = c >= '0' && c <= '9' ? c - '0' : c >= 'A' && c <= 'F' ? c - 'A' + 10 : c >= 'a' && c < 'f' ? c - 'a' + 10 : -1;
+
+[ed4-colour-lower-a]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = lower a refused
+original:
+|                 int digit = c >= '0' && c <= '9' ? c - '0' : c >= 'A' && c <= 'F' ? c - 'A' + 10 : c >= 'a' && c <= 'f' ? c - 'a' + 10 : -1;
+replacement:
+|                 int digit = c >= '0' && c <= '9' ? c - '0' : c >= 'A' && c <= 'F' ? c - 'A' + 10 : c > 'a' && c <= 'f' ? c - 'a' + 10 : -1;
+
+[ed4-colour-lower-value]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = lower letters one too high
+original:
+|                 int digit = c >= '0' && c <= '9' ? c - '0' : c >= 'A' && c <= 'F' ? c - 'A' + 10 : c >= 'a' && c <= 'f' ? c - 'a' + 10 : -1;
+replacement:
+|                 int digit = c >= '0' && c <= '9' ? c - '0' : c >= 'A' && c <= 'F' ? c - 'A' + 10 : c >= 'a' && c <= 'f' ? c - 'a' + 11 : -1;
+
+[ed4-colour-bad-digit]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = a non-hex character reads as 0
+original:
+|                 int digit = c >= '0' && c <= '9' ? c - '0' : c >= 'A' && c <= 'F' ? c - 'A' + 10 : c >= 'a' && c <= 'f' ? c - 'a' + 10 : -1;
+replacement:
+|                 int digit = c >= '0' && c <= '9' ? c - '0' : c >= 'A' && c <= 'F' ? c - 'A' + 10 : c >= 'a' && c <= 'f' ? c - 'a' + 10 : 0;
+
+[ed4-colour-shift]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = colour digits shift by 3
+original:
+|                 rgb = rgb << 4 | digit;
+replacement:
+|                 rgb = rgb << 3 | digit;
+
+[ed4-error-spacing]
+file = Assets/WarCore/Presentation/Maps/MapPalette.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = error text joins cartridge and field without a space
+original:
+|         private static InvalidDataException Bad(string where, string path, string what) => new InvalidDataException(where + " " + path + ": " + what);
+replacement:
+|         private static InvalidDataException Bad(string where, string path, string what) => new InvalidDataException(where + path + ": " + what);
+
+[ed4-msg-blank-trim]
+file = Assets/WarCore/Presentation/Maps/MapMessages.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4MessagesTests.
+note = a blank line with spaces is an entry
+original:
+|                 if (line.Trim().Length == 0 || line[0] == '#') continue;
+replacement:
+|                 if (line.Length == 0 || line[0] == '#') continue;
+
+[ed4-msg-comment-char]
+file = Assets/WarCore/Presentation/Maps/MapMessages.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4MessagesTests.
+note = comments start with another character
+original:
+|                 if (line.Trim().Length == 0 || line[0] == '#') continue;
+replacement:
+|                 if (line.Trim().Length == 0 || line[0] == ';') continue;
+
+[ed4-msg-tab-edge]
+file = Assets/WarCore/Presentation/Maps/MapMessages.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4MessagesTests.
+note = a line that starts with a tab has no tab
+original:
+|                 if (at < 0) throw Fail(name, i, "no tab between the code and the text");
+replacement:
+|                 if (at <= 0) throw Fail(name, i, "no tab between the code and the text");
+
+[ed4-msg-last-tab]
+file = Assets/WarCore/Presentation/Maps/MapMessages.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4MessagesTests.
+note = the split is at the last tab
+original:
+|                 int at = line.IndexOf(Tab);
+replacement:
+|                 int at = line.LastIndexOf(Tab);
+
+[ed4-msg-empty-code]
+file = Assets/WarCore/Presentation/Maps/MapMessages.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4MessagesTests.
+note = an empty code is accepted
+original:
+|                 if (code.Length == 0) throw Fail(name, i, "empty code");
+replacement:
+|                 if (code.Length < 0) throw Fail(name, i, "empty code");
+
+[ed4-msg-empty-text]
+file = Assets/WarCore/Presentation/Maps/MapMessages.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4MessagesTests.
+note = a blank text is accepted
+original:
+|                 if (text.Trim().Length == 0) throw Fail(name, i, "empty text for " + code);
+replacement:
+|                 if (text.Length == 0) throw Fail(name, i, "empty text for " + code);
+
+[ed4-msg-duplicate]
+file = Assets/WarCore/Presentation/Maps/MapMessages.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4MessagesTests.
+note = a duplicate code is not named
+original:
+|                 if (texts.ContainsKey(code)) throw Fail(name, i, "code " + code + " is listed twice");
+replacement:
+|                 if (texts.ContainsKey(code + "x")) throw Fail(name, i, "code " + code + " is listed twice");
+
+[ed4-msg-order-edge]
+file = Assets/WarCore/Presentation/Maps/MapMessages.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4MessagesTests.
+note = the second code is not compared with the first
+original:
+|                 if (order.Count > 0 && string.CompareOrdinal(order[order.Count - 1], code) > 0)
+replacement:
+|                 if (order.Count > 1 && string.CompareOrdinal(order[order.Count - 1], code) > 0)
+
+[ed4-msg-order-culture]
+file = Assets/WarCore/Presentation/Maps/MapMessages.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4MessagesTests.
+note = order is culture-aware
+original:
+|                 if (order.Count > 0 && string.CompareOrdinal(order[order.Count - 1], code) > 0)
+replacement:
+|                 if (order.Count > 0 && string.Compare(order[order.Count - 1], code) > 0)
+
+[ed4-msg-line-number]
+file = Assets/WarCore/Presentation/Maps/MapMessages.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4MessagesTests.
+note = line numbers count from 0
+original:
+|             new InvalidDataException(name + " line " + (index + 1) + ": " + what);
+replacement:
+|             new InvalidDataException(name + " line " + index + ": " + what);
+
+[ed4-msg-unknown-code]
+file = Assets/WarCore/Presentation/Maps/MapMessages.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4MessagesTests.
+note = an unknown code gives empty text
+original:
+|         public string Text(string code) => code != null && texts.TryGetValue(code, out string text) ? text : code;
+replacement:
+|         public string Text(string code) => code != null && texts.TryGetValue(code, out string text) ? text : "";
+
+[ed4-msg-null-code]
+file = Assets/WarCore/Presentation/Maps/MapMessages.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4MessagesTests.
+note = null code throws
+original:
+|         public string Text(string code) => code != null && texts.TryGetValue(code, out string text) ? text : code;
+replacement:
+|         public string Text(string code) => texts.TryGetValue(code, out string text) ? text : code;
+
+[ed4-msg-wcmap-code]
+file = Assets/WarCore/Presentation/Maps/MapMessages.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4MessagesTests.
+note = writer problems are not joined
+original:
+|             if (problem.Code == "MAPDESC_WCMAP" && problem.Id != null) text += "：" + Text(problem.Id);
+replacement:
+|             if (problem.Code == "MAPDESC_WCMAP2" && problem.Id != null) text += "：" + Text(problem.Id);
+
+[ed4-msg-wcmap-id-null]
+file = Assets/WarCore/Presentation/Maps/MapMessages.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4MessagesTests.
+note = writer text joined only without an id
+original:
+|             if (problem.Code == "MAPDESC_WCMAP" && problem.Id != null) text += "：" + Text(problem.Id);
+replacement:
+|             if (problem.Code == "MAPDESC_WCMAP" && problem.Id == null) text += "：" + Text(problem.Id);
+
+[ed4-msg-wcmap-join]
+file = Assets/WarCore/Presentation/Maps/MapMessages.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4MessagesTests.
+note = joined texts have no separator
+original:
+|             if (problem.Code == "MAPDESC_WCMAP" && problem.Id != null) text += "：" + Text(problem.Id);
+replacement:
+|             if (problem.Code == "MAPDESC_WCMAP" && problem.Id != null) text += Text(problem.Id);
+
+[ed4-msg-strict-utf8]
+file = Assets/WarCore/Presentation/Maps/MapMessages.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4MessagesTests.
+note = broken UTF-8 is read silently
+original:
+|             string text = new UTF8Encoding(false, true).GetString(File.ReadAllBytes(path));
+replacement:
+|             string text = new UTF8Encoding(false, false).GetString(File.ReadAllBytes(path));
+
+[ed4-msg-file-name]
+file = Assets/WarCore/Presentation/Maps/MapMessages.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4MessagesTests.
+note = errors carry the full path
+original:
+|             return Parse(text, Path.GetFileName(path));
+replacement:
+|             return Parse(text, path);
+
+[ed4-shade-flat]
+file = Assets/WarCore/Content/MapTools/MapTerrainView.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = flat shade moves
+original:
+|         public const int ShadeFlat = 160, ShadeMin = 40, ShadeMax = 240;
+replacement:
+|         public const int ShadeFlat = 161, ShadeMin = 40, ShadeMax = 240;
+
+[ed4-shade-min]
+file = Assets/WarCore/Content/MapTools/MapTerrainView.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = darkest shade moves
+original:
+|         public const int ShadeFlat = 160, ShadeMin = 40, ShadeMax = 240;
+replacement:
+|         public const int ShadeFlat = 160, ShadeMin = 41, ShadeMax = 240;
+
+[ed4-shade-max]
+file = Assets/WarCore/Content/MapTools/MapTerrainView.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = lightest shade moves
+original:
+|         public const int ShadeFlat = 160, ShadeMin = 40, ShadeMax = 240;
+replacement:
+|         public const int ShadeFlat = 160, ShadeMin = 40, ShadeMax = 239;
+
+[ed4-shade-step]
+file = Assets/WarCore/Content/MapTools/MapTerrainView.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = shade step moves
+original:
+|         private const int ShadeStep = 48;
+replacement:
+|         private const int ShadeStep = 47;
+
+[ed4-shade-no-heights]
+file = Assets/WarCore/Content/MapTools/MapTerrainView.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = no-heights test inverted
+original:
+|                     if (desc.Heights == null) { shade[z * w + x] = ShadeFlat; continue; }
+replacement:
+|                     if (desc.Heights != null) { shade[z * w + x] = ShadeFlat; continue; }
+
+[ed4-shade-h00-row]
+file = Assets/WarCore/Content/MapTools/MapTerrainView.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = a corner height read from the wrong row
+original:
+|                     long h00 = desc.Heights[z][x], h10 = desc.Heights[z][x + 1], h01 = desc.Heights[z + 1][x], h11 = desc.Heights[z + 1][x + 1];
+replacement:
+|                     long h00 = desc.Heights[z + 1][x], h10 = desc.Heights[z][x + 1], h01 = desc.Heights[z + 1][x], h11 = desc.Heights[z + 1][x + 1];
+
+[ed4-shade-h11-row]
+file = Assets/WarCore/Content/MapTools/MapTerrainView.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = a corner height read from the wrong row
+original:
+|                     long h00 = desc.Heights[z][x], h10 = desc.Heights[z][x + 1], h01 = desc.Heights[z + 1][x], h11 = desc.Heights[z + 1][x + 1];
+replacement:
+|                     long h00 = desc.Heights[z][x], h10 = desc.Heights[z][x + 1], h01 = desc.Heights[z + 1][x], h11 = desc.Heights[z][x + 1];
+
+[ed4-shade-gx-sign]
+file = Assets/WarCore/Content/MapTools/MapTerrainView.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = gx adds the near corners
+original:
+|                     long gx = (h10 + h11 - (h00 + h01)) / 2, gz = (h01 + h11 - (h00 + h10)) / 2;
+replacement:
+|                     long gx = (h10 + h11 + (h00 + h01)) / 2, gz = (h01 + h11 - (h00 + h10)) / 2;
+
+[ed4-shade-gz-sign]
+file = Assets/WarCore/Content/MapTools/MapTerrainView.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = gz adds the near corners
+original:
+|                     long gx = (h10 + h11 - (h00 + h01)) / 2, gz = (h01 + h11 - (h00 + h10)) / 2;
+replacement:
+|                     long gx = (h10 + h11 - (h00 + h01)) / 2, gz = (h01 + h11 + (h00 + h10)) / 2;
+
+[ed4-shade-gx-div]
+file = Assets/WarCore/Content/MapTools/MapTerrainView.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = gx divides by four
+original:
+|                     long gx = (h10 + h11 - (h00 + h01)) / 2, gz = (h01 + h11 - (h00 + h10)) / 2;
+replacement:
+|                     long gx = (h10 + h11 - (h00 + h01)) / 4, gz = (h01 + h11 - (h00 + h10)) / 2;
+
+[ed4-shade-gz-div]
+file = Assets/WarCore/Content/MapTools/MapTerrainView.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = gz divides by four
+original:
+|                     long gx = (h10 + h11 - (h00 + h01)) / 2, gz = (h01 + h11 - (h00 + h10)) / 2;
+replacement:
+|                     long gx = (h10 + h11 - (h00 + h01)) / 2, gz = (h01 + h11 - (h00 + h10)) / 4;
+
+[ed4-shade-gz-floor]
+file = Assets/WarCore/Content/MapTools/MapTerrainView.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = gz halves with floor, not truncation
+original:
+|                     long gx = (h10 + h11 - (h00 + h01)) / 2, gz = (h01 + h11 - (h00 + h10)) / 2;
+replacement:
+|                     long gx = (h10 + h11 - (h00 + h01)) / 2, gz = (h01 + h11 - (h00 + h10)) >> 1;
+
+[ed4-shade-gx-floor]
+file = Assets/WarCore/Content/MapTools/MapTerrainView.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = gx halves with floor, not truncation
+original:
+|                     long gx = (h10 + h11 - (h00 + h01)) / 2, gz = (h01 + h11 - (h00 + h10)) / 2;
+replacement:
+|                     long gx = (h10 + h11 - (h00 + h01)) >> 1, gz = (h01 + h11 - (h00 + h10)) / 2;
+
+[ed4-shade-direction]
+file = Assets/WarCore/Content/MapTools/MapTerrainView.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = light from the other side
+original:
+|                     long value = ShadeFlat - (gx + gz) * ShadeStep / SimFix.Scale;
+replacement:
+|                     long value = ShadeFlat + (gx + gz) * ShadeStep / SimFix.Scale;
+
+[ed4-shade-order-of-ops]
+file = Assets/WarCore/Content/MapTools/MapTerrainView.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = the slope is divided before it is scaled
+original:
+|                     long value = ShadeFlat - (gx + gz) * ShadeStep / SimFix.Scale;
+replacement:
+|                     long value = ShadeFlat - (gx + gz) / SimFix.Scale * ShadeStep;
+
+[ed4-shade-no-lower-clamp]
+file = Assets/WarCore/Content/MapTools/MapTerrainView.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = darkest shade not clamped
+original:
+|                     shade[z * w + x] = (int)Math.Max(ShadeMin, Math.Min(ShadeMax, value));
+replacement:
+|                     shade[z * w + x] = (int)Math.Min(ShadeMax, value);
+
+[ed4-shade-no-upper-clamp]
+file = Assets/WarCore/Content/MapTools/MapTerrainView.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = lightest shade not clamped
+original:
+|                     shade[z * w + x] = (int)Math.Max(ShadeMin, Math.Min(ShadeMax, value));
+replacement:
+|                     shade[z * w + x] = (int)Math.Max(ShadeMin, value);
+
+[ed4-shade-layout]
+file = Assets/WarCore/Content/MapTools/MapTerrainView.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = cells column by column
+original:
+|                     shade[z * w + x] = (int)Math.Max(ShadeMin, Math.Min(ShadeMax, value));
+replacement:
+|                     shade[x * d + z] = (int)Math.Max(ShadeMin, Math.Min(ShadeMax, value));
+
+[ed4-steep-slope-num-default]
+file = Assets/WarCore/Content/MapTools/MapTerrainView.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = default slope bound changes
+original:
+|             long num = pack.Terrain?.MaxWalkableNum ?? HeightField.MaxSlopeNumerator, den = pack.Terrain?.MaxWalkableDen ?? HeightField.MaxSlopeDenominator;
+replacement:
+|             long num = pack.Terrain?.MaxWalkableNum ?? 1, den = pack.Terrain?.MaxWalkableDen ?? HeightField.MaxSlopeDenominator;
+
+[ed4-steep-slope-den-default]
+file = Assets/WarCore/Content/MapTools/MapTerrainView.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = default slope bound changes
+original:
+|             long num = pack.Terrain?.MaxWalkableNum ?? HeightField.MaxSlopeNumerator, den = pack.Terrain?.MaxWalkableDen ?? HeightField.MaxSlopeDenominator;
+replacement:
+|             long num = pack.Terrain?.MaxWalkableNum ?? HeightField.MaxSlopeNumerator, den = pack.Terrain?.MaxWalkableDen ?? 2;
+
+[ed4-steep-pack-num]
+file = Assets/WarCore/Content/MapTools/MapTerrainView.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = pack slope numerator read from the denominator
+original:
+|             long num = pack.Terrain?.MaxWalkableNum ?? HeightField.MaxSlopeNumerator, den = pack.Terrain?.MaxWalkableDen ?? HeightField.MaxSlopeDenominator;
+replacement:
+|             long num = pack.Terrain?.MaxWalkableDen ?? HeightField.MaxSlopeNumerator, den = pack.Terrain?.MaxWalkableDen ?? HeightField.MaxSlopeDenominator;
+
+[ed4-steep-heights-flip]
+file = Assets/WarCore/Content/MapTools/MapTerrainView.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = heights read upside down
+original:
+|                 for (int i = 0; i <= w; i++) points[j * (w + 1) + i] = desc.Heights[j][i];
+replacement:
+|                 for (int i = 0; i <= w; i++) points[j * (w + 1) + i] = desc.Heights[d - j][i];
+
+[ed4-steep-inverted]
+file = Assets/WarCore/Content/MapTools/MapTerrainView.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = steep and walkable swapped
+original:
+|                 for (int x = 0; x < w; x++) steep[z * w + x] = !field.CellWithinSlope(x, z, num, den);
+replacement:
+|                 for (int x = 0; x < w; x++) steep[z * w + x] = field.CellWithinSlope(x, z, num, den);
+
+[ed4-steep-num]
+file = Assets/WarCore/Content/MapTools/MapTerrainView.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = slope bound moves
+original:
+|                 for (int x = 0; x < w; x++) steep[z * w + x] = !field.CellWithinSlope(x, z, num, den);
+replacement:
+|                 for (int x = 0; x < w; x++) steep[z * w + x] = !field.CellWithinSlope(x, z, num + 1, den);
+
+[ed4-steep-layout]
+file = Assets/WarCore/Content/MapTools/MapTerrainView.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = cells column by column
+original:
+|                 for (int x = 0; x < w; x++) steep[z * w + x] = !field.CellWithinSlope(x, z, num, den);
+replacement:
+|                 for (int x = 0; x < w; x++) steep[x * d + z] = !field.CellWithinSlope(x, z, num, den);
+
+[ed4-place-mm]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PinTests.
+note = mm place used only when absent
+original:
+|             if (p.HasMm) { xMm = p.XMm; zMm = p.ZMm; return true; }
+replacement:
+|             if (!p.HasMm) { xMm = p.XMm; zMm = p.ZMm; return true; }
+
+[ed4-place-cell]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PinTests.
+note = cell place used only when absent
+original:
+|             if (!p.HasCell || desc == null) return false;
+replacement:
+|             if (p.HasCell || desc == null) return false;
+
+[ed4-place-origin-x]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PinTests.
+note = cell pin ignores the origin (x)
+original:
+|             xMm = ((long)desc.Origin.X + p.CellX) * 1000 + 500;
+replacement:
+|             xMm = ((long)p.CellX) * 1000 + 500;
+
+[ed4-place-origin-z]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PinTests.
+note = cell pin ignores the origin (z)
+original:
+|             zMm = ((long)desc.Origin.Z + p.CellZ) * 1000 + 500;
+replacement:
+|             zMm = ((long)p.CellZ) * 1000 + 500;
+
+[ed4-place-centre-x]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PinTests.
+note = cell pin is off the centre (x)
+original:
+|             xMm = ((long)desc.Origin.X + p.CellX) * 1000 + 500;
+replacement:
+|             xMm = ((long)desc.Origin.X + p.CellX) * 1000 + 499;
+
+[ed4-place-centre-z]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PinTests.
+note = cell pin is off the centre (z)
+original:
+|             zMm = ((long)desc.Origin.Z + p.CellZ) * 1000 + 500;
+replacement:
+|             zMm = ((long)desc.Origin.Z + p.CellZ) * 1000 + 501;
+
+[ed4-problem-id-null]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PinTests.
+note = problem list drops the id
+original:
+|                 problems.Add(new MapPreviewProblem { Code = p.Code, Id = p.Id ?? "", Text = text });
+replacement:
+|                 problems.Add(new MapPreviewProblem { Code = p.Code, Id = "", Text = text });
+
+[ed4-pin-id-null]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PinTests.
+note = pin drops the id
+original:
+|                 pins.Add(new MapPreviewPin { ProblemIndex = problems.Count - 1, Code = p.Code, Id = p.Id ?? "", Text = text, XMm = x, ZMm = z });
+replacement:
+|                 pins.Add(new MapPreviewPin { ProblemIndex = problems.Count - 1, Code = p.Code, Id = "", Text = text, XMm = x, ZMm = z });
+
+[ed4-pin-problem-index]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PinTests.
+note = pin points at the next problem
+original:
+|                 pins.Add(new MapPreviewPin { ProblemIndex = problems.Count - 1, Code = p.Code, Id = p.Id ?? "", Text = text, XMm = x, ZMm = z });
+replacement:
+|                 pins.Add(new MapPreviewPin { ProblemIndex = problems.Count, Code = p.Code, Id = p.Id ?? "", Text = text, XMm = x, ZMm = z });
+
+[ed4-pin-text]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PinTests.
+note = pin drops the text
+original:
+|                 pins.Add(new MapPreviewPin { ProblemIndex = problems.Count - 1, Code = p.Code, Id = p.Id ?? "", Text = text, XMm = x, ZMm = z });
+replacement:
+|                 pins.Add(new MapPreviewPin { ProblemIndex = problems.Count - 1, Code = p.Code, Id = p.Id ?? "", Text = "", XMm = x, ZMm = z });
+
+[ed4-data-id]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = id and pack mixed up
+original:
+|             data.Id = desc.Id;
+replacement:
+|             data.Id = desc.Pack;
+
+[ed4-data-pack]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = id and pack mixed up
+original:
+|             data.Pack = desc.Pack;
+replacement:
+|             data.Pack = desc.Id;
+
+[ed4-data-width]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = width and depth mixed up
+original:
+|             data.Width = desc.Size.X;
+replacement:
+|             data.Width = desc.Size.Z;
+
+[ed4-data-depth]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = width and depth mixed up
+original:
+|             data.Depth = desc.Size.Z;
+replacement:
+|             data.Depth = desc.Size.X;
+
+[ed4-data-origin-x]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PinTests.
+note = origin axes mixed up
+original:
+|             data.OriginX = desc.Origin.X;
+replacement:
+|             data.OriginX = desc.Origin.Z;
+
+[ed4-data-origin-z]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PinTests.
+note = origin axes mixed up
+original:
+|             data.OriginZ = desc.Origin.Z;
+replacement:
+|             data.OriginZ = desc.Origin.X;
+
+[ed4-grid-layout]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = ground cells column by column
+original:
+|                     ground[z * w + x] = desc.Surfaces == null ? palette.NoGround
+replacement:
+|                     ground[x * d + z] = desc.Surfaces == null ? palette.NoGround
+
+[ed4-grid-noground]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = no surface table gives the neutral colour
+original:
+|                     ground[z * w + x] = desc.Surfaces == null ? palette.NoGround
+replacement:
+|                     ground[z * w + x] = desc.Surfaces == null ? palette.Neutral
+
+[ed4-grid-row-mirror]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = surface rows read mirrored
+original:
+|                         : palette.GroundColor(desc.Surfaces.Names[SurfaceIndex(desc.Surfaces.Rows[z][x])], out _);
+replacement:
+|                         : palette.GroundColor(desc.Surfaces.Names[SurfaceIndex(desc.Surfaces.Rows[z][w - 1 - x])], out _);
+
+[ed4-b64-upper]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = Z is not a surface index
+original:
+|             c >= 'A' && c <= 'Z' ? c - 'A' : c >= 'a' && c <= 'z' ? c - 'a' + 26 : c >= '0' && c <= '9' ? c - '0' + 52 : c == '+' ? 62 : 63;
+replacement:
+|             c >= 'A' && c < 'Z' ? c - 'A' : c >= 'a' && c <= 'z' ? c - 'a' + 26 : c >= '0' && c <= '9' ? c - '0' + 52 : c == '+' ? 62 : 63;
+
+[ed4-b64-upper-low]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = A is not a surface index
+original:
+|             c >= 'A' && c <= 'Z' ? c - 'A' : c >= 'a' && c <= 'z' ? c - 'a' + 26 : c >= '0' && c <= '9' ? c - '0' + 52 : c == '+' ? 62 : 63;
+replacement:
+|             c > 'A' && c <= 'Z' ? c - 'A' : c >= 'a' && c <= 'z' ? c - 'a' + 26 : c >= '0' && c <= '9' ? c - '0' + 52 : c == '+' ? 62 : 63;
+
+[ed4-b64-lower]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = lower case one too low
+original:
+|             c >= 'A' && c <= 'Z' ? c - 'A' : c >= 'a' && c <= 'z' ? c - 'a' + 26 : c >= '0' && c <= '9' ? c - '0' + 52 : c == '+' ? 62 : 63;
+replacement:
+|             c >= 'A' && c <= 'Z' ? c - 'A' : c >= 'a' && c <= 'z' ? c - 'a' + 25 : c >= '0' && c <= '9' ? c - '0' + 52 : c == '+' ? 62 : 63;
+
+[ed4-b64-lower-edge]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = z is not a surface index
+original:
+|             c >= 'A' && c <= 'Z' ? c - 'A' : c >= 'a' && c <= 'z' ? c - 'a' + 26 : c >= '0' && c <= '9' ? c - '0' + 52 : c == '+' ? 62 : 63;
+replacement:
+|             c >= 'A' && c <= 'Z' ? c - 'A' : c >= 'a' && c < 'z' ? c - 'a' + 26 : c >= '0' && c <= '9' ? c - '0' + 52 : c == '+' ? 62 : 63;
+
+[ed4-b64-digit]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = digits one too low
+original:
+|             c >= 'A' && c <= 'Z' ? c - 'A' : c >= 'a' && c <= 'z' ? c - 'a' + 26 : c >= '0' && c <= '9' ? c - '0' + 52 : c == '+' ? 62 : 63;
+replacement:
+|             c >= 'A' && c <= 'Z' ? c - 'A' : c >= 'a' && c <= 'z' ? c - 'a' + 26 : c >= '0' && c <= '9' ? c - '0' + 51 : c == '+' ? 62 : 63;
+
+[ed4-b64-digit-edge]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = 9 is not a surface index
+original:
+|             c >= 'A' && c <= 'Z' ? c - 'A' : c >= 'a' && c <= 'z' ? c - 'a' + 26 : c >= '0' && c <= '9' ? c - '0' + 52 : c == '+' ? 62 : 63;
+replacement:
+|             c >= 'A' && c <= 'Z' ? c - 'A' : c >= 'a' && c <= 'z' ? c - 'a' + 26 : c >= '0' && c < '9' ? c - '0' + 52 : c == '+' ? 62 : 63;
+
+[ed4-b64-plus]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = + and / swapped
+original:
+|             c >= 'A' && c <= 'Z' ? c - 'A' : c >= 'a' && c <= 'z' ? c - 'a' + 26 : c >= '0' && c <= '9' ? c - '0' + 52 : c == '+' ? 62 : 63;
+replacement:
+|             c >= 'A' && c <= 'Z' ? c - 'A' : c >= 'a' && c <= 'z' ? c - 'a' + 26 : c >= '0' && c <= '9' ? c - '0' + 52 : c == '+' ? 63 : 62;
+
+[ed4-wall-raised]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = raised flag inverted
+original:
+|                     Raised = w.BaseRaw.HasValue, BaseRaw = w.BaseRaw ?? 0, SideColor = palette.StructSide, TopColor = palette.StructTop,
+replacement:
+|                     Raised = !w.BaseRaw.HasValue, BaseRaw = w.BaseRaw ?? 0, SideColor = palette.StructSide, TopColor = palette.StructTop,
+
+[ed4-wall-base]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = wall base dropped
+original:
+|                     Raised = w.BaseRaw.HasValue, BaseRaw = w.BaseRaw ?? 0, SideColor = palette.StructSide, TopColor = palette.StructTop,
+replacement:
+|                     Raised = w.BaseRaw.HasValue, BaseRaw = 0, SideColor = palette.StructSide, TopColor = palette.StructTop,
+
+[ed4-wall-cell]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = wall cell axes mixed up
+original:
+|                     Id = w.Id, CellX = w.Cell.X, CellZ = w.Cell.Z, SizeX = w.Size.X, SizeZ = w.Size.Z, HeightRaw = w.HeightRaw,
+replacement:
+|                     Id = w.Id, CellX = w.Cell.Z, CellZ = w.Cell.X, SizeX = w.Size.X, SizeZ = w.Size.Z, HeightRaw = w.HeightRaw,
+
+[ed4-wall-size]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = wall size axes mixed up
+original:
+|                     Id = w.Id, CellX = w.Cell.X, CellZ = w.Cell.Z, SizeX = w.Size.X, SizeZ = w.Size.Z, HeightRaw = w.HeightRaw,
+replacement:
+|                     Id = w.Id, CellX = w.Cell.X, CellZ = w.Cell.Z, SizeX = w.Size.Z, SizeZ = w.Size.X, HeightRaw = w.HeightRaw,
+
+[ed4-wall-height]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = wall height dropped
+original:
+|                     Id = w.Id, CellX = w.Cell.X, CellZ = w.Cell.Z, SizeX = w.Size.X, SizeZ = w.Size.Z, HeightRaw = w.HeightRaw,
+replacement:
+|                     Id = w.Id, CellX = w.Cell.X, CellZ = w.Cell.Z, SizeX = w.Size.X, SizeZ = w.Size.Z, HeightRaw = 0,
+
+[ed4-wall-colours]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = wall colours swapped
+original:
+|                     Raised = w.BaseRaw.HasValue, BaseRaw = w.BaseRaw ?? 0, SideColor = palette.StructSide, TopColor = palette.StructTop,
+replacement:
+|                     Raised = w.BaseRaw.HasValue, BaseRaw = w.BaseRaw ?? 0, SideColor = palette.StructTop, TopColor = palette.StructSide,
+
+[ed4-plate-axis]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = plate axis dropped
+original:
+|                     Axis = p.Slope == null ? "" : p.Slope.Axis, FromRaw = p.Slope?.FromRaw ?? p.YRaw.Value, ToRaw = p.Slope?.ToRaw ?? p.YRaw.Value,
+replacement:
+|                     Axis = "", FromRaw = p.Slope?.FromRaw ?? p.YRaw.Value, ToRaw = p.Slope?.ToRaw ?? p.YRaw.Value,
+
+[ed4-plate-from-to]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = slope ends swapped
+original:
+|                     Axis = p.Slope == null ? "" : p.Slope.Axis, FromRaw = p.Slope?.FromRaw ?? p.YRaw.Value, ToRaw = p.Slope?.ToRaw ?? p.YRaw.Value,
+replacement:
+|                     Axis = p.Slope == null ? "" : p.Slope.Axis, FromRaw = p.Slope?.ToRaw ?? p.YRaw.Value, ToRaw = p.Slope?.FromRaw ?? p.YRaw.Value,
+
+[ed4-plate-flat-top]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = a flat plate has no top at its end
+original:
+|                     Axis = p.Slope == null ? "" : p.Slope.Axis, FromRaw = p.Slope?.FromRaw ?? p.YRaw.Value, ToRaw = p.Slope?.ToRaw ?? p.YRaw.Value,
+replacement:
+|                     Axis = p.Slope == null ? "" : p.Slope.Axis, FromRaw = p.Slope?.FromRaw ?? p.YRaw.Value, ToRaw = p.Slope?.ToRaw ?? 0,
+
+[ed4-plate-thick]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = plate thickness dropped
+original:
+|                     Id = p.Id, CellX = p.Cell.X, CellZ = p.Cell.Z, SizeX = p.Size.X, SizeZ = p.Size.Z, ThickRaw = p.ThickRaw,
+replacement:
+|                     Id = p.Id, CellX = p.Cell.X, CellZ = p.Cell.Z, SizeX = p.Size.X, SizeZ = p.Size.Z, ThickRaw = 0,
+
+[ed4-plate-size]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = plate size axes mixed up
+original:
+|                     Id = p.Id, CellX = p.Cell.X, CellZ = p.Cell.Z, SizeX = p.Size.X, SizeZ = p.Size.Z, ThickRaw = p.ThickRaw,
+replacement:
+|                     Id = p.Id, CellX = p.Cell.X, CellZ = p.Cell.Z, SizeX = p.Size.Z, SizeZ = p.Size.X, ThickRaw = p.ThickRaw,
+
+[ed4-point-xz]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = point axes mixed up
+original:
+|                     Id = p.Id, XMm = p.At.X, ZMm = p.At.Z, RadiusMm = p.RadiusMm, Owner = p.InitialOwner, Color = OwnerColor(palette, p.InitialOwner),
+replacement:
+|                     Id = p.Id, XMm = p.At.Z, ZMm = p.At.X, RadiusMm = p.RadiusMm, Owner = p.InitialOwner, Color = OwnerColor(palette, p.InitialOwner),
+
+[ed4-point-radius]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = point radius dropped
+original:
+|                     Id = p.Id, XMm = p.At.X, ZMm = p.At.Z, RadiusMm = p.RadiusMm, Owner = p.InitialOwner, Color = OwnerColor(palette, p.InitialOwner),
+replacement:
+|                     Id = p.Id, XMm = p.At.X, ZMm = p.At.Z, RadiusMm = 0, Owner = p.InitialOwner, Color = OwnerColor(palette, p.InitialOwner),
+
+[ed4-point-colour]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = points are all neutral
+original:
+|                     Id = p.Id, XMm = p.At.X, ZMm = p.At.Z, RadiusMm = p.RadiusMm, Owner = p.InitialOwner, Color = OwnerColor(palette, p.InitialOwner),
+replacement:
+|                     Id = p.Id, XMm = p.At.X, ZMm = p.At.Z, RadiusMm = p.RadiusMm, Owner = p.InitialOwner, Color = OwnerColor(palette, 0),
+
+[ed4-base-colour]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = bases are all neutral
+original:
+|                 bases.Add(new MapPreviewBase { Id = b.Id, Team = b.Team, XMm = b.At.X, ZMm = b.At.Z, Color = OwnerColor(palette, b.Team) });
+replacement:
+|                 bases.Add(new MapPreviewBase { Id = b.Id, Team = b.Team, XMm = b.At.X, ZMm = b.At.Z, Color = OwnerColor(palette, 0) });
+
+[ed4-base-xz]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = base axes mixed up
+original:
+|                 bases.Add(new MapPreviewBase { Id = b.Id, Team = b.Team, XMm = b.At.X, ZMm = b.At.Z, Color = OwnerColor(palette, b.Team) });
+replacement:
+|                 bases.Add(new MapPreviewBase { Id = b.Id, Team = b.Team, XMm = b.At.Z, ZMm = b.At.X, Color = OwnerColor(palette, b.Team) });
+
+[ed4-unit-squad]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = unit squad dropped
+original:
+|                     Key = u.Key, Type = u.Type, Team = u.Team, Squad = u.Squad, XMm = u.At.X, ZMm = u.At.Z, Reserve = u.Reserve,
+replacement:
+|                     Key = u.Key, Type = u.Type, Team = u.Team, Squad = 0, XMm = u.At.X, ZMm = u.At.Z, Reserve = u.Reserve,
+
+[ed4-unit-reserve]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = unit reserve flag dropped
+original:
+|                     Key = u.Key, Type = u.Type, Team = u.Team, Squad = u.Squad, XMm = u.At.X, ZMm = u.At.Z, Reserve = u.Reserve,
+replacement:
+|                     Key = u.Key, Type = u.Type, Team = u.Team, Squad = u.Squad, XMm = u.At.X, ZMm = u.At.Z, Reserve = false,
+
+[ed4-unit-xz]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = unit axes mixed up
+original:
+|                     Key = u.Key, Type = u.Type, Team = u.Team, Squad = u.Squad, XMm = u.At.X, ZMm = u.At.Z, Reserve = u.Reserve,
+replacement:
+|                     Key = u.Key, Type = u.Type, Team = u.Team, Squad = u.Squad, XMm = u.At.Z, ZMm = u.At.X, Reserve = u.Reserve,
+
+[ed4-unit-colour]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = units are all neutral
+original:
+|                     Color = OwnerColor(palette, u.Team),
+replacement:
+|                     Color = OwnerColor(palette, 0),
+
+[ed4-owner-zero]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = nobody gets team 1's colour
+original:
+|         private static int OwnerColor(MapPalette palette, int owner) => owner == 0 ? palette.Neutral : palette.Team[owner - 1];
+replacement:
+|         private static int OwnerColor(MapPalette palette, int owner) => owner == 0 ? palette.Team[0] : palette.Team[owner - 1];
+
+[ed4-owner-index]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = team colour index is off
+original:
+|         private static int OwnerColor(MapPalette palette, int owner) => owner == 0 ? palette.Neutral : palette.Team[owner - 1];
+replacement:
+|         private static int OwnerColor(MapPalette palette, int owner) => owner == 0 ? palette.Neutral : palette.Team[owner % 2];
+
+[ed4-note-inverted]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = notes for listed surfaces
+original:
+|                 if (fallback) notes.Add(new MapPreviewNote { Name = name, Key = GroundFallbackKey, Text = messages.Text(GroundFallbackKey) });
+replacement:
+|                 if (!fallback) notes.Add(new MapPreviewNote { Name = name, Key = GroundFallbackKey, Text = messages.Text(GroundFallbackKey) });
+
+[ed4-note-key]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = note drops its key
+original:
+|                 if (fallback) notes.Add(new MapPreviewNote { Name = name, Key = GroundFallbackKey, Text = messages.Text(GroundFallbackKey) });
+replacement:
+|                 if (fallback) notes.Add(new MapPreviewNote { Name = name, Key = "", Text = messages.Text(GroundFallbackKey) });
+
+[ed4-note-text]
+file = Assets/WarCore/Presentation/Maps/MapPreview.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = note drops its text
+original:
+|                 if (fallback) notes.Add(new MapPreviewNote { Name = name, Key = GroundFallbackKey, Text = messages.Text(GroundFallbackKey) });
+replacement:
+|                 if (fallback) notes.Add(new MapPreviewNote { Name = name, Key = GroundFallbackKey, Text = "" });
+
+[ed4-json-lt]
+file = Assets/WarCore/Presentation/Maps/MapPreview.Json.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = a less-than sign is not escaped
+original:
+|                 else if (c < ' ' || c == '<' || c == '\u2028' || c == '\u2029') o.Append("\\u").Append(((int)c).ToString("x4", CultureInfo.InvariantCulture));
+replacement:
+|                 else if (c < ' ' || c == '\u2028' || c == '\u2029') o.Append("\\u").Append(((int)c).ToString("x4", CultureInfo.InvariantCulture));
+
+[ed4-json-2028]
+file = Assets/WarCore/Presentation/Maps/MapPreview.Json.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = U+2028 is not escaped
+original:
+|                 else if (c < ' ' || c == '<' || c == '\u2028' || c == '\u2029') o.Append("\\u").Append(((int)c).ToString("x4", CultureInfo.InvariantCulture));
+replacement:
+|                 else if (c < ' ' || c == '<' || c == '\u2029') o.Append("\\u").Append(((int)c).ToString("x4", CultureInfo.InvariantCulture));
+
+[ed4-json-2029]
+file = Assets/WarCore/Presentation/Maps/MapPreview.Json.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = U+2029 is not escaped
+original:
+|                 else if (c < ' ' || c == '<' || c == '\u2028' || c == '\u2029') o.Append("\\u").Append(((int)c).ToString("x4", CultureInfo.InvariantCulture));
+replacement:
+|                 else if (c < ' ' || c == '<' || c == '\u2028') o.Append("\\u").Append(((int)c).ToString("x4", CultureInfo.InvariantCulture));
+
+[ed4-json-control]
+file = Assets/WarCore/Presentation/Maps/MapPreview.Json.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = the last control character is not escaped
+original:
+|                 else if (c < ' ' || c == '<' || c == '\u2028' || c == '\u2029') o.Append("\\u").Append(((int)c).ToString("x4", CultureInfo.InvariantCulture));
+replacement:
+|                 else if (c < '\u001f' || c == '<' || c == '\u2028' || c == '\u2029') o.Append("\\u").Append(((int)c).ToString("x4", CultureInfo.InvariantCulture));
+
+[ed4-json-hex-case]
+file = Assets/WarCore/Presentation/Maps/MapPreview.Json.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = escapes in upper-case hex
+original:
+|                 else if (c < ' ' || c == '<' || c == '\u2028' || c == '\u2029') o.Append("\\u").Append(((int)c).ToString("x4", CultureInfo.InvariantCulture));
+replacement:
+|                 else if (c < ' ' || c == '<' || c == '\u2028' || c == '\u2029') o.Append("\\u").Append(((int)c).ToString("X4", CultureInfo.InvariantCulture));
+
+[ed4-json-quote]
+file = Assets/WarCore/Presentation/Maps/MapPreview.Json.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = quotes not escaped
+original:
+|                 if (c == '"') o.Append("\\\"");
+replacement:
+|                 if (c == '\u0001') o.Append("\\\"");
+
+[ed4-json-backslash]
+file = Assets/WarCore/Presentation/Maps/MapPreview.Json.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = backslashes not escaped
+original:
+|                 else if (c == '\\') o.Append("\\\\");
+replacement:
+|                 else if (c == '\u0001') o.Append("\\\\");
+
+[ed4-json-steep]
+file = Assets/WarCore/Presentation/Maps/MapPreview.Json.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = walkable cells listed as steep
+original:
+|                 if (data.Steep[i]) steep.Add(i);
+replacement:
+|                 if (!data.Steep[i]) steep.Add(i);
+
+[ed4-json-colour-case]
+file = Assets/WarCore/Presentation/Maps/MapPreview.Json.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = colours in lower case
+original:
+|         private static void Colour(StringBuilder o, int rgb) => o.Append("\"#").Append((rgb & 0xFFFFFF).ToString("X6", CultureInfo.InvariantCulture)).Append('"');
+replacement:
+|         private static void Colour(StringBuilder o, int rgb) => o.Append("\"#").Append((rgb & 0xFFFFFF).ToString("x6", CultureInfo.InvariantCulture)).Append('"');
+
+[ed4-json-colour-mask]
+file = Assets/WarCore/Presentation/Maps/MapPreview.Json.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = colour loses a bit
+original:
+|         private static void Colour(StringBuilder o, int rgb) => o.Append("\"#").Append((rgb & 0xFFFFFF).ToString("X6", CultureInfo.InvariantCulture)).Append('"');
+replacement:
+|         private static void Colour(StringBuilder o, int rgb) => o.Append("\"#").Append((rgb & 0xFFFFFE).ToString("X6", CultureInfo.InvariantCulture)).Append('"');
+
+[ed4-json-palette-index]
+file = Assets/WarCore/Presentation/Maps/MapPreview.Json.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = every new ground colour gets index 0
+original:
+|                 if (!index.TryGetValue(colour, out int at)) { at = palette.Count; index.Add(colour, at); palette.Add(colour); }
+replacement:
+|                 if (!index.TryGetValue(colour, out int at)) { at = 0; index.Add(colour, at); palette.Add(colour); }
+
+[ed4-json-key-origin]
+file = Assets/WarCore/Presentation/Maps/MapPreview.Json.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PreviewTests.
+note = origin key renamed
+original:
+|             Key(o, "originX"); Num(o, data.OriginX);
+replacement:
+|             Key(o, "originY"); Num(o, data.OriginX);
+
+[ed4-catalog-colours-file]
+file = Assets/WarCore/Content/Data/ContentCatalog.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = the reserved name differs from the file
+original:
+|         public const string ColorsFile = "palette";
+replacement:
+|         public const string ColorsFile = "palettes";
+
+[ed4-catalog-directory-of]
+file = Assets/WarCore/Content/Data/ContentCatalog.cs
+filter = FullyQualifiedName~Ed4|FullyQualifiedName~Ed0
+expect = WarCore.Tests.Ed4PaletteTests.
+note = DirectoryOf always gives the first cartridge
+original:
+|         public string DirectoryOf(string cartridge) => directories[IndexOf(cartridge)];
+replacement:
+|         public string DirectoryOf(string cartridge) => directories[0];

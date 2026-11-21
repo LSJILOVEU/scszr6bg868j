@@ -1,0 +1,5 @@
+{
+  "id": "rwr-body",
+  "extends": "rwr-m6",
+  "combat": { "body": { "height": 1.75, "eye": 1.5, "muzzle": 1.5 } }
+}
