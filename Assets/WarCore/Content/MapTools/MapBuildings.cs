@@ -69,12 +69,13 @@ namespace WarCore.Content.MapTools
         {
             long ground = Ground(map, b);
             if (slopeDen <= 0 || slopeNum < 0) throw new ArgumentException("the walkable slope must be num >= 0 over den > 0", nameof(slopeDen));
-            long run = b.StairLength * SimFix.Scale;
-            if (b.Floors >= 2 && (b.StoreyRaw * slopeDen > slopeNum * run || b.StoreyRaw * MapGate.PlateSlopeDen > MapGate.PlateSlopeNum * run))
+            // The steepest cell of the stair rises ceil(storey / length) (the gate checks each cell, and the plate's points
+            // are floored), so that rise per cell is what must not pass either slope bound.
+            long rise = (b.StoreyRaw + b.StairLength - 1) / b.StairLength;
+            if (b.Floors >= 2 && (rise * slopeDen > slopeNum * SimFix.Scale || rise * MapGate.PlateSlopeDen > MapGate.PlateSlopeNum * SimFix.Scale))
                 throw new ArgumentException("the stair is too steep: make it longer or the storey lower", nameof(b));
             // Stair f + 1 stands over stair f on the same cells: under its lowest edge in a cell there must be 2 m above the
             // highest edge of the stair below, so the rise per cell must not pass storey - thick - WallSpan.ClearanceRaw.
-            long rise = (b.StoreyRaw + b.StairLength - 1) / b.StairLength;
             if (b.Floors >= 3 && rise > b.StoreyRaw - b.ThickRaw - WallSpan.ClearanceRaw)
                 throw new ArgumentException("the stairs stand over each other with less than 2 m between them: make the stair longer", nameof(b));
             if (map.Layers.Count == 0) throw new ArgumentException("the description has no layer", nameof(map));

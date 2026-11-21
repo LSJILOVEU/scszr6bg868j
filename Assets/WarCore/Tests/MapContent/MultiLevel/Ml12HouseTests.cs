@@ -169,6 +169,30 @@ namespace WarCore.Tests
                 Assert.DoesNotThrow(() => blank.WithBuilding(null, ok), ok.DoorAt + " " + ok.StairX + " " + ok.StairLength + " " + ok.StoreyRaw);
         }
 
+        // The steepest cell decides: a 5 m storey over 3 cells rises 109227 raw in its steepest cell, past 5/3 of a cell
+        // (109226.67), though the whole stair is exactly 5/3; 2 raw lower fits and the gate agrees.
+        [Test]
+        public void TheSteepestStairCellDecides()
+        {
+            MapDocument blank = Doc(Blank(24, 16));
+            MapBuildingInfo B(long storey) => new MapBuildingInfo(2, 2, 12, 10, 2, storey, M / 2, "s", 3, 2, true, 4, 8, 3);
+            Assert.That(Assert.Throws<ArgumentException>(() => blank.WithBuilding(null, B(327680))).Message, Does.Contain("too steep"));
+            MapBuildResult ok = blank.WithBuilding(null, B(327678));
+            Assert.That(Gate(ok.Document).Select(p => p.Code).ToArray(), Is.Empty);
+        }
+
+        // Stacked stairs round the rise up: a 196610 raw storey over 6 cells rises 32769 in its steepest cell, so the plates
+        // may be at most 196610 - 131072 - 32769 = 32769 thick.
+        [Test]
+        public void StackedStairsUseTheSteepestCell()
+        {
+            MapDocument blank = Doc(Blank(24, 16));
+            MapBuildingInfo B(long thick) => new MapBuildingInfo(2, 2, 12, 10, 3, 196610, thick, "s", 3, 2, true, 4, 8, 6);
+            Assert.That(Assert.Throws<ArgumentException>(() => blank.WithBuilding(null, B(32770))).Message, Does.Contain("less than 2 m"));
+            MapBuildResult ok = blank.WithBuilding(null, B(32769));
+            Assert.That(Gate(ok.Document).Select(p => p.Code).ToArray(), Is.Empty);
+        }
+
         // Without the cutout over the stair the plate above stacks on it: the gate says so.
         [Test]
         public void WithoutTheCutoutTheGateReportsTheStack()

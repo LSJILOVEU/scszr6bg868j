@@ -1,8 +1,7 @@
 # ML-12a: the building stamp (MapBuildings, MapBuilding, MapBuildSpec), DoorOn, the building members of MapDocument and the
 # floor view. Filter: ML-12 tests.
 # Not listed: the ground-floor wall height's "- map.FloorRaw" (every fixture has floorRaw 0, the same as the old ML-1
-# walls); the stacked-stair rise rounding up (an exact division in every fixture); WindowOn (its checks are the ML-3 ones,
-# compared byte for byte with the direct stamp); the cutout loop of Removal (without it the plate removal refuses a plate
+# walls); WindowOn (its checks are the ML-3 ones, compared byte for byte with the direct stamp); the cutout loop of Removal (without it the plate removal refuses a plate
 # that still has a cutout, an exception rather than a wrong result).
 [ml12a-src-no-part]
 file = Assets/WarCore/Content/MapTools/MapBuildings.cs
@@ -45,15 +44,35 @@ original:
 replacement:
 |             if (high + (b.Floors - 1) * b.StoreyRaw > map.CeilingRaw)
 
-[ml12a-steep-run]
+[ml12a-steep-whole-stair]
+file = Assets/WarCore/Content/MapTools/MapBuildings.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12HouseTests
+note = the slope is checked over the whole stair instead of its steepest cell
+original:
+|             if (b.Floors >= 2 && (rise * slopeDen > slopeNum * SimFix.Scale || rise * MapGate.PlateSlopeDen > MapGate.PlateSlopeNum * SimFix.Scale))
+replacement:
+|             if (b.Floors >= 2 && (b.StoreyRaw * slopeDen > slopeNum * b.StairLength * SimFix.Scale || b.StoreyRaw * MapGate.PlateSlopeDen > MapGate.PlateSlopeNum * b.StairLength * SimFix.Scale))
+
+[ml12a-steep-scale]
 file = Assets/WarCore/Content/MapTools/MapBuildings.cs
 filter = FullyQualifiedName~Ml12
 expect = WarCore.Tests.Ml12HouseTests
 note = a stair four times too steep passes
 original:
-|             long run = b.StairLength * SimFix.Scale;
+|             if (b.Floors >= 2 && (rise * slopeDen > slopeNum * SimFix.Scale || rise * MapGate.PlateSlopeDen > MapGate.PlateSlopeNum * SimFix.Scale))
 replacement:
-|             long run = 4 * b.StairLength * SimFix.Scale;
+|             if (b.Floors >= 2 && (rise * slopeDen > 4 * slopeNum * SimFix.Scale || rise * MapGate.PlateSlopeDen > 4 * MapGate.PlateSlopeNum * SimFix.Scale))
+
+[ml12a-rise-floor]
+file = Assets/WarCore/Content/MapTools/MapBuildings.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12HouseTests
+note = the rise per cell is rounded down
+original:
+|             long rise = (b.StoreyRaw + b.StairLength - 1) / b.StairLength;
+replacement:
+|             long rise = b.StoreyRaw / b.StairLength;
 
 [ml12a-steep-one-floor]
 file = Assets/WarCore/Content/MapTools/MapBuildings.cs
@@ -61,9 +80,9 @@ filter = FullyQualifiedName~Ml12
 expect = WarCore.Tests.Ml12HouseTests
 note = a one-floor building is checked for a stair it does not have
 original:
-|             if (b.Floors >= 2 && (b.StoreyRaw
+|             if (b.Floors >= 2 && (rise
 replacement:
-|             if (b.Floors >= 1 && (b.StoreyRaw
+|             if (b.Floors >= 1 && (rise
 
 [ml12a-stacked-stairs]
 file = Assets/WarCore/Content/MapTools/MapBuildings.cs
