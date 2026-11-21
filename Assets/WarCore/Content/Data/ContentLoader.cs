@@ -37,7 +37,7 @@ namespace WarCore.Content
             MergedLayers merged = extends == null ? new MergedLayers() : LoadMerged(source, ScalarText(extends, layerId, "extends"), chain, table);
             chain.RemoveAt(chain.Count - 1);
 
-            foreach (IContentSection section in table.Sections)
+            foreach (IContentSection section in table.All)
             {
                 JsonNode node = root.Find(section.Key);
                 if (node != null) section.Merge(merged.Of(section.Key), node, layerId);

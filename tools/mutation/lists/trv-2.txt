@@ -1,0 +1,629 @@
+# TRV-2: traversal kinds section, LinkDerive (K15), MapGate.Links.
+# Filter: the TRV-2 tests (FullyQualifiedName~Trv2).
+# Not listed (equivalent, with the reason):
+#  - c0 without "highest ground corner of m": a, m, b are in a line, so two corners of m are shared with a and two with b,
+#    and plates are never below the ground (PlateSpan rule 3); max(hi(a), hi(b)) is never below it (TRV-2 card A2).
+#  - fixed point "top > c" written ">=": a span with top == c leaves c unchanged.
+#  - fixed point done in one pass: spans are sorted by bottom, so one pass is the fixed point (trv2-sort-bottom-desc and
+#    trv2-fixpoint-strict cover the order and the comparison instead).
+#  - edge gap "own plate left out": a plate's span bottom is its lowest corner minus a thickness >= 0.5 m, always below
+#    max(hi(a), hi(b)), so it never passes "bottom >= top" anyway.
+#  - ticks "at least 1": ticksBase >= 1 is enforced by the reader and the TraversalKind constructor.
+#  - seam "<= becomes <" / "one end point only": the seam test lives in LayeredNav (Sim, locked, not this package);
+#    LinkDerive asks the graph (trv2-seam-ignored).
+#  - "centre of the cell can stand" (T2-21): not added; a walkable cell's centre footprint never reaches another cell.
+
+[trv2-seam-ignored]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2EdgeTests.T2_07_ASeamIsNotALink
+note = a seam pair also gets a link
+original:
+| || !nav.IsPassable(b) || HasSeam(a, b)) continue;
+replacement:
+| || !nav.IsPassable(b)) continue;
+
+[trv2-edge-same-layer]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2DeriveTests.T2_23_TheBoxLinksInFullInNodeOrder
+note = edge links between cells of the same layer
+original:
+| if (lb == la || !nav.TryNode(lb, nx, nz, out int b)
+replacement:
+| if (!nav.TryNode(lb, nx, nz, out int b)
+
+[trv2-edge-target-unwalkable]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2OverTests.T2_17_FromABoxOverATwoMetreWallOneWayOnly
+note = edge to a cell that is not walkable
+original:
+| || !nav.TryNode(lb, nx, nz, out int b) || !nav.IsPassable(b) || HasSeam
+replacement:
+| || !nav.TryNode(lb, nx, nz, out int b) || HasSeam
+
+[trv2-edge-skips-ground]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2EdgeTests.T2_05_BoxToGroundIsOneDrop
+note = the ground is never the edge target
+original:
+| for (int k = -1; k < LayersAt(nx, nz); k++)
+replacement:
+| for (int k = 0; k < LayersAt(nx, nz); k++)
+
+[trv2-rise-min-exclusive]
+file = Assets/WarCore/Content/TraversalRules.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2EdgeTests.T2_36_OnlyDownIsAStepWithRiseZero
+expect = WarCore.Tests.Trv2EdgeTests.T2_05_BoxToGroundIsOneDrop
+note = rise >= riseMin becomes >
+original:
+| rise >= RiseMin
+replacement:
+| rise > RiseMin
+
+[trv2-rise-max-exclusive]
+file = Assets/WarCore/Content/TraversalRules.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2EdgeTests.T2_06_
+expect = WarCore.Tests.Trv2EdgeTests.T2_08_
+expect = WarCore.Tests.Trv2OverTests.T2_14_
+note = rise <= riseMax becomes <
+original:
+| rise <= RiseMax
+replacement:
+| rise < RiseMax
+
+[trv2-fall-min-exclusive]
+file = Assets/WarCore/Content/TraversalRules.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2EdgeTests.T2_04_GroundToBoxIsOneClimb
+note = fall >= fallMin becomes >
+original:
+| fall >= FallMin
+replacement:
+| fall > FallMin
+
+[trv2-fall-max-exclusive]
+file = Assets/WarCore/Content/TraversalRules.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2EdgeTests.T2_09_
+expect = WarCore.Tests.Trv2OverTests.T2_18_
+expect = WarCore.Tests.Trv2EdgeTests.T2_34_
+note = fall <= fallMax becomes <
+original:
+| fall <= FallMax
+replacement:
+| fall < FallMax
+
+[trv2-gap-exclusive]
+file = Assets/WarCore/Content/TraversalRules.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2EdgeTests.T2_11_
+expect = WarCore.Tests.Trv2OverTests.T2_13_
+note = gap >= gapMin becomes >
+original:
+| gap >= GapMin;
+replacement:
+| gap > GapMin;
+
+[trv2-last-match]
+file = Assets/WarCore/Content/TraversalRules.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2EdgeTests.T2_06_
+note = the last matching kind wins
+original:
+| for (int i = 0; i < kinds.Length; i++)
+|                 if (kinds[i].Matches
+replacement:
+| for (int i = kinds.Length - 1; i >= 0; i--)
+|                 if (kinds[i].Matches
+
+[trv2-rise-smaller-end]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2EdgeTests.T2_10_
+note = rise takes the smaller end point
+original:
+| long rise = Math.Max(0, Math.Max(d0, d1)),
+replacement:
+| long rise = Math.Max(0, Math.Min(d0, d1)),
+
+[trv2-rise-first-end]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2EdgeTests.T2_10_
+note = rise looks at the first end point only
+original:
+| long rise = Math.Max(0, Math.Max(d0, d1)),
+replacement:
+| long rise = Math.Max(0, d0),
+
+[trv2-rise-mean]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2EdgeTests.T2_10_
+note = rise is the mean of the two ends
+original:
+| long rise = Math.Max(0, Math.Max(d0, d1)),
+replacement:
+| long rise = Math.Max(0, (d0 + d1) / 2),
+
+[trv2-fall-smaller-end]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2EdgeTests.T2_10_
+expect = WarCore.Tests.Trv2EdgeTests.T2_34_
+note = fall takes the smaller end point
+original:
+| fall = Math.Max(0, Math.Max(-d0, -d1));
+replacement:
+| fall = Math.Max(0, Math.Min(-d0, -d1));
+
+[trv2-edge-sign]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2EdgeTests.T2_04_
+note = rise and fall swapped (difference taken the other way)
+original:
+| long d0 = Height(lb, i0, j0) - Height(la, i0, j0)
+replacement:
+| long d0 = Height(la, i0, j0) - Height(lb, i0, j0)
+
+[trv2-edge-gap-a-only]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2BoundaryTests.EdgeGapReadsTheTargetCellToo
+note = edge gap reads the start cell only
+original:
+| long lowest = Math.Min(LowestFrom(x, z, top, la), LowestFrom(nx, nz, top, lb));
+replacement:
+| long lowest = LowestFrom(x, z, top, la);
+
+[trv2-edge-gap-b-only]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2EdgeTests.T2_11_
+note = edge gap reads the target cell only
+original:
+| long lowest = Math.Min(LowestFrom(x, z, top, la), LowestFrom(nx, nz, top, lb));
+replacement:
+| long lowest = LowestFrom(nx, nz, top, lb);
+
+[trv2-edge-gap-strict]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2BoundaryTests.EdgeGapCountsASpanWhoseBottomIsTheTop
+note = edge gap: bottom >= top becomes >
+original:
+| spanBottom[s] >= top && spanBottom[s] < best
+replacement:
+| spanBottom[s] > top && spanBottom[s] < best
+
+[trv2-edge-cross]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2EdgeTests.T2_04_
+note = edge cross is the start cell top
+original:
+| Add(links, a, b, TraversalShape.Edge, rise, fall, gap, top);
+replacement:
+| Add(links, a, b, TraversalShape.Edge, rise, fall, gap, hiA);
+
+[trv2-sort-bottom-desc]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2OverTests.T2_19_
+note = spans sorted by descending bottom, so one pass misses the stacked piece
+original:
+| : p.Bottom != q.Bottom ? p.Bottom.CompareTo(q.Bottom)
+replacement:
+| : p.Bottom != q.Bottom ? q.Bottom.CompareTo(p.Bottom)
+
+[trv2-fixpoint-strict]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2OverTests.T2_19_
+note = fixed point: bottom <= c becomes <
+original:
+| if (spanBottom[s] <= c && spanTop[s] > c) c = spanTop[s];
+replacement:
+| if (spanBottom[s] < c && spanTop[s] > c) c = spanTop[s];
+
+[trv2-fixpoint-skipped]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2OverTests.T2_12_
+note = c stays at c0
+original:
+| if (spanBottom[s] <= c && spanTop[s] > c) c = spanTop[s];
+replacement:
+| if (spanBottom[s] <= c && spanTop[s] > c) { }
+
+[trv2-blocked-dropped]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2OverTests.T2_29_
+expect = WarCore.Tests.Trv2OverTests.T2_30_
+expect = WarCore.Tests.Trv2OverTests.T2_31_
+expect = WarCore.Tests.Trv2OverTests.T2_32_
+note = no solid span needed in the middle cell
+original:
+| if (!blocked) return;
+replacement:
+| if (false) return;
+
+[trv2-blocked-bottom-strict]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2OverTests.T2_32_
+note = blocked: bottom <= c0 becomes <
+original:
+| if (spanBottom[s] <= c0 && c0 < spanTop[s]) blocked = true;
+replacement:
+| if (spanBottom[s] < c0 && c0 < spanTop[s]) blocked = true;
+
+[trv2-blocked-top-inclusive]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2OverTests.T2_40_
+note = blocked: c0 < top becomes <=
+original:
+| if (spanBottom[s] <= c0 && c0 < spanTop[s]) blocked = true;
+replacement:
+| if (spanBottom[s] <= c0 && c0 <= spanTop[s]) blocked = true;
+
+[trv2-c0-no-hi-a]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2OverTests.T2_38_
+note = c0 leaves out hi(a)
+original:
+| long c0 = Math.Max(Math.Max(hiA, hiB), groundM);
+replacement:
+| long c0 = Math.Max(hiB, groundM);
+
+[trv2-c0-no-hi-b]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2OverTests.T2_39_
+note = c0 leaves out hi(b)
+original:
+| long c0 = Math.Max(Math.Max(hiA, hiB), groundM);
+replacement:
+| long c0 = Math.Max(hiA, groundM);
+
+[trv2-over-rise-hi]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2OverTests.OverRiseAndFallMeasureFromTheLowCorner
+note = over rise from hi(a)
+original:
+| Add(links, a, b, TraversalShape.Over, c - loA, c - loB, gap, c);
+replacement:
+| Add(links, a, b, TraversalShape.Over, c - hiA, c - loB, gap, c);
+
+[trv2-over-fall-hi]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2OverTests.OverRiseAndFallMeasureFromTheLowCorner
+note = over fall from hi(b)
+original:
+| Add(links, a, b, TraversalShape.Over, c - loA, c - loB, gap, c);
+replacement:
+| Add(links, a, b, TraversalShape.Over, c - loA, c - hiB, gap, c);
+
+[trv2-over-cross-c0]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2OverTests.T2_12_
+note = over cross reported as c0
+original:
+| Add(links, a, b, TraversalShape.Over, c - loA, c - loB, gap, c);
+replacement:
+| Add(links, a, b, TraversalShape.Over, c - loA, c - loB, gap, c0);
+
+[trv2-over-gap-m-only]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2BoundaryTests.OverGapReadsAllThreeCells
+note = over gap reads the middle cell only
+original:
+| long lowest = Math.Min(LowestAbove(mx, mz, c), Math.Min(LowestAbove(x, z, c), LowestAbove(bx, bz, c)));
+replacement:
+| long lowest = LowestAbove(mx, mz, c);
+
+[trv2-over-gap-no-b]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2BoundaryTests.OverGapReadsAllThreeCells
+note = over gap leaves out the end cell
+original:
+| long lowest = Math.Min(LowestAbove(mx, mz, c), Math.Min(LowestAbove(x, z, c), LowestAbove(bx, bz, c)));
+replacement:
+| long lowest = Math.Min(LowestAbove(mx, mz, c), LowestAbove(x, z, c));
+
+[trv2-over-gap-inclusive]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2BoundaryTests.OverGapSkipsASpanWhoseBottomIsTheCrossing
+note = over gap: bottom > c becomes >=
+original:
+| if (spanBottom[s] > c && spanBottom[s] < best) best = spanBottom[s];
+replacement:
+| if (spanBottom[s] >= c && spanBottom[s] < best) best = spanBottom[s];
+
+[trv2-middle-walkable-ignored]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2OverTests.T2_20_
+note = the middle cell may be walkable
+original:
+| if (Walkable(la, nx, nz) || Walkable(lb, nx, nz)) continue;
+replacement:
+| if (false) continue;
+
+[trv2-middle-a-layer-only]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2OverTests.T2_20_
+note = the middle cell is checked on a's layer only
+original:
+| if (Walkable(la, nx, nz) || Walkable(lb, nx, nz)) continue;
+replacement:
+| if (Walkable(la, nx, nz)) continue;
+
+[trv2-over-target-unwalkable]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2OverTests.T2_16_
+note = over to a cell that is not walkable
+original:
+| if (!nav.TryNode(lb, bx, bz, out int b) || !nav.IsPassable(b)) continue;
+replacement:
+| if (!nav.TryNode(lb, bx, bz, out int b)) continue;
+
+[trv2-two-cells-thick]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2OverTests.T2_16_
+expect = WarCore.Tests.Trv2OverTests.T2_12_
+note = b two cells after the middle one
+original:
+| int bx = nx + dx, bz = nz + dz;
+replacement:
+| int bx = nx + 2 * dx, bz = nz + 2 * dz;
+
+[trv2-diagonal]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2OverTests.T2_15_
+note = north becomes north-east (a diagonal)
+original:
+| int dx = direction == 1 ? 1 : direction == 3 ? -1 : 0;
+|                         int dz
+replacement:
+| int dx = direction == 1 || direction == 0 ? 1 : direction == 3 ? -1 : 0;
+|                         int dz
+
+[trv2-zone-a-ignored]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2DeriveTests.T2_24_
+note = a zone over the start cell is ignored
+original:
+| if (zoned[z * width + x]) continue;
+replacement:
+| if (false) continue;
+
+[trv2-zone-m-ignored]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2DeriveTests.T2_24_
+note = a zone over the neighbour (edge target, over middle) is ignored
+original:
+| if (!OnMap(nx, nz) || zoned[nz * width + nx]) continue;
+replacement:
+| if (!OnMap(nx, nz)) continue;
+
+[trv2-zone-b-ignored]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2DeriveTests.T2_24_
+note = a zone over the over target is ignored
+original:
+| if (!OnMap(bx, bz) || zoned[bz * width + bx]) continue;
+replacement:
+| if (!OnMap(bx, bz)) continue;
+
+[trv2-zone-far-x]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2DeriveTests.T2_24_
+note = zone far x edge inclusive
+original:
+| (long)x < (long)X + Width
+replacement:
+| (long)x <= (long)X + Width
+
+[trv2-zone-far-z]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2DeriveTests.T2_24_
+note = zone far z edge inclusive
+original:
+| (long)z < (long)Z + Depth
+replacement:
+| (long)z <= (long)Z + Depth
+
+[trv2-sort-from-only]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2DeriveTests.T2_23_TheBoxLinksInFullInNodeOrder
+note = links sorted by from only
+original:
+| links.Sort((p, q) => p.From != q.From ? p.From.CompareTo(q.From) : p.To.CompareTo(q.To));
+replacement:
+| links.Sort((p, q) => p.From.CompareTo(q.From));
+
+[trv2-sort-descending]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2DeriveTests.T2_23_
+note = links sorted by descending from
+original:
+| links.Sort((p, q) => p.From != q.From ? p.From.CompareTo(q.From) : p.To.CompareTo(q.To));
+replacement:
+| links.Sort((p, q) => p.From != q.From ? q.From.CompareTo(p.From) : p.To.CompareTo(q.To));
+
+[trv2-cap-off-by-one]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2DeriveTests.T2_28_
+note = the cap lets one link too many through
+original:
+| if (links.Count > maxLinks) throw
+replacement:
+| if (links.Count > maxLinks + 1) throw
+
+[trv2-plate-span-no-thickness]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2OverTests.T2_32_
+note = a plate span has no thickness
+original:
+| spans.Add((z * width + x, low - map.Plates[layer - 1].ThickRaw, high, layer));
+replacement:
+| spans.Add((z * width + x, low, high, layer));
+
+[trv2-plate-span-low-top]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2OracleTests.T2_27_
+note = a plate span tops at its lowest corner
+original:
+| spans.Add((z * width + x, low - map.Plates[layer - 1].ThickRaw, high, layer));
+replacement:
+| spans.Add((z * width + x, low - map.Plates[layer - 1].ThickRaw, low, layer));
+
+[trv2-wall-floor-offset]
+file = Assets/WarCore/Content/LinkDerive.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2BoundaryTests.AFloorAboveZeroMeasuresTheSame
+note = walls left relative to the floor
+original:
+| spans.Add((z * width + x, floor + w.Bottom, floor + w.Top, -1));
+replacement:
+| spans.Add((z * width + x, w.Bottom, w.Top, -1));
+
+[trv2-ticks-up-floor]
+file = Assets/WarCore/Content/TraversalRules.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2EdgeTests.TicksRoundUpPerMetreTerm
+note = up term rounds down
+original:
+| (TicksPerMetreUp * rise + SimFix.Scale - 1) / SimFix.Scale
+replacement:
+| (TicksPerMetreUp * rise) / SimFix.Scale
+
+[trv2-ticks-down-floor]
+file = Assets/WarCore/Content/TraversalRules.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2EdgeTests.TicksRoundUpPerMetreTerm
+note = down term rounds down
+original:
+| (TicksPerMetreDown * fall + SimFix.Scale - 1) / SimFix.Scale
+replacement:
+| (TicksPerMetreDown * fall) / SimFix.Scale
+
+[trv2-fold-drops-field]
+file = Assets/WarCore/Content/TraversalRules.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2SectionTests.T2_03_
+note = the fold leaves out noiseRaw
+original:
+| hash.Add(k.PathCost); hash.Add(k.Fire); hash.Add(k.NoiseRaw);
+replacement:
+| hash.Add(k.PathCost); hash.Add(k.Fire);
+
+[trv2-section-merges]
+file = Assets/WarCore/Content/Data/Sections/TraversalSection.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2SectionTests.T2_01_AChildLayerReplacesTheWholeTable
+note = a child layer merges kinds by id instead of replacing the table
+original:
+| entries.Clear();
+replacement:
+| // entries kept
+
+[trv2-section-32]
+file = Assets/WarCore/Content/Data/Sections/TraversalSection.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2SectionTests.T2_02_ThirtyTwoKindsAreAllowed
+note = 32 kinds rejected
+original:
+| if (entries.Count > TraversalRules.MaxKinds)
+replacement:
+| if (entries.Count >= TraversalRules.MaxKinds)
+
+[trv2-section-manual-is-over]
+file = Assets/WarCore/Content/Data/Sections/TraversalSection.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2SectionTests.T2_02_BadDataIsRejectedEachWithItsOwnMessage
+note = shape manual read as over
+original:
+| else if (shapeText == "over") shape = TraversalShape.Over;
+replacement:
+| else if (shapeText == "over" || shapeText == "manual") shape = TraversalShape.Over;
+
+[trv2-section-rise-equal]
+file = Assets/WarCore/Content/Data/Sections/TraversalSection.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2SectionTests.T2_02_EqualBoundsAreAllowed
+note = riseMin == riseMax rejected
+original:
+| if (riseMin > riseMax) throw Bad
+replacement:
+| if (riseMin >= riseMax) throw Bad
+
+[trv2-section-fall-equal]
+file = Assets/WarCore/Content/Data/Sections/TraversalSection.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2SectionTests.T2_02_EqualBoundsAreAllowed
+note = fallMin == fallMax rejected
+original:
+| if (fallMin > fallMax) throw Bad
+replacement:
+| if (fallMin >= fallMax) throw Bad
+
+[trv2-section-fire-default]
+file = Assets/WarCore/Content/Data/Sections/TraversalSection.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2SectionTests.T2_01_TheFourPlaceholderKindsReadFieldByFieldInTableOrder
+note = fire defaults to true
+original:
+| bool fire = r.Has("fire") && r.Bool("fire");
+replacement:
+| bool fire = !r.Has("fire") || r.Bool("fire");
+
+[trv2-gate-to-layer]
+file = Assets/WarCore/Content/MapTools/MapGate.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2GateTests.T2_26_
+note = the report gives the start layer for both ends
+original:
+| nav.LayerOf(link.To), nav.XOf(link.To), nav.ZOf(link.To), link.Rise
+replacement:
+| nav.LayerOf(link.From), nav.XOf(link.To), nav.ZOf(link.To), link.Rise
+
+[trv2-gate-kind-name]
+file = Assets/WarCore/Content/MapTools/MapGate.cs
+filter = FullyQualifiedName~Trv2
+expect = WarCore.Tests.Trv2GateTests.T2_26_
+note = the report names the first kind always
+original:
+| lines.Add(new TraversalLinkLine(rules[link.Kind].Id,
+replacement:
+| lines.Add(new TraversalLinkLine(rules[0].Id,
