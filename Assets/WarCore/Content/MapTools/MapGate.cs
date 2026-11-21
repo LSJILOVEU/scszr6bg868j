@@ -45,7 +45,7 @@ namespace WarCore.Content.MapTools
             + ") rise " + Rise + " fall " + Fall + " gap " + (Gap == LinkDerive.NoGap ? "none" : Gap.ToString(CultureInfo.InvariantCulture)) + " ticks " + Ticks;
     }
 
-    public static class MapGate
+    public static partial class MapGate
     {
         // The same as InterimLocomotion.UnitFootprint; Content does not reference Interim.
         public const long FootprintRaw = SimFix.Scale / 4;
