@@ -12,7 +12,7 @@ namespace WarCore.Presentation
         internal static readonly IWorldOption Facing = new SwitchOption("world.facing");
         internal static readonly IWorldOption Motion = new SwitchOption("world.motion");
         internal static readonly IWorldOption Standing = new SwitchOption("world.standing");
-        // The internal preview of maps with floor plates (WorldRecipe.WithPlatesPreview).
+        // The switch that opens maps with floor plates (WorldRecipe.WithPlatesPreview): MapRecipe.From and the plate demos add it; a recipe built by hand declares it.
         internal static readonly IWorldOption PlatesPreview = new SwitchOption("world.plates-preview");
     }
 }

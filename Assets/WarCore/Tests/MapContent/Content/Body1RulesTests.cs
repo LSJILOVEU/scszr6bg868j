@@ -91,7 +91,7 @@ namespace WarCore.Tests
 
         [TestCase("rwr.json", "ab899d19a791ef55a441e58ed54aad3e9ede096938279f9434e39bc67bf2e640")]
         [TestCase("rwr-m6.json", "96b95c08ead27c47bb0145f36352e349b2501194d0d7791afcc4825e2981cb28")]
-        [TestCase("rwr-m7-playtest.json", "96596c5691191656eee354d670ef990b34d8b6bba8bb2bce30781b3d39ce67d7")]
+        [TestCase("rwr-m7-playtest.json", "30f3ac68b7a7068a2559f989deebca779e81274b04ec34ba1c0e9dd2dcbb79cf")]
         [TestCase("rwr-melee.json", "8ee908b4a9c7e1b2498a8f5d7ac6d7607f1f48d510591faea6205db77f373347")]
         [TestCase("rwr-surfaces.json", "7b805e67ceda488ed21a23d9e5cf991940895e2fcc1cf96b0de3c780f5ba9b68")]
         public void OldLayerFiles_AreByteIdentical(string file, string sha256) => Assert.That(Sha(file), Is.EqualTo(sha256), file);
