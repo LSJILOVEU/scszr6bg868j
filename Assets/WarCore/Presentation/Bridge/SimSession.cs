@@ -173,6 +173,7 @@ namespace WarCore.Presentation
         internal TerrainRules TerrainRules { get; }
         // The match the session runs (null without one); read by PointCheck.
         internal MatchPack MatchPack => matchPack;
+        internal ProjectileSystem ProjectilesForView => combat?.Projectiles; // PROJ-1, read by ViewProjectiles.Read only
         // TRV-7a: each point's entries and watch cells (by the match's point index), built once with the world; null without
         // plates or without a match. Read by tests and reports only: no match system reads it.
         internal PointEntryTable Entries { get; }
