@@ -88,13 +88,17 @@ namespace WarCore.Tests
         [Test]
         public void T2_02_ThirtyTwoKindsAreAllowed()
         {
-            Assert.That(LoadWith("[ " + string.Join(", ", Enumerable.Range(0, 32).Select(i => Kind("k" + i))) + " ]").SectionOrNull<TraversalRules>().Count, Is.EqualTo(32));
+            ContentPack pack = null;
+            Assert.DoesNotThrow(() => pack = LoadWith("[ " + string.Join(", ", Enumerable.Range(0, 32).Select(i => Kind("k" + i))) + " ]"));
+            Assert.That(pack.SectionOrNull<TraversalRules>().Count, Is.EqualTo(32));
         }
 
         [Test]
         public void T2_02_EqualBoundsAreAllowed()
         {
-            TraversalKind k = LoadWith("[ " + Kind("a", riseMin: "10", riseMax: "10", fallMin: "5", fallMax: "5") + " ]").SectionOrNull<TraversalRules>()[0];
+            ContentPack pack = null;
+            Assert.DoesNotThrow(() => pack = LoadWith("[ " + Kind("a", riseMin: "10", riseMax: "10", fallMin: "5", fallMax: "5") + " ]"));
+            TraversalKind k = pack.SectionOrNull<TraversalRules>()[0];
             Assert.That(new[] { k.RiseMin, k.RiseMax, k.FallMin, k.FallMax }, Is.EqualTo(new long[] { 10, 10, 5, 5 }));
         }
 
