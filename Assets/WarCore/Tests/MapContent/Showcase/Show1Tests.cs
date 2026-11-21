@@ -5,7 +5,7 @@ using WarCore.Presentation;
 
 namespace WarCore.Tests
 {
-    // SHOW-1: the showcase stages (Showcase), the projectile view data (SimSession.ReadProjectiles) and the HUD text
+    // SHOW-1: the showcase stages (Showcase), the projectile view data (ViewProjectiles.Read) and the HUD text
     // (ShowcaseHud). Each stage is played once with its script to tick 600 and the tests read what that run saw.
     public sealed class Show1Tests
     {
@@ -72,7 +72,7 @@ namespace WarCore.Tests
                 }
                 flying.Clear();
                 landed.Clear();
-                s.ReadProjectiles(flying, landed);
+                ViewProjectiles.Read(s, flying, landed);
                 seen.MaxInFlight = Math.Max(seen.MaxInFlight, flying.Count);
                 foreach (ViewProjectile p in flying)
                     if (p.Fresh && (p.X != p.FromX || p.Y != p.FromY || p.Z != p.FromZ)) seen.FreshMoved++;
@@ -236,11 +236,11 @@ namespace WarCore.Tests
                 s.StepOnce();
                 both.Clear();
                 landed.Clear();
-                s.ReadProjectiles(both, landed);
+                ViewProjectiles.Read(s, both, landed);
                 var onlyFlying = new List<ViewProjectile>();
-                s.ReadProjectiles(onlyFlying, null);
+                ViewProjectiles.Read(s, onlyFlying, null);
                 var onlyLanded = new List<ViewImpact>();
-                s.ReadProjectiles(null, onlyLanded);
+                ViewProjectiles.Read(s, null, onlyLanded);
                 Assert.That(onlyFlying.Count, Is.EqualTo(both.Count));
                 Assert.That(onlyLanded.Count, Is.EqualTo(landed.Count));
                 flights += both.Count;
@@ -248,6 +248,7 @@ namespace WarCore.Tests
             }
             Assert.That(flights, Is.GreaterThan(0));
             Assert.That(landings, Is.GreaterThan(0));
+            Assert.That(() => ViewProjectiles.Read(null, both, landed), Throws.ArgumentNullException);
         }
 
         [Test]
@@ -429,13 +430,24 @@ namespace WarCore.Tests
         }
 
         [Test]
+        public void TheFieldNeedsASurfaceAndAPack()
+        {
+            Assert.That(() => WarCore.Content.ShowcaseField.MapBytes(null), Throws.ArgumentException);
+            Assert.That(() => WarCore.Content.ShowcaseField.MapBytes(""), Throws.ArgumentException);
+            Assert.That(() => WarCore.Content.ShowcaseField.BuildMatch(null), Throws.ArgumentNullException);
+            ViewMap field = ViewMap.Parse(WarCore.Content.ShowcaseField.MapBytes("ancient.ground"));
+            Assert.That(new[] { field.Width, field.Depth, field.Walls.Length }, Is.EqualTo(new[] { 96, 64, 0 }));
+            Assert.That(field.SurfaceName(0), Is.EqualTo("ancient.ground"));
+        }
+
+        [Test]
         public void ASessionWithoutProjectileWeaponsReadsNothing()
         {
             SimSession s = Stage("melee").Start();
             var flying = new List<ViewProjectile> { default };
             var landed = new List<ViewImpact> { default };
             for (int t = 0; t < 30; t++) s.StepOnce();
-            s.ReadProjectiles(flying, landed);
+            ViewProjectiles.Read(s, flying, landed);
             Assert.That(flying.Count, Is.EqualTo(1), "the lists are appended to, never cleared");
             Assert.That(landed.Count, Is.EqualTo(1));
         }

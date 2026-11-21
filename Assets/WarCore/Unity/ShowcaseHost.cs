@@ -178,6 +178,10 @@ namespace WarCore.Unity
                     PlayerInput player = mapper.Map(scene.Camera, ix, iy, mouse.x, mouse.y, w, h, inWindow && aim.HasValue,
                         fire, keys.KeyDown(focused), aim);
                     liveInput.Apply(session, player, click);
+                }
+                catch (ArgumentException) { } // an aim the simulation refuses (off the map): this frame's input is dropped
+                try
+                {
                     if (session.Advance((long)(Time.unscaledDeltaTime * 1e6)) > 0)
                     {
                         scene.Stepped();

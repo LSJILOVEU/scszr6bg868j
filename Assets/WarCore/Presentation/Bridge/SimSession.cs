@@ -253,7 +253,8 @@ namespace WarCore.Presentation
 
         // PROJ-1 for the picture, read on demand and never hashed: the projectiles in flight at the committed tick and the ones
         // that ended on it, appended to the lists (either may be null). Nothing is added in a world without a projectile weapon.
-        public void ReadProjectiles(List<ViewProjectile> flying, List<ViewImpact> landed)
+        // Internal: the public way in is ViewProjectiles.Read, so that this class's public surface stays as recorded.
+        internal void ReadProjectiles(List<ViewProjectile> flying, List<ViewImpact> landed)
         {
             ProjectileSystem system = combat?.Projectiles;
             if (system == null) return;

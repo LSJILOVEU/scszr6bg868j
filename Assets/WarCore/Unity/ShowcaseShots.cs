@@ -120,7 +120,7 @@ namespace WarCore.Unity
             return flat.sqrMagnitude < 1e-6f ? from : from + flat.normalized * 0.9f;
         }
 
-        // The projectiles fired and landed on the frame's tick (SimSession.ReadProjectiles of that tick). A projectile has
+        // The projectiles fired and landed on the frame's tick (ViewProjectiles.Read of that tick). A projectile has
         // no direction on the tick it is fired, so its shooter turns (and the flash at the gun's end shows) one tick later.
         public void AddProjectiles(FrameView frame, ShowcaseUnits units, List<ViewProjectile> flying, List<ViewImpact> landed, ulong? player = null)
         {

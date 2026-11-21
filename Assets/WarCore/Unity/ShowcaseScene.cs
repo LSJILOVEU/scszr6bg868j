@@ -211,7 +211,7 @@ namespace WarCore.Unity
             Shots.Add(frame, Units, Session.Map.FloorY, key);
             flying.Clear();
             landed.Clear();
-            Session.ReadProjectiles(flying, landed);
+            ViewProjectiles.Read(Session, flying, landed);
             Shots.AddProjectiles(frame, Units, flying, landed, key);
             if (Shots.PlayerShots != shotsSeen) Jolt(0.12f);
             if (Shots.PlayerKills != killsSeen) KillLeft = KillSeconds;

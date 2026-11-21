@@ -4,7 +4,6 @@ using System.IO;
 using WarCore.Battle;
 using WarCore.Content;
 using WarCore.Content.MapTools;
-using WarCore.Sim;
 
 namespace WarCore.Presentation
 {
@@ -76,7 +75,6 @@ namespace WarCore.Presentation
         public const string HouseAiLayer = "rwr-ai-playtest", TerrainLayer = "rwr-ai-playtest", AncientLayer = "ancient-field";
         private const string LanesMap = "Assets/WarCore/Maps/lanes-playtest.map.json";
         private const string LanesPack = "\"pack\": \"rwr-m6\"";
-        private const int AncientWidth = 96, AncientDepth = 64;
         // The speed the map-file route gives a soldier whose unit type names none (MapRecipe).
         private const long SoldierSpeedMmPerSec = 6000;
 
@@ -110,7 +108,7 @@ namespace WarCore.Presentation
             {
                 "Second cartridge: swords, spears and shields, 60 a side and 30 in reserve, no guns",
                 "Player: a guard (sword and shield); AI raises its shield against swings",
-            }, AncientMap, AncientRecipe, AncientScript),
+            }, () => ShowcaseField.MapBytes("ancient.ground"), AncientRecipe, AncientScript),
         });
 
         // Not in the code base yet. The HUD lists these so nobody mistakes a gap for a bug.
@@ -178,7 +176,7 @@ namespace WarCore.Presentation
 
         // The assault demo house under the playtest AI rules (the setup of the ML-11b-1 battle tests) with HouseReserves more
         // soldiers a side waiting in reserve, team 1's first soldier as the player and respawn on. The description's own
-        // units keep their keys; the reserves take the keys after them.
+        // units keep their keys; the reserves take the keys after them and wait where their team's first soldier starts.
         private const int HouseReserves = 12, RespawnTicks = 150, RespawnGuardTicks = 90;
 
         private static WorldRecipe HouseRecipe()
@@ -189,8 +187,16 @@ namespace WarCore.Presentation
             MapSetup setup = baked.Setup;
             var units = new List<UnitSpawn>();
             ulong last = 0;
+            long[] homeX = new long[2], homeZ = new long[2];
+            bool[] home = new bool[2];
             foreach (MapSoldier s in setup.Soldiers)
             {
+                if ((s.Team == 1 || s.Team == 2) && !s.Reserve && !home[s.Team - 1])
+                {
+                    home[s.Team - 1] = true;
+                    homeX[s.Team - 1] = s.XMm;
+                    homeZ[s.Team - 1] = s.ZMm;
+                }
                 units.Add(new UnitSpawn(s.Key, 0, s.Squad, s.XMm, s.ZMm, SoldierSpeedMmPerSec, s.Team, pack.WeaponOfUnitType(s.Type), s.Reserve,
                     pack.MeleeOfUnitType(s.Type), layer: s.Layer));
                 if (s.Key > last) last = s.Key;
@@ -199,8 +205,7 @@ namespace WarCore.Presentation
             for (int i = 0; i < 2 * HouseReserves; i++)
             {
                 int team = i % 2 + 1;
-                SimVec3 at = bases[team - 1].Point;
-                units.Add(new UnitSpawn(++last, 0, team, at.X.Raw * 1000 / SimFix.Scale, at.Z.Raw * 1000 / SimFix.Scale, SoldierSpeedMmPerSec, team,
+                units.Add(new UnitSpawn(++last, 0, team, homeX[team - 1], homeZ[team - 1], SoldierSpeedMmPerSec, team,
                     pack.WeaponOfUnitType(team == 1 ? WarCore.Content.Rwr.RwrPack.SoldierTeam1 : WarCore.Content.Rwr.RwrPack.SoldierTeam2), true));
             }
             WorldRecipe recipe = new WorldRecipe(setup.Seed, MoverKind.InterimCrowd, units.ToArray(), Array.Empty<BridgeCommand>())
@@ -245,19 +250,8 @@ namespace WarCore.Presentation
             return DemoRecipes.WithRespawnGuard(DemoRecipes.WithRespawn(recipe, RespawnTicks), RespawnGuardTicks);
         }
 
-        // A flat 96 x 64 m field on the cartridge's one surface.
-        private static byte[] AncientMap()
-        {
-            var bits = new byte[AncientWidth * AncientDepth / 8];
-            for (int i = 0; i < bits.Length; i++) bits[i] = 255;
-            var max = new SimVec3(SimFix.FromInt(AncientWidth), SimFix.FromInt(4), SimFix.FromInt(AncientDepth));
-            return WcMapWriter.Write(new WcMap("showcase-ancient-field", "none", default, max, SimFix.FromInt(AncientWidth), default,
-                AncientWidth, AncientDepth, new[] { new WcMapLayer("walls", 1) }, Array.Empty<WcMapWall>(), bits,
-                new int[(AncientWidth + 1) * (AncientDepth + 1)], new[] { "ancient.ground" }, new byte[AncientWidth * AncientDepth]));
-        }
-
-        // 60 against 60 in six ranks (guards in front, then spears, then swords) with AncientReserves more a side in reserve,
-        // three points down the middle, facing and block AI on. The player is team 1's first guard; the cartridge has no
+        // 60 against 60 in six ranks (guards in front, then spears, then swords) with AncientReserves more a side in reserve
+        // on the showcase field (three points down the middle), facing and block AI on. The player is team 1's first guard; the cartridge has no
         // respawn, so a dead player's control passes to a living team mate.
         private const int AncientReserves = 30;
 
@@ -274,12 +268,8 @@ namespace WarCore.Presentation
                 units[i] = UnitSpawn.OfType((ulong)i + 1, pack, rank[column], 1, 1, 30000 - 1500 * column, 22000 + 2000 * row, reserve);
                 units[i + perTeam] = UnitSpawn.OfType((ulong)(i + perTeam) + 1, pack, rank[column], 2, 2, 66000 + 1500 * column, 22000 + 2000 * row, reserve);
             }
-            var points = new ControlPointDef[3];
-            for (int n = 0; n < points.Length; n++)
-                points[n] = new ControlPointDef(n + 1, SimVec3.Metres(48, 0, 12 + 20 * n), SimFix.FromInt(4));
-            var bases = new[] { new SpawnAnchor(1, SimVec3.Metres(4, 0, 32)), new SpawnAnchor(2, SimVec3.Metres(92, 0, 32)) };
             return new WorldRecipe(41, MoverKind.InterimCrowd, units, Array.Empty<BridgeCommand>()).WithCombat(pack.BuildCombat())
-                .WithMatch(pack.BuildMatch(points, bases)).WithCrowdPass(CrowdPassKind.TeamIdle).WithTerrainRules(pack).WithFacing().WithBlockAi()
+                .WithMatch(ShowcaseField.BuildMatch(pack)).WithCrowdPass(CrowdPassKind.TeamIdle).WithTerrainRules(pack).WithFacing().WithBlockAi()
                 .WithPlayer(1);
         }
 

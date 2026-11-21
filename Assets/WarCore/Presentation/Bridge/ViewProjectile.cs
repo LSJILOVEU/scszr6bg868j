@@ -20,6 +20,18 @@ namespace WarCore.Presentation
         }
     }
 
+    // The projectiles of a session for the picture: those in flight at its committed tick and those that ended on it, appended
+    // to the lists (either may be null). Read on demand, never hashed; nothing is added without a projectile weapon.
+    public static class ViewProjectiles
+    {
+        public static void Read(SimSession session, System.Collections.Generic.List<ViewProjectile> flying,
+            System.Collections.Generic.List<ViewImpact> landed)
+        {
+            if (session == null) throw new System.ArgumentNullException(nameof(session));
+            session.ReadProjectiles(flying, landed);
+        }
+    }
+
     // One projectile that ended on the committed tick: where it stopped, whose it was, and whether it stopped on a body.
     public readonly struct ViewImpact
     {

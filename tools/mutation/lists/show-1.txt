@@ -1,4 +1,5 @@
-# SHOW-1: the showcase stages (Showcase), the projectile view data (SimSession.ReadProjectiles) and the HUD text (ShowcaseHud).
+# SHOW-1: the showcase stages (Showcase, ShowcaseField), the projectile view data (SimSession.ReadProjectiles behind
+# ViewProjectiles.Read) and the HUD text (ShowcaseHud).
 # Filter: Show1Tests. Not listed: the null guards of ReadProjectiles and the recipe switches whose removal makes a stage
 # throw on start (a crash is not an assertion); the content layers (JSON has no assembly); Unity code (no Unity here).
 
@@ -381,3 +382,23 @@ original:
 | if (e.Alive && e.Band == me.Band) alive++;
 replacement:
 | if (e.Alive) alive++;
+
+[show1-field-points]
+file = Assets/WarCore/Content/ShowcaseField.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.AStageStartsWithItsForcesAndThePlayerInTeamOne
+note = the field has two points
+original:
+| var points = new ControlPointDef[3];
+replacement:
+| var points = new ControlPointDef[2];
+
+[show1-field-surface-required]
+file = Assets/WarCore/Content/ShowcaseField.cs
+filter = FullyQualifiedName~Show1Tests
+expect = WarCore.Tests.Show1Tests.TheFieldNeedsASurfaceAndAPack
+note = an empty surface id is accepted
+original:
+| if (string.IsNullOrEmpty(surface)) throw
+replacement:
+| if (surface == null) throw
