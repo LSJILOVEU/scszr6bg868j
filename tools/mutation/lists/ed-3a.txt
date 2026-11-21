@@ -259,10 +259,12 @@ replacement:
 file = Assets/WarCore/Content/MapTools/MapTerrainMath.cs
 filter = FullyQualifiedName~Ed3
 expect = WarCore.Tests.Ed3MathTests.CloserCompares
-note = plain cross-multiplication
+note = plain cross-multiplication (overflows)
 original:
+|             if (qa != qb) return qa < qb;
 |             return a.Num % a.Den * b.Den < b.Num % b.Den * a.Den;
 replacement:
+|             if (qa != qb && qa < 0) return qa < qb;
 |             return a.Num * b.Den < b.Num * a.Den;
 
 [ed3a-band-edge]
@@ -440,7 +442,7 @@ replacement:
 [ed3a-road-walk-check]
 file = Assets/WarCore/Content/MapTools/MapTerrain.cs
 filter = FullyQualifiedName~Ed3
-expect = WarCore.Tests.Ed3RoadTests.SteepRoadCell
+expect = WarCore.Tests.Ed3RoadTests.RoadCellSteeperThanWalkable
 note = walkable check skipped
 original:
 |                     if (!MapBrush.CellWithin(t[p], t[p + 1], t[p + cols], t[p + cols + 1], rules.MaxWalkableNum, rules.MaxWalkableDen))

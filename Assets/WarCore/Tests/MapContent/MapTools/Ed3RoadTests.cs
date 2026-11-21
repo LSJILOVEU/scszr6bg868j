@@ -117,13 +117,31 @@ namespace WarCore.Tests
         }
 
         [Test]
-        public void SteepRoadCellIsRefused()
+        public void HairpinWhoseLegsCannotMeetIsRefused()
         {
-            // A hairpin: two legs 3 m apart climbing in opposite directions cannot both be met.
+            // Two legs 3 m apart climbing in opposite directions: their heights differ by more than L per metre.
             MapDesc d = Map(60, 20, ceiling: 40 * G);
             string gen = Gen(60, 20, Join(Mesa(50, 5, 2, 1000000), Road("[[10, 5], [50, 5], [50, 8], [10, 8]]", 1)));
             ArgumentException e = Assert.Throws<ArgumentException>(() => Compose(d, gen));
-            Assert.That(e.Message, Does.Contain("road stamp 1"));
+            Assert.That(e.Message, Does.Contain("road stamp 1 does not fit with itself"));
+        }
+
+        [Test]
+        public void RoadCellSteeperThanWalkableIsRefused()
+        {
+            // Leg one flat at 0 along z = 5, leg two flat at H = 69 992 along z = 8: neighbours 1 m apart differ by H, which
+            // is legal (<= L) and fits the fixed points, but the cells between the legs are steeper than 3/4.
+            MapDesc d = Map(50, 20);
+            string gen = Gen(50, 20, Join(Mesa(10, 9, 1, 1068), Mesa(40, 9, 1, 1068), Road("[[10, 5], [40, 5], [40, 8], [10, 8]]", 1)));
+            Assert.That(Raw(1068), Is.EqualTo(69992));
+            ArgumentException e = Assert.Throws<ArgumentException>(() => Compose(d, gen));
+            Assert.That(e.Message, Does.Contain("road stamp 2 is steeper than the walkable slope"));
+            // The same legs 4 m apart (one plain row between them) are accepted.
+            MapDesc wide = Run(Map(50, 20), Gen(50, 20, Join(Mesa(10, 10, 1, 1068), Mesa(40, 10, 1, 1068),
+                Road("[[10, 5], [40, 5], [40, 9], [10, 9]]", 1))));
+            Assert.That(H(wide, 20, 9), Is.EqualTo(69992));
+            Assert.That(H(wide, 20, 6), Is.EqualTo(0));
+            AllLegal(wide);
         }
     }
 }
