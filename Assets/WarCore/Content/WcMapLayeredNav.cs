@@ -1,8 +1,13 @@
 using System;
+using System.Collections.Generic;
 using WarCore.Sim;
 
 namespace WarCore.Content
 {
+    // TRV-3: which link shapes a graph built with links carries.
+    [Flags]
+    public enum TraversalShapes : byte { None = 0, Edge = 1, Over = 2, All = Edge | Over }
+
     // ML-6: the walkable graph of a validated .wcmap with plates under one pack's terrain rules. The ground is
     // TerrainDerivation's, under the same rules; a plate cell is walkable when its baked walkable bit is set, its surface is
     // passable and it is within the pack's walkable slope. A plate without a surface (255) counts as the default surface of
@@ -53,6 +58,24 @@ namespace WarCore.Content
                 slabs[k] = new PlateSlab(p.Id, p.X, p.Z, p.Width, p.Depth, points, p.ThickRaw, solid);
             }
             return new LayeredNav(ground, map.Min.Y.Raw, slabs, costs, speeds);
+        }
+
+        // TRV-3: as Build(map, rules, packId), plus the links LinkDerive measures under the traversal rules (outside the zones),
+        // keeping only the chosen shapes. Null traversal rules: exactly Build(map, rules, packId). Otherwise the graph always
+        // has a link table, empty when nothing was measured or chosen. Null when the map has no plates.
+        public static LayeredNav Build(WcMap map, TerrainRules rules, string packId, TraversalRules traversal,
+            IReadOnlyList<NoTraverseZone> zones, TraversalShapes shapes = TraversalShapes.All)
+        {
+            LayeredNav nav = Build(map, rules, packId);
+            if (traversal == null || nav == null) return nav;
+            TraversalLink[] measured = LinkDerive.Derive(map, nav, traversal, zones);
+            var links = new List<NavLink>(measured.Length);
+            foreach (TraversalLink l in measured)
+            {
+                if ((shapes & (l.Shape == TraversalShape.Edge ? TraversalShapes.Edge : TraversalShapes.Over)) == 0) continue;
+                links.Add(new NavLink(l.From, l.To, l.Shape == TraversalShape.Edge ? 1 : 2, traversal[l.Kind].PathCost, l.Kind, l.Ticks, l.Cross, l.Gap));
+            }
+            return nav.WithLinks(links);
         }
     }
 }
