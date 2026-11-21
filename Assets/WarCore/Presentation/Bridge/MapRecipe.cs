@@ -29,7 +29,10 @@ namespace WarCore.Presentation
             WorldRecipe recipe = new WorldRecipe(setup.Seed, MoverKind.InterimCrowd, units, Array.Empty<BridgeCommand>())
                 .WithCombat(pack.BuildCombat());
             if (setup.ControlPoints.Length != 0) recipe = recipe.WithMatch(pack.BuildMatch(setup.ControlPoints, setup.Bases));
-            if (WcMapReader.Read(result.WcMapBytes).HasTerrain) recipe = recipe.WithTerrainRules(pack);
+            WcMap map = WcMapReader.Read(result.WcMapBytes);
+            if (map.HasTerrain) recipe = recipe.WithTerrainRules(pack);
+            // Floor plates in a map file are supported: the file route opens them; a recipe built by hand still declares them.
+            if (map.Plates.Count > 0) recipe = recipe.WithPlatesPreview();
             if (setup.CrowdPass == "teamIdle") recipe = recipe.WithCrowdPass(CrowdPassKind.TeamIdle);
             return recipe;
         }
