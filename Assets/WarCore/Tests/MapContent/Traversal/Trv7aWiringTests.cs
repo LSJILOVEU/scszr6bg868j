@@ -168,8 +168,8 @@ namespace WarCore.Tests
                             Assert.That(nav.IsPassable(c.Node), Is.True);
                             Assert.That(c.Layer, Is.EqualTo(nav.LayerOf(c.Node)));
                             Assert.That(c.Point, Is.EqualTo(EntryTable.Centre(nav, c.Node)));
-                            Assert.That(reach.CostFrom(c.Node), Is.GreaterThanOrEqualTo(0L).And.LessThan(e.OuterCost));
-                            Assert.That(e.InnerCost, Is.GreaterThanOrEqualTo(0L));
+                            Assert.That(reach.CostFrom(c.Node), Is.InRange(0L, e.OuterCost - 1));
+                            Assert.That(e.InnerCost, Is.InRange(0L, e.OuterCost - 1));
                             cells++;
                         }
                     }
