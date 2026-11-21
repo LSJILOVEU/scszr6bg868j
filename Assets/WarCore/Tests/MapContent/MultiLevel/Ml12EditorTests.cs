@@ -82,6 +82,12 @@ namespace WarCore.Tests
             Assert.That(Assert.Throws<ArgumentException>(() => MapBuildSpec.Read(unknown)).Message, Does.Contain("unknown key"));
             Assert.Throws<ArgumentException>(() => two.Document.Buildings(unknown));
             Assert.Throws<ArgumentException>(() => MapBuildSpec.Read(json.Replace("\"version\": 1", "\"version\": 2")));
+            // A door with no first frame: the file's range check and the building's own check both stop it.
+            Assert.That(json, Does.Contain("\"doorAt\": 3,"));
+            Assert.That(Assert.Throws<ArgumentException>(() => MapBuildSpec.Read(json.Replace("\"doorAt\": 3,", "\"doorAt\": 0,"))).Message, Does.Contain("doorAt"));
+            Assert.That(Assert.Throws<ArgumentException>(() => new MapBuilding(new MapXZ(2, 2), new MapXZ(12, 10), 2, 3 * M, M / 2, 's', 0, 2, true,
+                new MapXZ(4, 8), 6)).Message, Does.Contain("first frame"));
+            Assert.DoesNotThrow(() => new MapBuilding(new MapXZ(2, 2), new MapXZ(12, 10), 2, 3 * M, M / 2, 's', 1, 2, true, new MapXZ(4, 8), 6));
         }
 
         // Without the .build.json floors cannot change; a new building starts a new file.
