@@ -56,7 +56,7 @@ filter = FullyQualifiedName~WarCore.Tests.A3a
 expect = WarCore.Tests.A3aSearchTests.GoesStandsAndGivesUp
 note = the arrival test is always false
 original:
-|             if (SimpleAiSystem.Arrived(here, lastKnown)) {
+|             if (layer == lastLayer && SimpleAiSystem.Arrived(here, lastKnown)) {
 replacement:
 |             if (false) {
 
@@ -66,7 +66,7 @@ filter = FullyQualifiedName~WarCore.Tests.A3a
 expect = WarCore.Tests.A3aSearchTests.GoesStandsAndGivesUp
 note = the walk to P is ordered again on every thinking tick
 original:
-|                         if (!moving || target.X.Raw != lastKnown.X.Raw || target.Z.Raw != lastKnown.Z.Raw)
+|                         if (!moving || orderLayer != lastLayer || target.X.Raw != lastKnown.X.Raw || target.Z.Raw != lastKnown.Z.Raw)
 replacement:
 |                         if (true)
 

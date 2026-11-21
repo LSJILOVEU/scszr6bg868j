@@ -1,0 +1,184 @@
+# SCALE-1: world size relations (Tests/MapContent/Scale/WorldScaleTests.cs). The production code is not changed; each
+# entry moves one real constant and the named relation test must fail on an assertion. Entries 01-14 are the planned list,
+# 15-18 cover the relations W1, W2, W5 and W15 that the planned list left out.
+
+[scale-01-clearance]
+file = Assets/WarCore/Content/WallSpan.cs
+filter = FullyQualifiedName~WarCore.Tests.WorldScaleTests
+expect = WarCore.Tests.WorldScaleTests.W04_
+expect = WarCore.Tests.WorldScaleTests.W06_
+note = headroom 1.5 m is below the 1.75 m shipped body
+original:
+|         public const long ClearanceRaw = 2 * SimFix.Scale;
+replacement:
+|         public const long ClearanceRaw = 3 * SimFix.Scale / 2;
+
+[scale-02-wall-probe]
+file = Assets/WarCore/Content/WallSpan.cs
+filter = FullyQualifiedName~WarCore.Tests.WorldScaleTests
+expect = WarCore.Tests.WorldScaleTests.W03_
+note = wall probe radius 0.5 m differs from the soldier radius
+original:
+|         public const long BelowRaw = SimFix.Scale / 4;
+replacement:
+|         public const long BelowRaw = SimFix.Scale / 2;
+
+[scale-03-unit-radius]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~WarCore.Tests.WorldScaleTests
+expect = WarCore.Tests.WorldScaleTests.W03_
+note = content soldier radius 0.5 m differs from the colliders
+original:
+|         internal const long UnitRadiusRaw = SimFix.Scale / 4;
+replacement:
+|         internal const long UnitRadiusRaw = SimFix.Scale / 2;
+
+[scale-04-start-collider]
+file = Assets/WarCore/Presentation/Bridge/Features/MovementFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.WorldScaleTests
+expect = WarCore.Tests.WorldScaleTests.W03_
+note = collider radius of a unit placed at the start is 0.5 m
+original:
+| new Collider(SimFix.Ratio(1, 4), WorldAssembly.UnitHeight(a.Recipe.Combat))
+replacement:
+| new Collider(SimFix.Ratio(1, 2), WorldAssembly.UnitHeight(a.Recipe.Combat))
+
+[scale-05-deploy-collider]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.WorldScaleTests
+expect = WarCore.Tests.WorldScaleTests.W03_
+note = collider radius of a deployed reinforcement is 0.5 m
+original:
+|         private static readonly SimFix Radius = SimFix.Ratio(1, 4);
+replacement:
+|         private static readonly SimFix Radius = SimFix.Ratio(1, 2);
+
+[scale-06-sill]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~WarCore.Tests.WorldScaleTests
+expect = WarCore.Tests.WorldScaleTests.W06_
+note = default sill 1.3 m is above min(eye, muzzle) - r = 1.25 m
+original:
+|         public const long DefaultSillRaw = 58982;
+replacement:
+|         public const long DefaultSillRaw = 85196;
+
+[scale-07-opening]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~WarCore.Tests.WorldScaleTests
+expect = WarCore.Tests.WorldScaleTests.W06_
+note = default opening top 1.7 m is below max(eye, muzzle) + r = 1.75 m
+original:
+|         public const long DefaultOpeningRaw = 2 * SimFix.Scale;
+replacement:
+|         public const long DefaultOpeningRaw = 111412;
+
+[scale-08-min-thick]
+file = Assets/WarCore/Content/WcMapPlate.cs
+filter = FullyQualifiedName~WarCore.Tests.WorldScaleTests
+expect = WarCore.Tests.WorldScaleTests.W07_
+note = thinnest plate 1.5 m: the 3 m demo storeys are shorter than 2 + 1.5 m
+original:
+|         public const long MinThickRaw = SimFix.Scale / 2;
+replacement:
+|         public const long MinThickRaw = SimFix.Scale * 3 / 2;
+
+[scale-09-seam]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~WarCore.Tests.WorldScaleTests
+expect = WarCore.Tests.WorldScaleTests.W09_
+note = seam tolerance 0.6 m instead of 0.3 m
+original:
+|         public const long StepRaw = 19660;
+replacement:
+|         public const long StepRaw = 39321;
+
+[scale-10-terrain-step]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~WarCore.Tests.WorldScaleTests
+expect = WarCore.Tests.WorldScaleTests.W10_
+note = terrain step cap 0.1 m is below the shipped 6 m/s step
+original:
+|         public const long MaxTerrainStepRaw = SimFix.Scale / 4;
+replacement:
+|         public const long MaxTerrainStepRaw = SimFix.Scale / 10;
+
+[scale-11-effective-step]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~WarCore.Tests.WorldScaleTests
+expect = WarCore.Tests.WorldScaleTests.W11_
+note = scaled step cap 0.2 m is below the fastest unit on the fastest surface
+original:
+|         public const long MaxEffectiveStepRaw = SimFix.Scale / 2;
+replacement:
+|         public const long MaxEffectiveStepRaw = SimFix.Scale / 5;
+
+[scale-12-recipe-speed]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.WorldScaleTests
+expect = WarCore.Tests.WorldScaleTests.W10_
+note = recipe soldier speed 9000 mm/s is above the terrain step cap
+original:
+|         private const long SpeedMmPerSec = 6000;
+replacement:
+|         private const long SpeedMmPerSec = 9000;
+
+[scale-13-max-side]
+file = Assets/WarCore/Sim/HeightField.cs
+filter = FullyQualifiedName~WarCore.Tests.WorldScaleTests
+expect = WarCore.Tests.WorldScaleTests.W12_
+note = largest map side 32768 m is beyond the world limit
+original:
+|         public const int MaxSide = 512;
+replacement:
+|         public const int MaxSide = 32768;
+
+[scale-14-plate-slope]
+file = Assets/WarCore/Content/MapTools/MapGate.cs
+filter = FullyQualifiedName~WarCore.Tests.WorldScaleTests
+expect = WarCore.Tests.WorldScaleTests.W08_
+note = gate plate slope 1/2 is below the 3/4 demo stairs
+original:
+|         internal const int PlateSlopeNum = 5, PlateSlopeDen = 3;
+replacement:
+|         internal const int PlateSlopeNum = 1, PlateSlopeDen = 2;
+
+[scale-15-tick-rate]
+file = Assets/WarCore/Sim/Sim.cs
+filter = FullyQualifiedName~WarCore.Tests.WorldScaleTests
+expect = WarCore.Tests.WorldScaleTests.W02_
+note = 60 steps a second
+original:
+|         public const int TickRate = 30;
+replacement:
+|         public const int TickRate = 60;
+
+[scale-16-cell-size]
+file = Assets/WarCore/Content/WcMap.cs
+filter = FullyQualifiedName~WarCore.Tests.WorldScaleTests
+expect = WarCore.Tests.WorldScaleTests.W01_
+note = map cell 2 m
+original:
+|         public SimFix CellSize => SimFix.FromInt(1);
+replacement:
+|         public SimFix CellSize => SimFix.FromInt(2);
+
+[scale-17-door-lintel]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~WarCore.Tests.WorldScaleTests
+expect = WarCore.Tests.WorldScaleTests.W05_
+note = door lintel 2 raw above the headroom
+original:
+|             long bottom = ground + WallSpan.ClearanceRaw;
+replacement:
+|             long bottom = ground + WallSpan.ClearanceRaw + 2;
+
+[scale-18-spatial-cell]
+file = Assets/WarCore/Presentation/Bridge/WorldBuilder.cs
+filter = FullyQualifiedName~WarCore.Tests.WorldScaleTests
+expect = WarCore.Tests.WorldScaleTests.W15_
+note = spatial index cell 0.4 m is below a soldier diameter
+original:
+| sim.ConfigureSpatial(assembly.Positions, assembly.Colliders, SimFix.FromInt(2),
+replacement:
+| sim.ConfigureSpatial(assembly.Positions, assembly.Colliders, SimFix.Ratio(2, 5),

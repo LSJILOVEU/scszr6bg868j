@@ -11,6 +11,9 @@ namespace WarCore.Content
     // and one row here.
     //   * Merge order and the order of the "allowed" list in the unknown-key error are the table order.
     //   * Build order is (BuildStage, table order): that is how surfaces merge before the slope rule yet build after it.
+    //   * Unlisted sections (TRV-2: traversal, still off in every shipped layer) come after the listed ones. Their keys are
+    //     accepted, merged and built like the others but left out of the "allowed" list, so that recorded message stays the
+    //     same until the section is switched on in a shipped layer.
     internal sealed class SectionTable
     {
         // Weapons come before unit types and combat before match: later sections read what earlier ones built.
@@ -18,30 +21,40 @@ namespace WarCore.Content
         {
             new WeaponsSection(), new MeleeSection(), new BlockSection(), new UnitTypesSection(), new CombatSection(), new MatchSection(),
             new SurfacesSection(), new SlopeRuleSection(), new AiSection(), new RulesSection(),
-        });
+        }, new IContentSection[] { new TraversalSection() });
 
-        private readonly IContentSection[] sections, buildOrder;
+        private readonly IContentSection[] sections, all, buildOrder;
         private readonly string[] allowedKeys;
+        private readonly string listedKeys;
 
-        internal SectionTable(IContentSection[] sections)
+        internal SectionTable(IContentSection[] sections, IContentSection[] unlisted = null)
         {
             this.sections = sections;
-            buildOrder = (IContentSection[])sections.Clone();
+            unlisted = unlisted ?? Array.Empty<IContentSection>();
+            all = new IContentSection[sections.Length + unlisted.Length];
+            sections.CopyTo(all, 0);
+            unlisted.CopyTo(all, sections.Length);
+            buildOrder = (IContentSection[])all.Clone();
             // A stable sort: Array.Sort is not, so order by stage and then by position in the table.
             var position = new Dictionary<IContentSection, int>();
-            for (int i = 0; i < sections.Length; i++) position[sections[i]] = i;
+            for (int i = 0; i < all.Length; i++) position[all[i]] = i;
             Array.Sort(buildOrder, (a, b) => a.BuildStage != b.BuildStage ? a.BuildStage.CompareTo(b.BuildStage) : position[a].CompareTo(position[b]));
-            allowedKeys = new string[sections.Length + 2];
+            allowedKeys = new string[all.Length + 2];
             allowedKeys[0] = "id"; allowedKeys[1] = "extends";
-            for (int i = 0; i < sections.Length; i++) allowedKeys[i + 2] = sections[i].Key;
+            for (int i = 0; i < all.Length; i++) allowedKeys[i + 2] = all[i].Key;
+            listedKeys = string.Join(", ", allowedKeys, 0, sections.Length + 2);
         }
 
+        // The listed sections, in table order (a test that adds a row builds its table from these).
         internal IReadOnlyList<IContentSection> Sections => sections;
+
+        // Every section the loader merges, listed then unlisted.
+        internal IReadOnlyList<IContentSection> All => all;
 
         // "id" and "extends" belong to the loader; every other key is a section.
         internal bool IsAllowedKey(string key) => Array.IndexOf(allowedKeys, key) >= 0;
 
-        internal string AllowedKeys => string.Join(", ", allowedKeys);
+        internal string AllowedKeys => listedKeys;
 
         internal ContentPack Build(string pack, MergedLayers merged)
         {

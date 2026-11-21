@@ -1,0 +1,703 @@
+# BASE-0 (WP-24): stat line, action gate, input action bits. Filter: the Base0 tests.
+# Not listed: StatReceipt property getters (each asserted field by field in V12); Power and FactorAt are covered by every value test.
+
+[sl-factor-low]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V11_Rejections
+note = a factor of 0 passes
+original:
+|                 if (factors[i] < MinPermille || factors[i] > MaxPermille)
+replacement:
+|                 if (factors[i] < 0 || factors[i] > MaxPermille)
+
+[sl-factor-high-ge]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V3_UpperBounds
+expect = WarCore.Tests.Base0StatLineTests.V11_Rejections
+note = 4000 is refused
+original:
+|                 if (factors[i] < MinPermille || factors[i] > MaxPermille)
+replacement:
+|                 if (factors[i] < MinPermille || factors[i] >= MaxPermille)
+
+[sl-factor-high-4001]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V11_Rejections
+note = 4001 passes
+original:
+|                 if (factors[i] < MinPermille || factors[i] > MaxPermille)
+replacement:
+|                 if (factors[i] < MinPermille || factors[i] > MaxPermille + 1)
+
+[sl-base-ge]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V3_UpperBounds
+expect = WarCore.Tests.Base0StatLineTests.V11_Rejections
+note = the largest base is refused
+original:
+|             if (baseValue > MaxBase || baseValue < -MaxBase)
+replacement:
+|             if (baseValue >= MaxBase || baseValue < -MaxBase)
+
+[sl-base-negative]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V11_Rejections
+note = -2^31 passes
+original:
+|             if (baseValue > MaxBase || baseValue < -MaxBase)
+replacement:
+|             if (baseValue > MaxBase || baseValue < -MaxBase - 1)
+
+[sl-scale-count-8]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V11_Rejections
+note = Scale takes eight factors
+original:
+|             if (factors.Length > MaxFactors)
+replacement:
+|             if (factors.Length > MaxFactors + 1)
+
+[sl-scale-count-ge]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V3_UpperBounds
+expect = WarCore.Tests.Base0StatLineTests.V3b
+expect = WarCore.Tests.Base0StatLineTests.V3c
+note = Scale refuses seven factors
+original:
+|             if (factors.Length > MaxFactors)
+replacement:
+|             if (factors.Length >= MaxFactors)
+
+[sl-apply-count]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V11_Rejections
+note = four gears and four drags pass
+original:
+|             if (gears.Length + drags.Length > MaxFactors)
+replacement:
+|             if (gears.Length + drags.Length > MaxFactors + 1)
+
+[sl-apply-count-ge]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V11_Rejections
+expect = WarCore.Tests.Base0StatLineTests.V3_UpperBounds
+expect = WarCore.Tests.Base0StatLineTests.V9b
+note = seven factors in Apply are refused
+original:
+|             if (gears.Length + drags.Length > MaxFactors)
+replacement:
+|             if (gears.Length + drags.Length >= MaxFactors)
+
+[sl-drag-check]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V11_Rejections
+note = drags are not range-checked
+original:
+|             CheckFactors(drags, nameof(drags));
+replacement:
+
+[sl-floor-bound]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V11_Rejections
+note = a floor of 4001 passes
+original:
+|             CheckBound(floor, nameof(dragFloorPermille));
+replacement:
+
+[sl-ceil-bound]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V11_Rejections
+note = a ceiling of 4001 passes
+original:
+|             CheckBound(ceil, nameof(dragCeilPermille));
+replacement:
+
+[sl-floor-above-ceil]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V11_Rejections
+note = a floor above the ceiling passes
+original:
+|             if (floor != 0 && ceil != 0 && floor > ceil)
+replacement:
+|             if (floor != 0 && ceil != 0 && floor > ceil + 1000)
+
+[sl-a-three]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V3_UpperBounds
+expect = WarCore.Tests.Base0StatLineTests.V3b
+expect = WarCore.Tests.Base0StatLineTests.V3c
+expect = WarCore.Tests.Base0StatLineTests.V12_Random
+note = three factors go into the 64-bit head and overflow
+original:
+|                 if (i < 2)
+replacement:
+|                 if (i < 3)
+
+[sl-seventh-division-missing]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V3_UpperBounds
+expect = WarCore.Tests.Base0StatLineTests.V3b
+expect = WarCore.Tests.Base0StatLineTests.V3c
+expect = WarCore.Tests.Base0StatLineTests.V12_Random
+note = seven factors divide by 1e18 only
+original:
+|                 : wide.DivideToUInt64(Power(MaxFactors - 1)) / One;
+replacement:
+|                 : wide.DivideToUInt64(Power(MaxFactors - 1));
+
+[sl-seventh-division-100]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V3_UpperBounds
+expect = WarCore.Tests.Base0StatLineTests.V3b
+expect = WarCore.Tests.Base0StatLineTests.V3c
+expect = WarCore.Tests.Base0StatLineTests.V12_Random
+note = the second division is by 100
+original:
+|                 : wide.DivideToUInt64(Power(MaxFactors - 1)) / One;
+replacement:
+|                 : wide.DivideToUInt64(Power(MaxFactors - 1)) / 100;
+
+[sl-divisor-short]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V2_OneFactor
+expect = WarCore.Tests.Base0StatLineTests.V4
+note = divides by 1000^(n-1)
+original:
+|                 ? wide.DivideToUInt64(Power(count))
+replacement:
+|                 ? wide.DivideToUInt64(Power(count - 1))
+
+[sl-divide-each]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V4
+expect = WarCore.Tests.Base0StatLineTests.V3c
+expect = WarCore.Tests.Base0StatLineTests.V12_Random
+note = divides after every factor (no single division)
+original:
+|                 if (i < 2)
+|                     a *= factor;
+|                 else
+|                     b *= factor;
+|             }
+|
+|             FixedUInt128 wide = FixedUInt128.Multiply(a, b);
+|             ulong quotient = count < MaxFactors
+|                 ? wide.DivideToUInt64(Power(count))
+|                 : wide.DivideToUInt64(Power(MaxFactors - 1)) / One;
+replacement:
+|                 a = a * factor / One;
+|             }
+|
+|             ulong quotient = a + 0 * b;
+
+[sl-round-up]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V2_OneFactor
+expect = WarCore.Tests.Base0StatLineTests.V4
+expect = WarCore.Tests.Base0StatLineTests.V6
+note = rounds the magnitude up
+original:
+|                 ? wide.DivideToUInt64(Power(count))
+replacement:
+|                 ? (wide + new FixedUInt128(Power(count) - 1)).DivideToUInt64(Power(count))
+
+[sl-round-half]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V2_OneFactor
+note = rounds the magnitude half up
+original:
+|                 ? wide.DivideToUInt64(Power(count))
+replacement:
+|                 ? (wide + new FixedUInt128(Power(count) / 2)).DivideToUInt64(Power(count))
+
+[sl-negative-down]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V6
+note = rounds negative results down instead of toward zero
+original:
+|             return negative ? -magnitude : magnitude;
+replacement:
+|             return negative ? -magnitude - 1 : magnitude;
+
+[sl-floor-power]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V7_Floor
+expect = WarCore.Tests.Base0StatLineTests.V10
+expect = WarCore.Tests.Base0StatLineTests.V9b
+expect = WarCore.Tests.Base0StatLineTests.V12_Random
+note = the floor side is floor * 1000^d
+original:
+|                 ulong scale = Power(drags.Length - 1);
+replacement:
+|                 ulong scale = Power(drags.Length);
+
+[sl-floor-ulong]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V9b
+expect = WarCore.Tests.Base0StatLineTests.V12_Random
+note = the floor side is a 64-bit product that wraps
+original:
+|                 if (floor != 0 && product.CompareTo(FixedUInt128.Multiply((ulong)floor, scale)) < 0)
+replacement:
+|                if (floor != 0 && product.CompareTo(new FixedUInt128(unchecked((ulong)floor * scale))) < 0)
+
+[sl-floor-flip]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V7_Floor
+expect = WarCore.Tests.Base0StatLineTests.V10
+expect = WarCore.Tests.Base0StatLineTests.V12_Random
+note = the floor test is reversed
+original:
+|                 if (floor != 0 && product.CompareTo(FixedUInt128.Multiply((ulong)floor, scale)) < 0)
+replacement:
+|                 if (floor != 0 && product.CompareTo(FixedUInt128.Multiply((ulong)floor, scale)) > 0)
+
+[sl-floor-no-power]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V7_Floor
+expect = WarCore.Tests.Base0StatLineTests.V10
+expect = WarCore.Tests.Base0StatLineTests.V12_Random
+note = the drag product is compared with the bare floor
+original:
+|                 if (floor != 0 && product.CompareTo(FixedUInt128.Multiply((ulong)floor, scale)) < 0)
+replacement:
+|                 if (floor != 0 && product.CompareTo(new FixedUInt128((ulong)floor)) < 0)
+
+[sl-floor-le]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V10
+note = a drag product exactly at the floor counts as clamped
+original:
+|                 if (floor != 0 && product.CompareTo(FixedUInt128.Multiply((ulong)floor, scale)) < 0)
+replacement:
+|                 if (floor != 0 && product.CompareTo(FixedUInt128.Multiply((ulong)floor, scale)) <= 0)
+
+[sl-ceil-flip]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V8_Ceiling
+expect = WarCore.Tests.Base0StatLineTests.V10
+expect = WarCore.Tests.Base0StatLineTests.V12_Random
+note = the ceiling test is reversed
+original:
+|                 else if (ceil != 0 && product.CompareTo(FixedUInt128.Multiply((ulong)ceil, scale)) > 0)
+replacement:
+|                 else if (ceil != 0 && product.CompareTo(FixedUInt128.Multiply((ulong)ceil, scale)) < 0)
+
+[sl-ceil-no-power]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V8_Ceiling
+expect = WarCore.Tests.Base0StatLineTests.V12_Random
+note = the drag product is compared with the bare ceiling
+original:
+|                 else if (ceil != 0 && product.CompareTo(FixedUInt128.Multiply((ulong)ceil, scale)) > 0)
+replacement:
+|                 else if (ceil != 0 && product.CompareTo(new FixedUInt128((ulong)ceil)) > 0)
+
+[sl-ceil-ge]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V10
+note = a drag product exactly at the ceiling counts as clamped
+original:
+|                 else if (ceil != 0 && product.CompareTo(FixedUInt128.Multiply((ulong)ceil, scale)) > 0)
+replacement:
+|                 else if (ceil != 0 && product.CompareTo(FixedUInt128.Multiply((ulong)ceil, scale)) >= 0)
+
+[sl-clamp-without-drags]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V1_NoFactors
+note = no drags are clamped too
+original:
+|             if (drags.Length != 0 && (floor != 0 || ceil != 0))
+replacement:
+|             if (floor != 0 || ceil != 0)
+
+[sl-clamp-gears]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V9_Gears
+expect = WarCore.Tests.Base0StatLineTests.V12_Random
+note = a clamp replaces the gears too
+original:
+|                 : Multiply(baseValue, gears, ReadOnlySpan<int>.Empty, clampPermille);
+replacement:
+|                 : Multiply(baseValue, ReadOnlySpan<int>.Empty, ReadOnlySpan<int>.Empty, clampPermille);
+
+[sl-clamp-count]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V7_Floor
+expect = WarCore.Tests.Base0StatLineTests.V9_Gears
+expect = WarCore.Tests.Base0StatLineTests.V12_Random
+note = the stand-in factor is not counted in the divisor
+original:
+|                 ? wide.DivideToUInt64(Power(count))
+replacement:
+|                 ? wide.DivideToUInt64(Power(first.Length + second.Length))
+
+[sl-product-head]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V9b
+expect = WarCore.Tests.Base0StatLineTests.V12_Random
+note = drags after the fourth are left out of the clamp test
+original:
+|                     tail *= (ulong)factors[i];
+replacement:
+|                     tail *= 1;
+
+[sl-explain-apart]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V12
+note = Explain reports another calculation
+original:
+|             return new StatReceipt(baseValue, gears.ToArray(), drags.ToArray(), dragFloorPermille, dragCeilPermille, clamp, clampPermille, result);
+replacement:
+|             return new StatReceipt(baseValue, gears.ToArray(), drags.ToArray(), dragFloorPermille, dragCeilPermille, clamp, clampPermille, Scale(baseValue, gears));
+
+[sl-explain-clamp]
+file = Assets/WarCore/Sim/StatLine.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0StatLineTests.V10
+expect = WarCore.Tests.Base0StatLineTests.V12
+note = the receipt does not say which bound applied
+original:
+|                     clamp = StatClamp.Ceil;
+replacement:
+|                     clamp = StatClamp.Floor;
+
+[ag-union-last]
+file = Assets/WarCore/Sim/ActionGate.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0ActionGateTests.V15
+note = Denied keeps only the last limit
+original:
+|                 denied |= limits[i].Denied(unit);
+replacement:
+|                 denied = limits[i].Denied(unit);
+
+[ag-union-and]
+file = Assets/WarCore/Sim/ActionGate.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0ActionGateTests.V15
+note = Denied is the intersection
+original:
+|                 denied |= limits[i].Denied(unit);
+replacement:
+|                 denied &= limits[i].Denied(unit);
+
+[ag-allows-any]
+file = Assets/WarCore/Sim/ActionGate.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0ActionGateTests.V15_DeniedIsTheUnion
+note = Allows is true when any bit is allowed
+original:
+|             return (Denied(unit) & action) == UnitAction.None;
+replacement:
+|             return (Denied(unit) & action) != action;
+
+[ag-duplicate]
+file = Assets/WarCore/Sim/ActionGate.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0ActionGateTests.V16
+note = a limit can be added twice
+original:
+|                     throw new ArgumentException("This limit is already registered.", nameof(limit));
+replacement:
+|                     break;
+
+[ag-null]
+file = Assets/WarCore/Sim/ActionGate.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0ActionGateTests.V16
+note = a null limit is accepted
+original:
+|                 throw new ArgumentNullException(nameof(limit));
+replacement:
+|                 return;
+
+[ag-none]
+file = Assets/WarCore/Sim/ActionGate.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0ActionGateTests.V16
+note = Allows(None) is accepted
+original:
+|                 throw new ArgumentOutOfRangeException(nameof(action));
+replacement:
+|                 return true;
+
+[ag-value]
+file = Assets/WarCore/Sim/ActionGate.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0ActionGateTests.V17
+note = an action value moves
+original:
+|         Capture = 1024
+replacement:
+|         Capture = 2048
+
+[ia-mask]
+file = Assets/WarCore/Sim/InputActions.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0InputActionsTests.V18
+note = bit 7 is valid
+original:
+|         public const uint ValidMask = 0x7F;
+replacement:
+|         public const uint ValidMask = 0xFF;
+
+[ia-stance-9]
+file = Assets/WarCore/Sim/InputActions.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0InputActionsTests.V18
+note = stance bits 9 are valid
+original:
+| (actions & StanceMask) <= MaxStanceLevel + 1;
+replacement:
+| (actions & StanceMask) <= MaxStanceLevel + 2;
+
+[ia-stance-7]
+file = Assets/WarCore/Sim/InputActions.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0InputActionsTests.V18
+note = stance bits 8 are invalid
+original:
+| (actions & StanceMask) <= MaxStanceLevel + 1;
+replacement:
+| (actions & StanceMask) <= MaxStanceLevel;
+
+[ia-request]
+file = Assets/WarCore/Sim/InputActions.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0InputActionsTests.V18_Helpers
+note = the stance request is not shifted by one
+original:
+|         public static int StanceRequest(uint actions) => (int)(actions & StanceMask) - 1;
+replacement:
+|         public static int StanceRequest(uint actions) => (int)(actions & StanceMask);
+
+[ia-with]
+file = Assets/WarCore/Sim/InputActions.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0InputActionsTests.V18_Helpers
+expect = WarCore.Tests.Base0InputActionsTests.V20
+note = WithStance writes the level unshifted
+original:
+|             return (actions & ~StanceMask) | (uint)(level + 1);
+replacement:
+|             return (actions & ~StanceMask) | (uint)level;
+
+[ia-with-range]
+file = Assets/WarCore/Sim/InputActions.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0InputActionsTests.V18_Helpers
+note = WithStance takes level 8
+original:
+|             if (level < 0 || level > MaxStanceLevel)
+replacement:
+|             if (level < 0 || level > MaxStanceLevel + 1)
+
+[if-valid]
+file = Assets/WarCore/Sim/InputFrame.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0InputActionsTests.V18_TheFrameRefusesInvalidBits
+note = the frame takes invalid bits
+original:
+|             if (!InputActions.IsValid(actions))
+|                 throw new ArgumentOutOfRangeException(nameof(actions));
+replacement:
+
+[sim-refuse]
+file = Assets/WarCore/Sim/StableInput.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0InputActionsTests.V19_Row3
+note = a world without the switch takes bits
+original:
+|                 throw new SimBoundaryException("This world's input carries no action bits.");
+replacement:
+|                 return;
+
+[sim-refuse-step]
+file = Assets/WarCore/Sim/Sim.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0InputActionsTests.V19_Row3
+note = Step does not check the bits
+original:
+|             CheckInputActions(input);
+replacement:
+
+[sim-refuse-stable]
+file = Assets/WarCore/Sim/StableInput.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0InputActionsTests.V19_Row3
+note = StepStable does not check the bits
+original:
+|             CheckInputActions(input.Payload);
+replacement:
+
+[sim-warmup]
+file = Assets/WarCore/Sim/StableInput.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0InputActionsTests.V19_Row7
+note = the switch can be set after warmup
+original:
+|             if (warmed) throw new InvalidOperationException("Input actions are enabled before warmup.");
+replacement:
+
+[sim-stable-only]
+file = Assets/WarCore/Sim/StableInput.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0InputActionsTests.V19_Row3
+note = a legacy world takes the switch
+original:
+|             Entities.RequireStableWorld();
+|             if (warmed) throw new InvalidOperationException("Input actions are enabled before warmup.");
+replacement:
+|             if (warmed) throw new InvalidOperationException("Input actions are enabled before warmup.");
+
+[save-always]
+file = Assets/WarCore/Sim/StableInput.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0LockedWorldTests.V19_Row1
+expect = WarCore.Tests.Base0InputActionsTests.V19_Row2
+expect = WarCore.Tests.Base0InputActionsTests.V19_Row4
+expect = WarCore.Tests.Base0InputActionsTests.V19_Row6
+expect = WarCore.Tests.Base0InputActionsTests.V19_TheSwitchItself
+note = the bits are written without the switch
+original:
+|             if (actions) writer.Int32(unchecked((int)Payload.Actions));
+replacement:
+|             if (true) writer.Int32(unchecked((int)Payload.Actions));
+
+[save-never]
+file = Assets/WarCore/Sim/StableInput.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0InputActionsTests.V19_Row4
+expect = WarCore.Tests.Base0InputActionsTests.V19_Row5
+expect = WarCore.Tests.Base0InputActionsTests.V19_Row6
+expect = WarCore.Tests.Base0InputActionsTests.V19_BitsSurvive
+expect = WarCore.Tests.Base0InputActionsTests.V19_BitsChange
+expect = WarCore.Tests.Base0InputActionsTests.V19_TheSwitchItself
+note = the bits are not written with the switch
+original:
+|             if (actions) writer.Int32(unchecked((int)Payload.Actions));
+replacement:
+|             if (false) writer.Int32(unchecked((int)Payload.Actions));
+
+[save-order]
+file = Assets/WarCore/Sim/StableInput.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0InputActionsTests.V19_Row5
+note = the bits come before the layers
+original:
+|             if (layers) writer.Int32(Payload.AimLayer);
+|             if (actions) writer.Int32(unchecked((int)Payload.Actions));
+replacement:
+|             if (actions) writer.Int32(unchecked((int)Payload.Actions));
+|             if (layers) writer.Int32(Payload.AimLayer);
+
+[read-skip]
+file = Assets/WarCore/Sim/StableInput.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0InputActionsTests.V19_Row5
+expect = WarCore.Tests.Base0InputActionsTests.V19_BitsSurvive
+note = the bits are not read back
+original:
+|             uint bits = actions ? Actions(reader) : 0;
+replacement:
+|             uint bits = actions ? Actions(reader) & 0 : 0;
+
+[read-check]
+file = Assets/WarCore/Sim/StableInput.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0InputActionsTests.V19_Row5
+note = invalid bits are read back
+original:
+|             SimStateReader.Require(InputActions.IsValid(bits),"Invalid input action bits.");
+replacement:
+|             bits &= InputActions.ValidMask; if ((bits & InputActions.StanceMask) > 8) bits &= ~InputActions.StanceMask;
+
+[hash-no-bits]
+file = Assets/WarCore/Sim/StableSimState.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0InputActionsTests.V19_BitsChange
+expect = WarCore.Tests.Base0InputActionsTests.V19_TheSwitchItself
+note = the hash leaves the bits out
+original:
+| stableInput.Save(stableWriter,inputLayers,inputActions);
+replacement:
+| stableInput.Save(stableWriter,inputLayers);
+
+[hash-always]
+file = Assets/WarCore/Sim/StableSimState.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0LockedWorldTests.V19_Row1
+expect = WarCore.Tests.Base0InputActionsTests.V19_Row2
+note = the hash writes the bits in every world
+original:
+| stableInput.Save(stableWriter,inputLayers,inputActions);
+replacement:
+| stableInput.Save(stableWriter,inputLayers,true);
+
+[snapshot-no-bits]
+file = Assets/WarCore/Sim/StableSimState.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0InputActionsTests.V19_Row4
+expect = WarCore.Tests.Base0InputActionsTests.V19_BitsSurvive
+expect = WarCore.Tests.Base0InputActionsTests.V19_Row6
+note = the snapshot leaves the bits out
+original:
+| stableInput.Save(writer,inputLayers,inputActions);
+replacement:
+| stableInput.Save(writer,inputLayers);
+
+[restore-no-bits]
+file = Assets/WarCore/Sim/StableSimState.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0InputActionsTests.V19_BitsSurvive
+expect = WarCore.Tests.Base0InputActionsTests.V19_Row6
+note = the restore does not read the bits
+original:
+| stableInput = StableInputFrame.Read(reader,inputLayers,inputActions);
+replacement:
+| stableInput = StableInputFrame.Read(reader,inputLayers);
+
+[bind-drop]
+file = Assets/WarCore/Sim/StableInput.cs
+filter = FullyQualifiedName~Base0
+expect = WarCore.Tests.Base0InputActionsTests.V20
+note = Bind drops the bits
+original:
+| Payload.SkillCommandCount,Payload.AimLayer,Payload.Actions);
+replacement:
+| Payload.SkillCommandCount,Payload.AimLayer);
