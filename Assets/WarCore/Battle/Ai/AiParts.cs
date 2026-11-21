@@ -68,6 +68,8 @@ namespace WarCore.Battle
         }
         // True when the team's base (TryBase) can be walked to from a place; always true on a map without floor plates.
         public bool ReachesBase(int team, SimVec3 from, int fromLayer) => reach == null || reach.TryBaseCost(team, from, fromLayer, out _);
+        // True when one place can be walked to from the other; always true on a map without floor plates.
+        public bool Connected(SimVec3 from, int fromLayer, SimVec3 to, int toLayer) => reach == null || reach.Connected(from, fromLayer, to, toLayer);
         // The team's owned point closest to any point it does not own (ties to the lower point index); -1 when it owns none or all.
         public int Frontline(int team)
         {

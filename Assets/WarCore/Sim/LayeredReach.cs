@@ -69,6 +69,42 @@ namespace WarCore.Sim
         // The heap's size (it never grows: every push fits). 0 when the target is not walkable. Diagnostics only.
         internal int HeapCapacity { get; }
 
+        // ML-11b-1: which nodes can be walked between. Gives every node its island: two walkable nodes share an island exactly
+        // when LayeredPathfinder.Find finds a route between them; a node nobody walks on has -1. Islands are numbered from 0 in
+        // ascending order of their lowest node. Orthogonal steps and seams are enough: a diagonal step needs both orthogonal
+        // cells walkable, so it joins nothing that two orthogonal steps do not join. The relation is symmetric (see above).
+        public static int[] Islands(LayeredNav nav)
+        {
+            if (nav == null) throw new ArgumentNullException(nameof(nav));
+            int count = nav.Count, next = 0;
+            var islands = new int[count];
+            for (int i = 0; i < count; i++) islands[i] = -1;
+            var queue = new int[count];
+            for (int start = 0; start < count; start++)
+            {
+                if (nav.Cost[start] == 0 || islands[start] >= 0) continue;
+                int head = 0, tail = 0;
+                islands[start] = next; queue[tail++] = start;
+                while (head < tail)
+                {
+                    int v = queue[head++], layer = nav.NodeLayer[v], x = nav.NodeX[v], z = nav.NodeZ[v];
+                    for (int direction = 0; direction < 4; direction++)
+                    {
+                        // N, E, S, W.
+                        int u = Walkable(nav, layer, x + (direction == 1 ? 1 : direction == 3 ? -1 : 0), z + (direction == 0 ? 1 : direction == 2 ? -1 : 0));
+                        if (u >= 0 && islands[u] < 0) { islands[u] = next; queue[tail++] = u; }
+                    }
+                    for (int s = nav.SeamStart[v]; s < nav.SeamStart[v + 1]; s++)
+                    {
+                        int u = nav.Seams[s];
+                        if (islands[u] < 0) { islands[u] = next; queue[tail++] = u; }
+                    }
+                }
+                next++;
+            }
+            return islands;
+        }
+
         // The cheapest walking cost from the node to the target; -1 when there is no route or the node is not walkable.
         public long CostFrom(int node) => costs[node];
 

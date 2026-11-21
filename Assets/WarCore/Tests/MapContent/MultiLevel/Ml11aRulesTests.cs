@@ -11,11 +11,9 @@ namespace WarCore.Tests
 {
     // ML-11a acceptance 15: on a map with floor plates the AI rules that still measure on the plane are refused when the world
     // is built, in a fixed order; the same rules build a world without plates, and the values that turn a rule off pass.
+    // ML-11b-1 lifted the search, the suppressive fire and the melee chase: they read layers now and build on plates.
     public sealed class Ml11aRulesTests
     {
-        private const string Search = "\"targetMemoryTicks\": 90, \"searchTicks\": 60";
-        private const string Suppress = "\"targetMemoryTicks\": 90, \"suppressTicks\": 30";
-        private const string Chase = "\"meleeChaseRange\": 12";
         private const string Pressure = "\"pressureDeathRadiusMm\": 3000, \"pressureDeathShock\": 2000, \"pressureNearRadiusMm\": 3000, \"pressureNearShock\": 1000, "
             + "\"pressureDecayPermille\": 12, \"pressureBrokenAt\": 7000, \"pressureRecoverAt\": 1000, \"pressurePinnedAt\": 2000, "
             + "\"pressureSpreadPermille\": 500, \"pressureBreakSharePermille\": 300";
@@ -33,19 +31,14 @@ namespace WarCore.Tests
             return new M6World(M6World.Endless(Recipe(units, pack, false)).WithAiRules(Rules("{ " + ai + " }")), Ml9bMatchTests.Arena(false));
         }
 
-        [TestCase(Search, "searchTicks")]
-        [TestCase(Suppress, "suppressTicks")]
-        [TestCase(Chase, "meleeChaseRange")]
         [TestCase(Pressure, "pressureNearRadiusMm")]
         [TestCase(Bound, "engage")]
         [TestCase(Scatter, "placement")]
         [TestCase(Roles, "placement")]
         // Two at once: the first in the fixed order is the one named.
-        [TestCase("\"targetMemoryTicks\": 90, \"searchTicks\": 60, \"suppressTicks\": 30", "searchTicks")]
-        [TestCase(Suppress + ", " + Chase, "suppressTicks")]
-        [TestCase(Chase + ", " + Pressure, "meleeChaseRange")]
         [TestCase(Pressure + ", " + Bound, "pressureNearRadiusMm")]
         [TestCase(Bound + ", " + Scatter, "engage")]
+        [TestCase(Pressure + ", " + Scatter, "pressureNearRadiusMm")]
         public void ARuleThatMeasuresOnThePlaneIsRefusedOnPlates(string ai, string field)
         {
             // The fixture builds the world by reflection, which wraps what the build throws.
@@ -53,7 +46,7 @@ namespace WarCore.Tests
             Assert.That(thrown, Is.InstanceOf<ContentException>());
             string message = thrown.Message;
             Assert.That(message, Does.Contain(field).And.Contain("is not supported on a map with floor plates"));
-            foreach (string other in new[] { "searchTicks", "suppressTicks", "meleeChaseRange", "pressureNearRadiusMm", "engage", "placement" })
+            foreach (string other in new[] { "pressureNearRadiusMm", "engage", "placement" })
                 if (other != field) Assert.That(message, Does.Not.Contain(other), other);
             Assert.DoesNotThrow(() => Build(ai, false), "the same rules build a world without plates");
         }
@@ -62,6 +55,7 @@ namespace WarCore.Tests
         [TestCase("\"searchTicks\": 0, \"suppressTicks\": 0, \"meleeChaseRange\": 0, \"engage\": \"hold\", \"placement\": \"nearest-slot\"")]
         [TestCase("\"failedSlotTicks\": 60, \"targetMemoryTicks\": 90, \"reactionTicks\": 6, \"senseTicks\": 3, \"burstShots\": 3, \"burstPauseTicks\": 20, "
             + "\"slotSpacingMm\": 1500, \"slotRingMm\": 1000, \"holdSharePermille\": 300, \"attackSpreadPoints\": 2, \"dispatch\": \"nearest\"")]
+        [TestCase("\"targetMemoryTicks\": 90, \"searchTicks\": 60, \"suppressTicks\": 30, \"meleeChaseRange\": 12")]
         public void TheOtherRulesBuildOnPlates(string ai)
         {
             M6World w = null;
@@ -74,10 +68,10 @@ namespace WarCore.Tests
         [Test]
         public void RulesBuiltInCodeAreRefusedByName()
         {
-            var rules = new AiRules(0, targetMemoryTicks: 90, searchTicks: 60);
+            var rules = new AiRules(0, engage: ContentPolicies.BoundEngage, boundMoveTicks: 60, boundFireTicks: 90, boundSharePermille: 700, boundMinRangeMm: 12000);
             Assert.That(rules.FieldError, Is.Null);
             Assert.That(Assert.Throws<NotSupportedException>(() => ContentPolicies.Parts(rules, plates: true)).Message,
-                Is.EqualTo("ai.searchTicks is not supported on a map with floor plates."));
+                Is.EqualTo("ai.engage is not supported on a map with floor plates."));
             Assert.DoesNotThrow(() => ContentPolicies.Parts(rules, plates: false));
             Assert.DoesNotThrow(() => ContentPolicies.Parts(rules));
             Assert.DoesNotThrow(() => ContentPolicies.Parts(null, plates: true));

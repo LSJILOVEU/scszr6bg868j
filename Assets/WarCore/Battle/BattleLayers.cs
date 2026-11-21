@@ -24,5 +24,8 @@ namespace WarCore.Battle
         bool TryCost(int point, SimVec3 from, int fromLayer, out long cost);
         // The same to the team's first spawn anchor; false when the team has none or nobody can walk on its cell.
         bool TryBaseCost(int team, SimVec3 from, int fromLayer, out long cost);
+        // ML-11b-1: true when one place can be walked to from the other (both are walkable cells of their layers and there is a
+        // route between them); the order of the two does not matter.
+        bool Connected(SimVec3 from, int fromLayer, SimVec3 to, int toLayer);
     }
 }

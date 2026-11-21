@@ -1,0 +1,556 @@
+# ML-11b-1: the memory, the search, the suppressive fire and the melee chase by layer; which cells can be walked between.
+# Filter: the ML-11b-1 tests, except where a mutant changes a map without floor plates (then the tests of that rule).
+# Not listed: the layer read from a state without layers (the reader runs past the end: an exception, not an assertion);
+# the walkable-neighbour test of the islands' queue dropped (the queue overflows: an exception); the two checks before a
+# search also run while the soldier stands at the place (it stands there, so both hold); the route asked after the line of
+# sight in the chase (the same enemies pass both); the three refusals left in CheckPlates (ml-11a.txt).
+
+[ml11b1-tm-saw-layer-zero]
+file = Assets/WarCore/Battle/Ai/TargetMemory.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = the memory keeps layer 0
+original:
+| Seen = tick, Layer = layers?.LayerOf(target) ?? 0 };
+replacement:
+| Seen = tick, Layer = 0 };
+
+[ml11b1-tm-saw-observer-layer]
+file = Assets/WarCore/Battle/Ai/TargetMemory.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = the memory keeps the observer's layer
+original:
+| Seen = tick, Layer = layers?.LayerOf(target) ?? 0 };
+replacement:
+| Seen = tick, Layer = layers?.LayerOf(combat.Entities.Resolve(new EntityLink(observer))) ?? 0 };
+
+[ml11b1-tm-version-one]
+file = Assets/WarCore/Battle/Ai/TargetMemory.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = the state with layers keeps version 1
+original:
+| public int StateVersion => layers != null ? 2 : 1;
+replacement:
+| public int StateVersion => 1;
+
+[ml11b1-tm-version-two]
+file = Assets/WarCore/Battle/Ai/TargetMemory.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = the state without layers has version 2
+original:
+| public int StateVersion => layers != null ? 2 : 1;
+replacement:
+| public int StateVersion => 2;
+
+[ml11b1-tm-save-no-layer]
+file = Assets/WarCore/Battle/Ai/TargetMemory.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = the layer is not written
+original:
+| if (layers != null) writer.Int32(e.Layer);
+replacement:
+|
+
+[ml11b1-tm-save-always]
+file = Assets/WarCore/Battle/Ai/TargetMemory.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = the layer is written without layers
+original:
+| if (layers != null) writer.Int32(e.Layer);
+replacement:
+| writer.Int32(e.Layer);
+
+[ml11b1-tm-load-no-layer]
+file = Assets/WarCore/Battle/Ai/TargetMemory.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = the layer is read and dropped
+original:
+| int layer = layers != null ? reader.Int32() : 0;
+replacement:
+| int layer = layers != null ? reader.Int32() * 0 : 0;
+
+[ml11b1-tm-load-entry-layer]
+file = Assets/WarCore/Battle/Ai/TargetMemory.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = a loaded entry is on layer 0
+original:
+| Seen = seen, Layer = layer };
+replacement:
+| Seen = seen, Layer = 0 };
+
+[ml11b1-tm-load-layer-positive]
+file = Assets/WarCore/Battle/Ai/TargetMemory.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = a loaded layer 0 is refused
+original:
+| SimStateReader.Require(layer >= 0, "AI target memory layer is negative.");
+replacement:
+| SimStateReader.Require(layer > 0, "AI target memory layer is negative.");
+
+[ml11b1-tm-load-layer-unchecked]
+file = Assets/WarCore/Battle/Ai/TargetMemory.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = a negative layer is loaded
+original:
+| SimStateReader.Require(layer >= 0, "AI target memory layer is negative.");
+replacement:
+|
+
+[ml11b1-tm-hash-no-layer]
+file = Assets/WarCore/Battle/Ai/TargetMemory.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = the layer is not hashed
+original:
+| if (layers != null) hash.Add(e.Layer);
+replacement:
+|
+
+[ml11b1-tm-hash-always]
+file = Assets/WarCore/Battle/Ai/TargetMemory.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = the layer is hashed without layers
+original:
+| if (layers != null) hash.Add(e.Layer);
+replacement:
+| hash.Add(e.Layer);
+
+[ml11b1-tm-recall-layer-zero]
+file = Assets/WarCore/Battle/Ai/TargetMemory.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = the recalled layer is 0
+original:
+| layer = known ? entries[observer.Value].Layer : 0;
+replacement:
+| layer = 0;
+
+[ml11b1-tm-recall-unknown-layer]
+file = Assets/WarCore/Battle/Ai/TargetMemory.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = an unknown memory recalls layer 1
+original:
+| layer = known ? entries[observer.Value].Layer : 0;
+replacement:
+| layer = known ? entries[observer.Value].Layer : 1;
+
+[ml11b1-mf-memory-no-layers]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = the world's memory is built without layers
+original:
+| contacts = new TargetMemory(combat, memoryTicks, layers);
+replacement:
+| contacts = new TargetMemory(combat, memoryTicks);
+
+[ml11b1-ts-arrive-any-layer]
+file = Assets/WarCore/Battle/Ai/TargetSearch.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = under or over the place counts as arrived
+original:
+| if (layer == lastLayer && SimpleAiSystem.Arrived(here, lastKnown))
+replacement:
+| if (SimpleAiSystem.Arrived(here, lastKnown))
+
+[ml11b1-ts-arrive-other-layer]
+file = Assets/WarCore/Battle/Ai/TargetSearch.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = only another layer counts as arrived
+original:
+| if (layer == lastLayer && SimpleAiSystem.Arrived(here, lastKnown))
+replacement:
+| if (layer != lastLayer && SimpleAiSystem.Arrived(here, lastKnown))
+
+[ml11b1-sa-search-own-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = the search is told the unit is on layer 0
+original:
+| search.Decide(id, here, layer, c.Clock.Tick,
+replacement:
+| search.Decide(id, here, 0, c.Clock.Tick,
+
+[ml11b1-sa-search-order-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = the search is ordered on layer 0
+original:
+| OrderUnit(id, here, moving, target, lastKnown, lastLayer, -1);
+replacement:
+| OrderUnit(id, here, moving, target, lastKnown, 0, -1);
+
+[ml11b1-sa-search-onway-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = an order to the same spot on another layer counts as on the way
+original:
+| if (!moving || orderLayer != lastLayer || target.X.Raw != lastKnown.X.Raw
+replacement:
+| if (!moving || target.X.Raw != lastKnown.X.Raw
+
+[ml11b1-sa-search-no-stand]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = a place nobody stands at is searched
+original:
+| !(moves.CanStandAt(lastKnown, lastLayer) && field.Connected(here, layer, lastKnown, lastLayer))
+replacement:
+| !(field.Connected(here, layer, lastKnown, lastLayer))
+
+[ml11b1-sa-search-stand-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = the place is checked for standing on the ground
+original:
+| moves.CanStandAt(lastKnown, lastLayer) && field.Connected(here, layer, lastKnown, lastLayer)
+replacement:
+| moves.CanStandAt(lastKnown, 0) && field.Connected(here, layer, lastKnown, lastLayer)
+
+[ml11b1-sa-search-no-connected]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = a place out of reach is searched
+original:
+| !(moves.CanStandAt(lastKnown, lastLayer) && field.Connected(here, layer, lastKnown, lastLayer))
+replacement:
+| !(moves.CanStandAt(lastKnown, lastLayer))
+
+[ml11b1-sa-search-either]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = one of the two checks is enough
+original:
+| moves.CanStandAt(lastKnown, lastLayer) && field.Connected(here, layer, lastKnown, lastLayer)
+replacement:
+| moves.CanStandAt(lastKnown, lastLayer) || field.Connected(here, layer, lastKnown, lastLayer)
+
+[ml11b1-sa-search-connected-own-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = the route to the place is asked from layer 0
+original:
+| field.Connected(here, layer, lastKnown, lastLayer)
+replacement:
+| field.Connected(here, 0, lastKnown, lastLayer)
+
+[ml11b1-sa-search-connected-place-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = the route is asked to the place on layer 0
+original:
+| field.Connected(here, layer, lastKnown, lastLayer)
+replacement:
+| field.Connected(here, layer, lastKnown, 0)
+
+[ml11b1-sa-search-checks-without-plates]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = the two checks also run without plates
+original:
+| if (hunt == TargetSearch.Hunt.Go && layers != null
+replacement:
+| if (hunt == TargetSearch.Hunt.Go
+
+[ml11b1-sa-search-checks-reversed]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = the two checks run only without plates
+original:
+| if (hunt == TargetSearch.Hunt.Go && layers != null
+replacement:
+| if (hunt == TargetSearch.Hunt.Go && layers == null
+
+[ml11b1-sa-chase-reach-plane]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = under the enemy counts as in reach
+original:
+| if (combat.SpanSquared(here, enemy) <= new SimVec3(engage, default, default).LengthSquared)
+replacement:
+| if (CombatSystem.Horizontal(enemy - here).LengthSquared <= new SimVec3(engage, default, default).LengthSquared)
+
+[ml11b1-sa-chase-order-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = the chase is ordered on layer 0
+original:
+| OrderUnit(id, here, moving, target, enemy, enemyLayer, -2);
+replacement:
+| OrderUnit(id, here, moving, target, enemy, 0, -2);
+
+[ml11b1-sa-chase-onway-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = an order to the enemy's spot on another layer counts as chasing
+original:
+| else if (!moving || orderLayer != enemyLayer || target.X.Raw != enemy.X.Raw
+replacement:
+| else if (!moving || target.X.Raw != enemy.X.Raw
+
+[ml11b1-sa-melee-distance-plane]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = the nearest enemy is the nearest on the plane
+original:
+| SimWide distance = combat.SpanSquared(here, at);
+replacement:
+| SimWide distance = CombatSystem.Horizontal(at - here).LengthSquared;
+
+[ml11b1-sa-melee-no-connected]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = an enemy out of reach is chased
+original:
+| if (!field.Connected(here, layer, at, atLayer)) continue;
+replacement:
+|
+
+[ml11b1-sa-melee-connected-own-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = the route to the enemy is asked from layer 0
+original:
+| if (!field.Connected(here, layer, at, atLayer)) continue;
+replacement:
+| if (!field.Connected(here, 0, at, atLayer)) continue;
+
+[ml11b1-sa-melee-connected-enemy-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = the route is asked to the enemy on layer 0
+original:
+| if (!field.Connected(here, layer, at, atLayer)) continue;
+replacement:
+| if (!field.Connected(here, layer, at, 0)) continue;
+
+[ml11b1-sa-melee-target-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = the chased enemy is on layer 0
+original:
+| target = at; targetLayer = atLayer;
+replacement:
+| target = at; targetLayer = 0;
+
+[ml11b1-sa-melee-own-layer]
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = the enemy is taken to be on the unit's layer
+original:
+| int atLayer = LayerOf(candidate);
+replacement:
+| int atLayer = layer;
+
+[ml11b1-ap-connected-without-plates]
+file = Assets/WarCore/Battle/Ai/AiParts.cs
+filter = FullyQualifiedName~WarCore.Tests.A1BehaviorTests
+expect = WarCore.Tests.A1BehaviorTests
+note = nothing is connected without plates
+original:
+| reach == null || reach.Connected(from, fromLayer, to, toLayer);
+replacement:
+| reach != null && reach.Connected(from, fromLayer, to, toLayer);
+
+[ml11b1-ap-connected-always]
+file = Assets/WarCore/Battle/Ai/AiParts.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = everything is connected
+original:
+| reach == null || reach.Connected(from, fromLayer, to, toLayer);
+replacement:
+| reach == null || reach != null;
+
+[ml11b1-tu-range-plane]
+file = Assets/WarCore/Battle/Ai/TargetSuppress.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = the range is measured on the plane
+original:
+| || combat.SpanSquared(here, lastKnown) > new SimVec3(range
+replacement:
+| || CombatSystem.Horizontal(lastKnown - here).LengthSquared > new SimVec3(range
+
+[ml11b1-tu-no-overhead]
+file = Assets/WarCore/Battle/Ai/TargetSuppress.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = a place straight above is not shot at
+original:
+| if ((SimpleAiSystem.Arrived(here, lastKnown) && !combat.Overhead(here, lastKnown))
+replacement:
+| if ((SimpleAiSystem.Arrived(here, lastKnown))
+
+[ml11b1-tu-overhead-reversed]
+file = Assets/WarCore/Battle/Ai/TargetSuppress.cs
+filter = FullyQualifiedName~WarCore.Tests.A3b
+expect = WarCore.Tests.A3b
+note = only a place straight above is skipped
+original:
+| if ((SimpleAiSystem.Arrived(here, lastKnown) && !combat.Overhead(here, lastKnown))
+replacement:
+| if ((SimpleAiSystem.Arrived(here, lastKnown) && combat.Overhead(here, lastKnown))
+
+[ml11b1-pl-connected-blocked]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateLayers.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = two cells nobody walks on are connected
+original:
+| && islands[a] >= 0 && islands[a] == islands[b];
+replacement:
+| && islands[a] == islands[b];
+
+[ml11b1-pl-connected-any]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateLayers.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = any two walkable cells are connected
+original:
+| && islands[a] >= 0 && islands[a] == islands[b];
+replacement:
+| && islands[a] >= 0 && islands[b] >= 0;
+
+[ml11b1-pl-connected-other]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateLayers.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = only cells of different islands are connected
+original:
+| && islands[a] >= 0 && islands[a] == islands[b];
+replacement:
+| && islands[a] >= 0 && islands[a] != islands[b];
+
+[ml11b1-lr-islands-blocked-start]
+file = Assets/WarCore/Sim/LayeredReach.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = a node nobody walks on starts an island
+original:
+| if (nav.Cost[start] == 0 || islands[start] >= 0) continue;
+replacement:
+| if (islands[start] >= 0) continue;
+
+[ml11b1-lr-islands-no-seams]
+file = Assets/WarCore/Sim/LayeredReach.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = seams join nothing
+original:
+| for (int s = nav.SeamStart[v]; s < nav.SeamStart[v + 1]; s++)
+|                     {
+|                         int u = nav.Seams[s];
+|                         if (islands[u] < 0) { islands[u] = next; queue[tail++] = u; }
+replacement:
+| for (int s = nav.SeamStart[v]; s < nav.SeamStart[v + 1]; s++)
+|                     {
+|                         int u = nav.Seams[s];
+|                         if (islands[u] < -1) { islands[u] = next; queue[tail++] = u; }
+
+[ml11b1-lr-islands-no-north]
+file = Assets/WarCore/Sim/LayeredReach.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = no step to the north
+original:
+| z + (direction == 0 ? 1 : direction == 2 ? -1 : 0));
+replacement:
+| z + (direction == 0 ? 0 : direction == 2 ? -1 : 0));
+
+[ml11b1-lr-islands-no-south]
+file = Assets/WarCore/Sim/LayeredReach.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = no step to the south
+original:
+| z + (direction == 0 ? 1 : direction == 2 ? -1 : 0));
+replacement:
+| z + (direction == 0 ? 1 : direction == 2 ? 0 : 0));
+
+[ml11b1-lr-islands-no-east]
+file = Assets/WarCore/Sim/LayeredReach.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = no step to the east
+original:
+| x + (direction == 1 ? 1 : direction == 3 ? -1 : 0),
+replacement:
+| x + (direction == 1 ? 0 : direction == 3 ? -1 : 0),
+
+[ml11b1-lr-islands-no-west]
+file = Assets/WarCore/Sim/LayeredReach.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = no step to the west
+original:
+| x + (direction == 1 ? 1 : direction == 3 ? -1 : 0),
+replacement:
+| x + (direction == 1 ? 1 : direction == 3 ? 0 : 0),
+
+[ml11b1-lr-islands-diagonal]
+file = Assets/WarCore/Sim/LayeredReach.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = the step to the north goes over the corner
+original:
+| x + (direction == 1 ? 1 : direction == 3 ? -1 : 0), z + (direction == 0 ? 1 : direction == 2 ? -1 : 0));
+replacement:
+| x + (direction == 1 || direction == 0 ? 1 : direction == 3 ? -1 : 0), z + (direction == 0 ? 1 : direction == 2 ? -1 : 0));
+
+[ml11b1-lr-islands-one-number]
+file = Assets/WarCore/Sim/LayeredReach.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = every island has number 0
+original:
+|                 next++;
+|             }
+|             return islands;
+replacement:
+|             }
+|             return islands;
+
+[ml11b1-lr-islands-null]
+file = Assets/WarCore/Sim/LayeredReach.cs
+filter = FullyQualifiedName~Ml11b1
+expect = WarCore.Tests.Ml11b1
+note = a missing graph is not refused by name
+original:
+| if (nav == null) throw new ArgumentNullException(nameof(nav));
+|             int count = nav.Count, next = 0;
+replacement:
+| int count = nav.Count, next = 0;
