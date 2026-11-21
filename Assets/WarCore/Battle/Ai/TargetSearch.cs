@@ -50,12 +50,14 @@ namespace WarCore.Battle
             foreach (ulong key in drop) entries.Remove(key);
         }
 
-        // Called by the AI on a thinking tick when it sees no target. here is the unit's point before this tick's move.
-        internal Hunt Decide(StableId observer, SimVec3 here, long tick, out SimVec3 lastKnown)
+        // Called by the AI on a thinking tick when it sees no target. here is the unit's point before this tick's move and
+        // layer the layer it stands on; lastLayer is the layer of P (both 0 on a map without floor plates). The unit has
+        // arrived when it is at P on P's layer: standing under or over P is not arriving.
+        internal Hunt Decide(StableId observer, SimVec3 here, int layer, long tick, out SimVec3 lastKnown, out int lastLayer)
         {
-            if (!contacts.TryRecall(observer, tick, out _, out lastKnown, out long seen)) return Hunt.None;
+            if (!contacts.TryRecall(observer, tick, out _, out lastKnown, out lastLayer, out long seen)) return Hunt.None;
             if (entries.TryGetValue(observer.Value, out Entry e) && e.Seen == seen) return tick - e.Since < ticks ? Hunt.Hold : Hunt.None;
-            if (SimpleAiSystem.Arrived(here, lastKnown)) { entries[observer.Value] = new Entry { Seen = seen, Since = tick }; return Hunt.Hold; }
+            if (layer == lastLayer && SimpleAiSystem.Arrived(here, lastKnown)) { entries[observer.Value] = new Entry { Seen = seen, Since = tick }; return Hunt.Hold; }
             return Hunt.Go;
         }
 

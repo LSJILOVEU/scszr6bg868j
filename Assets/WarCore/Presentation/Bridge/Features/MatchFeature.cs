@@ -59,7 +59,7 @@ namespace WarCore.Presentation
             int memoryTicks = ai?.TargetMemoryTicks ?? 0;
             if (memoryTicks > 0)
             {
-                contacts = new TargetMemory(combat, memoryTicks);
+                contacts = new TargetMemory(combat, memoryTicks, layers);
                 sim.RegisterGameplay("battle.ai-contacts", contacts, SimSystemPhase.Requests);
             }
             // Only with the memory on: a positive searchTicks adds the search; 0 (the default) adds nothing.

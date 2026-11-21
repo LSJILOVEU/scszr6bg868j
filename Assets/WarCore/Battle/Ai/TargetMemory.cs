@@ -12,21 +12,26 @@ namespace WarCore.Battle
     // Recording happens inside the AI (12) on its thinking ticks, forgetting here (13) after it, and TryRecall applies the
     // window itself, so the result does not depend on which side of the AI this system runs. Behaviour packages only read
     // through TryRecall; nothing but Saw writes P.
+    //
+    // ML-11b-1, a map with floor plates (the units' layers are given): the entry also keeps the layer the target stood on at
+    // that moment, and the state has version 2 with that one more number per entry. Without layers the layer is 0 and the
+    // state is the old one, byte for byte.
     public sealed class TargetMemory : IRetainedGameplaySystem
     {
-        private struct Entry { internal StableId Target; internal SimVec3 At; internal long Seen; }
+        private struct Entry { internal StableId Target; internal SimVec3 At; internal long Seen; internal int Layer; }
 
         private readonly CombatSystem combat;
         private readonly int ticks;
+        private readonly IUnitLayers layers;
         private readonly SortedList<ulong, Entry> entries;
         private readonly IList<ulong> keys;
         private readonly List<ulong> drop;
 
-        public TargetMemory(CombatSystem combat, int ticks)
+        public TargetMemory(CombatSystem combat, int ticks, IUnitLayers layers = null)
         {
             if (ticks < 1) throw new ArgumentOutOfRangeException(nameof(ticks));
             this.combat = combat ?? throw new ArgumentNullException(nameof(combat));
-            this.ticks = ticks;
+            this.ticks = ticks; this.layers = layers;
             entries = new SortedList<ulong, Entry>(combat.Entities.Capacity);
             keys = entries.Keys;
             drop = new List<ulong>(combat.Entities.Capacity);
@@ -34,7 +39,7 @@ namespace WarCore.Battle
 
         public int Order => 13;
         public string StateTypeId => "battle.ai-contacts";
-        public int StateVersion => 1;
+        public int StateVersion => layers != null ? 2 : 1;
         internal int Count => entries.Count;
 
         public void Step(SimContext c)
@@ -52,7 +57,7 @@ namespace WarCore.Battle
 
         // The observer's AI selected this target on this tick.
         internal void Saw(StableId observer, EntityId target, long tick) =>
-            entries[observer.Value] = new Entry { Target = combat.Entities.StableOf(target), At = combat.Point(target), Seen = tick };
+            entries[observer.Value] = new Entry { Target = combat.Entities.StableOf(target), At = combat.Point(target), Seen = tick, Layer = layers?.LayerOf(target) ?? 0 };
 
         internal void Forget(StableId observer) => entries.Remove(observer.Value);
 
@@ -63,6 +68,14 @@ namespace WarCore.Battle
             { target = e.Target; lastKnown = e.At; seenTick = e.Seen; return true; }
             target = default; lastKnown = default; seenTick = 0;
             return false;
+        }
+
+        // The same, with the layer the target stood on when it was seen (0 without layers).
+        public bool TryRecall(StableId observer, long tick, out StableId target, out SimVec3 lastKnown, out int layer, out long seenTick)
+        {
+            bool known = TryRecall(observer, tick, out target, out lastKnown, out seenTick);
+            layer = known ? entries[observer.Value].Layer : 0;
+            return known;
         }
 
         private bool Alive(StableId id) => combat.Entities.TryResolve(id, out EntityRef entity) && !combat.IsDead(entity);
@@ -76,6 +89,7 @@ namespace WarCore.Battle
                 Entry e = pair.Value;
                 writer.UInt64(pair.Key); writer.UInt64(e.Target.Value);
                 writer.Int64(e.At.X.Raw); writer.Int64(e.At.Y.Raw); writer.Int64(e.At.Z.Raw); writer.Int64(e.Seen);
+                if (layers != null) writer.Int32(e.Layer);
             }
         }
 
@@ -94,7 +108,9 @@ namespace WarCore.Battle
                 var at = new SimVec3(SimFix.FromRaw(reader.Int64()), SimFix.FromRaw(reader.Int64()), SimFix.FromRaw(reader.Int64()));
                 long seen = reader.Int64();
                 SimStateReader.Require(seen >= 0, "AI target memory tick is negative.");
-                entries[key] = new Entry { Target = target, At = at, Seen = seen };
+                int layer = layers != null ? reader.Int32() : 0;
+                SimStateReader.Require(layer >= 0, "AI target memory layer is negative.");
+                entries[key] = new Entry { Target = target, At = at, Seen = seen, Layer = layer };
             }
         }
 
@@ -105,6 +121,7 @@ namespace WarCore.Battle
             {
                 Entry e = pair.Value;
                 hash.Add(pair.Key); hash.Add(e.Target.Value); hash.Add(e.At.X.Raw); hash.Add(e.At.Y.Raw); hash.Add(e.At.Z.Raw); hash.Add(e.Seen);
+                if (layers != null) hash.Add(e.Layer);
             }
         }
     }
