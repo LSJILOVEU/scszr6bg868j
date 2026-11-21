@@ -135,6 +135,24 @@ namespace WarCore.Tests.Blast1
         // Read on main before BLAST-1: rwr-field and ancient have no blasts, so these stay.
         internal const ulong FieldDigest = 0x83B866D46CB9EA79UL, AncientDigest = 0xB02D04256D7204EEUL;
 
+        // With AIM-1: a layer over rwr-aim adds blasts and keeps the parent's move spread (an object) and manual reload; the
+        // blasts (an array) stay whole too. WithSelector carries all three; each section changes the digest.
+        [Test]
+        public void BlastsBesideMoveSpreadAndReload()
+        {
+            ContentPack both = Ml3Content.Load("blast-aim", Ml3Content.Layer("blast-aim", "rwr-aim", "\"combat\": { " + Blasts(Frag) + " }"));
+            CombatPack pack = both.BuildCombat();
+            Assert.That((pack.MoveSpread != null, pack.ManualReload, pack.Blasts?.Kinds.Length), Is.EqualTo((true, true, (int?)1)));
+            CombatPack copy = pack.WithSelector(pack.Selector);
+            Assert.That(copy.MoveSpread, Is.SameAs(pack.MoveSpread));
+            Assert.That(copy.ManualReload, Is.True);
+            Assert.That(copy.Blasts, Is.SameAs(pack.Blasts));
+            Assert.That(copy.PolicyDigest, Is.EqualTo(pack.PolicyDigest));
+            ulong aimOnly = RwrPack.Load("rwr-aim").BuildCombat().PolicyDigest, blastOnly = Load(Blasts(Frag)).BuildCombat().PolicyDigest;
+            Assert.That(pack.PolicyDigest, Is.Not.EqualTo(aimOnly));
+            Assert.That(pack.PolicyDigest, Is.Not.EqualTo(blastOnly));
+        }
+
         [Test]
         public void WithSelectorKeepsTheBlasts()
         {
