@@ -135,13 +135,14 @@ namespace WarCore.Battle
                 if ((c.Clock.Tick + (long)((fairDecisions ? AiParts.Mix(id.Value ^ seedSalt) : id.Value) % (ulong)pack.ThinkInterval)) % pack.ThinkInterval != 0) continue;
                 if (meleeChaseRange.Raw > 0 && unit.Weapon < 0 && weapons.HasMelee
                     && combat.Entities.TryGet(meleeStates, entity, out MeleeState melee) && melee.Spec >= 0
-                    && TryMeleeTarget(entity, here, out SimVec3 enemy))
+                    && TryMeleeTarget(entity, here, out SimVec3 enemy, out int enemyLayer))
                 {
+                    // In reach by the combat's span (3D on a map with floor plates): under the enemy is not in reach.
                     SimFix engage = weapons.Melee[melee.Spec].EngageRange;
-                    if (CombatSystem.Horizontal(enemy - here).LengthSquared <= new SimVec3(engage, default, default).LengthSquared)
+                    if (combat.SpanSquared(here, enemy) <= new SimVec3(engage, default, default).LengthSquared)
                     { if (moving) StopUnit(id, here, target); }
-                    else if (!moving || target.X.Raw != enemy.X.Raw || target.Z.Raw != enemy.Z.Raw)
-                    { OrderUnit(id, here, moving, target, enemy, 0, -2); }
+                    else if (!moving || orderLayer != enemyLayer || target.X.Raw != enemy.X.Raw || target.Z.Raw != enemy.Z.Raw)
+                    { OrderUnit(id, here, moving, target, enemy, enemyLayer, -2); }
                     continue;
                 }
                 var thinker = new AiUnit(id, unit.Team, here, pressure != null ? pressure.Level(id) : AiNerve.Calm, layer);
@@ -169,12 +170,15 @@ namespace WarCore.Battle
                 // Nothing in sight: a remembered target comes before the points (go to where it was last seen, stand, give up).
                 if (!advance && !fallback && search != null && unit.Weapon >= 0)
                 {
-                    TargetSearch.Hunt hunt = search.Decide(id, here, c.Clock.Tick, out SimVec3 lastKnown);
+                    TargetSearch.Hunt hunt = search.Decide(id, here, layer, c.Clock.Tick, out SimVec3 lastKnown, out int lastLayer);
+                    // On a map with floor plates a place the unit cannot stand at or walk to is no memory for this think.
+                    if (hunt == TargetSearch.Hunt.Go && layers != null
+                        && !(moves.CanStandAt(lastKnown, lastLayer) && field.Connected(here, layer, lastKnown, lastLayer))) hunt = TargetSearch.Hunt.None;
                     if (hunt == TargetSearch.Hunt.Go)
                     {
-                        // Orders are grounded (only Y changes), so X and Z tell whether the unit is already on its way.
-                        if (!moving || target.X.Raw != lastKnown.X.Raw || target.Z.Raw != lastKnown.Z.Raw)
-                        { OrderUnit(id, here, moving, target, lastKnown, 0, -1); }
+                        // Orders are grounded (only Y changes), so the layer, X and Z tell whether the unit is already on its way.
+                        if (!moving || orderLayer != lastLayer || target.X.Raw != lastKnown.X.Raw || target.Z.Raw != lastKnown.Z.Raw)
+                        { OrderUnit(id, here, moving, target, lastKnown, lastLayer, -1); }
                         continue;
                     }
                     if (hunt == TargetSearch.Hunt.Hold)
@@ -235,9 +239,11 @@ namespace WarCore.Battle
             OrderUnit(id, here, moving, target, spot, 0, -1);
             return true;
         }
-        private bool TryMeleeTarget(EntityId entity, SimVec3 here, out SimVec3 target)
+        // The nearest enemy in the chase range that the unit sees (ties to the lower stable id), by the combat's span; on a map
+        // with floor plates an enemy the unit cannot walk to is passed over. layer is the thinking unit's.
+        private bool TryMeleeTarget(EntityId entity, SimVec3 here, out SimVec3 target, out int targetLayer)
         {
-            target = default;
+            target = default; targetLayer = 0;
             bool found = false; SimWide best = default; StableId bestId = default;
             SimWide limit = new SimVec3(meleeChaseRange, default, default).LengthSquared;
             foreach (var hit in combat.Candidates(entity, meleeChaseRange))
@@ -245,12 +251,14 @@ namespace WarCore.Battle
                 EntityId candidate = hit.Entity;
                 if (!combat.IsEnemy(entity, candidate)) continue;
                 SimVec3 at = combat.Point(candidate);
-                SimWide distance = CombatSystem.Horizontal(at - here).LengthSquared;
+                SimWide distance = combat.SpanSquared(here, at);
                 if (distance > limit) continue;
                 StableId id = combat.Entities.StableOf(candidate);
                 if (found && (distance > best || (distance == best && id.CompareTo(bestId) >= 0))) continue;
+                int atLayer = LayerOf(candidate);
+                if (!field.Connected(here, layer, at, atLayer)) continue;
                 if (!combat.Visible(entity, candidate)) continue;
-                target = at; best = distance; bestId = id; found = true;
+                target = at; targetLayer = atLayer; best = distance; bestId = id; found = true;
             }
             return found;
         }
