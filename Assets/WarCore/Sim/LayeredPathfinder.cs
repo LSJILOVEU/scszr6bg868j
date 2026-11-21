@@ -11,6 +11,10 @@ namespace WarCore.Sim
     // a node's parent changes only on a strictly smaller cost, so the neighbour order (eight cells, then seams by ascending
     // other node) does not change any result. Without plates every status, path, total and Expanded equals GridPathfinder's
     // on the same TerrainTables: same walkable test (cost > 0), step costs, heuristic, comparator and loop.
+    //
+    // TRV-3 (K16): after the eight cells and the seams, the links starting at the node. Entering a link's end costs
+    // 1000 x Span x the end's cost + PathCost. LayeredNav refuses a link whose cells are farther apart (octile) than 1000 x
+    // Span, and PathCost >= 0, so a link costs at least octile distance x the smallest cost: the heuristic stays consistent.
     public sealed class LayeredPathfinder
     {
         private readonly LayeredNav nav;
@@ -29,6 +33,8 @@ namespace WarCore.Sim
         public long TotalCostWide { get; private set; }
         // Nodes taken off the open set and expanded by the last search (stale heap entries not counted). Diagnostics only.
         internal int Expanded { get; private set; }
+        // The heap's size as allocated (it only grows on overflow). Diagnostics only.
+        internal int HeapCapacity => heap.Length;
 
         private readonly struct Entry
         {
@@ -42,8 +48,9 @@ namespace WarCore.Sim
             this.nav = nav ?? throw new ArgumentNullException(nameof(nav));
             int count = nav.Count;
             costs = new long[count]; stamps = new uint[count]; parents = new int[count]; path = new int[count];
-            // Each node is expanded once (consistent heuristic) and inserts at most eight neighbours plus its seams.
-            heap = new Entry[8L * count + nav.Seams.Length + 1 > int.MaxValue ? int.MaxValue : 8 * count + nav.Seams.Length + 1];
+            // Each node is expanded once (consistent heuristic) and inserts at most eight neighbours, its seams and its links.
+            long size = 8L * count + nav.Seams.Length + nav.LinkCount + 1;
+            heap = new Entry[size > int.MaxValue ? int.MaxValue : (int)size];
             long min = long.MaxValue;
             for (int node = 0; node < count; node++)
                 if (nav.Cost[node] != 0 && nav.Cost[node] < min) min = nav.Cost[node];
@@ -54,8 +61,10 @@ namespace WarCore.Sim
 
         // As Find, but gives up once no route can cost limitCost or less: Found exactly when the cheapest route costs at most
         // limitCost (then Path and TotalCostWide equal Find's), else Unreachable; a blocked start stays Rejected.
-        public GridPathStatus FindWithin(int start, int target, long limitCost)
+        // skipLink: the index of one link this search does not use (-1, the default, uses them all).
+        public GridPathStatus FindWithin(int start, int target, long limitCost, int skipLink = -1)
         {
+            if (skipLink < -1 || skipLink >= nav.LinkCount) throw new ArgumentOutOfRangeException(nameof(skipLink));
             pathCount = 0; TotalCostWide = 0; heapCount = 0; Expanded = 0;
             if (!nav.IsPassable(start)) return GridPathStatus.Rejected;
             if (!nav.IsPassable(target)) return GridPathStatus.Unreachable;
@@ -96,6 +105,13 @@ namespace WarCore.Sim
                 {
                     int next = nav.Seams[s];
                     Relax(current, next, 1000 * (long)nav.Cost[next], target);
+                }
+                if (nav.Links == null) continue;
+                for (int l = nav.LinkStart[current.Key]; l < nav.LinkStart[current.Key + 1]; l++)
+                {
+                    if (l == skipLink) continue;
+                    NavLink link = nav.Links[l];
+                    Relax(current, link.To, 1000L * link.Span * nav.Cost[link.To] + link.PathCost, target);
                 }
             }
             return GridPathStatus.Unreachable;

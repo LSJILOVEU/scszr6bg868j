@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "width": 160,
+  "depth": 160,
+  "pack": "rwr-field",
+  "seed": 0,
+  "baseMm": 0,
+  "base": { "tile": "emmental.dem.json", "sha256": "a1790885063c9b461fa646c72e965b2780b720e546205ae352f03e2f5bcd06df", "x0Mm": 296000, "z0Mm": 346000, "scaleMilli": 1000, "exaggerationMilli": 1000, "datumMm": 60 },
+  "ground": "grass",
+  "stamps": []
+}

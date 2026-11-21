@@ -1,9 +1,14 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using WarCore.Combat;
 using WarCore.Sim;
 
 namespace WarCore.Content.MapTools
 {
+    // The side a ramp runs to from its doorway.
+    public enum MapSide : byte { PlusX = 0, MinusX = 1, PlusZ = 2, MinusZ = 3 }
+
     // Editor prefabs: ready-made groups of entries for MapEdit.Stamp.
     public static class MapPrefabs
     {
@@ -109,6 +114,120 @@ namespace WarCore.Content.MapTools
                 new MapStampEntry<MapWall>(3, new MapWall(0, kind, layer, cell, size, topRaw - openingTop, baseRaw: openingTop)),
                 new MapStampEntry<MapWall>(4, new MapWall(0, kind, layer, right, rightSize, frame)),
             }, Array.Empty<MapStampEntry<MapPoint>>(), Array.Empty<MapStampEntry<MapBase>>(), Array.Empty<MapStampEntry<MapUnit>>());
+        }
+
+        // TRV-1a: a ramp from a doorway to the ground outside it, one sloped plate (stamp source part, default 1).
+        // first: the cell of the first row outside the doorway with the smallest x and z; width: cells across; outward: the side
+        // the ramp runs to, away from the doorway; doorTopRaw: absolute raw Y of the floor at the doorway edge; slopeNum /
+        // slopeDen: the pack's walkable slope, used as min(pack, 5/3) (MapGate's plate slope rule).
+        // Length L is the first of 1..MaxRampCells with den * ceil(drop / L) <= num * 65536, drop = doorTopRaw - low(L) and
+        // low(L) the highest ground point on the ramp's far edge L cells out: the plate's point table splits the drop by floor
+        // division, so its steepest cell rises ceil(drop / L), and that cell passes HeightField.CellWithinSlope exactly then.
+        // The plate falls from doorTopRaw at the doorway to low(L) at the far edge, which therefore meets every ground point
+        // there within LayeredNav.StepRaw (the far edge's points may differ by at most that much). Thickness is
+        // max(MinRampThickRaw, doorTopRaw - the lowest ground point under the ramp), so the underside is never above the
+        // ground. Every top point must be at or above the ground point under it (plate rule 3), and the ramp must keep the
+        // stack clearance from every plate of the description (plate rule 4) except the one this stamp source already placed
+        // (stamping it again replaces that plate). The far edge must lie inside the map, so a row of ground cells is outside
+        // the foot to walk on from. Walls, the solid cell budget and the other plate rules are left to MapGate.Check.
+        public const int MaxRampCells = 16;
+        public const long MinRampThickRaw = SimFix.Scale / 2;
+
+        public static MapStampPlan Ramp(MapDesc map, string instance, MapXZ first, int width, MapSide outward, long doorTopRaw,
+            long slopeNum, long slopeDen, ulong part = 1)
+        {
+            if (map == null) throw new ArgumentNullException(nameof(map));
+            if (width < 1) throw new ArgumentException("the ramp is narrower than one cell", nameof(width));
+            if (slopeDen < 1 || slopeDen > HeightField.MaxWalkableDenominator || slopeNum < 0 || slopeNum > HeightField.MaxSlopeNumerator * slopeDen)
+                throw new ArgumentOutOfRangeException(nameof(slopeNum), "the walkable slope is out of range");
+            if (outward > MapSide.MinusZ) throw new ArgumentOutOfRangeException(nameof(outward));
+            if (doorTopRaw > map.CeilingRaw) throw new ArgumentException("the doorway is above the ceiling", nameof(doorTopRaw));
+            if (doorTopRaw > MapDescReader.HeightLimit) throw new ArgumentOutOfRangeException(nameof(doorTopRaw), "the doorway is above the description's height limit");
+            long num = slopeNum, den = slopeDen;
+            if (num * MapGate.PlateSlopeDen > MapGate.PlateSlopeNum * den) { num = MapGate.PlateSlopeNum; den = MapGate.PlateSlopeDen; }
+
+            bool alongX = outward == MapSide.PlusX || outward == MapSide.MinusX;
+            int sign = outward == MapSide.PlusX || outward == MapSide.PlusZ ? 1 : -1;
+            int sizeAlong = alongX ? map.Size.X : map.Size.Z, sizeAcross = alongX ? map.Size.Z : map.Size.X;
+            int across0 = alongX ? first.Z : first.X, row = alongX ? first.X : first.Z;
+            if (across0 < 0 || (long)across0 + width > sizeAcross || row < 0 || row >= sizeAlong)
+                throw new ArgumentException("the ramp leaves the map", nameof(first));
+            int door = sign > 0 ? row : row + 1;   // the doorway's grid line along the ramp
+            Func<int, int, long> ground = MapBake.Point(map);
+            long At(int along, int acrossAt) => alongX ? ground(along, acrossAt) : ground(acrossAt, along);
+            long Low(int cells, out long lowest)
+            {
+                long high = long.MinValue;
+                lowest = long.MaxValue;
+                for (int c = across0; c <= across0 + width; c++)
+                {
+                    long g = At(door + sign * cells, c);
+                    high = Math.Max(high, g);
+                    lowest = Math.Min(lowest, g);
+                }
+                return high;
+            }
+
+            int length = 0;
+            long low = 0, farLowest = 0;
+            for (int cells = 1; cells <= MaxRampCells && length == 0; cells++)
+            {
+                long far = (long)door + sign * cells;
+                // far starts one line beyond the doorway line (0..sizeAlong) and moves by one: it meets an edge before leaving.
+                if (far <= 0 || far >= sizeAlong) throw new ArgumentException("the ramp's foot reaches the map edge: no ground outside it", nameof(first));
+                long high = Low(cells, out long lowest);
+                if (cells == 1 && doorTopRaw <= high)
+                    throw new ArgumentException("the ground outside is as high as the doorway: no drop to ramp down (flatten it)", nameof(doorTopRaw));
+                long drop = doorTopRaw - high;
+                if (den * CeilDiv(drop, cells) <= num * SimFix.Scale) { length = cells; low = high; farLowest = lowest; }
+            }
+            if (length == 0) throw new ArgumentException("the ramp needs more than " + MaxRampCells + " cells", nameof(doorTopRaw));
+            if (low >= doorTopRaw) throw new ArgumentException("the ground rises back to the doorway before the ramp ends (flatten it)", nameof(doorTopRaw));
+            if (low - farLowest > LayeredNav.StepRaw) throw new ArgumentException("the ground at the ramp's foot differs too much from end to end (flatten it)", nameof(first));
+
+            int along0 = sign > 0 ? door : door - length;
+            long from = sign > 0 ? doorTopRaw : low, to = sign > 0 ? low : doorTopRaw;
+            long lowestGround = long.MaxValue;
+            for (int a = 0; a <= length; a++)
+                for (int c = across0; c <= across0 + width; c++)
+                {
+                    long g = At(along0 + a, c);
+                    lowestGround = Math.Min(lowestGround, g);
+                    if (PlateSpan.TopPoint(PlateAxis.X, from, to, length, 1, a, 0) < g)
+                        throw new ArgumentException("the ramp would dip below the ground (plates must not be buried)", nameof(first));
+                }
+            long thick = Math.Max(MinRampThickRaw, doorTopRaw - lowestGround);
+            if (thick > MapDescReader.HeightLimit) throw new ArgumentException("the ramp would be thicker than the description's height limit", nameof(doorTopRaw));
+
+            MapXZ cell = alongX ? new MapXZ(along0, across0) : new MapXZ(across0, along0);
+            MapXZ size = alongX ? new MapXZ(length, width) : new MapXZ(width, length);
+            var plate = new MapPlate(0, cell, size, null, new MapSlope(alongX ? "x" : "z", from, to), thick);
+            ulong close = TooClose(map, plate, instance, part);
+            if (close != 0) throw new ArgumentException("the ramp is closer to plate " + close + " than the stack clearance", nameof(first));
+            return new MapStampPlan(instance, Array.Empty<MapHeightWrite>(), Array.Empty<MapSurfaceWrite>(), Array.Empty<MapStampEntry<MapWall>>(),
+                Array.Empty<MapStampEntry<MapPoint>>(), Array.Empty<MapStampEntry<MapBase>>(), Array.Empty<MapStampEntry<MapUnit>>(),
+                new[] { new MapStampEntry<MapPlate>(part, plate) }, Array.Empty<MapStampEntry<MapCutout>>());
+        }
+
+        // Ceiling of a / b for b > 0 (a may be negative or zero).
+        private static long CeilDiv(long a, long b) => -PlateSpan.FloorDiv(-a, b);
+
+        // The id of the first plate of the description that breaks plate rule 4 with the new plate, or 0. The plate stamp source
+        // (instance, part) placed before is left out: a stamp replaces it.
+        private static ulong TooClose(MapDesc map, MapPlate plate, string instance, ulong part)
+        {
+            var own = new HashSet<ulong>(map.Plates.Where(p => p.Src != null && p.Src.Instance == instance
+                && p.Src.Kind == MapEditKinds.Plate.Name && p.Src.Src == part).Select(p => p.Id));
+            List<PlateGeom> geoms = MapBake.PlateGeoms(map);
+            geoms.RemoveAll(g => own.Contains(g.Id));
+            int ramp = geoms.Count;
+            long floor = map.FloorRaw;
+            geoms.Add(new PlateGeom(ulong.MaxValue, plate.Cell.X, plate.Cell.Z, plate.Size.X, plate.Size.Z,
+                plate.Slope.Axis == "x" ? PlateAxis.X : PlateAxis.Z, plate.Slope.FromRaw - floor, plate.Slope.ToRaw - floor, plate.ThickRaw,
+                Enumerable.Repeat(true, plate.Size.X * plate.Size.Z).ToArray()));
+            foreach (PlateSpan.Conflict c in PlateSpan.Stacks(map.Size.X, map.Size.Z, geoms, out _, out _))
+                if (c.A == ramp || c.B == ramp) return geoms[c.A == ramp ? c.B : c.A].Id;
+            return 0;
         }
 
         // ML-12a: Door on a floor plate. As Door, but every part is a raised wall standing on floorTopRaw (the plate's top,
