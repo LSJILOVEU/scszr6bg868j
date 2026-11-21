@@ -161,7 +161,7 @@ namespace WarCore.Unity
             {
                 try
                 {
-                    FrameView shown = FrameView.Interpolate(session.Previous, session.Current, session.Alpha);
+                    FrameView shown = ShowcaseScene.Blend(session.Previous, session.Current, session.Alpha);
                     aim = AimPick.Pick(scene.Camera, mouse.x, mouse.y, w, h, scene.Ground, shown, session.ControlledKey,
                         session.Map.Plates, scene.Cut);
                 }

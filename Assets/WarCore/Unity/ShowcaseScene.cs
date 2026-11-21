@@ -111,6 +111,10 @@ namespace WarCore.Unity
             Show(0f, null);
         }
 
+        // FrameView.Interpolate takes 0 <= alpha < 1; a picture (alpha 1) shows the committed frame itself.
+        public static FrameView Blend(FrameView previous, FrameView current, float alpha) =>
+            alpha >= 1f ? current : FrameView.Interpolate(previous, current, Mathf.Max(0f, alpha));
+
         public static Color Rgb(int rgb) => new Color((rgb >> 16 & 255) / 255f, (rgb >> 8 & 255) / 255f, (rgb & 255) / 255f);
 
         // A shaded material (the built-in Standard shader); a flat one where a part must read at any angle.
@@ -235,7 +239,7 @@ namespace WarCore.Unity
                 HurtLeft = 2f * HurtSeconds;
                 Jolt(0.6f);
             }
-            FrameView shown = FrameView.Interpolate(previous, current, alpha);
+            FrameView shown = Blend(previous, current, alpha);
             ViewEntity? me = key.HasValue && shown.TryGet(key.Value, out ViewEntity found) ? found : (ViewEntity?)null;
             if (me.HasValue)
             {

@@ -136,7 +136,7 @@ namespace WarCore.Unity
                 if (bodies[key].Silhouette != null) ShowcaseScene.Kill(bodies[key].Silhouette);
                 bodies.Remove(key);
             }
-            FrameView shown = FrameView.Interpolate(previous, current, alpha);
+            FrameView shown = ShowcaseScene.Blend(previous, current, alpha);
             bool ringOn = false;
             foreach (ViewEntity entity in shown.Entities)
             {

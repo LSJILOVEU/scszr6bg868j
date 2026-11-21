@@ -205,6 +205,27 @@ namespace WarCore.Unity.Tests
         }
 
         [Test]
+        public void APictureShowsTheCommittedFrameAndPlayBlendsTheLastStep()
+        {
+            using (ShowcaseScene scene = Scripted("melee"))
+            {
+                scene.Session.StepOnce();
+                FrameView previous = scene.Session.Previous, current = scene.Session.Current;
+                Assert.That(ShowcaseScene.Blend(previous, current, 1f), Is.SameAs(current));
+                Assert.That(ShowcaseScene.Blend(previous, current, 2f), Is.SameAs(current));
+                FrameView start = ShowcaseScene.Blend(previous, current, -1f);
+                Assert.That(start, Is.Not.SameAs(current));
+                Assert.That(start.Entities.Length, Is.EqualTo(current.Entities.Length));
+                FrameView zero = FrameView.Interpolate(previous, current, 0f);
+                for (int i = 0; i < start.Entities.Length; i++)
+                {
+                    Assert.That(start.Entities[i].X, Is.EqualTo(zero.Entities[i].X), "below 0 is held at 0");
+                    Assert.That(start.Entities[i].Z, Is.EqualTo(zero.Entities[i].Z));
+                }
+            }
+        }
+
+        [Test]
         public void EveryCharacterOfAShotLabelHasAGlyph()
         {
             foreach (string line in ShowcaseHost.ShotLabel(600, 0xABCDEF0123456789UL, 4))
