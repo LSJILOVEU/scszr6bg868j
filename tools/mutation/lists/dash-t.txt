@@ -1,0 +1,233 @@
+# DASH-T dash on terrain and plate worlds: the pieces (count, rounding, last piece, zero steps, scaling to nothing, layer and
+# point per piece, part of a tick kept), the flat branch's zero rule, the busy hook, BindDash, and the rejoin (route over the
+# layered graph, progress, the route length not handed on, no route).
+# Not listed: sending a world without terrain down the terrain path throws (it has no surface table), so it cannot fail by an
+# assertion; DashTFlatLockTests pins that branch tick by tick.
+
+[dash-t-no-split]
+file = Assets/WarCore/Interim/InterimLocomotion.Dash.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.DashT.DashTPlateTests.UpTheStairInTwoTicks
+expect = WarCore.Tests.DashT.DashTTerrainTests.Mud_ScalesEachPieceTowardZero
+note = the tick's step is taken in one piece: a 2 m step spans two cells and TryEnter refuses it
+original:
+|             int m = (int)((MaxRaw(ax, az) + MaxTerrainStepRaw - 1) / MaxTerrainStepRaw);
+replacement:
+|             int m = 1;
+
+[dash-t-m-floor]
+file = Assets/WarCore/Interim/InterimLocomotion.Dash.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.DashT.DashTTerrainTests.Blocked_StopsAtTheFirstPieceThatCannotMove
+note = the piece count rounds down: two pieces of 0.33 m stop short of the wall at 360447
+original:
+|             int m = (int)((MaxRaw(ax, az) + MaxTerrainStepRaw - 1) / MaxTerrainStepRaw);
+replacement:
+|             int m = (int)(MaxRaw(ax, az) / MaxTerrainStepRaw);
+
+[dash-t-m-one-more]
+file = Assets/WarCore/Interim/InterimLocomotion.Dash.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.DashT.DashTPlateTests.OntoTheFloorAndStopsAtTheWall
+note = one piece more whenever the step is a whole number of 0.25 m
+original:
+|             int m = (int)((MaxRaw(ax, az) + MaxTerrainStepRaw - 1) / MaxTerrainStepRaw);
+replacement:
+|             int m = (int)((MaxRaw(ax, az) + MaxTerrainStepRaw) / MaxTerrainStepRaw);
+
+[dash-t-m-x-only]
+file = Assets/WarCore/Interim/InterimLocomotion.Dash.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.DashT.DashTRejoinTests.Terrain_TheOrderGoesOnAfterTheDash
+note = the piece count reads X only: a dash along Z takes no piece
+original:
+|             int m = (int)((MaxRaw(ax, az) + MaxTerrainStepRaw - 1) / MaxTerrainStepRaw);
+replacement:
+|             int m = (int)((ax + MaxTerrainStepRaw - 1) / MaxTerrainStepRaw);
+
+[dash-t-last-piece-dropped]
+file = Assets/WarCore/Interim/InterimLocomotion.Dash.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.DashT.DashTTerrainTests.Grass_MovesTheWholeStepEachTick
+note = the last piece of each tick is not taken
+original:
+|             for (int j = 1; j <= m; j++)
+replacement:
+|             for (int j = 1; j < m; j++)
+
+[dash-t-zero-step-blocks]
+file = Assets/WarCore/Interim/InterimLocomotion.Dash.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.DashT.DashTTerrainTests.APieceScaledToNothingIsBlocked
+note = a tick whose step is nothing ends the dash on a terrain world
+original:
+|             if (dx == 0 && dz == 0) return true;
+replacement:
+|             if (dx == 0 && dz == 0) return false;
+
+[dash-t-flat-zero-blocks]
+file = Assets/WarCore/Interim/InterimLocomotion.Dash.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.DashT.DashTTerrainTests.APieceScaledToNothingIsBlocked
+note = without terrain a tick whose step is nothing ends the dash too
+original:
+|                 blocked = step.LengthSquared.Sign != 0 && provisional[i].Point.Equals(before);
+replacement:
+|                 blocked = provisional[i].Point.Equals(before);
+
+[dash-t-scaled-to-nothing-moves]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.DashT.DashTTerrainTests.APieceScaledToNothingIsBlocked
+note = a piece scaled to nothing on both axes counts as taken
+original:
+|             if (d.X.Raw == 0 && d.Z.Raw == 0) return false;
+replacement:
+|             if (d.X.Raw == 0 && d.Z.Raw == 0) return true;
+
+[dash-t-no-layer-per-piece]
+file = Assets/WarCore/Interim/InterimLocomotion.Dash.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.DashT.DashTPlateTests.UpTheStairInTwoTicks
+note = a piece that crosses a seam does not change the unit's layer
+original:
+|                 if (layered) CommitLayer(unit);
+|                 provisional[i].Point = next;
+replacement:
+|                 provisional[i].Point = next;
+
+[dash-t-no-point-per-piece]
+file = Assets/WarCore/Interim/InterimLocomotion.Dash.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.DashT.DashTTerrainTests.Grass_MovesTheWholeStepEachTick
+note = every piece starts from the tick's start point
+original:
+|                 if (layered) CommitLayer(unit);
+|                 provisional[i].Point = next;
+|             }
+replacement:
+|                 if (layered) CommitLayer(unit);
+|             }
+|             provisional[i].Point = start;
+
+[dash-t-part-of-tick-dropped]
+file = Assets/WarCore/Interim/InterimLocomotion.Dash.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.DashT.DashTTerrainTests.Blocked_StopsAtTheFirstPieceThatCannotMove
+note = a blocked tick gives back the pieces it took
+original:
+|                 if (!ControlledTerrainCandidate(context, i, piece, out SimVec3 next)) { moved = false; break; }
+replacement:
+|                 if (!ControlledTerrainCandidate(context, i, piece, out SimVec3 next)) { moved = false; provisional[i].Point = start; break; }
+
+[dash-t-submit-start]
+file = Assets/WarCore/Interim/InterimLocomotion.Dash.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.DashT.DashTTerrainTests.Grass_MovesTheWholeStepEachTick
+note = the tick submits the first piece's end instead of the last
+original:
+|                 context.SubmitMovement(unit, end);
+replacement:
+|                 context.SubmitMovement(unit, Grounded(start + new SimVec3(SimFix.FromRaw(DashPart(dx, 1, m)), default, SimFix.FromRaw(DashPart(dz, 1, m)))));
+
+[dash-t-busy-ignored]
+file = Assets/WarCore/Interim/InterimLocomotion.Dash.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.DashT.DashTBusyTests.ABusyUnitIsRefusedAndNothingIsWritten
+note = a busy unit's request is accepted
+original:
+|             if (busy != null && busy.IsBusy(unit)) return false;
+replacement:
+|             if (false) return false;
+
+[dash-t-busy-on-steps]
+file = Assets/WarCore/Interim/InterimLocomotion.Dash.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.DashT.DashTBusyTests.ARunningDashIsNotAsked
+note = each dash step asks the busy rule and a busy unit's dash waits
+original:
+|             if (k == 0) return false;
+replacement:
+|             if (k == 0 || (busy != null && busy.IsBusy(unit))) return false;
+
+[dash-t-terrain-refused]
+file = Assets/WarCore/Interim/InterimLocomotion.Dash.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.Dash.DashContentTests.TerrainWorld_IsBuiltAndDashes
+note = M7a's refusal of terrain worlds comes back
+original:
+|             if (!crowd) throw new InvalidOperationException("Dash needs a crowd world.");
+replacement:
+|             if (!crowd || terrain != null) throw new InvalidOperationException("Dash needs a crowd world.");
+
+[dash-t-any-mover]
+file = Assets/WarCore/Interim/InterimLocomotion.Dash.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.DashT.DashTTerrainTests.BindDash_NeedsACrowd
+note = the locomotion binds a dash on any mover
+original:
+|             if (!crowd) throw new InvalidOperationException("Dash needs a crowd world.");
+replacement:
+|             if (false) throw new InvalidOperationException("Dash needs a crowd world.");
+
+[dash-t-rejoin-ground-route]
+file = Assets/WarCore/Interim/InterimLocomotion.Dash.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.DashT.DashTRejoinTests.Plates_TheOrderGoesOnFromTheStair
+note = the rejoin plans on the ground grid, as before DASH-T
+original:
+|             if (TryCrowdRoute(unit, point, intent.Target, out SimVec3 waypoint))
+replacement:
+|             if (TryCrowdWaypoint(point, intent.Target, out SimVec3 waypoint))
+
+[dash-t-rejoin-tail-handed-on]
+file = Assets/WarCore/Interim/InterimLocomotion.Dash.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.DashT.DashTRejoinTests.TheRejoinRouteIsNotHandedOn
+note = the rejoin leaves its route length for the next unit's progress to take
+original:
+|                 tailFresh = false;
+|                 entities.Set(progress, unit, p);
+replacement:
+|                 entities.Set(progress, unit, p);
+
+[dash-t-rejoin-no-progress]
+file = Assets/WarCore/Interim/InterimLocomotion.Dash.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.DashT.DashTRejoinTests.Terrain_TheOrderGoesOnAfterTheDash
+note = the order's progress keeps measuring against the waypoint planned before the dash
+original:
+|                 if (terrain == null) return;
+replacement:
+|                 return;
+
+[dash-t-rejoin-no-tail]
+file = Assets/WarCore/Interim/InterimLocomotion.Dash.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.DashT.DashTRejoinTests.Terrain_TheOrderGoesOnAfterTheDash
+note = the new route's length beyond the waypoint is not taken
+original:
+|                 p.Tail = routeTail; p.BestDist2 = Dist2(point, waypoint); p.Stall = 0;
+replacement:
+|                 p.Tail = 0; p.BestDist2 = Dist2(point, waypoint); p.Stall = 0;
+
+[dash-t-rejoin-no-route-not-failed]
+file = Assets/WarCore/Interim/InterimLocomotion.Dash.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.DashT.DashTRejoinTests.NoRoute_TheOrderFails
+note = no route after the dash stops the unit without a failure
+original:
+|             lost.Failed = 1;
+replacement:
+|             lost.Failed = 0;
+
+[dash-t-rejoin-no-route-not-stopped]
+file = Assets/WarCore/Interim/InterimLocomotion.Dash.cs
+filter = FullyQualifiedName~WarCore.Tests.Dash
+expect = WarCore.Tests.DashT.DashTRejoinTests.NoRoute_TheOrderFails
+note = no route after the dash leaves the order running
+original:
+|             Stop(unit);
+|             lost.Failed = 1;
+replacement:
+|             lost.Failed = 1;

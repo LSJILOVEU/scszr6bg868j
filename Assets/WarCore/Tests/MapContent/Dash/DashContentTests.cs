@@ -8,8 +8,8 @@ using WarCore.Sim;
 
 namespace WarCore.Tests.Dash
 {
-    // The optional unit-type fields dashDistance (mm), dashTicks and dashCooldown (ticks), how they reach a world, and the
-    // worlds a dash is refused in.
+    // The optional unit-type fields dashDistance (mm), dashTicks and dashCooldown (ticks), how they reach a world, the worlds a
+    // dash is refused in, and (DASH-T) a terrain world that takes one.
     public sealed class DashContentTests
     {
         internal static ContentPack Load(string fields) =>
@@ -73,13 +73,24 @@ namespace WarCore.Tests.Dash
                     Throws.ArgumentException.With.Message.Contains("crowd mover"), mover.ToString());
         }
 
+        // DASH-T replaces M7a's refusal: the same hill (1/16 along x) builds with a dasher, and the standard dash (20 m in 10 ticks)
+        // covers its 20 m along +X on the ground, y = x / 16 at every tick (the field's points are i * 4096 raw).
         [Test]
-        public void TerrainWorld_IsRefused()
+        public void TerrainWorld_IsBuiltAndDashes()
         {
             byte[] hill = WcMapWriter.Write(Wp23.Make(80, 24, 0, 6 * DashWorlds.S, null, 4 * DashWorlds.S, (i, j) => i * (int)(DashWorlds.S / 16)));
             var recipe = new WorldRecipe(41, MoverKind.InterimCrowd, new[] { DashWorlds.Dasher(1, 5500, 12500) }, Array.Empty<BridgeCommand>())
                 .WithTerrainRules(Wp23.Pack());
-            Assert.That(() => WorldBuilder.Build(recipe, hill, false), Throws.InvalidOperationException.With.Message.Contains("without terrain"));
+            SimSession s = null;
+            Assert.DoesNotThrow(() => s = WorldBuilder.Build(recipe, hill, false));
+            Assert.That(DashWorlds.Dash(s, DashWorlds.PlusX), Is.True);
+            List<SimVec3> track = DashWorlds.Track(s, DashWorlds.Ticks);
+            for (int k = 1; k <= DashWorlds.Ticks; k++)
+            {
+                Assert.That(track[k].X.Raw - track[k - 1].X.Raw, Is.EqualTo(2 * DashWorlds.S), "step " + k);
+                Assert.That(track[k].Y.Raw, Is.EqualTo(track[k].X.Raw / 16), "step " + k + " on the ground");
+            }
+            Assert.That(DashWorlds.State(s).Ticks, Is.EqualTo(DashWorlds.Ticks));
         }
     }
 }
