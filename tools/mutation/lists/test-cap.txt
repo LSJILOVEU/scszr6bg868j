@@ -46,9 +46,9 @@ filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarC
 expect = WarCore.Tests.M6CaptureTests.D1_D2_PLACEHOLDER_RatioAndExactCaptureTick
 note = team two cannot contribute to capture
 original:
-|                 if (!combat.Entities.TryGet(combatants, unit, out Combatant value) || value.Team < 1 || value.Team > 2
+|                 if (!combat.Entities.TryGet(combatants, unit, out Combatant value) || value.Team < 1 || value.Team > teams
 replacement:
-|                 if (!combat.Entities.TryGet(combatants, unit, out Combatant value) || value.Team < 1 || value.Team >= 2
+|                 if (!combat.Entities.TryGet(combatants, unit, out Combatant value) || value.Team < 1 || value.Team >= teams
 
 [test-cap-c06-strict-inclusive]
 file = Assets/WarCore/Battle/CaptureSystem.cs
@@ -176,9 +176,9 @@ filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarC
 expect = WarCore.Tests.M6DeployTests.D5_PLACEHOLDER_ExactAttemptsStableOrderComponentsAnchorsAndExhaustion
 note = The first reinforcement attempt is one tick late.
 original:
-|             next[0] = next[1] = startTick + pack.IntervalTicks;
+|             for (int i = 0; i < teams; i++) next[i] = startTick + pack.IntervalTicks;
 replacement:
-|             next[0] = next[1] = startTick + pack.IntervalTicks + 1;
+|             for (int i = 0; i < teams; i++) next[i] = startTick + pack.IntervalTicks + 1;
 
 [test-cap-r02-due-tick-late]
 file = Assets/WarCore/Battle/ReinforceSystem.cs
@@ -206,9 +206,9 @@ filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarC
 expect = WarCore.Tests.M6DeployTests.D5_PLACEHOLDER_SameRequestDeploymentsSeeEachOther
 note = The second team receives no reinforcement attempts.
 original:
-|             for (int team = 1; team <= 2; team++)
+|             for (int team = 1; team <= pack.TeamCount; team++)
 replacement:
-|             for (int team = 1; team < 2; team++)
+|             for (int team = 1; team < pack.TeamCount; team++)
 
 [test-cap-r05-wrong-team-reserve]
 file = Assets/WarCore/Battle/ReinforceSystem.cs

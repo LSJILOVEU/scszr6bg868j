@@ -116,11 +116,11 @@ namespace WarCore.Replay
                 json = text; location = "replay:" + id; return true;
             }
         }
-        private const string AncientDir = "Assets/WarCore/Content/Ancient/Data", AncientFieldDir = "Assets/WarCore/Tests/MapContent/Ancient/Data";
+        private const string AncientDir = "Assets/WarCore/Content/Ancient/Data";
         private sealed class AncientSource : IContentSource
         {
             public bool TryRead(string layerId, out string text, out string location) =>
-                new FileContentSource(AncientFieldDir).TryRead(layerId, out text, out location) || new FileContentSource(AncientDir).TryRead(layerId, out text, out location);
+                new FileContentSource(AncientDir).TryRead(layerId, out text, out location);
         }
         private static byte[] AncientFieldMap()
         {

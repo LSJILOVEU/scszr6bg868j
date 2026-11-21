@@ -1,0 +1,580 @@
+# ED-3a: terrain generation spec (Content/MapTools/MapGenSpec.cs), noise (MapNoise.cs), composer (MapTerrain.cs,
+# MapTerrainMath.cs) and the facade (Presentation/Maps/MapDocument.Terrain.cs). Filter: the ED-3 tests.
+# Not listed (equivalent): the road vertex backward pass (after the forward pass every pair already holds, so it never
+# changes a value); the step-7 axis and range checks (steps 3, 4 and 6 already ensure them; they guard only); T <= 0
+# versus T < 0 at a segment start (at T = 0 both formulas give the same distance and the same band weight); the order
+# of AddSurfaceName calls (the table is sorted either way).
+
+[ed3a-mm-toward-zero]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3SpecTests.MillimetresBecomeRaw
+note = mm to raw rounds toward zero
+original:
+|             if (n % 1000 != 0 && n < 0) q--;
+replacement:
+|             if (n % 1000 != 0 && n < -1000000000) q--;
+
+[ed3a-radius-range]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3SpecTests.RangesAccept
+note = radius range widened by one at both ends
+original:
+|                 case "radius": case "rMin": case "rMax": case "halfWidth": lo = 1; hi = MaxRadius; return;
+replacement:
+|                 case "radius": case "rMin": case "rMax": case "halfWidth": lo = 0; hi = MaxRadius + 1; return;
+
+[ed3a-x-range]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3SpecTests.RangesAccept
+note = x range widened by one
+original:
+|                 case "x": case "x0": case "x1": lo = -MaxOutside; hi = (long)width + MaxOutside; return;
+replacement:
+|                 case "x": case "x0": case "x1": lo = -MaxOutside - 1; hi = (long)width + MaxOutside + 1; return;
+
+[ed3a-z-uses-width]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3SpecTests.RangesAccept
+note = z range from the width
+original:
+|                 case "z": case "z0": case "z1": lo = -MaxOutside; hi = (long)depth + MaxOutside; return;
+replacement:
+|                 case "z": case "z0": case "z1": lo = -MaxOutside; hi = (long)width + MaxOutside; return;
+
+[ed3a-mm-range]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3SpecTests.RangesAccept
+note = heightMm range widened by one
+original:
+|                 case "heightMm": case "hMinMm": case "hMaxMm": lo = -MaxMm; hi = MaxMm; return;
+replacement:
+|                 case "heightMm": case "hMinMm": case "hMaxMm": lo = -MaxMm - 1; hi = MaxMm + 1; return;
+
+[ed3a-depth-zero]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3SpecTests.RangesAccept
+note = depthMm 0 accepted
+original:
+|                 case "depthMm": lo = 1; hi = MaxMm; return;
+replacement:
+|                 case "depthMm": lo = 0; hi = MaxMm; return;
+
+[ed3a-count-range]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3SpecTests.RangesAccept
+note = count range widened
+original:
+|                 case "count": lo = 1; hi = MaxCount; return;
+replacement:
+|                 case "count": lo = 0; hi = MaxCount + 1; return;
+
+[ed3a-rough-range]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3SpecTests.RangesAccept
+note = rough range widened
+original:
+|                 case "rough": lo = 0; hi = MaxRough; return;
+replacement:
+|                 case "rough": lo = -1; hi = MaxRough + 1; return;
+
+[ed3a-points-range]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3SpecTests.PolylinesTake
+note = one and 65 points accepted
+original:
+|             if (v.Items.Count < 2 || v.Items.Count > MaxPoints) throw Bad(at, "must have 2 to " + MaxPoints + " points");
+replacement:
+|             if (v.Items.Count < 1 || v.Items.Count > MaxPoints + 1) throw Bad(at, "must have 2 to " + MaxPoints + " points");
+
+[ed3a-version]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3SpecTests.TopLevelFields
+note = any version accepted
+original:
+|             if (Int(Need(root, "version", ""), "version", long.MinValue, long.MaxValue) != FormatVersion)
+replacement:
+|             if (Int(Need(root, "version", ""), "version", long.MinValue, long.MaxValue) < 0)
+
+[ed3a-stamp-cap]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3SpecTests.TopLevelFields
+note = 257 stamps accepted
+original:
+|             if (list.Items.Count > MaxStamps) throw Bad("stamps", "has more than " + MaxStamps + " stamps");
+replacement:
+|             if (list.Items.Count > MaxStamps + 1) throw Bad("stamps", "has more than " + MaxStamps + " stamps");
+
+[ed3a-unknown-key]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3SpecTests.UnknownKeys
+note = unknown keys accepted
+original:
+|                 if (Array.IndexOf(allowed, m.Name) < 0) throw Bad(at, "unknown key '" + m.Name + "'");
+replacement:
+|                 if (Array.IndexOf(allowed, m.Name) < -1) throw Bad(at, "unknown key '" + m.Name + "'");
+
+[ed3a-backward-box]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3SpecTests.UnknownKeys
+note = x0 > x1 accepted
+original:
+|                 if (stamp.X0 > stamp.X1) throw Bad(at, "x0 is greater than x1");
+replacement:
+|                 if (stamp.X0 > stamp.X1 + 1) throw Bad(at, "x0 is greater than x1");
+
+[ed3a-quote-escape]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3SpecTests.CanonicalTextIsFixed
+note = quote not escaped
+original:
+|                 if (c == '"') sb.Append("\\\"");
+replacement:
+|                 if (c == '"') sb.Append("\\'");
+
+[ed3a-width-match]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3SpecTests.SpecMustMatchTheMap
+note = width mismatch not reported
+original:
+|             if (spec.Width != desc.Size.X) throw new ArgumentException("gen width " + spec.Width + " does not match the map width " + desc.Size.X);
+replacement:
+|             if (spec.Width != desc.Size.X && false) throw new ArgumentException("gen width " + spec.Width + " does not match the map width " + desc.Size.X);
+
+[ed3a-pack-match]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3SpecTests.SpecMustMatchTheMap
+note = pack mismatch not reported
+original:
+|             if (!string.Equals(spec.Pack, desc.Pack, StringComparison.Ordinal))
+replacement:
+|             if (!string.Equals(spec.Pack, spec.Pack, StringComparison.Ordinal))
+
+[ed3a-hash-constant]
+file = Assets/WarCore/Content/MapTools/MapNoise.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3MathTests.HashVectors
+note = first mixing constant changed
+original:
+|                 ulong z = seed + (ulong)a * 0x9E3779B97F4A7C15UL + (ulong)b * 0xBF58476D1CE4E5B9UL + (ulong)c * 0x94D049BB133111EBUL;
+replacement:
+|                 ulong z = seed + (ulong)a * 0x9E3779B97F4A7C17UL + (ulong)b * 0xBF58476D1CE4E5B9UL + (ulong)c * 0x94D049BB133111EBUL;
+
+[ed3a-hash-shift]
+file = Assets/WarCore/Content/MapTools/MapNoise.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3MathTests.HashVectors
+note = finaliser first shift 31
+original:
+|                 z ^= z >> 30;
+replacement:
+|                 z ^= z >> 31;
+
+[ed3a-pick-span]
+file = Assets/WarCore/Content/MapTools/MapNoise.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3MathTests.PickReachesBothEnds
+note = hi never picked
+original:
+|                 ulong span = (ulong)(hi - lo) + 1UL;
+replacement:
+|                 ulong span = (ulong)(hi - lo) + (hi > lo ? 0UL : 1UL);
+
+[ed3a-weight-r3]
+file = Assets/WarCore/Content/MapTools/MapTerrainMath.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3MathTests.DiscFalloff
+note = falloff divides by r^3
+original:
+|             return Full * k * k / (r2 * r2);
+replacement:
+|             return Full * k * k / (r2 * r);
+
+[ed3a-weight-outside]
+file = Assets/WarCore/Content/MapTools/MapTerrainMath.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3MathTests.DiscFalloff
+note = falloff not 0 outside the disc
+original:
+|             if (d2 >= r2) return 0;
+replacement:
+|             if (d2 < 0) return 0;
+
+[ed3a-band-one-division]
+file = Assets/WarCore/Content/MapTools/MapTerrainMath.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3MathTests.BandFalloffByHand
+note = band falloff in one division
+original:
+|             return Full * q / b * q / b;
+replacement:
+|             return Full * q * q / (b * b);
+
+[ed3a-near-start-cap]
+file = Assets/WarCore/Content/MapTools/MapTerrainMath.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3MathTests
+note = before the start uses the perpendicular distance
+original:
+|                 if (c.T <= 0) { c.Num = ex * ex + ez * ez; c.Den = 1; }
+replacement:
+|                 if (c.T < -1000000000) { c.Num = ex * ex + ez * ez; c.Den = 1; }
+
+[ed3a-near-end-cap]
+file = Assets/WarCore/Content/MapTools/MapTerrainMath.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3MathTests
+note = past the end uses the perpendicular distance
+original:
+|                 else if (c.T >= c.L2)
+replacement:
+|                 else if (c.T >= c.L2 + 1000000000)
+
+[ed3a-near-tie-later]
+file = Assets/WarCore/Content/MapTools/MapTerrainMath.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3MathTests.CornerTakes
+note = a tie takes the later segment
+original:
+|                 if (n == 0 || Closer(c, best)) best = c;
+replacement:
+|                 if (n == 0 || !Closer(best, c)) best = c;
+
+[ed3a-closer-overflow]
+file = Assets/WarCore/Content/MapTools/MapTerrainMath.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3MathTests.CloserCompares
+note = plain cross-multiplication (overflows)
+original:
+|             if (qa != qb) return qa < qb;
+|             return a.Num % a.Den * b.Den < b.Num % b.Den * a.Den;
+replacement:
+|             if (qa != qb && qa < 0) return qa < qb;
+|             return a.Num * b.Den < b.Num * a.Den;
+
+[ed3a-band-edge]
+file = Assets/WarCore/Content/MapTools/MapTerrainMath.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3MathTests.BandMembership
+note = band edge excluded
+original:
+|         internal static bool InBand(MapLineNear near, long w) => near.Num <= w * w * near.Den;
+replacement:
+|         internal static bool InBand(MapLineNear near, long w) => near.Num < w * w * near.Den;
+
+[ed3a-step-92682]
+file = Assets/WarCore/Content/MapTools/MapTerrainMath.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3FillTests
+note = step bound one more
+original:
+|         internal const long L = 92681;
+replacement:
+|         internal const long L = 92682;
+
+[ed3a-fill-forward-only]
+file = Assets/WarCore/Content/MapTools/MapTerrainMath.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3FillTests
+note = fill without the backward pass
+original:
+|                     if (i + 1 < cols) v = Math.Max(v, t[p + 1] - L);
+|                     if (j + 1 < rows) v = Math.Max(v, t[p + cols] - L);
+replacement:
+|                     if (i + 1 < cols) v = Math.Max(v, v);
+|                     if (j + 1 < rows) v = Math.Max(v, v);
+
+[ed3a-envelope-src]
+file = Assets/WarCore/Content/MapTools/MapTerrainMath.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3FillTests.IncompatibleFixedPoints
+note = source stamp not carried
+original:
+|             if (c < v[p]) { v[p] = c; src[p] = src[from]; }
+replacement:
+|             if (c < v[p]) { v[p] = c; }
+
+[ed3a-settle-no-conflict]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3FillTests.IncompatibleFixedPoints
+note = incompatible fixed points not refused
+original:
+|                 if (fixedBy[p] >= 0 && up[p] < t[p]) throw Conflict(fixedBy[p], src[p], p % cols, p / cols);
+replacement:
+|                 if (fixedBy[p] >= 0 && up[p] < t[p] - 1000000000) throw Conflict(fixedBy[p], src[p], p % cols, p / cols);
+
+[ed3a-settle-no-clamp]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3FillTests.Settle
+note = others not lowered to Up
+original:
+|                 if (fixedBy[p] < 0) t[p] = Math.Min(t[p], up[p]);
+replacement:
+|                 if (fixedBy[p] < -1) t[p] = Math.Min(t[p], up[p]);
+
+[ed3a-base-reads-desc]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3ComposeTests.SeedARunThenSeedB
+note = composer reads the current heights
+original:
+|             for (int p = 0; p < t.Length; p++) t[p] = baseRaw;
+replacement:
+|             for (int p = 0; p < t.Length; p++) t[p] = baseRaw + desc.Heights[p / cols][p % cols];
+
+[ed3a-no-clamp]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3ComposeTests.HeightsAreClamped
+note = no range clamp
+original:
+|             for (int p = 0; p < t.Length; p++) t[p] = Math.Max(lo, Math.Min(hi, t[p]));
+replacement:
+|             for (int p = 0; p < t.Length; p++) t[p] = t[p];
+
+[ed3a-clamp-int]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3ComposeTests.HeightsAreClamped
+note = range clamped to int instead of the format limit
+original:
+|             long lo = Math.Max(desc.FloorRaw, -MapDescReader.HeightLimit), hi = Math.Min(desc.CeilingRaw, MapDescReader.HeightLimit);
+replacement:
+|             long lo = Math.Max(desc.FloorRaw, int.MinValue), hi = Math.Min(desc.CeilingRaw, int.MaxValue);
+
+[ed3a-hills-index]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3ComposeTests.HillsPick
+note = hills x picked with index 1
+original:
+|                             long x = MapNoise.Pick(spec.Seed, k, n, 0, s.X0, s.X1), z = MapNoise.Pick(spec.Seed, k, n, 1, s.Z0, s.Z1);
+replacement:
+|                             long x = MapNoise.Pick(spec.Seed, k, n, 1, s.X0, s.X1), z = MapNoise.Pick(spec.Seed, k, n, 1, s.Z0, s.Z1);
+
+[ed3a-hill-full]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3MathTests.MesaTop
+note = hill divides by 1023
+original:
+|                     t[j * cols + i] += h * Weight(r, di * di + dj * dj) / Full;
+replacement:
+|                     t[j * cols + i] += h * Weight(r, di * di + dj * dj) / (Full - 1);
+
+[ed3a-mesa-own-point]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3MathTests.MesaTop
+note = mesa adds to each point instead of the centre
+original:
+|                     if (di * di + dj * dj <= r * r) t[j * cols + i] = c + h;
+replacement:
+|                     if (di * di + dj * dj <= r * r) t[j * cols + i] += h;
+
+[ed3a-river-sign]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3ComposeTests.LaterSurfaces
+note = river raises
+original:
+|                     case "river": Band(t, width, depth, s.Points, s.HalfWidth, -(long)MapGenSpec.MmToRaw(s.DepthMm)); break;
+replacement:
+|                     case "river": Band(t, width, depth, s.Points, s.HalfWidth, (long)MapGenSpec.MmToRaw(s.DepthMm)); break;
+
+[ed3a-road-no-margin]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3RoadTests.ExactlyG
+note = walkable step without the -4 margin
+original:
+|             long g = Math.Max(0, (long)rules.MaxWalkableNum * S / rules.MaxWalkableDen - 4);
+replacement:
+|             long g = Math.Max(0, (long)rules.MaxWalkableNum * S / rules.MaxWalkableDen);
+
+[ed3a-road-no-limit]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3RoadTests
+note = vertices not limited forward
+original:
+|             for (int n = 1; n < m; n++) v[n] = Math.Max(v[n - 1] - g * len[n], Math.Min(v[n - 1] + g * len[n], v[n]));
+replacement:
+|             for (int n = 1; n < m; n++) v[n] = v[n];
+
+[ed3a-road-not-level]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3RoadTests
+note = road height depends on the distance across
+original:
+|                     long h = near.L2 == 0 ? va : va + (vb - va) * Math.Max(0, Math.Min(near.L2, near.T)) / near.L2;
+replacement:
+|                     long h = near.L2 == 0 ? va : va + (vb - va) * Math.Max(0, Math.Min(near.L2, near.T + near.Num / near.Den)) / near.L2;
+
+[ed3a-road-vertex-swap]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3RoadTests
+note = vertex read at the swapped point
+original:
+|                 v[n] = t[Clamp(s.Points[n].Z, 0, depth) * cols + Clamp(s.Points[n].X, 0, width)];
+replacement:
+|                 v[n] = t[Clamp(s.Points[n].X, 0, depth) * cols + Clamp(s.Points[n].Z, 0, width)];
+
+[ed3a-road-walk-check]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3RoadTests.RoadCellSteeperThanWalkable
+note = walkable check skipped
+original:
+|                     if (!MapBrush.CellWithin(t[p], t[p + 1], t[p + cols], t[p + cols + 1], rules.MaxWalkableNum, rules.MaxWalkableDen))
+replacement:
+|                     if (!MapBrush.CellWithin(t[p], t[p + 1], t[p + cols], t[p + cols + 1], 2, 1))
+
+[ed3a-surface-no-cover]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3ComposeTests.LaterSurfaces
+note = a band does not cover an earlier surface
+original:
+|                             if (InBand(Near(s.Points, 2, 2L * x + 1, 2L * z + 1), 2L * s.HalfWidth)) cells[z * width + x] = s.Surface;
+replacement:
+|                             if (InBand(Near(s.Points, 2, 2L * x + 1, 2L * z + 1), 2L * s.HalfWidth) && cells[z * width + x] == spec.Ground) cells[z * width + x] = s.Surface;
+
+[ed3a-surface-not-doubled]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3RoadTests.RoadOverAHill
+note = cell band measured from the cell corner
+original:
+|                             if (InBand(Near(s.Points, 2, 2L * x + 1, 2L * z + 1), 2L * s.HalfWidth)) cells[z * width + x] = s.Surface;
+replacement:
+|                             if (InBand(Near(s.Points, 1, x, z), s.HalfWidth)) cells[z * width + x] = s.Surface;
+
+[ed3a-patch-corner]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3MathTests.SmoothPatch
+note = patch measured from the cell corner
+original:
+|                     long ax = 2L * x + 1 - 2 * cx, az = 2L * z + 1 - 2 * cz;
+replacement:
+|                     long ax = 2L * x - 2 * cx, az = 2L * z - 2 * cz;
+
+[ed3a-patch-smooth]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3MathTests.RoughPatch
+note = rough ignored
+original:
+|                     long j = s.Rough == 0 ? 0 : MapNoise.Pick(seed, k, x, z, -s.Rough, s.Rough);
+replacement:
+|                     long j = 0;
+
+[ed3a-pre-base-given]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3ComposeTests.Preconditions
+note = baseMm on a map without heights accepted
+original:
+|             if (!hasHeights && spec.BaseMm.HasValue) throw new ArgumentException("gen baseMm is given but the map has no heights");
+replacement:
+|             if (!hasHeights && spec.BaseMm.HasValue && false) throw new ArgumentException("gen baseMm is given but the map has no heights");
+
+[ed3a-pre-base-missing]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3ComposeTests.Preconditions
+note = missing baseMm not refused up front
+original:
+|             if (hasHeights && !spec.BaseMm.HasValue) throw new ArgumentException("the map has heights, so gen baseMm is required");
+replacement:
+|             if (hasHeights && !spec.BaseMm.HasValue && false) throw new ArgumentException("the map has heights, so gen baseMm is required");
+
+[ed3a-pre-ground-given]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3ComposeTests.Preconditions
+note = ground on a map without surfaces accepted
+original:
+|             if (!hasSurfaces && spec.Ground != null) throw new ArgumentException("gen ground is given but the map has no surfaces");
+replacement:
+|             if (!hasSurfaces && spec.Ground != null && false) throw new ArgumentException("gen ground is given but the map has no surfaces");
+
+[ed3a-pre-ground-missing]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3ComposeTests.Preconditions
+note = missing ground accepted
+original:
+|             if (hasSurfaces && spec.Ground == null) throw new ArgumentException("the map has surfaces, so gen ground is required");
+replacement:
+|             if (hasSurfaces && spec.Ground == null && false) throw new ArgumentException("the map has surfaces, so gen ground is required");
+
+[ed3a-pre-heights]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3ComposeTests.Preconditions
+note = height stamp on a map without heights accepted
+original:
+|                 if (!hasHeights && s.ChangesHeights) throw new ArgumentException("stamp " + k + " (" + s.Kind + ") changes heights but the map has no heights");
+replacement:
+|                 if (!hasHeights && s.ChangesHeights && false) throw new ArgumentException("stamp " + k + " (" + s.Kind + ") changes heights but the map has no heights");
+
+[ed3a-pre-patch]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3ComposeTests.Preconditions
+note = patch on a map without surfaces accepted
+original:
+|                 if (!hasSurfaces && s.Kind == "patch") throw new ArgumentException("stamp " + k + " (patch) needs surfaces but the map has none");
+replacement:
+|                 if (!hasSurfaces && s.Kind == "patch" && false) throw new ArgumentException("stamp " + k + " (patch) needs surfaces but the map has none");
+
+[ed3a-pre-surface-known]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3ComposeTests.Preconditions
+note = surface not in the layer accepted
+original:
+|             if (!rules.TryFind(name, out _)) throw new ArgumentException("surface " + name + " is not in layer " + layer);
+replacement:
+|             if (!rules.TryFind(name, out _) && false) throw new ArgumentException("surface " + name + " is not in layer " + layer);
+
+[ed3a-doc-no-names]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Terrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3DocumentTests.WithTerrainIsTheSameBatch
+note = facade does not add surface names
+original:
+|                 foreach (string name in MissingNames(plan)) b.AddSurfaceName(name);
+replacement:
+|                 foreach (string name in MissingNames(plan)) { }
+
+[ed3a-doc-no-rules]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Terrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3DocumentTests.LayerWithoutTerrainRules
+note = layer without rules not InvalidOperationException
+original:
+|             if (rules == null) throw new InvalidOperationException("layer " + PackId + " has no terrain rules");
+replacement:
+|             if (rules == null && false) throw new InvalidOperationException("layer " + PackId + " has no terrain rules");

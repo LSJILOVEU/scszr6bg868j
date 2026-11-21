@@ -21,10 +21,10 @@ namespace WarCore.Battle
         private readonly EntityStage stage;
         private readonly ComponentType<Position> positions;
         private readonly ComponentType<Combatant> combatants;
-        private readonly long[] next = new long[2], attempts = new long[2], successes = new long[2];
+        private readonly long[] next, attempts, successes;
         private readonly SimVec3[] anchors;
         private readonly int[] layers;
-        private readonly DeployRecord[] deployed = new DeployRecord[2];
+        private readonly DeployRecord[] deployed;
         private int deployCount;
         public ReinforceSystem(CombatSystem combat, MatchPack pack, CaptureSystem capture, IUnitDeployer deployer, long startTick = 0)
         {
@@ -32,11 +32,14 @@ namespace WarCore.Battle
             stage = new EntityStage(combat.Entities); positions = combat.Entities.Resolve<Position>(); combatants = combat.Entities.Resolve<Combatant>();
             anchors = new SimVec3[pack.Bases.Length + pack.Points.Length];
             layers = new int[anchors.Length];
-            next[0] = next[1] = startTick + pack.IntervalTicks;
+            int teams = pack.TeamCount;
+            next = new long[teams]; attempts = new long[teams]; successes = new long[teams]; deployed = new DeployRecord[teams];
+            for (int i = 0; i < teams; i++) next[i] = startTick + pack.IntervalTicks;
         }
         public int Order => 8;
         public string StateTypeId => "battle.reinforce";
-        public int StateVersion => 1;
+        // NT-1: two teams keep version 1 and its bytes; more teams save TeamCount triples (version 2).
+        public int StateVersion => pack.TeamCount == 2 ? 1 : 2;
         public ReadOnlySpan<DeployRecord> Deployed => deployed.AsSpan(0, deployCount);
         public long Attempts(int team) => attempts[team - 1];
         public long Successes(int team) => successes[team - 1];
@@ -44,7 +47,7 @@ namespace WarCore.Battle
         public void Step(SimContext c)
         {
             deployCount = 0;
-            for (int team = 1; team <= 2; team++)
+            for (int team = 1; team <= pack.TeamCount; team++)
             {
                 int index = team - 1;
                 if (c.Clock.Tick < next[index]) continue;
@@ -81,18 +84,18 @@ namespace WarCore.Battle
         public void SaveState(SimStateWriter writer)
         {
             writer.UInt64(pack.PolicyDigest); writer.UInt64(deployer.PolicyKey);
-            for (int i = 0; i < 2; i++) { writer.Int64(next[i]); writer.Int64(attempts[i]); writer.Int64(successes[i]); }
+            for (int i = 0; i < pack.TeamCount; i++) { writer.Int64(next[i]); writer.Int64(attempts[i]); writer.Int64(successes[i]); }
         }
         public void LoadState(SimStateReader reader)
         {
             pack.Check(reader); SimStateReader.Require(reader.UInt64() == deployer.PolicyKey, "Deployment configuration differs.");
-            for (int i = 0; i < 2; i++) { next[i] = reader.Int64(); attempts[i] = reader.Int64(); successes[i] = reader.Int64(); }
+            for (int i = 0; i < pack.TeamCount; i++) { next[i] = reader.Int64(); attempts[i] = reader.Int64(); successes[i] = reader.Int64(); }
             deployCount = 0;
         }
         public void WriteState(StateHash hash)
         {
             hash.Add(StateTypeId); hash.Add(StateVersion); hash.Add(pack.PolicyDigest); hash.Add(deployer.PolicyKey);
-            for (int i = 0; i < 2; i++) { hash.Add(next[i]); hash.Add(attempts[i]); hash.Add(successes[i]); }
+            for (int i = 0; i < pack.TeamCount; i++) { hash.Add(next[i]); hash.Add(attempts[i]); hash.Add(successes[i]); }
         }
     }
 }

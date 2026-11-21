@@ -10,8 +10,8 @@ namespace WarCore.Content
     // objects keep their own PolicyKey (the id string is never hashed).
     public static class ContentPolicies
     {
-        public const string RwrHit = "rwr.hit", NearestVisible = "nearest-visible", SightLimitedNearest = "sight-limited";
-        public const string ResolverIds = RwrHit;
+        public const string Damage = "damage", RwrHit = "rwr.hit", NearestVisible = "nearest-visible", SightLimitedNearest = "sight-limited";
+        public const string ResolverIds = Damage + ", " + RwrHit;
         public const string SelectorIds = NearestVisible + ", " + SightLimitedNearest;
         // AI parts (ai section): dispatch picks the point a unit goes for, placement where at it the unit wants to stand.
         public const string NearestDispatch = "nearest", NearestSlot = "nearest-slot", Scatter = "scatter", AssaultRoles = "assault-roles";
@@ -21,12 +21,12 @@ namespace WarCore.Content
         public const string HoldEngage = "hold", BoundEngage = "bound";
         public const string EngageIds = HoldEngage + ", " + BoundEngage;
 
-        public static bool IsResolver(string id) => id == RwrHit;
+        public static bool IsResolver(string id) => id == Damage || id == RwrHit;
         public static bool IsSelector(string id) => id == NearestVisible || id == SightLimitedNearest;
         public static bool IsDispatch(string id) => id == NearestDispatch;
         public static bool IsPlacement(string id) => id == NearestSlot || id == Scatter || id == AssaultRoles;
         public static bool IsEngage(string id) => id == HoldEngage || id == BoundEngage;
-        public static IHitResolver Resolver(string id) => id == null ? null : new RwrHitResolver();
+        public static IHitResolver Resolver(string id) => id == null ? null : id == Damage ? new DamageResolver() : (IHitResolver)new RwrHitResolver();
         public static ITargetSelector Selector(string id, SimFix sight) => id == SightLimitedNearest
             ? new SightLimited(new NearestVisibleEnemy(), sight)
             : (ITargetSelector)new NearestVisibleEnemy();
@@ -37,9 +37,11 @@ namespace WarCore.Content
         // so bound's move and fire windows must be whole multiples of it, or loading the battle fails. The default 1 checks nothing.
         // flat: the battle runs on a flat map. A cover spot takes the height of the unit that looks for it, so cover rules
         // on a terrain map fail the load.
-        public static AiParts Parts(AiRules ai, ReadOnlySpan<ControlPointDef> points = default, int thinkInterval = 1, bool flat = true)
+        // plates: the map has floor plates (ML-11a). The parts that still measure on the plane are refused there.
+        public static AiParts Parts(AiRules ai, ReadOnlySpan<ControlPointDef> points = default, int thinkInterval = 1, bool flat = true, bool plates = false)
         {
             if (!flat && ai != null && ai.CoverRadiusMm > 0) throw ai.FieldError("coverRadiusMm", "is not supported on a terrain map");
+            if (plates && ai != null) CheckPlates(ai);
             long spacing = SimFix.Ratio(ai?.SlotSpacingMm ?? AiRules.DefaultSlotSpacingMm, 1000).Raw;
             long ring = SimFix.Ratio(ai?.SlotRingMm ?? 0, 1000).Raw;
             if (ring > 0) CheckZones(ai, points, spacing, ring);
@@ -55,6 +57,21 @@ namespace WarCore.Content
                 Placement(ai), spacing, ring, engage,
                 SimFix.Ratio(ai?.CoverRadiusMm ?? 0, 1000).Raw, SimFix.Ratio(ai?.CoverStepMm ?? 0, 1000).Raw, SimFix.Ratio(ai?.CoverDepthMm ?? 0, 1000).Raw);
         }
+
+        private const string NoPlates = "is not supported on a map with floor plates";
+        private static void CheckPlates(AiRules ai)
+        {
+            if (ai.SearchTicks > 0) throw Refused(ai, "searchTicks");
+            if (ai.SuppressTicks > 0) throw Refused(ai, "suppressTicks");
+            if (ai.MeleeChaseRange > 0) throw Refused(ai, "meleeChaseRange");
+            if (ai.Pressure != null) throw Refused(ai, "pressureNearRadiusMm");
+            if (ai.Engage == BoundEngage) throw Refused(ai, "engage");
+            if (ai.Placement == Scatter || ai.Placement == AssaultRoles) throw Refused(ai, "placement");
+        }
+
+        // Rules built in code have no place in a pack to point at.
+        private static Exception Refused(AiRules ai, string field) => ai.FieldError != null
+            ? ai.FieldError(field, NoPlates) : new NotSupportedException("ai." + field + " " + NoPlates + ".");
 
         private static void CheckThinks(AiRules ai, string field, int ticks, int thinkInterval)
         {

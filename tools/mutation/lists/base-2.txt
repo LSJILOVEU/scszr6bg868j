@@ -1,0 +1,81 @@
+# BASE-2: the generic hit resolver "damage" (EffectRaw of health scaled by falloff, no roll). Filter: damage, gen-hit and content error tests.
+
+[dmg-no-falloff]
+file = Assets/WarCore/Combat/DamageResolver.cs
+filter = FullyQualifiedName~DamageResolver|FullyQualifiedName~GenHit|FullyQualifiedName~ContentErrorLock
+expect = WarCore.Tests.DamageResolverTests.Damage_IsEffectScaledByFalloffWithoutRoll
+note = falloff is ignored
+original:
+|             weapon.EffectRaw * falloffRaw / WarCore.Sim.SimFix.Scale;
+replacement:
+|             weapon.EffectRaw;
+
+[dmg-kills]
+file = Assets/WarCore/Combat/DamageResolver.cs
+filter = FullyQualifiedName~DamageResolver|FullyQualifiedName~GenHit|FullyQualifiedName~ContentErrorLock
+expect = WarCore.Tests.DamageResolverTests.Damage_WoundsUntilTheThirdHitKills
+note = every hit kills, as under rwr.hit
+original:
+|             weapon.EffectRaw * falloffRaw / WarCore.Sim.SimFix.Scale;
+replacement:
+|             maxHealthRaw;
+
+[dmg-rounds-up]
+file = Assets/WarCore/Combat/DamageResolver.cs
+filter = FullyQualifiedName~DamageResolver|FullyQualifiedName~GenHit|FullyQualifiedName~ContentErrorLock
+expect = WarCore.Tests.DamageResolverTests.Damage_IsEffectScaledByFalloffWithoutRoll
+note = rounding goes up
+original:
+|             weapon.EffectRaw * falloffRaw / WarCore.Sim.SimFix.Scale;
+replacement:
+|             (weapon.EffectRaw * falloffRaw + WarCore.Sim.SimFix.Scale - 1) / WarCore.Sim.SimFix.Scale;
+
+[dmg-roll-read]
+file = Assets/WarCore/Combat/DamageResolver.cs
+filter = FullyQualifiedName~DamageResolver|FullyQualifiedName~GenHit|FullyQualifiedName~ContentErrorLock
+expect = WarCore.Tests.DamageResolverTests.Damage_IsEffectScaledByFalloffWithoutRoll
+note = the roll scales the damage
+original:
+|             weapon.EffectRaw * falloffRaw / WarCore.Sim.SimFix.Scale;
+replacement:
+|             weapon.EffectRaw * falloffRaw / WarCore.Sim.SimFix.Scale * (65536 - rollRaw) / 65536;
+
+[dmg-not-allowed]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~DamageResolver|FullyQualifiedName~GenHit|FullyQualifiedName~ContentErrorLock
+expect = WarCore.Tests.DamageResolverTests.Damage_IsAContentPolicy
+note = the id is refused
+original:
+| public static bool IsResolver(string id) => id == Damage || id == RwrHit;
+replacement:
+| public static bool IsResolver(string id) => id == RwrHit;
+
+[dmg-maps-to-rwr]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~DamageResolver|FullyQualifiedName~GenHit|FullyQualifiedName~ContentErrorLock
+expect = WarCore.Tests.DamageResolverTests.Damage_IsAContentPolicy
+note = the id builds the RWR resolver
+original:
+| id == Damage ? new DamageResolver() : (IHitResolver)new RwrHitResolver();
+replacement:
+| (IHitResolver)new RwrHitResolver();
+
+[dmg-rwr-maps-to-damage]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~DamageResolver|FullyQualifiedName~GenHit|FullyQualifiedName~ContentErrorLock
+expect = WarCore.Tests.DamageResolverTests.Damage_IsAContentPolicy
+note = rwr.hit builds the damage resolver
+original:
+| id == Damage ? new DamageResolver() : (IHitResolver)new RwrHitResolver();
+replacement:
+| (IHitResolver)new DamageResolver();
+
+[dmg-not-listed]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~DamageResolver|FullyQualifiedName~GenHit|FullyQualifiedName~ContentErrorLock
+expect = WarCore.Tests.GenHitTests.GenHit_ExplicitInvalidResolverIsRejected
+note = the error does not list the id
+original:
+| public const string ResolverIds = Damage + ", " + RwrHit;
+replacement:
+| public const string ResolverIds = RwrHit;

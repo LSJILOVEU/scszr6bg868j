@@ -1,0 +1,315 @@
+# ML-10: the plates for the picture (ViewPlates, layers in the view), the layer cut and fading (LayerCut), picking with
+# plates (AimPick, the mapper), the plate self-check (PlateCheck) and the plate mesh (PlateMesh). Filter: ML-10 tests.
+# Not listed: PlateRay.TryTop's solid-cell skip (the millimetre check behind it refuses the same cells); LayerCut's
+# `if (indoors)` guard, a shortcut (outdoors no plate is in the building, so dropping it changes nothing); Unity code (no
+# Unity here).
+[ml10-view-solid-ignored]
+file = Assets/WarCore/Presentation/Bridge/Features/ViewPlates.cs
+filter = FullyQualifiedName~Ml10
+expect = WarCore.Tests.Ml10ViewTests.ThePlatesForThePictureAreSims
+expect = WarCore.Tests.Ml10ViewTests.PlateCheckReportsEachRule
+note = a cutout cell has a top
+original:
+| if (i < 0 || j < 0 || i >= p.Width || j >= p.Depth || !p.IsSolid(i, j)) return false;
+replacement:
+| if (i < 0 || j < 0 || i >= p.Width || j >= p.Depth) return false;
+
+[ml10-view-layer-dropped]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Ml10
+expect = WarCore.Tests.Ml10ViewTests.TheViewCarriesEachUnitsLayer
+note = every unit is shown on the ground
+original:
+| layers == null ? 0 : layers.LayerOf(unit)));
+replacement:
+| 0));
+
+[ml10-interpolate-drops-layer]
+file = Assets/WarCore/Presentation/Bridge/FrameView.cs
+filter = FullyQualifiedName~Ml10
+expect = WarCore.Tests.Ml10ViewTests.TheViewCarriesEachUnitsLayer
+note = interpolation loses the layer
+original:
+| next.Team, next.Alive, layer: next.Layer);
+replacement:
+| next.Team, next.Alive);
+
+[ml10-cut-no-building]
+file = Assets/WarCore/Presentation/Camera/LayerCut.cs
+filter = FullyQualifiedName~Ml10
+expect = WarCore.Tests.Ml10CutTests.UnderTheFloorTheFloorIsHidden
+expect = WarCore.Tests.Ml10CutTests.TheHeadroomEdges
+note = indoors, but no plate starts the building
+original:
+|                     building[k] = true;
+|                     indoors = true;
+replacement:
+|                     indoors = true;
+
+[ml10-cut-headroom-equal]
+file = Assets/WarCore/Presentation/Camera/LayerCut.cs
+filter = FullyQualifiedName~Ml10
+expect = WarCore.Tests.Ml10CutTests.TheHeadroomEdges
+note = a plate whose bottom is exactly at the headroom hides
+original:
+| if (building[k] && plates[k].LowestBottom > cut)
+replacement:
+| if (building[k] && plates[k].LowestBottom >= cut)
+
+[ml10-cut-wall-edge]
+file = Assets/WarCore/Presentation/Camera/LayerCut.cs
+filter = FullyQualifiedName~Ml10
+expect = WarCore.Tests.Ml10CutTests.TheHeadroomEdges
+note = a wall whose bottom is exactly at the headroom stays
+original:
+| if (wall.CenterY - wall.SizeY / 2 < cut) continue;
+replacement:
+| if (wall.CenterY - wall.SizeY / 2 <= cut) continue;
+
+[ml10-cut-wall-anywhere]
+file = Assets/WarCore/Presentation/Camera/LayerCut.cs
+filter = FullyQualifiedName~Ml10
+expect = WarCore.Tests.Ml10CutTests.AHighWallAwayFromTheHouseStays
+note = any high wall hides indoors, near the building or not
+original:
+| if (building[k] && Covers(plates[k], wall))
+replacement:
+| if (building[k])
+
+[ml10-cut-fades-own-plate]
+file = Assets/WarCore/Presentation/Camera/LayerCut.cs
+filter = FullyQualifiedName~Ml10
+expect = WarCore.Tests.Ml10CutTests.ThePlateUnderTheUnitNeverFades
+note = the plate under the unit fades
+original:
+| if (plateStates[k] == CutState.Shown && k + 1 != me.Layer && PlateRay.Crosses(
+replacement:
+| if (plateStates[k] == CutState.Shown && PlateRay.Crosses(
+
+[ml10-cut-fades-all-walls]
+file = Assets/WarCore/Presentation/Camera/LayerCut.cs
+filter = FullyQualifiedName~Ml10
+expect = WarCore.Tests.Ml10CutTests.OutsideNothingIsCut
+expect = WarCore.Tests.Ml10CutTests.FadingFollowsTheLine
+note = every wall fades
+original:
+| if (wallStates[w] == CutState.Shown && PlateRay.CrossesBox(
+replacement:
+| if (wallStates[w] == CutState.Shown && true || PlateRay.CrossesBox(
+
+[ml10-cut-no-feet-line]
+file = Assets/WarCore/Presentation/Camera/LayerCut.cs
+filter = FullyQualifiedName~Ml10
+expect = WarCore.Tests.Ml10CutTests.FadingFollowsTheLine
+note = only the head line fades (the feet line is dropped)
+original:
+| foreach (float lift in new[] { FootLift, AimPick.BodyHeight })
+replacement:
+| foreach (float lift in new[] { AimPick.BodyHeight })
+
+[ml10-cut-no-head-line]
+file = Assets/WarCore/Presentation/Camera/LayerCut.cs
+filter = FullyQualifiedName~Ml10
+expect = WarCore.Tests.Ml10CutTests.TheHeadLineFadesWhatTheFeetPassUnder
+note = only the feet line fades (the head line is dropped)
+original:
+| foreach (float lift in new[] { FootLift, AimPick.BodyHeight })
+replacement:
+| foreach (float lift in new[] { FootLift })
+
+[ml10-cut-indoors-equal]
+file = Assets/WarCore/Presentation/Camera/LayerCut.cs
+filter = FullyQualifiedName~Ml10
+expect = WarCore.Tests.Ml10CutTests.TheIndoorsEdge
+note = a plate bottom level with the feet counts as over the unit
+original:
+| top - p.Thick > me.Y)
+replacement:
+| top - p.Thick >= me.Y)
+
+[ml10-cut-corner-joins]
+file = Assets/WarCore/Presentation/Camera/LayerCut.cs
+filter = FullyQualifiedName~Ml10
+expect = WarCore.Tests.Ml10CutTests.ACornerAloneDoesNotJoinTheBuilding
+note = rectangles meeting at a corner join the building
+original:
+|             return x >= 0 && z >= 0 && (x > 0 || z > 0);
+replacement:
+|             return x >= 0 && z >= 0;
+
+[ml10-cut-faded-pickable]
+file = Assets/WarCore/Presentation/Camera/LayerCut.cs
+filter = FullyQualifiedName~Ml10
+expect = WarCore.Tests.Ml10CutTests.HalfwayUpTheStairNothingHides
+note = a faded plate is picked
+original:
+| plates[layer - 1] == CutState.Shown;
+replacement:
+| plates[layer - 1] != CutState.Hidden;
+
+[ml10-pick-cut-ignored]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Ml10
+expect = WarCore.Tests.Ml10PickTests.HiddenPlatesAndHolesAreNotPicked
+note = hidden plates are picked
+original:
+|                     if (cut != null && !cut.Pickable(k + 1)) continue;
+| 
+replacement:
+| 
+
+[ml10-pick-mm-unchecked]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Ml10
+expect = WarCore.Tests.Ml10PickTests.TheMillimetrePointStaysOnThePlate
+note = a hit whose millimetre point is off the plate is taken
+original:
+| if (!plates.TryTopRaw(layer, q.X.Raw, q.Z.Raw, out long h)) return false;
+replacement:
+| plates.TryTopRaw(layer, q.X.Raw, q.Z.Raw, out long h);
+
+[ml10-pick-hidden-unit]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Ml10
+expect = WarCore.Tests.Ml10PickTests.HiddenUnitsAreNotSnapped
+note = a hidden unit is snapped to
+original:
+|                 if (cut != null && cut.IsHidden(e)) continue;
+| 
+replacement:
+| 
+
+[ml10-pick-unit-height]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Ml10
+expect = WarCore.Tests.Ml10PickTests.HiddenUnitsAreNotSnapped
+note = a unit on a plate has no height on a flat map
+original:
+| long? yMm = ground == null && snapped.Layer == 0 ? (long?)null
+replacement:
+| long? yMm = ground == null ? (long?)null
+
+[ml10-pick-plate-layer]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Ml10
+expect = WarCore.Tests.Ml10PickTests.TheFloorIsPickedWithItsLayer
+expect = WarCore.Tests.Ml10PickTests.ThePickReachesTheSession
+note = a plate pick carries layer 0
+original:
+| target = new AimTarget(AimKind.Plate, x, y, z, yMm, 0, layer);
+replacement:
+| target = new AimTarget(AimKind.Plate, x, y, z, yMm, 0, 0);
+
+[ml10-mapper-drops-layer]
+file = Assets/WarCore/Presentation/Camera/PlayerInputMapper.cs
+filter = FullyQualifiedName~Ml10
+expect = WarCore.Tests.Ml10PickTests.ThePickReachesTheSession
+note = the input loses the pick layer
+original:
+| lastAimLayer = aim.Value.Layer;
+replacement:
+| lastAimLayer = 0;
+
+[ml10-mapper-flat-keeps-layer]
+file = Assets/WarCore/Presentation/Camera/PlayerInputMapper.cs
+filter = FullyQualifiedName~Ml10
+expect = WarCore.Tests.Ml10PickTests.ThePickReachesTheSession
+note = a flat pick keeps the last layer
+original:
+|                 lastAimYMm = null;
+|                 lastAimLayer = 0;
+replacement:
+|                 lastAimYMm = null;
+
+[ml10-check-no-hole]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateCheck.cs
+filter = FullyQualifiedName~Ml10
+expect = WarCore.Tests.Ml10ViewTests.PlateCheckReportsEachRule
+note = holes are not compared
+original:
+| if (mine != sims) holeAgrees = false;
+replacement:
+| if (mine != sims) holeAgrees = true;
+
+[ml10-check-no-top]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateCheck.cs
+filter = FullyQualifiedName~Ml10
+expect = WarCore.Tests.Ml10ViewTests.PlateCheckReportsEachRule
+note = tops are not compared
+original:
+| else if (mine && a != b.Raw) topsAgree = false;
+replacement:
+| else if (mine && a != b.Raw) topsAgree = true;
+
+[ml10-check-one-triangle]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateCheck.cs
+filter = FullyQualifiedName~Ml10
+expect = WarCore.Tests.Ml10ViewTests.PlateCheckReportsEachRule
+note = tops sampled at the cell centre only
+original:
+| foreach ((long u, long v) in new[] { (3L, 1L), (1L, 3L) })
+replacement:
+| foreach ((long u, long v) in new[] { (2L, 2L) })
+
+[ml10-check-walk-is-solid]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateCheck.cs
+filter = FullyQualifiedName~Ml10
+expect = WarCore.Tests.Ml10ViewTests.PlateCheckReportsEachRule
+note = the walk rule reads the solid bit
+original:
+| if (walkable != p.IsWalkable(i, j))
+replacement:
+| if (walkable != p.IsSolid(i, j))
+
+[ml10-mesh-faces-in]
+file = Assets/WarCore/Presentation/Bridge/PlateMesh.cs
+filter = FullyQualifiedName~Ml10
+expect = WarCore.Tests.Ml10MeshTests.EveryFaceFacesOut
+note = faces turned the wrong way
+original:
+| if (facing < 0) { var s = b; b = d; d = s; }
+replacement:
+| if (facing > 0) { var s = b; b = d; d = s; }
+
+[ml10-mesh-no-bottom]
+file = Assets/WarCore/Presentation/Bridge/PlateMesh.cs
+filter = FullyQualifiedName~Ml10
+expect = WarCore.Tests.Ml10MeshTests.TheFloorMeshByHand
+expect = WarCore.Tests.Ml10MeshTests.EveryFaceFacesOut
+note = bottoms drawn at the top
+original:
+| (plate.MinX + i, top ? plate.Top(i, j) : plate.Bottom(i, j), plate.MinZ + j);
+replacement:
+| (plate.MinX + i, plate.Top(i, j), plate.MinZ + j);
+
+[ml10-mesh-cutout-closed]
+file = Assets/WarCore/Presentation/Bridge/PlateMesh.cs
+filter = FullyQualifiedName~Ml10
+expect = WarCore.Tests.Ml10MeshTests.TheFloorMeshByHand
+note = no sides round a cutout
+original:
+| || j >= plate.Depth || !plate.IsSolid(i, j);
+replacement:
+| || j >= plate.Depth;
+
+[ml10-mesh-compare-tops-only]
+file = Assets/WarCore/Presentation/Bridge/PlateMesh.cs
+filter = FullyQualifiedName~Ml10
+expect = WarCore.Tests.Ml10MeshTests.TheComparisonNamesTheFirstProblem
+note = only top vertices are compared
+original:
+|             for (int v = 0; v < VertexCount; v++)
+|                 for (int c = 0; c < 3; c++)
+replacement:
+|             for (int v = 0; v < 4 * SolidCells; v++)
+|                 for (int c = 0; c < 3; c++)
+
+[ml10-mesh-compare-loose]
+file = Assets/WarCore/Presentation/Bridge/PlateMesh.cs
+filter = FullyQualifiedName~Ml10
+expect = WarCore.Tests.Ml10MeshTests.TheComparisonNamesTheFirstProblem
+note = ten times the tolerance
+original:
+| public const float Tolerance = 1e-3f;
+replacement:
+| public const float Tolerance = 1e-2f;

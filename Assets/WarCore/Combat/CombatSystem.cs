@@ -232,7 +232,8 @@ namespace WarCore.Combat
                     }
                     int angle = weapon.Spread.AngleAt(unit.SpreadStored, unit.SpreadLastMilli, tick * 1000);
                     if (angle > 0) direction = Rotate(direction, angle, sim.Rng.NextInt(spreadStream, 65536));
-                    FireRay(c, shooter, in unit, in position, in weapon, tick, origin, direction, angle);
+                    if (pack.IsProjectile(unit.Weapon)) LaunchRay(shooter, in unit, in weapon, tick, origin, direction, angle);
+                    else FireRay(c, shooter, in unit, in position, in weapon, tick, origin, direction, angle);
                 }
             }
             finally { cacheValid = false; inStep = false; ClearIntents(); }

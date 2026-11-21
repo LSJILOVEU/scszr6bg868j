@@ -20,25 +20,40 @@ namespace WarCore.Tests
         [SetUp] public void Make() => dirs = new Ed0Dirs();
         [TearDown] public void Clean() => dirs.Dispose();
 
+        // Layers each cartridge must have. A cartridge may hold more: every layer it lists must load (see AssertLayers).
         private static readonly string[] RwrLayers = { "rwr", "rwr-ai-playtest", "rwr-m6", "rwr-m7-playtest", "rwr-melee", "rwr-surfaces", "rwr-terrain-demo" };
+        private static readonly string[] AncientLayers = { "ancient", "ancient-field" };
 
         [Test]
         public void TheShippedCartridges()
         {
             Assert.That(MapCatalog.Cartridges(), Is.EqualTo(new[] { "Ancient", "Rwr" }));
-            Assert.That(MapCatalog.Layers("Rwr"), Is.EqualTo(RwrLayers));
-            Assert.That(MapCatalog.Layers("Ancient"), Is.EqualTo(new[] { "ancient" }));
+            AssertLayers("Rwr", RwrLayers, RwrPack.Load);
+            AssertLayers("Ancient", AncientLayers, layer => ContentLoader.Load(new FileContentSource("Assets/WarCore/Content/Ancient/Data"), layer));
             Assert.That(MapCatalog.DefaultLayer("Rwr"), Is.EqualTo("rwr-terrain-demo"));
             Assert.That(MapCatalog.DefaultLayer("Ancient"), Is.EqualTo("ancient"));
             Assert.That(MapCatalog.SurfaceNames("rwr-terrain-demo"), Is.EqualTo(new[] { "grass", "mud", "road" }));
             Assert.That(MapCatalog.UnitTypeNames("ancient"), Is.EqualTo(new[] { "ancient.swordsman", "ancient.guard" }));
-            foreach (string layer in RwrLayers)
+            Assert.That(RwrPack.Load("rwr").HasMatch, Is.True);
+        }
+
+        // The cartridge lists at least the layers it must have, in strictly increasing byte order (so no repeats), and every
+        // layer it lists loads, with the id its file name gives, and the catalog agrees with the pack about match and terrain.
+        // load reads a layer without the catalog, so the two paths are compared.
+        private static void AssertLayers(string cartridge, string[] required, Func<string, ContentPack> load)
+        {
+            IReadOnlyList<string> listed = MapCatalog.Layers(cartridge);
+            Assert.That(listed, Is.SupersetOf(required), cartridge);
+            for (int i = 1; i < listed.Count; i++)
+                Assert.That(string.CompareOrdinal(listed[i - 1], listed[i]), Is.LessThan(0), cartridge + ": " + listed[i - 1] + ", " + listed[i]);
+            foreach (string layer in listed)
             {
-                ContentPack pack = RwrPack.Load(layer);
+                ContentPack pack = null;
+                Assert.DoesNotThrow(() => pack = load(layer), cartridge + " layer " + layer);
+                Assert.That(pack.Id, Is.EqualTo(layer), cartridge + " layer " + layer);
                 Assert.That(MapCatalog.LayerHasMatch(layer), Is.EqualTo(pack.HasMatch), layer);
                 Assert.That(MapCatalog.LayerHasTerrain(layer), Is.EqualTo(pack.Terrain != null), layer);
             }
-            Assert.That(RwrPack.Load("rwr").HasMatch, Is.True);
         }
 
         [Test]

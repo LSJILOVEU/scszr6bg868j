@@ -36,6 +36,9 @@ namespace WarCore.Presentation
             var combat = new CombatSystem(sim, a.Positions, a.Combatants, Covered(a), a.WallMask, WorldAssembly.MoverLayer, recipe.Units.Length, a.Controlled, a.Terrain?.Ground,
                 a.Plates?.Field);
             sim.RegisterGameplay("combat.system", combat, SimSystemPhase.Queries);
+            // PROJ-1: only a pack with a projectile weapon gets the projectile system (and its random stream).
+            if (combat.Pack.HasProjectiles)
+                sim.RegisterGameplay("combat.projectiles", new ProjectileSystem(sim, combat, System.Math.Max(1, ProjectileCapacity(recipe))), SimSystemPhase.Queries);
             // The combat system registers the melee component, so the units get their specs only now.
             for (int i = 0; i < recipe.Units.Length; i++)
                 if (recipe.Units[i].Melee >= 0) combat.SetMelee(a.Units[i], recipe.Units[i].Melee);
@@ -43,6 +46,17 @@ namespace WarCore.Presentation
                 if (recipe.Units[i].Block >= 0) combat.SetBlock(a.Units[i], recipe.Units[i].Block);
             sim.RegisterGameplay("bridge.dead-cleanup", new DeadCleanup(sim, a.Combatants, a.Intents), SimSystemPhase.Requests);
             a.Combat = combat;
+        }
+
+        // PROJ-1: the projectile pool of the recipe's units, reserves included (CombatPack.ProjectileCapacity); 0 without a
+        // projectile weapon. The world's damage command, notice and event limits grow by the same number.
+        internal static int ProjectileCapacity(WorldRecipe recipe)
+        {
+            CombatPack pack = recipe.Combat;
+            if (pack == null || !pack.HasProjectiles) return 0;
+            var weapons = new int[recipe.Units.Length];
+            for (int i = 0; i < weapons.Length; i++) weapons[i] = recipe.Units[i].Weapon;
+            return pack.ProjectileCapacity(weapons);
         }
 
         // The recipe's combat pack, with its selector wrapped in ConcealedSight when some cell of a terrain map stands on a surface

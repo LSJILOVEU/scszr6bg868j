@@ -35,6 +35,7 @@ namespace WarCore.Presentation
         private bool hasAim;
         private GroundPick lastAim;
         private long? lastAimYMm; // A4: height of the last valid pick from the aim overload; null after any other pick
+        private int lastAimLayer; // ML-10: layer of that pick (a plate top); 0 after any other pick
 
         public PlayerInputMapper() { bindings = Array.Empty<PlayerKeyBinding>(); }
 
@@ -65,6 +66,7 @@ namespace WarCore.Presentation
             {
                 lastAim = camera.ScreenToGround(x, y, w, h);
                 lastAimYMm = null;
+                lastAimLayer = 0;
                 hasAim = true;
             }
             GroundPick aim = hasAim ? lastAim : new GroundPick(camera.FocusX, camera.FocusZ);
@@ -87,7 +89,7 @@ namespace WarCore.Presentation
         // A4: as above, but a valid pick inside the window takes aim (AimPick's result) when it is given, with its height.
         // aim == null inside the window picks the flat plane, as the overloads above do; outside the window the last pick
         // and its height are kept; before the first valid pick, the focus with no height. The overloads above never output
-        // a height and clear it on a pick inside the window.
+        // a height and clear it on a pick inside the window. ML-10: the layer of a plate pick goes with its height.
         public PlayerInput Map(IsoCamera camera, float ix, float iy, float x, float y,
             float w, float h, bool mouseInWindow, bool primary, Func<string, bool> isKeyDown, AimTarget? aim)
         {
@@ -98,11 +100,12 @@ namespace WarCore.Presentation
             {
                 lastAim = new GroundPick(aim.Value.X, aim.Value.Z);
                 lastAimYMm = aim.Value.YMm;
+                lastAimLayer = aim.Value.Layer;
                 hasAim = true;
             }
             if (!hasAim) return flat;
             return new PlayerInput(flat.MoveXMilli, flat.MoveZMilli, lastAim.XMm, lastAim.ZMm, flat.Primary,
-                flat.Block, flat.Throw, flat.SkillSlot, lastAimYMm);
+                flat.Block, flat.Throw, flat.SkillSlot, lastAimYMm, lastAimLayer);
         }
 
         // Scale then truncate toward zero. Clamp before the cast to keep the conversion bounded.

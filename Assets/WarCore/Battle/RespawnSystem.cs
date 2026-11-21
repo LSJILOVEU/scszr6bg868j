@@ -79,14 +79,14 @@ namespace WarCore.Battle
             return found;
         }
 
-        // Contested: a living unit of the other team with a position stands inside the point's capture circle (centre and radius,
+        // Contested: a living unit of another team (1..TeamCount, NT-1) with a position stands inside the point's capture circle (centre and radius,
         // horizontal only, boundary included; ML-9b: with layers, on the point's layer too), counted like CaptureSystem counts units.
         // Read before this tick's movement.
         // PointState.Capturing is not used: under InterruptMode.Pause it outlives the enemy that set it.
         private bool Contested(int team, in ControlPointDef point)
         {
             foreach (EntityId entity in stage.Capture())
-                if (combat.Entities.TryGet(combatants, entity, out Combatant unit) && unit.Team == 3 - team
+                if (combat.Entities.TryGet(combatants, entity, out Combatant unit) && unit.Team != team && unit.Team >= 1 && unit.Team <= pack.TeamCount
                     && combat.Entities.TryGet(positions, entity, out Position at) && !combat.IsDead(entity) && CaptureSystem.Inside(layers, entity, at.Value, point))
                     return true;
             return false;

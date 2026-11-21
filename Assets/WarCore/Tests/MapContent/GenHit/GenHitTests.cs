@@ -57,8 +57,8 @@ namespace WarCore.Tests
             Assert.That(error.Message, Is.EqualTo("content pack 'ancient' layer 'ancient' combat is missing field 'resolver'"));
         }
 
-        [TestCase("\"unknown\"", "content pack 'ancient' layer 'ancient' combat field 'resolver': unknown policy 'unknown', allowed: rwr.hit")]
-        [TestCase("\"\"", "content pack 'ancient' layer 'ancient' combat field 'resolver': unknown policy '', allowed: rwr.hit")]
+        [TestCase("\"unknown\"", "content pack 'ancient' layer 'ancient' combat field 'resolver': unknown policy 'unknown', allowed: damage, rwr.hit")]
+        [TestCase("\"\"", "content pack 'ancient' layer 'ancient' combat field 'resolver': unknown policy '', allowed: damage, rwr.hit")]
         public void GenHit_ExplicitInvalidResolverIsRejected(string value, string expected)
         {
             var error = Assert.Throws<ContentException>(() => Load(MeleeJson.Replace("\"maxHealth\":", "\"resolver\":" + value + ",\"maxHealth\":")));

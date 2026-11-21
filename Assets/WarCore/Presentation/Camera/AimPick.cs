@@ -2,7 +2,7 @@ using System;
 
 namespace WarCore.Presentation
 {
-    public enum AimKind { Plane = 0, Ground = 1, Unit = 2 }
+    public enum AimKind { Plane = 0, Ground = 1, Unit = 2, Plate = 3 }
 
     // Where the mouse aims: metres for the picture, whole millimetres for the bridge. YMm is null when the point has no
     // height (Plane, or any pick on a map without a height field): Sim then uses the map's ground height, as before.
@@ -17,11 +17,13 @@ namespace WarCore.Presentation
         public long? YMm { get; }
         /// <summary>The snapped enemy's key for Unit; 0 otherwise.</summary>
         public ulong UnitKey { get; }
+        /// <summary>ML-10: the plate's layer for Plate (1..N); 0 otherwise.</summary>
+        public int Layer { get; }
 
-        internal AimTarget(AimKind kind, float x, float y, float z, long? yMm, ulong unitKey)
+        internal AimTarget(AimKind kind, float x, float y, float z, long? yMm, ulong unitKey, int layer = 0)
         {
             var pick = new GroundPick(x, z); // same millimetre rounding as the flat pick
-            Kind = kind; X = x; Y = y; Z = z; XMm = pick.XMm; ZMm = pick.ZMm; YMm = yMm; UnitKey = unitKey;
+            Kind = kind; X = x; Y = y; Z = z; XMm = pick.XMm; ZMm = pick.ZMm; YMm = yMm; UnitKey = unitKey; Layer = layer;
         }
     }
 
@@ -36,32 +38,69 @@ namespace WarCore.Presentation
 
         public static AimTarget Pick(IsoCamera camera, float screenX, float screenY, float screenWidth, float screenHeight,
             ViewGround ground, FrameView shown, ulong? self)
+            => Pick(camera, screenX, screenY, screenWidth, screenHeight, ground, shown, self, null, null);
+
+        // ML-10: as above on a map with floor plates. The ray also meets the top of every solid cell of a plate the cut leaves
+        // as it is (cut null: every plate); the nearest of the ground and those tops wins, a plate top as Plate with its layer
+        // and the plate's height at the millimetre point (a hit whose millimetre point falls off the plate's solid cells is
+        // skipped, so the bridge never refuses the layer). Units the cut hides are not snapped to. Plates null: as above.
+        public static AimTarget Pick(IsoCamera camera, float screenX, float screenY, float screenWidth, float screenHeight,
+            ViewGround ground, FrameView shown, ulong? self, ViewPlates plates, LayerCutResult cut)
         {
             if (camera == null) throw new ArgumentNullException(nameof(camera));
             var o = camera.RayOrigin(screenX, screenY, screenWidth, screenHeight);
             var f = camera.Forward;
-            return PickRay(o.X, o.Y, o.Z, f.X, f.Y, f.Z, camera.GroundY, ground, shown, self);
+            return PickRay(o.X, o.Y, o.Z, f.X, f.Y, f.Z, camera.GroundY, ground, shown, self, plates, cut);
         }
 
         // The ray o + t f (f.Y < 0). Plane points use the same float formula as IsoCamera.ScreenToGround.
         internal static AimTarget PickRay(float ox, float oy, float oz, float fx, float fy, float fz, float groundY,
-            ViewGround ground, FrameView shown, ulong? self)
+            ViewGround ground, FrameView shown, ulong? self, ViewPlates plates = null, LayerCutResult cut = null)
         {
             if (!(fy < 0f)) throw new ArgumentOutOfRangeException(nameof(fy), "The pick ray must point down.");
             AimTarget onGround = ground == null ? PlanePoint(ox, oy, oz, fx, fy, fz, groundY, out double tGround)
                 : GroundPoint(ox, oy, oz, fx, fy, fz, groundY, ground, out tGround);
+            if (plates != null)
+                for (int k = 0; k < plates.Count; k++)
+                {
+                    if (cut != null && !cut.Pickable(k + 1)) continue;
+                    if (TryPlate(plates, k + 1, ox, oy, oz, fx, fy, fz, tGround, out AimTarget top, out double t))
+                    {
+                        onGround = top;
+                        tGround = t;
+                    }
+                }
             if (shown == null || !self.HasValue || !shown.TryGet(self.Value, out ViewEntity me)) return onGround;
             double best = double.PositiveInfinity;
             ViewEntity snapped = default;
             foreach (ViewEntity e in shown.Entities)
             {
                 if (!e.Alive || e.Team == 0 || e.Team == me.Team || e.Key == self.Value) continue;
+                if (cut != null && cut.IsHidden(e)) continue;
                 double t = BodyHit(ox, oy, oz, fx, fy, fz, e);
                 if (t < best || (t == best && t < double.PositiveInfinity && e.Key < snapped.Key)) { best = t; snapped = e; }
             }
             if (!(best < tGround)) return onGround;
-            long? yMm = ground == null ? (long?)null : (long)Math.Round((double)snapped.Y * 1000.0, MidpointRounding.AwayFromZero);
+            // A unit on a plate always carries its height: without it Sim would aim at the ground under it.
+            long? yMm = ground == null && snapped.Layer == 0 ? (long?)null
+                : (long)Math.Round((double)snapped.Y * 1000.0, MidpointRounding.AwayFromZero);
             return new AimTarget(AimKind.Unit, snapped.X, snapped.Y, snapped.Z, yMm, snapped.Key);
+        }
+
+        // The first top of the plate of this layer in front of tLimit, at a millimetre point on a solid cell of that plate.
+        private static bool TryPlate(ViewPlates plates, int layer, float ox, float oy, float oz, float fx, float fy, float fz,
+            double tLimit, out AimTarget target, out double t)
+        {
+            target = default;
+            double tMax = double.IsInfinity(tLimit) ? 1e9 : tLimit;
+            if (!PlateRay.TryTop(plates.OfLayer(layer), ox, oy, oz, fx, fy, fz, 0, tMax, out t, out _, out _) || !(t < tLimit)) return false;
+            float x = (float)(ox + t * fx), y = (float)(oy + t * fy), z = (float)(oz + t * fz);
+            var pick = new GroundPick(x, z);
+            var q = SimSession.TargetAt(pick.XMm, 0, pick.ZMm);
+            if (!plates.TryTopRaw(layer, q.X.Raw, q.Z.Raw, out long h)) return false;
+            long yMm = (long)Math.Round((double)h * 1000.0 / OneMetre, MidpointRounding.AwayFromZero);
+            target = new AimTarget(AimKind.Plate, x, y, z, yMm, 0, layer);
+            return true;
         }
 
         private static AimTarget PlanePoint(float ox, float oy, float oz, float fx, float fy, float fz, float groundY, out double t)
