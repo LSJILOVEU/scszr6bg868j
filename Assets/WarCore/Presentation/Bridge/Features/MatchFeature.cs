@@ -89,8 +89,10 @@ namespace WarCore.Presentation
             int meleeChaseRange = terrainRules ? recipe.TerrainPack.Section<AiRules>().MeleeChaseRange : 0;
             if (!terrainRules && ai != null) meleeChaseRange = ai.MeleeChaseRange;
             bool fair = recipe.TerrainPack != null && recipe.TerrainPack.Section<AiRules>().FairDecisions;
+            // TRV-7a: the entry table is built from the same cost tables once the walls are in the spatial index (WorldBuilder).
+            a.Reach = PointReach.Of(a, recipe.Match);
             sim.RegisterGameplay("battle.ai", new SimpleAiSystem(combat, recipe.Combat, recipe.Match, capture, adapter, a.Controlled, memory, contacts, search, suppress, meleeChaseRange, fair, recipe.Seed, ContentPolicies.Parts(ai, recipe.Match.Points, recipe.Match.ThinkInterval, terrain == null, layers != null), pressure, layers, layers,
-                PointReach.Of(a, recipe.Match)), SimSystemPhase.Requests);
+                a.Reach), SimSystemPhase.Requests);
             sim.RegisterGameplay("battle.capture", capture, SimSystemPhase.Queries);
             sim.RegisterGameplay("battle.match", match, SimSystemPhase.Queries);
             a.Capture = capture; a.Reinforce = reinforce; a.Match = match; a.Pressure = pressure;

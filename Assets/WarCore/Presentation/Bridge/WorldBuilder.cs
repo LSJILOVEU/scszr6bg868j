@@ -97,6 +97,8 @@ namespace WarCore.Presentation
             FeatureTable.RunSystems(assembly);
             FeatureTable.RunRules(assembly);
             sim.CompleteSpatialBoundary();
+            // TRV-7a: after the boundary, so the walls are in the spatial index the sight test reads; before the first tick.
+            assembly.Entries = EntryWiring.Of(assembly);
             ComponentType<UnitFacing>? facings = recipe.Facing ? assembly.Facings : (ComponentType<UnitFacing>?)null;
             var session = new SimSession(new SessionParts
             {
@@ -106,6 +108,7 @@ namespace WarCore.Presentation
                 MaxHealthRaw = recipe.Combat?.MaxHealthRaw ?? 0, Controlled = assembly.Controlled, CombatPack = recipe.Combat,
                 Facings = facings, Terrain = assembly.Terrain, TerrainRules = recipe.TerrainPack?.Terrain,
                 Plates = assembly.Plates, Layers = PlateLayers.Of(assembly),
+                Entries = assembly.Entries, EntryBuild = assembly.Reach != null ? () => EntryWiring.Of(assembly) : (Func<PointEntryTable>)null,
             });
             foreach (BridgeCommand command in recipe.Script)
                 session.Enqueue(command);

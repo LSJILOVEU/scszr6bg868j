@@ -48,6 +48,10 @@ namespace WarCore.Presentation
         internal PlateWorld Plates;
         // ML-10: the plates for the picture and each unit's layer; both null without plates.
         internal WarCore.Battle.IUnitLayers Layers;
+        // TRV-7a: each point's entries and watch cells, and how to build them again from the world as it is now; null without
+        // plates or without a match.
+        internal PointEntryTable Entries;
+        internal Func<PointEntryTable> EntryBuild;
     }
 
     /// <summary>
@@ -83,6 +87,7 @@ namespace WarCore.Presentation
         private readonly long groundRaw;
         private readonly PlateWorld plates;
         private readonly WarCore.Battle.IUnitLayers layers;
+        private readonly Func<PointEntryTable> entryBuild;
         private readonly long maxHealthRaw;
         private readonly WcMap map;
         private readonly uint wallMask;
@@ -127,6 +132,8 @@ namespace WarCore.Presentation
             groundRaw = parts.GroundRaw;
             plates = parts.Plates;
             layers = parts.Layers;
+            Entries = parts.Entries;
+            entryBuild = parts.EntryBuild;
             map = parts.Map;
             wallMask = parts.WallMask;
             Map = parts.View;
@@ -153,6 +160,11 @@ namespace WarCore.Presentation
         internal TerrainRules TerrainRules { get; }
         // The match the session runs (null without one); read by PointCheck.
         internal MatchPack MatchPack => matchPack;
+        // TRV-7a: each point's entries and watch cells (by the match's point index), built once with the world; null without
+        // plates or without a match. Read by tests and reports only: no match system reads it.
+        internal PointEntryTable Entries { get; }
+        // The same table built again from the world as it is now (after a restore, say); null where Entries is null.
+        internal PointEntryTable RebuildEntriesForCheck() => entryBuild?.Invoke();
         // View key is the original UnitSpawn.Key, not the hashed StableId or the physical entity slot.
         public ulong? ControlledKey
         {

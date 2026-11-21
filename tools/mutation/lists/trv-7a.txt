@@ -1,0 +1,388 @@
+# TRV-7a: the entry table (narrow and seam entries, duplicates, cell middles), the entries of a point, the watch cells (side,
+# ring, order, own nodes), the wiring's placeholders and build time, and the two sight rules the table relies on (combat's
+# static sight: units never block it, plates do). Filter: the TRV-7a tests.
+# Not listed: the appendix row "three costs added for a walk through an entry" (TRV-7b). Ring bounds are checked on whole
+# metres in the map tests and on raw values in T7-10; a cell 1 raw off a bound does not exist on a 1 m grid.
+
+[trv7a-narrow-width-lt]
+file = Assets/WarCore/Sim/EntryTable.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = a run exactly 2 wide is not narrow
+original:
+| if (width > MaxNarrowWidth) continue;
+replacement:
+| if (width >= MaxNarrowWidth) continue;
+
+[trv7a-narrow-width-3]
+file = Assets/WarCore/Sim/EntryTable.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = 3 wide counts as narrow
+original:
+| public const int MaxNarrowWidth = 2;
+replacement:
+| public const int MaxNarrowWidth = 3;
+
+[trv7a-shut-either]
+file = Assets/WarCore/Sim/EntryTable.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = one shut end is enough
+original:
+| if (cells.AnyAcross(first, -ux, -uz) || cells.AnyAcross(last, ux, uz)) continue;
+replacement:
+| if (cells.AnyAcross(first, -ux, -uz) && cells.AnyAcross(last, ux, uz)) continue;
+
+[trv7a-front-or-back]
+file = Assets/WarCore/Sim/EntryTable.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = a walkable side in front or behind is enough
+original:
+| if (!front || !back) continue;
+replacement:
+| if (!front && !back) continue;
+
+[trv7a-merge-none]
+file = Assets/WarCore/Sim/EntryTable.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = narrow rows never join
+original:
+| if (before.P0 <= p1 && p0 <= before.P1 && !before.Continued)
+replacement:
+| if (false && before.P0 <= p1 && p0 <= before.P1 && !before.Continued)
+
+[trv7a-merge-diagonal]
+file = Assets/WarCore/Sim/EntryTable.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = rows touching at a corner join
+original:
+| if (before.P0 <= p1 && p0 <= before.P1 && !before.Continued)
+replacement:
+| if (before.P0 <= p1 + 1 && p0 <= before.P1 + 1 && !before.Continued)
+
+[trv7a-door-rows-1]
+file = Assets/WarCore/Sim/EntryTable.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = a 2-row passage is a corridor
+original:
+| public const int MaxDoorRows = 2;
+replacement:
+| public const int MaxDoorRows = 1;
+
+[trv7a-door-rows-3]
+file = Assets/WarCore/Sim/EntryTable.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = a 3-row passage is one entry
+original:
+| public const int MaxDoorRows = 2;
+replacement:
+| public const int MaxDoorRows = 3;
+
+[trv7a-door-width-max]
+file = Assets/WarCore/Sim/EntryTable.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = a door is as wide as its widest row
+original:
+| int w = r.P1 - r.P0 + 1; if (w < width) width = w;
+replacement:
+| int w = r.P1 - r.P0 + 1; if (width == int.MaxValue || w > width) width = w;
+
+[trv7a-dedupe-none]
+file = Assets/WarCore/Sim/EntryTable.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = no duplicates removed
+original:
+| if (Duplicate(sides, c.SideA, c) || Duplicate(sides, c.SideB, c)) continue;
+replacement:
+| if (false) continue;
+
+[trv7a-dedupe-narrow-first]
+file = Assets/WarCore/Sim/EntryTable.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = a narrow entry is kept before a seam entry
+original:
+| if (x.Kind != y.Kind) return x.Kind == EntryKind.Seam ? -1 : 1;
+replacement:
+| if (x.Kind != y.Kind) return x.Kind == EntryKind.Seam ? 1 : -1;
+
+[trv7a-seam-gap-joins]
+file = Assets/WarCore/Sim/EntryTable.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = seams on one line join across a gap
+original:
+| && seams[k].line == seams[k - 1].line && seams[k].across == seams[k - 1].across + 1;
+replacement:
+| && seams[k].line == seams[k - 1].line;
+
+[trv7a-centre-lowest]
+file = Assets/WarCore/Sim/EntryTable.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = the middle takes the lowest corner
+original:
+| long sum = Corner(nav, layer, x, z) + Corner(nav, layer, x + 1, z) + Corner(nav, layer, x, z + 1) + Corner(nav, layer, x + 1, z + 1);
+replacement:
+| long sum = 4 * Math.Min(Math.Min(Corner(nav, layer, x, z), Corner(nav, layer, x + 1, z)), Math.Min(Corner(nav, layer, x, z + 1), Corner(nav, layer, x + 1, z + 1)));
+
+[trv7a-centre-highest]
+file = Assets/WarCore/Sim/EntryTable.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = the middle takes the highest corner
+original:
+| long sum = Corner(nav, layer, x, z) + Corner(nav, layer, x + 1, z) + Corner(nav, layer, x, z + 1) + Corner(nav, layer, x + 1, z + 1);
+replacement:
+| long sum = 4 * Math.Max(Math.Max(Corner(nav, layer, x, z), Corner(nav, layer, x + 1, z)), Math.Max(Corner(nav, layer, x, z + 1), Corner(nav, layer, x + 1, z + 1)));
+
+[trv7a-centre-truncate]
+file = Assets/WarCore/Sim/EntryTable.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = the quarter is cut toward zero
+original:
+| internal static long FloorQuarter(long sum) => sum >= 0 ? sum / 4 : -((-sum + 3) / 4);
+replacement:
+| internal static long FloorQuarter(long sum) => sum / 4;
+
+[trv7a-reach-lt]
+file = Assets/WarCore/Sim/PointEntryTable.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = an inner cost equal to the reach is out
+original:
+| if (inner > reach) continue;
+replacement:
+| if (inner >= reach) continue;
+
+[trv7a-tie-belongs]
+file = Assets/WarCore/Sim/PointEntryTable.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = equal side costs belong to the point
+original:
+| if (a < 0 || b < 0 || a == b) continue;
+replacement:
+| if (a < 0 || b < 0) continue;
+
+[trv7a-order-entry-only]
+file = Assets/WarCore/Sim/PointEntryTable.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = point entries by entry number only
+original:
+| list.Sort((x, y) => x.InnerCost != y.InnerCost ? x.InnerCost.CompareTo(y.InnerCost) : x.Entry.CompareTo(y.Entry));
+replacement:
+| list.Sort((x, y) => x.Entry.CompareTo(y.Entry));
+
+[trv7a-order-cost-down]
+file = Assets/WarCore/Sim/PointEntryTable.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = point entries by inner cost falling
+original:
+| list.Sort((x, y) => x.InnerCost != y.InnerCost ? x.InnerCost.CompareTo(y.InnerCost) : x.Entry.CompareTo(y.Entry));
+replacement:
+| list.Sort((x, y) => x.InnerCost != y.InnerCost ? y.InnerCost.CompareTo(x.InnerCost) : x.Entry.CompareTo(y.Entry));
+
+[trv7a-rank-no-outer]
+file = Assets/WarCore/Sim/PointEntryTable.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = seeing the outer side does not rank
+original:
+| if (outerA != outerB) return outerA ? -1 : 1;
+replacement:
+| if (false) return outerA ? -1 : 1;
+
+[trv7a-rank-outer-last]
+file = Assets/WarCore/Sim/PointEntryTable.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = seeing the outer side ranks last
+original:
+| if (outerA != outerB) return outerA ? -1 : 1;
+replacement:
+| if (outerA != outerB) return outerA ? 1 : -1;
+
+[trv7a-rank-no-near]
+file = Assets/WarCore/Sim/PointEntryTable.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = nearness to 5 m does not rank
+original:
+| if (nearA != nearB) return nearA < nearB ? -1 : 1;
+replacement:
+| if (false) return nearA < nearB ? -1 : 1;
+
+[trv7a-rank-near-far]
+file = Assets/WarCore/Sim/PointEntryTable.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = farther from 5 m ranks first
+original:
+| if (nearA != nearB) return nearA < nearB ? -1 : 1;
+replacement:
+| if (nearA != nearB) return nearA < nearB ? 1 : -1;
+
+[trv7a-rank-no-node]
+file = Assets/WarCore/Sim/PointEntryTable.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = the node does not break ties
+original:
+|             return nodeA.CompareTo(nodeB);
+replacement:
+|             return 0;
+
+[trv7a-rank-node-down]
+file = Assets/WarCore/Sim/PointEntryTable.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = the larger node first
+original:
+|             return nodeA.CompareTo(nodeB);
+replacement:
+|             return nodeB.CompareTo(nodeA);
+
+[trv7a-near-squared]
+file = Assets/WarCore/Sim/PointEntryTable.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = nearness by the squared difference
+original:
+| long d = Isqrt(squared) - PreferRaw;
+replacement:
+| long d = squared - PreferRaw * PreferRaw;
+
+[trv7a-side-none]
+file = Assets/WarCore/Sim/PointEntryTable.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = cells beyond the outer side are candidates
+original:
+| if (cost < 0 || cost > reach || cost >= entry.OuterCost) continue;
+replacement:
+| if (cost < 0 || cost > reach) continue;
+
+[trv7a-side-le]
+file = Assets/WarCore/Sim/PointEntryTable.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = a cell costing the outer cost is a candidate
+original:
+| if (cost < 0 || cost > reach || cost >= entry.OuterCost) continue;
+replacement:
+| if (cost < 0 || cost > reach || cost > entry.OuterCost) continue;
+
+[trv7a-ring-min-open]
+file = Assets/WarCore/Sim/PointEntryTable.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = 2 m is out
+original:
+| internal static bool InRing(long squared) => squared >= MinRaw * MinRaw && squared <= MaxRaw * MaxRaw;
+replacement:
+| internal static bool InRing(long squared) => squared > MinRaw * MinRaw && squared <= MaxRaw * MaxRaw;
+
+[trv7a-ring-max-open]
+file = Assets/WarCore/Sim/PointEntryTable.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = 10 m is out
+original:
+| internal static bool InRing(long squared) => squared >= MinRaw * MinRaw && squared <= MaxRaw * MaxRaw;
+replacement:
+| internal static bool InRing(long squared) => squared >= MinRaw * MinRaw && squared < MaxRaw * MaxRaw;
+
+[trv7a-ring-no-min]
+file = Assets/WarCore/Sim/PointEntryTable.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = no lower bound
+original:
+| internal static bool InRing(long squared) => squared >= MinRaw * MinRaw && squared <= MaxRaw * MaxRaw;
+replacement:
+| internal static bool InRing(long squared) => squared <= MaxRaw * MaxRaw;
+
+[trv7a-ring-no-max]
+file = Assets/WarCore/Sim/PointEntryTable.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = no upper bound
+original:
+| internal static bool InRing(long squared) => squared >= MinRaw * MinRaw && squared <= MaxRaw * MaxRaw;
+replacement:
+| internal static bool InRing(long squared) => squared >= MinRaw * MinRaw;
+
+[trv7a-own-allowed]
+file = Assets/WarCore/Sim/PointEntryTable.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = own nodes are candidates
+original:
+|                         if (entries.Owns(entry.Entry, w)) continue;
+replacement:
+|
+
+[trv7a-reach-cost]
+file = Assets/WarCore/Presentation/Bridge/Features/EntryWiring.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = reach 14 m
+original:
+| internal const long ReachCost = 15000;
+replacement:
+| internal const long ReachCost = 14000;
+
+[trv7a-keep-2]
+file = Assets/WarCore/Presentation/Bridge/Features/EntryWiring.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = two watch cells an entry
+original:
+| internal const int Keep = 3;
+replacement:
+| internal const int Keep = 2;
+
+[trv7a-build-before-walls]
+file = Assets/WarCore/Presentation/Bridge/WorldBuilder.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = the table is built before the walls reach the spatial index
+original:
+|             sim.CompleteSpatialBoundary();
+|             // TRV-7a: after the boundary, so the walls are in the spatial index the sight test reads; before the first tick.
+|             assembly.Entries = EntryWiring.Of(assembly);
+replacement:
+|             assembly.Entries = EntryWiring.Of(assembly);
+|             sim.CompleteSpatialBoundary();
+
+[trv7a-sight-units]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = sight is blocked by units too
+original:
+| if (sim.SpatialQuery.Any(SpatialQueries.Ray(from, delta, delta.Length, wallMask))) return false;
+replacement:
+| if (sim.SpatialQuery.Any(SpatialQueries.Ray(from, delta, delta.Length, wallMask | unitLayerMask))) return false;
+
+[trv7a-sight-no-plates]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~Trv7a
+expect = WarCore.Tests.Trv7a
+note = sight ignores plates
+original:
+|             return !LineStop.TryFirst(ground, plates, from, to, out _);
+replacement:
+|             return !LineStop.TryFirst(ground, null, from, to, out _);

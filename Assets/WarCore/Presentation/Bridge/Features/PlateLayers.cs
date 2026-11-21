@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using WarCore.Battle;
 using WarCore.Interim;
 using WarCore.Sim;
@@ -55,6 +56,9 @@ namespace WarCore.Presentation
                 if (TryNode(anchor.Point, anchor.Layer, out int target)) bases[anchor.Team] = new LayeredReach(nav, target);
             }
         }
+
+        // TRV-7a: the cost table of each point, by point index (null where nobody reaches the point).
+        internal IReadOnlyList<LayeredReach> Tables => tables;
 
         internal static PointReach Of(WorldAssembly a, MatchPack match) =>
             a.Plates != null ? new PointReach(a.Terrain.Nav, a.Plates.Nav, match) : null;
