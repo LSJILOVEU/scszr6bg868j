@@ -18,6 +18,7 @@ namespace WarCore.Presentation
             new PlayerKeyBinding("Alpha2", PlayerKeyAction.Skill, 2),
             new PlayerKeyBinding("Alpha3", PlayerKeyAction.Skill, 3),
             new PlayerKeyBinding("Alpha4", PlayerKeyAction.Skill, 4),
+            new PlayerKeyBinding("LeftShift", PlayerKeyAction.Dash),
         };
     }
 }

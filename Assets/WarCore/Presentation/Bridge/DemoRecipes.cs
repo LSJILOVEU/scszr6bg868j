@@ -80,10 +80,35 @@ namespace WarCore.Presentation
         // PF1: the playtest recipe, the MP respawn demo built from content layer rwr-m7-playtest (weapons, match rules) with that
         // layer's AI rules. WithAiRules comes last: WithPlayerBlock rebuilds the recipe without the AI pack.
         public const string PlaytestLayer = "rwr-m7-playtest";
+        // M7b: every unit of the player's team (reserves too: respawn switches control to a reserve) also carries the dash of its
+        // team's unit type in that layer, given last: WithPlayerBlock rebuilds UnitSpawn without it. Nothing but the player's input
+        // asks for a dash (no AI use); the other team's units are the respawn demo's.
         public static WorldRecipe MpPlaytest()
         {
             ContentPack layer = WarCore.Content.Rwr.RwrPack.Load(PlaytestLayer);
-            return MpRespawnDemo(layer).WithAiRules(layer);
+            return WithPlayerTeamDash(MpRespawnDemo(layer).WithAiRules(layer), layer);
+        }
+
+        // The recipe with every unit of the player's team given the dash of that team's soldier type in content. Every other field is copied.
+        private static WorldRecipe WithPlayerTeamDash(WorldRecipe source, ContentPack content)
+        {
+            ulong player = source.PlayerKey.Value;
+            UnitSpawn[] units = source.Units.ToArray();
+            int team = 0;
+            foreach (UnitSpawn u in units) if (u.Key == player) team = u.Team;
+            string type = team == 1 ? WarCore.Content.Rwr.RwrPack.SoldierTeam1 : WarCore.Content.Rwr.RwrPack.SoldierTeam2;
+            UnitDash dash = content.Section<UnitDashes>().Of(type)
+                ?? throw new System.InvalidOperationException("Content layer " + PlaytestLayer + " gives " + type + " no dash.");
+            for (int i = 0; i < units.Length; i++)
+                if (units[i].Team == team) units[i] = units[i].WithDash(dash.DistanceMm, dash.Ticks, dash.CooldownTicks);
+            WorldRecipe recipe = new WorldRecipe(source.Seed, source.Mover, units, source.Script.ToArray())
+                .WithCombat(source.Combat).WithCrowdPass(source.CrowdPass).WithRuleSet(source.RuleSetId).WithPlayer(player);
+            if (source.Match != null) recipe = recipe.WithMatch(source.Match);
+            if (source.TerrainPack != null) recipe = recipe.WithTerrainRules(source.TerrainPack);
+            if (source.AiPack != null) recipe = recipe.WithAiRules(source.AiPack);
+            if (source.BlockAi) recipe = recipe.WithBlockAi();
+            foreach (IWorldOption option in source.Options) recipe = recipe.With(option);
+            return recipe;
         }
 
         // The recipe with its match rules rebuilt from every field of the old ones and only the respawn delay replaced.
