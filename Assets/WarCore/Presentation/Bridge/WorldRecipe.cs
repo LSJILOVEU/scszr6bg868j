@@ -108,7 +108,7 @@ namespace WarCore.Presentation
         public bool Motion => HasOption(WorldOptions.Motion.OptionId);
         // Opens the per-unit standing-order component (hold, follow, move in progress), same rule: off by default, and a world without it is unchanged.
         public bool Standing => HasOption(WorldOptions.Standing.OptionId);
-        // Opens maps with floor plates before units can walk on them (tests only). Only the builder's own option instance counts.
+        // Opens maps with floor plates. MapRecipe.From (a map file) and the plate demos add it; a recipe built by hand declares it. Only the builder's own option instance counts.
         internal bool PlatesPreview
         {
             get
