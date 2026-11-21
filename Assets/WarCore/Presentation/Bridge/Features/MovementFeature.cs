@@ -61,9 +61,10 @@ namespace WarCore.Presentation
         {
             Simulation sim = a.Sim;
             PlayerControl controlled = a.Controlled;
+            a.PlayerStep = controlled == null ? null : new PlayerStep(sim, controlled);
             var locomotion = new InterimLocomotion(sim.Entities, a.WallMask,
                 a.Path ? (a.Terrain != null ? a.Terrain.Nav : WcMapNavigation.Create(a.Map)) : null, a.Crowd,
-                controlled == null ? null : new PlayerStep(sim, controlled), a.CrowdPass, a.Terrain);
+                a.PlayerStep, a.CrowdPass, a.Terrain);
             if (controlled != null) locomotion.Stop(controlled.Current);
             a.Locomotion = locomotion;
             sim.RegisterGameplay("interim.orders", new InterimOrders(sim.Entities, locomotion, a.Crowd ? WorldBuilder.CrowdSlotSpacing : default, controlled, a.Standing), SimSystemPhase.Requests);

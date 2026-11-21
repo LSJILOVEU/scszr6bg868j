@@ -30,6 +30,11 @@ A frame also lists the indices of the pinned (`n`) and broken (`b`) units when t
 ring round a pinned unit and a thick yellow one round a broken unit. When somebody is in an AI squad the frame has `q`:
 for each unit the unit index of its squad's leader (`-1` = in no squad, a leader names itself); the page draws a square
 round a leader and a thin line from each member to its leader.
+A setup whose combat pack has stances writes `p` on every frame: each unit's stance level (0 standing, 1 crouched,
+2 prone); the page draws a crouched unit as a smaller dot and a prone one as a flat oval.
+A frame that follows blasts has `x`: per blast its x, z and outer radius in decimetres and its team (BLAST-1); the page
+draws a ring of the outer radius for 1.5 s, fading. `blast-wall` is the BLAST-1 setup (run it with `EVERY=1`).
+Every frame carries `h`, the state hash after its tick (16 hex digits), so a picture of a frame can name the exact state.
 
 | Key | Meaning | Reads |
 |---|---|---|

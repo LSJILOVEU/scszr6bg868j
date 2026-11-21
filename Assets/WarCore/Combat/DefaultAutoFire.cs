@@ -28,7 +28,7 @@ namespace WarCore.Combat
         // viewpoint; without a body both are feet, as before).
         public AutoFireAction AimAt(CombatSystem combat, EntityId shooter, in Position position, EntityId target, out SimVec3 direction)
         {
-            SimVec3 origin = combat.MuzzleOver(position.Value);
+            SimVec3 origin = combat.MuzzleOver(position.Value, shooter);
             direction = combat.ShotEnd(target) - origin;
             // Zero-direction rule: a target standing on (or straight above or below) the shooter gives no horizontal heading,
             // so the shot goes along +X

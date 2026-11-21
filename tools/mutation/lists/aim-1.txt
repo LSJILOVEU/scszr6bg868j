@@ -1,0 +1,584 @@
+# AIM-1 (WP-27): move spread, the spread line, manual reload, the reload command. Filter: the Aim1 tests.
+# Not listed (equivalent): ShotAngle without any source skipping StatLine (Apply with no factor returns the base unchanged);
+# MoveMark skipping units without combat state (nobody reads their marks); the far guard at exactly 2^24 (the square fits).
+
+[ms-band-ge]
+file = Assets/WarCore/Combat/MoveSpread.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1BandTests
+note = the band edge is inclusive
+original:
+| for (int i = 0; i < threshold.Length && squared > threshold[i] * threshold[i]; i++) result = permille[i];
+replacement:
+| for (int i = 0; i < threshold.Length && squared >= threshold[i] * threshold[i]; i++) result = permille[i];
+
+[ms-first-band]
+file = Assets/WarCore/Combat/MoveSpread.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1BandTests
+note = the first band the step exceeds wins
+original:
+| for (int i = 0; i < threshold.Length && squared > threshold[i] * threshold[i]; i++) result = permille[i];
+replacement:
+| for (int i = 0; i < threshold.Length && squared > threshold[i] * threshold[i]; i++) { result = permille[i]; break; }
+
+[ms-x-only]
+file = Assets/WarCore/Combat/MoveSpread.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1BandTests
+note = only x counts
+original:
+| long squared = dx * dx + dz * dz;
+replacement:
+| long squared = dx * dx;
+
+[ms-manhattan]
+file = Assets/WarCore/Combat/MoveSpread.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1BandTests
+note = Manhattan distance
+original:
+| long squared = dx * dx + dz * dz;
+replacement:
+| long squared = (Math.Abs(dx) + Math.Abs(dz)) * (Math.Abs(dx) + Math.Abs(dz));
+
+[ms-thr-1000]
+file = Assets/WarCore/Combat/MoveSpread.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1BandTests
+note = threshold divided by 1000 instead of 30000
+original:
+| threshold[i] = above[i] * SimFix.Scale / (SimClock.TickRate * 1000L);
+replacement:
+| threshold[i] = above[i] * SimFix.Scale / 1000L;
+
+[ms-thr-ceil]
+file = Assets/WarCore/Combat/MoveSpread.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1BandTests
+note = threshold rounded up
+original:
+| threshold[i] = above[i] * SimFix.Scale / (SimClock.TickRate * 1000L);
+replacement:
+| threshold[i] = (above[i] * SimFix.Scale + SimClock.TickRate * 1000L - 1) / (SimClock.TickRate * 1000L);
+
+[ms-far-none]
+file = Assets/WarCore/Combat/MoveSpread.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1BandTests
+note = no far guard (squares overflow)
+original:
+| if (dx > FarRaw || dx < -FarRaw || dz > FarRaw || dz < -FarRaw) return permille[permille.Length - 1];
+replacement:
+| if (false) return permille[permille.Length - 1];
+
+[ms-far-first]
+file = Assets/WarCore/Combat/MoveSpread.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1BandTests
+note = the far guard takes the first band
+original:
+| if (dx > FarRaw || dx < -FarRaw || dz > FarRaw || dz < -FarRaw) return permille[permille.Length - 1];
+replacement:
+| if (dx > FarRaw || dx < -FarRaw || dz > FarRaw || dz < -FarRaw) return permille[0];
+
+[ms-far-z]
+file = Assets/WarCore/Combat/MoveSpread.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1BandTests
+note = the far guard ignores z
+original:
+| if (dx > FarRaw || dx < -FarRaw || dz > FarRaw || dz < -FarRaw) return permille[permille.Length - 1];
+replacement:
+| if (dx > FarRaw || dx < -FarRaw) return permille[permille.Length - 1];
+
+[ms-equal-speeds]
+file = Assets/WarCore/Combat/MoveSpread.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1BandTests
+note = equal speeds pass
+original:
+| if (above[i] < 0 || above[i] > MaxAboveMmPerSec || (i > 0 && above[i] <= above[i - 1]))
+replacement:
+| if (above[i] < 0 || above[i] > MaxAboveMmPerSec || (i > 0 && above[i] < above[i - 1]))
+
+[ms-speed-high]
+file = Assets/WarCore/Combat/MoveSpread.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1BandTests
+note = 300001 passes
+original:
+| if (above[i] < 0 || above[i] > MaxAboveMmPerSec || (i > 0 && above[i] <= above[i - 1]))
+replacement:
+| if (above[i] < 0 || above[i] > MaxAboveMmPerSec + 1 || (i > 0 && above[i] <= above[i - 1]))
+
+[ms-permille-zero]
+file = Assets/WarCore/Combat/MoveSpread.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1BandTests
+note = a permille of 0 passes
+original:
+| if (this.permille[i] < StatLine.MinPermille || this.permille[i] > StatLine.MaxPermille)
+replacement:
+| if (this.permille[i] < 0 || this.permille[i] > StatLine.MaxPermille)
+
+[ms-nine-bands]
+file = Assets/WarCore/Combat/MoveSpread.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1BandTests
+note = 9 bands pass
+original:
+| if (aboveMmPerSec.Length < 1 || aboveMmPerSec.Length > MaxBands) throw
+replacement:
+| if (aboveMmPerSec.Length < 1 || aboveMmPerSec.Length > MaxBands + 1) throw
+
+[ms-hash-permille]
+file = Assets/WarCore/Combat/MoveSpread.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ContentTests
+note = a band permille is not hashed
+original:
+| for (int i = 0; i < above.Length; i++) { hash.Add(above[i]); hash.Add(permille[i]); }
+replacement:
+| for (int i = 0; i < above.Length; i++) { hash.Add(above[i]); }
+
+[ms-hash-index]
+file = Assets/WarCore/Combat/MoveSpread.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ContentTests
+note = which weapon owns a table is not hashed
+original:
+| if (byWeapon[i] != null) { hash.Add(i); byWeapon[i].WriteState(hash); }
+replacement:
+| if (byWeapon[i] != null) { byWeapon[i].WriteState(hash); }
+
+[ms-for-default]
+file = Assets/WarCore/Combat/MoveSpread.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ShotAngleTests
+expect = WarCore.Tests.Aim1.Aim1BandTests
+note = per-weapon tables are ignored
+original:
+| public MoveSpreadTable For(int weapon) => weapon >= 0 && weapon < byWeapon.Length && byWeapon[weapon] != null ? byWeapon[weapon] : Default;
+replacement:
+| public MoveSpreadTable For(int weapon) => Default;
+
+[mm-any-tick]
+file = Assets/WarCore/Combat/MoveMark.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ShotAngleTests
+note = a mark of another tick counts
+original:
+| if ((uint)slot < (uint)tickOf.Length && tickOf[slot] == tick && generation[slot] == unit.Generation)
+replacement:
+| if ((uint)slot < (uint)tickOf.Length && generation[slot] == unit.Generation)
+
+[mm-any-generation]
+file = Assets/WarCore/Combat/MoveMark.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1WorldTests
+note = another entity in the slot counts
+original:
+| if ((uint)slot < (uint)tickOf.Length && tickOf[slot] == tick && generation[slot] == unit.Generation)
+replacement:
+| if ((uint)slot < (uint)tickOf.Length && tickOf[slot] == tick)
+
+[mm-load-keeps]
+file = Assets/WarCore/Combat/MoveMark.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1WorldTests
+note = a restore keeps the table
+original:
+| public void LoadState(SimStateReader reader) => Forget();
+replacement:
+| public void LoadState(SimStateReader reader) { }
+
+[mm-forget-zero]
+file = Assets/WarCore/Combat/MoveMark.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1WorldTests
+note = an empty table claims tick 0
+original:
+| private void Forget() { for (int i = 0; i < tickOf.Length; i++) tickOf[i] = -1; }
+replacement:
+| private void Forget() { for (int i = 0; i < tickOf.Length; i++) tickOf[i] = 0; }
+
+[mm-after-move]
+file = Assets/WarCore/Combat/MoveMark.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ShotAngleTests
+expect = WarCore.Tests.Aim1.Aim1WorldTests
+note = marked after the locomotion (order 21)
+original:
+| public const int StepOrder = 19;
+replacement:
+| public const int StepOrder = 21;
+
+[aim-no-cap]
+file = Assets/WarCore/Combat/CombatSystem.Aim.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ShotAngleTests
+note = no 90000 cap
+original:
+| return (int)Math.Min(SpreadSpec.MaxLegalMilliDegrees, angle);
+replacement:
+| return (int)angle;
+
+[aim-cap-9000]
+file = Assets/WarCore/Combat/CombatSystem.Aim.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ShotAngleTests
+note = cap 9000
+original:
+| return (int)Math.Min(SpreadSpec.MaxLegalMilliDegrees, angle);
+replacement:
+| return (int)Math.Min(9000, angle);
+
+[aim-no-move]
+file = Assets/WarCore/Combat/CombatSystem.Aim.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ShotAngleTests
+expect = WarCore.Tests.Aim1.Aim1WorldTests
+note = the move column is left out
+original:
+| if (MoveMark != null) gearScratch[gears++] = MovePermille(shooter, unit.Weapon, tick);
+replacement:
+| if (false) gearScratch[gears++] = MovePermille(shooter, unit.Weapon, tick);
+
+[aim-no-clamp]
+file = Assets/WarCore/Combat/CombatSystem.Aim.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ShotAngleTests
+note = the drag clamp is ignored
+original:
+|                 dragFloorPermille, dragCeilPermille);
+|             return (int)Math.Min
+replacement:
+|                 0, 0);
+|             return (int)Math.Min
+
+[aim-count-move]
+file = Assets/WarCore/Combat/CombatSystem.Aim.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ShotAngleTests
+note = the move column is not counted
+original:
+| private int FactorCount => spreadGears.Count + spreadDrags.Count + (MoveMark != null ? 1 : 0);
+replacement:
+| private int FactorCount => spreadGears.Count + spreadDrags.Count;
+
+[aim-eight]
+file = Assets/WarCore/Combat/CombatSystem.Aim.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ShotAngleTests
+note = an eighth factor passes
+original:
+| if (FactorCount >= StatLine.MaxFactors)
+replacement:
+| if (FactorCount > StatLine.MaxFactors)
+
+[aim-clamp-unchecked]
+file = Assets/WarCore/Combat/CombatSystem.Aim.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ShotAngleTests
+note = a bad clamp is accepted
+original:
+|             StatLine.Apply(1, ReadOnlySpan<int>.Empty, ReadOnlySpan<int>.Empty, floorPermille, ceilPermille);
+|
+replacement:
+|
+
+[aim-unmarked-far]
+file = Assets/WarCore/Combat/CombatSystem.Aim.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ShotAngleTests
+note = an unmarked unit moved very far
+original:
+| long dx = 0, dz = 0;
+replacement:
+| long dx = MoveSpreadTable.FarRaw + 1, dz = 0;
+
+[rl-no-switch]
+file = Assets/WarCore/Combat/CombatSystem.Aim.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ReloadTests
+note = reload without combat.manualReload
+original:
+| if (!pack.ManualReload || !Entities.TryGet
+replacement:
+| if (!Entities.TryGet
+
+[rl-no-gate]
+file = Assets/WarCore/Combat/CombatSystem.Aim.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ReloadTests
+note = the action gate is not asked
+original:
+| if (gate != null && !gate.Allows(unit, UnitAction.Reload)) return false;
+replacement:
+| if (false) return false;
+
+[rl-full]
+file = Assets/WarCore/Combat/CombatSystem.Aim.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ReloadTests
+note = a full magazine reloads
+original:
+| if (state.Ammo >= weapon.Magazine) return false;
+replacement:
+| if (state.Ammo > weapon.Magazine) return false;
+
+[rl-start-now]
+file = Assets/WarCore/Combat/CombatSystem.Aim.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ReloadTests
+note = the start is always now
+original:
+| long start = state.DueMilli > (tick - 1) * 1000 ? state.DueMilli : tick * 1000;
+replacement:
+| long start = tick * 1000;
+
+[rl-start-ge]
+file = Assets/WarCore/Combat/CombatSystem.Aim.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ReloadTests
+note = due at the end of the tick before counts as pending
+original:
+| long start = state.DueMilli > (tick - 1) * 1000 ? state.DueMilli : tick * 1000;
+replacement:
+| long start = state.DueMilli >= (tick - 1) * 1000 ? state.DueMilli : tick * 1000;
+
+[rl-interval]
+file = Assets/WarCore/Combat/CombatSystem.Aim.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ReloadTests
+note = due after the fire interval
+original:
+| weapon.Magazine, start + weapon.ReloadMilli,
+replacement:
+| weapon.Magazine, start + weapon.FireIntervalMilli,
+
+[rl-no-refill]
+file = Assets/WarCore/Combat/CombatSystem.Aim.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ReloadTests
+note = the ammo is not refilled
+original:
+| weapon.Magazine, start + weapon.ReloadMilli,
+replacement:
+| state.Ammo, start + weapon.ReloadMilli,
+
+[rl-this-tick]
+file = Assets/WarCore/Combat/CombatSystem.Aim.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ReloadTests
+note = now is the last tick, not the next
+original:
+| long tick = sim.Clock.Tick + 1;
+replacement:
+| long tick = sim.Clock.Tick;
+
+[rl-dead]
+file = Assets/WarCore/Combat/CombatSystem.Aim.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ReloadTests
+note = a dead unit reloads
+original:
+| state.Weapon < 0 || IsDead(unit)) return false;
+replacement:
+| state.Weapon < 0) return false;
+
+[rl-unarmed]
+file = Assets/WarCore/Combat/CombatSystem.Aim.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ReloadTests
+note = an unarmed unit reloads
+original:
+| state.Weapon < 0 || IsDead(unit)) return false;
+replacement:
+| IsDead(unit)) return false;
+
+[cs-turn-weapon]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1WorldTests
+note = the turn uses the weapon angle
+original:
+| if (shot > 0) direction = Rotate(direction, shot, sim.Rng.NextInt(spreadStream, 65536));
+replacement:
+| if (shot > 0) direction = Rotate(direction, angle, sim.Rng.NextInt(spreadStream, 65536));
+
+[cs-draw-weapon]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ShotAngleTests
+note = the draw follows the weapon angle
+original:
+| if (shot > 0) direction = Rotate(direction, shot, sim.Rng.NextInt(spreadStream, 65536));
+replacement:
+| if (angle > 0) direction = Rotate(direction, shot, sim.Rng.NextInt(spreadStream, 65536));
+
+[cs-store-shot]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ShotAngleTests
+note = the stored spread uses the shot angle
+original:
+| else FireRay(c, shooter, in unit, in position, in weapon, tick, origin, direction, angle);
+replacement:
+| else FireRay(c, shooter, in unit, in position, in weapon, tick, origin, direction, shot);
+
+[pk-no-hash]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ContentTests
+note = moveSpread is not hashed
+original:
+| { hash.Add("combat.pack.movespread.v1"); moveSpread.WriteState(hash); }
+replacement:
+| { }
+
+[pk-reload-always]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ContentTests
+note = the reload section is always hashed
+original:
+|             if (manualReload)
+|                 hash.Add("combat.pack.reload.v1");
+replacement:
+|             hash.Add("combat.pack.reload.v1");
+
+[pk-with-selector]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ContentTests
+note = WithSelector drops moveSpread
+original:
+| projectileSpeeds.Length == 0 ? null : projectileSpeeds, MoveSpread, ManualReload);
+replacement:
+| projectileSpeeds.Length == 0 ? null : projectileSpeeds, null, ManualReload);
+
+[pk-slots]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ContentTests
+note = a per-weapon table of the wrong size passes
+original:
+| if (moveSpread != null && moveSpread.WeaponSlots != 0 && moveSpread.WeaponSlots != weapons.Length)
+replacement:
+| if (false)
+
+[ct-publish]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ContentTests
+expect = WarCore.Tests.Aim1.Aim1ReloadTests
+note = manualReload alone is not published
+original:
+| if (moveSpread != null || manualReload) b.Publish
+replacement:
+| if (moveSpread != null) b.Publish
+
+[ct-nested]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ContentTests
+note = moveSpread may not hold an object
+original:
+| protected override bool IsNested(string field) => base.IsNested(field) || field == MoveSpreadField;
+replacement:
+| protected override bool IsNested(string field) => base.IsNested(field);
+
+[ct-order]
+file = Assets/WarCore/Content/Data/Sections/CombatAim.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ContentTests
+note = equal speeds read
+original:
+| if (i > 0 && above[i] <= above[i - 1])
+replacement:
+| if (i > 0 && above[i] < above[i - 1])
+
+[ct-weapon-key]
+file = Assets/WarCore/Content/Data/Sections/CombatAim.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ContentTests
+note = a key that is no weapon reads
+original:
+| if (weapon < 0) throw Bad(pack, field.Layer, where, member.Name, "is not a weapon of this pack");
+replacement:
+|
+
+[ct-band-count]
+file = Assets/WarCore/Content/Data/Sections/CombatAim.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ContentTests
+note = 9 bands read
+original:
+| if (count < 1 || count > MoveSpreadTable.MaxBands)
+replacement:
+| if (count < 1 || count > MoveSpreadTable.MaxBands + 1)
+
+[ct-build]
+file = Assets/WarCore/Content/Data/ContentPack.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ContentTests
+note = the pack drops the aim section
+original:
+| projectileSpeeds.Length == 0 ? null : projectileSpeeds, aim?.MoveSpread, aim != null && aim.ManualReload);
+replacement:
+| projectileSpeeds.Length == 0 ? null : projectileSpeeds);
+
+[ss-into-switch]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ReloadTests
+note = a reload falls into the squad order switch
+original:
+| if (hasCommand && head.Kind == BridgeCommandKind.Reload) { if (combat != null) AskSquad(head.Squad, combat.TryReload); }
+replacement:
+| if (false) { if (combat != null) AskSquad(head.Squad, combat.TryReload); }
+
+[ss-any-squad]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ReloadTests
+note = every squad reloads
+original:
+| if (spawns[i].Squad == squad && (controlled == null || !controlled.Current.Equals(sim.Entities.Resolve(new EntityLink(units[i])))))
+replacement:
+| if ((controlled == null || !controlled.Current.Equals(sim.Entities.Resolve(new EntityLink(units[i])))))
+
+[ss-player]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ReloadTests
+note = the player unit reloads too
+original:
+| if (spawns[i].Squad == squad && (controlled == null || !controlled.Current.Equals(sim.Entities.Resolve(new EntityLink(units[i])))))
+replacement:
+| if (spawns[i].Squad == squad)
+
+[ss-no-combat]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ReloadTests
+note = a world without combat is not guarded
+original:
+| if (hasCommand && head.Kind == BridgeCommandKind.Reload) { if (combat != null) AskSquad(head.Squad, combat.TryReload); }
+replacement:
+| if (hasCommand && head.Kind == BridgeCommandKind.Reload) { AskSquad(head.Squad, combat.TryReload); }
+
+[cf-no-mark]
+file = Assets/WarCore/Presentation/Bridge/Features/CombatFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.Aim1
+expect = WarCore.Tests.Aim1.Aim1ShotAngleTests
+expect = WarCore.Tests.Aim1.Aim1WorldTests
+note = the move mark is not registered
+original:
+| if (combat.MoveMark != null)
+|                 sim.RegisterGameplay
+replacement:
+| if (false)
+|                 sim.RegisterGameplay

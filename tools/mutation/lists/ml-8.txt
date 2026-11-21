@@ -414,16 +414,10 @@ filter = FullyQualifiedName~Ml8
 expect = WarCore.Tests.Ml8MoveTests.ThePlayerClimbsAndStaysOnTheFloor
 note = the player never writes the new layer
 original:
-|             }
+|             if (!ControlledTerrainCandidate(context, i, displacement, out SimVec3 next)) return;
 |             if (layered) CommitLayer(unit);
-|             context.SubmitMovement(unit, next);
-|             Face(unit, point, next);
-|             provisional[i].Point = next;
 replacement:
-|             }
-|             context.SubmitMovement(unit, next);
-|             Face(unit, point, next);
-|             provisional[i].Point = next;
+|             if (!ControlledTerrainCandidate(context, i, displacement, out SimVec3 next)) return;
 
 [ml8-commit-no-write]
 file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
