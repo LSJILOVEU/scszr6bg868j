@@ -84,7 +84,6 @@ namespace WarCore.Unity
                 if (!on) return;
                 body = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 body.name = SilhouettePrefix + entity.Key;
-                body.GetComponent<Collider>().enabled = false;
                 body.transform.SetParent(parent, false);
                 body.transform.localScale = scale;
                 body.GetComponent<Renderer>().sharedMaterial = SilhouetteMaterial(entity);
