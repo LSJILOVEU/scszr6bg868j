@@ -199,7 +199,7 @@ namespace WarCore.Replay
                 // Blasts since the previous recorded frame (x, z, outer radius in decimetres, team); written only when there are any.
                 if (blasts.Count > 0) sb.Append("],\"x\":[").Append(string.Join(",", blasts));
                 sb.Append("],\"s\":[").Append(string.Join(",", shots)).Append("],\"a\":[").Append(frame.Match.AliveOne).Append(',').Append(frame.Match.AliveTwo)
-                  .Append(',').Append(frame.Match.ReserveOne).Append(',').Append(frame.Match.ReserveTwo).Append("]}");
+                  .Append(',').Append(frame.Match.ReserveOne).Append(',').Append(frame.Match.ReserveTwo).Append("],\"h\":\"").Append(session.StateHash.ToString("X16")).Append("\"}");
                 shots.Clear(); blasts.Clear();
             }
             bool decided = session.IsFinished && session.Winner != 0;

@@ -39,6 +39,9 @@ namespace WarCore.Presentation
             // PROJ-1: only a pack with a projectile weapon gets the projectile system (and its random stream).
             if (combat.Pack.HasProjectiles)
                 sim.RegisterGameplay("combat.projectiles", new ProjectileSystem(sim, combat, System.Math.Max(1, ProjectileCapacity(recipe))), SimSystemPhase.Queries);
+            // AIM-1: only a pack with combat.moveSpread gets the move mark (Movement, order 19, before the locomotion's 20).
+            if (combat.MoveMark != null)
+                sim.RegisterGameplay("combat.move-mark", combat.MoveMark, SimSystemPhase.Movement);
             // BLAST-1: only a pack with blasts gets the blast system.
             if (combat.Pack.HasBlasts)
                 sim.RegisterGameplay("combat.blasts", new BlastSystem(sim, combat, recipe.Units.Length), SimSystemPhase.Queries);

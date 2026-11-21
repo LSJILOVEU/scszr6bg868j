@@ -2,7 +2,7 @@ using System;
 
 namespace WarCore.Presentation
 {
-    public enum BridgeCommandKind { MoveTo, Hold, Follow, Blast }
+    public enum BridgeCommandKind { MoveTo, Hold, Follow, Reload, Blast }
 
     public readonly struct BridgeCommand
     {
@@ -10,7 +10,8 @@ namespace WarCore.Presentation
         public int Squad { get; }
         public long XMm { get; }
         public long ZMm { get; }
-        // MoveTo (the default) uses XMm/ZMm; Hold uses neither; Follow uses TargetKey (a UnitSpawn.Key).
+        // MoveTo (the default) uses XMm/ZMm; Hold uses neither; Follow uses TargetKey (a UnitSpawn.Key). Reload (AIM-1) uses
+        // neither: it is no squad order, the session asks a manual reload of every living unit of the squad before that tick.
         public BridgeCommandKind Kind { get; }
         public ulong TargetKey { get; }
         // The layer of a MoveTo target: 0 = the ground, 1..N = a floor plate of the map (worlds with plates only).
@@ -46,6 +47,9 @@ namespace WarCore.Presentation
 
         public static BridgeCommand Follow(long atTick, int squad, ulong targetKey)
             => new BridgeCommand(atTick, squad, 0, 0, BridgeCommandKind.Follow, targetKey);
+
+        public static BridgeCommand Reload(long atTick, int squad)
+            => new BridgeCommand(atTick, squad, 0, 0, BridgeCommandKind.Reload);
 
         // BLAST-1: sets off a blast of kind blastId on tick atTick at (xMm, zMm) on the ground (layer 0) or on a floor plate. The
         // session puts it on the ground or plate surface there and queues it before the tick's step, so it goes off on that tick;

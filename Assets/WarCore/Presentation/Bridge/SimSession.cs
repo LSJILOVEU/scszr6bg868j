@@ -49,6 +49,10 @@ namespace WarCore.Presentation
         internal PlateWorld Plates;
         // ML-10: the plates for the picture and each unit's layer; both null without plates.
         internal WarCore.Battle.IUnitLayers Layers;
+        // TRV-7a: each point's entries and watch cells, and how to build them again from the world as it is now; null without
+        // plates or without a match.
+        internal PointEntryTable Entries;
+        internal Func<PointEntryTable> EntryBuild;
         // M7b: the locomotion and the dash state table when a recipe unit has a dash (DashFeature on); both null otherwise.
         internal InterimLocomotion Dash;
         internal ComponentType<DashState>? DashStates;
@@ -92,6 +96,7 @@ namespace WarCore.Presentation
         private readonly long groundRaw;
         private readonly PlateWorld plates;
         private readonly WarCore.Battle.IUnitLayers layers;
+        private readonly Func<PointEntryTable> entryBuild;
         private readonly long maxHealthRaw;
         private readonly WcMap map;
         private readonly uint wallMask;
@@ -138,6 +143,8 @@ namespace WarCore.Presentation
             groundRaw = parts.GroundRaw;
             plates = parts.Plates;
             layers = parts.Layers;
+            Entries = parts.Entries;
+            entryBuild = parts.EntryBuild;
             map = parts.Map;
             wallMask = parts.WallMask;
             Map = parts.View;
@@ -164,6 +171,11 @@ namespace WarCore.Presentation
         internal TerrainRules TerrainRules { get; }
         // The match the session runs (null without one); read by PointCheck.
         internal MatchPack MatchPack => matchPack;
+        // TRV-7a: each point's entries and watch cells (by the match's point index), built once with the world; null without
+        // plates or without a match. Read by tests and reports only: no match system reads it.
+        internal PointEntryTable Entries { get; }
+        // The same table built again from the world as it is now (after a restore, say); null where Entries is null.
+        internal PointEntryTable RebuildEntriesForCheck() => entryBuild?.Invoke();
         // View key is the original UnitSpawn.Key, not the hashed StableId or the physical entity slot.
         public ulong? ControlledKey
         {
@@ -265,6 +277,20 @@ namespace WarCore.Presentation
             throw new ArgumentException("Follow target is not a unit of this session.", nameof(key));
         }
 
+        // AIM-1: TryReload for each unit of the squad that the player does not control, in spawn key order (spawns are sorted
+        // by key). The combat system refuses what it must (dead, no manual reload in the pack, full magazine...).
+        private void ReloadSquad(int squad)
+        {
+            if (combat == null) return;
+            for (int i = 0; i < spawns.Length; i++)
+            {
+                if (spawns[i].Squad != squad) continue;
+                EntityId unit = sim.Entities.Resolve(new EntityLink(units[i]));
+                if (controlled != null && controlled.Current.Equals(unit)) continue;
+                combat.TryReload(unit);
+            }
+        }
+
         // A squad target travels as a link beside the frame; frames without one take the plain path.
         private void StepSim(InputFrame input, EntityLink followTarget)
         {
@@ -342,9 +368,11 @@ namespace WarCore.Presentation
             SquadCommand? squad = null;
             EntityLink followTarget = default;
             bool hasCommand = pending.Count > 0 && pending[0].AtTick == nextTick;
-            // BLAST-1: a blast command is no squad command; it is taken apart here, before the squad switch below.
+            // AIM-1: a reload is no squad order; it is asked here, before the step, and the frame carries no squad command.
+            // BLAST-1: a blast command is no squad command either; it is taken apart here, before the squad switch below.
             bool blast = hasCommand && pending[0].Kind == BridgeCommandKind.Blast;
-            if (hasCommand && !blast)
+            if (hasCommand && pending[0].Kind == BridgeCommandKind.Reload) ReloadSquad(pending[0].Squad);
+            else if (hasCommand && !blast)
             {
                 BridgeCommand command = pending[0];
                 squad = command.Kind switch
