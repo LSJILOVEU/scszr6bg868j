@@ -34,7 +34,7 @@ namespace WarCore.Presentation
             var capture = new CaptureSystem(combat, recipe.Match, layers);
             var adapter = new BattleAdapter(sim, a.Locomotion, recipe, new DeployGround(terrain != null ? terrain.Nav : WcMapNavigation.Create(a.Map), terrain, a.GroundRaw), a.GroundRaw, a.Standing,
                 a.Plates != null ? a.Verticals : (ComponentType<VerticalState>?)null, a.Plates);
-            var reinforce = new ReinforceSystem(combat, recipe.Match, capture, adapter);
+            var reinforce = new ReinforceSystem(combat, recipe.Match, capture, adapter, layers: layers);
             var match = new MatchSystem(combat, recipe.Match, capture, a.Mode);
             a.Mode.Bind(match);
             sim.RegisterGameplay("battle.reinforce", reinforce, SimSystemPhase.Requests);
@@ -59,7 +59,7 @@ namespace WarCore.Presentation
             int memoryTicks = ai?.TargetMemoryTicks ?? 0;
             if (memoryTicks > 0)
             {
-                contacts = new TargetMemory(combat, memoryTicks);
+                contacts = new TargetMemory(combat, memoryTicks, layers);
                 sim.RegisterGameplay("battle.ai-contacts", contacts, SimSystemPhase.Requests);
             }
             // Only with the memory on: a positive searchTicks adds the search; 0 (the default) adds nothing.

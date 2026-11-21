@@ -37,7 +37,7 @@ filter = FullyQualifiedName~WarCore.Tests.A1BehaviorTests|FullyQualifiedName~War
 expect = WarCore.Tests.A1BehaviorTests.A1_StopsAtOwnEngageRange
 note = entering the melee engagement range never stops movement
 original:
-|                     if (CombatSystem.Horizontal(enemy - here).LengthSquared <= new SimVec3(engage, default, default).LengthSquared)
+|                     if (combat.SpanSquared(here, enemy) <= new SimVec3(engage, default, default).LengthSquared)
 replacement:
 |                     if (false)
 

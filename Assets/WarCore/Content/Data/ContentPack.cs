@@ -13,15 +13,17 @@ namespace WarCore.Content
         public readonly InterruptMode Interrupt;
         public readonly SimFix Sight, GridSpacing;
         public readonly int RespawnTicks, RespawnGuardTicks;
+        // RESPAWN-AI-1: match.reinforceSkipContested (optional, default false).
+        public readonly bool ReinforceSkipContested;
 
         public MatchRules(int num, int den, bool strict, int captureTicks, InterruptMode interrupt, int decayPerTick,
             int intervalTicks, int thinkInterval, int maxTicks, SimFix sight, int gridColumns, int gridRows, SimFix gridSpacing,
-            int respawnTicks = 0, int respawnGuardTicks = 0)
+            int respawnTicks = 0, int respawnGuardTicks = 0, bool reinforceSkipContested = false)
         {
             CaptureAdvantageNum = num; CaptureAdvantageDen = den; CaptureStrict = strict; CaptureTicks = captureTicks;
             Interrupt = interrupt; DecayPerTick = decayPerTick; IntervalTicks = intervalTicks; ThinkInterval = thinkInterval;
             MaxTicks = maxTicks; Sight = sight; GridColumns = gridColumns; GridRows = gridRows; GridSpacing = gridSpacing;
-            RespawnTicks = respawnTicks; RespawnGuardTicks = respawnGuardTicks;
+            RespawnTicks = respawnTicks; RespawnGuardTicks = respawnGuardTicks; ReinforceSkipContested = reinforceSkipContested;
         }
     }
 
@@ -159,7 +161,7 @@ namespace WarCore.Content
             {
                 return new MatchPack(points, bases, m.CaptureAdvantageNum, m.CaptureAdvantageDen, m.CaptureStrict, m.CaptureTicks,
                     m.Interrupt, m.DecayPerTick, m.IntervalTicks, m.ThinkInterval, m.MaxTicks, m.Sight, m.GridColumns, m.GridRows, m.GridSpacing,
-                    m.RespawnTicks, m.RespawnGuardTicks, ruleIds);
+                    m.RespawnTicks, m.RespawnGuardTicks, ruleIds, m.ReinforceSkipContested);
             }
             catch (ArgumentException e)
             {

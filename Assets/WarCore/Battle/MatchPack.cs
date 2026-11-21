@@ -71,6 +71,8 @@ namespace WarCore.Battle
         public int RespawnTicks { get; }
         // Ticks after a respawn switch during which combat deals the new unit no damage; 0 turns it off. Needs a positive delay.
         public int RespawnGuardTicks { get; }
+        // RESPAWN-AI-1: the timed reinforcement leaves out points another team contests (PointPresence); false keeps the old list.
+        public bool ReinforceSkipContested { get; }
         public ulong PolicyDigest { get; }
         // NT-1: teams 1..TeamCount take part; 0 is no team. At least 2, else the highest team a base anchor or an initial owner
         // names. Fixed by the pack (never by the units), so state sized by it is known when the world is built. Not hashed:
@@ -84,7 +86,7 @@ namespace WarCore.Battle
         public MatchPack(ControlPointDef[] points, SpawnAnchor[] bases, int num, int den, bool strict,
             int captureTicks, InterruptMode interrupt, int decayPerTick, int intervalTicks, int thinkInterval,
             int maxTicks, SimFix sight, int gridColumns, int gridRows, SimFix gridSpacing, int respawnTicks = 0, int respawnGuardTicks = 0,
-            string[] rules = null)
+            string[] rules = null, bool reinforceSkipContested = false)
         {
             if (den < 1 || num < den) throw new ArgumentOutOfRangeException(nameof(num));
             if (captureTicks < 1 || intervalTicks < 1 || thinkInterval < 1 || maxTicks < 1)
@@ -113,6 +115,7 @@ namespace WarCore.Battle
             Num = num; Den = den; Strict = strict; CaptureTicks = captureTicks; Interrupt = interrupt;
             DecayPerTick = decayPerTick; IntervalTicks = intervalTicks; ThinkInterval = thinkInterval; MaxTicks = maxTicks;
             Sight = sight; GridColumns = gridColumns; GridRows = gridRows; GridSpacing = gridSpacing; RespawnTicks = respawnTicks; RespawnGuardTicks = respawnGuardTicks;
+            ReinforceSkipContested = reinforceSkipContested;
             var hash = new StateHash(); hash.Add("battle.pack.v1"); hash.Add(points.Length);
             foreach (var point in this.points) point.WriteState(hash);
             hash.Add(bases.Length); foreach (var anchor in this.bases) { hash.Add(anchor.Team); anchor.Point.WriteState(hash); }
@@ -138,6 +141,8 @@ namespace WarCore.Battle
                 hash.Add("battle.pack.center-layers.v1");
                 foreach (var point in this.points) hash.Add(point.Layer);
             }
+            // RESPAWN-AI-1: only when on, so a pack without the switch keeps its digest.
+            if (reinforceSkipContested) hash.Add("battle.pack.reinforce-skip.v1");
             PolicyDigest = hash.Value;
         }
         private bool HasLayers()

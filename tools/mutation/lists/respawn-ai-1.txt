@@ -1,0 +1,323 @@
+# RESPAWN-AI-1: reinforcement skips contested points, entry chooser, entry records. Test classes are named RespawnAi1*.
+
+[respawn-ai-1-01-skip-when-off]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi1
+expect = WarCore.Tests.RespawnAi1LockTests.RespawnAi1Lock_OldWorldIsUnchanged
+expect = WarCore.Tests.RespawnAi1Tests.A1_FalseIsLeftOut
+expect = WarCore.Tests.RespawnAi1Tests.A2_TheContestedPointIsSkipped
+note = the switch off still skips contested points
+original:
+|                     if (capture.Points[i].Owner == team && pack.Points[i].HasSpawn && !(pack.ReinforceSkipContested && presence.Contested(team, pack.Points[i])))
+replacement:
+|                     if (capture.Points[i].Owner == team && pack.Points[i].HasSpawn && !presence.Contested(team, pack.Points[i]))
+
+[respawn-ai-1-02-contested-ignored]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi1
+expect = WarCore.Tests.RespawnAi1Tests.A2_TheContestedPointIsSkipped
+expect = WarCore.Tests.RespawnAi1Tests.A3_WhoContests
+note = the switch on skips nothing
+original:
+|                     if (capture.Points[i].Owner == team && pack.Points[i].HasSpawn && !(pack.ReinforceSkipContested && presence.Contested(team, pack.Points[i])))
+replacement:
+|                     if (capture.Points[i].Owner == team && pack.Points[i].HasSpawn && !(pack.ReinforceSkipContested && false))
+
+[respawn-ai-1-03-edge-excluded]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi1
+expect = WarCore.Tests.RespawnAi1Tests.A3_TheCircleIncludesItsEdge
+note = the circle leaves out its edge
+original:
+|             CombatSystem.Horizontal(point - def.Center).LengthSquared <= new SimVec3(def.Radius, default, default).LengthSquared;
+replacement:
+|             CombatSystem.Horizontal(point - def.Center).LengthSquared < new SimVec3(def.Radius, default, default).LengthSquared;
+
+[respawn-ai-1-04-dead-contest]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi1
+expect = WarCore.Tests.RespawnAi1Tests.A3_WhoContests
+note = a dead unit still stands on the point
+original:
+|                 || !combat.Entities.TryGet(positions, unit, out Position position) || combat.IsDead(unit)) return false;
+replacement:
+|                 || !combat.Entities.TryGet(positions, unit, out Position position)) return false;
+
+[respawn-ai-1-05-own-team-contests]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi1
+expect = WarCore.Tests.RespawnAi1Tests.A3_WhoContests
+note = a unit of the same team contests
+original:
+|                 if (Stands(unit, out int other, out SimVec3 at) && other != team && Inside(unit, at, point)) return true;
+replacement:
+|                 if (Stands(unit, out int other, out SimVec3 at) && Inside(unit, at, point)) return true;
+
+[respawn-ai-1-06-team-zero-stands]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi1
+expect = WarCore.Tests.RespawnAi1Tests.A3_WhoContests
+note = team 0 stands on points
+original:
+|             if (!combat.Entities.TryGet(combatants, unit, out Combatant value) || value.Team < 1 || value.Team > teams
+replacement:
+|             if (!combat.Entities.TryGet(combatants, unit, out Combatant value) || value.Team < 0 || value.Team > teams
+
+[respawn-ai-1-07-team-above-count-stands]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi1
+expect = WarCore.Tests.RespawnAi1Tests.A3_WhoContests
+note = a team above TeamCount stands on points
+original:
+|             if (!combat.Entities.TryGet(combatants, unit, out Combatant value) || value.Team < 1 || value.Team > teams
+replacement:
+|             if (!combat.Entities.TryGet(combatants, unit, out Combatant value) || value.Team < 1 || value.Team > MatchPack.MaxTeams
+
+[respawn-ai-1-08-layer-ignored]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi1
+expect = WarCore.Tests.RespawnAi1Tests.A5_OnPlatesOnlyTheSameLayerContests
+note = presence ignores the plate layer
+original:
+|         public bool Inside(EntityId unit, SimVec3 at, in ControlPointDef point) => CaptureSystem.Inside(layers, unit, at, point);
+replacement:
+|         public bool Inside(EntityId unit, SimVec3 at, in ControlPointDef point) => CaptureSystem.Inside(null, unit, at, point);
+
+[respawn-ai-1-09-base-contested]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi1
+expect = WarCore.Tests.RespawnAi1Tests.A2_TheContestedPointIsSkipped
+note = a base is skipped like a contested point
+original:
+|                 foreach (var anchor in pack.Bases) if (anchor.Team == team) options[count++] = new EntryOption(true, -1, anchor.Point, anchor.Layer);
+replacement:
+|                 foreach (var anchor in pack.Bases) if (anchor.Team == team && !(pack.ReinforceSkipContested && presence.Contested(team, pack.Points[0]))) options[count++] = new EntryOption(true, -1, anchor.Point, anchor.Layer);
+
+[respawn-ai-1-10-digest-missing]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi1
+expect = WarCore.Tests.RespawnAi1Tests.A1_FalseIsLeftOut
+expect = WarCore.Tests.RespawnAi1Tests.A11_TrueAndFalseDigests
+note = the switch is not in the digest
+original:
+|             if (reinforceSkipContested) hash.Add("battle.pack.reinforce-skip.v1");
+replacement:
+|             _ = reinforceSkipContested;
+
+[respawn-ai-1-11-content-not-passed]
+file = Assets/WarCore/Content/Data/ContentPack.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi1
+expect = WarCore.Tests.RespawnAi1Tests.A11_TrueAndFalseDigests
+note = the content switch does not reach the pack
+original:
+|                     m.RespawnTicks, m.RespawnGuardTicks, ruleIds, m.ReinforceSkipContested);
+replacement:
+|                     m.RespawnTicks, m.RespawnGuardTicks, ruleIds, false);
+
+[respawn-ai-1-12-content-inverted]
+file = Assets/WarCore/Content/Data/Sections/MatchSection.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi1
+expect = WarCore.Tests.RespawnAi1Tests.A11_TrueAndFalseDigests
+note = the content switch is read inverted
+original:
+|             bool skipContested = mr.Has("reinforceSkipContested") && mr.Bool("reinforceSkipContested");
+replacement:
+|             bool skipContested = mr.Has("reinforceSkipContested") && !mr.Bool("reinforceSkipContested");
+
+[respawn-ai-1-13-default-plus-one]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi1
+expect = WarCore.Tests.RespawnAi1LockTests.RespawnAi1Lock_WithoutTheSwitchTheContestedPointStillDeploys
+expect = WarCore.Tests.RespawnAi1Tests.A6_TheDefaultIsTheRotation
+note = the default starts one entry later
+original:
+|                 int first = (int)(attempt % count);
+replacement:
+|                 int first = (int)((attempt + 1) % count);
+
+[respawn-ai-1-14-chooser-ignored]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi1
+expect = WarCore.Tests.RespawnAi1Tests.A7_TheChoosersEntryIsTriedFirst
+note = the chooser is asked but its answer is not used
+original:
+|                     first = chooser.First(team, reserve, new ReadOnlySpan<EntryOption>(options, 0, count), attempt);
+replacement:
+|                     _ = chooser.First(team, reserve, new ReadOnlySpan<EntryOption>(options, 0, count), attempt);
+
+[respawn-ai-1-15-no-wrap]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi1
+expect = WarCore.Tests.RespawnAi1Tests.A7_TheChoosersEntryIsTriedFirst
+note = the chooser entry is used without going round the list
+original:
+|                         EntryOption entry = options[(first + a) % count];
+replacement:
+|                         EntryOption entry = options[chooser != null ? first : (first + a) % count];
+
+[respawn-ai-1-16-no-throw]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi1
+expect = WarCore.Tests.RespawnAi1Tests.A8_AnIndexOutsideTheListThrows
+note = an index outside the list is clamped
+original:
+|                         throw new ArgumentOutOfRangeException(nameof(IEntryChooser.First), first, "The entry chooser returned an index outside the list.");
+replacement:
+|                         first = 0;
+
+[respawn-ai-1-17-key-not-saved]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi1
+expect = WarCore.Tests.RespawnAi1Tests.A9_TheChooserKeyIsSavedAndChecked
+note = the chooser key is not saved
+original:
+|             if (chooser != null) writer.UInt64(chooser.PolicyKey);
+replacement:
+|             _ = writer;
+
+[respawn-ai-1-18-key-not-hashed]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi1
+expect = WarCore.Tests.RespawnAi1Tests.A9_TheChooserKeyIsSavedAndChecked
+note = the chooser key is not hashed
+original:
+|             if (chooser != null) hash.Add(chooser.PolicyKey);
+replacement:
+|             _ = hash;
+
+[respawn-ai-1-19-key-not-compared]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi1
+expect = WarCore.Tests.RespawnAi1Tests.A9_TheChooserKeyIsSavedAndChecked
+note = the chooser key is read but not compared
+original:
+|             if (chooser != null) SimStateReader.Require(reader.UInt64() == chooser.PolicyKey, "Entry chooser differs.");
+replacement:
+|             if (chooser != null) reader.UInt64();
+
+[respawn-ai-1-20-version-unbound]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi1
+expect = WarCore.Tests.RespawnAi1LockTests.RespawnAi1Lock_OldWorldIsUnchanged
+expect = WarCore.Tests.RespawnAi1Tests.A1_FalseIsLeftOut
+note = the version changes without a chooser
+original:
+|         public int StateVersion => (pack.TeamCount == 2 ? 1 : 2) + (chooser == null ? 0 : 2);
+replacement:
+|         public int StateVersion => (pack.TeamCount == 2 ? 1 : 2) + (chooser == null ? 1 : 2);
+
+[respawn-ai-1-21-version-bound-same]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi1
+expect = WarCore.Tests.RespawnAi1Tests.A9_TheChooserKeyIsSavedAndChecked
+note = a bound chooser keeps the unbound version
+original:
+|         public int StateVersion => (pack.TeamCount == 2 ? 1 : 2) + (chooser == null ? 0 : 2);
+replacement:
+|         public int StateVersion => (pack.TeamCount == 2 ? 1 : 2);
+
+[respawn-ai-1-22-bind-after-step]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi1
+expect = WarCore.Tests.RespawnAi1Tests.A8_BindingRules
+note = binding after the first step is allowed
+original:
+|             if (started) throw new InvalidOperationException("The entry chooser is bound before the first step.");
+replacement:
+|             _ = started;
+
+[respawn-ai-1-23-bind-twice]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi1
+expect = WarCore.Tests.RespawnAi1Tests.A8_BindingRules
+note = binding twice is allowed
+original:
+|             if (this.chooser != null) throw new InvalidOperationException("An entry chooser is already bound.");
+replacement:
+|             _ = this.chooser;
+
+[respawn-ai-1-24-bind-null]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi1
+expect = WarCore.Tests.RespawnAi1Tests.A8_BindingRules
+note = binding null is allowed
+original:
+|             if (chooser == null) throw new ArgumentNullException(nameof(chooser));
+replacement:
+|             _ = chooser;
+
+[respawn-ai-1-25-load-not-started]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi1
+expect = WarCore.Tests.RespawnAi1Tests.A8_BindingRules
+note = binding after a load is allowed
+original:
+|         public void LoadState(SimStateReader reader)
+|         {
+|             started = true;
+replacement:
+|         public void LoadState(SimStateReader reader)
+|         {
+
+[respawn-ai-1-26-record-layer-zero]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi1
+expect = WarCore.Tests.RespawnAi1Tests.A5_OnPlatesOnlyTheSameLayerContests
+note = the record says layer 0
+original:
+|                         deployed[deployCount++] = new DeployRecord(c.Clock.Tick, combat.Entities.StableOf(reserve), team, point, entry.Layer, entry.Point);
+replacement:
+|                         deployed[deployCount++] = new DeployRecord(c.Clock.Tick, combat.Entities.StableOf(reserve), team, point, 0, entry.Point);
+
+[respawn-ai-1-27-record-point-base]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi1
+expect = WarCore.Tests.RespawnAi1Tests.A10_RecordsCarryLayerAndPoint
+expect = WarCore.Tests.RespawnAi1Tests.A5_OnPlatesOnlyTheSameLayerContests
+note = the record always names a base
+original:
+|                         deployed[deployCount++] = new DeployRecord(c.Clock.Tick, combat.Entities.StableOf(reserve), team, point, entry.Layer, entry.Point);
+replacement:
+|                         deployed[deployCount++] = new DeployRecord(c.Clock.Tick, combat.Entities.StableOf(reserve), team, point, entry.Layer, -1);
+
+[respawn-ai-1-28-records-kept]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi1
+expect = WarCore.Tests.RespawnAi1Tests.A10_RecordsCarryLayerAndPoint
+note = records are not cleared on the next step
+original:
+|             started = true;
+|             deployCount = 0;
+replacement:
+|             started = true;
+|             if (c.Clock.Tick % pack.IntervalTicks == 0) deployCount = 0;
+
+[respawn-ai-1-29-list-allocates]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi1AllocationTests
+expect = WarCore.Tests.RespawnAi1AllocationTests.A12
+note = the list given to the chooser is copied
+original:
+|                     first = chooser.First(team, reserve, new ReadOnlySpan<EntryOption>(options, 0, count), attempt);
+replacement:
+|                     first = chooser.First(team, reserve, options.AsSpan(0, count).ToArray(), attempt);
+
+[respawn-ai-1-30-respawn-no-contest]
+file = Assets/WarCore/Battle/RespawnSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.C1bAnchorTests
+expect = WarCore.Tests.C1bAnchorTests.EnemyOnTheBoundary_Contested
+note = player respawn stops checking contested points (the refactor keeps it)
+original:
+|                 if (capture.Points[i].Owner == team && pack.Points[i].HasSpawn && !presence.Contested(team, pack.Points[i]))
+replacement:
+|                 if (capture.Points[i].Owner == team && pack.Points[i].HasSpawn)
+
+[respawn-ai-1-31-capture-shared-rule]
+file = Assets/WarCore/Battle/CaptureSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.Nt1CaptureTests
+expect = WarCore.Tests.Nt1CaptureTests.
+note = capture stops using the shared rule for the team
+original:
+|                 for (int i = 0; i < states.Length; i++) if (presence.Inside(unit, at, pack.Points[i])) counts[teams * i + team - 1]++;
+replacement:
+|                 for (int i = 0; i < states.Length; i++) if (presence.Inside(unit, at, pack.Points[i])) counts[teams * i]++;
