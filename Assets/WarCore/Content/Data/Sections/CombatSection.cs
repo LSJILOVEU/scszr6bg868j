@@ -10,6 +10,9 @@ namespace WarCore.Content
         internal const string SectionKey = "combat";
         internal CombatSection() : base(SectionKey) { }
         protected override string NestedObject => "body";
+        private static readonly string[] Arrays = { BlastsField };
+        protected override string[] NestedArrays => Arrays;
+        internal const string BlastsField = "blasts";
 
         // The unit collider radius r (MovementFeature and the deployer place every unit with it).
         internal const long UnitRadiusRaw = SimFix.Scale / 4;
@@ -26,6 +29,41 @@ namespace WarCore.Content
             Within(r, "eye", eye.Raw, UnitRadiusRaw, height.Raw - UnitRadiusRaw);
             Within(r, "muzzle", muzzle.Raw, 0, height.Raw);
             return new CombatBody(height, eye, muzzle);
+        }
+
+        // BLAST-1 "blasts": [ { id, innerMm, outerMm, damage, friendly, walls } ], 1 to 32 kinds with distinct ids (a child layer's
+        // array replaces the parent's whole), plus "blastPerTick" (1..64, default 4) and "blastQueue" (1..4096, default 64), which
+        // are refused without "blasts". damage 1..32767 health units; outerMm 1..100000; innerMm 0..outerMm - 1.
+        private static BlastRules Blasts(string pack, EntryReader cr)
+        {
+            ContentField field = cr.FieldOf(BlastsField);
+            if (field == null)
+            {
+                foreach (string name in new[] { "blastPerTick", "blastQueue" })
+                    if (cr.Has(name)) throw cr.Bad(cr.FieldOf(name), "needs the combat section's " + BlastsField);
+                return null;
+            }
+            field.Used = true;
+            if (field.Node.Kind != JsonKind.Array) throw cr.Bad(field, "must be an array");
+            int count = field.Node.Items.Count;
+            if (count < 1 || count > BlastRules.MaxKinds) throw cr.Bad(field, "has " + count + " entries, allowed 1 to " + BlastRules.MaxKinds);
+            var entries = new System.Collections.Generic.List<ContentEntry>();
+            EntryMerge.Array(entries, field.Node, "combat." + BlastsField, field.Layer);
+            var kinds = new BlastSpec[entries.Count];
+            for (int i = 0; i < kinds.Length; i++)
+            {
+                var r = new EntryReader(pack, entries[i]);
+                int outer = r.Int("outerMm", 1, BlastSpec.MaxOuterMm);
+                int inner = r.Int("innerMm", 0, BlastSpec.MaxOuterMm - 1);
+                if (inner >= outer) throw r.Bad(r.FieldOf("innerMm"), "must be less than outerMm (" + outer + ")");
+                int damage = r.Int("damage", 1, BlastSpec.MaxDamage);
+                bool friendly = r.Bool("friendly"), walls = r.Bool("walls");
+                r.Done();
+                kinds[i] = new BlastSpec(entries[i].Id, inner, outer, damage, friendly, walls);
+            }
+            int perTick = cr.Has("blastPerTick") ? cr.Int("blastPerTick", 1, BlastRules.MaxPerTick) : BlastRules.DefaultPerTick;
+            int queue = cr.Has("blastQueue") ? cr.Int("blastQueue", 1, BlastRules.MaxQueue) : BlastRules.DefaultQueue;
+            return new BlastRules(kinds, perTick, queue);
         }
 
         private static void Within(EntryReader r, string name, long raw, long min, long max)
@@ -62,6 +100,7 @@ namespace WarCore.Content
             if (missRate.Raw < 0 || missRate.Raw > SimFix.Scale) throw cr.Bad(cr.FieldOf("allyCheckMissRate"), "must be between 0 and 1");
             long holdMilli = cr.Long("allyHoldMilli", 1000, SectionLimits.MaxMilli);
             ContentEntry body = cr.ObjectOrNull("body");
+            BlastRules blasts = Blasts(b.Pack, cr);
             cr.Done();
             if (body != null) b.Body = Body(b.Pack, body);
             // PROJ-1: a projectile starts at the muzzle, so a pack with a projectile weapon must have the body.
@@ -69,6 +108,7 @@ namespace WarCore.Content
                 if (b.ProjectileSpeeds[i] != 0)
                     throw new ContentException("content pack '" + b.Pack + "' weapon '" + b.WeaponIds[i] + "' field '" + WeaponsSection.ProjectileField
                         + "': a projectile weapon needs the combat section's body");
+            if (blasts != null) b.Publish(blasts);
             b.MaxHealthRaw = maxHealth.Raw; b.ResolverId = resolver; b.SelectorId = selector;
             b.FriendlyFire = friendlyFire; b.FriendlyFireLocked = friendlyFireLocked; b.AllyCheckMissRaw = (int)missRate.Raw; b.AllyHoldMilli = holdMilli;
         }

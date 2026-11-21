@@ -283,6 +283,11 @@ namespace WarCore.Presentation
             }
             else if (command.Kind == BridgeCommandKind.Follow && !HasUnit(command.TargetKey))
                 throw new ArgumentException("Follow target is not a unit of this session.", nameof(command));
+            else if (command.Kind == BridgeCommandKind.Blast)
+            {
+                BlastIndex(command.BlastId);
+                BlastPoint(command.XMm, command.ZMm, command.Layer, nameof(command));
+            }
             int index = 0;
             while (index < pending.Count && pending[index].AtTick < command.AtTick)
                 index++;
@@ -337,7 +342,9 @@ namespace WarCore.Presentation
             SquadCommand? squad = null;
             EntityLink followTarget = default;
             bool hasCommand = pending.Count > 0 && pending[0].AtTick == nextTick;
-            if (hasCommand)
+            // BLAST-1: a blast command is no squad command; it is taken apart here, before the squad switch below.
+            bool blast = hasCommand && pending[0].Kind == BridgeCommandKind.Blast;
+            if (hasCommand && !blast)
             {
                 BridgeCommand command = pending[0];
                 squad = command.Kind switch
@@ -373,6 +380,12 @@ namespace WarCore.Presentation
                     if (sim.Entities.TryGet(positions, unit, out Position at) && (combat == null || !combat.IsDead(unit)))
                         dash.TryDash(unit, move.X.Raw != 0 || move.Z.Raw != 0 ? move : aim - at.Value);
                 }
+            }
+            // The blast goes into the queue before the step, so it goes off on this tick (the blast system runs at Order 28).
+            if (blast)
+            {
+                BridgeCommand command = pending[0];
+                combat.Blasts.Enqueue(BlastPoint(command.XMm, command.ZMm, command.Layer, nameof(command)), BlastIndex(command.BlastId), default, 0);
             }
             if (StepTimingEnabled && stepSampleCount < stepSamples.Length)
             {
@@ -440,6 +453,14 @@ namespace WarCore.Presentation
             var fires = new ViewFire[combat == null ? 0 : combat.Fires.Length];
             for (int i = 0; i < fires.Length; i++)
                 fires[i] = ToView(combat.Fires[i]);
+            BlastSystem blasts = combat?.Blasts;
+            var blastViews = new ViewBlast[blasts == null ? 0 : blasts.Records.Length];
+            for (int i = 0; i < blastViews.Length; i++)
+            {
+                BlastRecord record = blasts.Records[i];
+                blastViews[i] = new ViewBlast((float)record.Point.X.Raw / SimFix.Scale, (float)record.Point.Y.Raw / SimFix.Scale,
+                    (float)record.Point.Z.Raw / SimFix.Scale, (float)blasts.Rules.Kinds[record.Blast].OuterRaw / SimFix.Scale, record.Team);
+            }
             var points = new ViewPoint[capture == null ? 0 : capture.Points.Length];
             for (int i = 0; i < points.Length; i++)
             {
@@ -465,7 +486,7 @@ namespace WarCore.Presentation
                 }
             }
             return new FrameView(Tick, views.ToArray(), fires, points,
-                new ViewMatch(Winner, (int)EndTick, EndReason, aliveOne, aliveTwo, reserveOne, reserveTwo, IsFinished), respawn);
+                new ViewMatch(Winner, (int)EndTick, EndReason, aliveOne, aliveTwo, reserveOne, reserveTwo, IsFinished), respawn, blastViews);
         }
 
         public static ViewFire ToView(in FireRecord fire) => new ViewFire(
@@ -489,6 +510,30 @@ namespace WarCore.Presentation
             const long limitMm = SimVec3.WorldLimitMetres * 1000L;
             if (yMm < -limitMm || yMm > limitMm)
                 throw new ArgumentOutOfRangeException("aimYMm", "Aim height exceeds the world bounds.");
+        }
+
+        // BLAST-1: the index of a blast kind of this session's combat pack.
+        private int BlastIndex(string blastId)
+        {
+            BlastSystem blasts = combat?.Blasts;
+            if (blasts == null) throw new InvalidOperationException("This session's combat pack has no blasts.");
+            int index = blasts.Rules.IndexOf(blastId);
+            if (index < 0) throw new ArgumentException("The combat pack has no blast '" + blastId + "'.", nameof(blastId));
+            return index;
+        }
+
+        // BLAST-1: where a blast command goes off: (x, z) on the ground (the terrain's height there, else the map's floor) or, for
+        // a layer above 0, on that floor plate's surface.
+        private SimVec3 BlastPoint(long xMm, long zMm, int layer, string parameter)
+        {
+            CheckLayer(xMm, zMm, layer, "Blast point", parameter);
+            if (layer > 0) return PlateTarget(xMm, zMm, layer);
+            SimVec3 point = Target(xMm, zMm, groundRaw);
+            HeightField ground = Terrain?.Ground;
+            if (ground == null) return point;
+            if (!ground.TryHeightAt(point.X, point.Z, out SimFix y))
+                throw new ArgumentException("Blast point is outside the terrain.", parameter);
+            return new SimVec3(point.X, y, point.Z);
         }
 
         // A point on a layer above the ground must lie on a solid cell of that plate of this map.

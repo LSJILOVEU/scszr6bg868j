@@ -39,6 +39,9 @@ namespace WarCore.Presentation
             // PROJ-1: only a pack with a projectile weapon gets the projectile system (and its random stream).
             if (combat.Pack.HasProjectiles)
                 sim.RegisterGameplay("combat.projectiles", new ProjectileSystem(sim, combat, System.Math.Max(1, ProjectileCapacity(recipe))), SimSystemPhase.Queries);
+            // BLAST-1: only a pack with blasts gets the blast system.
+            if (combat.Pack.HasBlasts)
+                sim.RegisterGameplay("combat.blasts", new BlastSystem(sim, combat, recipe.Units.Length), SimSystemPhase.Queries);
             // The combat system registers the melee component, so the units get their specs only now.
             for (int i = 0; i < recipe.Units.Length; i++)
                 if (recipe.Units[i].Melee >= 0) combat.SetMelee(a.Units[i], recipe.Units[i].Melee);
@@ -58,6 +61,11 @@ namespace WarCore.Presentation
             for (int i = 0; i < weapons.Length; i++) weapons[i] = recipe.Units[i].Weapon;
             return pack.ProjectileCapacity(weapons);
         }
+
+        // BLAST-1: the blast commands B of the recipe's units given its projectile pool (CombatPack.BlastCommands); 0 without
+        // blasts. The world's damage command, notice and event limits grow by the same number.
+        internal static int BlastCommands(WorldRecipe recipe, int projectiles) =>
+            recipe.Combat == null ? 0 : recipe.Combat.BlastCommands(recipe.Units.Length, projectiles);
 
         // The recipe's combat pack, with its selector wrapped in ConcealedSight when some cell of a terrain map stands on a surface
         // with cover. Otherwise (flat world, no surface table, or every cell at factor 1000) it is the recipe's pack itself.

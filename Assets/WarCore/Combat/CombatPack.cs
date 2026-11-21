@@ -26,6 +26,9 @@ namespace WarCore.Combat
         public ReadOnlySpan<ProjectileSpec> Projectiles => projectiles;
         public bool HasProjectiles => projectiles.Length > 0;
         public bool IsProjectile(int weapon) => projectiles.Length > 0 && weapon >= 0 && !projectiles[weapon].IsInstant;
+        // BLAST-1: the pack's explosions, or null. A pack without them hashes, sizes and registers exactly as before.
+        public BlastRules Blasts { get; }
+        public bool HasBlasts => Blasts != null;
         // Most damage commands one unit can issue in a tick: one shot, or one swing landing on up to this many targets.
         public int MaxHitsPerAction { get; }
         public IHitResolver Resolver { get; }
@@ -42,7 +45,7 @@ namespace WarCore.Combat
 
         public CombatPack(WeaponDef[] weapons, IHitResolver resolver, ITargetSelector selector, long maxHealthRaw,
             bool friendlyFire = false, bool friendlyFireLocked = false, int allyCheckMissRaw = 0, long allyHoldMilli = 30000, MeleeSpec[] melee = null, BlockSpec[] block = null,
-            CombatBody? body = null, int[] projectileSpeeds = null)
+            CombatBody? body = null, int[] projectileSpeeds = null, BlastRules blasts = null)
         {
             if (allyCheckMissRaw < 0 || allyCheckMissRaw > SimFix.Scale) throw new ArgumentOutOfRangeException(nameof(allyCheckMissRaw));
             if (allyHoldMilli < 1000 || allyHoldMilli > 1_000_000_000_000L) throw new ArgumentOutOfRangeException(nameof(allyHoldMilli));
@@ -56,6 +59,7 @@ namespace WarCore.Combat
             FriendlyFire = friendlyFire; FriendlyFireLocked = friendlyFireLocked;
             AllyCheckMissRaw = allyCheckMissRaw; AllyHoldMilli = allyHoldMilli;
             Body = body;
+            Blasts = blasts;
             projectiles = BuildProjectiles(this.weapons, projectileSpeeds, body);
             this.projectileSpeeds = projectiles.Length == 0 ? Array.Empty<int>() : (int[])projectileSpeeds.Clone();
             var hash = new StateHash();
@@ -72,6 +76,8 @@ namespace WarCore.Combat
             { hash.Add("combat.pack.body.v1"); body.Value.WriteState(hash); }
             if (projectiles.Length > 0)
             { hash.Add("combat.pack.projectile.v1"); hash.Add(projectiles.Length); foreach (var spec in projectiles) hash.Add(spec.StepRaw); }
+            // KB4: later optional sections (stances, move spread, manual reload) go before this one, every one only when present.
+            if (blasts != null) blasts.WriteState(hash);
             PolicyDigest = hash.Value;
         }
 
@@ -114,16 +120,34 @@ namespace WarCore.Combat
         // Rule (ML-3): a new optional section of the pack is passed on by every With* copy, with a test.
         public CombatPack WithSelector(ITargetSelector selector) => new CombatPack(weapons, Resolver, selector, MaxHealthRaw,
             FriendlyFire, FriendlyFireLocked, AllyCheckMissRaw, AllyHoldMilli, melee.Length == 0 ? null : melee, block.Length == 0 ? null : block, Body,
-            projectileSpeeds.Length == 0 ? null : projectileSpeeds);
+            projectileSpeeds.Length == 0 ? null : projectileSpeeds, Blasts);
+
+        // BLAST-1 blast commands B for a world of these units: PerTick blasts a tick, each landing at most one damage command on
+        // every unit, so B = PerTick * N; 0 for a pack without blasts. Refused when the damage settlement's staging
+        // (2 * commands + 2 * N + 1, commands = N * MaxHitsPerAction + P + B) would exceed GameplayMath.MaxPackets.
+        public int BlastCommands(int unitCount, int projectiles = 0)
+        {
+            if (Blasts == null) return 0;
+            if (unitCount < 0) throw new ArgumentOutOfRangeException(nameof(unitCount));
+            if (projectiles < 0) throw new ArgumentOutOfRangeException(nameof(projectiles));
+            long units = unitCount, per = Blasts.PerTick;
+            long blasts = per * units;
+            long staging = 2 * (units * MaxHitsPerAction + projectiles + blasts) + 2 * units + 1;
+            if (staging > GameplayMath.MaxPackets)
+                throw new ArgumentException("Blast capacity too large: B = " + per + ", N = " + units + ", damage staging " + staging
+                    + " exceeds " + GameplayMath.MaxPackets + ".", nameof(unitCount));
+            return (int)blasts;
+        }
 
         // projectiles: the projectile pool size (ProjectileCapacity); each projectile may land one damage command in a tick.
-        public GameplaySchema BuildSchema(int unitCount, int projectiles = 0) => new GameplaySchema(
+        // blastCommands: BlastCommands for the world's units; each adds one damage command and one notice.
+        public GameplaySchema BuildSchema(int unitCount, int projectiles = 0, int blastCommands = 0) => new GameplaySchema(
             new[] { new GameplayResourceDef(1, "health", 0, MaxHealthRaw, MaxHealthRaw, isLife: true) },
             new[] { new GameplayDamageTypeDef(1, "hit", 1, 1) },
             new[] { new GameplayPipelineDef(1, new GameplayDamageSpec(0, GameplayDamageStages.None)) },
             new[] { new GameplayArchetypeDef(1, new[] { 1UL }) },
-            new GameplayCapacities(unitCount, unitCount, checked(unitCount * MaxHitsPerAction + projectiles),
-                checked(unitCount * (MaxHitsPerAction + 1) + projectiles)), "combat.critical",
+            new GameplayCapacities(unitCount, unitCount, checked(unitCount * MaxHitsPerAction + projectiles + blastCommands),
+                checked(unitCount * (MaxHitsPerAction + 1) + projectiles + blastCommands)), "combat.critical",
             lifeRules: new[] { new GameplayLifeRuleDef(1, 1, false, 0) });
 
         // N units, each landing at most k = MaxHitsPerAction hits per tick (k = 1 without melee): N*k commands, N*(k+1) notices.
@@ -131,9 +155,10 @@ namespace WarCore.Combat
         // Block 2 separately stages 2*Commands + Resources + Owners + 1 = 4*N+1 notices.
         // Its legacy Enqueue reservation needs Notices >= Commands + Resources = 2*N.
         // PROJ-1: P projectiles add P commands, so P notices and P events; final-resource facts and deaths stay bounded by N.
-        public SimConfig BuildConfig(int entityCount, int unitCount, int projectiles = 0)
+        // BLAST-1: B blast commands add the same way.
+        public SimConfig BuildConfig(int entityCount, int unitCount, int projectiles = 0, int blastCommands = 0)
         {
-            int events = Math.Max(1, checked(unitCount * (MaxHitsPerAction + 2) + projectiles));
+            int events = Math.Max(1, checked(unitCount * (MaxHitsPerAction + 2) + projectiles + blastCommands));
             return new SimConfig(entityCapacity: entityCount, eventInitialCapacity: events, eventHardLimit: events);
         }
     }

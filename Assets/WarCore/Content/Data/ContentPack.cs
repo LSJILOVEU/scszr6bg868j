@@ -148,7 +148,7 @@ namespace WarCore.Content
             bool effective = friendlyFireLocked ? friendlyFire : requestedFriendlyFire ?? friendlyFire;
             return new CombatPack(weapons, ContentPolicies.Resolver(resolverId), ContentPolicies.Selector(selectorId, sight), maxHealthRaw,
                 effective, friendlyFireLocked, allyCheckMissRaw, allyHoldMilli, melee.Length == 0 ? null : melee, block.Length == 0 ? null : block, Body,
-                projectileSpeeds.Length == 0 ? null : projectileSpeeds);
+                projectileSpeeds.Length == 0 ? null : projectileSpeeds, SectionOrNull<BlastRules>());
         }
 
         // Control points and spawn anchors are map data and stay with the caller.
