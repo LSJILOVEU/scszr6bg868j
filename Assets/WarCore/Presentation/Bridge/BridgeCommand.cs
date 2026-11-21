@@ -2,7 +2,7 @@ using System;
 
 namespace WarCore.Presentation
 {
-    public enum BridgeCommandKind { MoveTo, Hold, Follow, Reload, Blast }
+    public enum BridgeCommandKind { MoveTo, Hold, Follow, Reload, Blast, Stance }
 
     public readonly struct BridgeCommand
     {
@@ -16,12 +16,17 @@ namespace WarCore.Presentation
         public ulong TargetKey { get; }
         // The layer of a MoveTo target: 0 = the ground, 1..N = a floor plate of the map (worlds with plates only).
         public int Layer { get; }
+        // STANCE-1: the stance level a Stance command asks for (0 = standing).
+        public int Level { get; }
         // BLAST-1: the blast kind (an id of the combat pack's blasts) a Blast command sets off at XMm/ZMm on Layer; null otherwise.
         public string BlastId { get; }
 
         private BridgeCommand(long atTick, int squad, long xMm, long zMm, BridgeCommandKind kind = BridgeCommandKind.MoveTo, ulong targetKey = 0, int layer = 0,
-            string blastId = null)
+            string blastId = null, int level = 0)
         {
+            if (level < 0 || level > CombatStances)
+                throw new ArgumentOutOfRangeException(nameof(level), "A stance level is 0 to " + CombatStances + ".");
+            Level = level;
             if (atTick < 1)
                 throw new ArgumentOutOfRangeException(nameof(atTick));
             if (layer < 0 || layer > UnitSpawn.MaxLayer)
@@ -59,5 +64,12 @@ namespace WarCore.Presentation
             if (string.IsNullOrEmpty(blastId)) throw new ArgumentException("A blast command needs a blast id.", nameof(blastId));
             return new BridgeCommand(atTick, 0, xMm, zMm, BridgeCommandKind.Blast, layer: layer, blastId: blastId);
         }
+
+        // STANCE-1: at that tick every living unit of the squad on the field (in key order, the player's unit left out) is asked
+        // to change to level, before the tick's step. No squad order goes into that tick's input.
+        public static BridgeCommand Stance(long atTick, int squad, int level)
+            => new BridgeCommand(atTick, squad, 0, 0, BridgeCommandKind.Stance, level: level);
+
+        private const int CombatStances = WarCore.Combat.CombatPack.MaxStances;
     }
 }

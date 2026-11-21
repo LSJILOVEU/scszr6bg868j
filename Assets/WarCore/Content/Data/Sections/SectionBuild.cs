@@ -29,6 +29,8 @@ namespace WarCore.Content
         internal bool FriendlyFire, FriendlyFireLocked;
         internal int AllyCheckMissRaw;
         internal CombatBody? Body;
+        // STANCE-1: the combat section's stances, or null.
+        internal StanceDef[] Stances;
         internal MatchRules? Rules;
         internal string[] RuleIds;
         internal int SlopeNumerator = HeightField.MaxSlopeNumerator, SlopeDenominator = HeightField.MaxSlopeDenominator;
@@ -49,6 +51,6 @@ namespace WarCore.Content
 
         internal ContentPack ToPack() => new ContentPack(Pack, WeaponIds, Weapons, UnitIds, UnitWeapons, MaxHealthRaw, ResolverId, SelectorId, Rules,
             FriendlyFire, FriendlyFireLocked, AllyCheckMissRaw, AllyHoldMilli, Block, UnitBlock, UnitArchetypes, UnitSpeeds,
-            MeleeIds, Melee, UnitMelee, Terrain, published.ToArray(), RuleIds, Body, ProjectileSpeeds);
+            MeleeIds, Melee, UnitMelee, Terrain, published.ToArray(), RuleIds, Body, ProjectileSpeeds, Stances);
     }
 }

@@ -55,6 +55,8 @@ namespace WarCore.Content
         public CombatBody? Body { get; }
         // PROJ-1: projectile speed per weapon in mm/s (0 = instant); passed to the combat pack as is.
         private readonly int[] projectileSpeeds;
+        // STANCE-1: the combat section's stances, or null; passed to the combat pack as is.
+        private readonly StanceDef[] stances;
 
         public string Id { get; }
         // Optional terrain rules (WP-22); null when the pack has none. Not part of any PolicyDigest.
@@ -65,9 +67,10 @@ namespace WarCore.Content
             bool friendlyFire, bool friendlyFireLocked, int allyCheckMissRaw, long allyHoldMilli,
             BlockSpec[] block, int[] unitTypeBlock, int[] unitTypeArchetypes, long?[] unitTypeSpeeds,
             string[] meleeIds = null, MeleeSpec[] melee = null, int[] unitTypeMelee = null, TerrainRules terrain = null, object[] sections = null, string[] ruleIds = null,
-            CombatBody? body = null, int[] projectileSpeeds = null)
+            CombatBody? body = null, int[] projectileSpeeds = null, StanceDef[] stances = null)
         {
             Body = body;
+            this.stances = stances;
             this.projectileSpeeds = projectileSpeeds ?? Array.Empty<int>();
             this.block = block; this.unitTypeBlock = unitTypeBlock;
             this.unitTypeArchetypes = unitTypeArchetypes; this.unitTypeSpeeds = unitTypeSpeeds;
@@ -151,7 +154,8 @@ namespace WarCore.Content
             CombatAim aim = SectionOrNull<CombatAim>();
             return new CombatPack(weapons, ContentPolicies.Resolver(resolverId), ContentPolicies.Selector(selectorId, sight), maxHealthRaw,
                 effective, friendlyFireLocked, allyCheckMissRaw, allyHoldMilli, melee.Length == 0 ? null : melee, block.Length == 0 ? null : block, Body,
-                projectileSpeeds.Length == 0 ? null : projectileSpeeds, aim?.MoveSpread, aim != null && aim.ManualReload, SectionOrNull<BlastRules>());
+                projectileSpeeds.Length == 0 ? null : projectileSpeeds, aim?.MoveSpread, aim != null && aim.ManualReload, SectionOrNull<BlastRules>(),
+                stances);
         }
 
         // Control points and spawn anchors are map data and stay with the caller.

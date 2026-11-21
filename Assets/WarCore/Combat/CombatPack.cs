@@ -11,6 +11,7 @@ namespace WarCore.Combat
         // PROJ-1: projectile speed per weapon in mm/s (index = weapon), or empty when every weapon fires instantly.
         private readonly int[] projectileSpeeds;
         private readonly ProjectileSpec[] projectiles;
+        private readonly StanceDef[] stances;
         public ReadOnlySpan<WeaponDef> Weapons => weapons;
         // Melee swings (WP-20). Empty for every pack that has none; such a pack hashes, sizes and registers exactly as before.
         public ReadOnlySpan<MeleeSpec> Melee => melee;
@@ -29,6 +30,11 @@ namespace WarCore.Combat
         // BLAST-1: the pack's explosions, or null. A pack without them hashes, sizes and registers exactly as before.
         public BlastRules Blasts { get; }
         public bool HasBlasts => Blasts != null;
+        // STANCE-1: the stances below the standing body, highest first (level n is Stances[n - 1]; level 0 is the body). Empty for
+        // every pack that has none; such a pack hashes, sizes and registers exactly as before. A pack with stances needs the body.
+        public ReadOnlySpan<StanceDef> Stances => stances;
+        public bool HasStances => stances.Length > 0;
+        public const int MaxStances = 7;
         // Most damage commands one unit can issue in a tick: one shot, or one swing landing on up to this many targets.
         public int MaxHitsPerAction { get; }
         public IHitResolver Resolver { get; }
@@ -49,7 +55,8 @@ namespace WarCore.Combat
 
         public CombatPack(WeaponDef[] weapons, IHitResolver resolver, ITargetSelector selector, long maxHealthRaw,
             bool friendlyFire = false, bool friendlyFireLocked = false, int allyCheckMissRaw = 0, long allyHoldMilli = 30000, MeleeSpec[] melee = null, BlockSpec[] block = null,
-            CombatBody? body = null, int[] projectileSpeeds = null, MoveSpread moveSpread = null, bool manualReload = false, BlastRules blasts = null)
+            CombatBody? body = null, int[] projectileSpeeds = null, MoveSpread moveSpread = null, bool manualReload = false, BlastRules blasts = null,
+            StanceDef[] stances = null)
         {
             if (moveSpread != null && moveSpread.WeaponSlots != 0 && moveSpread.WeaponSlots != weapons.Length)
                 throw new ArgumentException("A move-spread table per weapon needs one slot per weapon.", nameof(moveSpread));
@@ -69,6 +76,7 @@ namespace WarCore.Combat
             Blasts = blasts;
             projectiles = BuildProjectiles(this.weapons, projectileSpeeds, body);
             this.projectileSpeeds = projectiles.Length == 0 ? Array.Empty<int>() : (int[])projectileSpeeds.Clone();
+            this.stances = CheckStances(stances, body);
             var hash = new StateHash();
             hash.Add("combat.pack.v2"); hash.Add(weapons.Length);
             foreach (var weapon in this.weapons) weapon.WriteState(hash);
@@ -83,13 +91,33 @@ namespace WarCore.Combat
             { hash.Add("combat.pack.body.v1"); body.Value.WriteState(hash); }
             if (projectiles.Length > 0)
             { hash.Add("combat.pack.projectile.v1"); hash.Add(projectiles.Length); foreach (var spec in projectiles) hash.Add(spec.StepRaw); }
+            if (this.stances.Length > 0)
+            { hash.Add("combat.pack.stances.v1"); hash.Add(this.stances.Length); foreach (var stance in this.stances) stance.WriteState(hash); }
             if (moveSpread != null)
             { hash.Add("combat.pack.movespread.v1"); moveSpread.WriteState(hash); }
             if (manualReload)
                 hash.Add("combat.pack.reload.v1");
-            // KB4: later optional sections (stances) go before this one, every one only when present.
+            // KB4: later optional sections go before this one, every one only when present.
             if (blasts != null) blasts.WriteState(hash);
             PolicyDigest = hash.Value;
+        }
+
+        // Null or empty: no stances. Otherwise 1..7 stances under the body, ids unique, each strictly lower than the one above.
+        private static StanceDef[] CheckStances(StanceDef[] stances, CombatBody? body)
+        {
+            if (stances == null || stances.Length == 0) return Array.Empty<StanceDef>();
+            if (!body.HasValue) throw new ArgumentException("Stances need the combat pack's body.", nameof(stances));
+            if (stances.Length > MaxStances) throw new ArgumentException("At most " + MaxStances + " stances.", nameof(stances));
+            long above = body.Value.Height.Raw;
+            for (int i = 0; i < stances.Length; i++)
+            {
+                if (stances[i].Id == null) throw new ArgumentException("Stance " + i + " has no id.", nameof(stances));
+                for (int j = 0; j < i; j++)
+                    if (stances[j].Id == stances[i].Id) throw new ArgumentException("Stance id '" + stances[i].Id + "' is repeated.", nameof(stances));
+                if (stances[i].Body.Height.Raw >= above) throw new ArgumentException("Stance '" + stances[i].Id + "' is not lower than the one above it.", nameof(stances));
+                above = stances[i].Body.Height.Raw;
+            }
+            return (StanceDef[])stances.Clone();
         }
 
         // Null or all zero: no projectile section. Otherwise one spec per weapon, every weapon checked, and the body required.
@@ -131,7 +159,8 @@ namespace WarCore.Combat
         // Rule (ML-3): a new optional section of the pack is passed on by every With* copy, with a test.
         public CombatPack WithSelector(ITargetSelector selector) => new CombatPack(weapons, Resolver, selector, MaxHealthRaw,
             FriendlyFire, FriendlyFireLocked, AllyCheckMissRaw, AllyHoldMilli, melee.Length == 0 ? null : melee, block.Length == 0 ? null : block, Body,
-            projectileSpeeds.Length == 0 ? null : projectileSpeeds, MoveSpread, ManualReload, Blasts);
+            projectileSpeeds.Length == 0 ? null : projectileSpeeds, MoveSpread, ManualReload, Blasts,
+            stances.Length == 0 ? null : stances);
 
         // BLAST-1 blast commands B for a world of these units: PerTick blasts a tick, each landing at most one damage command on
         // every unit, so B = PerTick * N; 0 for a pack without blasts. Refused when the damage settlement's staging
@@ -167,10 +196,14 @@ namespace WarCore.Combat
         // Its legacy Enqueue reservation needs Notices >= Commands + Resources = 2*N.
         // PROJ-1: P projectiles add P commands, so P notices and P events; final-resource facts and deaths stay bounded by N.
         // BLAST-1: B blast commands add the same way.
+        // STANCE-1: with stances every unit may finish a stance change in the same tick (one due task, one event each), so the
+        // event limit and the task table grow by the unit count; a pack without stances sizes exactly as before.
         public SimConfig BuildConfig(int entityCount, int unitCount, int projectiles = 0, int blastCommands = 0)
         {
-            int events = Math.Max(1, checked(unitCount * (MaxHitsPerAction + 2) + projectiles + blastCommands));
-            return new SimConfig(entityCapacity: entityCount, eventInitialCapacity: events, eventHardLimit: events);
+            int changes = stances.Length == 0 ? 0 : unitCount;
+            int events = Math.Max(1, checked(unitCount * (MaxHitsPerAction + 2) + projectiles + blastCommands + changes));
+            if (changes == 0) return new SimConfig(entityCapacity: entityCount, eventInitialCapacity: events, eventHardLimit: events);
+            return new SimConfig(entityCapacity: entityCount, eventInitialCapacity: events, eventHardLimit: events, timerCapacity: checked(1024 + changes));
         }
     }
 }

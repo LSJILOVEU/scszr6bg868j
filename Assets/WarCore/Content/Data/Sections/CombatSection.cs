@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using WarCore.Combat;
 using WarCore.Sim;
@@ -13,10 +14,11 @@ namespace WarCore.Content
         // AIM-1: combat.moveSpread is an object too (bands and optional per-weapon tables), kept whole across layers.
         internal const string MoveSpreadField = "moveSpread", ManualReloadField = "manualReload";
         protected override bool IsNested(string field) => base.IsNested(field) || field == MoveSpreadField;
-        // BLAST-1: combat.blasts is an array of kinds, kept whole across layers.
-        private static readonly string[] Arrays = { BlastsField };
+        // STANCE-1 combat.stances and BLAST-1 combat.blasts are arrays, each kept whole across layers.
+        private static readonly string[] Arrays = { StancesField, BlastsField };
         protected override string[] NestedArrays => Arrays;
         internal const string BlastsField = "blasts";
+        internal const string StancesField = "stances";
 
         // The unit collider radius r (MovementFeature and the deployer place every unit with it).
         internal const long UnitRadiusRaw = SimFix.Scale / 4;
@@ -33,6 +35,71 @@ namespace WarCore.Content
             Within(r, "eye", eye.Raw, UnitRadiusRaw, height.Raw - UnitRadiusRaw);
             Within(r, "muzzle", muzzle.Raw, 0, height.Raw);
             return new CombatBody(height, eye, muzzle);
+        }
+
+        // STANCE-1 combat.stances: 1..7 objects, highest first, each { id, height, eye, muzzle, speedPermille, spreadPermille, ticks,
+        // deny? }. Heights in metres with the body's checks (2r <= height <= 2 m, r <= eye <= height - r, 0 <= muzzle <= height),
+        // each height strictly under the one above (the body's for the first). deny: action names (UnitAction, lower case), not
+        // move or stance, no repeats; absent means ["dash", "traverse"].
+        private static StanceDef[] Stances(string pack, ContentEntry combat, ContentField field, CombatBody? body)
+        {
+            var r = new EntryReader(pack, combat);
+            if (body == null) throw r.Bad(field, "stances need the combat section's body");
+            List<JsonNode> items = field.Node.Items;
+            if (items.Count < 1 || items.Count > CombatPack.MaxStances)
+                throw r.Bad(field, "has " + items.Count + " stances, allowed 1 to " + CombatPack.MaxStances);
+            var result = new StanceDef[items.Count];
+            var ids = new List<string>();
+            long above = body.Value.Height.Raw;
+            for (int i = 0; i < items.Count; i++)
+            {
+                JsonNode item = items[i];
+                if (item.Kind != JsonKind.Object) throw r.Bad(field, "entry " + i + " must be an object (line " + item.Line + ")");
+                JsonNode idNode = item.Find("id");
+                string label = idNode != null && idNode.Kind == JsonKind.String ? idNode.Text : i.ToString(CultureInfo.InvariantCulture);
+                var entry = new ContentEntry(SectionKey + "." + StancesField, label, field.Layer);
+                foreach (var member in item.Members) entry.Fields.Add(new ContentField(member.Name, member.Value, field.Layer));
+                var e = new EntryReader(pack, entry);
+                string id = e.Str("id");
+                if (id.Length == 0) throw e.Bad(e.FieldOf("id"), "must not be empty");
+                if (ids.Contains(id)) throw e.Bad(e.FieldOf("id"), "'" + id + "' is repeated");
+                ids.Add(id);
+                SimFix height = e.Fix("height"), eye = e.Fix("eye"), muzzle = e.Fix("muzzle");
+                int speed = e.Int("speedPermille", StanceDef.MinSpeedPermille, StanceDef.MaxSpeedPermille);
+                int spread = e.Int("spreadPermille", StanceDef.MinSpreadPermille, StanceDef.MaxSpreadPermille);
+                int ticks = e.Int("ticks", StanceDef.MinTicks, StanceDef.MaxTicks);
+                UnitAction deny = e.Has("deny") ? Deny(e) : StanceDef.DefaultDeny;
+                e.Done();
+                Within(e, "height", height.Raw, 2 * UnitRadiusRaw, WallSpan.ClearanceRaw);
+                if (height.Raw >= above)
+                    throw e.Bad(e.FieldOf("height"), "is " + Metres(height.Raw) + " m, must be lower than the stance above it (" + Metres(above) + " m)");
+                Within(e, "eye", eye.Raw, UnitRadiusRaw, height.Raw - UnitRadiusRaw);
+                Within(e, "muzzle", muzzle.Raw, 0, height.Raw);
+                above = height.Raw;
+                result[i] = new StanceDef(id, new CombatBody(height, eye, muzzle), speed, spread, ticks, deny);
+            }
+            return result;
+        }
+
+        private static readonly string[] ActionNames =
+            { "move", "dash", "traverse", "fire", "melee", "block", "throw", "reload", "stance", "interact", "capture" };
+
+        private static UnitAction Deny(EntryReader e)
+        {
+            ContentField f = e.FieldOf("deny");
+            f.Used = true;
+            if (f.Node.Kind != JsonKind.Array) throw e.Bad(f, "must be an array of action names");
+            UnitAction deny = UnitAction.None;
+            foreach (JsonNode name in f.Node.Items)
+            {
+                int bit = name.Kind == JsonKind.String ? Array.IndexOf(ActionNames, name.Text) : -1;
+                if (bit < 0) throw e.Bad(f, "unknown action " + (name.Kind == JsonKind.String ? "'" + name.Text + "'" : "(not a string)") + ", allowed: " + string.Join(", ", ActionNames));
+                var action = (UnitAction)(1 << bit);
+                if ((action & StanceDef.Deniable) == UnitAction.None) throw e.Bad(f, "may not deny '" + name.Text + "' (a unit must be able to move and change stance)");
+                if ((deny & action) != UnitAction.None) throw e.Bad(f, "'" + name.Text + "' is repeated");
+                deny |= action;
+            }
+            return deny;
         }
 
         // BLAST-1 "blasts": [ { id, innerMm, outerMm, damage, friendly, walls } ], 1 to 32 kinds with distinct ids (a child layer's
@@ -108,10 +175,17 @@ namespace WarCore.Content
             if (moveField != null) moveField.Used = true;
             bool manualReload = cr.Has(ManualReloadField) && cr.Bool(ManualReloadField);
             BlastRules blasts = Blasts(b.Pack, cr);
+            ContentField stances = cr.FieldOf(StancesField);
+            if (stances != null)
+            {
+                stances.Used = true;
+                if (stances.Node.Kind != JsonKind.Array) throw cr.Bad(stances, "must be an array");
+            }
             cr.Done();
             MoveSpread moveSpread = moveField == null ? null : CombatAimReader.MoveSpread(b.Pack, moveField, b.WeaponIds);
             if (moveSpread != null || manualReload) b.Publish(new CombatAim(moveSpread, manualReload));
             if (body != null) b.Body = Body(b.Pack, body);
+            if (stances != null) b.Stances = Stances(b.Pack, combat, stances, b.Body);
             // PROJ-1: a projectile starts at the muzzle, so a pack with a projectile weapon must have the body.
             for (int i = 0; i < b.ProjectileSpeeds.Length && body == null; i++)
                 if (b.ProjectileSpeeds[i] != 0)

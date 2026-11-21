@@ -203,7 +203,13 @@ canvas { width: 100%; aspect-ratio: 160 / 100; max-width: 100%; display: block; 
     for (const unit of units) {
       ctx.fillStyle = colors[unit[2]];
       if (unit[3] === 2) { ctx.globalAlpha = 0.25; ctx.fillRect(X(unit[0]) - radius * 0.6, Z(unit[1]) - radius * 0.6, radius * 1.2, radius * 1.2); ctx.globalAlpha = 1; continue; }
-      ctx.beginPath(); ctx.arc(X(unit[0]), Z(unit[1]), radius, 0, Math.PI * 2); ctx.fill();
+      // Stance (frame.p): standing a full dot, crouched a smaller dot, prone a flat oval.
+      const stance = a.p ? a.p[unit[5]] : 0;
+      ctx.beginPath();
+      if (stance === 1) ctx.arc(X(unit[0]), Z(unit[1]), radius * 0.65, 0, Math.PI * 2);
+      else if (stance >= 2) ctx.ellipse(X(unit[0]), Z(unit[1]), radius * 1.3, radius * 0.45, 0, 0, Math.PI * 2);
+      else ctx.arc(X(unit[0]), Z(unit[1]), radius, 0, Math.PI * 2);
+      ctx.fill();
       if (unit[4] === 0) continue;
       // Pinned: a thin ring. Broken: a thick ring in the warning colour.
       ctx.strokeStyle = unit[4] === 2 ? token("--broken") : token("--fg"); ctx.lineWidth = (unit[4] === 2 ? 2 : 1) * ratio;

@@ -87,6 +87,20 @@ namespace WarCore.Combat
 
         private const long LegacyEyeRaw = SimFix.Scale / 2;
 
+        // STANCE-1: the stances of the units, or null (a pack without stances: every height below is the pack's).
+        private StanceSystem stances;
+        public StanceSystem Stances => stances;
+
+        // Bound once by the StanceSystem constructor; a restored world binds a fresh one when it is assembled.
+        internal void AttachStances(StanceSystem system)
+        {
+            if (!pack.HasStances) throw new InvalidOperationException("The combat pack has no stances.");
+            if (stances != null) throw new InvalidOperationException("A stance system is already attached.");
+            stances = system;
+            // The stance row of the spread line (AIM-1's ShotAngle): standing 1000, while changing the wider of the two levels.
+            AddSpreadGear(system);
+        }
+
         // D2a: the pack's body is the only source. The spatial index must anchor the unit layer at the foot exactly when the
         // pack has a body (a Sim with no index yet counts as 0), and never a wall layer. A restored world rebuilds this system,
         // so the check runs again.
@@ -209,7 +223,7 @@ namespace WarCore.Combat
                         FireAtTarget(c, shooter, in unit, in position, in weapon, tick, in intents[shooter.Id]);
                         continue;
                     }
-                    SimVec3 origin = Lift(position.Value, muzzleRaw), direction;
+                    SimVec3 origin = Lift(position.Value, MuzzleOf(shooter)), direction;
                     if (hasIntent)
                     {
                         direction = Lift(intents[shooter.Id].Point, aimEndRaw) - origin;

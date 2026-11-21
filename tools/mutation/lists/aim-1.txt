@@ -536,9 +536,9 @@ filter = FullyQualifiedName~WarCore.Tests.Aim1
 expect = WarCore.Tests.Aim1.Aim1ReloadTests
 note = a reload falls into the squad order switch
 original:
-| if (hasCommand && pending[0].Kind == BridgeCommandKind.Reload) ReloadSquad(pending[0].Squad);
+| if (hasCommand && head.Kind == BridgeCommandKind.Reload) { if (combat != null) AskSquad(head.Squad, combat.TryReload); }
 replacement:
-| if (false) ReloadSquad(pending[0].Squad);
+| if (false) { if (combat != null) AskSquad(head.Squad, combat.TryReload); }
 
 [ss-any-squad]
 file = Assets/WarCore/Presentation/Bridge/SimSession.cs
@@ -546,9 +546,9 @@ filter = FullyQualifiedName~WarCore.Tests.Aim1
 expect = WarCore.Tests.Aim1.Aim1ReloadTests
 note = every squad reloads
 original:
-| if (spawns[i].Squad != squad) continue;
+| if (spawns[i].Squad == squad && (controlled == null || !controlled.Current.Equals(sim.Entities.Resolve(new EntityLink(units[i])))))
 replacement:
-| if (false) continue;
+| if ((controlled == null || !controlled.Current.Equals(sim.Entities.Resolve(new EntityLink(units[i])))))
 
 [ss-player]
 file = Assets/WarCore/Presentation/Bridge/SimSession.cs
@@ -556,9 +556,9 @@ filter = FullyQualifiedName~WarCore.Tests.Aim1
 expect = WarCore.Tests.Aim1.Aim1ReloadTests
 note = the player unit reloads too
 original:
-| if (controlled != null && controlled.Current.Equals(unit)) continue;
+| if (spawns[i].Squad == squad && (controlled == null || !controlled.Current.Equals(sim.Entities.Resolve(new EntityLink(units[i])))))
 replacement:
-| if (false) continue;
+| if (spawns[i].Squad == squad)
 
 [ss-no-combat]
 file = Assets/WarCore/Presentation/Bridge/SimSession.cs
@@ -566,14 +566,9 @@ filter = FullyQualifiedName~WarCore.Tests.Aim1
 expect = WarCore.Tests.Aim1.Aim1ReloadTests
 note = a world without combat is not guarded
 original:
-|             if (combat == null) return;
-|             for (int i = 0; i < spawns.Length; i++)
-|             {
-|                 if (spawns[i].Squad != squad) continue;
+| if (hasCommand && head.Kind == BridgeCommandKind.Reload) { if (combat != null) AskSquad(head.Squad, combat.TryReload); }
 replacement:
-|             for (int i = 0; i < spawns.Length; i++)
-|             {
-|                 if (spawns[i].Squad != squad) continue;
+| if (hasCommand && head.Kind == BridgeCommandKind.Reload) { AskSquad(head.Squad, combat.TryReload); }
 
 [cf-no-mark]
 file = Assets/WarCore/Presentation/Bridge/Features/CombatFeature.cs

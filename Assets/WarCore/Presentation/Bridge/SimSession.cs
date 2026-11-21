@@ -56,6 +56,7 @@ namespace WarCore.Presentation
         // M7b: the locomotion and the dash state table when a recipe unit has a dash (DashFeature on); both null otherwise.
         internal InterimLocomotion Dash;
         internal ComponentType<DashState>? DashStates;
+        internal StanceSystem Stances; internal ActionGate Gate; // STANCE-1, when the combat pack has stances; else null
     }
 
     /// <summary>
@@ -88,6 +89,7 @@ namespace WarCore.Presentation
         private readonly ComponentType<UnitFacing>? facings;
         private readonly InterimLocomotion dash;
         private readonly ComponentType<DashState>? dashStates;
+        internal StanceSystem Stances { get; } internal ActionGate Gate { get; } // STANCE-1, null in a world without stances
         private readonly List<BridgeCommand> pending = new List<BridgeCommand>();
         private readonly List<BridgeCommand> commandLog = new List<BridgeCommand>();
         private readonly List<PlayerInputRecord> pendingPlayer = new List<PlayerInputRecord>();
@@ -134,7 +136,7 @@ namespace WarCore.Presentation
         {
             facings = parts.Facings;
             dash = parts.Dash;
-            dashStates = parts.DashStates;
+            dashStates = parts.DashStates; Stances = parts.Stances; Gate = parts.Gate;
             combatPack = parts.CombatPack;
             controlled = parts.Controlled;
             maxHealthRaw = parts.MaxHealthRaw;
@@ -277,18 +279,13 @@ namespace WarCore.Presentation
             throw new ArgumentException("Follow target is not a unit of this session.", nameof(key));
         }
 
-        // AIM-1: TryReload for each unit of the squad that the player does not control, in spawn key order (spawns are sorted
-        // by key). The combat system refuses what it must (dead, no manual reload in the pack, full magazine...).
-        private void ReloadSquad(int squad)
+        // AIM-1 TryReload, STANCE-1 TryStance: ask each unit of the squad that the player does not control, in spawn key order
+        // (spawns are sorted by key). The system asked refuses what it must (dead, full magazine, changing stance...).
+        private void AskSquad(int squad, Func<EntityId, bool> ask)
         {
-            if (combat == null) return;
             for (int i = 0; i < spawns.Length; i++)
-            {
-                if (spawns[i].Squad != squad) continue;
-                EntityId unit = sim.Entities.Resolve(new EntityLink(units[i]));
-                if (controlled != null && controlled.Current.Equals(unit)) continue;
-                combat.TryReload(unit);
-            }
+                if (spawns[i].Squad == squad && (controlled == null || !controlled.Current.Equals(sim.Entities.Resolve(new EntityLink(units[i])))))
+                    ask(sim.Entities.Resolve(new EntityLink(units[i])));
         }
 
         // A squad target travels as a link beside the frame; frames without one take the plain path.
@@ -309,6 +306,7 @@ namespace WarCore.Presentation
             }
             else if (command.Kind == BridgeCommandKind.Follow && !HasUnit(command.TargetKey))
                 throw new ArgumentException("Follow target is not a unit of this session.", nameof(command));
+            else if (command.Kind == BridgeCommandKind.Stance && command.Level >= (Stances?.Levels ?? 1)) throw new ArgumentOutOfRangeException(nameof(command), "This world has stance levels 0 to " + ((Stances?.Levels ?? 1) - 1) + ".");
             else if (command.Kind == BridgeCommandKind.Blast)
             {
                 BlastIndex(command.BlastId);
@@ -368,10 +366,12 @@ namespace WarCore.Presentation
             SquadCommand? squad = null;
             EntityLink followTarget = default;
             bool hasCommand = pending.Count > 0 && pending[0].AtTick == nextTick;
-            // AIM-1: a reload is no squad order; it is asked here, before the step, and the frame carries no squad command.
+            // AIM-1 reload, STANCE-1 stance: no squad order; asked here, before the step, and the frame carries no squad command.
             // BLAST-1: a blast command is no squad command either; it is taken apart here, before the squad switch below.
             bool blast = hasCommand && pending[0].Kind == BridgeCommandKind.Blast;
-            if (hasCommand && pending[0].Kind == BridgeCommandKind.Reload) ReloadSquad(pending[0].Squad);
+            BridgeCommand head = hasCommand ? pending[0] : default;
+            if (hasCommand && head.Kind == BridgeCommandKind.Reload) { if (combat != null) AskSquad(head.Squad, combat.TryReload); }
+            else if (hasCommand && head.Kind == BridgeCommandKind.Stance) { if (Stances != null) AskSquad(head.Squad, u => Stances.TryStance(u, head.Level)); }
             else if (hasCommand && !blast)
             {
                 BridgeCommand command = pending[0];
@@ -405,7 +405,7 @@ namespace WarCore.Presentation
                 if (dash != null && nextPlayerInput.Dash && !heldPlayerInput.Dash)
                 {
                     EntityId unit = controlled.Current;
-                    if (sim.Entities.TryGet(positions, unit, out Position at) && (combat == null || !combat.IsDead(unit)))
+                    if (sim.Entities.TryGet(positions, unit, out Position at) && (combat == null || !combat.IsDead(unit)) && (Gate == null || Gate.Allows(unit, UnitAction.Dash)))
                         dash.TryDash(unit, move.X.Raw != 0 || move.Z.Raw != 0 ? move : aim - at.Value);
                 }
             }
@@ -476,7 +476,7 @@ namespace WarCore.Presentation
                     (float)point.Z.Raw / SimFix.Scale, spawns[i].Squad,
                     team, alive, pressure != null && alive ? (int)pressure.Level(sim.Entities.StableOf(unit)) : 0,
                     layers == null ? 0 : layers.LayerOf(unit),
-                    squads != null && alive ? BandKey(squads.SquadOf(sim.Entities.StableOf(unit))) : 0));
+                    squads != null && alive ? BandKey(squads.SquadOf(sim.Entities.StableOf(unit))) : 0, Stances == null ? 0 : Stances.StanceOf(unit).Level));
             }
             var fires = new ViewFire[combat == null ? 0 : combat.Fires.Length];
             for (int i = 0; i < fires.Length; i++)

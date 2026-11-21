@@ -422,9 +422,9 @@ filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1Capacit
 expect = WarCore.Tests.Blast1.Blast1PackTests.WithSelectorKeepsTheBlasts
 note = WithSelector drops the blasts
 original:
-| projectileSpeeds.Length == 0 ? null : projectileSpeeds, MoveSpread, ManualReload, Blasts);
+| projectileSpeeds.Length == 0 ? null : projectileSpeeds, MoveSpread, ManualReload, Blasts,
 replacement:
-| projectileSpeeds.Length == 0 ? null : projectileSpeeds, MoveSpread, ManualReload);
+| projectileSpeeds.Length == 0 ? null : projectileSpeeds, MoveSpread, ManualReload, null,
 
 [blast1-42-digest-queue]
 file = Assets/WarCore/Combat/BlastSpec.cs
