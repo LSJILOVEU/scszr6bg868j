@@ -38,7 +38,8 @@ namespace WarCore.Content
         // flat: the battle runs on a flat map. A cover spot takes the height of the unit that looks for it, so cover rules
         // on a terrain map fail the load.
         // plates: the map has floor plates (ML-11a). The parts that still measure on the plane are refused there.
-        public static AiParts Parts(AiRules ai, ReadOnlySpan<ControlPointDef> points = default, int thinkInterval = 1, bool flat = true, bool plates = false)
+        // squads: the battle's squad system, or null. With it the dispatch and the placement are wrapped (Squads.Wrap).
+        public static AiParts Parts(AiRules ai, ReadOnlySpan<ControlPointDef> points = default, int thinkInterval = 1, bool flat = true, bool plates = false, Squads squads = null)
         {
             if (!flat && ai != null && ai.CoverRadiusMm > 0) throw ai.FieldError("coverRadiusMm", "is not supported on a terrain map");
             if (plates && ai != null) CheckPlates(ai);
@@ -52,9 +53,12 @@ namespace WarCore.Content
                 CheckThinks(ai, "boundFireTicks", ai.BoundFireTicks, thinkInterval);
                 engage = new BoundEngage(ai.BoundMoveTicks, ai.BoundFireTicks, ai.BoundSharePermille, ai.BoundMinRangeMm);
             }
+            IAiDispatch dispatch = new NearestDispatch(ai?.HoldSharePermille ?? 0, ai?.AttackSpreadPoints ?? 1);
+            IAiPlacement placement = Placement(ai);
+            // Squads wrap the battle's own dispatch and placement: a member asks them as its leader.
+            if (squads != null) { dispatch = squads.Wrap(dispatch); placement = squads.Wrap(placement); }
             return new AiParts(
-                new NearestDispatch(ai?.HoldSharePermille ?? 0, ai?.AttackSpreadPoints ?? 1),
-                Placement(ai), spacing, ring, engage,
+                dispatch, placement, spacing, ring, engage,
                 SimFix.Ratio(ai?.CoverRadiusMm ?? 0, 1000).Raw, SimFix.Ratio(ai?.CoverStepMm ?? 0, 1000).Raw, SimFix.Ratio(ai?.CoverDepthMm ?? 0, 1000).Raw);
         }
 
@@ -67,6 +71,7 @@ namespace WarCore.Content
             if (ai.Pressure != null) throw Refused(ai, "pressureNearRadiusMm");
             if (ai.Engage == BoundEngage) throw Refused(ai, "engage");
             if (ai.Placement == Scatter || ai.Placement == AssaultRoles) throw Refused(ai, "placement");
+            if (ai.Squads != null) throw Refused(ai, "squadMinSize");
         }
 
         // Rules built in code have no place in a pack to point at.

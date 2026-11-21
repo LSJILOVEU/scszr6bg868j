@@ -86,14 +86,21 @@ namespace WarCore.Presentation
                 pressure = new Pressure(combat, ai.Pressure.Value, ai.CoverRadiusMm > 0);
                 sim.RegisterGameplay("battle.ai-pressure", pressure, SimSystemPhase.Queries);
             }
+            // Only with all seven squad fields written: who follows whom, read by the squad parts.
+            Squads squads = null;
+            if (ai?.Squads != null)
+            {
+                squads = new Squads(combat, adapter, a.Controlled, ai.Squads.Value);
+                sim.RegisterGameplay("battle.ai-squads", squads, SimSystemPhase.Requests);
+            }
             int meleeChaseRange = terrainRules ? recipe.TerrainPack.Section<AiRules>().MeleeChaseRange : 0;
             if (!terrainRules && ai != null) meleeChaseRange = ai.MeleeChaseRange;
             bool fair = recipe.TerrainPack != null && recipe.TerrainPack.Section<AiRules>().FairDecisions;
-            sim.RegisterGameplay("battle.ai", new SimpleAiSystem(combat, recipe.Combat, recipe.Match, capture, adapter, a.Controlled, memory, contacts, search, suppress, meleeChaseRange, fair, recipe.Seed, ContentPolicies.Parts(ai, recipe.Match.Points, recipe.Match.ThinkInterval, terrain == null, layers != null), pressure, layers, layers,
+            sim.RegisterGameplay("battle.ai", new SimpleAiSystem(combat, recipe.Combat, recipe.Match, capture, adapter, a.Controlled, memory, contacts, search, suppress, meleeChaseRange, fair, recipe.Seed, ContentPolicies.Parts(ai, recipe.Match.Points, recipe.Match.ThinkInterval, terrain == null, layers != null, squads), pressure, layers, layers,
                 PointReach.Of(a, recipe.Match)), SimSystemPhase.Requests);
             sim.RegisterGameplay("battle.capture", capture, SimSystemPhase.Queries);
             sim.RegisterGameplay("battle.match", match, SimSystemPhase.Queries);
-            a.Capture = capture; a.Reinforce = reinforce; a.Match = match; a.Pressure = pressure;
+            a.Capture = capture; a.Reinforce = reinforce; a.Match = match; a.Pressure = pressure; a.Squads = squads;
         }
     }
 

@@ -282,6 +282,17 @@ namespace WarCore.Replay
             return (double)count / n;
         }
 
+        // Squads: a quantile (0.5 = the median) of the distances in metres from each squad member to its leader, over one
+        // team's members whose leader is alive on the field. NaN below MinMembers such members.
+        public const int MinMembers = 5;
+        public static double Leash(List<double> distances, double quantile)
+        {
+            if (distances.Count < MinMembers) return double.NaN;
+            double[] sorted = distances.ToArray();
+            Array.Sort(sorted);
+            return Quantile(sorted, quantile);
+        }
+
         // Running mean and peak of one per-frame series, skipping NaN frames.
         public sealed class Series
         {

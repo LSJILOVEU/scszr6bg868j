@@ -98,8 +98,23 @@ namespace WarCore.Replay
             Expect("pinnedMoving 2 of 5", Math.Abs(Metrics.PinnedMoving(2, 5) - 0.4) < 1e-12);
             Expect("pinnedMoving undefined below MinPinned", double.IsNaN(Metrics.PinnedMoving(2, Metrics.MinPinned - 1)));
 
+            // Squads: the share of a team in squads, and quantiles of the members' distances to their leaders.
+            Expect("squadShare 7 of 12", Math.Abs(Metrics.Share(7, 12) - 7.0 / 12) < 1e-12);
+            Expect("squadShare undefined below MinUnits", double.IsNaN(Metrics.Share(7, Metrics.MinUnits - 1)));
+            var leashes = new List<double> { 9, 1, 3, 2, 4 };
+            Expect("squadLeash median 3", Math.Abs(Metrics.Leash(leashes, 0.5) - 3) < 1e-12);
+            Expect("squadLeashP90 between 4 and 9", Math.Abs(Metrics.Leash(leashes, 0.9) - 7) < 1e-12);
+            Expect("squadLeash leaves its input as it was", leashes[0] == 9 && leashes[4] == 4);
+            Expect("squadLeash undefined below MinMembers", double.IsNaN(Metrics.Leash(leashes.GetRange(0, Metrics.MinMembers - 1), 0.5)));
+
             string a = Program.Export("base", 300, 3, out _), b = Program.Export("base", 300, 3, out _);
             Expect("export repeats byte for byte", a == b);
+            Expect("an export without squads has no squad frames", !a.Contains("\"q\":[") && a.Contains("\"squadShare\":{\"mean\":null"));
+            Recipes.LanesSeed = 42;
+            string once = Program.Export("lanes-allon-squads", 600, 3, out _), twice = Program.Export("lanes-allon-squads", 600, 3, out _);
+            Recipes.LanesSeed = null;
+            Expect("an export with squads repeats byte for byte", once == twice);
+            Expect("an export with squads has squad frames", once.Contains("\"q\":[") && !once.Contains("\"squadShare\":{\"mean\":null"));
 
             Console.WriteLine(failures == 0 ? "selftest: all passed" : $"selftest: {failures} failed");
             return failures == 0 ? 0 : 1;

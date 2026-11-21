@@ -1,0 +1,1276 @@
+# AI-P5a: AI squads (who follows whom), the squad parts (a member asks as its leader and stands at an offset), their
+# saved state, the ai.squad* content fields and the wiring into a battle and its view.
+#
+# Left out, with the reason:
+# - `while (bodies < target)` -> `<=` and `while (target - bodies >= 2)` -> `>= 1`: the same squads, the caps on
+#   Recruit already allow nobody.
+# - dropping `counts[leader]++` in Recruit: a squad is served once per Form and Count runs on the next Step.
+# - `unit.Team < 1` -> `< 0`: Form starts at team 1, a team 0 unit is never free.
+# - keeping squads whose leader is gone, or members whose squad is gone, in Clean; dropping `served[best] = true`;
+#   dropping `free[pick] = false`: these end in an exception or never return, which the tool reports as invalid, not
+#   as killed.
+# - dropping the sort in Gather, or reading `foundTeams[i]` / `foundAt[i]` instead of `[from[i]]`: a battle's entity
+#   store hands its units out in stable id order already, so the sort moves nothing and no test can tell.
+
+[ai-p5a-order]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.EverySystemHasAnOrderOfItsOwnWithAPlayerAndEverythingOn
+note = the squads system is no longer the first system of the tick
+original:
+| public int Order => 3;
+replacement:
+| public int Order => 15;
+
+[ai-p5a-target-share]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TenMenMakeASquadOfFiveAndASquadOfTwo
+note = the target is the skirmishers' share, not the others'
+original:
+| (long)foot * (1000 - rules.SkirmisherPermille) / 1000
+replacement:
+| (long)foot * rules.SkirmisherPermille / 1000
+
+[ai-p5a-target-rounds-up]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TheTargetIsRoundedDown
+note = the target is rounded up
+original:
+| (long)foot * (1000 - rules.SkirmisherPermille) / 1000
+replacement:
+| ((long)foot * (1000 - rules.SkirmisherPermille) + 999) / 1000
+
+[ai-p5a-form-every-tick]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.NobodyIsRecruitedBetweenFormTicks
+note = squads form on every tick
+original:
+| if (c.Clock.Tick % rules.FormTicks != 0) return;
+replacement:
+
+[ai-p5a-form-off-by-one]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TenMenMakeASquadOfFiveAndASquadOfTwo
+note = squads form one tick before the form tick
+original:
+| c.Clock.Tick % rules.FormTicks != 0
+replacement:
+| (c.Clock.Tick + 1) % rules.FormTicks != 0
+
+[ai-p5a-gather-player]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.ThePlayersManIsInNoSquad
+note = the player's man is gathered like any other
+original:
+| if (controlled != null && entity.Equals(controlled.Current)) continue;
+replacement:
+
+[ai-p5a-gather-dead]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.ADeadLeadersSquadDissolvesAndFormsAgain
+note = a dead unit is still gathered
+original:
+| out Position position) || combat.IsDead(entity)) continue;
+replacement:
+| out Position position)) continue;
+
+[ai-p5a-gather-commanded]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.ACommandedManLeavesHisSquad
+note = a unit under a squad command is still gathered
+original:
+| if (moves.IsCommanded(id)) continue;
+replacement:
+
+[ai-p5a-clean-keeps-gone-member]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.NobodyIsRecruitedBetweenFormTicks
+note = a member who is gone stays in the table
+original:
+| if (Find(members[i]) < 0 || !sizes.ContainsKey(theirs[i]))
+replacement:
+| if (!sizes.ContainsKey(theirs[i]))
+
+[ai-p5a-clean-keeps-empty-squad]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.ASquadWithNoMemberLeftIsNoSquad
+note = a squad without a member stays a squad
+original:
+| if (counts[Find(leaders[i])] == 0) drop[dropped++] = leaders[i];
+replacement:
+| if (counts[Find(leaders[i])] < 0) drop[dropped++] = leaders[i];
+
+[ai-p5a-form-leaders-not-bodies]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.ASquadShortOfManyTakesOnlyThePlacesLeft
+expect = WarCore.Tests.AiP5aTests.SwappingTheTeamsKeysSwapsTheirSquads
+note = leaders are not counted among the men in squads
+original:
+| if (sizes.ContainsKey(keys[i]) || leaderOf.ContainsKey(keys[i])) bodies++;
+|                 else free[i] = true;
+replacement:
+| if (sizes.ContainsKey(keys[i])) continue;
+|                 if (leaderOf.ContainsKey(keys[i])) bodies++;
+|                 else free[i] = true;
+
+[ai-p5a-form-foot-all-teams]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.EachTeamFormsItsOwnSquads
+note = every team's units are counted and marked free for each team
+original:
+| if (teams[i] != team) continue;
+|                 foot++;
+replacement:
+| foot++;
+
+[ai-p5a-gap-size-ignored]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TheSquadShortOfMostRecruitsFirst
+note = any squad short of a man counts as short of one
+original:
+| int lacks = size - counts[i];
+replacement:
+| int lacks = size > counts[i] ? 1 : 0;
+
+[ai-p5a-gap-tie-by-key]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.EqualGapsGoByElectionOrder
+note = equal gaps go to the smaller id
+original:
+| if (lacks > gap || (lacks == gap && best >= 0 && Before(keys[i], keys[best])))
+replacement:
+| if (lacks > gap)
+
+[ai-p5a-gap-tie-reversed]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.EqualGapsGoByElectionOrder
+note = equal gaps go to the later by election order
+original:
+| lacks == gap && best >= 0 && Before(keys[i], keys[best])
+replacement:
+| lacks == gap && best >= 0 && Before(keys[best], keys[i])
+
+[ai-p5a-gap-other-teams]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.EachTeamFormsItsOwnSquads
+note = another team's short squad recruits this team's free men
+original:
+| if (teams[i] != team || served[i] || !sizes.TryGetValue(keys[i], out int size)) continue;
+replacement:
+| if (served[i] || !sizes.TryGetValue(keys[i], out int size)) continue;
+
+[ai-p5a-gap-past-target]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.ASquadShortOfManyTakesOnlyThePlacesLeft
+note = a short squad fills its whole gap, past the target
+original:
+| bodies += Recruit(best, Math.Min(gap, target - bodies));
+replacement:
+| bodies += Recruit(best, gap);
+
+[ai-p5a-new-needs-three]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TenMenMakeASquadOfFiveAndASquadOfTwo
+note = a new squad needs three places
+original:
+| while (target - bodies >= 2)
+replacement:
+| while (target - bodies >= 3)
+
+[ai-p5a-new-leader-by-key]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TenMenMakeASquadOfFiveAndASquadOfTwo
+note = the first free unit in key order leads
+original:
+| if (free[i] && (leader < 0 || Before(keys[i], keys[leader]))) leader = i;
+replacement:
+| if (free[i] && leader < 0) leader = i;
+
+[ai-p5a-new-size-max]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.ASquadsSizeComesFromItsLeader
+note = every squad has the largest size
+original:
+| int size = rules.MinSize + (int)(AiParts.Mix(keys[leader] ^ SizeSalt) % (ulong)(rules.MaxSize - rules.MinSize + 1));
+replacement:
+| int size = rules.MaxSize;
+
+[ai-p5a-new-size-salt]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.ASquadsSizeComesFromItsLeader
+note = the size comes from the id without the salt
+original:
+| AiParts.Mix(keys[leader] ^ SizeSalt)
+replacement:
+| AiParts.Mix(keys[leader])
+
+[ai-p5a-new-past-target]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TenMenMakeASquadOfFiveAndASquadOfTwo
+note = a new squad takes its whole size, past the target
+original:
+| int got = Recruit(leader, Math.Min(size, target - bodies - 1));
+replacement:
+| int got = Recruit(leader, size);
+
+[ai-p5a-new-leader-place]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TenMenMakeASquadOfFiveAndASquadOfTwo
+note = the leader's own place is not counted
+original:
+| int got = Recruit(leader, Math.Min(size, target - bodies - 1));
+replacement:
+| int got = Recruit(leader, Math.Min(size, target - bodies));
+
+[ai-p5a-new-lone-leader]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.ALeaderWhoFindsNobodyLeadsNoSquad
+note = a man who finds nobody leads a squad of none
+original:
+| if (got == 0) continue;
+replacement:
+
+[ai-p5a-new-bodies]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TenMenMakeASquadOfFiveAndASquadOfTwo
+note = a new squad's leader is not added to the men in squads
+original:
+| bodies += 1 + got;
+replacement:
+| bodies += got;
+
+[ai-p5a-radius-exclusive]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TheRecruitRadiusIsInclusive
+note = a man exactly at the radius is not taken
+original:
+| if (distance > recruitSquared) continue;
+replacement:
+| if (distance >= recruitSquared) continue;
+
+[ai-p5a-radius-none]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TheRecruitRadiusIsInclusive
+note = no radius
+original:
+| if (distance > recruitSquared) continue;
+replacement:
+
+[ai-p5a-recruit-farthest]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TenMenMakeASquadOfFiveAndASquadOfTwo
+note = the farthest free man is taken first
+original:
+| pick >= 0 && (distance > best ||
+replacement:
+| pick >= 0 && (distance < best ||
+
+[ai-p5a-recruit-tie-by-key]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.EqualDistancesGoByElectionOrder
+note = equal distances go to the smaller id
+original:
+| (distance == best && !Before(keys[i], keys[pick]))
+replacement:
+| distance == best
+
+[ai-p5a-recruit-tie-reversed]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.EqualDistancesGoByElectionOrder
+note = equal distances go to the later by election order
+original:
+| (distance == best && !Before(keys[i], keys[pick]))
+replacement:
+| (distance == best && Before(keys[i], keys[pick]))
+
+[ai-p5a-recruit-3d]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TheRecruitRadiusIsInclusive
+note = the distance is measured from the origin, not from the leader
+original:
+| CombatSystem.Horizontal(at[i] - at[leader]).LengthSquared
+replacement:
+| CombatSystem.Horizontal(at[i]).LengthSquared
+
+[ai-p5a-elect-by-key]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TenMenMakeASquadOfFiveAndASquadOfTwo
+note = the election order is the id's own order
+original:
+| AiParts.Mix(a ^ ElectSalt) < AiParts.Mix(b ^ ElectSalt)
+replacement:
+| a < b
+
+[ai-p5a-elect-salt]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TenMenMakeASquadOfFiveAndASquadOfTwo
+note = another election salt
+original:
+| ElectSalt = 0x8f1bbcdc6ed9eba1UL
+replacement:
+| ElectSalt = 0x8f1bbcdc6ed9eba2UL
+
+[ai-p5a-size-salt]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.ASquadsSizeComesFromItsLeader
+note = another size salt
+original:
+| SizeSalt = 0xca62c1d6a953fd4eUL
+replacement:
+| SizeSalt = 0xca62c1d6a953fd4fUL
+
+[ai-p5a-squadof-leader]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TenMenMakeASquadOfFiveAndASquadOfTwo
+note = a leader is told he is in no squad
+original:
+| sizes.ContainsKey(unit.Value) ? unit.Value : 0
+replacement:
+| 0
+
+[ai-p5a-sizeof]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TenMenMakeASquadOfFiveAndASquadOfTwo
+note = the size is off by one
+original:
+| sizes.TryGetValue(leader.Value, out int size) ? size : 0
+replacement:
+| sizes.TryGetValue(leader.Value, out int size) ? size + 1 : 0
+
+[ai-p5a-tryleader-dead]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.ADeadLeadersSquadDissolvesAndFormsAgain
+note = a member asks as a leader who fell on this tick
+original:
+|  || combat.IsDead((EntityId)found)
+|
+replacement:
+|
+|
+
+[ai-p5a-tryleader-here]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.ADeadLeadersSquadDissolvesAndFormsAgain
+note = the leader's place is not handed out
+original:
+| leader = new StableId(key); leaderHere = position.Value;
+replacement:
+| leader = new StableId(key);
+
+[ai-p5a-state-id]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.State_TheSevenNumbersAndBothTablesInKeyOrder
+note = another state id in the hash
+original:
+| public string StateTypeId => "battle.ai-squads";
+replacement:
+| public string StateTypeId => "battle.ai-squad";
+
+[ai-p5a-state-version]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.State_TheSevenNumbersAndBothTablesInKeyOrder
+note = another state version in the hash
+original:
+| public int StateVersion => 1;
+replacement:
+| public int StateVersion => 2;
+
+[ai-p5a-save-rules-order]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.State_TheSevenNumbersAndBothTablesInKeyOrder
+note = the first two numbers are saved the other way round
+original:
+| writer.Int32(rules.MinSize); writer.Int32(rules.MaxSize);
+replacement:
+| writer.Int32(rules.MaxSize); writer.Int32(rules.MinSize);
+
+[ai-p5a-save-squad-order]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.State_TheSevenNumbersAndBothTablesInKeyOrder
+note = size before leader
+original:
+| writer.UInt64(leaders[i]); writer.Int32(size[i]);
+replacement:
+| writer.Int32(size[i]); writer.UInt64(leaders[i]);
+
+[ai-p5a-save-member-order]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.State_TheSevenNumbersAndBothTablesInKeyOrder
+note = leader before member
+original:
+| writer.UInt64(members[i]); writer.UInt64(theirs[i]);
+replacement:
+| writer.UInt64(theirs[i]); writer.UInt64(members[i]);
+
+[ai-p5a-load-rule-min]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.State_LoadRefusesOtherRules
+note = a snapshot with another MinSize is loaded
+original:
+| bool same = reader.Int32() == rules.MinSize;
+replacement:
+| bool same = reader.Int32() >= 0;
+
+[ai-p5a-load-rule-max]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.State_LoadRefusesOtherRules
+note = a snapshot with another MaxSize is loaded
+original:
+| same &= reader.Int32() == rules.MaxSize;
+replacement:
+| same &= reader.Int32() >= 0;
+
+[ai-p5a-load-rule-skirmishers]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.State_LoadRefusesOtherRules
+note = a snapshot with another SkirmisherPermille is loaded
+original:
+| same &= reader.Int32() == rules.SkirmisherPermille;
+replacement:
+| same &= reader.Int32() >= 0;
+
+[ai-p5a-load-rule-radius]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.State_LoadRefusesOtherRules
+note = a snapshot with another RecruitRadiusMm is loaded
+original:
+| same &= reader.Int32() == rules.RecruitRadiusMm;
+replacement:
+| same &= reader.Int32() >= 0;
+
+[ai-p5a-load-rule-form]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.State_LoadRefusesOtherRules
+note = a snapshot with another FormTicks is loaded
+original:
+| same &= reader.Int32() == rules.FormTicks;
+replacement:
+| same &= reader.Int32() >= 0;
+
+[ai-p5a-load-rule-spread-min]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.State_LoadRefusesOtherRules
+note = a snapshot with another SpreadMinMm is loaded
+original:
+| same &= reader.Int32() == rules.SpreadMinMm;
+replacement:
+| same &= reader.Int32() >= 0;
+
+[ai-p5a-load-rule-spread-max]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.State_LoadRefusesOtherRules
+note = a snapshot with another SpreadMaxMm is loaded
+original:
+| same &= reader.Int32() == rules.SpreadMaxMm;
+replacement:
+| same &= reader.Int32() >= 0;
+
+[ai-p5a-load-keeps-tables]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.State_LoadReplacesTheTables
+note = the members table is not emptied before a load
+original:
+| sizes.Clear(); leaderOf.Clear();
+replacement:
+| sizes.Clear();
+
+[ai-p5a-load-leaders-equal]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.State_LoadRefusesTablesThatCannotBe
+note = the same leader twice is not refused by its reason
+original:
+| i == 0 || leader > previous
+replacement:
+| i == 0 || leader >= previous
+
+[ai-p5a-load-size-low]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.State_LoadRefusesTablesThatCannotBe
+note = a size under the least is loaded
+original:
+| size >= rules.MinSize && size <= rules.MaxSize
+replacement:
+| size <= rules.MaxSize
+
+[ai-p5a-load-size-high]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.State_LoadRefusesTablesThatCannotBe
+note = a size over the most is loaded
+original:
+| size >= rules.MinSize && size <= rules.MaxSize
+replacement:
+| size >= rules.MinSize
+
+[ai-p5a-load-members-equal]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.State_LoadRefusesTablesThatCannotBe
+note = the same member twice is not refused by its reason
+original:
+| i == 0 || member > previous
+replacement:
+| i == 0 || member >= previous
+
+[ai-p5a-load-member-of-nobody]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.State_LoadRefusesTablesThatCannotBe
+note = a member of a unit that leads nothing is not refused by its reason
+original:
+| SimStateReader.Require(squad >= 0, "AI squad member follows a unit that leads no squad.");
+replacement:
+
+[ai-p5a-load-member-leads]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.State_LoadRefusesTablesThatCannotBe
+note = a member that leads a squad is loaded
+original:
+| SimStateReader.Require(!sizes.ContainsKey(member), "AI squad member leads a squad.");
+replacement:
+
+[ai-p5a-load-empty-squad]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.State_LoadRefusesTablesThatCannotBe
+note = a squad without a member is loaded
+original:
+| counts[i] >= 1 && counts[i] <= room[i]
+replacement:
+| counts[i] <= room[i]
+
+[ai-p5a-load-overfull-squad]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.State_LoadRefusesTablesThatCannotBe
+note = a squad with more members than its size is loaded
+original:
+| counts[i] >= 1 && counts[i] <= room[i]
+replacement:
+| counts[i] >= 1
+
+[ai-p5a-hash-no-sizes]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.State_OtherTablesHashDifferently
+note = sizes are not in the hash
+original:
+| hash.Add(leaders[i]); hash.Add(size[i]);
+replacement:
+| hash.Add(leaders[i]);
+
+[ai-p5a-hash-no-leader-of]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.State_OtherTablesHashDifferently
+note = who a member follows is not in the hash
+original:
+| hash.Add(members[i]); hash.Add(theirs[i]);
+replacement:
+| hash.Add(members[i]);
+
+[ai-p5a-hash-no-members]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.State_TheSevenNumbersAndBothTablesInKeyOrder
+note = the members are not in the hash
+original:
+| hash.Add(members[i]); hash.Add(theirs[i]);
+replacement:
+| hash.Add(theirs[i]);
+
+[ai-p5a-hash-no-rules]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.State_TheSevenNumbersAndBothTablesInKeyOrder
+note = a rule is not in the state hash
+original:
+| hash.Add(rules.FormTicks); hash.Add(rules.SpreadMinMm); hash.Add(rules.SpreadMaxMm);
+replacement:
+| hash.Add(rules.FormTicks); hash.Add(rules.SpreadMinMm);
+
+[ai-p5a-dispatch-as-self]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.AMemberAsksTheDispatchAsItsLeader
+note = a member asks the dispatch as itself
+original:
+| ? inner.Pick(in asLeader, field) : inner.Pick(in unit, field);
+replacement:
+| ? inner.Pick(in unit, field) : inner.Pick(in unit, field);
+
+[ai-p5a-asleader-own-place]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.AMemberAsksTheDispatchAsItsLeader
+note = the member asks from its own place
+original:
+| asLeader = new AiUnit(leader, unit.Team, leaderHere, unit.Nerve, unit.Layer);
+replacement:
+| asLeader = new AiUnit(leader, unit.Team, unit.Here, unit.Nerve, unit.Layer);
+
+[ai-p5a-asleader-calm]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.AMemberAsksTheDispatchAsItsLeader
+note = the member's nerve is lost
+original:
+| asLeader = new AiUnit(leader, unit.Team, leaderHere, unit.Nerve, unit.Layer);
+replacement:
+| asLeader = new AiUnit(leader, unit.Team, leaderHere, AiNerve.Calm, unit.Layer);
+
+[ai-p5a-asleader-ground]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.AMemberAsksWithItsOwnLayer
+note = the member's layer is lost
+original:
+| asLeader = new AiUnit(leader, unit.Team, leaderHere, unit.Nerve, unit.Layer);
+replacement:
+| asLeader = new AiUnit(leader, unit.Team, leaderHere, unit.Nerve);
+
+[ai-p5a-anchor-no-offset]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.AMemberStandsAtItsLeadersAnchorPlusItsOffset
+note = members stand on the leader's anchor
+original:
+| ? inner.Anchor(in asLeader, point, field) + squads.Offset(unit.Id, asLeader.Id)
+replacement:
+| ? inner.Anchor(in asLeader, point, field)
+
+[ai-p5a-anchor-offset-swapped]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.AMemberStandsAtItsLeadersAnchorPlusItsOffset
+note = the offset is asked with member and leader swapped
+original:
+| squads.Offset(unit.Id, asLeader.Id)
+replacement:
+| squads.Offset(asLeader.Id, unit.Id)
+
+[ai-p5a-anchor-as-self]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.AMemberStandsAtItsLeadersAnchorPlusItsOffset
+note = a member asks the placement as itself
+original:
+| ? inner.Anchor(in asLeader, point, field) + squads.Offset(unit.Id, asLeader.Id)
+replacement:
+| ? inner.Anchor(in unit, point, field) + squads.Offset(unit.Id, asLeader.Id)
+
+[ai-p5a-waypoint-leaders-place]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.AMemberAsksTheWaypointAsItsLeaderFromItsOwnPlace
+note = the waypoint is asked from the leader's place
+original:
+| var onItsWay = new AiUnit(asLeader.Id, unit.Team, unit.Here, unit.Nerve, unit.Layer);
+replacement:
+| var onItsWay = new AiUnit(asLeader.Id, unit.Team, asLeader.Here, unit.Nerve, unit.Layer);
+
+[ai-p5a-waypoint-as-self]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.AMemberAsksTheWaypointAsItsLeaderFromItsOwnPlace
+note = the waypoint is asked with the member's id
+original:
+| var onItsWay = new AiUnit(asLeader.Id, unit.Team, unit.Here, unit.Nerve, unit.Layer);
+replacement:
+| var onItsWay = new AiUnit(unit.Id, unit.Team, unit.Here, unit.Nerve, unit.Layer);
+
+[ai-p5a-waypoint-ground]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.AMemberAsksWithItsOwnLayer
+note = the waypoint is asked without the member's layer
+original:
+| var onItsWay = new AiUnit(asLeader.Id, unit.Team, unit.Here, unit.Nerve, unit.Layer);
+replacement:
+| var onItsWay = new AiUnit(asLeader.Id, unit.Team, unit.Here, unit.Nerve);
+
+[ai-p5a-waypoint-never]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.AMemberAsksTheWaypointAsItsLeaderFromItsOwnPlace
+note = the inner part's waypoints are not seen
+original:
+| waypoints = inner as IAiWaypoint;
+replacement:
+| waypoints = null;
+
+[ai-p5a-waypoint-not-for-leaders]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.AMemberAsksTheWaypointAsItsLeaderFromItsOwnPlace
+note = a leader or skirmisher gets no waypoint
+original:
+| if (!squads.TryAsLeader(in unit, out AiUnit asLeader)) return waypoints.TryWaypoint(in unit, point, field, out at);
+replacement:
+| if (!squads.TryAsLeader(in unit, out AiUnit asLeader)) return false;
+
+[ai-p5a-offset-width-sum]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TheOffsetFollowsTheRule
+note = the squad's width runs past the largest spread
+original:
+| * (rules.SpreadMaxMm - rules.SpreadMinMm) / 1000;
+replacement:
+| * (rules.SpreadMaxMm + rules.SpreadMinMm) / 1000;
+
+[ai-p5a-offset-width-by-member]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TheOffsetFollowsTheRule
+note = the squad's width comes from the member
+original:
+| AiParts.Permille(leader.Value, TightSalt)
+replacement:
+| AiParts.Permille(member.Value, TightSalt)
+
+[ai-p5a-offset-sloppy-by-leader]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TheOffsetFollowsTheRule
+note = the member's scale comes from the leader
+original:
+| AiParts.Permille(member.Value, SloppySalt)
+replacement:
+| AiParts.Permille(leader.Value, SloppySalt)
+
+[ai-p5a-offset-sloppy-range]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TheOffsetFollowsTheRule
+note = the member's scale runs from 1.0 to 2.0
+original:
+| (500 + AiParts.Permille(member.Value, SloppySalt))
+replacement:
+| (1000 + AiParts.Permille(member.Value, SloppySalt))
+
+[ai-p5a-offset-by-leader]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TheOffsetFollowsTheRule
+note = all members of a squad get one offset
+original:
+| AiParts.Mix(member.Value ^ OffsetSalt)
+replacement:
+| AiParts.Mix(leader.Value ^ OffsetSalt)
+
+[ai-p5a-offset-span]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TheOffsetFollowsTheRule
+note = the offset never reaches +s
+original:
+| span = 2UL * (ulong)s + 1UL;
+replacement:
+| span = 2UL * (ulong)s;
+
+[ai-p5a-offset-high-bits]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TheOffsetFollowsTheRule
+note = z comes from other bits
+original:
+| (m >> 32) % span
+replacement:
+| (m >> 16) % span
+
+[ai-p5a-offset-x-z]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TheOffsetFollowsTheRule
+note = x and z are swapped
+original:
+| new SimVec3(SimFix.Ratio(u, 1000), default, SimFix.Ratio(v, 1000));
+replacement:
+| new SimVec3(SimFix.Ratio(v, 1000), default, SimFix.Ratio(u, 1000));
+
+[ai-p5a-offset-tight-salt]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TheOffsetFollowsTheRule
+note = another width salt
+original:
+| TightSalt = 0x2ad7d2bb4c1a9e37UL
+replacement:
+| TightSalt = 0x2ad7d2bb4c1a9e38UL
+
+[ai-p5a-offset-salt]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TheOffsetFollowsTheRule
+note = another offset salt
+original:
+| OffsetSalt = 0xe07c265404be4294UL
+replacement:
+| OffsetSalt = 0xe07c265404be4295UL
+
+[ai-p5a-offset-sloppy-salt]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TheOffsetFollowsTheRule
+note = another scale salt
+original:
+| SloppySalt = 0x76f988da831153b5UL
+replacement:
+| SloppySalt = 0x76f988da831153b6UL
+
+[ai-p5a-fold-dispatch-tag]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TheWrappersFoldTheirTagsAndTheSevenNumbers
+note = another dispatch tag
+original:
+| "battle.ai.squads.v1"
+replacement:
+| "battle.ai.squads.v2"
+
+[ai-p5a-fold-dispatch-inner]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TheWrappersFoldTheirTagsAndTheSevenNumbers
+note = the inner dispatch is not folded
+original:
+| hash.Add("battle.ai.squads.v1"); hash.Add(inner.Fold(digest));
+replacement:
+| hash.Add("battle.ai.squads.v1"); hash.Add(digest);
+
+[ai-p5a-fold-minsize]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.World_EachOfTheSevenNumbersIsInThePolicy
+note = MinSize is not in the battle's policy digest
+original:
+| hash.Add(r.MinSize);
+replacement:
+
+[ai-p5a-fold-maxsize]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.World_EachOfTheSevenNumbersIsInThePolicy
+note = MaxSize is not in the battle's policy digest
+original:
+| hash.Add(r.MaxSize);
+replacement:
+
+[ai-p5a-fold-skirmisherpermille]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.World_EachOfTheSevenNumbersIsInThePolicy
+note = SkirmisherPermille is not in the battle's policy digest
+original:
+| hash.Add(r.SkirmisherPermille);
+replacement:
+
+[ai-p5a-fold-recruitradiusmm]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.World_EachOfTheSevenNumbersIsInThePolicy
+note = RecruitRadiusMm is not in the battle's policy digest
+original:
+| hash.Add(r.RecruitRadiusMm);
+replacement:
+
+[ai-p5a-fold-formticks]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.World_EachOfTheSevenNumbersIsInThePolicy
+note = FormTicks is not in the battle's policy digest
+original:
+| hash.Add(r.FormTicks);
+replacement:
+
+[ai-p5a-fold-spreadminmm]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.World_EachOfTheSevenNumbersIsInThePolicy
+note = SpreadMinMm is not in the battle's policy digest
+original:
+| hash.Add(r.SpreadMinMm);
+replacement:
+
+[ai-p5a-fold-spreadmaxmm]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.World_EachOfTheSevenNumbersIsInThePolicy
+note = SpreadMaxMm is not in the battle's policy digest
+original:
+| hash.Add(r.SpreadMaxMm);
+replacement:
+
+[ai-p5a-fold-placement-tag]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TheWrappersFoldTheirTagsAndTheSevenNumbers
+note = another placement tag
+original:
+| "battle.ai.squad-placement.v1"
+replacement:
+| "battle.ai.squad-placement.v2"
+
+[ai-p5a-fold-placement-inner]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TheWrappersFoldTheirTagsAndTheSevenNumbers
+note = the inner placement is not folded
+original:
+| hash.Add("battle.ai.squad-placement.v1"); hash.Add(inner.Fold(digest));
+replacement:
+| hash.Add("battle.ai.squad-placement.v1"); hash.Add(digest);
+
+[ai-p5a-wrap-null-dispatch]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.WrapNeedsAnInnerPart
+note = a missing dispatch is wrapped
+original:
+| new SquadDispatch(this, inner ?? throw new ArgumentNullException(nameof(inner)))
+replacement:
+| new SquadDispatch(this, inner)
+
+[ai-p5a-wrap-null-placement]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.WrapNeedsAnInnerPart
+note = a missing placement is wrapped
+original:
+| new SquadPlacement(this, inner ?? throw new ArgumentNullException(nameof(inner)))
+replacement:
+| new SquadPlacement(this, inner)
+
+[ai-p5a-content-min-low]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.Content_EachSquadFieldHasItsBounds
+note = squadMinSize 0 is read
+original:
+| r.Int("squadMinSize", 1, MaxSquadSize)
+replacement:
+| r.Int("squadMinSize", 0, MaxSquadSize)
+
+[ai-p5a-content-max-low]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.Content_EachSquadFieldHasItsBounds
+note = squadMaxSize 0 is read
+original:
+| r.Int("squadMaxSize", 1, MaxSquadSize)
+replacement:
+| r.Int("squadMaxSize", 0, MaxSquadSize)
+
+[ai-p5a-content-size-high]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.Content_EachSquadFieldHasItsBounds
+note = a size of 65 is read
+original:
+| MaxSquadSize = 64
+replacement:
+| MaxSquadSize = 65
+
+[ai-p5a-content-skirmishers-low]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.Content_EachSquadFieldHasItsBounds
+note = squadSkirmisherPermille -1 is read
+original:
+| r.Int("squadSkirmisherPermille", 0, 1000)
+replacement:
+| r.Int("squadSkirmisherPermille", -1, 1000)
+
+[ai-p5a-content-skirmishers-high]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.Content_EachSquadFieldHasItsBounds
+note = squadSkirmisherPermille 1001 is read
+original:
+| r.Int("squadSkirmisherPermille", 0, 1000)
+replacement:
+| r.Int("squadSkirmisherPermille", 0, 1001)
+
+[ai-p5a-content-radius-low]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.Content_EachSquadFieldHasItsBounds
+note = squadRecruitRadiusMm 0 is read
+original:
+| r.Int("squadRecruitRadiusMm", 1, MaxSquadRadiusMm)
+replacement:
+| r.Int("squadRecruitRadiusMm", 0, MaxSquadRadiusMm)
+
+[ai-p5a-content-radius-high]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.Content_EachSquadFieldHasItsBounds
+note = squadRecruitRadiusMm 512001 is read
+original:
+| MaxSquadRadiusMm = 512000
+replacement:
+| MaxSquadRadiusMm = 512001
+
+[ai-p5a-content-form-low]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.Content_EachSquadFieldHasItsBounds
+note = squadFormTicks 0 is read
+original:
+| r.Int("squadFormTicks", 1, MaxSquadFormTicks)
+replacement:
+| r.Int("squadFormTicks", 0, MaxSquadFormTicks)
+
+[ai-p5a-content-form-high]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.Content_EachSquadFieldHasItsBounds
+note = squadFormTicks 100001 is read
+original:
+| MaxSquadFormTicks = 100000
+replacement:
+| MaxSquadFormTicks = 100001
+
+[ai-p5a-content-spread-min-low]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.Content_EachSquadFieldHasItsBounds
+note = squadSpreadMinMm -1 is read
+original:
+| r.Int("squadSpreadMinMm", 0, MaxSquadSpreadMm)
+replacement:
+| r.Int("squadSpreadMinMm", -1, MaxSquadSpreadMm)
+
+[ai-p5a-content-spread-max-low]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.Content_EachSquadFieldHasItsBounds
+note = squadSpreadMaxMm -1 is read
+original:
+| r.Int("squadSpreadMaxMm", 0, MaxSquadSpreadMm)
+replacement:
+| r.Int("squadSpreadMaxMm", -1, MaxSquadSpreadMm)
+
+[ai-p5a-content-spread-high]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.Content_EachSquadFieldHasItsBounds
+note = a spread of 50001 is read
+original:
+| MaxSquadSpreadMm = 50000
+replacement:
+| MaxSquadSpreadMm = 50001
+
+[ai-p5a-content-max-under-min]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.Content_MaxIsAtLeastMin
+note = a largest size under the least is not refused by the content reader
+original:
+| if (max < min) throw r.Bad(r.FieldOf("squadMaxSize")
+replacement:
+| if (max < min - 1) throw r.Bad(r.FieldOf("squadMaxSize")
+
+[ai-p5a-content-spread-max-under-min]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.Content_MaxIsAtLeastMin
+note = a largest spread under the least is not refused by the content reader
+original:
+| if (spreadMax < spreadMin) throw r.Bad(r.FieldOf("squadSpreadMaxMm")
+replacement:
+| if (spreadMax < spreadMin - 1) throw r.Bad(r.FieldOf("squadSpreadMaxMm")
+
+[ai-p5a-content-any-of-seven]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.Content_SquadFieldsAreReadAllOrNone
+note = only the first field makes the seven required
+original:
+| foreach (string field in SquadFields) banded |= r.Has(field);
+replacement:
+| banded = r.Has(SquadFields[0]);
+
+[ai-p5a-content-rules-order]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.Content_SquadFieldsAreReadAllOrNone
+note = two of the seven numbers are swapped
+original:
+| new WarCore.Battle.SquadRules(min, max, skirmishers, radius, form, spreadMin, spreadMax);
+replacement:
+| new WarCore.Battle.SquadRules(min, max, skirmishers, form, radius, spreadMin, spreadMax);
+
+[ai-p5a-content-squads-dropped]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.Content_SquadFieldsAreReadAllOrNone
+note = the squad numbers are read and thrown away
+original:
+| CoverDepthMm = coverDepth, Squads = squads });
+replacement:
+| CoverDepthMm = coverDepth });
+
+[ai-p5a-wire-no-dispatch-wrap]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.World_EachOfTheSevenNumbersIsInThePolicy
+note = the dispatch is not wrapped
+original:
+| if (squads != null) { dispatch = squads.Wrap(dispatch); placement = squads.Wrap(placement); }
+replacement:
+| if (squads != null) { placement = squads.Wrap(placement); }
+
+[ai-p5a-wire-no-placement-wrap]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.World_EachOfTheSevenNumbersIsInThePolicy
+note = the placement is not wrapped
+original:
+| if (squads != null) { dispatch = squads.Wrap(dispatch); placement = squads.Wrap(placement); }
+replacement:
+| if (squads != null) { dispatch = squads.Wrap(dispatch); }
+
+[ai-p5a-wire-plates]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.World_SquadsAreRefusedOnFloorPlates
+note = squads are built on a map with floor plates
+original:
+| if (ai.Squads != null) throw Refused(ai, "squadMinSize");
+replacement:
+
+[ai-p5a-wire-plates-field]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.World_SquadsAreRefusedOnFloorPlates
+note = the refusal names another field
+original:
+| throw Refused(ai, "squadMinSize");
+replacement:
+| throw Refused(ai, "squadMaxSize");
+
+[ai-p5a-wire-parts-without]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.World_EachOfTheSevenNumbersIsInThePolicy
+note = the battle's parts are built without the squads
+original:
+| terrain == null, layers != null, squads)
+replacement:
+| terrain == null, layers != null)
+
+[ai-p5a-wire-system-id]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.EverySystemHasAnOrderOfItsOwnWithAPlayerAndEverythingOn
+note = the system is registered under another id
+original:
+| sim.RegisterGameplay("battle.ai-squads", squads, SimSystemPhase.Requests);
+replacement:
+| sim.RegisterGameplay("battle.ai-squad", squads, SimSystemPhase.Requests);
+
+[ai-p5a-wire-assembly]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TheViewShowsEachMansSquad
+note = the view never gets the squads
+original:
+| a.Pressure = pressure; a.Squads = squads;
+replacement:
+| a.Pressure = pressure;
+
+[ai-p5a-wire-builder]
+file = Assets/WarCore/Presentation/Bridge/WorldBuilder.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TheViewShowsEachMansSquad
+note = the session never gets the squads
+original:
+| Pressure = assembly.Pressure, Squads = assembly.Squads,
+replacement:
+| Pressure = assembly.Pressure,
+
+[ai-p5a-view-dead-band]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TheViewShowsEachMansSquad
+note = a dead man keeps his band in the view
+original:
+| squads != null && alive ? BandKey(
+replacement:
+| squads != null ? BandKey(
+
+[ai-p5a-view-band-id]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TheViewShowsEachMansSquad
+note = the band is the leader's id, not his spawn key
+original:
+| return spawnKeys.TryGetValue(leader, out ulong key) ? key : 0;
+replacement:
+| return leader;
+
+[ai-p5a-view-interpolated]
+file = Assets/WarCore/Presentation/Bridge/FrameView.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.TheViewShowsEachMansSquad
+note = an interpolated frame loses the band
+original:
+| layer: next.Layer, band: next.Band);
+replacement:
+| layer: next.Layer);
+
