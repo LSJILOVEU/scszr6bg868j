@@ -1,10 +1,10 @@
-# SHOW-1: the showcase stages (Showcase, ShowcaseField), the projectile view data (SimSession.ReadProjectiles behind
+# SHOW-1: the showcase stages (Showcase, ShowcaseField), the projectile view data (SimSession.ProjectilesForView behind
 # ViewProjectiles.Read) and the HUD text (ShowcaseHud).
-# Filter: Show1Tests. Not listed: the null guards of ReadProjectiles and the recipe switches whose removal makes a stage
+# Filter: Show1Tests. Not listed: the null guards of ViewProjectiles.Read and the recipe switches whose removal makes a stage
 # throw on start (a crash is not an assertion); the content layers (JSON has no assembly); Unity code (no Unity here).
 
 [show1-fresh-is-launch-tick]
-file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+file = Assets/WarCore/Presentation/Bridge/Features/ViewProjectiles.cs
 filter = FullyQualifiedName~Show1Tests
 expect = WarCore.Tests.Show1Tests.AFreshProjectileSitsAtTheShootersMuzzleAndThenMovesFiveMetresATick
 note = a projectile fired on the committed tick is not fresh
@@ -14,7 +14,7 @@ replacement:
 | bool fresh = view.LaunchTick > tick;
 
 [show1-before-is-one-tick-back]
-file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+file = Assets/WarCore/Presentation/Bridge/Features/ViewProjectiles.cs
 filter = FullyQualifiedName~Show1Tests
 expect = WarCore.Tests.Show1Tests.AFreshProjectileSitsAtTheShootersMuzzleAndThenMovesFiveMetresATick
 note = the earlier position is the current one
@@ -24,7 +24,7 @@ replacement:
 | view.PositionAt(tick);
 
 [show1-every-projectile-listed]
-file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+file = Assets/WarCore/Presentation/Bridge/Features/ViewProjectiles.cs
 filter = FullyQualifiedName~Show1Tests
 expect = WarCore.Tests.Show1Tests.AFreshProjectileSitsAtTheShootersMuzzleAndThenMovesFiveMetresATick
 note = the last projectile in flight is left out
@@ -34,7 +34,7 @@ replacement:
 | flying != null && i < system.Count - 1; i++)
 
 [show1-projectile-team]
-file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+file = Assets/WarCore/Presentation/Bridge/Features/ViewProjectiles.cs
 filter = FullyQualifiedName~Show1Tests
 expect = WarCore.Tests.Show1Tests.AFreshProjectileSitsAtTheShootersMuzzleAndThenMovesFiveMetresATick
 note = the projectile's team is one too high
@@ -44,7 +44,7 @@ replacement:
 |                     view.Team + 1, fresh));
 
 [show1-metres]
-file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+file = Assets/WarCore/Presentation/Bridge/Features/ViewProjectiles.cs
 filter = FullyQualifiedName~Show1Tests
 expect = WarCore.Tests.Show1Tests.AFreshProjectileSitsAtTheShootersMuzzleAndThenMovesFiveMetresATick
 note = positions are twice as far out
@@ -54,7 +54,7 @@ replacement:
 | private static float Metres(SimFix value) => (float)value.Raw * 2 / SimFix.Scale;
 
 [show1-struck-either-outcome]
-file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+file = Assets/WarCore/Presentation/Bridge/Features/ViewProjectiles.cs
 filter = FullyQualifiedName~Show1Tests
 expect = WarCore.Tests.Show1Tests.TheBulletsStageFliesProjectilesInsteadOfInstantHits
 note = no landing counts as a body hit
@@ -64,7 +64,7 @@ replacement:
 | impact.Outcome == FireOutcome.Hit && impact.Outcome == FireOutcome.FriendHit
 
 [show1-damaged-needs-damage]
-file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+file = Assets/WarCore/Presentation/Bridge/Features/ViewProjectiles.cs
 filter = FullyQualifiedName~Show1Tests
 expect = WarCore.Tests.Show1Tests.TheBulletsStageFliesProjectilesInsteadOfInstantHits
 note = every landing counts as damage
