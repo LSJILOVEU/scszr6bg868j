@@ -195,7 +195,7 @@ namespace WarCore.Replay
                 // Each unit's squad leader by unit index (-1 = in no squad; a leader names itself); written only when somebody is in a squad.
                 if (banded) sb.Append("],\"q\":[").Append(string.Join(",", bands));
                 sb.Append("],\"s\":[").Append(string.Join(",", shots)).Append("],\"a\":[").Append(frame.Match.AliveOne).Append(',').Append(frame.Match.AliveTwo)
-                  .Append(',').Append(frame.Match.ReserveOne).Append(',').Append(frame.Match.ReserveTwo).Append("]}");
+                  .Append(',').Append(frame.Match.ReserveOne).Append(',').Append(frame.Match.ReserveTwo).Append("],\"h\":\"").Append(session.StateHash.ToString("X16")).Append("\"}");
                 shots.Clear();
             }
             bool decided = session.IsFinished && session.Winner != 0;

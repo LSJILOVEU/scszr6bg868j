@@ -39,11 +39,17 @@ namespace WarCore.Combat
         public bool FriendlyFireLocked { get; }
         public int AllyCheckMissRaw { get; }
         public long AllyHoldMilli { get; }
+        // AIM-1 combat.moveSpread: how far a shooter moved this tick widens its shot (null = off; the pack hashes as before).
+        public MoveSpread MoveSpread { get; }
+        // AIM-1 combat.manualReload: CombatSystem.TryReload may start a reload before the magazine is empty (false = off).
+        public bool ManualReload { get; }
 
         public CombatPack(WeaponDef[] weapons, IHitResolver resolver, ITargetSelector selector, long maxHealthRaw,
             bool friendlyFire = false, bool friendlyFireLocked = false, int allyCheckMissRaw = 0, long allyHoldMilli = 30000, MeleeSpec[] melee = null, BlockSpec[] block = null,
-            CombatBody? body = null, int[] projectileSpeeds = null)
+            CombatBody? body = null, int[] projectileSpeeds = null, MoveSpread moveSpread = null, bool manualReload = false)
         {
+            if (moveSpread != null && moveSpread.WeaponSlots != 0 && moveSpread.WeaponSlots != weapons.Length)
+                throw new ArgumentException("A move-spread table per weapon needs one slot per weapon.", nameof(moveSpread));
             if (allyCheckMissRaw < 0 || allyCheckMissRaw > SimFix.Scale) throw new ArgumentOutOfRangeException(nameof(allyCheckMissRaw));
             if (allyHoldMilli < 1000 || allyHoldMilli > 1_000_000_000_000L) throw new ArgumentOutOfRangeException(nameof(allyHoldMilli));
             this.weapons = (WeaponDef[])weapons.Clone();
@@ -56,6 +62,7 @@ namespace WarCore.Combat
             FriendlyFire = friendlyFire; FriendlyFireLocked = friendlyFireLocked;
             AllyCheckMissRaw = allyCheckMissRaw; AllyHoldMilli = allyHoldMilli;
             Body = body;
+            MoveSpread = moveSpread; ManualReload = manualReload;
             projectiles = BuildProjectiles(this.weapons, projectileSpeeds, body);
             this.projectileSpeeds = projectiles.Length == 0 ? Array.Empty<int>() : (int[])projectileSpeeds.Clone();
             var hash = new StateHash();
@@ -72,6 +79,10 @@ namespace WarCore.Combat
             { hash.Add("combat.pack.body.v1"); body.Value.WriteState(hash); }
             if (projectiles.Length > 0)
             { hash.Add("combat.pack.projectile.v1"); hash.Add(projectiles.Length); foreach (var spec in projectiles) hash.Add(spec.StepRaw); }
+            if (moveSpread != null)
+            { hash.Add("combat.pack.movespread.v1"); moveSpread.WriteState(hash); }
+            if (manualReload)
+                hash.Add("combat.pack.reload.v1");
             PolicyDigest = hash.Value;
         }
 
@@ -114,7 +125,7 @@ namespace WarCore.Combat
         // Rule (ML-3): a new optional section of the pack is passed on by every With* copy, with a test.
         public CombatPack WithSelector(ITargetSelector selector) => new CombatPack(weapons, Resolver, selector, MaxHealthRaw,
             FriendlyFire, FriendlyFireLocked, AllyCheckMissRaw, AllyHoldMilli, melee.Length == 0 ? null : melee, block.Length == 0 ? null : block, Body,
-            projectileSpeeds.Length == 0 ? null : projectileSpeeds);
+            projectileSpeeds.Length == 0 ? null : projectileSpeeds, MoveSpread, ManualReload);
 
         // projectiles: the projectile pool size (ProjectileCapacity); each projectile may land one damage command in a tick.
         public GameplaySchema BuildSchema(int unitCount, int projectiles = 0) => new GameplaySchema(

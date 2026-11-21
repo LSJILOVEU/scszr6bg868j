@@ -30,6 +30,7 @@ A frame also lists the indices of the pinned (`n`) and broken (`b`) units when t
 ring round a pinned unit and a thick yellow one round a broken unit. When somebody is in an AI squad the frame has `q`:
 for each unit the unit index of its squad's leader (`-1` = in no squad, a leader names itself); the page draws a square
 round a leader and a thin line from each member to its leader.
+Every frame carries `h`, the state hash after its tick (16 hex digits), so a picture of a frame can name the exact state.
 
 | Key | Meaning | Reads |
 |---|---|---|

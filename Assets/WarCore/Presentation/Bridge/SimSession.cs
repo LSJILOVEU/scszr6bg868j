@@ -277,6 +277,20 @@ namespace WarCore.Presentation
             throw new ArgumentException("Follow target is not a unit of this session.", nameof(key));
         }
 
+        // AIM-1: TryReload for each unit of the squad that the player does not control, in spawn key order (spawns are sorted
+        // by key). The combat system refuses what it must (dead, no manual reload in the pack, full magazine...).
+        private void ReloadSquad(int squad)
+        {
+            if (combat == null) return;
+            for (int i = 0; i < spawns.Length; i++)
+            {
+                if (spawns[i].Squad != squad) continue;
+                EntityId unit = sim.Entities.Resolve(new EntityLink(units[i]));
+                if (controlled != null && controlled.Current.Equals(unit)) continue;
+                combat.TryReload(unit);
+            }
+        }
+
         // A squad target travels as a link beside the frame; frames without one take the plain path.
         private void StepSim(InputFrame input, EntityLink followTarget)
         {
@@ -349,7 +363,9 @@ namespace WarCore.Presentation
             SquadCommand? squad = null;
             EntityLink followTarget = default;
             bool hasCommand = pending.Count > 0 && pending[0].AtTick == nextTick;
-            if (hasCommand)
+            // AIM-1: a reload is no squad order; it is asked here, before the step, and the frame carries no squad command.
+            if (hasCommand && pending[0].Kind == BridgeCommandKind.Reload) ReloadSquad(pending[0].Squad);
+            else if (hasCommand)
             {
                 BridgeCommand command = pending[0];
                 squad = command.Kind switch
