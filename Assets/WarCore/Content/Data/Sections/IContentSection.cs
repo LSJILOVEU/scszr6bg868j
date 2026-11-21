@@ -37,12 +37,14 @@ namespace WarCore.Content
         protected ObjectSection(string key) { Key = key; }
         public string Key { get; }
         public virtual int BuildStage => 0;
-        public void Merge(List<ContentEntry> entries, JsonNode node, string layer) => EntryMerge.Object(entries, node, Key, layer, NestedObject, NestedArray);
+        public void Merge(List<ContentEntry> entries, JsonNode node, string layer) => EntryMerge.Object(entries, node, Key, layer, IsNested, NestedArrays);
         // The one field of this section that may hold an object (merged whole: a child layer's object replaces the parent's),
         // or null when every field must be a number, string or boolean.
         protected virtual string NestedObject => null;
-        // The one field of this section that may hold an array (merged whole like NestedObject), or null.
-        protected virtual string NestedArray => null;
+        // Whether a field may hold an object (merged whole, as NestedObject). A section with more than one such field overrides it.
+        protected virtual bool IsNested(string field) => NestedObject != null && field == NestedObject;
+        // The fields of this section that may hold an array (merged whole, as NestedObject); none by default.
+        protected virtual string[] NestedArrays => null;
         public abstract void Build(SectionBuild build);
     }
 }

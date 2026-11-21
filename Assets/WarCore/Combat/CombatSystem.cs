@@ -82,6 +82,7 @@ namespace WarCore.Combat
             intentSlots = new int[candidates.Length];
             InitMelee();
             InitBlock();
+            InitAim();
         }
 
         private const long LegacyEyeRaw = SimFix.Scale / 2;
@@ -243,7 +244,9 @@ namespace WarCore.Combat
                         if (action != AutoFireAction.Fire) continue;
                     }
                     int angle = weapon.Spread.AngleAt(unit.SpreadStored, unit.SpreadLastMilli, tick * 1000);
-                    if (angle > 0) direction = Rotate(direction, angle, sim.Rng.NextInt(spreadStream, 65536));
+                    // AIM-1: the turn uses the spread line's angle; the weapon's spread state below keeps the weapon's angle.
+                    int shot = ShotAngle(shooter, in unit, angle, tick);
+                    if (shot > 0) direction = Rotate(direction, shot, sim.Rng.NextInt(spreadStream, 65536));
                     if (pack.IsProjectile(unit.Weapon)) LaunchRay(shooter, in unit, in weapon, tick, origin, direction, angle);
                     else FireRay(c, shooter, in unit, in position, in weapon, tick, origin, direction, angle);
                 }

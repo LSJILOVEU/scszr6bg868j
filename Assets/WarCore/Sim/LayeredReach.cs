@@ -7,9 +7,10 @@ namespace WarCore.Sim
     // The costs are LayeredPathfinder's: entering a node costs 1000 x its cost on an orthogonal step or a seam and 1414 x its
     // cost on a diagonal step (diagonals only inside one layer, both orthogonal cells of that layer walkable). The table is
     // filled from the target outwards: a settled node v gives each neighbour u the cost of stepping from u into v plus v's own
-    // cost to the target. The neighbour relation is the pathfinder's and is symmetric (a diagonal's two orthogonal cells are
-    // the same pair in both directions; a seam is listed on both of its nodes), so CostFrom(n) equals the total of
-    // LayeredPathfinder.Find(n, target) wherever that finds a route, and is -1 everywhere else.
+    // cost to the target. Walking steps and seams are symmetric (a diagonal's two orthogonal cells are the same pair in both
+    // directions; a seam is listed on both of its nodes); links have a direction (TRV-3, K16), so they are followed through
+    // the index by end node: a link u -> v gives u the cost 1000 x Span x v's cost + PathCost plus v's cost. So CostFrom(n)
+    // equals the total of LayeredPathfinder.Find(n, target) wherever that finds a route, and is -1 everywhere else.
     public sealed class LayeredReach
     {
         private readonly long[] costs;
@@ -23,8 +24,11 @@ namespace WarCore.Sim
             costs = new long[count];
             for (int i = 0; i < count; i++) costs[i] = -1;
             if (nav.Cost[target] == 0) return;
-            // A node is pushed again whenever its cost falls: at most once per edge into it, plus the target.
-            var heap = new long[8L * count + nav.Seams.Length + 1 > int.MaxValue ? int.MaxValue : 8 * count + nav.Seams.Length + 1];
+            // A node is pushed again whenever its cost falls: at most once per edge into it (eight cells, seams, links), plus
+            // the target.
+            long capacity = 8L * count + nav.Seams.Length + nav.LinkCount + 1;
+            var heap = new long[capacity > int.MaxValue ? int.MaxValue : (int)capacity];
+            HeapCapacity = heap.Length;
             var nodes = new int[heap.Length];
             int size = 0;
             costs[target] = 0;
@@ -51,15 +55,27 @@ namespace WarCore.Sim
                 }
                 for (int s = nav.SeamStart[v]; s < nav.SeamStart[v + 1]; s++)
                     Relax(heap, nodes, ref size, nav.Seams[s], cost + 1000 * enter);
+                if (nav.Links == null) continue;
+                for (int i = nav.InStart[v]; i < nav.InStart[v + 1]; i++)
+                {
+                    NavLink link = nav.Links[nav.InLinks[i]];
+                    Relax(heap, nodes, ref size, link.From, cost + 1000L * link.Span * enter + link.PathCost);
+                }
             }
         }
 
         public int Target { get; }
 
-        // ML-11b-1: which nodes can be walked between. Gives every node its island: two walkable nodes share an island exactly
-        // when LayeredPathfinder.Find finds a route between them; a node nobody walks on has -1. Islands are numbered from 0 in
-        // ascending order of their lowest node. Orthogonal steps and seams are enough: a diagonal step needs both orthogonal
-        // cells walkable, so it joins nothing that two orthogonal steps do not join. The relation is symmetric (see above).
+        // The heap's size (it never grows: every push fits). 0 when the target is not walkable. Diagnostics only.
+        internal int HeapCapacity { get; }
+
+        // ML-11b-1: which nodes can be walked between. Gives every node its island; a node nobody walks on has -1. Islands are
+        // numbered from 0 in ascending order of their lowest node. Two nodes share an island when steps, seams and two-way links
+        // join them (TRV-3 A5): a link joins only when the link back exists too. Then LayeredPathfinder.Find finds a route
+        // between them in both directions; without links that is exactly when it finds one. Orthogonal steps are enough: a
+        // diagonal step needs both orthogonal cells walkable, so it joins nothing that two orthogonal steps do not join. A node
+        // reached only over a one-way link (a drop), or only round a ring of one-way links, is on another island; CostFrom
+        // answers a route that needs one.
         public static int[] Islands(LayeredNav nav)
         {
             if (nav == null) throw new ArgumentNullException(nameof(nav));
@@ -85,6 +101,12 @@ namespace WarCore.Sim
                     {
                         int u = nav.Seams[s];
                         if (islands[u] < 0) { islands[u] = next; queue[tail++] = u; }
+                    }
+                    if (nav.Links == null) continue;
+                    for (int l = nav.LinkStart[v]; l < nav.LinkStart[v + 1]; l++)
+                    {
+                        int u = nav.Links[l].To;
+                        if (islands[u] < 0 && nav.TryLink(u, v, out _)) { islands[u] = next; queue[tail++] = u; }
                     }
                 }
                 next++;

@@ -1,0 +1,8 @@
+{
+  "id": "rwr-aim",
+  "extends": "rwr-field",
+  "combat": {
+    "moveSpread": { "bands": [ { "aboveMmPerSec": 500, "permille": 1500 }, { "aboveMmPerSec": 4000, "permille": 3000 } ] },
+    "manualReload": true
+  }
+}

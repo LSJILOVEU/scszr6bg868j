@@ -78,6 +78,10 @@ namespace WarCore.Presentation
         internal ReinforceSystem Reinforce { get; set; }
         internal MatchSystem Match { get; set; }
         internal Pressure Pressure { get; set; }
+        // TRV-7a: the walking costs to each point (null without plates or without a match) and the entry table built from them
+        // once the walls are in the spatial index (null likewise).
+        internal PointReach Reach { get; set; }
+        internal PointEntryTable Entries { get; set; }
         internal Squads Squads { get; set; }
         // STANCE-1, written by the stance installer (a pack with stances only; null otherwise): the posture geometry the spatial
         // index takes, the stance system and the action gate of the world.

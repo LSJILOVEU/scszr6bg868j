@@ -71,6 +71,7 @@ canvas { width: 100%; aspect-ratio: 160 / 100; max-width: 100%; display: block; 
     <span>细线是开火</span>
     <span>细圈是被压住的兵，黄色粗圈是在后撤的兵（开了压力系统才有）</span>
     <span>方框是小队队长，细线把队员连到自己的队长（开了小队才有）</span>
+    <span>黄色实心圆是爆炸，圆的大小是最远伤害距离，1.5 秒内淡出（开了爆炸才有）</span>
   </div>
 
   <div class="notes">
@@ -166,6 +167,20 @@ canvas { width: 100%; aspect-ratio: 160 / 100; max-width: 100%; display: block; 
     for (let s = 0; s + 5 < b.s.length; s += 6) {
       ctx.strokeStyle = colors[b.s[s + 4]] || token("--shot"); ctx.globalAlpha = b.s[s + 5] ? 0.55 : 0.22;
       ctx.beginPath(); ctx.moveTo(X(b.s[s] / 10), Z(b.s[s + 1] / 10)); ctx.lineTo(X(b.s[s + 2] / 10), Z(b.s[s + 3] / 10)); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    // Blasts (frame.x: x, z, outer radius in decimetres, team): a ring of the outer radius, kept for 1.5 s and fading.
+    const fade = Math.max(1, Math.ceil(1.5 * r.tickRate / r.every));
+    for (let k = 0; k < fade && i0 - k >= 0; k++) {
+      const x = r.frames[i0 - k].x;
+      if (!x) continue;
+      for (let s = 0; s + 3 < x.length; s += 4) {
+        ctx.strokeStyle = token("--broken"); ctx.fillStyle = token("--broken"); ctx.lineWidth = 2 * ratio;
+        ctx.globalAlpha = 0.9 * (1 - k / fade);
+        ctx.beginPath(); ctx.arc(X(x[s] / 10), Z(x[s + 1] / 10), x[s + 2] / 10 * scale, 0, Math.PI * 2); ctx.stroke();
+        ctx.globalAlpha = 0.18 * (1 - k / fade); ctx.fill();
+      }
     }
     ctx.globalAlpha = 1;
 
