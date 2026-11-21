@@ -243,10 +243,14 @@ namespace WarCore.Tests
             }
         }
 
-        // Acceptance 7: reading the table allocates nothing.
+        // Acceptance 7: reading the table allocates nothing. Unity's Mono has no direct per-thread byte counter: there the test is
+        // inconclusive (pattern of CommanderQuotaTests); CoreCLR headless runs the strict direct check.
         [Test]
         public void ReadingAllocatesNothing()
         {
+            var meter = new AllocationMeter();
+            if (meter.Basis != AllocationBasis.Direct)
+                Assert.Inconclusive("Strict zero needs a passing direct positive control.");
             PointEntryTable t = Trv7aFixture.Assault().Session.Entries;
             long sum = Read(t) + Read(t);
             AllocationMeter.Stabilize();

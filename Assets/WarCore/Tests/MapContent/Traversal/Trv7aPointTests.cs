@@ -69,9 +69,12 @@ namespace WarCore.Tests
             EntryTable t = EntryTable.Build(nav);
             int[] Order(int x) => PointEntryTable.Of(nav, t, new LayeredReach(nav, Node(nav, 0, x, 8)), Far).Select(e => e.Entry).ToArray();
             long[] Costs(int x) => PointEntryTable.Of(nav, t, new LayeredReach(nav, Node(nav, 0, x, 8)), Far).Select(e => e.InnerCost).ToArray();
-            Assert.That((Order(4), Costs(4)), Is.EqualTo((new[] { 0, 1 }, new[] { 4242L, 4242L })));
-            Assert.That((Order(2), Costs(2)), Is.EqualTo((new[] { 0, 1 }, new[] { 3414L, 6242L })));
-            Assert.That((Order(6), Costs(6)), Is.EqualTo((new[] { 1, 0 }, new[] { 3414L, 6242L })));
+            Assert.That(Order(4), Is.EqualTo(new[] { 0, 1 }));
+            Assert.That(Costs(4), Is.EqualTo(new[] { 4242L, 4242L }));
+            Assert.That(Order(2), Is.EqualTo(new[] { 0, 1 }));
+            Assert.That(Costs(2), Is.EqualTo(new[] { 3414L, 6242L }));
+            Assert.That(Order(6), Is.EqualTo(new[] { 1, 0 }));
+            Assert.That(Costs(6), Is.EqualTo(new[] { 3414L, 6242L }));
         }
 
         // The watch fixture: 24 x 24, wall z = 10 with a gap at x = 10; the point's cell (13, 23). Inner I = (10, 11) (cost
