@@ -237,7 +237,8 @@ namespace WarCore.Tests.Blast1
             w.Step();
             Assert.That(w.Hits().OrderBy(h => h.Unit), Is.EqualTo(new[] { (0, 0L, M), (1, 100 * M, M) }));
             Assert.That(w.Blasts.Records[0].VictimCount, Is.EqualTo(2));
-            Assert.That((w.DamageFacts(0), w.DamageFacts(1)), Is.EqualTo((new[] { 0L }, new[] { 100 * M })), "the shielded unit's command is issued, with 0");
+            Assert.That(w.DamageFacts(0), Is.EqualTo(new[] { 0L }), "the shielded unit's command is issued, with 0");
+            Assert.That(w.DamageFacts(1), Is.EqualTo(new[] { 100 * M }));
             w.Step();
             Assert.That(w.Health(0), Is.EqualTo(100 * M));
             Assert.That(w.Dead(1), Is.True);
