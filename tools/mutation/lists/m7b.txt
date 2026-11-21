@@ -164,9 +164,9 @@ filter = FullyQualifiedName~M7b|FullyQualifiedName~PF1|FullyQualifiedName~F5uKey
 expect = WarCore.Tests.Dash.M7bDashInputTests.M7bRecipes_OnlyThePlaytestPlayerTeamHasADash
 note = the playtest team gets no dash
 original:
-| return WithPlayerTeamDash(MpRespawnDemo().WithAiRules(layer), layer);
+| return WithPlayerTeamDash(MpRespawnDemo(layer).WithAiRules(layer), layer);
 replacement:
-| return MpRespawnDemo().WithAiRules(layer);
+| return MpRespawnDemo(layer).WithAiRules(layer);
 
 [m7b-18-recipe-drops-ai]
 file = Assets/WarCore/Presentation/Bridge/DemoRecipes.cs
