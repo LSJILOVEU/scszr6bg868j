@@ -1,0 +1,1287 @@
+# AI-P5b: squad tempers (rash, normal, steady, shifted by losses), regrouping (the saved marks, the way back to a
+# point of the team's own), the wrapped engage part, the seven new ai.squad* content fields and what the view is told.
+#
+# Left out, with the reason:
+# - reading the mood in SquadEngage.Decide without `squads.tempered`: with no tempers all four numbers are 0, so the
+#   mood is normal for every squad and the inner part is asked either way.
+# - dropping `marks.Clear()` in LoadState or `marks.Remove` in Dissolve: the next `marks.Add` of the same leader ends
+#   in an exception, which the tool reports as invalid, not as killed.
+# - reading the marks without `regrouping` (RegroupOf, SquadEngage.Decide): the list is empty in such a battle, so
+#   the read ends in an exception as well.
+# - the unit's own layer in TryRally: squads are refused on a map with floor plates, so there is one layer.
+
+[ai-p5b-mood-rash-line]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ASquadIsRashBelowTheRashLineAndSteadyFromTheSteadyLine
+note = a squad exactly on the rash line is rash
+original:
+| return m < temper.RashPermille ?
+replacement:
+| return m <= temper.RashPermille ?
+
+[ai-p5b-mood-steady-line]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ASquadIsRashBelowTheRashLineAndSteadyFromTheSteadyLine
+note = a squad exactly on the steady line is normal
+original:
+| m >= 1000 - temper.SteadyPermille ?
+replacement:
+| m > 1000 - temper.SteadyPermille ?
+
+[ai-p5b-mood-rash-is-steady]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ASquadIsRashBelowTheRashLineAndSteadyFromTheSteadyLine
+note = below the rash line a squad is steady
+original:
+| ? SquadMood.Rash : m >=
+replacement:
+| ? SquadMood.Steady : m >=
+
+[ai-p5b-mood-steady-is-normal]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ASquadIsRashBelowTheRashLineAndSteadyFromTheSteadyLine
+note = from the steady line a squad is normal
+original:
+| ? SquadMood.Steady : SquadMood.Normal;
+replacement:
+| ? SquadMood.Normal : SquadMood.Normal;
+
+[ai-p5b-mood-no-shift]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ASquadShortOfMembersMovesTowardSteady
+note = a squad short of members keeps its temper number
+original:
+|  + (1000 - Strength(squad)) * temper.ShakenPermille / 1000;
+replacement:
+| ;
+
+[ai-p5b-mood-shift-toward-rash]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ASquadShortOfMembersMovesTowardSteady
+note = a squad short of members moves toward rash
+original:
+|  + (1000 - Strength(squad)) * temper
+replacement:
+|  - (1000 - Strength(squad)) * temper
+
+[ai-p5b-mood-shift-by-strength]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ASquadShortOfMembersMovesTowardSteady
+note = the shift grows with the strength, not with the loss
+original:
+| (1000 - Strength(squad)) * temper
+replacement:
+| Strength(squad) * temper
+
+[ai-p5b-mood-shift-not-scaled]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ASquadShortOfMembersMovesTowardSteady
+note = the shift is not scaled by the shaken share
+original:
+| * temper.ShakenPermille / 1000;
+replacement:
+| * 1000 / 1000;
+
+[ai-p5b-temper-other-salt]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.TheTemperNumbersOfTenKeysArePinned
+note = the temper number uses the size salt
+original:
+| AiParts.Permille(sizes.Keys[squad], TemperSalt)
+replacement:
+| AiParts.Permille(sizes.Keys[squad], SizeSalt)
+
+[ai-p5b-temper-salt-value]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.TheTemperNumbersOfTenKeysArePinned
+note = another temper salt
+original:
+| TemperSalt = 0xe6222af5c6534b75UL
+replacement:
+| TemperSalt = 0xe6222af5c6534b76UL
+
+[ai-p5b-strength-without-leader]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.TheStrengthCountsTheLeaderAndTheSizePlusOne
+note = the strength does not count the leader
+original:
+| (1 + heads[squad]) * 1000 /
+replacement:
+| heads[squad] * 1000 /
+
+[ai-p5b-strength-over-size]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.TheStrengthCountsTheLeaderAndTheSizePlusOne
+note = the strength is measured against the size without the leader
+original:
+| / (1 + sizes.Values[squad]);
+replacement:
+| / sizes.Values[squad];
+
+[ai-p5b-mood-without-tempers]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.SkirmishersAndBattlesWithoutTempersHaveNoMood
+note = a battle without tempers tells a mood
+original:
+| int squad = tempered ? IndexOf(unit.Value) : -1;
+replacement:
+| int squad = IndexOf(unit.Value);
+
+[ai-p5b-mood-leaders-only]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ASquadIsRashBelowTheRashLineAndSteadyFromTheSteadyLine
+expect = WarCore.Tests.AiP5bTests.TheViewShowsEachSquadsMoodAndMark
+note = a member has no mood or mark
+original:
+| return squad >= 0 || !leaderOf.TryGetValue(unit, out ulong leader) ? squad : sizes.IndexOfKey(leader);
+replacement:
+| return squad;
+
+[ai-p5b-rally-idle-is-none]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ANewSquadShortOfMembersIsIdleUntilItHasBeenStrong
+expect = WarCore.Tests.AiP5bTests.State_TheThreeNumbersAndEverySquadsMark
+note = an idle squad is told as not regrouping
+original:
+| mark == Idle ? SquadRally.Idle : SquadRally.None;
+replacement:
+| mark == Idle ? SquadRally.None : SquadRally.None;
+
+[ai-p5b-rally-settled-is-idle]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.State_TheThreeNumbersAndEverySquadsMark
+note = a settled squad is told as idle
+original:
+| mark == Idle ? SquadRally.Idle
+replacement:
+| mark == Settled ? SquadRally.Idle
+
+[ai-p5b-rally-mark-zero]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.State_LoadRefusesAMarkThatCannotBeAndOtherRegroupNumbers
+note = a squad regrouping since tick 0 is told as not regrouping
+original:
+| return mark >= 0 ? SquadRally.Active
+replacement:
+| return mark > 0 ? SquadRally.Active
+
+[ai-p5b-judge-below-line]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ASquadBelowTheLineRegroupsFromTheNextFormTick
+note = a squad exactly on the below line regroups
+original:
+| if (strength < regroup.BelowPermille) next = tick;
+replacement:
+| if (strength <= regroup.BelowPermille) next = tick;
+
+[ai-p5b-judge-since-next-tick]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ASquadBelowTheLineRegroupsFromTheNextFormTick
+note = the mark is the tick after the form tick
+original:
+| regroup.BelowPermille) next = tick;
+replacement:
+| regroup.BelowPermille) next = tick + 1;
+
+[ai-p5b-judge-idle-line]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.AnIdleSquadSettlesAtTheBelowLine
+note = an idle squad exactly on the below line stays idle
+original:
+| if (strength >= regroup.BelowPermille) next = Settled;
+replacement:
+| if (strength > regroup.BelowPermille) next = Settled;
+
+[ai-p5b-judge-idle-until]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.AnIdleSquadSettlesAtTheBelowLine
+note = an idle squad settles at the until line
+original:
+| if (strength >= regroup.BelowPermille) next = Settled;
+replacement:
+| if (strength >= regroup.UntilPermille) next = Settled;
+
+[ai-p5b-judge-idle-regroups]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ANewSquadShortOfMembersIsIdleUntilItHasBeenStrong
+expect = WarCore.Tests.AiP5bTests.AnIdleSquadSettlesAtTheBelowLine
+note = an idle squad starts regrouping
+original:
+| else if (mark == Idle) {
+replacement:
+| else if (mark == Idle - 1) {
+
+[ai-p5b-judge-until-line]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ARegroupingSquadSetsOutAtTheUntilLine
+note = a regrouping squad exactly on the until line goes on regrouping
+original:
+| else if (strength >= regroup.UntilPermille) next = Settled;
+replacement:
+| else if (strength > regroup.UntilPermille) next = Settled;
+
+[ai-p5b-judge-until-below]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ARegroupingSquadSetsOutAtTheUntilLine
+note = a regrouping squad sets out at the below line
+original:
+| else if (strength >= regroup.UntilPermille) next = Settled;
+replacement:
+| else if (strength >= regroup.BelowPermille) next = Settled;
+
+[ai-p5b-judge-max-ticks]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ARegroupingSquadGivesUpAfterMaxTicks
+note = a regrouping squad gives up one form tick late
+original:
+| else if (tick - mark >= regroup.MaxTicks) next = Idle;
+replacement:
+| else if (tick - mark > regroup.MaxTicks) next = Idle;
+
+[ai-p5b-judge-gives-up-settled]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ARegroupingSquadGivesUpAfterMaxTicks
+note = a squad that gives up is settled, not idle
+original:
+| regroup.MaxTicks) next = Idle;
+replacement:
+| regroup.MaxTicks) next = Settled;
+
+[ai-p5b-judge-every-tick]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ASquadBelowTheLineRegroupsFromTheNextFormTick
+expect = WarCore.Tests.AiP5bTests.ARegroupingSquadGivesUpAfterMaxTicks
+note = the marks are judged on every tick
+original:
+| if (forms && regrouping) Judge(c.Clock.Tick);
+replacement:
+| if (regrouping) Judge(c.Clock.Tick);
+
+[ai-p5b-judge-before-count]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ASquadThatFillsUpOnTheFormTickDoesNotRegroup
+note = the marks are judged with the members counted before this tick's recruiting
+original:
+|             Recount();
+|             if (forms && regrouping) Judge(c.Clock.Tick);
+replacement:
+|             if (forms && regrouping) Judge(c.Clock.Tick);
+|             Recount();
+
+[ai-p5b-new-squad-settled]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ANewSquadShortOfMembersIsIdleUntilItHasBeenStrong
+note = a new squad starts settled
+original:
+| marks.Add(keys[leader], Idle);
+replacement:
+| marks.Add(keys[leader], Settled);
+
+[ai-p5b-state-version-one]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.State_TheThreeNumbersAndEverySquadsMark
+note = version 1 with the regroup rules
+original:
+| public int StateVersion => regrouping ? 2 : 1;
+replacement:
+| public int StateVersion => regrouping ? 1 : 1;
+
+[ai-p5b-save-numbers-order]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.State_TheThreeNumbersAndEverySquadsMark
+note = two of the three regroup numbers are saved in the other order
+original:
+| writer.Int32(regroup.BelowPermille); writer.Int32(regroup.UntilPermille);
+replacement:
+| writer.Int32(regroup.UntilPermille); writer.Int32(regroup.BelowPermille);
+
+[ai-p5b-save-no-max-ticks]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.State_TheThreeNumbersAndEverySquadsMark
+note = the third regroup number is saved as another
+original:
+| writer.Int32(regroup.UntilPermille); writer.Int32(regroup.MaxTicks); }
+replacement:
+| writer.Int32(regroup.UntilPermille); writer.Int32(regroup.UntilPermille); }
+
+[ai-p5b-save-mark-settled]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.State_TheThreeNumbersAndEverySquadsMark
+note = every mark is saved as settled
+original:
+| if (regrouping) writer.Int64(marks.Values[i]);
+replacement:
+| if (regrouping) writer.Int64(Settled);
+
+[ai-p5b-save-numbers-always]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.State_WithoutRegroupingNothingMoreIsSaved
+note = the regroup numbers are saved without regrouping
+original:
+| if (regrouping) { writer.Int32(regroup.BelowPermille);
+replacement:
+| { writer.Int32(regroup.BelowPermille);
+
+[ai-p5b-load-below-unchecked]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.State_LoadRefusesAMarkThatCannotBeAndOtherRegroupNumbers
+note = another below number is accepted
+original:
+| same &= reader.Int32() == regroup.BelowPermille;
+replacement:
+| same &= reader.Int32() >= 0;
+
+[ai-p5b-load-until-unchecked]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.State_LoadRefusesAMarkThatCannotBeAndOtherRegroupNumbers
+note = another until number is accepted
+original:
+| same &= reader.Int32() == regroup.UntilPermille;
+replacement:
+| same &= reader.Int32() >= 0;
+
+[ai-p5b-load-max-ticks-unchecked]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.State_LoadRefusesAMarkThatCannotBeAndOtherRegroupNumbers
+note = another max ticks number is accepted
+original:
+| same &= reader.Int32() == regroup.MaxTicks;
+replacement:
+| same &= reader.Int32() >= 0;
+
+[ai-p5b-load-mark-range]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.State_LoadRefusesAMarkThatCannotBeAndOtherRegroupNumbers
+note = a mark of -3 is accepted
+original:
+| SimStateReader.Require(mark >= Idle,
+replacement:
+| SimStateReader.Require(mark >= Idle - 1,
+
+[ai-p5b-load-mark-range-tight]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.State_LoadRefusesAMarkThatCannotBeAndOtherRegroupNumbers
+note = a mark of -2 is refused
+original:
+| SimStateReader.Require(mark >= Idle,
+replacement:
+| SimStateReader.Require(mark > Idle,
+
+[ai-p5b-load-no-recount]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.State_TheThreeNumbersAndEverySquadsMark
+note = the members are not counted after a load
+original:
+| "AI squad has no member or more than its size.");
+|             Recount();
+replacement:
+| "AI squad has no member or more than its size.");
+
+[ai-p5b-hash-no-marks]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.State_TheThreeNumbersAndEverySquadsMark
+note = the marks are not in the hash
+original:
+| if (regrouping) hash.Add(marks.Values[i]);
+replacement:
+| if (regrouping) hash.Add(Settled);
+
+[ai-p5b-hash-no-below]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.State_TheThreeNumbersAndEverySquadsMark
+note = the below number is not in the hash
+original:
+| if (regrouping) { hash.Add(regroup.BelowPermille); hash.Add(regroup.UntilPermille);
+replacement:
+| if (regrouping) { hash.Add(regroup.UntilPermille); hash.Add(regroup.UntilPermille);
+
+[ai-p5b-hash-no-max-ticks]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.State_TheThreeNumbersAndEverySquadsMark
+note = the max ticks number is not in the hash
+original:
+| hash.Add(regroup.UntilPermille); hash.Add(regroup.MaxTicks); }
+replacement:
+| hash.Add(regroup.UntilPermille); hash.Add(regroup.UntilPermille); }
+
+[ai-p5b-hash-numbers-always]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.State_WithoutRegroupingNothingMoreIsSaved
+note = the regroup numbers are hashed without regrouping
+original:
+| if (regrouping) { hash.Add(regroup.BelowPermille);
+replacement:
+| { hash.Add(regroup.BelowPermille);
+
+[ai-p5b-rules-accept-1]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.TheTemperAndRegroupRulesRefuseWhatCannotBe
+note = the rules accept a rash share of -1
+original:
+| if (rashPermille < 0 ||
+replacement:
+| if (rashPermille < -1 ||
+
+[ai-p5b-rules-accept-2]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.TheTemperAndRegroupRulesRefuseWhatCannotBe
+note = the rules accept a rash share of 1001
+original:
+| rashPermille > 1000) throw
+replacement:
+| rashPermille > 1001) throw
+
+[ai-p5b-rules-accept-3]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.TheTemperAndRegroupRulesRefuseWhatCannotBe
+note = the rules accept a steady share of -1
+original:
+| if (steadyPermille < 0 ||
+replacement:
+| if (steadyPermille < -1 ||
+
+[ai-p5b-rules-accept-4]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.TheTemperAndRegroupRulesRefuseWhatCannotBe
+note = the rules accept the two shares one over 1000
+original:
+| steadyPermille > 1000 - rashPermille) throw
+replacement:
+| steadyPermille > 1001 - rashPermille) throw
+
+[ai-p5b-rules-accept-5]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.TheTemperAndRegroupRulesRefuseWhatCannotBe
+note = the rules accept a shaken share of -1
+original:
+| if (shakenPermille < 0 ||
+replacement:
+| if (shakenPermille < -1 ||
+
+[ai-p5b-rules-accept-6]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.TheTemperAndRegroupRulesRefuseWhatCannotBe
+note = the rules accept a shaken share of 1001
+original:
+| shakenPermille > 1000) throw
+replacement:
+| shakenPermille > 1001) throw
+
+[ai-p5b-rules-accept-7]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.TheTemperAndRegroupRulesRefuseWhatCannotBe
+note = the rules accept a rash range of -1
+original:
+| if (rashMinRangeMm < 0) throw
+replacement:
+| if (rashMinRangeMm < -1) throw
+
+[ai-p5b-rules-accept-8]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.TheTemperAndRegroupRulesRefuseWhatCannotBe
+note = the rules accept a below line of 0
+original:
+| if (belowPermille < 1 ||
+replacement:
+| if (belowPermille < 0 ||
+
+[ai-p5b-rules-accept-9]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.TheTemperAndRegroupRulesRefuseWhatCannotBe
+note = the rules accept a below line of 1001
+original:
+| belowPermille > 1000) throw
+replacement:
+| belowPermille > 1001) throw
+
+[ai-p5b-rules-accept-10]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.TheTemperAndRegroupRulesRefuseWhatCannotBe
+note = the rules accept an until line one under the below line
+original:
+| if (untilPermille < belowPermille ||
+replacement:
+| if (untilPermille < belowPermille - 1 ||
+
+[ai-p5b-rules-accept-11]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.TheTemperAndRegroupRulesRefuseWhatCannotBe
+note = the rules accept an until line of 1001
+original:
+| untilPermille > 1000) throw
+replacement:
+| untilPermille > 1001) throw
+
+[ai-p5b-rules-accept-12]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.TheTemperAndRegroupRulesRefuseWhatCannotBe
+note = the rules accept max ticks of 0
+original:
+| if (maxTicks < 1) throw
+replacement:
+| if (maxTicks < 0) throw
+
+[ai-p5b-rash-range-unit]
+file = Assets/WarCore/Battle/Ai/Squads.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ARashManGoesOnUntilTheEnemyIsNearerThanTheRange
+note = the rash range is read in another unit
+original:
+| SimFix.Ratio(temper.RashMinRangeMm, 1000)
+replacement:
+| SimFix.Ratio(temper.RashMinRangeMm, 100)
+
+[ai-p5b-decide-pressed-too]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.SeeingAnEnemyACalmManActsByHisSquadsMood
+note = a pressed man acts by his squad's mood
+original:
+| if (unit.Nerve != AiNerve.Calm || !squads.TryBody(
+replacement:
+| if (!squads.TryBody(
+
+[ai-p5b-decide-regroup-mark-zero]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ARegroupingSquadsCalmMenGoOn
+note = a squad regrouping since tick 0 does not go on
+original:
+| squads.marks.Values[squad] >= 0) return AiEngage.Advance;
+replacement:
+| squads.marks.Values[squad] > 0) return AiEngage.Advance;
+
+[ai-p5b-decide-regroup-stands]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ARegroupingSquadsCalmMenGoOn
+note = a regrouping squad's men stand
+original:
+| squads.marks.Values[squad] >= 0) return AiEngage.Advance;
+replacement:
+| squads.marks.Values[squad] >= 0) return AiEngage.Hold;
+
+[ai-p5b-decide-idle-goes-on]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ARegroupingSquadsCalmMenGoOn
+expect = WarCore.Tests.AiP5bTests.RegroupingAloneWrapsTheEngagePartToo
+note = idle and settled squads go on like a regrouping one
+original:
+| squads.marks.Values[squad] >= 0) return AiEngage.Advance;
+replacement:
+| squads.marks.Values[squad] >= -2) return AiEngage.Advance;
+
+[ai-p5b-decide-steady-goes-on]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.SeeingAnEnemyACalmManActsByHisSquadsMood
+note = a steady man goes on
+original:
+| if (mood == SquadMood.Steady) return AiEngage.Hold;
+replacement:
+| if (mood == SquadMood.Steady) return AiEngage.Advance;
+
+[ai-p5b-decide-normal-stands]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.SeeingAnEnemyACalmManActsByHisSquadsMood
+note = a normal man stands, a steady one asks the inner part
+original:
+| if (mood == SquadMood.Steady) return
+replacement:
+| if (mood == SquadMood.Normal) return
+
+[ai-p5b-decide-rash-range-line]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ARashManGoesOnUntilTheEnemyIsNearerThanTheRange
+note = a rash man exactly at the range does not go on
+original:
+| .LengthSquared >= squads.rashRangeSquared)
+replacement:
+| .LengthSquared > squads.rashRangeSquared)
+
+[ai-p5b-decide-rash-always]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ARashManGoesOnUntilTheEnemyIsNearerThanTheRange
+note = a rash man goes on at any distance
+original:
+| if (mood == SquadMood.Rash && CombatSystem.Horizontal(enemy - unit.Here).LengthSquared >= squads.rashRangeSquared) return
+replacement:
+| if (mood == SquadMood.Rash) return
+
+[ai-p5b-decide-rash-nearer]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ARashManGoesOnUntilTheEnemyIsNearerThanTheRange
+note = a rash man goes on only when the enemy is nearer than the range
+original:
+| .LengthSquared >= squads.rashRangeSquared)
+replacement:
+| .LengthSquared < squads.rashRangeSquared)
+
+[ai-p5b-decide-rash-height]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ARashManGoesOnUntilTheEnemyIsNearerThanTheRange
+note = the rash range counts the height
+original:
+| CombatSystem.Horizontal(enemy - unit.Here).LengthSquared
+replacement:
+| (enemy - unit.Here).LengthSquared
+
+[ai-p5b-decide-rash-stands]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.SeeingAnEnemyACalmManActsByHisSquadsMood
+expect = WarCore.Tests.AiP5bTests.ARashManGoesOnUntilTheEnemyIsNearerThanTheRange
+note = a rash man stands
+original:
+| squads.rashRangeSquared) return AiEngage.Advance;
+replacement:
+| squads.rashRangeSquared) return AiEngage.Hold;
+
+[ai-p5b-unseen-not-inner]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.SeeingNobodyEverybodyAsksTheInnerPart
+note = a man who sees nobody does not ask the inner part
+original:
+| => inner.Unseen(in unit, field);
+replacement:
+| => AiEngage.Hold;
+
+[ai-p5b-fold-engage-tag]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.TheWrappersFoldTheTemperAndRegroupNumbers
+note = another tag for the engage wrapper
+original:
+| "battle.ai.squad-engage.v1"
+replacement:
+| "battle.ai.squad-engage.v2"
+
+[ai-p5b-fold-engage-no-inner]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.TheWrappersFoldTheTemperAndRegroupNumbers
+note = the engage wrapper does not fold the inner part
+original:
+| hash.Add("battle.ai.squad-engage.v1"); hash.Add(inner.Fold(digest));
+replacement:
+| hash.Add("battle.ai.squad-engage.v1"); hash.Add(digest);
+
+[ai-p5b-fold-no-rash]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.TheWrappersFoldTheTemperAndRegroupNumbers
+expect = WarCore.Tests.AiP5bTests.World_EachOfTheSevenNewNumbersIsInThePolicy
+note = the rash share is not folded
+original:
+| hash.Add(t.RashPermille); hash.Add(t.SteadyPermille);
+replacement:
+| hash.Add(t.SteadyPermille); hash.Add(t.SteadyPermille);
+
+[ai-p5b-fold-no-steady]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.TheWrappersFoldTheTemperAndRegroupNumbers
+expect = WarCore.Tests.AiP5bTests.World_EachOfTheSevenNewNumbersIsInThePolicy
+note = the steady share is not folded
+original:
+| hash.Add(t.RashPermille); hash.Add(t.SteadyPermille);
+replacement:
+| hash.Add(t.RashPermille); hash.Add(t.RashPermille);
+
+[ai-p5b-fold-no-shaken]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.TheWrappersFoldTheTemperAndRegroupNumbers
+expect = WarCore.Tests.AiP5bTests.World_EachOfTheSevenNewNumbersIsInThePolicy
+note = the shaken share is not folded
+original:
+| hash.Add(t.ShakenPermille); hash.Add(t.RashMinRangeMm);
+replacement:
+| hash.Add(t.RashMinRangeMm); hash.Add(t.RashMinRangeMm);
+
+[ai-p5b-fold-no-range]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.TheWrappersFoldTheTemperAndRegroupNumbers
+expect = WarCore.Tests.AiP5bTests.World_EachOfTheSevenNewNumbersIsInThePolicy
+note = the rash range is not folded
+original:
+| hash.Add(t.ShakenPermille); hash.Add(t.RashMinRangeMm);
+replacement:
+| hash.Add(t.ShakenPermille); hash.Add(t.ShakenPermille);
+
+[ai-p5b-fold-no-regrouping]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.TheWrappersFoldTheTemperAndRegroupNumbers
+note = the engage wrapper does not fold whether squads regroup
+original:
+| hash.Add(squads.regrouping ? 1 : 0);
+replacement:
+| hash.Add(0);
+
+[ai-p5b-fold-regroup-always]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.World_WithTheSquadFieldsAloneNothingMoreIsAdded
+note = the dispatch wrapper folds the regroup numbers without regrouping
+original:
+| if (!squads.regrouping) return hash.Value;
+replacement:
+
+[ai-p5b-fold-regroup-tag]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.TheWrappersFoldTheTemperAndRegroupNumbers
+note = another tag for the regroup numbers
+original:
+| "battle.ai.squad-regroup.v1"
+replacement:
+| "battle.ai.squad-regroup.v2"
+
+[ai-p5b-fold-no-below]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.TheWrappersFoldTheTemperAndRegroupNumbers
+expect = WarCore.Tests.AiP5bTests.World_EachOfTheSevenNewNumbersIsInThePolicy
+note = the below line is not folded
+original:
+| hash.Add(squads.regroup.BelowPermille); hash.Add(squads.regroup.UntilPermille);
+replacement:
+| hash.Add(squads.regroup.UntilPermille); hash.Add(squads.regroup.UntilPermille);
+
+[ai-p5b-fold-no-until]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.TheWrappersFoldTheTemperAndRegroupNumbers
+expect = WarCore.Tests.AiP5bTests.World_EachOfTheSevenNewNumbersIsInThePolicy
+note = the until line is not folded
+original:
+| hash.Add(squads.regroup.BelowPermille); hash.Add(squads.regroup.UntilPermille);
+replacement:
+| hash.Add(squads.regroup.BelowPermille); hash.Add(squads.regroup.BelowPermille);
+
+[ai-p5b-fold-no-max-ticks]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.TheWrappersFoldTheTemperAndRegroupNumbers
+expect = WarCore.Tests.AiP5bTests.World_EachOfTheSevenNewNumbersIsInThePolicy
+note = max ticks is not folded
+original:
+| hash.Add(squads.regroup.UntilPermille); hash.Add(squads.regroup.MaxTicks);
+replacement:
+| hash.Add(squads.regroup.UntilPermille); hash.Add(squads.regroup.UntilPermille);
+
+[ai-p5b-rally-mark-zero-asks-inner]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ARegroupingSquadGoesToItsTeamsPointNearestItsLeader
+note = a squad regrouping since tick 0 asks the inner part
+original:
+| || marks.Values[squad] < 0) return false;
+replacement:
+| || marks.Values[squad] <= 0) return false;
+
+[ai-p5b-rally-idle-too]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.WithoutAMarkOrAPointOfItsOwnASquadAsksTheInnerPart
+note = idle and settled squads go back as well
+original:
+| || marks.Values[squad] < 0) return false;
+replacement:
+| || marks.Values[squad] < -2) return false;
+
+[ai-p5b-rally-enemy-point]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ARegroupingSquadGoesToItsTeamsPointNearestItsLeader
+note = a regrouping squad goes to a point of the enemy
+original:
+| if (field.Owner(i) != unit.Team ||
+replacement:
+| if (field.Owner(i) == unit.Team ||
+
+[ai-p5b-rally-any-point]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ARegroupingSquadGoesToItsTeamsPointNearestItsLeader
+expect = WarCore.Tests.AiP5bTests.WithoutAMarkOrAPointOfItsOwnASquadAsksTheInnerPart
+note = a regrouping squad goes to the nearest point, whoever owns it
+original:
+| if (field.Owner(i) != unit.Team || !field.TrySpan(
+replacement:
+| if (!field.TrySpan(
+
+[ai-p5b-rally-farthest]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ARegroupingSquadGoesToItsTeamsPointNearestItsLeader
+note = a regrouping squad goes to its team's farthest point
+original:
+| if (point < 0 || span < best)
+replacement:
+| if (point < 0 || span > best)
+
+[ai-p5b-rally-tie-higher]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.EquallyFarPointsGoToTheLowerIndex
+note = equally far points go to the higher index
+original:
+| if (point < 0 || span < best)
+replacement:
+| if (point < 0 || span <= best)
+
+[ai-p5b-rally-from-the-man]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ARegroupingSquadGoesToItsTeamsPointNearestItsLeader
+note = the distance is measured from the man, not from his leader
+original:
+| field.TrySpan(leaderHere, unit.Layer, i, out SimWide span)
+replacement:
+| field.TrySpan(unit.Here, unit.Layer, i, out SimWide span)
+
+[ai-p5b-rally-first-point]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.ARegroupingSquadGoesToItsTeamsPointNearestItsLeader
+note = a regrouping squad goes to its team's first point
+original:
+| if (point < 0 || span < best) { point = i; best = span; }
+replacement:
+| if (point < 0) { point = i; best = span; }
+
+[ai-p5b-pick-regroup-off]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.WithoutAMarkOrAPointOfItsOwnASquadAsksTheInnerPart
+note = the dispatch wrapper never sends a squad back
+original:
+| if (squads.regrouping && squads.TryRally(in unit, field, out int point)) return point;
+replacement:
+| if (!squads.regrouping && squads.TryRally(in unit, field, out int point)) return point;
+
+[ai-p5b-body-leaderless-member]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.AMemberWhoseLeaderFellDoesNotRegroupWithHim
+note = a member whose leader fell still acts with the squad
+original:
+| if (!TryLeader(unit.Id, out StableId leader, out leaderHere)) return false;
+|             squad = sizes.IndexOfKey(leader.Value);
+|             return true;
+replacement:
+| if (!TryLeader(unit.Id, out StableId leader, out leaderHere)) { if (!leaderOf.TryGetValue(unit.Id.Value, out ulong fallen)) return false; squad = sizes.IndexOfKey(fallen); leaderHere = unit.Here; return squad >= 0; }
+|             squad = sizes.IndexOfKey(leader.Value);
+|             return true;
+
+[ai-p5b-wire-engage-tempers-only]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.RegroupingAloneWrapsTheEngagePartToo
+note = the engage part is not wrapped with regrouping alone
+original:
+| if (squads.Rules.Temper != null || squads.Rules.Regroup != null) engage
+replacement:
+| if (squads.Rules.Temper != null) engage
+
+[ai-p5b-wire-engage-regroup-only]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.World_EachOfTheSevenNewNumbersIsInThePolicy
+expect = WarCore.Tests.AiP5bTests.SeeingAnEnemyACalmManActsByHisSquadsMood
+note = the engage part is not wrapped with tempers alone
+original:
+| if (squads.Rules.Temper != null || squads.Rules.Regroup != null) engage
+replacement:
+| if (squads.Rules.Regroup != null) engage
+
+[ai-p5b-wire-engage-always]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.World_WithTheSquadFieldsAloneNothingMoreIsAdded
+note = the engage part is wrapped with the squad fields alone
+original:
+| if (squads.Rules.Temper != null || squads.Rules.Regroup != null) engage
+replacement:
+| engage
+
+[ai-p5b-content-rash-least]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.Content_EachTemperFieldHasItsBounds
+note = squadRashPermille must be at least 1
+original:
+| r.Int("squadRashPermille", 0, 1000)
+replacement:
+| r.Int("squadRashPermille", 1, 1000)
+
+[ai-p5b-content-rash-most]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.Content_EachTemperFieldHasItsBounds
+note = squadRashPermille may be 1001
+original:
+| r.Int("squadRashPermille", 0, 1000)
+replacement:
+| r.Int("squadRashPermille", 0, 1001)
+
+[ai-p5b-content-steady-least]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.Content_EachTemperFieldHasItsBounds
+note = squadSteadyPermille must be at least 1
+original:
+| r.Int("squadSteadyPermille", 0, 1000)
+replacement:
+| r.Int("squadSteadyPermille", 1, 1000)
+
+[ai-p5b-content-steady-most]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.Content_EachTemperFieldHasItsBounds
+note = squadSteadyPermille may be 1001
+original:
+| r.Int("squadSteadyPermille", 0, 1000)
+replacement:
+| r.Int("squadSteadyPermille", 0, 1001)
+
+[ai-p5b-content-shaken-least]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.Content_EachTemperFieldHasItsBounds
+note = squadShakenPermille must be at least 1
+original:
+| r.Int("squadShakenPermille", 0, 1000)
+replacement:
+| r.Int("squadShakenPermille", 1, 1000)
+
+[ai-p5b-content-shaken-most]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.Content_EachTemperFieldHasItsBounds
+note = squadShakenPermille may be 1001
+original:
+| r.Int("squadShakenPermille", 0, 1000)
+replacement:
+| r.Int("squadShakenPermille", 0, 1001)
+
+[ai-p5b-content-range-least]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.Content_EachTemperFieldHasItsBounds
+note = squadRashMinRangeMm must be at least 1
+original:
+| r.Int("squadRashMinRangeMm", 0, MaxSquadRashRangeMm)
+replacement:
+| r.Int("squadRashMinRangeMm", 1, MaxSquadRashRangeMm)
+
+[ai-p5b-content-range-most]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.Content_EachTemperFieldHasItsBounds
+note = squadRashMinRangeMm may be one more
+original:
+| MaxSquadRashRangeMm = 512000
+replacement:
+| MaxSquadRashRangeMm = 512001
+
+[ai-p5b-content-below-least]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.Content_EachRegroupFieldHasItsBounds
+note = squadRegroupBelowPermille may be 0
+original:
+| r.Int("squadRegroupBelowPermille", 1, 1000)
+replacement:
+| r.Int("squadRegroupBelowPermille", 0, 1000)
+
+[ai-p5b-content-below-most]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.Content_EachRegroupFieldHasItsBounds
+note = squadRegroupBelowPermille may be 1001
+original:
+| r.Int("squadRegroupBelowPermille", 1, 1000)
+replacement:
+| r.Int("squadRegroupBelowPermille", 1, 1001)
+
+[ai-p5b-content-until-least]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.Content_EachRegroupFieldHasItsBounds
+note = squadRegroupUntilPermille may be 0
+original:
+| r.Int("squadRegroupUntilPermille", 1, 1000)
+replacement:
+| r.Int("squadRegroupUntilPermille", 0, 1000)
+
+[ai-p5b-content-until-most]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.Content_EachRegroupFieldHasItsBounds
+note = squadRegroupUntilPermille may be 1001
+original:
+| r.Int("squadRegroupUntilPermille", 1, 1000)
+replacement:
+| r.Int("squadRegroupUntilPermille", 1, 1001)
+
+[ai-p5b-content-ticks-least]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.Content_EachRegroupFieldHasItsBounds
+note = squadRegroupMaxTicks may be 0
+original:
+| r.Int("squadRegroupMaxTicks", 1, MaxSquadRegroupTicks)
+replacement:
+| r.Int("squadRegroupMaxTicks", 0, MaxSquadRegroupTicks)
+
+[ai-p5b-content-ticks-most]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.Content_EachRegroupFieldHasItsBounds
+note = squadRegroupMaxTicks may be one more
+original:
+| MaxSquadRegroupTicks = 100000
+replacement:
+| MaxSquadRegroupTicks = 100001
+
+[ai-p5b-content-shares-meet]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.Content_TheSharesFitAndUntilIsAtLeastBelow
+expect = WarCore.Tests.AiP5bTests.WithTheTwoSharesMeetingNoSquadIsNormal
+note = two shares that add up to 1000 are refused
+original:
+| if (rash + steady > 1000)
+replacement:
+| if (rash + steady >= 1000)
+
+[ai-p5b-content-shares-over]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.Content_TheSharesFitAndUntilIsAtLeastBelow
+note = two shares that add up to 1001 are read
+original:
+| if (rash + steady > 1000)
+replacement:
+| if (rash + steady > 1001)
+
+[ai-p5b-content-until-equal]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.Content_TheSharesFitAndUntilIsAtLeastBelow
+note = an until line equal to the below line is refused
+original:
+| if (until < below) throw
+replacement:
+| if (until <= below) throw
+
+[ai-p5b-content-until-under]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.Content_TheSharesFitAndUntilIsAtLeastBelow
+note = an until line one under the below line is read
+original:
+| if (until < below) throw
+replacement:
+| if (until < below - 1) throw
+
+[ai-p5b-content-group-first-only]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.Content_TheTwoGroupsAreReadAllOrNone
+note = only a group's first field makes the others required
+original:
+| foreach (string field in fields) if (r.Has(field)) return field;
+replacement:
+| foreach (string field in fields) if (r.Has(fields[0])) return field;
+
+[ai-p5b-content-tempers-alone]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.Content_BothGroupsNeedTheSquadFields
+note = temper fields without the squad fields are read
+original:
+| string alone = FirstWritten(r, TemperFields) ?? FirstWritten(r, RegroupFields);
+replacement:
+| string alone = FirstWritten(r, RegroupFields);
+
+[ai-p5b-content-regroup-alone]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.Content_BothGroupsNeedTheSquadFields
+note = regroup fields without the squad fields are read
+original:
+| string alone = FirstWritten(r, TemperFields) ?? FirstWritten(r, RegroupFields);
+replacement:
+| string alone = FirstWritten(r, TemperFields);
+
+[ai-p5b-content-no-temper]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.World_EachOfTheSevenNewNumbersIsInThePolicy
+expect = WarCore.Tests.AiP5bTests.Content_TheTwoGroupsAreReadAllOrNone
+note = the tempers read are not handed on
+original:
+| spreadMin, spreadMax, temper, regroup);
+replacement:
+| spreadMin, spreadMax, null, regroup);
+
+[ai-p5b-content-no-regroup]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.World_EachOfTheSevenNewNumbersIsInThePolicy
+expect = WarCore.Tests.AiP5bTests.Content_TheTwoGroupsAreReadAllOrNone
+note = the regroup rules read are not handed on
+original:
+| spreadMin, spreadMax, temper, regroup);
+replacement:
+| spreadMin, spreadMax, temper, null);
+
+[ai-p5b-content-temper-order]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.World_EachOfTheSevenNewNumbersIsInThePolicy
+expect = WarCore.Tests.AiP5bTests.Content_TheTwoGroupsAreReadAllOrNone
+note = two of the four temper numbers are swapped
+original:
+| new WarCore.Battle.SquadTemper(rash, steady, shaken, range);
+replacement:
+| new WarCore.Battle.SquadTemper(steady, rash, shaken, range);
+
+[ai-p5b-content-temper-order-2]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.World_EachOfTheSevenNewNumbersIsInThePolicy
+expect = WarCore.Tests.AiP5bTests.Content_TheTwoGroupsAreReadAllOrNone
+note = the shaken share and the rash share are swapped
+original:
+| new WarCore.Battle.SquadTemper(rash, steady, shaken, range);
+replacement:
+| new WarCore.Battle.SquadTemper(shaken, steady, rash, range);
+
+[ai-p5b-view-no-mood]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.TheViewShowsEachSquadsMoodAndMark
+note = the view is not told the mood
+original:
+| banded ? (int)squads.MoodOf(stable) : 0,
+replacement:
+| 0,
+
+[ai-p5b-view-no-mark]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.TheViewShowsEachSquadsMoodAndMark
+note = the view is not told the regroup mark
+original:
+| banded ? (int)squads.RegroupOf(stable) : 0));
+replacement:
+| 0));
+
+[ai-p5b-view-mood-interpolated]
+file = Assets/WarCore/Presentation/Bridge/FrameView.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.TheViewShowsEachSquadsMoodAndMark
+note = an interpolated frame loses the mood
+original:
+| mood: next.Mood, regroup: next.Regroup);
+replacement:
+| regroup: next.Regroup);
+
+[ai-p5b-view-mark-interpolated]
+file = Assets/WarCore/Presentation/Bridge/FrameView.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.TheViewShowsEachSquadsMoodAndMark
+note = an interpolated frame loses the regroup mark
+original:
+| mood: next.Mood, regroup: next.Regroup);
+replacement:
+| mood: next.Mood);
+
+[ai-p5b-view-entity-mood]
+file = Assets/WarCore/Presentation/Bridge/ViewEntity.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.TheViewShowsEachSquadsMoodAndMark
+note = the entity keeps the mark as its mood
+original:
+| Mood = mood;
+replacement:
+| Mood = regroup;
+
+[ai-p5b-view-entity-mark]
+file = Assets/WarCore/Presentation/Bridge/ViewEntity.cs
+filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5bTests.TheViewShowsEachSquadsMoodAndMark
+note = the entity keeps the mood as its mark
+original:
+| Regroup = regroup;
+replacement:
+| Regroup = mood;

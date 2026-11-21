@@ -430,12 +430,15 @@ namespace WarCore.Presentation
                 }
                 if (alive) { if (team == 1) aliveOne++; else if (team == 2) aliveTwo++; }
                 SimVec3 point = position.Value;
+                bool banded = squads != null && alive;
+                StableId stable = banded ? sim.Entities.StableOf(unit) : default;
                 views.Add(new ViewEntity(spawns[i].Key, spawns[i].Archetype,
                     (float)point.X.Raw / SimFix.Scale, (float)point.Y.Raw / SimFix.Scale,
                     (float)point.Z.Raw / SimFix.Scale, spawns[i].Squad,
                     team, alive, pressure != null && alive ? (int)pressure.Level(sim.Entities.StableOf(unit)) : 0,
                     layers == null ? 0 : layers.LayerOf(unit),
-                    squads != null && alive ? BandKey(squads.SquadOf(sim.Entities.StableOf(unit))) : 0));
+                    banded ? BandKey(squads.SquadOf(stable)) : 0,
+                    banded ? (int)squads.MoodOf(stable) : 0, banded ? (int)squads.RegroupOf(stable) : 0));
             }
             var fires = new ViewFire[combat == null ? 0 : combat.Fires.Length];
             for (int i = 0; i < fires.Length; i++)

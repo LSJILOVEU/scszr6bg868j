@@ -25,11 +25,17 @@ Computed on every recorded frame for each team's alive, deployed units; `metrics
 over the match, `m` on each frame holds `[share1, share2, nn1, nn2, spread1, spread2, close1, close2, idle1, idle2,
 closeNear1, closeNear2, enemy20_1, enemy20_2, idleNoEnemy1, idleNoEnemy2, pinned1, pinned2, broken1, broken2,
 pinnedHidden1, pinnedHidden2, pinnedMoving1, pinnedMoving2, pinnedAtWall1, pinnedAtWall2, squadShare1, squadShare2,
-squadLeash1, squadLeash2, squadLeashP90_1, squadLeashP90_2]` (`null` = undefined).
+squadLeash1, squadLeash2, squadLeashP90_1, squadLeashP90_2, rashShare1, rashShare2, steadyShare1, steadyShare2,
+regroupShare1, regroupShare2, rashMoving1, rashMoving2, steadyMoving1, steadyMoving2]` (`null` = undefined).
 A frame also lists the indices of the pinned (`n`) and broken (`b`) units when there are any; the page draws a thin
 ring round a pinned unit and a thick yellow one round a broken unit. When somebody is in an AI squad the frame has `q`:
 for each unit the unit index of its squad's leader (`-1` = in no squad, a leader names itself); the page draws a square
-round a leader and a thin line from each member to its leader.
+round a leader and a thin line from each member to its leader. When a squad has a temper or a regroup mark the frame
+also has `qm`: triples of a leader's unit index, the squad's temper (1 normal, 2 rash, 3 steady) and its regroup mark
+(0 none, 1 regrouping, 2 waited too long); the page colours a rash squad's links and rings magenta and a steady squad's
+green, and draws a regrouping squad faint with dashed links. Such an export ends with `clips`, up to three stretches
+picked by `Clips.cs` (`k`: `rash`, `steady`, `regroup`; `team`, `leader`, `from` and `to` in ticks, `note`); the page
+shows a button for each that jumps there, circles the squad and plays the stretch at 1x.
 
 | Key | Meaning | Reads |
 |---|---|---|
@@ -49,11 +55,17 @@ round a leader and a thin line from each member to its leader.
 | `squadShare` | Share of the team that is in an AI squad, leaders included (read from the squads system) | undefined without squads |
 | `squadLeash` | Median distance in metres from a squad member to its leader, over the team's members whose leader is alive on the field | low = squads stay together |
 | `squadLeashP90` | The same, 90th percentile | high = some members are far from their leader |
+| `rashShare`, `steadyShare` | Share of the team's squad men whose squad is rash, steady (read from the squads system) | undefined until a squad has a temper |
+| `regroupShare` | Share of the team's squad men whose squad is regrouping | undefined until a squad has a regroup mark |
+| `rashMoving`, `steadyMoving` | Share of the team's calm men in rash, steady squads that are not regrouping and have an enemy in sight, whose position differs by more than 0.1 m from the previous recorded frame | rash high and steady low = the tempers show |
 | `decidedTick` | Tick the match was won; `null` if not decided within `maxTicks` | |
 
 - `pinnedHidden`, `pinnedMoving` and `pinnedAtWall` are undefined on a frame with fewer than 5 pinned units of the team.
 - `squadLeash` and `squadLeashP90` are undefined on a frame with fewer than 5 such members of the team; `squadShare` on a
   frame where nobody of either team is in a squad.
+- An enemy is in sight when it is alive, on the field, within 35 m (`Metrics.SightRange`, the sight of the shipped
+  packs) and no wall lies between, seen from above. A man who sees nobody is never asked for his squad's temper, so he
+  is not counted. `rashMoving` and `steadyMoving` are undefined on a frame with no such man of that temper.
 - Undefined when fewer than 10 units are on the field (share, nn, close, idle, enemy20, idleNoEnemy, pinned, broken), fewer than 10 units near points
   (closeNear) or fewer than 5 attackers (spread).
 - The slot ring of `idleOutside` is the setup's `ai.slotRingMm` (the `RingMm` of its `Recipes.cs` entry), 0 by default.
@@ -126,3 +138,19 @@ field to `playtest`). The replay cannot show who fired when; the per-shooter tim
 |---|---|---|---|---|---|---|---|---|
 | playtest | undecided at 2400 | 1B5A952895358459 | 0.726 / 0.634 | 0.408 / 0.278 | 0.874 / 0.870 | 0.085 / 0.106 | 0.884 / 0.880 | 0.009 / 0.016 |
 | playtest-s2 | undecided at 2400 | 7531D3A423B34B4C | 0.692 / 0.657 | 0.591 / 0.268 | 0.823 / 0.874 | 0.092 / 0.093 | 0.834 / 0.886 | 0.009 / 0.017 |
+
+AI-P5b (squad tempers and regrouping, values PLACEHOLDER: `squadRashPermille` 300, `squadSteadyPermille` 250,
+`squadShakenPermille` 600, `squadRashMinRangeMm` 8000, `squadRegroupBelowPermille` 500, `squadRegroupUntilPermille`
+750, `squadRegroupMaxTicks` 1200; the setups add only these to `lanes-allon-squads` and `lanes-allon-roles-squads`;
+9000 ticks, every 3, seed 41):
+
+| Setup | End | Hash | rashShare 1/2 | steadyShare 1/2 | regroupShare 1/2 | rashMoving 1/2 | steadyMoving 1/2 |
+|---|---|---|---|---|---|---|---|
+| lanes-allon-squads | team 1 wins at tick 4868 | E9250B0A7F5F7878 | - | - | - | - | - |
+| lanes-allon-squads-temper | team 1 wins at tick 9000 (time limit) | F167DE1078F8B025 | 0.272 / 0.073 | 0.628 / 0.090 | 0.044 / 0.010 | 0.743 / 0.185 | 0.308 / 0.187 |
+| lanes-allon-roles-squads | team 1 wins at tick 5489 | 34EDA882A366CAF0 | - | - | - | - | - |
+| lanes-allon-roles-squads-temper | team 1 wins at tick 9000 (time limit) | 7532C5BFB9DDAA0E | 0.493 / 0.040 | 0.474 / 0.394 | 0.012 / 0.086 | 0.525 / 0.926 | 0.442 / 0.215 |
+
+Clips of `lanes-allon-roles-squads-temper`: rash team 1 ticks 1494-1623, steady team 2 the same stretch, regroup
+(filled up) team 1 ticks 330-510. A steady squad is shown beside the rash clip when it stands for at least 10 recorded
+frames inside it, otherwise its own longest standing stretch is shown; every clip gets 60 ticks before and after.

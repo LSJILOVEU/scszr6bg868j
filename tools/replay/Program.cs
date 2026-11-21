@@ -73,10 +73,19 @@ namespace WarCore.Replay
             for (int i = 0; i < keys.Count; i++) indexOf[keys[i]] = i;
             var bands = new int[keys.Count]; var inSquads = new int[2];
             var leash = new[] { new List<double>(), new List<double>() };
+            // Tempers and regrouping: per unit its squad's temper and regroup mark, whether it is calm and how it stepped since
+            // the previous recorded frame; per team the men in rash, steady and regrouping squads and, of the calm rash and
+            // steady men with an enemy in sight (within Metrics.SightRange, no wall between; a man who sees nobody is not
+            // asked for his temper), how many there are and how many walked. tempered and marked latch on the first
+            // frame that shows a temper, or a temper or a mark; a battle without either group never sets them.
+            var moods = new int[keys.Count]; var rallies = new int[keys.Count]; var steps = new int[keys.Count]; var calm = new bool[keys.Count];
+            var men = new int[2, 3]; var engaged = new int[2, 2]; var walked = new int[2, 2];
+            bool tempered = false, marked = false;
+            var tape = new Clips.Tape(); var leaders = new List<int>();
 
             var points = new List<(double x, double z, double r)>();
             foreach (ViewPoint point in session.Current.Points) points.Add((point.X, point.Z, point.Radius));
-            const int metricCount = 16;
+            const int metricCount = 21;
             var stats = new Metrics.Series[2, metricCount];
             for (int t = 0; t < 2; t++) for (int m = 0; m < metricCount; m++) stats[t, m] = new Metrics.Series();
             var side = new[] { new List<(double x, double z)>(), new List<(double x, double z)>() };
@@ -130,6 +139,7 @@ namespace WarCore.Replay
                 pinned.Clear(); broken.Clear(); Array.Clear(pressed, 0, pressed.Length);
                 pinnedAt[0].Clear(); pinnedAt[1].Clear(); pinnedMoved[0] = pinnedMoved[1] = 0;
                 bool banded = false; inSquads[0] = inSquads[1] = 0; leash[0].Clear(); leash[1].Clear();
+                Array.Clear(men, 0, men.Length); Array.Clear(engaged, 0, engaged.Length); Array.Clear(walked, 0, walked.Length); leaders.Clear();
                 // Per unit: x, z in decimetres, state (0 = not on the field, 1 = alive, 2 = dead).
                 for (int i = 0; i < keys.Count; i++)
                 {
@@ -140,6 +150,10 @@ namespace WarCore.Replay
                         if (e.Band != 0 && indexOf.TryGetValue(e.Band, out int lead))
                         {
                             bands[i] = lead; banded = true;
+                            moods[i] = e.Mood; rallies[i] = e.Regroup; calm[i] = e.Nerve == 0;
+                            steps[i] = float.IsNaN(frameX[i]) ? Clips.Unknown : Metrics.Moved(e.X - frameX[i], e.Z - frameZ[i]) ? Clips.Walked : Clips.Stood;
+                            tempered |= e.Mood != 0; marked |= e.Mood != 0 || e.Regroup != 0;
+                            if (lead == i) leaders.Add(i);
                             if (teams[i] >= 1 && teams[i] <= 2)
                             {
                                 inSquads[teams[i] - 1]++;
@@ -162,10 +176,30 @@ namespace WarCore.Replay
                     }
                     else { sb.Append("0,0,0"); frameX[i] = float.NaN; }
                 }
+                // Squads by temper, once both teams' positions are known: the counts behind the five temper numbers and one
+                // row per squad for the clips.
+                for (int i = 0; marked && i < keys.Count; i++)
+                {
+                    if (bands[i] < 0 || teams[i] < 1 || teams[i] > 2) continue;
+                    int t = teams[i] - 1;
+                    if (moods[i] == Clips.Rash) men[t, 0]++; else if (moods[i] == Clips.Steady) men[t, 1]++;
+                    if (rallies[i] == Clips.Regrouping) { men[t, 2]++; continue; }
+                    if (moods[i] < Clips.Rash || !calm[i] || steps[i] == Clips.Unknown || !Metrics.AnySeenWithin((frameX[i], frameZ[i]), side[1 - t], Metrics.SightRange, walls)) continue;
+                    engaged[t, moods[i] - Clips.Rash]++;
+                    if (steps[i] == Clips.Walked) walked[t, moods[i] - Clips.Rash]++;
+                }
+                if (marked)
+                {
+                    tape.Begin(frame.Tick);
+                    foreach (int i in leaders)
+                        tape.Add(new Clips.Row(i, teams[i], moods[i], rallies[i],
+                            calm[i] && teams[i] >= 1 && teams[i] <= 2 && Metrics.AnySeenWithin((frameX[i], frameZ[i]), side[2 - teams[i]], Metrics.SightRange, walls), steps[i]));
+                }
                 // Per frame metrics: [share1, share2, nnSpread1, nnSpread2, spread1, spread2, close1, close2, idle1, idle2, closeNear1, closeNear2,
                 // enemy20_1, enemy20_2, idleNoEnemy1, idleNoEnemy2, pinned1, pinned2, broken1, broken2, pinnedHidden1, pinnedHidden2,
                 // pinnedMoving1, pinnedMoving2, pinnedAtWall1, pinnedAtWall2, squadShare1, squadShare2, squadLeash1, squadLeash2,
-                // squadLeashP90_1, squadLeashP90_2]; null when undefined.
+                // squadLeashP90_1, squadLeashP90_2, rashShare1, rashShare2, steadyShare1, steadyShare2, regroupShare1, regroupShare2,
+                // rashMoving1, rashMoving2, steadyMoving1, steadyMoving2]; null when undefined.
                 var values = new double[2 * metricCount];
                 for (int t = 0; t < 2; t++)
                 {
@@ -185,6 +219,11 @@ namespace WarCore.Replay
                     values[26 + t] = banded ? Metrics.Share(inSquads[t], side[t].Count) : double.NaN;
                     values[28 + t] = Metrics.Leash(leash[t], 0.5);
                     values[30 + t] = Metrics.Leash(leash[t], 0.9);
+                    values[32 + t] = tempered ? Metrics.Part(men[t, 0], inSquads[t]) : double.NaN;
+                    values[34 + t] = tempered ? Metrics.Part(men[t, 1], inSquads[t]) : double.NaN;
+                    values[36 + t] = marked ? Metrics.Part(men[t, 2], inSquads[t]) : double.NaN;
+                    values[38 + t] = Metrics.Part(walked[t, 0], engaged[t, 0]);
+                    values[40 + t] = Metrics.Part(walked[t, 1], engaged[t, 1]);
                     for (int m = 0; m < metricCount; m++) stats[t, m].Add(values[m * 2 + t]);
                 }
                 sb.Append("],\"m\":[");
@@ -194,13 +233,22 @@ namespace WarCore.Replay
                 if (broken.Count > 0) sb.Append("],\"b\":[").Append(string.Join(",", broken));
                 // Each unit's squad leader by unit index (-1 = in no squad; a leader names itself); written only when somebody is in a squad.
                 if (banded) sb.Append("],\"q\":[").Append(string.Join(",", bands));
+                // Each squad's leader by unit index, temper (1 normal, 2 rash, 3 steady; 0 without tempers) and regroup mark
+                // (0 none, 1 regrouping, 2 waiting); written only in a battle with tempers or regrouping.
+                if (banded && marked)
+                {
+                    sb.Append("],\"qm\":[");
+                    for (int l = 0; l < leaders.Count; l++)
+                    { if (l > 0) sb.Append(','); sb.Append(leaders[l]).Append(',').Append(moods[leaders[l]]).Append(',').Append(rallies[leaders[l]]); }
+                }
                 sb.Append("],\"s\":[").Append(string.Join(",", shots)).Append("],\"a\":[").Append(frame.Match.AliveOne).Append(',').Append(frame.Match.AliveTwo)
                   .Append(',').Append(frame.Match.ReserveOne).Append(',').Append(frame.Match.ReserveTwo).Append("]}");
                 shots.Clear();
             }
             bool decided = session.IsFinished && session.Winner != 0;
             sb.Append("],\"metrics\":{\"attackRange\":").Append(N(Metrics.AttackRange)).Append(",\"slotRing\":").Append(N(ring)).Append(",\"decidedTick\":").Append(decided ? session.EndTick.ToString(CultureInfo.InvariantCulture) : "null");
-            string[] names = { "maxPointShare", "nnSpread", "attackSpread", "closeShare", "idleOutside", "closeShareNearPoints", "enemyWithin20", "idleNoEnemy", "pinnedShare", "brokenShare", "pinnedHidden", "pinnedMoving", "pinnedAtWall", "squadShare", "squadLeash", "squadLeashP90" };
+            string[] names = { "maxPointShare", "nnSpread", "attackSpread", "closeShare", "idleOutside", "closeShareNearPoints", "enemyWithin20", "idleNoEnemy", "pinnedShare", "brokenShare", "pinnedHidden", "pinnedMoving", "pinnedAtWall", "squadShare", "squadLeash", "squadLeashP90",
+                "rashShare", "steadyShare", "regroupShare", "rashMoving", "steadyMoving" };
             var line = new StringBuilder();
             for (int t = 0; t < 2; t++)
             {
@@ -214,7 +262,9 @@ namespace WarCore.Replay
                 }
                 sb.Append('}');
             }
-            sb.Append("},\"winner\":").Append(session.Winner).Append(",\"endTick\":").Append(session.EndTick).Append(",\"hash\":\"").Append(session.StateHash.ToString("X16")).Append("\"}");
+            sb.Append('}');
+            if (marked) Clips.Write(sb, Clips.Pick(tape));
+            sb.Append(",\"winner\":").Append(session.Winner).Append(",\"endTick\":").Append(session.EndTick).Append(",\"hash\":\"").Append(session.StateHash.ToString("X16")).Append("\"}");
             summary = $"{setup}: ticks={session.Tick} winner={session.Winner} decidedTick={(decided ? session.EndTick.ToString(CultureInfo.InvariantCulture) : "none")} hash={session.StateHash:X16} bytes={sb.Length} mean/peak:{line}";
             return sb.ToString();
         }

@@ -38,7 +38,8 @@ namespace WarCore.Content
         // flat: the battle runs on a flat map. A cover spot takes the height of the unit that looks for it, so cover rules
         // on a terrain map fail the load.
         // plates: the map has floor plates (ML-11a). The parts that still measure on the plane are refused there.
-        // squads: the battle's squad system, or null. With it the dispatch and the placement are wrapped (Squads.Wrap).
+        // squads: the battle's squad system, or null. With it the dispatch and the placement are wrapped (Squads.Wrap),
+        // and the engage part too when its rules have tempers or regrouping.
         public static AiParts Parts(AiRules ai, ReadOnlySpan<ControlPointDef> points = default, int thinkInterval = 1, bool flat = true, bool plates = false, Squads squads = null)
         {
             if (!flat && ai != null && ai.CoverRadiusMm > 0) throw ai.FieldError("coverRadiusMm", "is not supported on a terrain map");
@@ -55,8 +56,13 @@ namespace WarCore.Content
             }
             IAiDispatch dispatch = new NearestDispatch(ai?.HoldSharePermille ?? 0, ai?.AttackSpreadPoints ?? 1);
             IAiPlacement placement = Placement(ai);
-            // Squads wrap the battle's own dispatch and placement: a member asks them as its leader.
-            if (squads != null) { dispatch = squads.Wrap(dispatch); placement = squads.Wrap(placement); }
+            // Squads wrap the battle's own dispatch and placement: a member asks them as its leader. With tempers or
+            // regrouping they wrap the engage part as well; without either it stays the battle's own.
+            if (squads != null)
+            {
+                dispatch = squads.Wrap(dispatch); placement = squads.Wrap(placement);
+                if (squads.Rules.Temper != null || squads.Rules.Regroup != null) engage = squads.Wrap(engage);
+            }
             return new AiParts(
                 dispatch, placement, spacing, ring, engage,
                 SimFix.Ratio(ai?.CoverRadiusMm ?? 0, 1000).Raw, SimFix.Ratio(ai?.CoverStepMm ?? 0, 1000).Raw, SimFix.Ratio(ai?.CoverDepthMm ?? 0, 1000).Raw);

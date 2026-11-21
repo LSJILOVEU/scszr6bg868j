@@ -73,7 +73,8 @@ namespace WarCore.Presentation
                 if (dx * dx + dy * dy + dz * dz > 4)
                     continue;
                 result[i] = new ViewEntity(next.Key, next.Archetype,
-                    old.X + dx * alpha, old.Y + dy * alpha, old.Z + dz * alpha, next.Squad, next.Team, next.Alive, layer: next.Layer, band: next.Band);
+                    old.X + dx * alpha, old.Y + dy * alpha, old.Z + dz * alpha, next.Squad, next.Team, next.Alive, layer: next.Layer, band: next.Band,
+                    mood: next.Mood, regroup: next.Regroup);
             }
             return new FrameView(current.Tick, result, current.fires, current.points, current.Match, current.Respawn);
         }
