@@ -65,9 +65,6 @@ namespace WarCore.Content
         private const string NoPlates = "is not supported on a map with floor plates";
         private static void CheckPlates(AiRules ai)
         {
-            if (ai.SearchTicks > 0) throw Refused(ai, "searchTicks");
-            if (ai.SuppressTicks > 0) throw Refused(ai, "suppressTicks");
-            if (ai.MeleeChaseRange > 0) throw Refused(ai, "meleeChaseRange");
             if (ai.Pressure != null) throw Refused(ai, "pressureNearRadiusMm");
             if (ai.Engage == BoundEngage) throw Refused(ai, "engage");
             if (ai.Placement == Scatter || ai.Placement == AssaultRoles) throw Refused(ai, "placement");

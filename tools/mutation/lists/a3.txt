@@ -38,12 +38,12 @@ expect = WarCore.Tests.A3MemoryTests.SeenAgain_RestartsTheWindow
 note = seeing the same target again keeps the old entry
 original:
 |         internal void Saw(StableId observer, EntityId target, long tick) =>
-|             entries[observer.Value] = new Entry { Target = combat.Entities.StableOf(target), At = combat.Point(target), Seen = tick };
+|             entries[observer.Value] = new Entry { Target = combat.Entities.StableOf(target), At = combat.Point(target), Seen = tick, Layer = layers?.LayerOf(target) ?? 0 };
 replacement:
 |         internal void Saw(StableId observer, EntityId target, long tick)
 |         {
 |             if (entries.TryGetValue(observer.Value, out Entry old) && old.Target.Equals(combat.Entities.StableOf(target))) return;
-|             entries[observer.Value] = new Entry { Target = combat.Entities.StableOf(target), At = combat.Point(target), Seen = tick };
+|             entries[observer.Value] = new Entry { Target = combat.Entities.StableOf(target), At = combat.Point(target), Seen = tick, Layer = layers?.LayerOf(target) ?? 0 };
 |         }
 
 [a3-05-new-target-ignored]
@@ -53,12 +53,12 @@ expect = WarCore.Tests.A3MemoryTests.NewTarget_ReplacesTheEntry
 note = an entry is written only when the observer has none
 original:
 |         internal void Saw(StableId observer, EntityId target, long tick) =>
-|             entries[observer.Value] = new Entry { Target = combat.Entities.StableOf(target), At = combat.Point(target), Seen = tick };
+|             entries[observer.Value] = new Entry { Target = combat.Entities.StableOf(target), At = combat.Point(target), Seen = tick, Layer = layers?.LayerOf(target) ?? 0 };
 replacement:
 |         internal void Saw(StableId observer, EntityId target, long tick)
 |         {
 |             if (entries.ContainsKey(observer.Value)) return;
-|             entries[observer.Value] = new Entry { Target = combat.Entities.StableOf(target), At = combat.Point(target), Seen = tick };
+|             entries[observer.Value] = new Entry { Target = combat.Entities.StableOf(target), At = combat.Point(target), Seen = tick, Layer = layers?.LayerOf(target) ?? 0 };
 |         }
 
 [a3-06-recall-ignores-death]
@@ -98,9 +98,9 @@ filter = FullyQualifiedName~WarCore.Tests.A3Memory
 expect = WarCore.Tests.A3MemoryStateTests.Restore_ContinuesTheMemory
 note = LoadState reads S and stores 0
 original:
-|                 entries[key] = new Entry { Target = target, At = at, Seen = seen };
+|                 entries[key] = new Entry { Target = target, At = at, Seen = seen, Layer = layer };
 replacement:
-|                 entries[key] = new Entry { Target = target, At = at, Seen = 0 };
+|                 entries[key] = new Entry { Target = target, At = at, Seen = 0, Layer = layer };
 
 [a3-10-load-skips-key-order]
 file = Assets/WarCore/Battle/Ai/TargetMemory.cs
@@ -120,11 +120,11 @@ note = the memory is registered in terrain worlds even when targetMemoryTicks is
 original:
 |             if (memoryTicks > 0)
 |             {
-|                 contacts = new TargetMemory(combat, memoryTicks);
+|                 contacts = new TargetMemory(combat, memoryTicks, layers);
 replacement:
 |             if (terrain != null)
 |             {
-|                 contacts = new TargetMemory(combat, Math.Max(memoryTicks, 1));
+|                 contacts = new TargetMemory(combat, Math.Max(memoryTicks, 1), layers);
 
 [a3-12-no-stop-with-memory]
 file = Assets/WarCore/Battle/SimpleAiSystem.cs
@@ -143,12 +143,12 @@ expect = WarCore.Tests.A3MemoryTests.NewTarget_ReplacesTheEntry
 note = a different target never replaces an entry (the same target still updates)
 original:
 |         internal void Saw(StableId observer, EntityId target, long tick) =>
-|             entries[observer.Value] = new Entry { Target = combat.Entities.StableOf(target), At = combat.Point(target), Seen = tick };
+|             entries[observer.Value] = new Entry { Target = combat.Entities.StableOf(target), At = combat.Point(target), Seen = tick, Layer = layers?.LayerOf(target) ?? 0 };
 replacement:
 |         internal void Saw(StableId observer, EntityId target, long tick)
 |         {
 |             if (entries.TryGetValue(observer.Value, out Entry old) && !old.Target.Equals(combat.Entities.StableOf(target))) return;
-|             entries[observer.Value] = new Entry { Target = combat.Entities.StableOf(target), At = combat.Point(target), Seen = tick };
+|             entries[observer.Value] = new Entry { Target = combat.Entities.StableOf(target), At = combat.Point(target), Seen = tick, Layer = layers?.LayerOf(target) ?? 0 };
 |         }
 
 [a3-14-resighting-after-gap-ignored]
@@ -158,10 +158,10 @@ expect = WarCore.Tests.A3MemoryTests.SeenAgain_RestartsTheWindow
 note = an entry older than one thinking interval is not refreshed (uninterrupted sighting still updates)
 original:
 |         internal void Saw(StableId observer, EntityId target, long tick) =>
-|             entries[observer.Value] = new Entry { Target = combat.Entities.StableOf(target), At = combat.Point(target), Seen = tick };
+|             entries[observer.Value] = new Entry { Target = combat.Entities.StableOf(target), At = combat.Point(target), Seen = tick, Layer = layers?.LayerOf(target) ?? 0 };
 replacement:
 |         internal void Saw(StableId observer, EntityId target, long tick)
 |         {
 |             if (entries.TryGetValue(observer.Value, out Entry old) && tick - old.Seen > 10) return;
-|             entries[observer.Value] = new Entry { Target = combat.Entities.StableOf(target), At = combat.Point(target), Seen = tick };
+|             entries[observer.Value] = new Entry { Target = combat.Entities.StableOf(target), At = combat.Point(target), Seen = tick, Layer = layers?.LayerOf(target) ?? 0 };
 |         }
