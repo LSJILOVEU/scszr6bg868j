@@ -21,7 +21,7 @@ namespace WarCore.Tests
         [TearDown] public void Clean() => dirs.Dispose();
 
         // Layers each cartridge must have. A cartridge may hold more: every layer it lists must load (see AssertLayers).
-        private static readonly string[] RwrLayers = { "rwr", "rwr-ai-playtest", "rwr-m6", "rwr-m7-playtest", "rwr-melee", "rwr-surfaces", "rwr-terrain-demo" };
+        private static readonly string[] RwrLayers = { "rwr", "rwr-ai-playtest", "rwr-body", "rwr-field", "rwr-m6", "rwr-m7-playtest", "rwr-melee", "rwr-surfaces", "rwr-terrain-demo" };
         private static readonly string[] AncientLayers = { "ancient", "ancient-field" };
 
         [Test]

@@ -62,6 +62,7 @@ ring round a pinned unit and a thick yellow one round a broken unit.
 | playtest-n1 | undecided at 2400 | AB7BEF8C4824E0E3 | 0.600 / 0.667 | 0.417 / 0.378 | 0.285 / 0.461 | 0.871 / 0.830 | 0.143 / 0.129 | 0.877 / 0.843 |
 | mp-playtest (AI-N1: playtest weapons; was 6BA883C992F6F598) | undecided at 2400 | 25F3C40789F410A6 | 0.621 / 0.661 | 0.555 / 0.311 | 0.206 / 0.461 | 0.805 / 0.849 | 0.178 / 0.167 | 0.815 / 0.858 |
 | lanes | team 1 wins at tick 2245 | 0392AC1519D79015 | 0.315 / 0.213 | 0.474 / 0.571 | 0.180 / 0.143 | 0.784 / 0.771 | 0.022 / 0.019 | 0.832 / 0.824 |
+| lanes-body (pack rwr-body; same play as lanes, only the pack digest differs) | team 1 wins at tick 2245 | EEC3C5C9A17205A6 | 0.315 / 0.213 | 0.474 / 0.571 | 0.180 / 0.143 | 0.784 / 0.771 | 0.022 / 0.019 | 0.832 / 0.824 |
 | playtest-p1 | undecided at 2400 | 5BB665BAB3789C19 | 0.472 / 0.382 | 0.414 / 0.545 | 0.494 / 0.719 | 0.211 / 0.270 | 0.013 / 0.020 | 0.207 / 0.279 |
 | playtest-p1w | undecided at 2400 | 2C0F3A77CF416390 | 0.184 / 0.197 | 0.805 / 0.655 | 0.614 / 0.467 | 0.305 / 0.201 | 0.076 / 0.025 | 0.277 / 0.196 |
 | lanes-p1 | team 1 wins at tick 2319 | 270F5A03ED5B7491 | 0.234 / 0.146 | 0.897 / 0.784 | 0.428 / 0.433 | 0.352 / 0.445 | 0.003 / 0.004 | 0.223 / 0.230 |
