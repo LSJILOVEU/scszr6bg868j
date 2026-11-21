@@ -97,6 +97,8 @@ namespace WarCore.Combat
             if (!pack.HasStances) throw new InvalidOperationException("The combat pack has no stances.");
             if (stances != null) throw new InvalidOperationException("A stance system is already attached.");
             stances = system;
+            // The stance row of the spread line (AIM-1's ShotAngle): standing 1000, while changing the wider of the two levels.
+            AddSpreadGear(system);
         }
 
         // D2a: the pack's body is the only source. The spatial index must anchor the unit layer at the foot exactly when the

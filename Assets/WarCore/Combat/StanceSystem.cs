@@ -25,7 +25,7 @@ namespace WarCore.Combat
     // keeps its systems, components, state bytes and hashes. Until the due tick everything follows the old stance: body, eye,
     // muzzle; speed takes the slower and spread the wider of the two. It is also the action limit of stances: a unit in level n
     // may not start that stance's Deny, and a changing unit may not start another change, a dash or a traversal.
-    public sealed class StanceSystem : IRetainedGameplaySystem, ISimRestoreValidator, IActionLimit
+    public sealed class StanceSystem : IRetainedGameplaySystem, ISimRestoreValidator, IActionLimit, ISpreadFactor
     {
         public const string ComponentId = "combat.stance";
         public const string TransitionEventName = "stance.transition";
@@ -170,7 +170,8 @@ namespace WarCore.Combat
             return view.IsChanging ? Math.Min(now, SpeedOf(view.Target)) : now;
         }
 
-        // The stance's spread factor (permille): while changing, the wider of the two levels.
+        // The stance's spread factor (permille): while changing, the wider of the two levels. A gear of the combat system's spread
+        // line (ShotAngle).
         public int SpreadPermille(EntityId unit)
         {
             StanceView view = StanceOf(unit);

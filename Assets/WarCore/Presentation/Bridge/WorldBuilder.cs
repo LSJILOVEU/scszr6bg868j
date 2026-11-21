@@ -108,10 +108,9 @@ namespace WarCore.Presentation
                 MatchPack = recipe.Match, Capture = assembly.Capture, Reinforce = assembly.Reinforce, Match = assembly.Match, Pressure = assembly.Pressure, Squads = assembly.Squads,
                 MaxHealthRaw = recipe.Combat?.MaxHealthRaw ?? 0, Controlled = assembly.Controlled, CombatPack = recipe.Combat,
                 Facings = facings, Terrain = assembly.Terrain, TerrainRules = recipe.TerrainPack?.Terrain,
-                Plates = assembly.Plates, Layers = PlateLayers.Of(assembly),
+                Plates = assembly.Plates, Layers = PlateLayers.Of(assembly), Stances = assembly.Stances, Gate = assembly.Gate,
                 Entries = assembly.Entries, EntryBuild = assembly.Reach != null ? () => EntryWiring.Of(assembly) : (Func<PointEntryTable>)null,
                 Dash = dash ? assembly.Locomotion : null, DashStates = dash ? sim.Entities.Resolve<DashState>() : (ComponentType<DashState>?)null,
-                Stances = assembly.Stances, Gate = assembly.Gate,
             });
             foreach (BridgeCommand command in recipe.Script)
                 session.Enqueue(command);
