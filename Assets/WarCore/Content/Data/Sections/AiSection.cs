@@ -67,6 +67,8 @@ namespace WarCore.Content
         public int CoverRadiusMm { get; internal set; }
         public int CoverStepMm { get; internal set; }
         public int CoverDepthMm { get; internal set; }
+        // The squad system's numbers (the seven squad* fields, all or none); null leaves squads out of the battle.
+        public WarCore.Battle.SquadRules? Squads { get; internal set; }
         // Builds the load error for a written field (pack, layer, entry, field); null when the section is not written.
         internal System.Func<string, string, ContentException> FieldError { get; set; }
         internal AiRules(int failedSlotTicks, int targetMemoryTicks = 0, int searchTicks = 0, int reactionTicks = 0, int senseTicks = 1,
@@ -151,6 +153,10 @@ namespace WarCore.Content
             ("coverDepthMm", PartKind.Engage, ContentPolicies.BoundEngage),
         };
         // assault-roles parameters in AssaultRolesPlacement's constructor order, with their ranges (PLACEHOLDER bounds).
+        // The squad fields: written all seven or none. PLACEHOLDER bounds.
+        internal static readonly string[] SquadFields =
+            { "squadMinSize", "squadMaxSize", "squadSkirmisherPermille", "squadRecruitRadiusMm", "squadFormTicks", "squadSpreadMinMm", "squadSpreadMaxMm" };
+        internal const int MaxSquadSize = 64, MaxSquadRadiusMm = 512000, MaxSquadFormTicks = 100000, MaxSquadSpreadMm = 50000;
         internal static readonly string[] AssaultFields =
             { "frontPermille", "flankPermille", "rearPermille", "frontArcMm", "flankSideMm", "rearOutMm", "flankMinMm", "anchorMm", "arriveMm" };
         private static readonly int[] AssaultMin = { 0, 0, 0, 0, 1000, 1000, 0, 1000, 250 };
@@ -181,6 +187,7 @@ namespace WarCore.Content
             int[] assault = null;
             WarCore.Battle.PressureRules? pressure = null;
             int coverRadius = 0, coverStep = 0, coverDepth = 0;
+            WarCore.Battle.SquadRules? squads = null;
             if (entry != null)
             {
                 var r = new EntryReader(b.Pack, entry);
@@ -275,11 +282,24 @@ namespace WarCore.Content
                     coverDepth = r.Int("coverDepthMm", MinCoverDepthMm, MaxCoverDepthMm);
                     if (!pressed) throw r.Bad(r.FieldOf("coverRadiusMm"), "needs the pressure fields (pressureDeathRadiusMm ...)");
                 }
+                bool banded = false;
+                foreach (string field in SquadFields) banded |= r.Has(field);
+                // Any of the seven written makes all seven required: a missing one throws "is missing field".
+                if (banded)
+                {
+                    int min = r.Int("squadMinSize", 1, MaxSquadSize), max = r.Int("squadMaxSize", 1, MaxSquadSize);
+                    int skirmishers = r.Int("squadSkirmisherPermille", 0, 1000), radius = r.Int("squadRecruitRadiusMm", 1, MaxSquadRadiusMm);
+                    int form = r.Int("squadFormTicks", 1, MaxSquadFormTicks);
+                    int spreadMin = r.Int("squadSpreadMinMm", 0, MaxSquadSpreadMm), spreadMax = r.Int("squadSpreadMaxMm", 0, MaxSquadSpreadMm);
+                    if (max < min) throw r.Bad(r.FieldOf("squadMaxSize"), "must be at least squadMinSize (" + min + ")");
+                    if (spreadMax < spreadMin) throw r.Bad(r.FieldOf("squadSpreadMaxMm"), "must be at least squadSpreadMinMm (" + spreadMin + ")");
+                    squads = new WarCore.Battle.SquadRules(min, max, skirmishers, radius, form, spreadMin, spreadMax);
+                }
                 fieldError = (field, why) => r.Bad(r.FieldOf(field), why);
                 r.Done();
             }
             b.Publish(new AiRules(failed, memory, search, reaction, sense, burst, pause, suppress, chase, fair, follows, hold, spread, dispatch, placement, spacing, scatter, ring,
-                engage, boundMove, boundFire, boundShare, boundMinRange, assault, traits) { SlotRingError = ringError, FieldError = fieldError, Pressure = pressure, CoverRadiusMm = coverRadius, CoverStepMm = coverStep, CoverDepthMm = coverDepth });
+                engage, boundMove, boundFire, boundShare, boundMinRange, assault, traits) { SlotRingError = ringError, FieldError = fieldError, Pressure = pressure, CoverRadiusMm = coverRadius, CoverStepMm = coverStep, CoverDepthMm = coverDepth, Squads = squads });
         }
     }
 }

@@ -78,6 +78,7 @@ namespace WarCore.Presentation
         internal ReinforceSystem Reinforce { get; set; }
         internal MatchSystem Match { get; set; }
         internal Pressure Pressure { get; set; }
+        internal Squads Squads { get; set; }
 
         // Where a unit stands when it is placed: the map's flat floor, or the terrain surface where the map has a height field;
         // on a plate (layer above 0, checked by the plate installer) the plate's floored surface.
