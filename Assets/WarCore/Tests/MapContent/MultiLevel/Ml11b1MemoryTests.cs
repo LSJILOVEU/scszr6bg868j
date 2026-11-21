@@ -151,7 +151,7 @@ namespace WarCore.Tests
             Assert.That(error.Message, Is.EqualTo("AI target memory layer is negative."));
             foreach (int layer in new[] { 0, 1, 9, 65535 })
             {
-                Memory(w).LoadState(Written(w, layer));
+                Assert.That(() => Memory(w).LoadState(Written(w, layer)), Throws.Nothing, "layer " + layer);
                 Assert.That(Recall(Memory(w), Id(w, A), 5).Layer, Is.EqualTo(layer));
             }
         }

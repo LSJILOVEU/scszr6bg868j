@@ -176,6 +176,8 @@ namespace WarCore.Tests
             // Not a walkable cell: the ground under the stair, the floor's hole, a place off the floor, a place off the map.
             Assert.That(reach.Connected(ground, 0, Flat(37500, 31500), 0), Is.False);
             Assert.That(reach.Connected(Flat(37500, 31500), 0, ground, 0), Is.False);
+            Assert.That(reach.Connected(Flat(37500, 31500), 0, Flat(37500, 31500), 0), Is.False, "a cell nobody walks on, to itself");
+            Assert.That(reach.Connected(Flat(37500, 31500), 0, Flat(38500, 31500), 0), Is.False, "two cells nobody walks on");
             Assert.That(reach.Connected(ground, 0, Up(42500, 31500), 1), Is.False);
             Assert.That(reach.Connected(ground, 0, Up(30500, 31500), 1), Is.False);
             Assert.That(reach.Connected(ground, 0, Flat(-500, 31500), 0), Is.False);
