@@ -5,6 +5,8 @@ Everything here is public. Write technical content only, as little as possible.
 ## Never write
 Names, nicknames, account names, email addresses, schedules, time zones, places, machine or hardware details, local paths, billing or account details, links to chat or agent sessions, session ids. This applies to commit messages, pull request titles and descriptions, comments, code comments, documents and file names. Do not add signature, co-author, session or attribution lines. Do not mention who asked for a change or why in personal terms.
 
+Exception: names of real terrain used as map content are allowed in map ids, map file names, data credits (including tile ids that a data licence requires), and the commit messages and pull request text that mention those files. This covers geography only, never a place connected to a person.
+
 ## Commits
 - One short line, imperative, at most 72 characters. A body only if needed, at most 8 lines.
 - Identity must be `warcore <noreply@users.noreply.github.com>`; dates in UTC. Commit with `TZ=UTC git commit`.
@@ -21,7 +23,7 @@ Names, nicknames, account names, email addresses, schedules, time zones, places,
 ## Privacy review before merge
 The script cannot see meaning, so a Claude review must do it. Every pull request needs this review before it is merged:
 - Scope: the diff (including deleted lines, because history is public), every commit message, author and committer identity, the PR title and description, and all review and issue comments on it.
-- Look for leaks the script misses: names or nicknames in any form (translations, initials, transliterations), places, institutions, schedules or habits ("late at night", "after work"), devices, hardware, operating-system versions, billing or account trouble, who asked for or approved the change, hints about other repositories or projects, anything that narrows down who the author is.
+- Look for leaks the script misses: names or nicknames in any form (translations, initials, transliterations), places (other than the terrain names the exception above allows), institutions, schedules or habits ("late at night", "after work"), devices, hardware, operating-system versions, billing or account trouble, who asked for or approved the change, hints about other repositories or projects, anything that narrows down who the author is.
 - Run `python3 tools/pii-guard/pii_guard.py --range <base>..<head>` as part of the review.
 - The review must contain one line: `Privacy: PASS <first 7 characters of the head commit SHA>`, or `Privacy: FAIL <sha7> <rule and location only>`. Never copy the leaked text into the review.
 - No PASS line for the current head commit means no `reviewed` label and no merge. The `privacy-gate` check enforces this: it needs the `reviewed` label and a PASS line naming the current head commit, and a new push removes the label.
