@@ -140,7 +140,7 @@ namespace WarCore.Presentation
             return d.Layers[0].Name;
         }
 
-        private static CombatBody BodyOf(string pack)
+        internal static CombatBody BodyOf(string pack)
         {
             CombatBody? body = ContentCatalog.Find().Load(pack).Body;
             if (!body.HasValue)
