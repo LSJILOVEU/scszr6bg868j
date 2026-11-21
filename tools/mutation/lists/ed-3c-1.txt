@@ -1,0 +1,990 @@
+# ED-3c-1: height tile (Content/MapTools/MapDemTile.cs), the base key of the generation spec (MapGenSpec.cs), the base
+# layer of the composer (MapTerrain.cs) and the facade (Presentation/Maps). Filter: the ED-3 tests.
+# Not listed (equivalent): the '.' check of integer texts (long.TryParse refuses a fraction anyway); comparing fingerprints
+# without case (Read already refuses upper case in sha256 and fingerprints are lower case); a member-count check for
+# repeated keys (the JSON reader refuses a repeated key before any check here).
+
+[ed3c1-dem-cols-range]
+file = Assets/WarCore/Content/MapTools/MapDemTile.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cTileTests.SidesAndStepAcceptBothEndsAndRefuseOneBeyond
+note = cols range widened by one
+original:
+| "cols", MinSide, MaxSide);
+replacement:
+| "cols", MinSide - 1, MaxSide + 1);
+
+[ed3c1-dem-rows-range]
+file = Assets/WarCore/Content/MapTools/MapDemTile.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cTileTests.SidesAndStepAcceptBothEndsAndRefuseOneBeyond
+note = rows range widened by one
+original:
+| "rows", MinSide, MaxSide);
+replacement:
+| "rows", MinSide - 1, MaxSide + 1);
+
+[ed3c1-dem-step-range]
+file = Assets/WarCore/Content/MapTools/MapDemTile.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cTileTests.SidesAndStepAcceptBothEndsAndRefuseOneBeyond
+note = stepMm range widened by one
+original:
+| "stepMm", 1, MaxStepMm);
+replacement:
+| "stepMm", 0, MaxStepMm + 1);
+
+[ed3c1-dem-height-range]
+file = Assets/WarCore/Content/MapTools/MapDemTile.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cTileTests.HeightsAcceptBothEndsAndRefuseOneBeyond
+note = height range widened by one
+original:
+| at, -MaxHeightMm, MaxHeightMm);
+replacement:
+| at, -MaxHeightMm - 1, MaxHeightMm + 1);
+
+[ed3c1-dem-credit-count]
+file = Assets/WarCore/Content/MapTools/MapDemTile.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cTileTests.CreditTakesOneToEightTexts
+note = credit count widened by one
+original:
+| creditNode.Items.Count < 1 || creditNode.Items.Count > MaxCredit)
+replacement:
+| creditNode.Items.Count < 0 || creditNode.Items.Count > MaxCredit + 1)
+
+[ed3c1-dem-credit-text]
+file = Assets/WarCore/Content/MapTools/MapDemTile.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cTileTests.CreditTakesOneToEightTexts
+note = credit texts not checked
+original:
+| credit[k] = Text(creditNode.Items[k], "credit[" + k + "]");
+replacement:
+| credit[k] = creditNode.Items[k].Text;
+
+[ed3c1-dem-credit-array]
+file = Assets/WarCore/Content/MapTools/MapDemTile.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cTileTests.CreditTakesOneToEightTexts
+note = credit kind not checked
+original:
+| if (creditNode.Kind != JsonKind.Array) throw
+replacement:
+| if (creditNode.Kind == JsonKind.Bool) throw
+
+[ed3c1-dem-version]
+file = Assets/WarCore/Content/MapTools/MapDemTile.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cTileTests.KeysAndVersionAreChecked
+note = version below 1 accepted
+original:
+| long.MinValue, long.MaxValue) != FormatVersion)
+replacement:
+| long.MinValue, long.MaxValue) > FormatVersion)
+
+[ed3c1-dem-unknown-key]
+file = Assets/WarCore/Content/MapTools/MapDemTile.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cTileTests.KeysAndVersionAreChecked
+note = unknown keys accepted
+original:
+| if (Array.IndexOf(Keys, m.Name) < 0)
+replacement:
+| if (Array.IndexOf(Keys, m.Name) < -1)
+
+[ed3c1-dem-not-object]
+file = Assets/WarCore/Content/MapTools/MapDemTile.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cTileTests.KeysAndVersionAreChecked
+note = document kind not checked
+original:
+| if (root.Kind != JsonKind.Object) throw
+replacement:
+| if (root.Kind == JsonKind.Bool) throw
+
+[ed3c1-dem-row-count]
+file = Assets/WarCore/Content/MapTools/MapDemTile.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cTileTests.ShapeMustMatchColsAndRows
+note = extra rows accepted
+original:
+| grid.Items.Count != rows)
+replacement:
+| grid.Items.Count < rows)
+
+[ed3c1-dem-row-count-few]
+file = Assets/WarCore/Content/MapTools/MapDemTile.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cTileTests.ShapeMustMatchColsAndRows
+note = missing rows accepted
+original:
+| grid.Items.Count != rows)
+replacement:
+| grid.Items.Count > rows)
+
+[ed3c1-dem-col-count]
+file = Assets/WarCore/Content/MapTools/MapDemTile.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cTileTests.ShapeMustMatchColsAndRows
+note = extra columns accepted
+original:
+| row.Items.Count != cols)
+replacement:
+| row.Items.Count < cols)
+
+[ed3c1-dem-grid-array]
+file = Assets/WarCore/Content/MapTools/MapDemTile.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cTileTests.ShapeMustMatchColsAndRows
+note = grid kind not checked
+original:
+| if (grid.Kind != JsonKind.Array ||
+replacement:
+| if (grid.Kind == JsonKind.Bool ||
+
+[ed3c1-dem-row-major]
+file = Assets/WarCore/Content/MapTools/MapDemTile.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cTileTests.ExampleTileReads
+note = grid stored column-major
+original:
+| heights[b * cols + a] = (int)Int(
+replacement:
+| heights[a * cols + b] = (int)Int(
+
+[ed3c1-dem-accessor]
+file = Assets/WarCore/Content/MapTools/MapDemTile.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cTileTests.ExampleTileReads
+note = accessor swaps col and row
+original:
+| return heights[row * Cols + col];
+replacement:
+| return heights[col * Cols + row];
+
+[ed3c1-dem-accessor-col-hi]
+file = Assets/WarCore/Content/MapTools/MapDemTile.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cTileTests.ExampleTileReads
+note = col upper bound off by one
+original:
+| if (col < 0 || col >= Cols)
+replacement:
+| if (col < 0 || col > Cols)
+
+[ed3c1-dem-accessor-col-lo]
+file = Assets/WarCore/Content/MapTools/MapDemTile.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cTileTests.ExampleTileReads
+note = col lower bound dropped
+original:
+| if (col < 0 || col >= Cols)
+replacement:
+| if (col < -1 || col >= Cols)
+
+[ed3c1-dem-accessor-row-hi]
+file = Assets/WarCore/Content/MapTools/MapDemTile.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cTileTests.ExampleTileReads
+note = row upper bound off by one
+original:
+| if (row < 0 || row >= Rows)
+replacement:
+| if (row < 0 || row > Rows)
+
+[ed3c1-dem-accessor-row-lo]
+file = Assets/WarCore/Content/MapTools/MapDemTile.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cTileTests.ExampleTileReads
+note = row lower bound dropped
+original:
+| if (row < 0 || row >= Rows)
+replacement:
+| if (row < -1 || row >= Rows)
+
+[ed3c1-fp-credit]
+file = Assets/WarCore/Content/MapTools/MapDemTile.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cTileTests.FingerprintCoversTheGridOnly
+note = fingerprint depends on credit
+original:
+| Fingerprint = Hash(cols, rows, stepMm, heights);
+replacement:
+| Fingerprint = Hash(cols, rows, credit.Length == 1 ? stepMm : stepMm + 1, heights);
+
+[ed3c1-fp-no-step]
+file = Assets/WarCore/Content/MapTools/MapDemTile.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cTileTests.FingerprintCoversTheGridOnly
+note = fingerprint leaves out stepMm
+original:
+| .Append(' ').Append(stepMm.ToString(CultureInfo.InvariantCulture)).Append('\n');
+replacement:
+| .Append('\n');
+
+[ed3c1-fp-last-newline]
+file = Assets/WarCore/Content/MapTools/MapDemTile.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cTileTests.FingerprintCoversTheGridOnly
+expect = WarCore.Tests.Ed3cTileTests.ExampleTileReads
+note = no newline after the last row
+original:
+|                 sb.Append('\n');
+|             }
+|             // Method group
+replacement:
+|                 if (b + 1 < rows) sb.Append('\n');
+|             }
+|             // Method group
+
+[ed3c1-fp-separator]
+file = Assets/WarCore/Content/MapTools/MapDemTile.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cTileTests.FingerprintCoversTheGridOnly
+expect = WarCore.Tests.Ed3cTileTests.ExampleTileReads
+note = numbers separated by a comma
+original:
+| if (a > 0) sb.Append(' ');
+replacement:
+| if (a > 0) sb.Append(',');
+
+[ed3c1-fp-upper]
+file = Assets/WarCore/Content/MapTools/MapDemTile.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cTileTests.FingerprintCoversTheGridOnly
+expect = WarCore.Tests.Ed3cTileTests.ExampleTileReads
+note = fingerprint in upper case
+original:
+| hex.Append(x.ToString("x2", CultureInfo.InvariantCulture));
+replacement:
+| hex.Append(x.ToString("X2", CultureInfo.InvariantCulture));
+
+[ed3c1-base-needs-basemm]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cSpecTests.BaseKeysAreExactAndNeedBaseMm
+note = base without baseMm accepted when ground is given
+original:
+| if (genBase != null && !baseMm.HasValue)
+replacement:
+| if (genBase != null && !baseMm.HasValue && ground == null)
+
+[ed3c1-base-needs-basemm-2]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cSpecTests.BaseKeysAreExactAndNeedBaseMm
+note = base without baseMm accepted when ground is missing
+original:
+| if (genBase != null && !baseMm.HasValue)
+replacement:
+| if (genBase != null && !baseMm.HasValue && ground != null)
+
+[ed3c1-base-not-object]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cSpecTests.BaseKeysAreExactAndNeedBaseMm
+note = base kind not checked
+original:
+| if (node.Kind != JsonKind.Object) throw Bad("base"
+replacement:
+| if (node.Kind == JsonKind.Bool) throw Bad("base"
+
+[ed3c1-base-unknown-key]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cSpecTests.BaseKeysAreExactAndNeedBaseMm
+note = unknown base keys accepted
+original:
+| Known(node, MapGenBase.Keys, "base");
+replacement:
+| Known(node, new[] { "tile", "sha256", "x0Mm", "z0Mm", "scaleMilli", "exaggerationMilli", "datumMm", "rotation" }, "base");
+
+[ed3c1-base-tile-slash]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cSpecTests.TileAndFingerprintTextsAreChecked
+note = slash in tile accepted
+original:
+| if (tile.IndexOf('/') >= 0 || 
+replacement:
+| if (
+
+[ed3c1-base-tile-backslash]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cSpecTests.TileAndFingerprintTextsAreChecked
+note = backslash in tile accepted
+original:
+| || tile.IndexOf('\\') >= 0 
+replacement:
+|
+
+[ed3c1-base-tile-dot]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cSpecTests.TileAndFingerprintTextsAreChecked
+note = tile . accepted
+original:
+| || tile == "." 
+replacement:
+|
+
+[ed3c1-base-tile-dotdot]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cSpecTests.TileAndFingerprintTextsAreChecked
+note = tile .. accepted
+original:
+| || tile == "..")
+replacement:
+| )
+
+[ed3c1-base-sha-kind]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cSpecTests.TileAndFingerprintTextsAreChecked
+note = sha256 kind not checked
+original:
+| if (shaNode.Kind != JsonKind.String || !IsSha256
+replacement:
+| if (shaNode.Kind == JsonKind.Bool || !IsSha256
+
+[ed3c1-base-sha-short]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cSpecTests.TileAndFingerprintTextsAreChecked
+note = 63 characters accepted
+original:
+| if (s.Length != 64) return false;
+replacement:
+| if (s.Length > 64) return false;
+
+[ed3c1-base-sha-long]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cSpecTests.TileAndFingerprintTextsAreChecked
+note = 65 characters accepted
+original:
+| if (s.Length != 64) return false;
+replacement:
+| if (s.Length < 64) return false;
+
+[ed3c1-base-sha-digit-lo]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cSpecTests.TileAndFingerprintTextsAreChecked
+note = '/' accepted
+original:
+| !(c >= '0' && c <= '9')
+replacement:
+| !(c >= '/' && c <= '9')
+
+[ed3c1-base-sha-digit-hi]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cSpecTests.TileAndFingerprintTextsAreChecked
+note = ':' accepted
+original:
+| !(c >= '0' && c <= '9')
+replacement:
+| !(c >= '0' && c <= ':')
+
+[ed3c1-base-sha-letter-lo]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cSpecTests.TileAndFingerprintTextsAreChecked
+note = '`' accepted
+original:
+| !(c >= 'a' && c <= 'f')
+replacement:
+| !(c >= '`' && c <= 'f')
+
+[ed3c1-base-sha-letter-hi]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cSpecTests.TileAndFingerprintTextsAreChecked
+note = 'g' accepted
+original:
+| !(c >= 'a' && c <= 'f')
+replacement:
+| !(c >= 'a' && c <= 'g')
+
+[ed3c1-base-sha-case]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cSpecTests.TileAndFingerprintTextsAreChecked
+note = upper case accepted
+original:
+| !(c >= 'a' && c <= 'f')
+replacement:
+| !(char.ToLowerInvariant(c) >= 'a' && char.ToLowerInvariant(c) <= 'f')
+
+[ed3c1-base-x0-range]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cSpecTests.BaseRangesAcceptBothEndsAndRefuseOneBeyond
+note = x0Mm range widened by one
+original:
+| "base.x0Mm", 0, MapGenBase.MaxOffsetMm);
+replacement:
+| "base.x0Mm", -1, MapGenBase.MaxOffsetMm + 1);
+
+[ed3c1-base-z0-range]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cSpecTests.BaseRangesAcceptBothEndsAndRefuseOneBeyond
+note = z0Mm range widened by one
+original:
+| "base.z0Mm", 0, MapGenBase.MaxOffsetMm);
+replacement:
+| "base.z0Mm", -1, MapGenBase.MaxOffsetMm + 1);
+
+[ed3c1-base-scale-range]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cSpecTests.BaseRangesAcceptBothEndsAndRefuseOneBeyond
+note = scaleMilli range widened by one
+original:
+| MapGenBase.MinScaleMilli, MapGenBase.MaxScaleMilli);
+replacement:
+| MapGenBase.MinScaleMilli - 1, MapGenBase.MaxScaleMilli + 1);
+
+[ed3c1-base-exag-range]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cSpecTests.BaseRangesAcceptBothEndsAndRefuseOneBeyond
+note = exaggerationMilli range widened by one
+original:
+| "base.exaggerationMilli", 1, MapGenBase.MaxExaggerationMilli);
+replacement:
+| "base.exaggerationMilli", 0, MapGenBase.MaxExaggerationMilli + 1);
+
+[ed3c1-base-datum-range]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cSpecTests.BaseRangesAcceptBothEndsAndRefuseOneBeyond
+note = datumMm range widened by one
+original:
+| "base.datumMm", -MapGenBase.MaxDatumMm, MapGenBase.MaxDatumMm);
+replacement:
+| "base.datumMm", -MapGenBase.MaxDatumMm - 1, MapGenBase.MaxDatumMm + 1);
+
+[ed3c1-base-write-missing]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cSpecTests.BaseRoundTripsToItsCanonicalLine
+note = base not written when ground is given
+original:
+| if (Base != null) WriteBase(sb, Base);
+replacement:
+| if (Base != null && Ground == null) WriteBase(sb, Base);
+
+[ed3c1-base-write-always]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cSpecTests.WithoutBaseTheTextHasNoBaseKey
+note = base key written without a base
+original:
+| if (Base != null) WriteBase(sb, Base);
+replacement:
+| if (BaseMm.HasValue) WriteBase(sb, Base ?? new MapGenBase("t", "", 0, 0, 0, 0, 0));
+
+[ed3c1-base-write-order]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cSpecTests.BaseRoundTripsToItsCanonicalLine
+note = base written after ground
+original:
+| if (Base != null) WriteBase(sb, Base);
+|             if (Ground != null) { sb.Append("  \"ground\": "); Quote(sb, Ground); sb.Append(",\n"); }
+replacement:
+| if (Ground != null) { sb.Append("  \"ground\": "); Quote(sb, Ground); sb.Append(",\n"); }
+|             if (Base != null) WriteBase(sb, Base);
+
+[ed3c1-base-write-z0]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cSpecTests.BaseRoundTripsToItsCanonicalLine
+note = x0Mm written from z0Mm
+original:
+| .Append(b.X0Mm.ToString(CultureInfo.InvariantCulture));
+replacement:
+| .Append(b.Z0Mm.ToString(CultureInfo.InvariantCulture));
+
+[ed3c1-base-write-scale]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cSpecTests.BaseRoundTripsToItsCanonicalLine
+note = scaleMilli written from exaggerationMilli
+original:
+| .Append(b.ScaleMilli.ToString(CultureInfo.InvariantCulture));
+replacement:
+| .Append(b.ExaggerationMilli.ToString(CultureInfo.InvariantCulture));
+
+[ed3c1-base-write-tile]
+file = Assets/WarCore/Content/MapTools/MapGenSpec.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cSpecTests.BaseRoundTripsToItsCanonicalLine
+note = tile written without quoting
+original:
+| sb.Append("  \"base\": { \"tile\": "); Quote(sb, b.Tile);
+replacement:
+| sb.Append("  \"base\": { \"tile\": \"").Append(b.Tile).Append('"');
+
+[ed3c1-cmp-tile-without-base]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.SupportMatrix
+note = a tile without base accepted
+original:
+| if (spec.Base == null && tile != null) throw
+replacement:
+| if (spec.Base == null && tile != null && tile.Cols > 3) throw
+
+[ed3c1-cmp-no-window]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.SupportMatrix
+expect = WarCore.Tests.Ed3cComposeTests.WindowMustStayInsideTheTile
+note = base checks skipped
+original:
+| if (spec.Base != null) Window(spec, tile);
+replacement:
+| if (spec.Base != null && tile == null) Window(spec, tile);
+
+[ed3c1-cmp-no-fingerprint]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.SupportMatrix
+note = fingerprint not compared
+original:
+| if (!string.Equals(tile.Fingerprint, b.Sha256, StringComparison.Ordinal))
+replacement:
+| if (tile.Fingerprint.Length != b.Sha256.Length)
+
+[ed3c1-cmp-window-x-strict]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.WindowMustStayInsideTheTile
+note = x window refuses the exact edge
+original:
+| b.X0Mm + (long)spec.Width * b.ScaleMilli > (long)(tile.Cols - 1) * tile.StepMm
+replacement:
+| b.X0Mm + (long)spec.Width * b.ScaleMilli >= (long)(tile.Cols - 1) * tile.StepMm
+
+[ed3c1-cmp-window-z-strict]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.WindowMustStayInsideTheTile
+note = z window refuses the exact edge
+original:
+| b.Z0Mm + (long)spec.Depth * b.ScaleMilli > (long)(tile.Rows - 1) * tile.StepMm
+replacement:
+| b.Z0Mm + (long)spec.Depth * b.ScaleMilli >= (long)(tile.Rows - 1) * tile.StepMm
+
+[ed3c1-cmp-window-x-depth]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.WindowMustStayInsideTheTile
+note = x window uses the depth
+original:
+| b.X0Mm + (long)spec.Width * b.ScaleMilli
+replacement:
+| b.X0Mm + (long)spec.Depth * b.ScaleMilli
+
+[ed3c1-cmp-window-x-no-offset]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.WindowMustStayInsideTheTile
+note = x window leaves out x0Mm
+original:
+| if (b.X0Mm + (long)spec.Width
+replacement:
+| if ((long)spec.Width
+
+[ed3c1-cmp-window-z-no-offset]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.WindowMustStayInsideTheTile
+note = z window leaves out z0Mm
+original:
+| if (b.Z0Mm + (long)spec.Depth
+replacement:
+| if ((long)spec.Depth
+
+[ed3c1-cmp-window-z-cols]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.NonSquareTile
+note = z window uses the columns
+original:
+| > (long)(tile.Rows - 1) * tile.StepMm
+replacement:
+| > (long)(tile.Cols - 1) * tile.StepMm
+
+[ed3c1-cmp-window-x-rows]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.NonSquareTile
+note = x window uses the rows
+original:
+| > (long)(tile.Cols - 1) * tile.StepMm
+replacement:
+| > (long)(tile.Rows - 1) * tile.StepMm
+
+[ed3c1-cmp-window-no-z]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.WindowMustStayInsideTheTile
+note = only x checked
+original:
+| if (b.Z0Mm + (long)spec.Depth * b.ScaleMilli > (long)(tile.Rows - 1) * tile.StepMm)
+replacement:
+| if (b.Z0Mm < 0)
+
+[ed3c1-cmp-window-no-x]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.WindowMustStayInsideTheTile
+note = only z checked
+original:
+| if (b.X0Mm + (long)spec.Width * b.ScaleMilli > (long)(tile.Cols - 1) * tile.StepMm)
+replacement:
+| if (b.X0Mm < 0)
+
+[ed3c1-cmp-no-add]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.BilinearPointsOnASixBySixMap
+note = base layer not added
+original:
+| if (spec.Base != null) AddBase(t, width, depth, spec.Base, tile);
+replacement:
+| if (spec.Base == null) AddBase(t, width, depth, spec.Base, tile);
+
+[ed3c1-cmp-drop-basemm]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.DatumAndBaseMmShiftHeights
+note = baseMm dropped under a base
+original:
+| if (spec.Base != null) AddBase(t, width, depth, spec.Base, tile);
+replacement:
+| if (spec.Base != null) { for (int p = 0; p < t.Length; p++) t[p] = 0; AddBase(t, width, depth, spec.Base, tile); }
+
+[ed3c1-cmp-exag-basemm]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.DatumAndBaseMmShiftHeights
+note = baseMm multiplied by the exaggeration
+original:
+| if (spec.Base != null) AddBase(t, width, depth, spec.Base, tile);
+replacement:
+| if (spec.Base != null) { for (int p = 0; p < t.Length; p++) t[p] = t[p] * spec.Base.ExaggerationMilli / 1000; AddBase(t, width, depth, spec.Base, tile); }
+
+[ed3c1-cmp-x-uses-j]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.BilinearPointsOnASixBySixMap
+note = X uses j
+original:
+| long x = b.X0Mm + (long)i * b.ScaleMilli;
+replacement:
+| long x = b.X0Mm + (long)j * b.ScaleMilli;
+
+[ed3c1-cmp-z-uses-i]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.BilinearPointsOnASixBySixMap
+note = Z ignores j
+original:
+| long z = b.Z0Mm + (long)j * b.ScaleMilli;
+replacement:
+| long z = b.Z0Mm + (long)0 * b.ScaleMilli;
+
+[ed3c1-cmp-drop-x0]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.OffsetsMoveTheWindow
+note = x0Mm dropped
+original:
+| long x = b.X0Mm + (long)i * b.ScaleMilli;
+replacement:
+| long x = (long)i * b.ScaleMilli;
+
+[ed3c1-cmp-drop-z0]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.OffsetsMoveTheWindow
+note = z0Mm dropped
+original:
+| long z = b.Z0Mm + (long)j * b.ScaleMilli;
+replacement:
+| long z = (long)j * b.ScaleMilli;
+
+[ed3c1-cmp-x-no-min]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.BilinearPointsOnASixBySixMap
+expect = WarCore.Tests.Ed3cComposeTests.WindowMustStayInsideTheTile
+note = last column not clamped
+original:
+| int ca = (int)Math.Min(x / s, tile.Cols - 2);
+replacement:
+| int ca = (int)(x / s);
+
+[ed3c1-cmp-x-min-1]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.BilinearPointsOnASixBySixMap
+expect = WarCore.Tests.Ed3cComposeTests.WindowMustStayInsideTheTile
+note = last column clamped to cols - 1
+original:
+| int ca = (int)Math.Min(x / s, tile.Cols - 2);
+replacement:
+| int ca = (int)Math.Min(x / s, tile.Cols - 1);
+
+[ed3c1-cmp-z-no-min]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.BilinearPointsOnASixBySixMap
+expect = WarCore.Tests.Ed3cComposeTests.WindowMustStayInsideTheTile
+note = last row not clamped
+original:
+| int cb = (int)Math.Min(z / s, tile.Rows - 2);
+replacement:
+| int cb = (int)(z / s);
+
+[ed3c1-cmp-z-min-1]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.BilinearPointsOnASixBySixMap
+expect = WarCore.Tests.Ed3cComposeTests.WindowMustStayInsideTheTile
+note = last row clamped to rows - 1
+original:
+| int cb = (int)Math.Min(z / s, tile.Rows - 2);
+replacement:
+| int cb = (int)Math.Min(z / s, tile.Rows - 1);
+
+[ed3c1-cmp-x-min-rows]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.NonSquareTile
+note = column clamp uses the rows
+original:
+| int ca = (int)Math.Min(x / s, tile.Cols - 2);
+replacement:
+| int ca = (int)Math.Min(x / s, tile.Rows - 2);
+
+[ed3c1-cmp-weights-swap-top]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.BilinearPointsOnASixBySixMap
+note = top weights swapped
+original:
+| tile.HeightMm(ca, cb) * (s - fx) * (s - fz) + tile.HeightMm(ca + 1, cb) * fx * (s - fz)
+replacement:
+| tile.HeightMm(ca, cb) * fx * (s - fz) + tile.HeightMm(ca + 1, cb) * (s - fx) * (s - fz)
+
+[ed3c1-cmp-weights-swap-bottom]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.BilinearPointsOnASixBySixMap
+note = bottom weights swapped
+original:
+| tile.HeightMm(ca, cb + 1) * (s - fx) * fz + tile.HeightMm(ca + 1, cb + 1) * fx * fz
+replacement:
+| tile.HeightMm(ca, cb + 1) * fx * fz + tile.HeightMm(ca + 1, cb + 1) * (s - fx) * fz
+
+[ed3c1-cmp-weights-swap-diag]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.BilinearPointsOnASixBySixMap
+note = corner weights swapped
+original:
+| tile.HeightMm(ca, cb) * (s - fx) * (s - fz) +
+replacement:
+| tile.HeightMm(ca, cb) * fx * fz +
+
+[ed3c1-cmp-corner-swap]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.BilinearPointsOnASixBySixMap
+note = h[b][a+1] read as h[b+1][a]
+original:
+| + tile.HeightMm(ca + 1, cb) * fx * (s - fz)
+replacement:
+| + tile.HeightMm(ca, cb + 1) * fx * (s - fz)
+
+[ed3c1-cmp-floor4-zero]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.MixedParametersAndNegativeTile
+note = real height rounds toward zero
+original:
+| long r = FloorDiv(n, s * s);
+replacement:
+| long r = n / (s * s);
+
+[ed3c1-cmp-floor5-zero]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.DatumAndBaseMmShiftHeights
+note = raw rounds toward zero
+original:
+| t[j * cols + i] += FloorDiv((r - b.DatumMm) * b.ExaggerationMilli * 65536, (long)b.ScaleMilli * 1000);
+replacement:
+| t[j * cols + i] += (r - b.DatumMm) * b.ExaggerationMilli * 65536 / ((long)b.ScaleMilli * 1000);
+
+[ed3c1-cmp-one-floor]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.BilinearPointsOnASixBySixMap
+note = the two floors merged into one
+original:
+| t[j * cols + i] += FloorDiv((r - b.DatumMm) * b.ExaggerationMilli * 65536, (long)b.ScaleMilli * 1000);
+replacement:
+| t[j * cols + i] += (long)Math.Floor(((decimal)n / (s * s) - b.DatumMm) * b.ExaggerationMilli * 65536 / ((decimal)b.ScaleMilli * 1000));
+
+[ed3c1-cmp-floor-sign]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.MixedParametersAndNegativeTile
+expect = WarCore.Tests.Ed3cComposeTests.DatumAndBaseMmShiftHeights
+note = floor division rounds positive values down by one
+original:
+|             if (n % d != 0 && n < 0) q--;
+|             return q;
+|         }
+|
+|         // t += h W
+replacement:
+|             if (n % d != 0 && n > 0) q--;
+|             return q;
+|         }
+|
+|         // t += h W
+
+[ed3c1-cmp-datum-plus]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.DatumAndBaseMmShiftHeights
+note = datum added
+original:
+| (r - b.DatumMm) * b.ExaggerationMilli
+replacement:
+| (r + b.DatumMm) * b.ExaggerationMilli
+
+[ed3c1-cmp-datum-drop]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.DatumAndBaseMmShiftHeights
+note = datum dropped
+original:
+| (r - b.DatumMm) * b.ExaggerationMilli
+replacement:
+| r * b.ExaggerationMilli
+
+[ed3c1-cmp-exag-drop]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.ExaggerationScalesHeights
+note = exaggeration dropped
+original:
+| (r - b.DatumMm) * b.ExaggerationMilli * 65536, (long)b.ScaleMilli * 1000)
+replacement:
+| (r - b.DatumMm) * 1000 * 65536, (long)b.ScaleMilli * 1000)
+
+[ed3c1-cmp-exag-scale-swap]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.ExaggerationScalesHeights
+note = exaggeration and scale swapped
+original:
+| (r - b.DatumMm) * b.ExaggerationMilli * 65536, (long)b.ScaleMilli * 1000)
+replacement:
+| (r - b.DatumMm) * b.ScaleMilli * 65536, (long)b.ExaggerationMilli * 1000)
+
+[ed3c1-cmp-scale-drop]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.ScaleChangesSpacingAndHeight
+note = heights not divided by the scale
+original:
+| (r - b.DatumMm) * b.ExaggerationMilli * 65536, (long)b.ScaleMilli * 1000)
+replacement:
+| (r - b.DatumMm) * b.ExaggerationMilli * 65536, 10000L * 1000)
+
+[ed3c1-cmp-spacing-fixed]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.ScaleChangesSpacingAndHeight
+note = points spaced 10 m whatever the scale
+original:
+| long x = b.X0Mm + (long)i * b.ScaleMilli;
+replacement:
+| long x = b.X0Mm + (long)i * 10000;
+
+[ed3c1-cmp-skip-clamp]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.ClampStillApplies
+note = clamp skipped under a base
+original:
+| for (int p = 0; p < t.Length; p++) t[p] = Math.Max(lo, Math.Min(hi, t[p]));
+replacement:
+| if (spec.Base == null) for (int p = 0; p < t.Length; p++) t[p] = Math.Max(lo, Math.Min(hi, t[p]));
+
+[ed3c1-cmp-skip-fill]
+file = Assets/WarCore/Content/MapTools/MapTerrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cComposeTests.FillStillApplies
+note = fill skipped under a base
+original:
+|             Fill(t, cols, rows);
+|             var fixedBy
+replacement:
+|             if (spec.Base == null) Fill(t, cols, rows);
+|             var fixedBy
+
+[ed3c1-doc-tile-ignored]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Terrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cDocumentTests.WithTerrainTakesTheTileText
+note = tile text ignored
+original:
+| MapDemTile tile = demJson == null ? null : MapDemTile.Read(demJson);
+replacement:
+| MapDemTile tile = null;
+
+[ed3c1-doc-compose-no-tile]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Terrain.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cDocumentTests.WithTerrainTakesTheTileText
+note = tile not passed to the composer
+original:
+| MapTerrain.Compose(desc, spec, rules, tile);
+replacement:
+| MapTerrain.Compose(desc, spec, rules, tile == null ? null : null);
+
+[ed3c1-fac-fingerprint]
+file = Assets/WarCore/Presentation/Maps/MapDemTiles.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cDocumentTests.DemTilesGiveFingerprintAndCredit
+note = facade fingerprint changed
+original:
+| => MapDemTile.Read(demJson).Fingerprint;
+replacement:
+| => MapDemTile.Read(demJson).Fingerprint.Substring(1);
+
+[ed3c1-fac-credit]
+file = Assets/WarCore/Presentation/Maps/MapDemTiles.cs
+filter = FullyQualifiedName~Ed3
+expect = WarCore.Tests.Ed3cDocumentTests.DemTilesGiveFingerprintAndCredit
+note = facade credit keeps the first text only
+original:
+| => MapDemTile.Read(demJson).Credit;
+replacement:
+| => new[] { MapDemTile.Read(demJson).Credit[0] };

@@ -36,6 +36,8 @@ namespace WarCore.Replay
             ["mp-playtest"] = new Entry("MP playtest recipe, idle player", () => DemoRecipes.MpPlaytest(), DemoRecipes.M7MapBytes),
             // MAP-P1 three-lane map, seed and AI rules as baked (default AI).
             ["lanes"] = new Entry("Three-lane map, default AI", () => Lanes(null), () => LanesBake().WcMapBytes),
+            // BODY-1: the same map and default AI with the pack "rwr-body" (soldier body 1.75 m, eye and muzzle 1.5 m); only the pack line is swapped.
+            ["lanes-body"] = new Entry("Three-lane map, default AI, rwr-body pack", LanesBody, () => LanesBodyBake().WcMapBytes),
             // AI-P1 (values fixed by the task, PLACEHOLDER): 2 m guard slots, a 6 m slot ring (the point radius) and the
             // scatter placement; -p1 scatters over the point radius (6 m), -p1w over radius + ring (12 m).
             ["lanes-p1"] = new Entry("Three-lane map, 2 m slots + 6 m ring + scatter 6 m",
@@ -114,6 +116,25 @@ namespace WarCore.Replay
             string text = File.ReadAllText(LanesPath);
             if (text.IndexOf(BakedSeed, StringComparison.Ordinal) < 0) throw new InvalidOperationException("The three-lane map no longer says " + BakedSeed + ".");
             return MapBake.Run(System.Text.Encoding.UTF8.GetBytes(text.Replace(BakedSeed, "\"seed\": " + LanesSeed.Value)));
+        }
+        // The three-lane map with its pack line swapped in memory (the file is not touched); the seed follows LanesSeed as for "lanes".
+        private const string BakedPack = "\"pack\": \"rwr-m6\"";
+        private static MapBakeResult LanesBodyBake()
+        {
+            string text = File.ReadAllText(LanesPath);
+            if (text.IndexOf(BakedPack, StringComparison.Ordinal) < 0) throw new InvalidOperationException("The three-lane map no longer says " + BakedPack + ".");
+            text = text.Replace(BakedPack, "\"pack\": \"rwr-body\"");
+            if (LanesSeed != null)
+            {
+                if (text.IndexOf(BakedSeed, StringComparison.Ordinal) < 0) throw new InvalidOperationException("The three-lane map no longer says " + BakedSeed + ".");
+                text = text.Replace(BakedSeed, "\"seed\": " + LanesSeed.Value);
+            }
+            return MapBake.Run(System.Text.Encoding.UTF8.GetBytes(text));
+        }
+        private static WorldRecipe LanesBody()
+        {
+            MapBakeResult bake = LanesBodyBake();
+            return MapRecipe.From(bake, RwrPack.Load(bake.PackId));
         }
         private static WorldRecipe Lanes(ContentPack ai)
         {

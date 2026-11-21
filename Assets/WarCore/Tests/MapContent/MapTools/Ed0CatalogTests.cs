@@ -42,7 +42,7 @@ namespace WarCore.Tests
         public void LayersAreOrdinalAndLeaveTheReservedFilesOut()
         {
             string dir = TwelveLayers("Big/Data");
-            File.WriteAllText(Path.Combine(dir, "surface-colors.json"), "{}");
+            File.WriteAllText(Path.Combine(dir, "palette.json"), "{}");
             Ed0Dirs.Editor(dir, "{ \"defaultLayer\": \"l07\" }");
             File.WriteAllText(Path.Combine(dir, "notes.txt"), "not a layer");
             var catalog = new ContentCatalog(new[] { dir });

@@ -5,6 +5,10 @@
     { "id": "rwr.weapon-1", "effectRaw": 16384, "spreadBase": 4000, "spreadGrowth": 1000, "spreadMax": 9000 },
     { "id": "rwr.weapon-2", "effectRaw": 18022, "spreadBase": 4000, "spreadGrowth": 1000, "spreadMax": 9000 }
   ],
+  "unitTypes": [
+    { "id": "rwr.soldier-1", "dashDistance": 4000, "dashTicks": 6, "dashCooldown": 90 },
+    { "id": "rwr.soldier-2", "dashDistance": 4000, "dashTicks": 6, "dashCooldown": 90 }
+  ],
   "ai": {
     "failedSlotTicks": 90,
     "targetMemoryTicks": 300,

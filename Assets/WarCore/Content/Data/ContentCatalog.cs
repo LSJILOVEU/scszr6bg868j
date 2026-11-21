@@ -8,13 +8,13 @@ namespace WarCore.Content
     // <layer id>.json in it (the "pack" of a map description names a layer, never a cartridge).
     // Cartridge name: the parent folder's name when the directory itself is called "Data" (Content/Rwr/Data -> Rwr), else the
     // directory's own name. Cartridges and layers are kept in ordinal order, so nothing depends on the file system's order.
-    // Reserved file names (not layers): editor.json (the cartridge's editor settings) and surface-colors.json.
+    // Reserved file names (not layers): editor.json (the cartridge's editor settings) and palette.json (its colours).
     public sealed class ContentCatalog
     {
         // Path.PathSeparator-separated list of data directories; read before DirectoryVariable.
         public const string DirectoriesVariable = "WARCORE_CONTENT_DIRS";
         public const string EditorFile = "editor";
-        public const string ColorsFile = "surface-colors";
+        public const string ColorsFile = "palette";
         private const string ContentRoot = "Assets/WarCore/Content";
 
         private readonly string[] names;
@@ -91,6 +91,9 @@ namespace WarCore.Content
 
         // The cartridge that holds the layer; ContentException when none or more than one does.
         public string CartridgeOf(string layerId) => names[Holder(layerId)];
+
+        // The data directory of a cartridge, as it was given to the constructor.
+        public string DirectoryOf(string cartridge) => directories[IndexOf(cartridge)];
 
         public ContentPack Load(string layerId) => ContentLoader.Load(new FileContentSource(directories[Holder(layerId)]), layerId);
 

@@ -1,0 +1,82 @@
+# 地图体检的中文说明。每行：码、TAB、说明；按码的字母顺序排；# 开头是注释。
+# 门禁码（GATE_）、描述码（MAPDESC_）、编辑码（MAPEDIT_）、烘焙写入器码（WCMAP_）、预览提醒（MAPPREVIEW_）。
+GATE_LAYER	有墙用了兵会走的那一层，墙挡不住兵，换一个层。
+GATE_MATCH	图里有据点，但这一队没有基地，没法开局，给它放一个基地。
+GATE_PLATE_BURIED	楼板埋在地里了，抬高楼板或压低地面。
+GATE_PLATE_SLOPE	楼板面太陡，兵走不上去，把斜坡放缓。
+GATE_PLATE_STACK	两块楼板在同一格上叠得太近，分开一点或调高上面那块。
+GATE_POINT_BLOCKED	据点中心站不了人（被墙、陡坡或走不了的地面挡住），挪一挪。
+GATE_REF	这里写的名字内容包里找不到（兵种或地表），检查拼写。
+GATE_SPAWN_FOOTPRINT	这里放不下一个兵（基地、出生点或士兵被挡住），挪到空地上。
+GATE_UNREACHABLE	基地走不到这个据点，中间被墙或悬崖断开了，开一条路。
+GATE_WALL_BURIED	抬高的墙顶没有露出地面，把墙加高或降低地面。
+GATE_WALL_PLATE	有墙穿过了楼板，挪开墙或楼板。
+GATE_WALL_TERRAIN	墙顶没有比脚下最高的地面高出 1 米，把墙加高或压平地面。
+MAPDESC_FORMAT	地图文件格式不对（不是 warcore.map，或版本不认识）。
+MAPDESC_GRID	高度表或地表表有错（行列数、数值范围或名字表）。
+MAPDESC_ID	编号有错（重复、为 0 或超出范围）。
+MAPDESC_KEY	地图文件里有写错、缺少或多余的字段，或字段类型不对。
+MAPDESC_OWNER	归属表有错（名字重复、写满了或引用了不存在的归属）。
+MAPDESC_PLATE	楼板或挖洞的数据有错（尺寸、高度、厚度或位置）。
+MAPDESC_PLATE_ANCHOR	有东西标了站在某块楼板上，但它的位置不在那块板的实心部分。
+MAPDESC_POINT	据点的数据有错（位置、半径或出生点）。
+MAPDESC_SIZE	地图尺寸或原点不合规（太大、太小或不是整数）。
+MAPDESC_TEAM	队伍号或据点的初始归属超出范围。
+MAPDESC_WALL	墙的数据有错（位置、尺寸、高度或层名）。
+MAPDESC_WCMAP	烘焙成运行用的地图文件时被拒绝
+MAPEDIT_BATCH	批量编辑里不能再套一层批量编辑。
+MAPEDIT_LINK	这次编辑引用的东西对不上（编号不存在或类型不对）。
+MAPPREVIEW_GROUND_FALLBACK	配色表里没有这个地表的颜色，预览暂用按名字算出的灰色。
+WCMAP_BITMAP_LENGTH	通行位图的长度和地图尺寸对不上。
+WCMAP_BOUNDS	坐标或高度超出允许范围。
+WCMAP_CAPACITY	数量或尺寸超过上限（墙、楼板、地图边长等）。
+WCMAP_CELL_SIZE	格子大小不是 1 米。
+WCMAP_CHUNKS	地图块表有错。
+WCMAP_CHUNK_ORIGIN	地图块的原点有错。
+WCMAP_DEPENDENCIES	依赖表有错。
+WCMAP_DUPLICATE_KEY	有两样东西用了同一个编号。
+WCMAP_FILE_HASH	文件校验和不对，文件可能损坏了。
+WCMAP_GRID	地图原点不在整米格线上。
+WCMAP_HEIGHT_PROFILE	高度数据的格式不被支持。
+WCMAP_HEIGHT_RANGE	有高度点超出了地图的最低和最高高度。
+WCMAP_HEIGHT_SIZE	高度点的数量和地图尺寸对不上。
+WCMAP_HEIGHT_SLOPE	相邻高度点落差太大，有的格子坡度超过 2 比 1，把它压平一点。
+WCMAP_LAYERS	层表有错（数量、名字重复或位号冲突）。
+WCMAP_LAYER_ORDER	层表没有按名字排序。
+WCMAP_LENGTH	文件或某一段的长度不对。
+WCMAP_MAGIC	不是地图文件（开头标记不对）。
+WCMAP_NAV_PROFILE	导航数据的格式不被支持。
+WCMAP_NAV_TYPE	导航数据的类型不被支持。
+WCMAP_NAV_WALL_MISMATCH	通行位图和墙对不上。
+WCMAP_PAYLOAD_LENGTH	某一段数据的长度不对。
+WCMAP_PLATE_BURIED	楼板埋在地里了。
+WCMAP_PLATE_GEOMETRY	楼板的位置或尺寸超出了地图。
+WCMAP_PLATE_NAV_MISMATCH	楼板的可走区域和实心区域对不上。
+WCMAP_PLATE_ORDER	楼板没有按编号排序。
+WCMAP_PLATE_SLOPE	楼板面太陡。
+WCMAP_PLATE_STACK	两块楼板叠得太近。
+WCMAP_PLATE_SURFACE	楼板用了地表表里没有的地表。
+WCMAP_REFERENCE	引用对不上（墙的层名或地图块引用不存在）。
+WCMAP_SECTION_COUNT	文件的段数不对。
+WCMAP_SECTION_HASH	某一段的校验和不对，文件可能损坏了。
+WCMAP_SECTION_ORDER	文件的段顺序不对。
+WCMAP_SHAPE	墙的形状不被支持（只认长方体）。
+WCMAP_STRING	名字为空、太长或含非法字符。
+WCMAP_STRING_LENGTH	名字的长度不对。
+WCMAP_SURFACE	地表数据的格式不被支持。
+WCMAP_SURFACE_COUNT	地表表的名字数量不对。
+WCMAP_SURFACE_INDEX	有格子用了地表表里没有的序号。
+WCMAP_SURFACE_LENGTH	地表格数和地图尺寸对不上。
+WCMAP_SURFACE_ORDER	地表表没有按名字排序。
+WCMAP_TRAILING_BYTES	文件末尾多出了数据。
+WCMAP_TRUNCATED	文件被截断了，数据不完整。
+WCMAP_UNKNOWN_SECTION	文件里有不认识的段。
+WCMAP_UNSUPPORTED_SECTION	文件里有这个版本不支持的段。
+WCMAP_UTF8	名字不是合法的 UTF-8 文字。
+WCMAP_VERSION	文件版本不被支持。
+WCMAP_WALL_BURIED	抬高的墙顶没有露出地面。
+WCMAP_WALL_GEOMETRY	墙的位置、尺寸或高度不合规（要整米、整数高度）。
+WCMAP_WALL_ORDER	墙没有按编号排序。
+WCMAP_WALL_PLATE	有墙穿过了楼板。
+WCMAP_WALL_TERRAIN	墙顶没有比脚下最高的地面高出 1 米。
+WCMAP_YAW	墙有旋转角，现在只支持不旋转的墙。
