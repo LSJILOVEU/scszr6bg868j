@@ -79,6 +79,10 @@ namespace WarCore.Tests.Stance
 
         internal static Simulation SimOf(SimSession s) => M3TestWorld.Sim(s);
         internal static EntityId Unit(SimSession s, ulong key) => M3TestWorld.Unit(s, key);
+        // Ask the unit with this spawn key for a stance between two steps (false in a world without stances), and read its stance
+        // (standing in a world without stances).
+        internal static bool TryStance(this SimSession s, ulong key, int level) => s.Stances != null && s.Stances.TryStance(Unit(s, key), level);
+        internal static StanceView StanceOf(this SimSession s, ulong key) => s.Stances == null ? new StanceView(0, -1, 0) : s.Stances.StanceOf(Unit(s, key));
         internal static StanceSystem Stances(SimSession s) => s.Stances;
         internal static CombatSystem Combat(SimSession s) => s.Stances?.Gate == null ? null : CombatOf(s);
         internal static CombatSystem CombatOf(SimSession s)

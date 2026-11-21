@@ -504,9 +504,9 @@ filter = FullyQualifiedName~Stance1
 expect = WarCore.Tests.Stance.Stance1CommandTests.S11_CrouchedDoesNotDash
 note = the dash key ignores the gate
 original:
-|                         && (gate == null || gate.Allows(unit, UnitAction.Dash)))
+|                     if (sim.Entities.TryGet(positions, unit, out Position at) && (combat == null || !combat.IsDead(unit)) && (Gate == null || Gate.Allows(unit, UnitAction.Dash)))
 replacement:
-|                         )
+|                     if (sim.Entities.TryGet(positions, unit, out Position at) && (combat == null || !combat.IsDead(unit)))
 
 [se-skip-player]
 file = Assets/WarCore/Presentation/Bridge/SimSession.cs
@@ -514,29 +514,29 @@ filter = FullyQualifiedName~Stance1
 expect = WarCore.Tests.Stance.Stance1CommandTests.S11_TheCommandSkipsThePlayer
 note = the command asks the player too
 original:
-|                 if (controlled != null && unit.Equals(controlled.Current)) continue;
+|                 if (spawns[i].Squad == squad && (controlled == null || !controlled.Current.Equals(sim.Entities.Resolve(new EntityLink(units[i])))))
 replacement:
-|                 
+|                 if (spawns[i].Squad == squad)
 
 [se-not-squad]
 file = Assets/WarCore/Presentation/Bridge/SimSession.cs
 filter = FullyQualifiedName~Stance1
 expect = WarCore.Tests.Stance.Stance1CommandTests.S11_TheCommandAsksTheLivingUnitsOfTheSquad
-note = the stance command becomes a squad order
+note = the stance command asks nobody
 original:
-|             if (hasCommand && pending[0].Kind == BridgeCommandKind.Stance)
+|             else if (hasCommand && head.Kind == BridgeCommandKind.Stance) { if (Stances != null) AskSquad(head.Squad, u => Stances.TryStance(u, head.Level)); }
 replacement:
-|             if (false)
+|             else if (hasCommand && head.Kind == BridgeCommandKind.Stance) {  }
 
 [se-key-order]
 file = Assets/WarCore/Presentation/Bridge/SimSession.cs
 filter = FullyQualifiedName~Stance1
 expect = WarCore.Tests.Stance.Stance1CommandTests.S11_TheCommandAsksTheLivingUnitsOfTheSquad
-note = the walk starts at the largest key and asks only that unit
+note = the squad command asks the other squads
 original:
-|                     if (spawns[i].Squad == command.Squad && (first || spawns[i].Key > last) && (next < 0 || spawns[i].Key < spawns[next].Key))
+|                 if (spawns[i].Squad == squad && (controlled == null || !controlled.Current.Equals(sim.Entities.Resolve(new EntityLink(units[i])))))
 replacement:
-|                     if (spawns[i].Squad == command.Squad && (first || spawns[i].Key > last) && (next < 0 || spawns[i].Key > spawns[next].Key))
+|                 if (spawns[i].Squad != squad && (controlled == null || !controlled.Current.Equals(sim.Entities.Resolve(new EntityLink(units[i])))))
 
 [se-enqueue]
 file = Assets/WarCore/Presentation/Bridge/SimSession.cs
@@ -544,9 +544,9 @@ filter = FullyQualifiedName~Stance1
 expect = WarCore.Tests.Stance.Stance1CommandTests.S11_TheLevelIsChecked
 note = a level one past the last is queued
 original:
-|             else if (command.Kind == BridgeCommandKind.Stance && command.Level >= (stances?.Levels ?? 1))
+|             else if (command.Kind == BridgeCommandKind.Stance && command.Level >= (Stances?.Levels ?? 1)) throw new ArgumentOutOfRangeException(nameof(command), "This world has stance levels 0 to " + ((Stances?.Levels ?? 1) - 1) + ".");
 replacement:
-|             else if (command.Kind == BridgeCommandKind.Stance && command.Level > (stances?.Levels ?? 1))
+|             else if (command.Kind == BridgeCommandKind.Stance && command.Level > (Stances?.Levels ?? 1)) throw new ArgumentOutOfRangeException(nameof(command), "This world has stance levels 0 to " + ((Stances?.Levels ?? 1) - 1) + ".");
 
 [se-view]
 file = Assets/WarCore/Presentation/Bridge/SimSession.cs
@@ -554,9 +554,9 @@ filter = FullyQualifiedName~Stance1
 expect = WarCore.Tests.Stance.Stance1CommandTests.S11_TheCommandAsksTheLivingUnitsOfTheSquad
 note = the frame shows no stance
 original:
-|                     stances == null ? 0 : stances.StanceOf(unit).Level));
+|                     squads != null && alive ? BandKey(squads.SquadOf(sim.Entities.StableOf(unit))) : 0, Stances == null ? 0 : Stances.StanceOf(unit).Level));
 replacement:
-|                     0));
+|                     squads != null && alive ? BandKey(squads.SquadOf(sim.Entities.StableOf(unit))) : 0));
 
 [fv-stance]
 file = Assets/WarCore/Presentation/Bridge/FrameView.cs

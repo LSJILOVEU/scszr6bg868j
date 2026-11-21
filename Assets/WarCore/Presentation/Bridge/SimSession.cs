@@ -56,9 +56,7 @@ namespace WarCore.Presentation
         // M7b: the locomotion and the dash state table when a recipe unit has a dash (DashFeature on); both null otherwise.
         internal InterimLocomotion Dash;
         internal ComponentType<DashState>? DashStates;
-        // STANCE-1: the stance system and the action gate when the combat pack has stances; both null otherwise.
-        internal StanceSystem Stances;
-        internal ActionGate Gate;
+        internal StanceSystem Stances; internal ActionGate Gate; // STANCE-1, when the combat pack has stances; else null
     }
 
     /// <summary>
@@ -91,8 +89,7 @@ namespace WarCore.Presentation
         private readonly ComponentType<UnitFacing>? facings;
         private readonly InterimLocomotion dash;
         private readonly ComponentType<DashState>? dashStates;
-        private readonly StanceSystem stances;
-        private readonly ActionGate gate;
+        internal StanceSystem Stances { get; } internal ActionGate Gate { get; } // STANCE-1, null in a world without stances
         private readonly List<BridgeCommand> pending = new List<BridgeCommand>();
         private readonly List<BridgeCommand> commandLog = new List<BridgeCommand>();
         private readonly List<PlayerInputRecord> pendingPlayer = new List<PlayerInputRecord>();
@@ -139,9 +136,7 @@ namespace WarCore.Presentation
         {
             facings = parts.Facings;
             dash = parts.Dash;
-            dashStates = parts.DashStates;
-            stances = parts.Stances;
-            gate = parts.Gate;
+            dashStates = parts.DashStates; Stances = parts.Stances; Gate = parts.Gate;
             combatPack = parts.CombatPack;
             controlled = parts.Controlled;
             maxHealthRaw = parts.MaxHealthRaw;
@@ -284,18 +279,13 @@ namespace WarCore.Presentation
             throw new ArgumentException("Follow target is not a unit of this session.", nameof(key));
         }
 
-        // AIM-1: TryReload for each unit of the squad that the player does not control, in spawn key order (spawns are sorted
-        // by key). The combat system refuses what it must (dead, no manual reload in the pack, full magazine...).
-        private void ReloadSquad(int squad)
+        // AIM-1 TryReload, STANCE-1 TryStance: ask each unit of the squad that the player does not control, in spawn key order
+        // (spawns are sorted by key). The system asked refuses what it must (dead, full magazine, changing stance...).
+        private void AskSquad(int squad, Func<EntityId, bool> ask)
         {
-            if (combat == null) return;
             for (int i = 0; i < spawns.Length; i++)
-            {
-                if (spawns[i].Squad != squad) continue;
-                EntityId unit = sim.Entities.Resolve(new EntityLink(units[i]));
-                if (controlled != null && controlled.Current.Equals(unit)) continue;
-                combat.TryReload(unit);
-            }
+                if (spawns[i].Squad == squad && (controlled == null || !controlled.Current.Equals(sim.Entities.Resolve(new EntityLink(units[i])))))
+                    ask(sim.Entities.Resolve(new EntityLink(units[i])));
         }
 
         // A squad target travels as a link beside the frame; frames without one take the plain path.
@@ -316,8 +306,7 @@ namespace WarCore.Presentation
             }
             else if (command.Kind == BridgeCommandKind.Follow && !HasUnit(command.TargetKey))
                 throw new ArgumentException("Follow target is not a unit of this session.", nameof(command));
-            else if (command.Kind == BridgeCommandKind.Stance && command.Level >= (stances?.Levels ?? 1))
-                throw new ArgumentOutOfRangeException(nameof(command), "This world has stance levels 0 to " + ((stances?.Levels ?? 1) - 1) + ".");
+            else if (command.Kind == BridgeCommandKind.Stance && command.Level >= (Stances?.Levels ?? 1)) throw new ArgumentOutOfRangeException(nameof(command), "This world has stance levels 0 to " + ((Stances?.Levels ?? 1) - 1) + ".");
             else if (command.Kind == BridgeCommandKind.Blast)
             {
                 BlastIndex(command.BlastId);
@@ -377,12 +366,12 @@ namespace WarCore.Presentation
             SquadCommand? squad = null;
             EntityLink followTarget = default;
             bool hasCommand = pending.Count > 0 && pending[0].AtTick == nextTick;
-            // AIM-1: a reload is no squad order; it is asked here, before the step, and the frame carries no squad command.
+            // AIM-1 reload, STANCE-1 stance: no squad order; asked here, before the step, and the frame carries no squad command.
             // BLAST-1: a blast command is no squad command either; it is taken apart here, before the squad switch below.
-            // STANCE-1: a stance command is no squad order; it asks the squad's units before the step and leaves the input empty.
             bool blast = hasCommand && pending[0].Kind == BridgeCommandKind.Blast;
-            if (hasCommand && pending[0].Kind == BridgeCommandKind.Reload) ReloadSquad(pending[0].Squad);
-            else if (hasCommand && pending[0].Kind == BridgeCommandKind.Stance) AskStance(pending[0]);
+            BridgeCommand head = hasCommand ? pending[0] : default;
+            if (hasCommand && head.Kind == BridgeCommandKind.Reload) { if (combat != null) AskSquad(head.Squad, combat.TryReload); }
+            else if (hasCommand && head.Kind == BridgeCommandKind.Stance) { if (Stances != null) AskSquad(head.Squad, u => Stances.TryStance(u, head.Level)); }
             else if (hasCommand && !blast)
             {
                 BridgeCommand command = pending[0];
@@ -413,12 +402,10 @@ namespace WarCore.Presentation
                     @throw: nextPlayerInput.Throw, skillSlot: nextPlayerInput.SkillSlot, squad: squad, aimLayer: nextPlayerInput.AimLayer);
                 // M7b: the dash key going down asks for a dash before this tick's step, so its first step is this tick's.
                 // Direction: the move input, else from the unit to the aim point; TryDash refuses a zero direction.
-                // STANCE-1: with an action gate the dash is asked only when the gate allows it (not crouched, not changing stance).
                 if (dash != null && nextPlayerInput.Dash && !heldPlayerInput.Dash)
                 {
                     EntityId unit = controlled.Current;
-                    if (sim.Entities.TryGet(positions, unit, out Position at) && (combat == null || !combat.IsDead(unit))
-                        && (gate == null || gate.Allows(unit, UnitAction.Dash)))
+                    if (sim.Entities.TryGet(positions, unit, out Position at) && (combat == null || !combat.IsDead(unit)) && (Gate == null || Gate.Allows(unit, UnitAction.Dash)))
                         dash.TryDash(unit, move.X.Raw != 0 || move.Z.Raw != 0 ? move : aim - at.Value);
                 }
             }
@@ -456,35 +443,6 @@ namespace WarCore.Presentation
             }
         }
 
-        // Every living unit of the command's squad that stands on the field, in spawn key order, the player's unit left out.
-        private void AskStance(BridgeCommand command)
-        {
-            if (stances == null) return;
-            ulong last = 0;
-            bool first = true;
-            while (true)
-            {
-                int next = -1;
-                for (int i = 0; i < spawns.Length; i++)
-                    if (spawns[i].Squad == command.Squad && (first || spawns[i].Key > last) && (next < 0 || spawns[i].Key < spawns[next].Key))
-                        next = i;
-                if (next < 0) return;
-                first = false;
-                last = spawns[next].Key;
-                EntityId unit = sim.Entities.Resolve(new EntityLink(units[next]));
-                if (controlled != null && unit.Equals(controlled.Current)) continue;
-                stances.TryStance(unit, command.Level);
-            }
-        }
-
-        // STANCE-1, for tests and tools: ask the unit with this spawn key for a stance between two steps (false in a world without
-        // stances), and read its stance (standing in a world without stances).
-        internal bool TryStance(ulong viewKey, int level) => stances != null && stances.TryStance(sim.Entities.Resolve(UnitLink(viewKey)), level);
-        internal StanceView StanceOf(ulong viewKey) =>
-            stances == null ? new StanceView(0, -1, 0) : stances.StanceOf(sim.Entities.Resolve(UnitLink(viewKey)));
-        internal StanceSystem Stances => stances;
-        internal ActionGate Gate => gate;
-
         // The spawn key of the unit with this stable identity; 0 for 0 (no squad) and for an identity that is no unit's.
         private ulong BandKey(ulong leader)
         {
@@ -518,8 +476,7 @@ namespace WarCore.Presentation
                     (float)point.Z.Raw / SimFix.Scale, spawns[i].Squad,
                     team, alive, pressure != null && alive ? (int)pressure.Level(sim.Entities.StableOf(unit)) : 0,
                     layers == null ? 0 : layers.LayerOf(unit),
-                    squads != null && alive ? BandKey(squads.SquadOf(sim.Entities.StableOf(unit))) : 0,
-                    stances == null ? 0 : stances.StanceOf(unit).Level));
+                    squads != null && alive ? BandKey(squads.SquadOf(sim.Entities.StableOf(unit))) : 0, Stances == null ? 0 : Stances.StanceOf(unit).Level));
             }
             var fires = new ViewFire[combat == null ? 0 : combat.Fires.Length];
             for (int i = 0; i < fires.Length; i++)
