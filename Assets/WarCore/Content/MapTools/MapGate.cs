@@ -28,7 +28,7 @@ namespace WarCore.Content.MapTools
         public override string ToString() => "wall " + WallId + " (" + CellX + ", " + CellZ + ") " + TopAboveGroundRaw + " raw " + Band;
     }
 
-    public static class MapGate
+    public static partial class MapGate
     {
         // The same as InterimLocomotion.UnitFootprint; Content does not reference Interim.
         public const long FootprintRaw = SimFix.Scale / 4;
