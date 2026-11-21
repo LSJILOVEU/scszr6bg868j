@@ -118,6 +118,7 @@ replacement:
 file = Assets/WarCore/Combat/StanceSystem.cs
 filter = FullyQualifiedName~Stance1
 expect = WarCore.Tests.Stance.Stance1SightTests.S5 row
+expect = WarCore.Tests.Stance.Stance1SightTests.S5_NoWall_EveryPairHurts
 note = the eye stays standing
 original:
 |         public long EyeRaw(EntityId unit) => BodyOf(Level(unit)).Eye.Raw;
@@ -348,6 +349,7 @@ replacement:
 file = Assets/WarCore/Combat/CombatSystem.Sight.cs
 filter = FullyQualifiedName~Stance1
 expect = WarCore.Tests.Stance.Stance1SightTests.S5 row
+expect = WarCore.Tests.Stance.Stance1SightTests.S5_NoWall_EveryPairHurts
 note = the sight line starts at the standing eye
 original:
 |         private long EyeRaw(EntityId unit) => stances != null ? stances.EyeRaw(unit) : eyeRaw;
@@ -357,6 +359,7 @@ replacement:
 [sg-aim]
 file = Assets/WarCore/Combat/CombatSystem.Sight.cs
 filter = FullyQualifiedName~Stance1
+expect = WarCore.Tests.Stance.Stance1SightTests.S5_NoWall_EveryPairHurts
 expect = WarCore.Tests.Stance.Stance1SightTests.S5 row
 note = shots aim at the standing eye
 original:
