@@ -111,7 +111,7 @@ namespace WarCore.Tests
         [Test]
         public void W01_CellAndHeightSpacingAreOneMetre()
         {
-            WcMap map = WcMapReader.Read(PlateDemoMap.Bytes());
+            WcMap map = M3TestWorld.Boxes(4, 4);
             Assert.That(map.CellSize, Is.EqualTo(SimFix.FromInt(1)), "map cell");
             // A 2 x 2 field whose points rise one raw metre per step along x: the height read one cell along is the next point.
             var points = new int[9];
