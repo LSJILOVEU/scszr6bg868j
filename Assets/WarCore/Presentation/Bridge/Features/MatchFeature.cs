@@ -34,7 +34,7 @@ namespace WarCore.Presentation
             var capture = new CaptureSystem(combat, recipe.Match, layers);
             var adapter = new BattleAdapter(sim, a.Locomotion, recipe, new DeployGround(terrain != null ? terrain.Nav : WcMapNavigation.Create(a.Map), terrain, a.GroundRaw), a.GroundRaw, a.Standing,
                 a.Plates != null ? a.Verticals : (ComponentType<VerticalState>?)null, a.Plates);
-            var reinforce = new ReinforceSystem(combat, recipe.Match, capture, adapter);
+            var reinforce = new ReinforceSystem(combat, recipe.Match, capture, adapter, layers: layers);
             var match = new MatchSystem(combat, recipe.Match, capture, a.Mode);
             a.Mode.Bind(match);
             sim.RegisterGameplay("battle.reinforce", reinforce, SimSystemPhase.Requests);
