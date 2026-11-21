@@ -52,6 +52,9 @@ namespace WarCore.Presentation
         // plates or without a match.
         internal PointEntryTable Entries;
         internal Func<PointEntryTable> EntryBuild;
+        // M7b: the locomotion and the dash state table when a recipe unit has a dash (DashFeature on); both null otherwise.
+        internal InterimLocomotion Dash;
+        internal ComponentType<DashState>? DashStates;
     }
 
     /// <summary>
@@ -79,6 +82,8 @@ namespace WarCore.Presentation
         private readonly UnitSpawn[] spawns;
         private readonly ComponentType<Position> positions;
         private readonly ComponentType<UnitFacing>? facings;
+        private readonly InterimLocomotion dash;
+        private readonly ComponentType<DashState>? dashStates;
         private readonly List<BridgeCommand> pending = new List<BridgeCommand>();
         private readonly List<BridgeCommand> commandLog = new List<BridgeCommand>();
         private readonly List<PlayerInputRecord> pendingPlayer = new List<PlayerInputRecord>();
@@ -124,6 +129,8 @@ namespace WarCore.Presentation
         internal SimSession(SessionParts parts)
         {
             facings = parts.Facings;
+            dash = parts.Dash;
+            dashStates = parts.DashStates;
             combatPack = parts.CombatPack;
             controlled = parts.Controlled;
             maxHealthRaw = parts.MaxHealthRaw;
@@ -240,9 +247,13 @@ namespace WarCore.Presentation
                 long wait = Math.Max(0, dueTick - Tick);
                 bool reloading = hasWeapon && state.Ammo == combatPack.Weapons[state.Weapon].Magazine
                     && state.DueMilli > Tick * 1000;
+                // M7b: ticks until a dash request is accepted (DashState.Ready - Tick, at least 0).
+                DashState dashState = default;
+                bool hasDash = dashStates.HasValue && sim.Entities.TryGet(dashStates.Value, unit, out dashState);
+                long dashWait = hasDash ? Math.Max(0, dashState.Ready - Tick) : 0;
                 status = new UnitStatus((float)sim.GameplayResource(units[i], 1) / SimFix.Scale,
                     (float)maxHealthRaw / SimFix.Scale, state.Ammo, wait, reloading, !combat.IsDead(unit), hasWeapon,
-                    combat.IsHolding(unit));
+                    combat.IsHolding(unit), hasDash, dashWait);
                 return true;
             }
             return false;
@@ -354,14 +365,22 @@ namespace WarCore.Presentation
             {
                 while (playerCount < pendingPlayer.Count && pendingPlayer[playerCount].AtTick <= nextTick)
                     nextPlayerInput = pendingPlayer[playerCount++].Input;
-                input = new InputFrame(
-                    new SimVec3(SimFix.Ratio(nextPlayerInput.MoveXMilli, 1000), default, SimFix.Ratio(nextPlayerInput.MoveZMilli, 1000)),
-                    nextPlayerInput.AimYMm.HasValue
-                        ? TargetAt(nextPlayerInput.AimXMm, nextPlayerInput.AimYMm.Value, nextPlayerInput.AimZMm)
-                        : nextPlayerInput.AimLayer > 0 ? PlateTarget(nextPlayerInput.AimXMm, nextPlayerInput.AimZMm, nextPlayerInput.AimLayer)
-                        : Target(nextPlayerInput.AimXMm, nextPlayerInput.AimZMm, groundRaw),
+                var move = new SimVec3(SimFix.Ratio(nextPlayerInput.MoveXMilli, 1000), default, SimFix.Ratio(nextPlayerInput.MoveZMilli, 1000));
+                SimVec3 aim = nextPlayerInput.AimYMm.HasValue
+                    ? TargetAt(nextPlayerInput.AimXMm, nextPlayerInput.AimYMm.Value, nextPlayerInput.AimZMm)
+                    : nextPlayerInput.AimLayer > 0 ? PlateTarget(nextPlayerInput.AimXMm, nextPlayerInput.AimZMm, nextPlayerInput.AimLayer)
+                    : Target(nextPlayerInput.AimXMm, nextPlayerInput.AimZMm, groundRaw);
+                input = new InputFrame(move, aim,
                     primaryAttack: nextPlayerInput.Primary, block: nextPlayerInput.Block,
                     @throw: nextPlayerInput.Throw, skillSlot: nextPlayerInput.SkillSlot, squad: squad, aimLayer: nextPlayerInput.AimLayer);
+                // M7b: the dash key going down asks for a dash before this tick's step, so its first step is this tick's.
+                // Direction: the move input, else from the unit to the aim point; TryDash refuses a zero direction.
+                if (dash != null && nextPlayerInput.Dash && !heldPlayerInput.Dash)
+                {
+                    EntityId unit = controlled.Current;
+                    if (sim.Entities.TryGet(positions, unit, out Position at) && (combat == null || !combat.IsDead(unit)))
+                        dash.TryDash(unit, move.X.Raw != 0 || move.Z.Raw != 0 ? move : aim - at.Value);
+                }
             }
             if (StepTimingEnabled && stepSampleCount < stepSamples.Length)
             {

@@ -1,0 +1,9 @@
+{ "version": 1,
+  "ground":  { "grass": ["#8FA06A", "#7E8F5C"], "mud": ["#6E5A44", "#5F4D3A"], "road": ["#B5A47E", "#A59570"] },
+  "cliff":   "#8A8378",
+  "struct":  { "1": { "side": "#A39E95", "top": "#B8B3AA" } },
+  "team":    ["#2F6FD6", "#D6452F"],
+  "neutral": "#E8E4D8",
+  "prop":    { "crate": "#9A6B3E", "sandbag": "#B7A27A" },
+  "unit":    { "dark": "#3B4046", "skin": "#D8B18C" },
+  "fx":      { "muzzle": "#FFD45A", "tracer": "#FFE9A0" } }

@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>地图体检</title>
+<style>
+  :root { --bg:#f4f2ee; --panel:#fff; --ink:#23262b; --mute:#6b7078; --line:#d8d4cc; --bad:#c62828; --ok:#2e7d32; --note:#8a6d00; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#1d1f23; --panel:#272a30; --ink:#e8e8ea; --mute:#a0a4ac; --line:#3a3e46; --bad:#ff6b6b; --ok:#6fcf7a; --note:#e0b94a; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.5 system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+  header { padding:14px 16px 6px; }
+  h1 { margin:0; font-size:18px; }
+  #sub { color:var(--mute); margin-top:2px; }
+  #verdict { display:inline-block; margin-top:8px; padding:2px 10px; border-radius:12px; font-weight:600; color:#fff; }
+  main { display:flex; flex-wrap:wrap; gap:16px; padding:10px 16px 24px; align-items:flex-start; }
+  #view { flex:1 1 560px; min-width:0; }
+  #side { flex:0 1 380px; min-width:280px; }
+  canvas { width:100%; max-width:960px; height:auto; background:var(--panel); border:1px solid var(--line); border-radius:6px; display:block; }
+  h2 { font-size:15px; margin:0 0 6px; }
+  .box { background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:10px 12px; margin-bottom:12px; }
+  ol, ul { margin:0; padding:0; list-style:none; }
+  li { padding:6px 8px; border-radius:4px; cursor:pointer; border-left:3px solid transparent; }
+  li:hover, li.on { background:rgba(128,128,128,.15); }
+  li.bad { border-left-color:var(--bad); }
+  li.note { border-left-color:var(--note); cursor:default; }
+  .code { color:var(--mute); font:12px ui-monospace, Menlo, Consolas, monospace; }
+  .empty { color:var(--mute); }
+  #legend span { display:inline-block; margin:2px 12px 2px 0; white-space:nowrap; }
+  #legend i { display:inline-block; width:12px; height:12px; margin-right:4px; vertical-align:-2px; border:1px solid rgba(0,0,0,.35); }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title">地图体检</h1>
+  <div id="sub"></div>
+  <span id="verdict"></span>
+</header>
+<main>
+  <section id="view">
+    <canvas id="map" width="960" height="640"></canvas>
+    <div class="box" id="legend" style="margin-top:12px"></div>
+  </section>
+  <aside id="side">
+    <div class="box"><h2>问题</h2><ol id="problems"></ol></div>
+    <div class="box"><h2>提醒（不算错误）</h2><ul id="notes"></ul></div>
+  </aside>
+</main>
+<script>
+const DATA = /*MAPCHECK-DATA*/null;
+(function () {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const hex = (s) => [parseInt(s.slice(1, 3), 16), parseInt(s.slice(3, 5), 16), parseInt(s.slice(5, 7), 16)];
+  const W = DATA.width, D = DATA.depth;
+  $("title").textContent = "地图体检：" + (DATA.id || "（描述读不进来）");
+  $("sub").textContent = W > 0 ? "内容层 " + DATA.pack + "，" + W + " × " + D + " 米，原点 (" + DATA.originX + ", " + DATA.originZ + ")" : "没有可画的图";
+  const v = $("verdict");
+  v.textContent = DATA.problems.length === 0 ? "门禁通过" : "门禁发现 " + DATA.problems.length + " 个问题";
+  v.style.background = DATA.problems.length === 0 ? "var(--ok)" : "var(--bad)";
+
+  // ---- lists ----
+  let selected = -1;
+  const pinOfProblem = DATA.problems.map(() => -1);
+  DATA.pins.forEach((q, k) => { pinOfProblem[q.problem] = k; });
+  const items = [];
+  const ol = $("problems");
+  if (DATA.problems.length === 0) { const li = document.createElement("li"); li.className = "empty"; li.textContent = "没有问题。"; ol.appendChild(li); }
+  DATA.problems.forEach((p, i) => {
+    const li = document.createElement("li");
+    li.className = "bad";
+    const t = document.createElement("div"); t.textContent = (i + 1) + ". " + p.text; li.appendChild(t);
+    const c = document.createElement("div"); c.className = "code"; c.textContent = p.code + (p.id ? "  " + p.id : "") + (pinOfProblem[i] < 0 ? "  （没有位置，不出图钉）" : ""); li.appendChild(c);
+    li.addEventListener("click", () => select(i));
+    ol.appendChild(li); items.push(li);
+  });
+  const ul = $("notes");
+  if (DATA.notes.length === 0) { const li = document.createElement("li"); li.className = "empty"; li.textContent = "没有提醒。"; ul.appendChild(li); }
+  DATA.notes.forEach((n) => {
+    const li = document.createElement("li"); li.className = "note";
+    const t = document.createElement("div"); t.textContent = n.name + "：" + n.text; li.appendChild(t);
+    const c = document.createElement("div"); c.className = "code"; c.textContent = n.key; li.appendChild(c);
+    ul.appendChild(li);
+  });
+
+  // ---- map ----
+  const cv = $("map"), cx = cv.getContext("2d");
+  if (W === 0) { cv.width = 960; cv.height = 120; cx.fillStyle = "#888"; cx.font = "16px sans-serif"; cx.fillText("描述读不进来，只有右边的问题列表。", 20, 64); return; }
+  const S = Math.max(1, Math.min(48, Math.floor(960 / Math.max(W, D))));
+  cv.width = W * S; cv.height = D * S;
+  const px = (mm) => (mm / 1000 - DATA.originX) * S, pz = (mm) => (mm / 1000 - DATA.originZ) * S;
+  const off = document.createElement("canvas"); off.width = W; off.height = D;
+  const octx = off.getContext("2d"), img = octx.createImageData(W, D);
+  const pal = DATA.groundPalette.map(hex);
+  for (let i = 0; i < W * D; i++) {
+    const g = pal[DATA.ground[i]], k = DATA.shade[i] / 160;
+    img.data[i * 4] = Math.min(255, g[0] * k); img.data[i * 4 + 1] = Math.min(255, g[1] * k); img.data[i * 4 + 2] = Math.min(255, g[2] * k); img.data[i * 4 + 3] = 255;
+  }
+  octx.putImageData(img, 0, 0);
+  const hatch = document.createElement("canvas"); hatch.width = hatch.height = 8;
+  const hx = hatch.getContext("2d"); hx.strokeStyle = "rgba(90,20,20,.85)"; hx.lineWidth = 1.5; hx.beginPath(); hx.moveTo(0, 8); hx.lineTo(8, 0); hx.moveTo(-2, 2); hx.lineTo(2, -2); hx.moveTo(6, 10); hx.lineTo(10, 6); hx.stroke();
+
+  function draw() {
+    cx.imageSmoothingEnabled = false;
+    cx.clearRect(0, 0, cv.width, cv.height);
+    cx.drawImage(off, 0, 0, cv.width, cv.height);
+    if (DATA.steep.length) {
+      cx.beginPath();
+      for (const i of DATA.steep) cx.rect((i % W) * S, Math.floor(i / W) * S, S, S);
+      cx.fillStyle = cx.createPattern(hatch, "repeat"); cx.fill();
+    }
+    for (const p of DATA.plates) {
+      const x = p.x * S, z = p.z * S, w = p.w * S, d = p.d * S;
+      cx.fillStyle = "rgba(255,255,255,.18)"; cx.fillRect(x, z, w, d);
+      cx.setLineDash([6, 4]); cx.strokeStyle = "#fff"; cx.lineWidth = 2; cx.strokeRect(x, z, w, d); cx.setLineDash([]);
+      cx.strokeStyle = "#222"; cx.lineWidth = 1; cx.strokeRect(x + 1, z + 1, w - 2, d - 2);
+      if (p.axis) { // an arrow towards the higher end
+        const up = p.to >= p.from, horizontal = p.axis === "x";
+        const x0 = x + w / 2, z0 = z + d / 2, len = (horizontal ? w : d) * 0.35 * (up ? 1 : -1);
+        cx.strokeStyle = "#222"; cx.lineWidth = 2; cx.beginPath(); cx.moveTo(x0, z0);
+        cx.lineTo(horizontal ? x0 + len : x0, horizontal ? z0 : z0 + len); cx.stroke();
+      }
+    }
+    for (const w of DATA.walls) {
+      cx.fillStyle = w.top; cx.fillRect(w.x * S, w.z * S, w.w * S, w.d * S);
+      cx.strokeStyle = w.side; cx.lineWidth = Math.max(1, S / 6); cx.setLineDash(w.raised ? [4, 3] : []);
+      cx.strokeRect(w.x * S + 0.5, w.z * S + 0.5, w.w * S - 1, w.d * S - 1); cx.setLineDash([]);
+    }
+    for (const p of DATA.points) {
+      cx.beginPath(); cx.arc(px(p.x), pz(p.z), p.r / 1000 * S, 0, 7);
+      cx.fillStyle = p.color + "55"; cx.fill(); cx.strokeStyle = p.color; cx.lineWidth = 2; cx.stroke();
+      cx.beginPath(); cx.arc(px(p.x), pz(p.z), Math.max(2, S * 0.3), 0, 7); cx.fillStyle = p.color; cx.fill();
+    }
+    for (const b of DATA.bases) {
+      const s = Math.max(6, S * 1.4); cx.fillStyle = b.color; cx.strokeStyle = "#111"; cx.lineWidth = 1.5;
+      cx.fillRect(px(b.x) - s / 2, pz(b.z) - s / 2, s, s); cx.strokeRect(px(b.x) - s / 2, pz(b.z) - s / 2, s, s);
+    }
+    for (const u of DATA.units) {
+      const r = Math.max(1.5, S * 0.28); cx.beginPath(); cx.arc(px(u.x), pz(u.z), r, 0, 7);
+      if (u.reserve) { cx.strokeStyle = u.color; cx.lineWidth = 1; cx.stroke(); } else { cx.fillStyle = u.color; cx.fill(); }
+    }
+    DATA.pins.forEach((p, k) => {
+      const x = px(p.x), z = pz(p.z), on = k === selectedPin();
+      cx.beginPath(); cx.moveTo(x, z); cx.lineTo(x - 7, z - 18); cx.lineTo(x + 7, z - 18); cx.closePath();
+      cx.fillStyle = on ? "#ffd400" : "#d32f2f"; cx.fill(); cx.strokeStyle = "#fff"; cx.lineWidth = 2; cx.stroke();
+      if (on) { cx.beginPath(); cx.arc(x, z, 14, 0, 7); cx.strokeStyle = "#ffd400"; cx.lineWidth = 3; cx.stroke(); }
+    });
+  }
+  const selectedPin = () => (selected >= 0 ? pinOfProblem[selected] : -1);
+  function select(i) { selected = i; items.forEach((li, k) => li.classList.toggle("on", k === i)); draw(); }
+  cv.addEventListener("click", (e) => {
+    const r = cv.getBoundingClientRect(), f = cv.width / r.width, x = (e.clientX - r.left) * f, z = (e.clientY - r.top) * f;
+    let best = -1, dist = 24 * 24;
+    DATA.pins.forEach((p, k) => { const d = (px(p.x) - x) ** 2 + (pz(p.z) - 8 - z) ** 2; if (d < dist) { dist = d; best = k; } });
+    if (best >= 0) { const i = pinOfProblem.indexOf(best); if (i >= 0) { select(i); items[i].scrollIntoView({ block: "nearest" }); } }
+  });
+  draw();
+
+  const legend = [["#ffffff", "楼板（虚线框，箭头指向高端）"], ["#b8b3aa", "墙（虚线边 = 抬高的墙）"], ["#2f6fd6", "据点（圆 = 占领范围）"], ["#999", "基地（方块）"], ["#d32f2f", "问题图钉（点一下高亮）"]];
+  $("legend").innerHTML = "";
+  legend.forEach(([c, t]) => { const s = document.createElement("span"); const i = document.createElement("i"); i.style.background = c; s.appendChild(i); s.appendChild(document.createTextNode(t)); $("legend").appendChild(s); });
+  const note = document.createElement("span"); note.textContent = "明暗 = 坡向（光从左上来），斜线 = 比包允许的坡度更陡，点 = 士兵（空心 = 预备队）"; $("legend").appendChild(note);
+})();
+</script>
+</body>
+</html>

@@ -67,6 +67,10 @@ tools/headless/**/bin/
 tools/replay/bin/
 tools/replay/out/
 
+# Map health check page generator (tools/mapcheck)
+!tools/mapcheck/*.csproj
+tools/mapcheck/bin/
+
 # Python bytecode
 __pycache__/
 *.pyc
