@@ -8,6 +8,23 @@ namespace WarCore.Tests
         [Test, Explicit("prints the baseline numbers"), Category("Manual")]
         public void Print()
         {
+            // How many of the 16 deploy cells (4 x 4, 1.5 m apart) around each place stand on walkable ground with room for a soldier.
+            var places = new System.Collections.Generic.List<(string, long, long)>();
+            foreach (MapE1gLayout.Spot sp in MapE1gLayout.Points) places.Add(("spawn " + sp.Name, sp.SpawnXMm, sp.SpawnZMm));
+            places.Add(("base 1", MapE1gLayout.Bases[0][0], MapE1gLayout.Bases[0][1]));
+            places.Add(("base 2", MapE1gLayout.Bases[1][0], MapE1gLayout.Bases[1][1]));
+            foreach ((string name, long x, long z) in places)
+            {
+                int ok = 0;
+                for (int c = 0; c < 4; c++)
+                    for (int r = 0; r < 4; r++)
+                    {
+                        long px = x + (2 * c - 3) * 750, pz = z + (2 * r - 3) * 750;
+                        var v = Wp23.V(px, 0, pz);
+                        if (MapE1gWorld.Tables.Nav.SegmentClear(v, v, WarCore.Interim.InterimLocomotion.UnitFootprint)) ok++;
+                    }
+                TestContext.WriteLine("E4 deploy cells " + name + ": " + ok + " of 16 stand");
+            }
             foreach (int team in new[] { 1, 2 })
             {
                 var sw = System.Diagnostics.Stopwatch.StartNew();
