@@ -6,6 +6,7 @@ namespace WarCore.Tests
     // MAP-E1g E7 (one team alone) and E8 (the whole match, seed 41). The tick numbers, the winner and the hashes are behaviour
     // baselines recorded here for the first time, on the default soldiers and this temporary map: a package that changes the
     // play may record them again, listing old and new. Nothing here is a determinism lock except "the same world twice".
+    // PROVISIONAL: this map is the temporary ground-only version; re-record E7 and E8 when the two-floor version lands.
     public sealed class MapE1gRunTests
     {
         // ---- E7 ----
@@ -49,6 +50,7 @@ namespace WarCore.Tests
             Assert.That(r.Hash, Is.EqualTo(EndHash), r.Hash.ToString("X16"));
             Assert.That(string.Join(",", r.Taken.Select(p => p.Key + "@" + p.Value)), Is.EqualTo("2@632,3@2223,4@593"));
             // Not zero: the card wants no failed walk, the match has some. Recorded as the result, not asserted away.
+            // Candidate (looks like crowd pathing, AI work): four soldiers stall in open ground near points B and D.
             Assert.That(r.Failures.Count, Is.EqualTo(FailedWalkTicks));
             Assert.That(r.Failures.Select(f => f.Split(' ')[1]).Distinct().OrderBy(k => int.Parse(k)), Is.EqualTo(new[] { "5", "15", "68", "95" }));
             TestContext.WriteLine("MAPE1G E8 end tick " + r.Ticks + " winner " + r.Winner + " hash " + r.Hash.ToString("X16") + " failed-walk ticks " + r.Failures.Count);
