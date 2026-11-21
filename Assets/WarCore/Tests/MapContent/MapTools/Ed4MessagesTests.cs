@@ -56,7 +56,7 @@ namespace WarCore.Tests
         {
             byte[] bytes = File.ReadAllBytes(Ed4Fixtures.TablePath);
             Assert.That(bytes.Take(3), Is.Not.EqualTo(new byte[] { 0xEF, 0xBB, 0xBF }));
-            Assert.That(bytes, Does.Not.Contain((byte)'\r'));
+            Assert.That(Array.IndexOf(bytes, (byte)'\r'), Is.EqualTo(-1));
             Assert.That(bytes.Last(), Is.EqualTo((byte)'\n'));
             string text = new UTF8Encoding(false, true).GetString(bytes);
             Assert.That(Regex.IsMatch(text, "[\\u3400-\\u9fff]"), Is.True);
