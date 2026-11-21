@@ -62,6 +62,18 @@ namespace WarCore.Tests
             Assert.That(Rows(open, EntryTable.Build(open)), Is.EqualTo(new[] { (EntryKind.Narrow, 2, "L0(3,3)", "L0(3,5)") }));
         }
 
+        // T7-03: a gap with a walkable side in front and nothing behind it is a dead end, not an entry, and building over it does
+        // not throw (a run with one side has no representative for the other).
+        [Test]
+        public void T7_03_ADeadEndIsNotAnEntry()
+        {
+            var blocked = Enumerable.Range(0, 9).Where(x => x != 3 && x != 4).Select(x => (x, 4)).Concat(new[] { (3, 5), (4, 5) }).ToArray();
+            LayeredNav shut = Nav(Open(9, 9, blocked));
+            EntryTable t = null;
+            Assert.DoesNotThrow(() => t = EntryTable.Build(shut));
+            Assert.That(t.Count, Is.EqualTo(0));
+        }
+
         // T7-03: a run ends open when the cell past its end belongs to another layer joined by a seam: a 1-wide gap whose east
         // neighbour is blocked ground under a plate 0.3 m up (joined to the gap and to the cells north and south of it) is not
         // narrow. The plate's three seams are three seam entries sharing the plate's node: one crossing, kept once, the one
