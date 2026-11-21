@@ -67,10 +67,16 @@ namespace WarCore.Replay
             SimSession session = SimSession.Create(recipe, entry.Map());
             var keys = new List<ulong>(); var teams = new List<int>();
             foreach (UnitSpawn unit in recipe.Units) { keys.Add(unit.Key); teams.Add(unit.Team); }
+            // Squads: unit index by key; per frame each unit's leader index (-1 = in no squad), each team's men in squads and
+            // its members' distances to their leaders.
+            var indexOf = new Dictionary<ulong, int>();
+            for (int i = 0; i < keys.Count; i++) indexOf[keys[i]] = i;
+            var bands = new int[keys.Count]; var inSquads = new int[2];
+            var leash = new[] { new List<double>(), new List<double>() };
 
             var points = new List<(double x, double z, double r)>();
             foreach (ViewPoint point in session.Current.Points) points.Add((point.X, point.Z, point.Radius));
-            const int metricCount = 13;
+            const int metricCount = 16;
             var stats = new Metrics.Series[2, metricCount];
             for (int t = 0; t < 2; t++) for (int m = 0; m < metricCount; m++) stats[t, m] = new Metrics.Series();
             var side = new[] { new List<(double x, double z)>(), new List<(double x, double z)>() };
@@ -123,12 +129,24 @@ namespace WarCore.Replay
                 side[0].Clear(); side[1].Clear(); idleSide[0].Clear(); idleSide[1].Clear();
                 pinned.Clear(); broken.Clear(); Array.Clear(pressed, 0, pressed.Length);
                 pinnedAt[0].Clear(); pinnedAt[1].Clear(); pinnedMoved[0] = pinnedMoved[1] = 0;
+                bool banded = false; inSquads[0] = inSquads[1] = 0; leash[0].Clear(); leash[1].Clear();
                 // Per unit: x, z in decimetres, state (0 = not on the field, 1 = alive, 2 = dead).
                 for (int i = 0; i < keys.Count; i++)
                 {
                     if (i > 0) sb.Append(',');
+                    bands[i] = -1;
                     if (frame.TryGet(keys[i], out ViewEntity e))
                     {
+                        if (e.Band != 0 && indexOf.TryGetValue(e.Band, out int lead))
+                        {
+                            bands[i] = lead; banded = true;
+                            if (teams[i] >= 1 && teams[i] <= 2)
+                            {
+                                inSquads[teams[i] - 1]++;
+                                if (lead != i && frame.TryGet(e.Band, out ViewEntity leader) && leader.Alive)
+                                    leash[teams[i] - 1].Add(Math.Sqrt((e.X - leader.X) * (double)(e.X - leader.X) + (e.Z - leader.Z) * (double)(e.Z - leader.Z)));
+                            }
+                        }
                         sb.Append(D(e.X)).Append(',').Append(D(e.Z)).Append(',').Append(e.Alive ? 1 : 2);
                         if (e.Alive && teams[i] >= 1 && teams[i] <= 2)
                         {
@@ -146,7 +164,8 @@ namespace WarCore.Replay
                 }
                 // Per frame metrics: [share1, share2, nnSpread1, nnSpread2, spread1, spread2, close1, close2, idle1, idle2, closeNear1, closeNear2,
                 // enemy20_1, enemy20_2, idleNoEnemy1, idleNoEnemy2, pinned1, pinned2, broken1, broken2, pinnedHidden1, pinnedHidden2,
-                // pinnedMoving1, pinnedMoving2, pinnedAtWall1, pinnedAtWall2]; null when undefined.
+                // pinnedMoving1, pinnedMoving2, pinnedAtWall1, pinnedAtWall2, squadShare1, squadShare2, squadLeash1, squadLeash2,
+                // squadLeashP90_1, squadLeashP90_2]; null when undefined.
                 var values = new double[2 * metricCount];
                 for (int t = 0; t < 2; t++)
                 {
@@ -163,6 +182,9 @@ namespace WarCore.Replay
                     values[20 + t] = Metrics.PinnedHidden(pinnedAt[t], side[1 - t], walls);
                     values[22 + t] = Metrics.PinnedMoving(pinnedMoved[t], pinnedAt[t].Count);
                     values[24 + t] = Metrics.PinnedAtWall(pinnedAt[t], walls);
+                    values[26 + t] = banded ? Metrics.Share(inSquads[t], side[t].Count) : double.NaN;
+                    values[28 + t] = Metrics.Leash(leash[t], 0.5);
+                    values[30 + t] = Metrics.Leash(leash[t], 0.9);
                     for (int m = 0; m < metricCount; m++) stats[t, m].Add(values[m * 2 + t]);
                 }
                 sb.Append("],\"m\":[");
@@ -170,13 +192,15 @@ namespace WarCore.Replay
                 // Unit indices that are pinned (n) and broken (b); written only when there are any, so a setup without the pressure system keeps its frames.
                 if (pinned.Count > 0) sb.Append("],\"n\":[").Append(string.Join(",", pinned));
                 if (broken.Count > 0) sb.Append("],\"b\":[").Append(string.Join(",", broken));
+                // Each unit's squad leader by unit index (-1 = in no squad; a leader names itself); written only when somebody is in a squad.
+                if (banded) sb.Append("],\"q\":[").Append(string.Join(",", bands));
                 sb.Append("],\"s\":[").Append(string.Join(",", shots)).Append("],\"a\":[").Append(frame.Match.AliveOne).Append(',').Append(frame.Match.AliveTwo)
                   .Append(',').Append(frame.Match.ReserveOne).Append(',').Append(frame.Match.ReserveTwo).Append("]}");
                 shots.Clear();
             }
             bool decided = session.IsFinished && session.Winner != 0;
             sb.Append("],\"metrics\":{\"attackRange\":").Append(N(Metrics.AttackRange)).Append(",\"slotRing\":").Append(N(ring)).Append(",\"decidedTick\":").Append(decided ? session.EndTick.ToString(CultureInfo.InvariantCulture) : "null");
-            string[] names = { "maxPointShare", "nnSpread", "attackSpread", "closeShare", "idleOutside", "closeShareNearPoints", "enemyWithin20", "idleNoEnemy", "pinnedShare", "brokenShare", "pinnedHidden", "pinnedMoving", "pinnedAtWall" };
+            string[] names = { "maxPointShare", "nnSpread", "attackSpread", "closeShare", "idleOutside", "closeShareNearPoints", "enemyWithin20", "idleNoEnemy", "pinnedShare", "brokenShare", "pinnedHidden", "pinnedMoving", "pinnedAtWall", "squadShare", "squadLeash", "squadLeashP90" };
             var line = new StringBuilder();
             for (int t = 0; t < 2; t++)
             {

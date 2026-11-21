@@ -59,7 +59,7 @@ namespace WarCore.Presentation
             int memoryTicks = ai?.TargetMemoryTicks ?? 0;
             if (memoryTicks > 0)
             {
-                contacts = new TargetMemory(combat, memoryTicks);
+                contacts = new TargetMemory(combat, memoryTicks, layers);
                 sim.RegisterGameplay("battle.ai-contacts", contacts, SimSystemPhase.Requests);
             }
             // Only with the memory on: a positive searchTicks adds the search; 0 (the default) adds nothing.
@@ -86,16 +86,23 @@ namespace WarCore.Presentation
                 pressure = new Pressure(combat, ai.Pressure.Value, ai.CoverRadiusMm > 0);
                 sim.RegisterGameplay("battle.ai-pressure", pressure, SimSystemPhase.Queries);
             }
+            // Only with all seven squad fields written: who follows whom, read by the squad parts.
+            Squads squads = null;
+            if (ai?.Squads != null)
+            {
+                squads = new Squads(combat, adapter, a.Controlled, ai.Squads.Value);
+                sim.RegisterGameplay("battle.ai-squads", squads, SimSystemPhase.Requests);
+            }
             int meleeChaseRange = terrainRules ? recipe.TerrainPack.Section<AiRules>().MeleeChaseRange : 0;
             if (!terrainRules && ai != null) meleeChaseRange = ai.MeleeChaseRange;
             bool fair = recipe.TerrainPack != null && recipe.TerrainPack.Section<AiRules>().FairDecisions;
             // TRV-7a: the entry table is built from the same cost tables once the walls are in the spatial index (WorldBuilder).
             a.Reach = PointReach.Of(a, recipe.Match);
-            sim.RegisterGameplay("battle.ai", new SimpleAiSystem(combat, recipe.Combat, recipe.Match, capture, adapter, a.Controlled, memory, contacts, search, suppress, meleeChaseRange, fair, recipe.Seed, ContentPolicies.Parts(ai, recipe.Match.Points, recipe.Match.ThinkInterval, terrain == null, layers != null), pressure, layers, layers,
+            sim.RegisterGameplay("battle.ai", new SimpleAiSystem(combat, recipe.Combat, recipe.Match, capture, adapter, a.Controlled, memory, contacts, search, suppress, meleeChaseRange, fair, recipe.Seed, ContentPolicies.Parts(ai, recipe.Match.Points, recipe.Match.ThinkInterval, terrain == null, layers != null, squads), pressure, layers, layers,
                 a.Reach), SimSystemPhase.Requests);
             sim.RegisterGameplay("battle.capture", capture, SimSystemPhase.Queries);
             sim.RegisterGameplay("battle.match", match, SimSystemPhase.Queries);
-            a.Capture = capture; a.Reinforce = reinforce; a.Match = match; a.Pressure = pressure;
+            a.Capture = capture; a.Reinforce = reinforce; a.Match = match; a.Pressure = pressure; a.Squads = squads;
         }
     }
 

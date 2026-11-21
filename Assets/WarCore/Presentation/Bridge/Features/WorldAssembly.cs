@@ -82,6 +82,7 @@ namespace WarCore.Presentation
         // once the walls are in the spatial index (null likewise).
         internal PointReach Reach { get; set; }
         internal PointEntryTable Entries { get; set; }
+        internal Squads Squads { get; set; }
 
         // Where a unit stands when it is placed: the map's flat floor, or the terrain surface where the map has a height field;
         // on a plate (layer above 0, checked by the plate installer) the plate's floored surface.

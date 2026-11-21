@@ -29,17 +29,21 @@ namespace WarCore.Presentation
     }
 
     // ML-11a: the walking cost from any walkable cell of any layer to each control point and to each team's base, one table per
-    // target, found when the world is built (the map never changes). Null on a map without plates.
+    // target, found when the world is built (the map never changes). ML-11b-1: and which cells can be walked between. Null on a
+    // map without plates.
     internal sealed class PointReach : IPointReach
     {
         private readonly NavGrid grid;
         private readonly LayeredNav nav;
         // By point index, and by team (its first spawn anchor); null where nobody can walk to the target.
         private readonly LayeredReach[] tables, bases;
+        // ML-11b-1: by node, which nodes can be walked between (-1 = nobody walks on the node).
+        private readonly int[] islands;
 
         private PointReach(NavGrid grid, LayeredNav nav, MatchPack match)
         {
             this.grid = grid; this.nav = nav;
+            islands = LayeredReach.Islands(nav);
             ReadOnlySpan<ControlPointDef> points = match.Points;
             tables = new LayeredReach[points.Length];
             for (int p = 0; p < points.Length; p++)
@@ -70,6 +74,9 @@ namespace WarCore.Presentation
             cost = 0;
             return (uint)team < (uint)bases.Length && TryCost(bases[team], from, fromLayer, out cost);
         }
+
+        public bool Connected(SimVec3 from, int fromLayer, SimVec3 to, int toLayer) =>
+            TryNode(from, fromLayer, out int a) && TryNode(to, toLayer, out int b) && islands[a] >= 0 && islands[a] == islands[b];
 
         private bool TryCost(LayeredReach table, SimVec3 from, int fromLayer, out long cost)
         {
