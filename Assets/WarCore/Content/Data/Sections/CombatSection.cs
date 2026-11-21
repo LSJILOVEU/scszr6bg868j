@@ -10,6 +10,9 @@ namespace WarCore.Content
         internal const string SectionKey = "combat";
         internal CombatSection() : base(SectionKey) { }
         protected override string NestedObject => "body";
+        // AIM-1: combat.moveSpread is an object too (bands and optional per-weapon tables), kept whole across layers.
+        internal const string MoveSpreadField = "moveSpread", ManualReloadField = "manualReload";
+        protected override bool IsNested(string field) => base.IsNested(field) || field == MoveSpreadField;
 
         // The unit collider radius r (MovementFeature and the deployer place every unit with it).
         internal const long UnitRadiusRaw = SimFix.Scale / 4;
@@ -62,7 +65,12 @@ namespace WarCore.Content
             if (missRate.Raw < 0 || missRate.Raw > SimFix.Scale) throw cr.Bad(cr.FieldOf("allyCheckMissRate"), "must be between 0 and 1");
             long holdMilli = cr.Long("allyHoldMilli", 1000, SectionLimits.MaxMilli);
             ContentEntry body = cr.ObjectOrNull("body");
+            ContentField moveField = cr.FieldOf(MoveSpreadField);
+            if (moveField != null) moveField.Used = true;
+            bool manualReload = cr.Has(ManualReloadField) && cr.Bool(ManualReloadField);
             cr.Done();
+            MoveSpread moveSpread = moveField == null ? null : CombatAimReader.MoveSpread(b.Pack, moveField, b.WeaponIds);
+            if (moveSpread != null || manualReload) b.Publish(new CombatAim(moveSpread, manualReload));
             if (body != null) b.Body = Body(b.Pack, body);
             // PROJ-1: a projectile starts at the muzzle, so a pack with a projectile weapon must have the body.
             for (int i = 0; i < b.ProjectileSpeeds.Length && body == null; i++)

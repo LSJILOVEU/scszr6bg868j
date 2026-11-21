@@ -39,6 +39,9 @@ namespace WarCore.Presentation
             // PROJ-1: only a pack with a projectile weapon gets the projectile system (and its random stream).
             if (combat.Pack.HasProjectiles)
                 sim.RegisterGameplay("combat.projectiles", new ProjectileSystem(sim, combat, System.Math.Max(1, ProjectileCapacity(recipe))), SimSystemPhase.Queries);
+            // AIM-1: only a pack with combat.moveSpread gets the move mark (Movement, order 19, before the locomotion's 20).
+            if (combat.MoveMark != null)
+                sim.RegisterGameplay("combat.move-mark", combat.MoveMark, SimSystemPhase.Movement);
             // The combat system registers the melee component, so the units get their specs only now.
             for (int i = 0; i < recipe.Units.Length; i++)
                 if (recipe.Units[i].Melee >= 0) combat.SetMelee(a.Units[i], recipe.Units[i].Melee);
