@@ -2,8 +2,6 @@
 # Filter: the TRV-3 tests (FullyQualifiedName~Trv3).
 # Not listed (equivalent or covered elsewhere, with the reason):
 #  - "links only on maps with plates" (appendix row T3-13): moved to TRV-4 with the world switch.
-#  - "islands join two-way edges only" (T3-10): the island table (ML-11b-1) is not on main yet; whichever package lands
-#    second adds the row.
 #  - "derive does not leave out seams": a LinkDerive (TRV-2) branch, listed there as trv2-seam-ignored; here the table
 #    refuses such a link (trv3-check-seam).
 #  - "a link from a node to itself": no separate check; the one-layer neighbour check (dx = dz = 0) refuses it
@@ -214,6 +212,38 @@ original:
 | long capacity = 8L * count + nav.Seams.Length + nav.LinkCount + 1;
 replacement:
 | long capacity = 8L * count + nav.Seams.Length + 1;
+
+[trv3-islands-one-way]
+file = Assets/WarCore/Sim/LayeredReach.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3ReachTests.T3_10_
+note = 单向链接也并岛: a one-way link joins islands too
+original:
+| if (islands[u] < 0 && nav.TryLink(u, v, out _)) { islands[u] = next; queue[tail++] = u; }
+replacement:
+| if (islands[u] < 0) { islands[u] = next; queue[tail++] = u; }
+
+[trv3-islands-no-links]
+file = Assets/WarCore/Sim/LayeredReach.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3ReachTests.T3_10_
+note = islands never follow a link
+original:
+| if (nav.Links == null) continue;
+|                     for (int l = nav.LinkStart[v]
+replacement:
+| continue;
+|                     for (int l = nav.LinkStart[v]
+
+[trv3-islands-forward-check]
+file = Assets/WarCore/Sim/LayeredReach.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3ReachTests.T3_10_
+note = the two-way check asks for the same link again
+original:
+| nav.TryLink(u, v, out _)
+replacement:
+| nav.TryLink(v, u, out _)
 
 [trv3-hash-null-adds-zero]
 file = Assets/WarCore/Sim/LayeredNav.cs

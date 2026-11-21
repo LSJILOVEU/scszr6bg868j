@@ -69,10 +69,13 @@ namespace WarCore.Sim
         // The heap's size (it never grows: every push fits). 0 when the target is not walkable. Diagnostics only.
         internal int HeapCapacity { get; }
 
-        // ML-11b-1: which nodes can be walked between. Gives every node its island: two walkable nodes share an island exactly
-        // when LayeredPathfinder.Find finds a route between them; a node nobody walks on has -1. Islands are numbered from 0 in
-        // ascending order of their lowest node. Orthogonal steps and seams are enough: a diagonal step needs both orthogonal
-        // cells walkable, so it joins nothing that two orthogonal steps do not join. The relation is symmetric (see above).
+        // ML-11b-1: which nodes can be walked between. Gives every node its island; a node nobody walks on has -1. Islands are
+        // numbered from 0 in ascending order of their lowest node. Two nodes share an island when steps, seams and two-way links
+        // join them (TRV-3 A5): a link joins only when the link back exists too. Then LayeredPathfinder.Find finds a route
+        // between them in both directions; without links that is exactly when it finds one. Orthogonal steps are enough: a
+        // diagonal step needs both orthogonal cells walkable, so it joins nothing that two orthogonal steps do not join. A node
+        // reached only over a one-way link (a drop), or only round a ring of one-way links, is on another island; CostFrom
+        // answers a route that needs one.
         public static int[] Islands(LayeredNav nav)
         {
             if (nav == null) throw new ArgumentNullException(nameof(nav));
@@ -98,6 +101,12 @@ namespace WarCore.Sim
                     {
                         int u = nav.Seams[s];
                         if (islands[u] < 0) { islands[u] = next; queue[tail++] = u; }
+                    }
+                    if (nav.Links == null) continue;
+                    for (int l = nav.LinkStart[v]; l < nav.LinkStart[v + 1]; l++)
+                    {
+                        int u = nav.Links[l].To;
+                        if (islands[u] < 0 && nav.TryLink(u, v, out _)) { islands[u] = next; queue[tail++] = u; }
                     }
                 }
                 next++;

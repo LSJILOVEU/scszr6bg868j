@@ -76,6 +76,52 @@ namespace WarCore.Tests
             Assert.That(new LayeredReach(plain, north).CostFrom(south), Is.EqualTo(10414), "without links both ways go around");
         }
 
+        // T3-10 (A5): a link joins two islands only when the link back exists too. Without links the box top and the far
+        // side of the window are islands of their own; the climb and drop pair and the vault pair join them. One way only (or a
+        // ring of one-way links) leaves them apart, although A* finds a route that way.
+        [Test]
+        public void T3_10_OnlyTwoWayLinksJoinIslands()
+        {
+            LayeredNav box = Linked(Box1());
+            int ground = Node(box, 0, 8, 7), top = Node(box, 1, 8, 8);
+            Assert.That(box.TryLink(ground, top, out int climb), Is.True, "climb");
+            Assert.That(box.TryLink(top, ground, out int drop), Is.True, "drop");
+            int[] plain = LayeredReach.Islands(Plain(Box1()));
+            Assert.That(plain[top], Is.Not.EqualTo(plain[ground]), "without links");
+            int[] both = LayeredReach.Islands(box);
+            Assert.That(both[top], Is.EqualTo(both[ground]), "climb and drop");
+            foreach (int keep in new[] { climb, drop })
+            {
+                int[] one = LayeredReach.Islands(Plain(Box1()).WithLinks(new[] { box.Link(keep) }));
+                Assert.That(one[top], Is.Not.EqualTo(one[ground]), "one way: " + box.Link(keep));
+                Assert.That(one.Max(), Is.EqualTo(plain.Max()), "one way joins nothing");
+            }
+
+            LayeredNav window = Linked(Window());
+            int south = Node(window, 0, 8, 7), north = Node(window, 0, 8, 9);
+            Assert.That(window.TryLink(south, north, out int over), Is.True, "the vault north");
+            Assert.That(window.TryLink(north, south, out _), Is.True, "the vault south");
+            int[] walled = LayeredReach.Islands(Plain(Window()));
+            Assert.That(walled[north], Is.Not.EqualTo(walled[south]), "the wall splits the map");
+            int[] vaulted = LayeredReach.Islands(window);
+            Assert.That(vaulted[north], Is.EqualTo(vaulted[south]), "the window joins it");
+            int[] oneWay = LayeredReach.Islands(Plain(Window()).WithLinks(new[] { window.Link(over) }));
+            Assert.That(oneWay[north], Is.Not.EqualTo(oneWay[south]), "south to north only");
+            Assert.That(new LayeredReach(Plain(Window()).WithLinks(new[] { window.Link(over) }), north).CostFrom(south), Is.EqualTo(4000), "A* still goes over");
+
+            // A ring: over the window northwards, and back south by another one-way vault three cells west.
+            NavLink v = window.Link(over);
+            int westNorth = Node(window, 0, 5, 9), westSouth = Node(window, 0, 5, 7);
+            var ring = new List<NavLink> { v, new NavLink(westNorth, westSouth, v.Span, v.PathCost, v.Kind, v.Ticks, v.Cross, v.Gap) };
+            ring.Sort((a, b) => a.From != b.From ? a.From.CompareTo(b.From) : a.To.CompareTo(b.To));
+            LayeredNav ringed = Plain(Window()).WithLinks(ring);
+            int[] round = LayeredReach.Islands(ringed);
+            Assert.That(round[north], Is.Not.EqualTo(round[south]), "a ring of one-way links does not join");
+            var f = new LayeredPathfinder(ringed);
+            Assert.That(f.Find(south, north), Is.EqualTo(GridPathStatus.Found));
+            Assert.That(f.Find(north, south), Is.EqualTo(GridPathStatus.Found), "although A* goes both ways");
+        }
+
         // T3-12: one link per (from, to) pair, never beside a walking step or a seam.
         [Test]
         public void T3_12_OneLinkPerPairAndNeverBesideAStep()
