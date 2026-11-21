@@ -1,7 +1,9 @@
 # AI-M1: melee presses (PressureRules.Strikes, content field pressureStrikes) and a pressed melee unit asks the engage part
 # before it chases (content field meleeNerve); told to take cover, it still goes for an enemy within meleeNerveFightMm. Filters: the AI-M1 unit tests (pressure, scheduler, content and state).
 # Not listed: the damage test of a landed strike (a strike without damage adds nothing to the sum, so the unit falls or
-# not as without the test); Kills itself (pf-kills-* in base-1.txt); a strike whose striker or target is gone read as
+# not as without the test); the shots left out of the sum for a unit the strikes hit (a unit the fire hit is counted by
+# then, or its shots and strikes together fall short, so the strikes alone give the same answer); Kills itself
+# (pf-kills-* in base-1.txt); a strike whose striker or target is gone read as
 # present (the lookup throws: an exception, not an assertion); the saved flag not read back (the reader runs out of step:
 # an exception); the melee-nerve tag folded after the layers tag (the pressure fields are refused on floor plates, so no
 # world has both).
@@ -75,16 +77,6 @@ original:
 |                     if (counted || !Kills(strike.Target, fires, strikes, combat.HealthRaw(strike.Target))) continue;
 replacement:
 |                     if (counted || !Kills(strike.Target, fires, strikes, combat.Pack.MaxHealthRaw)) continue;
-
-[m1-pr-own-strikes-only]
-file = Assets/WarCore/Battle/Ai/Pressure.cs
-filter = FullyQualifiedName~AiM1PressureTests
-expect = WarCore.Tests.AiM1PressureTests
-note = the shots of the tick are not added to the strikes
-original:
-|                     if (counted || !Kills(strike.Target, fires, strikes, combat.HealthRaw(strike.Target))) continue;
-replacement:
-|                     if (counted || !Kills(strike.Target, default, strikes, combat.HealthRaw(strike.Target))) continue;
 
 [m1-pr-counted-twice]
 file = Assets/WarCore/Battle/Ai/Pressure.cs
@@ -607,17 +599,17 @@ note = pressureStrikes false turns strikes on
 original:
 |                     bool strikes = r.Has("pressureStrikes") && r.Bool("pressureStrikes");
 replacement:
-|                     bool strikes = r.Has("pressureStrikes");
+|                     bool strikes = r.Has("pressureStrikes") && (r.Bool("pressureStrikes") || true);
 
 [m1-ct-strikes-ignored]
 file = Assets/WarCore/Content/Data/Sections/AiSection.cs
 filter = FullyQualifiedName~AiM1StateTests
 expect = WarCore.Tests.AiM1StateTests
-note = pressureStrikes is not read
+note = pressureStrikes is read and dropped
 original:
 |                     bool strikes = r.Has("pressureStrikes") && r.Bool("pressureStrikes");
 replacement:
-|                     bool strikes = false;
+|                     bool strikes = r.Has("pressureStrikes") && r.Bool("pressureStrikes") && false;
 
 [m1-ct-strikes-alone]
 file = Assets/WarCore/Content/Data/Sections/AiSection.cs

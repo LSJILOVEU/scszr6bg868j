@@ -269,16 +269,39 @@ namespace WarCore.Tests
             Assert.That(strike.TryPressedFrom(Id(w, C), out from) && from.Equals(At(w, B)), Is.True);
         }
 
-        // The one-argument Advance reads the strikes combat made this tick, as Step does.
+        // 4. A record that is not a landed strike brings nobody down whatever number it carries: the fall is the landed
+        // strike's, and so is the source.
         [Test]
-        public void StepReadsTheStrikesOfTheTick()
+        public void OnlyALandedStrikeIsTheSourceOfAFall()
         {
             M6World w = Row1();
-            var p = new Pressure(w.Combat, Rules());
-            Assert.That(w.Combat.Strikes.Length, Is.EqualTo(0));
-            p.Advance(NoFire);
-            Assert.That(Values(w, p), Is.EqualTo(new[] { 0, 0, 0, 0, 0 }));
-            Assert.That(typeof(Pressure).GetMethod("Step").GetMethodBody(), Is.Not.Null);
+            var p = new Pressure(w.Combat, Rules(nearRadius: 1000), true);
+            p.Advance(NoFire, new[] { Strike(w, StrikeKind.Blocked, F, A, 1), Strike(w, StrikeKind.Landed, B, A, Health(w, A)) });
+            Assert.That(p.Value(Id(w, C)), Is.EqualTo(2000), "A fell 2 m from C");
+            Assert.That(p.TryPressedFrom(Id(w, C), out SimVec3 from) && from.Equals(At(w, B)), Is.True);
+        }
+
+        // Step reads the strikes combat made this tick: a blade (A) cuts at an enemy (B) that stands still, and B's
+        // teammate 2 m away (C2) feels the blow in the very tick the strike lands or is blocked. Without the rule it feels nothing.
+        [TestCase(true)]
+        [TestCase(false)]
+        public void StepReadsTheStrikesOfTheTick(bool strikes)
+        {
+            const ulong C2 = 12;
+            string ai = "{ \"meleeChaseRange\": 12, " + (strikes ? "\"pressureStrikes\": true, " : "") + AiM1MeleeTests.Pressed + " }";
+            M6World w = World(new[] { Blade(A, 30500, Row), Still(B, 32000, Row), Still(C2, 34000, Row) }, ai,
+                Guns(8, MeleeWorld.Spec(radius: 3, maxTargets: 1, engage: 1.8)), plates: false);
+            Pressure p = w.System<Pressure>();
+            bool struck = false;
+            for (int tick = 0; tick < 300 && !struck; tick++)
+            {
+                w.Step();
+                foreach (StrikeRecord strike in w.Combat.Strikes)
+                    if (strike.Kind == StrikeKind.Landed || strike.Kind == StrikeKind.Blocked) struck = true;
+                if (!struck) Assert.That(p.Value(Id(w, C2)), Is.EqualTo(0), "nothing pressed yet");
+            }
+            Assert.That(struck, Is.True, "the blade reached its enemy");
+            Assert.That(p.Value(Id(w, C2)), Is.EqualTo(strikes ? 2500 : 0));
         }
     }
 }

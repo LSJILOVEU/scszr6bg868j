@@ -99,16 +99,20 @@ namespace WarCore.Tests
             Assert.That(part.Unseens, Is.EqualTo(0), "the answer ends the think");
         }
 
+        // A blade (A) and an enemy that stands still (B) 8.2 m east of it, a wall on the ground at cell (41, 32) between
+        // them; engage "bound" with cover rules.
+        private static M6World Walled(string more = "") => World(new[] { Blade(A, 38500, 30500), Still(B, 46500, 32500) },
+            "{ \"meleeChaseRange\": 12, \"meleeNerve\": true, " + more + Bound + ", " + Pressed
+                + ", \"coverRadiusMm\": 9000, \"coverStepMm\": 1000, \"coverDepthMm\": 2000 }",
+            Guns(8, MeleeWorld.Spec(radius: 3, maxTargets: 1, engage: 1.8)), plates: false, map: WallOnly());
+
         // 6 (M4). Cover with cover rules (engage "bound", a wall on the ground at cell (41, 32), the enemy east of it in
         // sight): the pinned unit does not chase, it walks toward a spot with the wall close in front toward where it was
         // pressed from, and stands as soon as it is covered.
         [Test]
         public void APinnedBladeTakesCoverBehindAWall()
         {
-            string ai = "{ \"meleeChaseRange\": 12, \"meleeNerve\": true, " + Bound + ", " + Pressed
-                + ", \"coverRadiusMm\": 9000, \"coverStepMm\": 1000, \"coverDepthMm\": 2000 }";
-            M6World w = World(new[] { Blade(A, 38500, 30500), Still(B, 46500, 32500) }, ai, Guns(8, MeleeWorld.Spec(radius: 3, maxTargets: 1, engage: 1.8)),
-                plates: false, map: WallOnly());
+            M6World w = Walled();
             w.Step();
             Assert.That(GoesTo(w, A, At(w, B), 0), Is.True, "calm: chasing");
             Press(w, A, 1);
@@ -123,6 +127,19 @@ namespace WarCore.Tests
             Assert.That(Level(w, A), Is.EqualTo(AiNerve.Pinned));
             Assert.That((Ordered(w, A), w.Combat.WallWithin(At(w, A), At(w, B), SimFix.FromInt(2))), Is.EqualTo((false, true)), "standing in cover");
             Assert.That(CombatSystem.Horizontal(At(w, A) - order.Target).Length.Raw, Is.LessThan(2 * M), "at the spot or just short of it");
+        }
+
+        // 6 (M4). Hold with the same wall to hide behind: the unit stops where it is and does not walk to the wall.
+        [Test]
+        public void HoldStandsWithCoverNearby()
+        {
+            M6World w = Walled();
+            Install(w, "engage", new Asked { MeleeAnswer = AiEngage.Hold });
+            w.Step();
+            Assert.That(GoesTo(w, A, At(w, B), 0), Is.True, "calm: chasing");
+            Press(w, A, 1);
+            w.Step();
+            Assert.That(Ordered(w, A), Is.False, "stopped, not sent to the wall");
         }
 
         // 6 (M4). Cover and an enemy within the fight range (the enemy stands 8 m away): the unit goes for it instead of
@@ -159,10 +176,7 @@ namespace WarCore.Tests
         [Test]
         public void ACloseEnemyComesBeforeCover()
         {
-            string ai = "{ \"meleeChaseRange\": 12, \"meleeNerve\": true, \"meleeNerveFightMm\": 9000, " + Bound + ", " + Pressed
-                + ", \"coverRadiusMm\": 9000, \"coverStepMm\": 1000, \"coverDepthMm\": 2000 }";
-            M6World w = World(new[] { Blade(A, 38500, 30500), Still(B, 46500, 32500) }, ai, Guns(8, MeleeWorld.Spec(radius: 3, maxTargets: 1, engage: 1.8)),
-                plates: false, map: WallOnly());
+            M6World w = Walled("\"meleeNerveFightMm\": 9000, ");
             Press(w, A, 1);
             Assert.That(Level(w, A), Is.EqualTo(AiNerve.Pinned));
             w.Step();
