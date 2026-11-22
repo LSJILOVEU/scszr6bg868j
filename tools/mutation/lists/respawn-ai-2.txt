@@ -799,6 +799,26 @@ filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~Respawn
 expect = WarCore.Tests.RespawnAi2Tests.TheSessionReportsTheCounts
 note = HasReentry is true without the switch
 original:
-| public bool HasReentry => reinforce != null && reinforce.ByDebt;
+| internal bool HasReentry => reinforce != null && reinforce.ByDebt;
 replacement:
-| public bool HasReentry => reinforce != null;
+| internal bool HasReentry => reinforce != null;
+
+[respawn-ai-2-78-session-null-has]
+file = Assets/WarCore/Presentation/Bridge/SimSession.Reentry.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.TheSessionReportsTheCounts
+note = Has takes a null session
+original:
+| (session ?? throw new ArgumentNullException(nameof(session))).HasReentry;
+replacement:
+| session != null && session.HasReentry;
+
+[respawn-ai-2-79-session-null-counts]
+file = Assets/WarCore/Presentation/Bridge/SimSession.Reentry.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.TheSessionReportsTheCounts
+note = TryCounts takes a null session
+original:
+|             (session ?? throw new ArgumentNullException(nameof(session))).TryReentry(team, out owed, out entered);
+replacement:
+|             (session ?? throw new InvalidOperationException()).TryReentry(team, out owed, out entered);

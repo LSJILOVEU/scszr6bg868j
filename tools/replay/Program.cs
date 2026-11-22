@@ -207,7 +207,7 @@ namespace WarCore.Replay
                 sb.Append("],\"s\":[").Append(string.Join(",", shots)).Append("],\"a\":[").Append(frame.Match.AliveOne).Append(',').Append(frame.Match.AliveTwo)
                   .Append(',').Append(frame.Match.ReserveOne).Append(',').Append(frame.Match.ReserveTwo).Append("],\"h\":\"").Append(session.StateHash.ToString("X16")).Append('"');
                 // RESPAWN-AI-2: [owed1, entered1, owed2, entered2]; written only with match.reentryTicks, so other setups keep their frames.
-                if (session.TryReentry(1, out long owed1, out long entered1) && session.TryReentry(2, out long owed2, out long entered2))
+                if (SessionReentry.TryCounts(session, 1, out long owed1, out long entered1) && SessionReentry.TryCounts(session, 2, out long owed2, out long entered2))
                     sb.Append(",\"r\":[").Append(owed1).Append(',').Append(entered1).Append(',').Append(owed2).Append(',').Append(entered2).Append(']');
                 sb.Append('}');
                 shots.Clear(); blasts.Clear();

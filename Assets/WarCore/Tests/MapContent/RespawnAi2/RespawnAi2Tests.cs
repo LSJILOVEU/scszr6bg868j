@@ -390,27 +390,30 @@ namespace WarCore.Tests
             Assert.That(BitConverter.ToUInt64(Saved(a.Reinforce), 0), Is.EqualTo(a.Recipe.Match.PolicyDigest));
         }
 
-        // The session reports each team's owed and entered counts only in a world with the switch.
+        // The session reports each team's owed and entered counts only in a world with the switch, through SessionReentry
+        // (the session's own public members are a locked list).
         [Test]
         public void TheSessionReportsTheCounts()
         {
             M6World w = World(Units(), Pack());
             Kill(w, D, 1, 2, 3);
             GoTo(w, D + Reentry);
-            Assert.That(w.Session.HasReentry, Is.True);
+            Assert.That(SessionReentry.Has(w.Session), Is.True);
             // Three died on one tick and one has entered: two are still owed.
-            Assert.That((w.Session.TryReentry(1, out long owed, out long entered), owed, entered), Is.EqualTo((true, 2L, 1L)));
-            Assert.That((w.Session.TryReentry(2, out owed, out entered), owed, entered), Is.EqualTo((true, 0L, 0L)));
+            Assert.That((SessionReentry.TryCounts(w.Session, 1, out long owed, out long entered), owed, entered), Is.EqualTo((true, 2L, 1L)));
+            Assert.That((SessionReentry.TryCounts(w.Session, 2, out owed, out entered), owed, entered), Is.EqualTo((true, 0L, 0L)));
             foreach (int outside in new[] { 0, 3, -1 })
             {
                 (bool, long, long) got = (true, -1L, -1L);
-                Assert.DoesNotThrow(() => { bool known = w.Session.TryReentry(outside, out long o, out long e); got = (known, o, e); }, "team " + outside);
+                Assert.DoesNotThrow(() => { bool known = SessionReentry.TryCounts(w.Session, outside, out long o, out long e); got = (known, o, e); }, "team " + outside);
                 Assert.That(got, Is.EqualTo((false, 0L, 0L)), "team " + outside);
             }
             M6World off = World(Units(), Pack(reentry: 0));
             Assert.DoesNotThrow(() => off.Step(Interval));
             Assert.That(off.Reinforce.Successes(1), Is.EqualTo(1L));
-            Assert.That((off.Session.HasReentry, off.Session.TryReentry(1, out owed, out entered), owed, entered), Is.EqualTo((false, false, 0L, 0L)));
+            Assert.That((SessionReentry.Has(off.Session), SessionReentry.TryCounts(off.Session, 1, out owed, out entered), owed, entered), Is.EqualTo((false, false, 0L, 0L)));
+            Assert.Throws<ArgumentNullException>(() => SessionReentry.Has(null));
+            Assert.Throws<ArgumentNullException>(() => SessionReentry.TryCounts(null, 1, out _, out _));
         }
 
         // With the switch the system needs the simulation; the player's respawn needs the system.
