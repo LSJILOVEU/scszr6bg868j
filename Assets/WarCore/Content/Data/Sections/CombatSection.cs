@@ -12,8 +12,9 @@ namespace WarCore.Content
         internal CombatSection() : base(SectionKey) { }
         protected override string NestedObject => "body";
         // AIM-1: combat.moveSpread is an object too (bands and optional per-weapon tables), kept whole across layers.
-        internal const string MoveSpreadField = "moveSpread", ManualReloadField = "manualReload";
-        protected override bool IsNested(string field) => base.IsNested(field) || field == MoveSpreadField;
+        // VSPREAD-1: combat.verticalSpread is an object (with byStance inside), kept whole across layers.
+        internal const string MoveSpreadField = "moveSpread", ManualReloadField = "manualReload", VerticalSpreadField = "verticalSpread";
+        protected override bool IsNested(string field) => base.IsNested(field) || field == MoveSpreadField || field == VerticalSpreadField;
         // STANCE-1 combat.stances and BLAST-1 combat.blasts are arrays, each kept whole across layers.
         private static readonly string[] Arrays = { StancesField, BlastsField };
         protected override string[] NestedArrays => Arrays;
@@ -181,11 +182,14 @@ namespace WarCore.Content
                 stances.Used = true;
                 if (stances.Node.Kind != JsonKind.Array) throw cr.Bad(stances, "must be an array");
             }
+            ContentField vertical = cr.FieldOf(VerticalSpreadField);
+            if (vertical != null) vertical.Used = true;
             cr.Done();
             MoveSpread moveSpread = moveField == null ? null : CombatAimReader.MoveSpread(b.Pack, moveField, b.WeaponIds);
             if (moveSpread != null || manualReload) b.Publish(new CombatAim(moveSpread, manualReload));
             if (body != null) b.Body = Body(b.Pack, body);
             if (stances != null) b.Stances = Stances(b.Pack, combat, stances, b.Body);
+            if (vertical != null) b.Publish(CombatVSpreadReader.Read(b.Pack, vertical, b.Body.HasValue, b.Stances));
             // PROJ-1: a projectile starts at the muzzle, so a pack with a projectile weapon must have the body.
             for (int i = 0; i < b.ProjectileSpeeds.Length && body == null; i++)
                 if (b.ProjectileSpeeds[i] != 0)

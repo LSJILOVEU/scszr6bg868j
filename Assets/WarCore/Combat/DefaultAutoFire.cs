@@ -25,11 +25,12 @@ namespace WarCore.Combat
 
         // The decision for a target already chosen: the 3D heading to it (L9: targets above or below are aimed at), then the
         // ally check with its miss roll. ML-3: from the muzzle over the shooter's foot to the target's ShotEnd (new mode its
-        // viewpoint; without a body both are feet, as before).
+        // viewpoint; without a body both are feet, as before). VSPREAD-1: ShotEnd(shooter, target), the middle of the body
+        // when the pack's vertical spread aims there and the line to it is clear.
         public AutoFireAction AimAt(CombatSystem combat, EntityId shooter, in Position position, EntityId target, out SimVec3 direction)
         {
             SimVec3 origin = combat.MuzzleOver(position.Value, shooter);
-            direction = combat.ShotEnd(target) - origin;
+            direction = combat.ShotEnd(shooter, target) - origin;
             // Zero-direction rule: a target standing on (or straight above or below) the shooter gives no horizontal heading,
             // so the shot goes along +X
             // and takes the same ally check, spread, wall and teammate handling as any other ray.
