@@ -7,9 +7,9 @@ filter = FullyQualifiedName~Mt167AimPick
 expect = WarCore.Tests.Mt167AimPickTests.VerticalRayInsideOuterSnapRadius_SelectsEnemy
 note = Shrinking the snap radius misses a vertical ray 0.375 metres from the enemy axis.
 original:
-|         public const float SnapRadius = 0.5f; // PLACEHOLDER: the drawn body (0.5 x 1 x 0.5 m) widened for the mouse; tune after play.
+|         public const float SnapRadius = 0.5f; // PLACEHOLDER: the body's diameter (2r, r = BodySizes.Radius) as the mouse's reach; tune after play.
 replacement:
-|         public const float SnapRadius = 0.25f; // PLACEHOLDER: the drawn body (0.5 x 1 x 0.5 m) widened for the mouse; tune after play.
+|         public const float SnapRadius = 0.25f; // PLACEHOLDER: the body's diameter (2r, r = BodySizes.Radius) as the mouse's reach; tune after play.
 
 [mt-167-02]
 file = Assets/WarCore/Presentation/Camera/AimPick.cs
@@ -17,9 +17,9 @@ filter = FullyQualifiedName~Mt167AimPick
 expect = WarCore.Tests.Mt167AimPickTests.RayAboveOneMetreBody_DoesNotSelectEnemy
 note = Extending the body height selects an enemy when the ray passes above its one metre body.
 original:
-|         public const float BodyHeight = 1f;   // PLACEHOLDER: the drawn body height (EntityViews: bottom at Y, top at Y + 1).
+|         public const float BodyHeight = 1f;   // The old drawn body height, for a world without body sizes (BodySizes.TopOf falls back to it).
 replacement:
-|         public const float BodyHeight = 2f;   // PLACEHOLDER: the drawn body height (EntityViews: bottom at Y, top at Y + 1).
+|         public const float BodyHeight = 2f;   // The old drawn body height, for a world without body sizes (BodySizes.TopOf falls back to it).
 
 [mt-167-03]
 file = Assets/WarCore/Presentation/Camera/AimPick.cs

@@ -36,7 +36,8 @@ namespace WarCore.Presentation
     //   bottom is above y + Headroom, and the walls whose bottom is at or above y + Headroom with a footprint touching one of
     //   its rectangles. Outdoors nothing is hidden.
     //   Fading: a plate (other than the one the unit stands on) or wall that is not hidden and stands on the line from the
-    //   camera to the unit's feet (y + FootLift) or head (y + AimPick.BodyHeight) is faded, indoors and outdoors.
+    //   camera to the unit's feet (y + FootLift) or head (y + BodySizes.TopOf: its stance's height, 1 m without sizes) is faded,
+    //   indoors and outdoors.
     public static class LayerCut
     {
         public const float Headroom = 2.0f;  // K5 clear height
@@ -51,8 +52,9 @@ namespace WarCore.Presentation
 
         // forward is the camera's view direction (IsoCamera.Forward; Y below 0).
         // seeRadius (SEE-1) above 0 also fades what stands over the ground the unit can see within that radius (SeeZone).
+        // sizes (SCALE-2a): the head line and the ring's eye follow the body; null keeps the old 1 m.
         public static LayerCutResult Run(ViewPlates plates, ViewMap map, ViewEntity? player, (float X, float Y, float Z) forward,
-            float seeRadius = 0f)
+            float seeRadius = 0f, BodySizes sizes = null)
         {
             LayerCutResult none = None(plates, map);
             if (!player.HasValue || !player.Value.Alive) return none;
@@ -96,12 +98,12 @@ namespace WarCore.Presentation
             }
 
             // The line from each target point back against the view direction, until it is above everything.
-            float highest = me.Y + AimPick.BodyHeight;
+            float head = BodySizes.TopOf(sizes, me), highest = me.Y + head;
             for (int k = 0; k < plateCount; k++)
                 for (int j = 0; j <= plates[k].Depth; j++)
                     for (int i = 0; i <= plates[k].Width; i++) highest = Math.Max(highest, plates[k].Top(i, j));
             for (int w = 0; w < wallCount; w++) highest = Math.Max(highest, map.Walls[w].CenterY + map.Walls[w].SizeY / 2);
-            foreach (float lift in new[] { FootLift, AimPick.BodyHeight })
+            foreach (float lift in new[] { FootLift, head })
             {
                 double ox = me.X, oy = me.Y + lift, oz = me.Z;
                 double length = (highest + 1 - oy) / -forward.Y;
@@ -118,7 +120,7 @@ namespace WarCore.Presentation
                         wallStates[w] = CutState.Faded;
                 }
             }
-            if (seeRadius > 0) SeeZone.Fade(plates, map, me, forward, seeRadius, highest, plateStates, wallStates);
+            if (seeRadius > 0) SeeZone.Fade(plates, map, me, forward, seeRadius, highest, plateStates, wallStates, sizes);
             return new LayerCutResult(plateStates, wallStates, indoors);
         }
 

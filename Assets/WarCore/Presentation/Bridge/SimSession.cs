@@ -77,7 +77,7 @@ namespace WarCore.Presentation
         private readonly Squads squads;
         // Stable identity -> spawn key, built on first use: the view names a squad by its leader's spawn key.
         private System.Collections.Generic.Dictionary<ulong, ulong> spawnKeys;
-        private readonly CombatPack combatPack;
+        private readonly CombatPack combatPack; internal CombatPack CombatPackForView => combatPack; // SCALE-2a, read by BodySizes.Of only
         private readonly IControlTarget controlled;
         private readonly StableId[] units;
         private readonly MatchPack matchPack;
@@ -521,7 +521,7 @@ namespace WarCore.Presentation
         public static ViewFire ToView(in FireRecord fire) => new ViewFire(
             (float)fire.Origin.X.Raw / SimFix.Scale, (float)fire.Origin.Z.Raw / SimFix.Scale,
             (float)fire.End.X.Raw / SimFix.Scale, (float)fire.End.Z.Raw / SimFix.Scale,
-            fire.ShooterTeam, fire.DamageRaw > 0);
+            fire.ShooterTeam, fire.DamageRaw > 0, (float)fire.Origin.Y.Raw / SimFix.Scale, (float)fire.End.Y.Raw / SimFix.Scale);
 
         // A4: an aim point with its own height. X and Z convert and check exactly as in Target; Y = yMm / 1000 m.
         internal static SimVec3 TargetAt(long xMm, long yMm, long zMm)

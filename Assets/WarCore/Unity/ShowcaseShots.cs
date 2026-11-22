@@ -9,10 +9,12 @@ namespace WarCore.Unity
     // and a puff where it stopped; chips fly off where a shot lands (ShowcaseFx). Lines and puffs are pooled: nothing is
     // created once the pools are warm. It also counts what the controlled unit did (shots, kills) and lists where shots
     // landed on the last tick.
+    // SCALE-2a: with body sizes a tracer runs from where the simulation starts the shot (the shooter's muzzle) to where it
+    // ends, never below the ground there, and the flash sits a drawn gun's length ahead. Without sizes: SHOW-1's fixed heights.
     public sealed class ShowcaseShots
     {
         public const string TracerName = "Tracer", BulletName = "Bullet", PuffName = "Puff";
-        public const float MuzzleHeight = 1.4f;
+        public const float MuzzleHeight = ShowcaseLegacySizes.MuzzleHeight;
         private const int TracerTicks = 4, FlashTicks = 2, PuffTicks = 8, MaxTracers = 400, MaxPuffs = 300;
         private const float Streak = 0.6f; // the drawn part of a projectile's last step
 
@@ -20,6 +22,7 @@ namespace WarCore.Unity
 
         private readonly Transform parent;
         private readonly ViewGround ground;
+        private readonly BodySizes sizes;
         private readonly Material[] team;
         private readonly Material flash, dust, blood;
         private readonly List<Timed<LineRenderer>> tracers = new List<Timed<LineRenderer>>();
@@ -41,9 +44,10 @@ namespace WarCore.Unity
         public bool MineFired { get; private set; }
 
         // colors: 0xRRGGBB per team, team 1 first. ground: the map's height field, or null on a flat map.
-        // fx: where the chips go, or null for none.
-        public ShowcaseShots(Transform parent, IReadOnlyList<int> colors, ViewGround ground, ShowcaseFx fx = null)
+        // fx: where the chips go, or null for none. sizes: BodySizes.Of the session, or null for SHOW-1's fixed heights.
+        public ShowcaseShots(Transform parent, IReadOnlyList<int> colors, ViewGround ground, ShowcaseFx fx = null, BodySizes sizes = null)
         {
+            this.sizes = sizes;
             this.parent = parent;
             this.ground = ground;
             this.fx = fx;
@@ -94,12 +98,10 @@ namespace WarCore.Unity
             {
                 ulong? shooter = units?.Fired(frame, fire.X0, fire.Z0, fire.X1, fire.Z1, fire.Team);
                 float feet = shooter.HasValue && frame.TryGet(shooter.Value, out ViewEntity who) ? who.Y : Ground(fire.X0, fire.Z0, floorY);
-                var from = new Vector3(fire.X0, feet + MuzzleHeight, fire.Z0);
-                // On a height field the shot ends chest-high over the ground there; elsewhere it stays level.
                 float floorThere = Ground(fire.X1, fire.Z1, floorY);
-                var to = new Vector3(fire.X1, ground == null ? from.y : floorThere + 1.1f, fire.Z1);
+                Vector3 from = From(fire, feet), to = To(fire, from, floorThere, floorY);
                 Tracer(frame.Tick, from, to, Team(fire.Team), fire.Lethal ? 0.14f : 0.06f);
-                Puff(frame.Tick, Tip(from, to), flash, 0.5f, FlashTicks);
+                Puff(frame.Tick, Tip(from, to, Reach), flash, 0.5f, FlashTicks);
                 Puff(frame.Tick, to, fire.Lethal ? blood : dust, fire.Lethal ? 0.5f : 0.25f, PuffTicks);
                 fx?.Chips(to, ground == null ? feet : floorThere, fire.Lethal ? 5 : 3, fire.Lethal);
                 landedNow.Add(to);
@@ -113,11 +115,24 @@ namespace WarCore.Unity
             }
         }
 
-        // The end of the gun: a little way from the shooter's middle toward the target.
-        private static Vector3 Tip(Vector3 from, Vector3 to)
+        // Where a tracer starts: the simulation's start with sizes; else the old muzzle height over the shooter's feet.
+        public Vector3 From(ViewFire fire, float feet) =>
+            sizes != null ? new Vector3(fire.X0, fire.Y0, fire.Z0) : new Vector3(fire.X0, feet + MuzzleHeight, fire.Z0);
+
+        // Where it ends: the simulation's end, not below the ground there, with sizes. Else on a height field chest-high over the
+        // ground there, and elsewhere level with the start.
+        public Vector3 To(ViewFire fire, Vector3 from, float floorThere, float floorY) => sizes != null
+            ? new Vector3(fire.X1, DrawnParts.ShotEndY(fire.Y1, ground, floorY, fire.X1, fire.Z1), fire.Z1)
+            : new Vector3(fire.X1, ground == null ? from.y : floorThere + ShowcaseLegacySizes.ShotEndLift, fire.Z1);
+
+        // How far ahead of the start the flash sits: the drawn gun's length with sizes, else SHOW-1's reach.
+        public float Reach => sizes != null ? DrawnParts.GunLength(sizes.StandingHeight) : ShowcaseLegacySizes.FlashReach;
+
+        // The end of the gun: reach from the shot's start toward the target.
+        private static Vector3 Tip(Vector3 from, Vector3 to, float reach)
         {
             var flat = new Vector3(to.x - from.x, 0f, to.z - from.z);
-            return flat.sqrMagnitude < 1e-6f ? from : from + flat.normalized * 0.9f;
+            return flat.sqrMagnitude < 1e-6f ? from : from + flat.normalized * reach;
         }
 
         // The projectiles fired and landed on the frame's tick (ViewProjectiles.Read of that tick). A projectile has
@@ -136,7 +151,7 @@ namespace WarCore.Unity
                 }
                 if (!launched.Contains((from, p.Team))) continue;
                 ulong? shooter = units?.Fired(frame, p.FromX, p.FromZ, p.X, p.Z, p.Team);
-                Puff(frame.Tick, Tip(from, new Vector3(p.X, p.Y, p.Z)), flash, 0.5f, FlashTicks);
+                Puff(frame.Tick, Tip(from, new Vector3(p.X, p.Y, p.Z), Reach), flash, 0.5f, FlashTicks);
                 if (player.HasValue && shooter == player)
                 {
                     MineFired = true;
