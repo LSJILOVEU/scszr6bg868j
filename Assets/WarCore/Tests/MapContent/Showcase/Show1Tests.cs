@@ -261,7 +261,7 @@ namespace WarCore.Tests
             Assert.That(seen.Plates, Is.True);
             Assert.That(seen.Status.HasDash, Is.False);
             Assert.That(seen.At.ContainsKey(310), Is.True);
-            Assert.That(seen.At[100].Alive, Is.False, "the scripted player falls in the doorway");
+            Assert.That(seen.At[185].Alive, Is.False, "the scripted player falls in the doorway"); // AIM-2: falls at 108 (was 59)
             Assert.That(seen.At[310].Alive, Is.True, "and is playing again from the reserve");
             Assert.That(seen.FirstBand, Is.EqualTo(-1), "no squads on a map with floors");
         }

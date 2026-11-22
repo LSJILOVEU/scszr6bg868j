@@ -34,6 +34,7 @@ namespace WarCore.Unity
         private string dir = "", problem = "", selfCheck = "", status = "", shows = "";
         private float stubUntil = -1f;
         private Vector3? aimPoint;
+        private PickReach reach; // AIM-2: the stage's mouse reach (null: the old 0.5 m pick), read once when the stage starts
         private GUIStyle box, banner, button;
         private RenderTexture target;
         private Texture2D shot;
@@ -98,12 +99,14 @@ namespace WarCore.Unity
             problem = selfCheck = status = shows = "";
             paused = false;
             aimPoint = null;
+            reach = null;
             mapper = new PlayerInputMapper(PlayerKeys.Default);
             liveInput = new LivePlayerInput();
             ShowcaseStage stage = Showcase.Stages[index];
             try
             {
                 scene = new ShowcaseScene(stage);
+                reach = stage.Reach();
                 actions = new ShowcaseActions(stage, stage.StanceScales().Length);
                 selfCheck = scene.SelfCheck();
             }
@@ -164,7 +167,7 @@ namespace WarCore.Unity
                 {
                     FrameView shown = ShowcaseScene.Blend(session.Previous, session.Current, session.Alpha);
                     aim = AimPick.Pick(scene.Camera, mouse.x, mouse.y, w, h, scene.Ground, shown, session.ControlledKey,
-                        session.Map.Plates, scene.Cut, BodySizes.Of(session));
+                        session.Map.Plates, scene.Cut, BodySizes.Of(session), reach);
                 }
                 catch (ArgumentOutOfRangeException) { aim = null; } // a pick outside the world bounds
             }

@@ -45,20 +45,26 @@ namespace WarCore.Presentation
         // and the plate's height at the millimetre point (a hit whose millimetre point falls off the plate's solid cells is
         // skipped, so the bridge never refuses the layer). Units the cut hides are not snapped to. Plates null: as above.
         // SCALE-2a: with sizes a body is as tall as its stance level now (BodySizes.Top); null keeps the old 1 m body.
+        // AIM-2: with a reach (it needs sizes) the cylinder is the body widened by the reach, and of the enemies whose widened
+        // cylinder the ray meets before the ground, the one whose axis (feet to Top, not widened) passes nearest the ray wins
+        // (then the smaller t, then the smaller key). Reach null: exactly the pick without it.
         public static AimTarget Pick(IsoCamera camera, float screenX, float screenY, float screenWidth, float screenHeight,
-            ViewGround ground, FrameView shown, ulong? self, ViewPlates plates, LayerCutResult cut, BodySizes sizes = null)
+            ViewGround ground, FrameView shown, ulong? self, ViewPlates plates, LayerCutResult cut, BodySizes sizes = null,
+            PickReach reach = null)
         {
             if (camera == null) throw new ArgumentNullException(nameof(camera));
             var o = camera.RayOrigin(screenX, screenY, screenWidth, screenHeight);
             var f = camera.Forward;
-            return PickRay(o.X, o.Y, o.Z, f.X, f.Y, f.Z, camera.GroundY, ground, shown, self, plates, cut, sizes);
+            return PickRay(o.X, o.Y, o.Z, f.X, f.Y, f.Z, camera.GroundY, ground, shown, self, plates, cut, sizes, reach);
         }
 
         // The ray o + t f (f.Y < 0). Plane points use the same float formula as IsoCamera.ScreenToGround.
         internal static AimTarget PickRay(float ox, float oy, float oz, float fx, float fy, float fz, float groundY,
-            ViewGround ground, FrameView shown, ulong? self, ViewPlates plates = null, LayerCutResult cut = null, BodySizes sizes = null)
+            ViewGround ground, FrameView shown, ulong? self, ViewPlates plates = null, LayerCutResult cut = null, BodySizes sizes = null,
+            PickReach reach = null)
         {
             if (!(fy < 0f)) throw new ArgumentOutOfRangeException(nameof(fy), "The pick ray must point down.");
+            if (reach != null && sizes == null) throw new ArgumentException("A reach widens the body: the pick needs body sizes (pick needs body sizes).", nameof(reach));
             AimTarget onGround = ground == null ? PlanePoint(ox, oy, oz, fx, fy, fz, groundY, out double tGround)
                 : GroundPoint(ox, oy, oz, fx, fy, fz, groundY, ground, out tGround);
             if (plates != null)
@@ -74,18 +80,42 @@ namespace WarCore.Presentation
             if (shown == null || !self.HasValue || !shown.TryGet(self.Value, out ViewEntity me)) return onGround;
             double best = double.PositiveInfinity;
             ViewEntity snapped = default;
-            foreach (ViewEntity e in shown.Entities)
+            if (reach == null)
+                foreach (ViewEntity e in shown.Entities)
+                {
+                    if (!Snappable(e, me, self.Value, cut)) continue;
+                    double t = BodyHit(ox, oy, oz, fx, fy, fz, e, BodySizes.TopOf(sizes, e), SnapRadius);
+                    if (t < best || (t == best && t < double.PositiveInfinity && e.Key < snapped.Key)) { best = t; snapped = e; }
+                }
+            else
             {
-                if (!e.Alive || e.Team == 0 || e.Team == me.Team || e.Key == self.Value) continue;
-                if (cut != null && cut.IsHidden(e)) continue;
-                double t = BodyHit(ox, oy, oz, fx, fy, fz, e, BodySizes.TopOf(sizes, e));
-                if (t < best || (t == best && t < double.PositiveInfinity && e.Key < snapped.Key)) { best = t; snapped = e; }
+                double bestDistance = double.PositiveInfinity;
+                foreach (ViewEntity e in shown.Entities)
+                {
+                    if (!Snappable(e, me, self.Value, cut)) continue; // the same filter as without a reach
+                    float top = sizes.Top(e);
+                    double t = BodyHit(ox, oy, oz, fx, fy, fz, e, reach.Height(top), reach.Radius(sizes.Radius));
+                    if (!(t < tGround)) continue;
+                    double distance = AxisDistanceSquared(ox, oy, oz, fx, fy, fz, e.X, e.Y, e.Y + top, e.Z);
+                    if (distance < bestDistance || (distance == bestDistance && (t < best || (t == best && e.Key < snapped.Key))))
+                    {
+                        bestDistance = distance; best = t; snapped = e;
+                    }
+                }
             }
             if (!(best < tGround)) return onGround;
             // A unit on a plate always carries its height: without it Sim would aim at the ground under it.
             long? yMm = ground == null && snapped.Layer == 0 ? (long?)null
                 : (long)Math.Round((double)snapped.Y * 1000.0, MidpointRounding.AwayFromZero);
             return new AimTarget(AimKind.Unit, snapped.X, snapped.Y, snapped.Z, yMm, snapped.Key);
+        }
+
+        // Who the pick can snap to: a living unit of another team than the player's (team 0 is nobody's), not the player,
+        // and not hidden by the cut.
+        private static bool Snappable(ViewEntity e, ViewEntity me, ulong self, LayerCutResult cut)
+        {
+            if (!e.Alive || e.Team == 0 || e.Team == me.Team || e.Key == self) return false;
+            return cut == null || !cut.IsHidden(e);
         }
 
         // The first top of the plate of this layer in front of tLimit, at a millimetre point on a solid cell of that plate.
@@ -168,9 +198,9 @@ namespace WarCore.Presentation
 
         // First t at which the ray meets the upright cylinder of the body (side, or the top cap); +inf when it misses. height is
         // added to the feet in float, then widened.
-        private static double BodyHit(double ox, double oy, double oz, double fx, double fy, double fz, ViewEntity e, float height)
+        private static double BodyHit(double ox, double oy, double oz, double fx, double fy, double fz, ViewEntity e, float height, float radius)
         {
-            double r = SnapRadius, bottom = e.Y, top = e.Y + height;
+            double r = radius, bottom = e.Y, top = e.Y + height;
             double px = ox - e.X, pz = oz - e.Z;
             double a = fx * fx + fz * fz, b = 2 * (px * fx + pz * fz), c = px * px + pz * pz - r * r;
             if (a == 0) // straight down: inside the circle it meets the top cap, else nothing
@@ -186,6 +216,39 @@ namespace WarCore.Presentation
                 if (cap <= t2 && cap >= 0) return cap;
             }
             return double.PositiveInfinity;
+        }
+
+        // AIM-2: the squared shortest distance from the half-line o + t f (t >= 0, f.Y < 0) to the upright segment at (x, z) from
+        // bottom to top. Below the height where the line meets top and above where it meets bottom the vertical gap adds to the
+        // horizontal one; each of the three stretches is a quadratic in t, minimised at its vertex clamped into the stretch.
+        internal static double AxisDistanceSquared(double ox, double oy, double oz, double fx, double fy, double fz, double x, double bottom,
+            double top, double z)
+        {
+            double px = ox - x, pz = oz - z;
+            double a = fx * fx + fz * fz, b = 2 * (px * fx + pz * fz), c = px * px + pz * pz; // horizontal: a t^2 + b t + c
+            double tTop = (top - oy) / fy, tBottom = (bottom - oy) / fy;                          // fy < 0: tTop <= tBottom
+            double best = double.PositiveInfinity;
+            // Above the top (t < tTop): vertical gap oy + t fy - top.
+            Stretch(ref best, a, b, c, fy, oy - top, 0, tTop);
+            // Beside the segment: no vertical gap.
+            Stretch(ref best, a, b, c, 0, 0, tTop, tBottom);
+            // Below the bottom (t > tBottom): vertical gap bottom - oy - t fy, squared the same as oy + t fy - bottom.
+            Stretch(ref best, a, b, c, fy, oy - bottom, tBottom, double.PositiveInfinity);
+            return best;
+        }
+
+        // The least of a t^2 + b t + c + (g0 + g t)^2 over t in [max(lo, 0), hi]; nothing when that stretch is empty.
+        private static void Stretch(ref double best, double a, double b, double c, double g, double g0, double lo, double hi)
+        {
+            if (lo < 0) lo = 0;
+            if (!(lo <= hi)) return;
+            double qa = a + g * g, qb = b + 2 * g * g0, qc = c + g0 * g0;
+            double t = qa > 0 ? -qb / (2 * qa) : lo;
+            if (t < lo) t = lo;
+            if (t > hi) t = hi;
+            double v = (qa * t + qb) * t + qc;
+            if (v < 0) v = 0;
+            if (v < best) best = v;
         }
 
         private static long Along(long a, long b, long n) => a + FloorDiv((b - a) * n, 1L << Halvings);

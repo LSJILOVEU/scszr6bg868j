@@ -14,6 +14,7 @@ namespace WarCore.Unity.Tests
 
         private static ShowcaseStage Stage(string id)
         {
+            if (id == "house") return Showcase.LegacyHouse; // AIM-2: the house stage now has a body; the old house keeps rwr-m6
             foreach (ShowcaseStage stage in Showcase.Stages)
                 if (stage.Id == id) return stage;
             throw new ArgumentException(id);
