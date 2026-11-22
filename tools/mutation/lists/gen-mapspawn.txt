@@ -6,9 +6,9 @@ filter = FullyQualifiedName~WarCore.Tests.GenMapSpawnTests
 expect = WarCore.Tests.GenMapSpawnTests.EnabledSpawnsUseContentInTheWorld
 note = Enabled map spawns keep the legacy speed
 original:
-| ? UnitSpawn.OfType(s.Key, pack, s.Type, s.Squad, s.Team, s.XMm, s.ZMm, s.Reserve, s.Layer)
+| ? UnitSpawn.OfType(key, pack, type, squad, team, xMm, zMm, reserve, layer)
 replacement:
-| ? new UnitSpawn(s.Key, pack.SpawnOfUnitType(s.Type).Archetype, s.Squad, s.XMm, s.ZMm, SpeedMmPerSec, s.Team, pack.WeaponOfUnitType(s.Type), s.Reserve, pack.MeleeOfUnitType(s.Type), pack.SpawnOfUnitType(s.Type).Block, s.Layer)
+| ? new UnitSpawn(key, pack.SpawnOfUnitType(type).Archetype, squad, xMm, zMm, SpeedMmPerSec, team, pack.WeaponOfUnitType(type), reserve, pack.MeleeOfUnitType(type), pack.SpawnOfUnitType(type).Block, layer)
 
 [gen-mapspawn-02-drop-block]
 file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
@@ -16,9 +16,9 @@ filter = FullyQualifiedName~WarCore.Tests.GenMapSpawnTests
 expect = WarCore.Tests.GenMapSpawnTests.EnabledSpawnsUseContentInTheWorld
 note = Enabled map spawns discard the block spec
 original:
-| ? UnitSpawn.OfType(s.Key, pack, s.Type, s.Squad, s.Team, s.XMm, s.ZMm, s.Reserve, s.Layer)
+| ? UnitSpawn.OfType(key, pack, type, squad, team, xMm, zMm, reserve, layer)
 replacement:
-| ? new UnitSpawn(s.Key, pack.SpawnOfUnitType(s.Type).Archetype, s.Squad, s.XMm, s.ZMm, pack.SpawnOfUnitType(s.Type).SpeedMmPerSec, s.Team, pack.WeaponOfUnitType(s.Type), s.Reserve, pack.MeleeOfUnitType(s.Type), -1, s.Layer)
+| ? new UnitSpawn(key, pack.SpawnOfUnitType(type).Archetype, squad, xMm, zMm, pack.SpawnOfUnitType(type).SpeedMmPerSec, team, pack.WeaponOfUnitType(type), reserve, pack.MeleeOfUnitType(type), -1, layer)
 
 [gen-mapspawn-03-invert-switch]
 file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs

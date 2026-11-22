@@ -108,9 +108,9 @@ filter = FullyQualifiedName~WarCore.Tests.Nt1
 expect = WarCore.Tests.Nt1ReinforceTests.Nt1Reinforce_VersionAndBytes_TwoTeamsKeepVersionOne
 note = more teams keep version 1
 original:
-| public int StateVersion => (pack.TeamCount == 2 ? 1 : 2) + (chooser == null ? 0 : 2);
+| public int StateVersion => (pack.TeamCount == 2 ? 1 : 2) + (chooser == null ? 0 : 2) + (ByDebt ? 4 : 0);
 replacement:
-| public int StateVersion => 1 + (chooser == null ? 0 : 2);
+| public int StateVersion => 1 + (chooser == null ? 0 : 2) + (ByDebt ? 4 : 0);
 
 [nt1-reinforce-version-two]
 file = Assets/WarCore/Battle/ReinforceSystem.cs
@@ -119,9 +119,9 @@ expect = WarCore.Tests.Nt1ReinforceTests.Nt1Reinforce_VersionAndBytes_TwoTeamsKe
 expect = WarCore.Tests.Nt1TwoTeamLockTests.Nt1TwoTeams_PlaytestKeepsHashesAndSnapshotBytes
 note = two teams move to version 2
 original:
-| public int StateVersion => (pack.TeamCount == 2 ? 1 : 2) + (chooser == null ? 0 : 2);
+| public int StateVersion => (pack.TeamCount == 2 ? 1 : 2) + (chooser == null ? 0 : 2) + (ByDebt ? 4 : 0);
 replacement:
-| public int StateVersion => 2 + (chooser == null ? 0 : 2);
+| public int StateVersion => 2 + (chooser == null ? 0 : 2) + (ByDebt ? 4 : 0);
 
 [nt1-reinforce-init-two]
 file = Assets/WarCore/Battle/ReinforceSystem.cs

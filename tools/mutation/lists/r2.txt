@@ -56,9 +56,9 @@ filter = FullyQualifiedName~WarCore.Tests.R2MatchRulesTests
 expect = WarCore.Tests.R2MatchRulesTests.R2_OnlyExhausted
 note = drop rule ids when building the match pack
 original:
-| m.RespawnTicks, m.RespawnGuardTicks, ruleIds, m.ReinforceSkipContested);
+| m.RespawnTicks, m.RespawnGuardTicks, ruleIds, m.ReinforceSkipContested,
 replacement:
-| m.RespawnTicks, m.RespawnGuardTicks, null, m.ReinforceSkipContested);
+| m.RespawnTicks, m.RespawnGuardTicks, null, m.ReinforceSkipContested,
 
 [r2-07-drop-section-rules]
 file = Assets/WarCore/Content/Data/Sections/RulesSection.cs
