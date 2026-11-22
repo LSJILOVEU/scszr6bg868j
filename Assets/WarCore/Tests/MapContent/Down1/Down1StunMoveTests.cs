@@ -98,8 +98,8 @@ namespace WarCore.Tests.Down1
 
         // ---- D9 the player ----
 
-        // The player (key 1, team 1, armed, at (5, 8) m) aims north and pulls the trigger from tick 2: downed on tick 1, no shot and
-        // the facing stays; not downed, shots and the player turns north.
+        // The player (key 1, team 1, armed, at (5, 8) m) aims south and pulls the trigger from tick 2: downed on tick 1, no shot and
+        // the facing stays (north, the default); not downed, shots and the player turns south.
         [TestCase(true)]
         [TestCase(false)]
         public void D9_ADownedPlayerDoesNotFire(bool downed)
@@ -112,7 +112,7 @@ namespace WarCore.Tests.Down1
             int fired = 0;
             for (int t = 0; t < 30; t++)
             {
-                w.S.SetPlayerInput(w.Tick + 1, new PlayerInput(0, 0, 5000, 15000, primary: true));
+                w.S.SetPlayerInput(w.Tick + 1, new PlayerInput(0, 0, 5000, 1000, primary: true));
                 w.Step();
                 foreach (FireRecord f in w.Combat.Fires) if (f.Shooter.Equals(w.Sim.Entities.StableOf(w.Unit(1)))) fired++;
             }
@@ -125,7 +125,7 @@ namespace WarCore.Tests.Down1
             else
             {
                 Assert.That(fired, Is.GreaterThan(0));
-                Assert.That((after.X.Raw, after.Z.Raw), Is.EqualTo((0L, SimFix.Scale)));
+                Assert.That((after.X.Raw, after.Z.Raw), Is.EqualTo((0L, -SimFix.Scale)));
             }
         }
 
