@@ -12,14 +12,14 @@ replacement:
 |             if (result == null) throw new ArgumentNullException(nameof(result));
 
 [selftest-unexpected]
-file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+file = Assets/WarCore/Content/Data/ContentPack.cs
 filter = FullyQualifiedName~E1b
 expect = WarCore.Tests.E1bDocumentTests.MapDocumentIsDeclaredPartial
 note = only tests outside the expected list fail
 original:
-| private const long SpeedMmPerSec = 6000;
+| public const long DefaultUnitSpeedMmPerSec = 6000;
 replacement:
-| private const long SpeedMmPerSec = 6001;
+| public const long DefaultUnitSpeedMmPerSec = 6001;
 
 [selftest-count]
 file = Assets/WarCore/Tests/MapContent/MapTools/E1bLockTests.cs

@@ -37,6 +37,9 @@ namespace WarCore.Content
     public sealed class ContentPack
     {
         public const long MaxUnitSpeedMmPerSec = 300000;
+        // The speed of a unit type that names none (PLACEHOLDER): the one source of it. Where unit types are read, a type's own
+        // speed wins (SpeedOfUnitType).
+        public const long DefaultUnitSpeedMmPerSec = 6000;
 
         private readonly string[] weaponIds;
         private readonly WeaponDef[] weapons;
@@ -140,6 +143,14 @@ namespace WarCore.Content
             int index = Array.IndexOf(unitTypeIds, unitTypeId);
             if (index < 0) throw new ContentException("content pack '" + Id + "' has no unit type '" + unitTypeId + "'");
             return unitTypeMelee[index];
+        }
+
+        // A unit type's speed in mm/s: its own when it names one, else DefaultUnitSpeedMmPerSec.
+        public long SpeedOfUnitType(string unitTypeId)
+        {
+            int index = Array.IndexOf(unitTypeIds, unitTypeId);
+            if (index < 0) throw new ContentException("content pack '" + Id + "' has no unit type '" + unitTypeId + "'");
+            return unitTypeSpeeds[index] ?? DefaultUnitSpeedMmPerSec;
         }
 
         public (int Archetype, int Weapon, int Melee, int Block, long SpeedMmPerSec) SpawnOfUnitType(string unitTypeId)

@@ -1,11 +1,11 @@
 # Self-test list: the filter matches no test, so the run stops with zero-executed before any mutation.
 
 [selftest-zero]
-file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+file = Assets/WarCore/Content/Data/ContentPack.cs
 filter = FullyQualifiedName~NoSuchTestAnywhere
 expect = NoSuchTestAnywhere
 note = zero executed
 original:
-| private const long SpeedMmPerSec = 6000;
+| public const long DefaultUnitSpeedMmPerSec = 6000;
 replacement:
-| private const long SpeedMmPerSec = 6001;
+| public const long DefaultUnitSpeedMmPerSec = 6001;

@@ -17,18 +17,18 @@ namespace WarCore.Presentation
         private const string DemoJson = "{ \"id\": \"" + DemoLayer + "\", \"extends\": \"" + Layer + "\", \"combat\": { \"maxHealth\": 40, \"resolver\": \"damage\" } }";
         public const long CrouchTick = 1, ProneTick = 2;
         public const long WallTopRaw = 3 * SimFix.Scale, SillRaw = 58982, OpeningTopRaw = WallSpan.ClearanceRaw;
-        private const long Speed = 6000;
         private const int LineupWidth = 16, LineupDepth = 10, FireWidth = 20, FireDepth = 10;
 
         public static WorldRecipe Recipe()
         {
             ContentPack pack = Pack();
             int weapon = pack.WeaponOfUnitType(WarCore.Content.Rwr.RwrPack.SoldierTeam1);
+            long speed = pack.SpeedOfUnitType(WarCore.Content.Rwr.RwrPack.SoldierTeam1);
             var units = new[]
             {
-                new UnitSpawn(1, 0, 1, 5000, 5500, Speed, 1, weapon),
-                new UnitSpawn(2, 0, 2, 6500, 5500, Speed, 1, weapon),
-                new UnitSpawn(3, 0, 3, 8000, 5500, Speed, 1, weapon),
+                new UnitSpawn(1, 0, 1, 5000, 5500, speed, 1, weapon),
+                new UnitSpawn(2, 0, 2, 6500, 5500, speed, 1, weapon),
+                new UnitSpawn(3, 0, 3, 8000, 5500, speed, 1, weapon),
             };
             var script = new[] { BridgeCommand.Stance(CrouchTick, 2, 1), BridgeCommand.Stance(ProneTick, 3, 2) };
             return new WorldRecipe(41, MoverKind.InterimCrowd, units, script).WithCombat(pack.BuildCombat());
@@ -39,8 +39,8 @@ namespace WarCore.Presentation
             ContentPack pack = Pack();
             var units = new[]
             {
-                new UnitSpawn(1, 0, 1, 5000, 5000, Speed, 1, pack.WeaponOfUnitType(WarCore.Content.Rwr.RwrPack.SoldierTeam1)),
-                new UnitSpawn(2, 0, 2, 15000, 5000, Speed, 2, pack.WeaponOfUnitType(WarCore.Content.Rwr.RwrPack.SoldierTeam2)),
+                new UnitSpawn(1, 0, 1, 5000, 5000, pack.SpeedOfUnitType(WarCore.Content.Rwr.RwrPack.SoldierTeam1), 1, pack.WeaponOfUnitType(WarCore.Content.Rwr.RwrPack.SoldierTeam1)),
+                new UnitSpawn(2, 0, 2, 15000, 5000, pack.SpeedOfUnitType(WarCore.Content.Rwr.RwrPack.SoldierTeam2), 2, pack.WeaponOfUnitType(WarCore.Content.Rwr.RwrPack.SoldierTeam2)),
             };
             var script = new[] { BridgeCommand.Stance(CrouchTick, 2, 1) };
             return new WorldRecipe(41, MoverKind.InterimCrowd, units, script).WithCombat(pack.BuildCombat());

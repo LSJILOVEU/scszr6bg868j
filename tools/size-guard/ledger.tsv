@@ -6,7 +6,7 @@
 # A new literal is read from the content pack or from the one named source; it is not added here as debt.
 # Debt notes name the family in the audit: H1 body radius, H2 headroom, H3 speed, H4 grenade, M1 eye, M2 play distances,
 # L3 fixed-point scale.
-debt-max	515
+debt-max	507
 Battle/Ai/AssaultRolesPlacement.cs	SimFix.Scale/1000	1	debt	
 Battle/Ai/CommanderQuota.cs	CoordinateLimitMetres=8192	1	debt	
 Battle/Ai/Cover.cs	SimFix.Ratio(3,2)	1	debt	
@@ -26,6 +26,7 @@ Combat/ProjectileSystem.cs	SimFix.Scale/30000	1	debt
 Combat/StanceSystem.cs	SimFix.FromInt(1)	1	debt	
 Combat/VerticalSpread.cs	DefaultSnapMm=600	1	debt	M2
 Combat/VerticalSpread.cs	SimFix.Scale/1000	1	math	millimetres to raw
+Content/Data/ContentPack.cs	DefaultUnitSpeedMmPerSec=6000	1	canon	unit speed when a unit type names none; the one source, a type's own speed wins
 Content/Data/ContentWeaponEdit.cs	30000m	4	debt	
 Content/Data/Sections/AiSection.cs	DefaultSlotSpacingMm=1000	1	debt	M2 slot spacing not tied to body width
 Content/Data/Sections/CombatSection.cs	SimFix.Scale/2	1	debt	
@@ -101,13 +102,11 @@ Presentation/Bridge/Features/MatchFeature.cs	SimFix.Ratio(1,4)	1	debt	H1 body ra
 Presentation/Bridge/Features/MovementFeature.cs	SimFix.Ratio(1,4)	1	debt	H1 body radius copy
 Presentation/Bridge/Features/NerveDemo.cs	Depth=40	1	debt	
 Presentation/Bridge/Features/NerveDemo.cs	SimFix.FromInt(6)	1	debt	
-Presentation/Bridge/Features/NerveDemo.cs	Speed=6000	1	debt	H3 speed in code
 Presentation/Bridge/Features/NerveDemo.cs	Width=50	1	debt	
 Presentation/Bridge/Features/PlateCheck.cs	SimFix.Scale/2	2	debt	
 Presentation/Bridge/Features/PlateCheck.cs	SimFix.Scale/4	2	debt	
 Presentation/Bridge/Features/PlateDemo.cs	SimFix.FromInt(2)	3	debt	
 Presentation/Bridge/Features/PlateDemo.cs	SimFix.FromInt(35)	1	debt	
-Presentation/Bridge/Features/PlateDemo.cs	SpeedMmPerSec=3000	1	debt	H3 speed in code
 Presentation/Bridge/Features/Scale2aDemo.cs	3*SimFix.Scale	1	debt	
 Presentation/Bridge/Features/Scale2aDemo.cs	5.5f	1	debt	
 Presentation/Bridge/Features/Scale2aDemo.cs	6.5f	1	debt	
@@ -120,15 +119,12 @@ Presentation/Bridge/Features/Scale2aDemo.cs	SillRaw=58982	1	debt
 Presentation/Bridge/Features/Scale2aDemo.cs	SimFix.FromInt(6)	2	debt	
 Presentation/Bridge/Features/Scale2aDemo.cs	SimFix.Ratio(1,2)	1	debt	
 Presentation/Bridge/Features/Scale2aDemo.cs	SimFix.Ratio(13,2)	1	debt	
-Presentation/Bridge/Features/Scale2aDemo.cs	Speed=6000	1	debt	H3 speed in code
 Presentation/Bridge/Features/StanceDemo.cs	Depth=16	1	debt	
 Presentation/Bridge/Features/StanceDemo.cs	SimFix.FromInt(6)	1	debt	
-Presentation/Bridge/Features/StanceDemo.cs	Speed=6000	1	debt	H3 speed in code
 Presentation/Bridge/Features/StanceDemo.cs	Width=40	1	debt	
 Presentation/Bridge/Features/StreetDemo.cs	1.2	1	debt	
 Presentation/Bridge/Features/StreetDemo.cs	SimFix.FromInt(2)	3	debt	
 Presentation/Bridge/Features/StreetDemo.cs	SimFix.FromInt(35)	1	debt	
-Presentation/Bridge/Features/StreetDemo.cs	SpeedMmPerSec=3000	1	debt	H3 speed in code
 Presentation/Bridge/Features/TerrainCheck.cs	0.5f	3	debt	
 Presentation/Bridge/Features/ViewGround.cs	65536f	1	debt	
 Presentation/Bridge/Features/VspreadDemo.cs	Depth=30	1	debt	
@@ -136,18 +132,15 @@ Presentation/Bridge/Features/VspreadDemo.cs	FirstLaneZMm=5000	1	debt
 Presentation/Bridge/Features/VspreadDemo.cs	LaneStepMm=10000	1	debt	
 Presentation/Bridge/Features/VspreadDemo.cs	ShooterXMm=5000	1	debt	
 Presentation/Bridge/Features/VspreadDemo.cs	SimFix.FromInt(6)	1	debt	
-Presentation/Bridge/Features/VspreadDemo.cs	Speed=6000	1	debt	H3 speed in code
 Presentation/Bridge/Features/VspreadDemo.cs	TargetXMm=35000	1	debt	
 Presentation/Bridge/Features/VspreadDemo.cs	Width=48	1	debt	
 Presentation/Bridge/Features/WorldAssembly.cs	SimFix.FromInt(1)	1	debt	
-Presentation/Bridge/MapRecipe.cs	SpeedMmPerSec=6000	1	debt	H3 speed in code
 Presentation/Bridge/Showcase.cs	12f	1	debt	
 Presentation/Bridge/Showcase.cs	16f	2	debt	
 Presentation/Bridge/Showcase.cs	18f	1	debt	
 Presentation/Bridge/Showcase.cs	22f	2	debt	
 Presentation/Bridge/Showcase.cs	RespawnGuardTicks=90	1	debt	
 Presentation/Bridge/Showcase.cs	RespawnTicks=150	1	debt	
-Presentation/Bridge/Showcase.cs	SoldierSpeedMmPerSec=6000	1	debt	H3 speed in code
 Presentation/Bridge/ShowcaseActions.cs	CooldownTicks=90	1	debt	H4 grenade value in code (NADE-1)
 Presentation/Bridge/ShowcaseActions.cs	FuseTicks=33	1	debt	H4 grenade value in code (NADE-1)
 Presentation/Bridge/ShowcaseActions.cs	ReachMm=28000	1	debt	H4 grenade value in code (NADE-1)

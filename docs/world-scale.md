@@ -64,10 +64,10 @@ relation from the code or the shipped data. "none" means no test holds the value
 
 | Quantity | Value | Where | Test |
 |---|---|---|---|
-| RWR soldier speed | 6 m/s | `MapRecipe` | W10 |
+| RWR soldier speed (default when a unit type names none) | 6 m/s | `ContentPack.DefaultUnitSpeedMmPerSec`; a unit type's own speed wins where the unit types are read | W10, `Hc3SpeedTests` |
 | Ancient soldier speed | 3 m/s | `Content/Ancient/Data` | W10 |
 | Content speed limit | 300 m/s | `ContentPack.MaxUnitSpeedMmPerSec` | none |
-| Step cap, worlds with terrain or plates | 0.25 m per step (7.5 m/s) | `InterimLocomotion.MaxTerrainStepRaw` | W10, `L10CapTests`, `Wp23GuardTests` |
+| Step cap, worlds with terrain or plates | 0.25 m per step (7.5 m/s) | `InterimLocomotion.MaxTerrainStepRaw`; also checked when a recipe for a map with terrain or plates is built (`MapRecipe.CheckStep`) | W10, `L10CapTests`, `Wp23GuardTests`, `Hc3SpeedTests` |
 | Step cap after the surface multiplier | 0.5 m per step | `InterimLocomotion.MaxEffectiveStepRaw` | W11 |
 | Surface speed multiplier | up to 2x | `SurfaceDef.MaxSpeedMilli` | W11 |
 | Dash | at most 100 m, 10 m per step | `UnitDashes`, `Dash` | none |
