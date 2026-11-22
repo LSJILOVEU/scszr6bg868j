@@ -24,6 +24,7 @@ namespace WarCore.Tests
             public ulong Fold(ulong digest) => Tag("test.engage", digest);
             public AiEngage Decide(in AiUnit unit, SimVec3 enemy, AiField field) { Seen.Add(unit); Enemies.Add(enemy); return Sees; }
             public AiEngage Unseen(in AiUnit unit, AiField field) { Unseens.Add(unit); return SeesNobody; }
+            public AiEngage Melee(in AiUnit unit, SimVec3 enemy, AiField field) => AiEngage.Advance;
         }
         private sealed class SeenDispatch : IAiDispatch
         {

@@ -247,6 +247,27 @@ namespace WarCore.Tests
             Assert.That(bound.Melee(Unit(AiNerve.Broken), enemy, field), Is.EqualTo(AiEngage.Fallback));
         }
 
+        // 7. With squads the engage part is wrapped: the wrapper hands the melee question to the part inside as it came
+        // (the unit, its nerve, the enemy) and returns its answer, whatever it is.
+        [Test]
+        public void TheSquadPartPassesTheQuestionOn()
+        {
+            M6World w = Duel("{ \"meleeChaseRange\": 12, \"meleeNerve\": true, " + Pressed + ", \"squadMinSize\": 4, \"squadMaxSize\": 4, "
+                + "\"squadSkirmisherPermille\": 300, \"squadRecruitRadiusMm\": 30000, \"squadFormTicks\": 15, \"squadSpreadMinMm\": 0, \"squadSpreadMaxMm\": 0 }");
+            int asked = 0;
+            foreach (AiEngage answer in new[] { AiEngage.Advance, AiEngage.Hold, AiEngage.Cover, AiEngage.Fallback })
+                foreach (AiNerve nerve in new[] { AiNerve.Pinned, AiNerve.Broken })
+                {
+                    var part = new Asked { MeleeAnswer = answer };
+                    IAiEngage wrap = w.System<Squads>().Wrap(part);
+                    Assert.That(wrap.Melee(new AiUnit(Id(w, A), 1, At(w, A), nerve, 0), At(w, B), null), Is.EqualTo(answer), answer + " " + nerve);
+                    Assert.That((part.Melees, part.Decides, part.Unseens), Is.EqualTo((1, 0, 0)));
+                    Assert.That((part.Nerve, part.Enemy, part.Unit), Is.EqualTo((nerve, At(w, B), Id(w, A))));
+                    asked++;
+                }
+            Assert.That(asked, Is.EqualTo(8));
+        }
+
         // 6 and 7, with the parts as content builds them. hold: the pressed unit chases. bound: the pinned unit stands (no
         // cover rules), the broken one goes back to its point.
         [Test]

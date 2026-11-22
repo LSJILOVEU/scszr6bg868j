@@ -868,3 +868,23 @@ original:
 | MeleeNerveFightMm = meleeFight, CoverRadiusMm
 replacement:
 | MeleeNerveFightMm = 0, CoverRadiusMm
+
+[m1-sq-melee-advance]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = the squad part answers Advance itself
+original:
+|             public AiEngage Melee(in AiUnit unit, SimVec3 enemy, AiField field) => inner.Melee(in unit, enemy, field);
+replacement:
+|             public AiEngage Melee(in AiUnit unit, SimVec3 enemy, AiField field) => AiEngage.Advance;
+
+[m1-sq-melee-asks-decide]
+file = Assets/WarCore/Battle/Ai/SquadParts.cs
+filter = FullyQualifiedName~AiM1MeleeTests
+expect = WarCore.Tests.AiM1MeleeTests
+note = the squad part asks the question for gunners
+original:
+|             public AiEngage Melee(in AiUnit unit, SimVec3 enemy, AiField field) => inner.Melee(in unit, enemy, field);
+replacement:
+|             public AiEngage Melee(in AiUnit unit, SimVec3 enemy, AiField field) => inner.Decide(in unit, enemy, field);
