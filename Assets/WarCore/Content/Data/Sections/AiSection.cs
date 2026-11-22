@@ -157,6 +157,17 @@ namespace WarCore.Content
         internal static readonly string[] SquadFields =
             { "squadMinSize", "squadMaxSize", "squadSkirmisherPermille", "squadRecruitRadiusMm", "squadFormTicks", "squadSpreadMinMm", "squadSpreadMaxMm" };
         internal const int MaxSquadSize = 64, MaxSquadRadiusMm = 512000, MaxSquadFormTicks = 100000, MaxSquadSpreadMm = 50000;
+        // Squad tempers (all four or none) and regrouping (all three or none); both need the seven squad fields.
+        // PLACEHOLDER bounds.
+        internal static readonly string[] TemperFields = { "squadRashPermille", "squadSteadyPermille", "squadShakenPermille", "squadRashMinRangeMm" };
+        internal static readonly string[] RegroupFields = { "squadRegroupBelowPermille", "squadRegroupUntilPermille", "squadRegroupMaxTicks" };
+        internal const int MaxSquadRashRangeMm = 512000, MaxSquadRegroupTicks = 100000;
+        // The first field of the group that the entry has written, in the group's order; null when it has written none.
+        private static string FirstWritten(EntryReader r, string[] fields)
+        {
+            foreach (string field in fields) if (r.Has(field)) return field;
+            return null;
+        }
         internal static readonly string[] AssaultFields =
             { "frontPermille", "flankPermille", "rearPermille", "frontArcMm", "flankSideMm", "rearOutMm", "flankMinMm", "anchorMm", "arriveMm" };
         private static readonly int[] AssaultMin = { 0, 0, 0, 0, 1000, 1000, 0, 1000, 250 };
@@ -293,7 +304,30 @@ namespace WarCore.Content
                     int spreadMin = r.Int("squadSpreadMinMm", 0, MaxSquadSpreadMm), spreadMax = r.Int("squadSpreadMaxMm", 0, MaxSquadSpreadMm);
                     if (max < min) throw r.Bad(r.FieldOf("squadMaxSize"), "must be at least squadMinSize (" + min + ")");
                     if (spreadMax < spreadMin) throw r.Bad(r.FieldOf("squadSpreadMaxMm"), "must be at least squadSpreadMinMm (" + spreadMin + ")");
-                    squads = new WarCore.Battle.SquadRules(min, max, skirmishers, radius, form, spreadMin, spreadMax);
+                    WarCore.Battle.SquadTemper? temper = null;
+                    WarCore.Battle.SquadRegroup? regroup = null;
+                    // Any of the four written makes all four required, and any of the three all three.
+                    if (FirstWritten(r, TemperFields) != null)
+                    {
+                        int rash = r.Int("squadRashPermille", 0, 1000), steady = r.Int("squadSteadyPermille", 0, 1000);
+                        int shaken = r.Int("squadShakenPermille", 0, 1000), range = r.Int("squadRashMinRangeMm", 0, MaxSquadRashRangeMm);
+                        if (rash + steady > 1000)
+                            throw r.Bad(r.FieldOf("squadSteadyPermille"), "squadRashPermille + squadSteadyPermille must be at most 1000, got " + (rash + steady));
+                        temper = new WarCore.Battle.SquadTemper(rash, steady, shaken, range);
+                    }
+                    if (FirstWritten(r, RegroupFields) != null)
+                    {
+                        int below = r.Int("squadRegroupBelowPermille", 1, 1000), until = r.Int("squadRegroupUntilPermille", 1, 1000);
+                        int ticks = r.Int("squadRegroupMaxTicks", 1, MaxSquadRegroupTicks);
+                        if (until < below) throw r.Bad(r.FieldOf("squadRegroupUntilPermille"), "must be at least squadRegroupBelowPermille (" + below + ")");
+                        regroup = new WarCore.Battle.SquadRegroup(below, until, ticks);
+                    }
+                    squads = new WarCore.Battle.SquadRules(min, max, skirmishers, radius, form, spreadMin, spreadMax, temper, regroup);
+                }
+                else
+                {
+                    string alone = FirstWritten(r, TemperFields) ?? FirstWritten(r, RegroupFields);
+                    if (alone != null) throw r.Bad(r.FieldOf(alone), "needs the squad fields (squadMinSize ...)");
                 }
                 fieldError = (field, why) => r.Bad(r.FieldOf(field), why);
                 r.Done();

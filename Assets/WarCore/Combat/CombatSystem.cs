@@ -83,6 +83,7 @@ namespace WarCore.Combat
             InitMelee();
             InitBlock();
             InitAim();
+            InitNerve();
         }
 
         private const long LegacyEyeRaw = SimFix.Scale / 2;
