@@ -15,15 +15,20 @@ namespace WarCore.Content
         public readonly int RespawnTicks, RespawnGuardTicks;
         // RESPAWN-AI-1: match.reinforceSkipContested (optional, default false).
         public readonly bool ReinforceSkipContested;
+        // RESPAWN-AI-2: match.reentryTicks (optional, default 0 = off); match.reserveCount and match.reserveType (optional;
+        // the type is null without a positive count).
+        public readonly int ReentryTicks, ReserveCount;
+        public readonly string ReserveType;
 
         public MatchRules(int num, int den, bool strict, int captureTicks, InterruptMode interrupt, int decayPerTick,
             int intervalTicks, int thinkInterval, int maxTicks, SimFix sight, int gridColumns, int gridRows, SimFix gridSpacing,
-            int respawnTicks = 0, int respawnGuardTicks = 0, bool reinforceSkipContested = false)
+            int respawnTicks = 0, int respawnGuardTicks = 0, bool reinforceSkipContested = false, int reentryTicks = 0, int reserveCount = 0, string reserveType = null)
         {
             CaptureAdvantageNum = num; CaptureAdvantageDen = den; CaptureStrict = strict; CaptureTicks = captureTicks;
             Interrupt = interrupt; DecayPerTick = decayPerTick; IntervalTicks = intervalTicks; ThinkInterval = thinkInterval;
             MaxTicks = maxTicks; Sight = sight; GridColumns = gridColumns; GridRows = gridRows; GridSpacing = gridSpacing;
             RespawnTicks = respawnTicks; RespawnGuardTicks = respawnGuardTicks; ReinforceSkipContested = reinforceSkipContested;
+            ReentryTicks = reentryTicks; ReserveCount = reserveCount; ReserveType = reserveCount > 0 ? reserveType : null;
         }
     }
 
@@ -161,7 +166,7 @@ namespace WarCore.Content
             {
                 return new MatchPack(points, bases, m.CaptureAdvantageNum, m.CaptureAdvantageDen, m.CaptureStrict, m.CaptureTicks,
                     m.Interrupt, m.DecayPerTick, m.IntervalTicks, m.ThinkInterval, m.MaxTicks, m.Sight, m.GridColumns, m.GridRows, m.GridSpacing,
-                    m.RespawnTicks, m.RespawnGuardTicks, ruleIds, m.ReinforceSkipContested);
+                    m.RespawnTicks, m.RespawnGuardTicks, ruleIds, m.ReinforceSkipContested, m.ReentryTicks, m.ReserveCount, m.ReserveType);
             }
             catch (ArgumentException e)
             {

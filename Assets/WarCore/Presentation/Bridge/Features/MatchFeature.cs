@@ -34,14 +34,16 @@ namespace WarCore.Presentation
             var capture = new CaptureSystem(combat, recipe.Match, layers);
             var adapter = new BattleAdapter(sim, a.Locomotion, recipe, new DeployGround(terrain != null ? terrain.Nav : WcMapNavigation.Create(a.Map), terrain, a.GroundRaw), a.GroundRaw, a.Standing,
                 a.Plates != null ? a.Verticals : (ComponentType<VerticalState>?)null, a.Plates);
-            var reinforce = new ReinforceSystem(combat, recipe.Match, capture, adapter, layers: layers);
+            // RESPAWN-AI-2: with match.reentryTicks the system deploys by debt and reads death ticks and the controlled unit.
+            bool reentry = recipe.Match.ReentryTicks > 0;
+            var reinforce = new ReinforceSystem(combat, recipe.Match, capture, adapter, layers: layers, sim: reentry ? sim : null, controlled: reentry ? a.Controlled : null);
             var match = new MatchSystem(combat, recipe.Match, capture, a.Mode);
             a.Mode.Bind(match);
             sim.RegisterGameplay("battle.reinforce", reinforce, SimSystemPhase.Requests);
             // A positive match.respawnTicks with a player: the player takes over a reserve after the delay (PlayerFeature then adds no fallback).
             if (recipe.Match.RespawnTicks > 0 && a.Controlled != null)
             {
-                var respawn = new RespawnSystem(sim, combat, recipe.Match, capture, adapter, a.Controlled, layers);
+                var respawn = new RespawnSystem(sim, combat, recipe.Match, capture, adapter, a.Controlled, layers, reentry ? reinforce : null);
                 sim.RegisterGameplay("battle.respawn", respawn, SimSystemPhase.Requests);
                 if (recipe.Match.RespawnGuardTicks > 0) combat.SetDamageGuard(respawn);
             }

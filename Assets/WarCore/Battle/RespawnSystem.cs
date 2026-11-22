@@ -26,11 +26,16 @@ namespace WarCore.Battle
         private StableId guarded;
         private long guardEnd;
         private readonly PointPresence presence;
+        // RESPAWN-AI-2: the reinforcement system of a world with match.reentryTicks, told of each takeover; null otherwise
+        // (the system refuses a takeover without the switch).
+        private readonly ReinforceSystem reentry;
 
         // layers: on a map with floor plates (ML-9b) an enemy contests a point only on the point's layer; null keeps the old rule.
         public RespawnSystem(Simulation sim, CombatSystem combat, MatchPack pack, CaptureSystem capture, IUnitDeployer deployer, IControlTarget controlled,
-            IUnitLayers layers = null)
+            IUnitLayers layers = null, ReinforceSystem reentry = null)
         {
+            if (pack.ReentryTicks > 0 && reentry == null) throw new ArgumentNullException(nameof(reentry), "match.reentryTicks counts takeovers in the reinforcement system.");
+            this.reentry = reentry;
             presence = new PointPresence(combat, pack.TeamCount, layers);
             this.sim = sim; this.combat = combat; this.pack = pack; this.capture = capture; this.deployer = deployer; this.controlled = controlled;
             stage = new EntityStage(combat.Entities); positions = combat.Entities.Resolve<Position>(); combatants = combat.Entities.Resolve<Combatant>();
@@ -60,6 +65,8 @@ namespace WarCore.Battle
                     default, SimFix.Ratio(2 * (slot / pack.GridColumns) - pack.GridRows + 1, 2) * pack.GridSpacing);
                 if (!deployer.TryDeploy(reserve, anchor + offset, layer)) continue;
                 controlled.Switch(c, reserve);
+                // RESPAWN-AI-2: the reserve taken over entered for its team; the body left behind is counted from this step on.
+                reentry?.NoteTakeover(team);
                 if (pack.RespawnGuardTicks > 0) { guarded = combat.Entities.StableOf(reserve); guardEnd = c.Clock.Tick + pack.RespawnGuardTicks; }
                 return;
             }

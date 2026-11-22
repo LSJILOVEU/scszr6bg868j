@@ -195,11 +195,32 @@ canvas { width: 100%; aspect-ratio: 160 / 100; max-width: 100%; display: block; 
       ctx.beginPath(); ctx.arc(X(unit[0]), Z(unit[1]), radius + 2 * ratio, 0, Math.PI * 2); ctx.stroke();
     }
 
+    // A unit that came onto the field within the last second (not at the start): a ring that fades, so entries are easy to see.
+    if (!r.entered) {
+      // The tick of the frame each unit first shows up in after the start (never: far in the past).
+      r.entered = new Array(r.teams.length).fill(-1e9);
+      for (let f = 1; f < r.frames.length; f++)
+        for (let u = 0; u < r.teams.length; u++)
+          if (r.frames[f].u[u * 3 + 2] !== 0 && r.frames[f - 1].u[u * 3 + 2] === 0) r.entered[u] = r.frames[f].t;
+    }
+    {
+      ctx.lineWidth = 1.5 * ratio; ctx.strokeStyle = token("--fg");
+      for (const unit of units) {
+        const since = a.t - r.entered[unit[5]];
+        if (unit[3] !== 1 || !(since >= 0 && since < r.tickRate)) continue;
+        ctx.globalAlpha = 1 - since / r.tickRate;
+        ctx.beginPath(); ctx.arc(X(unit[0]), Z(unit[1]), radius * (2 + 3 * since / r.tickRate), 0, Math.PI * 2); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+
     const owned = [0, 0, 0]; for (const o of a.o) owned[o] = (owned[o] || 0) + 1;
+    // frame.r (only with match.reentryTicks): [owed1, entered1, owed2, entered2].
+    const debt = t => a.r ? '　已补 ' + a.r[t * 2 + 1] + '　待补 ' + Math.max(0, a.r[t * 2]) : '';
     const ended = position >= r.frames.length - 1 && r.winner !== 0;
     stats[index].innerHTML =
-      '<span class="t1"><b>一队</b> 场上 ' + a.a[0] + '　预备 ' + a.a[2] + '　据点 ' + owned[1] + '</span>' +
-      '<span class="t2"><b>二队</b> 场上 ' + a.a[1] + '　预备 ' + a.a[3] + '　据点 ' + owned[2] + '</span>' +
+      '<span class="t1"><b>一队</b> 场上 ' + a.a[0] + '　预备 ' + a.a[2] + '　据点 ' + owned[1] + debt(0) + '</span>' +
+      '<span class="t2"><b>二队</b> 场上 ' + a.a[1] + '　预备 ' + a.a[3] + '　据点 ' + owned[2] + debt(1) + '</span>' +
       (ended ? '<span><b>' + (r.winner === 1 ? "一队" : "二队") + '获胜</b>，用时 ' + fmt(r.endTick / r.tickRate) + '</span>'
              : position >= r.frames.length - 1 ? '<span>到 ' + fmt(r.frames[r.frames.length - 1].t / r.tickRate) + ' 仍未分胜负</span>' : '');
     metrics[index].innerHTML = metricLine(r, a);

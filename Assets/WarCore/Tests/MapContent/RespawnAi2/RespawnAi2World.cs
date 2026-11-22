@@ -121,8 +121,9 @@ namespace WarCore.Tests
             return string.Join(", ", units);
         }
         internal const string PackId = "respawn-ai-2";
-        internal static MapBakeResult MapW(string points = PointW, string bases = Base1W + ", " + Base2W, string soldiers = null) =>
-            E1aSamples.Bake(E1bSamples.Desc(PackId, null, null, points, bases, soldiers ?? SoldiersW(), 41, "teamIdle", 2, 3, 100));
+        // nextUnit: the description's next unit key, above every unit key in it.
+        internal static MapBakeResult MapW(string points = PointW, string bases = Base1W + ", " + Base2W, string soldiers = null, ulong nextUnit = 7) =>
+            E1aSamples.Bake(E1bSamples.Desc(PackId, null, null, points, bases, soldiers ?? SoldiersW(), 41, "teamIdle", 2, 3, nextUnit));
 
         // The layer of map W: rwr-melee with two unit types of its own and quiet match rules (the AI never thinks, capture
         // takes 8000 ticks, a 2 x 2 grid 2 m apart, reinforcement every 30 ticks). "w.reservist" differs from "w.line" in

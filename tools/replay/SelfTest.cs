@@ -116,6 +116,13 @@ namespace WarCore.Replay
             Expect("an export with squads repeats byte for byte", once == twice);
             Expect("an export with squads has squad frames", once.Contains("\"q\":[") && !once.Contains("\"squadShare\":{\"mean\":null"));
 
+            // RESPAWN-AI-2: reentry frames only in a setup with match.reentryTicks.
+            string reentry = Program.Export("lanes-reentry", 600, 3, out _);
+            Expect("an export without reentry has no reentry frames", !a.Contains("\"r\":[") && !once.Contains("\"r\":["));
+            Expect("an export with reentry has a reentry frame on every frame", reentry.Contains("\"r\":[0,0,0,0]")
+                && System.Text.RegularExpressions.Regex.Matches(reentry, "\"r\":\\[").Count == System.Text.RegularExpressions.Regex.Matches(reentry, "\"t\":").Count);
+            Expect("an export with reentry repeats byte for byte", reentry == Program.Export("lanes-reentry", 600, 3, out _));
+
             Console.WriteLine(failures == 0 ? "selftest: all passed" : $"selftest: {failures} failed");
             return failures == 0 ? 0 : 1;
         }

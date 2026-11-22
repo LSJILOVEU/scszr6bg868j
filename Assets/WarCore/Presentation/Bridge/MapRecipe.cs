@@ -1,4 +1,5 @@
 using System;
+using WarCore.Battle;
 using WarCore.Content;
 using WarCore.Content.MapTools;
 
@@ -17,14 +18,30 @@ namespace WarCore.Presentation
             if (pack.Id != result.PackId)
                 throw new ArgumentException("Map pack '" + result.PackId + "' does not match content pack '" + pack.Id + "'.", nameof(pack));
             MapSetup setup = result.Setup;
-            var units = new UnitSpawn[setup.Soldiers.Count];
-            for (int i = 0; i < units.Length; i++)
+            SpawnAnchor[] bases = setup.Bases;
+            int soldiers = setup.Soldiers.Count, extraTeams = ReserveTeams(setup, bases, pack, out int perTeam);
+            var units = new UnitSpawn[soldiers + extraTeams * perTeam];
+            ulong last = 0;
+            for (int i = 0; i < soldiers; i++)
             {
                 MapSoldier s = setup.Soldiers[i];
-                units[i] = useUnitTypes
-                    ? UnitSpawn.OfType(s.Key, pack, s.Type, s.Squad, s.Team, s.XMm, s.ZMm, s.Reserve, s.Layer)
-                    : new UnitSpawn(s.Key, 0, s.Squad, s.XMm, s.ZMm, SpeedMmPerSec, s.Team,
-                    pack.WeaponOfUnitType(s.Type), s.Reserve, pack.MeleeOfUnitType(s.Type), layer: s.Layer);
+                units[i] = Spawn(pack, useUnitTypes, s.Key, s.Type, s.Squad, s.Team, s.XMm, s.ZMm, s.Reserve, s.Layer);
+                if (s.Key > last) last = s.Key;
+            }
+            if (extraTeams > 0)
+            {
+                // RESPAWN-AI-2: match.reserveCount more reserves of match.reserveType for each team with a base, lower team
+                // first, after the map's own units and keyed on from the map's highest key. A reserve has no place until it
+                // is deployed, so its coordinates (0, 0, the ground) are never read; its squad is its team, as in map files.
+                if (last > ulong.MaxValue - (ulong)(extraTeams * perTeam))
+                    throw new ContentException("content pack '" + pack.Id + "' field 'reserveCount': no unit keys are left after the map's highest key " + last);
+                string type = pack.Match.ReserveType;
+                int n = soldiers;
+                for (int team = 1; team <= MatchPack.MaxTeams; team++)
+                {
+                    if (!HasBase(bases, team)) continue;
+                    for (int i = 0; i < perTeam; i++) units[n++] = Spawn(pack, useUnitTypes, ++last, type, team, team, 0, 0, true, 0);
+                }
             }
             WorldRecipe recipe = new WorldRecipe(setup.Seed, MoverKind.InterimCrowd, units, Array.Empty<BridgeCommand>())
                 .WithCombat(pack.BuildCombat());
@@ -35,6 +52,29 @@ namespace WarCore.Presentation
             if (map.Plates.Count > 0) recipe = recipe.WithPlatesPreview();
             if (setup.CrowdPass == "teamIdle") recipe = recipe.WithCrowdPass(CrowdPassKind.TeamIdle);
             return recipe;
+        }
+
+        private static UnitSpawn Spawn(ContentPack pack, bool useUnitTypes, ulong key, string type, int squad, int team, long xMm, long zMm, bool reserve, int layer) =>
+            useUnitTypes
+                ? UnitSpawn.OfType(key, pack, type, squad, team, xMm, zMm, reserve, layer)
+                : new UnitSpawn(key, 0, squad, xMm, zMm, SpeedMmPerSec, team, pack.WeaponOfUnitType(type), reserve, pack.MeleeOfUnitType(type), layer: layer);
+
+        // RESPAWN-AI-2: how many teams get the pack's extra reserves and how many each. None on a map without control points:
+        // such a world has no match rules and would place every reserve on the field at the start. A team without a base gets
+        // none either: its reserves could never deploy, yet would count as alive for ever.
+        private static int ReserveTeams(MapSetup setup, SpawnAnchor[] bases, ContentPack pack, out int perTeam)
+        {
+            perTeam = setup.ControlPoints.Length != 0 ? pack.Match.ReserveCount : 0;
+            if (perTeam == 0) return 0;
+            int teams = 0;
+            for (int team = 1; team <= MatchPack.MaxTeams; team++) if (HasBase(bases, team)) teams++;
+            return teams;
+        }
+
+        private static bool HasBase(SpawnAnchor[] bases, int team)
+        {
+            foreach (SpawnAnchor anchor in bases) if (anchor.Team == team) return true;
+            return false;
         }
     }
 }

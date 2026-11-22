@@ -81,6 +81,10 @@ namespace WarCore.Replay
                 () => Lanes(Layer("replay-lanes-allon-squads", LanesBake().PackId, WithSquads(AllOn(ScatterPart)))), () => LanesBake().WcMapBytes, P1RingMm),
             ["lanes-allon-roles-squads"] = new Entry("Three-lane map, all finished AI on (assault-roles) + squads",
                 () => Lanes(Layer("replay-lanes-allon-roles-squads", LanesBake().PackId, WithSquads(AllOn(RolesPart)))), () => LanesBake().WcMapBytes, P1RingMm),
+            // RESPAWN-AI-2 (PLACEHOLDER value: 90 ticks, 3 s): the three-lane map and default AI with match.reentryTicks, so a
+            // reserve enters 3 s after each death instead of one every 90 ticks; only the pack line is swapped. Each team has
+            // the map's 50 reserves and no more.
+            ["lanes-reentry"] = new Entry("Three-lane map, default AI, a reserve enters 3 s after each death", LanesReentry, () => LanesReentryBake().WcMapBytes),
             // ANC-2: ancient-field layer (spear), 60 against 60 on a flat 96 x 64 m field; the same layout as Tests/MapContent/Ancient.
             ["ancient-field"] = new Entry("Ancient field, 60 v 60 with spears", AncientField, AncientFieldMap),
         };
@@ -131,6 +135,23 @@ namespace WarCore.Replay
             }
             return MapBake.Run(System.Text.Encoding.UTF8.GetBytes(text));
         }
+        // The three-lane map with its pack line swapped for a layer that exists only here: rwr-m6 with match.reentryTicks.
+        private const string ReentryPack = "replay-lanes-reentry";
+        public const int ReentryTicks = 90;
+        private static MapBakeResult LanesReentryBake()
+        {
+            string text = File.ReadAllText(LanesPath);
+            if (text.IndexOf(BakedPack, StringComparison.Ordinal) < 0) throw new InvalidOperationException("The three-lane map no longer says " + BakedPack + ".");
+            text = text.Replace(BakedPack, "\"pack\": \"" + ReentryPack + "\"");
+            if (LanesSeed != null)
+            {
+                if (text.IndexOf(BakedSeed, StringComparison.Ordinal) < 0) throw new InvalidOperationException("The three-lane map no longer says " + BakedSeed + ".");
+                text = text.Replace(BakedSeed, "\"seed\": " + LanesSeed.Value);
+            }
+            return MapBake.Run(System.Text.Encoding.UTF8.GetBytes(text));
+        }
+        private static WorldRecipe LanesReentry() => MapRecipe.From(LanesReentryBake(), ContentLoader.Load(new OneLayer(ReentryPack,
+            "{ \"id\": \"" + ReentryPack + "\", \"extends\": \"rwr-m6\", \"match\": { \"reentryTicks\": " + ReentryTicks + " } }"), ReentryPack));
         private static WorldRecipe LanesBody()
         {
             MapBakeResult bake = LanesBodyBake();
