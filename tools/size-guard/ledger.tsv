@@ -97,6 +97,11 @@ Presentation/Bridge/Features/BlastDemo.cs	Width=40	1	debt
 Presentation/Bridge/Features/BodySizes.cs	65536f	4	debt	L3 fixed-point scale
 Presentation/Bridge/Features/BodySizes.cs	SimFix.Scale/4	1	debt	H1 body radius copy (SCALE-2a; HC-1 removes)
 Presentation/Bridge/Features/CrowdPassFeature.cs	EngagedTicks=60	1	debt	
+Presentation/Bridge/Features/DownDemo.cs	BlastXMm=10000	1	canon	blast point x; down-crawl replay layout, defined only here (DOWN-1)
+Presentation/Bridge/Features/DownDemo.cs	BlastZMm=8000	1	canon	row and blast point z, half the field depth; down-crawl replay layout, defined only here (DOWN-1)
+Presentation/Bridge/Features/DownDemo.cs	MoveMm=3000	1	canon	walk ordered after the blast; down-crawl replay layout, defined only here (DOWN-1)
+Presentation/Bridge/Features/DownDemo.cs	SpeedMmPerSec=3000	1	canon	unit speed (rwr-down has no unit speed); down-crawl replay layout, defined only here (DOWN-1)
+Presentation/Bridge/Features/DownDemo.cs	Width=30	1	canon	field width; down-crawl replay layout, defined only here (DOWN-1)
 Presentation/Bridge/Features/MatchFeature.cs	SimFix.FromInt(2)	1	debt	
 Presentation/Bridge/Features/MatchFeature.cs	SimFix.Ratio(1,4)	1	debt	H1 body radius copy
 Presentation/Bridge/Features/MovementFeature.cs	SimFix.Ratio(1,4)	1	debt	H1 body radius copy

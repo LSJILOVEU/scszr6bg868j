@@ -1,0 +1,11 @@
+{
+  "id": "rwr-down",
+  "extends": "rwr-stance",
+  "combat": {
+    "downed": { "when": "lethal", "ticks": 1800, "stance": "prone", "crawlPermille": 150,
+      "finish": true, "finishAfterTicks": 15, "stunTicks": 60, "targetable": false },
+    "blasts": [ { "id": "rwr.frag", "innerMm": 2000, "outerMm": 6000, "damage": 100, "friendly": true, "walls": true, "stunTicks": 60 } ],
+    "blastPerTick": 4,
+    "blastQueue": 64
+  }
+}

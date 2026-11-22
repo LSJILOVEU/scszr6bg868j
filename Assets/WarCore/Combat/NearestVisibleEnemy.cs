@@ -16,7 +16,8 @@ namespace WarCore.Combat
             foreach (var hit in world.Candidates(shooter, range))
             {
                 EntityId candidate = hit.Entity;
-                if (!world.IsEnemy(shooter, candidate)) continue;
+                // DOWN-1: a pack whose casualties are not targetable keeps the AI off downed and stunned enemies.
+                if (!world.IsEnemy(shooter, candidate) || !world.Targetable(candidate)) continue;
                 SimWide distance = world.SpanSquared(world.Point(shooter), world.Point(candidate));
                 StableId id = world.Entities.StableOf(candidate);
                 if (distance > limit || (found && (distance > best || (distance == best && id.CompareTo(bestId) >= 0)))) continue;

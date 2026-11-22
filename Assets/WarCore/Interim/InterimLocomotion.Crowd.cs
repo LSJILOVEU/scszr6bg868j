@@ -60,8 +60,8 @@ namespace WarCore.Interim
                 for (int i = 0; i < memberCount; i++)
                     if (provisional[i].Unit.Equals(controlled))
                     {
-                        // A dashing unit takes its dash step below instead.
-                        if (DashesNow(i)) break;
+                        // A dashing unit takes its dash step below instead; a held unit is skipped there.
+                        if (DashesNow(i) || Held(controlled)) break;
                         controlledIndex = i;
                         StepControlled(context, i, displacement);
                         break;
@@ -70,6 +70,7 @@ namespace WarCore.Interim
             {
                 if (i == controlledIndex) continue;
                 if (StepDash(context, i)) continue;
+                if (Held(provisional[i].Unit)) continue;
                 if (terrain != null) { StepCrowdUnitTerrain(context, i); continue; }
                 EntityId unit = provisional[i].Unit;
                 MoveIntent intent = entities.Get(intents, unit);
