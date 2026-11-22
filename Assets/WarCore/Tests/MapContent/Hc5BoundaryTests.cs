@@ -60,12 +60,16 @@ namespace WarCore.Tests
         public void ColliderHeight_AcceptsTheLimit_AndRefusesOneRawMore()
         {
             SimFix at = SimFix.FromRaw(ColliderHeightRaw), over = SimFix.FromRaw(ColliderHeightRaw + 1), one = SimFix.FromInt(1);
-            Assert.That(new Collider(one, at).Height, Is.EqualTo(at));
+            Collider built = default;
+            Assert.DoesNotThrow(() => built = new Collider(one, at), "capsule on the limit");
+            Assert.That(built.Height, Is.EqualTo(at));
             Assert.Throws<ArgumentOutOfRangeException>(() => new Collider(one, over));
-            Assert.That(Collider.Box(one, at, one, default).Height, Is.EqualTo(at));
+            Assert.DoesNotThrow(() => built = Collider.Box(one, at, one, default), "box on the limit");
+            Assert.That(built.Height, Is.EqualTo(at));
             Assert.Throws<ArgumentOutOfRangeException>(() => Collider.Box(one, over, one, default));
             Collider capsule = new Collider(one, SimFix.FromInt(2));
-            Assert.That(capsule.WithHeight(at).Height, Is.EqualTo(at));
+            Assert.DoesNotThrow(() => built = capsule.WithHeight(at), "WithHeight on the limit");
+            Assert.That(built.Height, Is.EqualTo(at));
             Assert.Throws<ArgumentOutOfRangeException>(() => capsule.WithHeight(over));
         }
 
@@ -73,7 +77,9 @@ namespace WarCore.Tests
         public void PostureHeight_AcceptsTheColliderLimit_AndRefusesOneRawMore()
         {
             SimFix one = SimFix.FromInt(1);
-            Assert.That(new PostureDef(1, SimFix.FromRaw(ColliderHeightRaw), one, default, one).Height.Raw, Is.EqualTo(ColliderHeightRaw));
+            PostureDef def = default;
+            Assert.DoesNotThrow(() => def = new PostureDef(1, SimFix.FromRaw(ColliderHeightRaw), one, default, one), "on the limit");
+            Assert.That(def.Height.Raw, Is.EqualTo(ColliderHeightRaw));
             Assert.Throws<ArgumentOutOfRangeException>(() => new PostureDef(1, SimFix.FromRaw(ColliderHeightRaw + 1), one, default, one));
         }
 

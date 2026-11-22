@@ -3,7 +3,7 @@ namespace WarCore.Tests.Diagnostics
 {
     internal static class DiagnosticSourceStamp
     {
-        internal const string SpatialQuery = "b8675f3115b18a148a2c6136cf84bdc0ee07f16e74dee758a7e034fef277199f";
+        internal const string SpatialQuery = "f1c19f3f6e427efe9007ca539f0ee6840cbfff810015f70e5025af274c23910e";
         internal const string GridSpatialQuery = "432aeb7c9af932c4894063b6f9cf26ea9a159103d2c32509586b66bb3d1dbc31";
         internal const string GridSpatialIndex = "2184dda25e3cd8280059803e5954c6f9a14b539657a7022b8bf1a9f5a9f7c774";
         internal const string GridSpatialIndex_Modes = "e4456ffe4ab12768c15e035b7509f10f8764932f3ffe9f9e191292044c8a92c3";
