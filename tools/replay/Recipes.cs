@@ -88,6 +88,16 @@ namespace WarCore.Replay
                 () => Lanes(Layer("replay-lanes-allon-roles-squads-temper", LanesBake().PackId, WithTempers(WithSquads(AllOn(RolesPart))))), () => LanesBake().WcMapBytes, P1RingMm),
             // ANC-2: ancient-field layer (spear), 60 against 60 on a flat 96 x 64 m field; the same layout as Tests/MapContent/Ancient.
             ["ancient-field"] = new Entry("Ancient field, 60 v 60 with spears", AncientField, AncientFieldMap),
+            // AIM-1: rwr-aim without damage; team 1 (4) stands, team 2 (4) runs to and fro along x 30 m in front at 6 m/s (the top
+            // move-spread band, 3000) or stands too ("-still"). The first 300 ticks are Tests/MapContent/Aim1 A9.
+            ["aim-run"] = new Entry("rwr-aim, team 2 runs across 30 m in front", () => AimRun(true), AimRunMap),
+            ["aim-run-still"] = new Entry("rwr-aim, both teams stand", () => AimRun(false), AimRunMap),
+            // BLAST-1: a scripted rwr.frag on tick 60 next to a 3 m wall; four units on its side, four behind the wall.
+            ["blast-wall"] = new Entry("Blast next to a 3 m wall (rwr-blast)", () => BlastDemo.Recipe(), BlastDemo.MapBytes),
+            // STANCE-1: a 1 m wall; squad 2 behind it crouches at tick 60 and stands up at tick 240 (StanceDemo).
+            ["stance-wall"] = new Entry("1 m wall, team 2 crouches at 60 and stands at 240", StanceDemo.Recipe, StanceDemo.MapBytes),
+            // VSPREAD-1: three 30 m lanes, standing, crouched and prone targets, a fixed 2000 millidegree gun (VspreadDemo).
+            ["vspread-range"] = new Entry("rwr-vspread, three 30 m lanes: standing, crouched, prone targets", VspreadDemo.Recipe, VspreadDemo.MapBytes),
         };
 
         private const string SquadAi = "\"squadMinSize\": 4, \"squadMaxSize\": 9, \"squadSkirmisherPermille\": 300, \"squadRecruitRadiusMm\": 30000, "
@@ -164,6 +174,30 @@ namespace WarCore.Replay
                 if (layerId != id) return rest.TryRead(layerId, out json, out location);
                 json = text; location = "replay:" + id; return true;
             }
+        }
+        private const string AimRunLayer = "{ \"id\": \"replay-aim-run\", \"extends\": \"rwr-aim\", \"combat\": { \"resolver\": \"damage\" }, \"weapons\": [ "
+            + "{ \"id\": \"rwr.weapon-1\", \"effectRaw\": 0 }, { \"id\": \"rwr.weapon-2\", \"effectRaw\": 0 }, { \"id\": \"rwr.weapon-3\", \"effectRaw\": 0 } ] }";
+        private static byte[] AimRunMap()
+        {
+            var bits = new byte[100 * 60 / 8]; Array.Fill(bits, (byte)255);
+            var max = new WarCore.Sim.SimVec3(WarCore.Sim.SimFix.FromInt(100), WarCore.Sim.SimFix.FromInt(6), WarCore.Sim.SimFix.FromInt(60));
+            return WcMapWriter.Write(new WcMap("aim-run", "none", default, max, WarCore.Sim.SimFix.FromInt(100), default, 100, 60,
+                new[] { new WcMapLayer("walls", 1) }, Array.Empty<WcMapWall>(), bits));
+        }
+        private static WorldRecipe AimRun(bool moving)
+        {
+            ContentPack pack = ContentLoader.Load(new OneLayer("replay-aim-run", AimRunLayer), "replay-aim-run");
+            var units = new UnitSpawn[8];
+            for (int i = 0; i < 4; i++)
+            {
+                units[i] = new UnitSpawn((ulong)i + 1, 0, i + 1, 35000 + 10000 * i, 10000, 6000, 1, 0);
+                units[i + 4] = new UnitSpawn((ulong)i + 5, 0, i + 5, 5000 + 8000 * i, 40000, 6000, 2, 0);
+            }
+            // Across (ticks 1-4, as in the test), back from tick 341 and across again from tick 681, so a long replay keeps running.
+            var script = new BridgeCommand[moving ? 12 : 0];
+            for (int i = 0; i < script.Length; i++)
+                script[i] = BridgeCommand.MoveTo(i / 4 * 340 + i % 4 + 1, i % 4 + 5, (i / 4 == 1 ? 5000 : 71000) + 8000 * (i % 4), 40000);
+            return new WorldRecipe(41, MoverKind.InterimCrowd, units, script).WithCombat(pack.BuildCombat());
         }
         private const string AncientDir = "Assets/WarCore/Content/Ancient/Data";
         private sealed class AncientSource : IContentSource

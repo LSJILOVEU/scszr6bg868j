@@ -1,0 +1,466 @@
+# TRV-1a: the ramp prefab (MapPrefabs.Ramp) and door hints (MapGate.Hints). Filter: Trv1a tests.
+# Not listed: the hint band's lower end made inclusive (gap >= StepRaw) is equivalent: a ground cell and a plate cell,
+# both walkable, whose edge ends are both within StepRaw always have a seam, so the plate cell is reached and never named.
+
+[trv1a-slope-strict]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.TheSlopeBoundIsInclusive
+note = the slope bound is exclusive
+original:
+| if (den * CeilDiv(drop, cells) <= num * SimFix.Scale)
+replacement:
+| if (den * CeilDiv(drop, cells) < num * SimFix.Scale)
+
+[trv1a-slope-average]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.EveryCellIsWithinTheSlope
+note = the average slope instead of the steepest cell
+original:
+| if (den * CeilDiv(drop, cells) <= num * SimFix.Scale)
+replacement:
+| if (den * drop <= num * SimFix.Scale * cells)
+
+[trv1a-slope-floor]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.EveryCellIsWithinTheSlope
+note = the steepest cell rounded down
+original:
+| if (den * CeilDiv(drop, cells) <= num * SimFix.Scale)
+replacement:
+| if (den * (drop / cells) <= num * SimFix.Scale)
+
+[trv1a-cap-never]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.ASteepPackIsHeldToFiveThirds
+note = the pack slope is used without the 5/3 cap
+original:
+| if (num * MapGate.PlateSlopeDen > MapGate.PlateSlopeNum * den)
+replacement:
+| if (false)
+
+[trv1a-cap-always]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.TheSlopeBoundIsInclusive
+expect = WarCore.Tests.Trv1aRampTests.ADoorwayNinetyCentimetresUpTakesTwoCells
+note = 5/3 is used whatever the pack says
+original:
+| if (num * MapGate.PlateSlopeDen > MapGate.PlateSlopeNum * den)
+replacement:
+| if (true)
+
+[trv1a-length-from-two]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.TheSlopeBoundIsInclusive
+note = the search starts at two cells
+original:
+| for (int cells = 1; cells <= MaxRampCells && length == 0; cells++)
+replacement:
+| for (int cells = 2; cells <= MaxRampCells && length == 0; cells++)
+
+[trv1a-length-cap-open]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.DownhillTheFootIsMeasuredAgainAtEveryLength
+note = the 16-cell cap moves out
+original:
+| for (int cells = 1; cells <= MaxRampCells && length == 0; cells++)
+replacement:
+| for (int cells = 1; cells <= MaxRampCells + 1 && length == 0; cells++)
+
+[trv1a-length-cap-short]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.DownhillTheFootIsMeasuredAgainAtEveryLength
+note = sixteen cells are not tried
+original:
+| for (int cells = 1; cells <= MaxRampCells && length == 0; cells++)
+replacement:
+| for (int cells = 1; cells < MaxRampCells && length == 0; cells++)
+
+[trv1a-foot-once]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.DownhillTheFootIsMeasuredAgainAtEveryLength
+note = the foot is measured once, one cell out
+original:
+| long high = Low(cells, out long lowest);
+replacement:
+| long high = Low(1, out long lowest);
+
+[trv1a-foot-step-strict]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.TheFootTakesTheHigherPointWithinAStep
+note = a foot exactly one step uneven is refused
+original:
+| if (low - farLowest > LayeredNav.StepRaw)
+replacement:
+| if (low - farLowest >= LayeredNav.StepRaw)
+
+[trv1a-foot-one-end]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.TheFootTakesTheHigherPointWithinAStep
+note = only the last end of the foot is compared
+original:
+| lowest = Math.Min(lowest, g);
+replacement:
+| if (c == across0 + width) lowest = g;
+
+[trv1a-foot-lower]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.TheFootTakesTheHigherPointWithinAStep
+note = the foot takes the lower point
+original:
+| return high;
+replacement:
+| return lowest;
+
+[trv1a-buried-off]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.TheRampIsNeverBuried
+note = no buried check
+original:
+| if (PlateSpan.TopPoint(PlateAxis.X, from, to, length, 1, a, 0) < g)
+replacement:
+| if (false)
+
+[trv1a-buried-touch]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.TheRampIsNeverBuried
+note = a top point on the ground counts as buried
+original:
+| if (PlateSpan.TopPoint(PlateAxis.X, from, to, length, 1, a, 0) < g)
+replacement:
+| if (PlateSpan.TopPoint(PlateAxis.X, from, to, length, 1, a, 0) <= g)
+
+[trv1a-map-edge-far]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.TheRampStaysOnTheMapAndClearOfPlates
+note = a foot on the far map edge (x = width or z = depth) is let through
+original:
+| if (far <= 0 || far >= sizeAlong)
+replacement:
+| if (far <= 0 || far > sizeAlong)
+
+[trv1a-map-edge-near]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.TheRampStaysOnTheMapAndClearOfPlates
+note = a foot on the near map edge (x = 0 or z = 0) is let through
+original:
+| if (far <= 0 || far >= sizeAlong)
+replacement:
+| if (far < 0 || far >= sizeAlong)
+
+[trv1a-map-across]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.TheRampStaysOnTheMapAndClearOfPlates
+note = no check across the ramp
+original:
+| (long)across0 + width > sizeAcross
+replacement:
+| false
+
+[trv1a-stack-off]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.TheRampStaysOnTheMapAndClearOfPlates
+note = no stack clearance check
+original:
+| if (close != 0) throw
+replacement:
+| if (false) throw
+
+[trv1a-thick-min]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.TheRampIsSolidDownToTheGround
+note = the thickness is always the minimum
+original:
+| long thick = Math.Max(MinRampThickRaw, doorTopRaw - lowestGround);
+replacement:
+| long thick = MinRampThickRaw;
+
+[trv1a-thick-drop]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.TheRampIsSolidDownToTheGround
+note = the thickness has no minimum
+original:
+| long thick = Math.Max(MinRampThickRaw, doorTopRaw - lowestGround);
+replacement:
+| long thick = doorTopRaw - lowestGround;
+
+[trv1a-thick-foot]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.TheRampIsSolidDownToTheGround
+note = the thickness reaches the foot, not the lowest point
+original:
+| long thick = Math.Max(MinRampThickRaw, doorTopRaw - lowestGround);
+replacement:
+| long thick = Math.Max(MinRampThickRaw, doorTopRaw - low);
+
+[trv1a-no-drop-strict]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.EachRefusalSaysWhy
+note = a doorway level with the ground is ramped
+original:
+| if (cells == 1 && doorTopRaw <= high)
+replacement:
+| if (cells == 1 && doorTopRaw < high)
+
+[trv1a-rises-back]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.GroundThatRisesBackToTheDoorwayIsRefused
+note = a foot level with the doorway is kept
+original:
+| if (low >= doorTopRaw)
+replacement:
+| if (low > doorTopRaw)
+
+[trv1a-side-door-line]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.EverySideBuildsItsOwnPointTable
+note = towards -x and -z the doorway line is the first row
+original:
+| int door = sign > 0 ? row : row + 1;
+replacement:
+| int door = row;
+
+[trv1a-side-from-to]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.EverySideBuildsItsOwnPointTable
+note = the high end is always from
+original:
+| long from = sign > 0 ? doorTopRaw : low, to = sign > 0 ? low : doorTopRaw;
+replacement:
+| long from = doorTopRaw, to = low;
+
+[trv1a-part]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.ThePartNumberIsTheSource
+note = the part number is ignored
+original:
+| new MapStampEntry<MapPlate>(part, plate)
+replacement:
+| new MapStampEntry<MapPlate>(1, plate)
+
+[trv1a-ceiling]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.EachRefusalSaysWhy
+note = a doorway at the ceiling is refused
+original:
+| if (doorTopRaw > map.CeilingRaw)
+replacement:
+| if (doorTopRaw >= map.CeilingRaw)
+
+[trv1a-hint-max]
+file = Assets/WarCore/Content/MapTools/MapGate.Hints.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aHintTests.AFloorTheGroundCannotReachIsNamedSideBySide
+note = a gap of exactly 1.5 m is not named
+original:
+| if (gap > LayeredNav.StepRaw && gap <= HintMaxGapRaw)
+replacement:
+| if (gap > LayeredNav.StepRaw && gap < HintMaxGapRaw)
+
+[trv1a-hint-max-open]
+file = Assets/WarCore/Content/MapTools/MapGate.Hints.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aHintTests.OutsideTheBandNothingIsNamed
+note = a gap above 1.5 m is named
+original:
+| if (gap > LayeredNav.StepRaw && gap <= HintMaxGapRaw)
+replacement:
+| if (gap > LayeredNav.StepRaw && gap <= HintMaxGapRaw + 1)
+
+[trv1a-hint-reached]
+file = Assets/WarCore/Content/MapTools/MapGate.Hints.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aHintTests.TheDemoHousesHaveNoHints
+expect = WarCore.Tests.Trv1aHintTests.ARampSilencesTheFloor
+note = reached plate cells are named too
+original:
+| if (!nav.IsPassable(node) || reached[node]) continue;
+replacement:
+| if (!nav.IsPassable(node)) continue;
+
+[trv1a-hint-no-seams]
+file = Assets/WarCore/Content/MapTools/MapGate.Hints.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aHintTests.ARampSilencesTheFloor
+expect = WarCore.Tests.Trv1aHintTests.TheDemoHousesHaveNoHints
+note = the flood does not cross seams
+original:
+| for (int k = 0; k < nav.SeamCount(v); k++) Visit(nav, reached, queue, nav.Seam(v, k));
+replacement:
+|
+
+[trv1a-hint-one-end]
+file = Assets/WarCore/Content/MapTools/MapGate.Hints.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aHintTests.TheLargerEndGapIsNamed
+note = only the first end of the edge is measured
+original:
+| long gap = Math.Max(Gap(nav, layer, i0, j0), Gap(nav, layer, i1, j1));
+replacement:
+| long gap = Gap(nav, layer, i0, j0);
+
+[trv1a-hint-blocked-ground]
+file = Assets/WarCore/Content/MapTools/MapGate.Hints.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aHintTests.OnlyWalkableGroundCounts
+note = blocked ground cells count
+original:
+| if (!nav.TryNode(0, x + dx, z + dz, out int ground) || !nav.IsPassable(ground)) continue;
+replacement:
+| if (!nav.TryNode(0, x + dx, z + dz, out int ground)) continue;
+
+[trv1a-hint-order]
+file = Assets/WarCore/Content/MapTools/MapGate.Hints.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aHintTests.AFloorTheGroundCannotReachIsNamedSideBySide
+note = x before z in the order
+original:
+| return hints.OrderBy(h => h.CellZ).ThenBy(h => h.CellX)
+replacement:
+| return hints.OrderBy(h => h.CellX).ThenBy(h => h.CellZ)
+
+[trv1a-hint-side-order]
+file = Assets/WarCore/Content/MapTools/MapGate.Hints.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aHintTests.AFloorTheGroundCannotReachIsNamedSideBySide
+note = sides in reverse order
+original:
+| .ThenBy(h => h.Plate).ThenBy(h => h.Side)
+replacement:
+| .ThenBy(h => h.Plate).ThenByDescending(h => h.Side)
+
+[trv1a-hint-unreadable]
+file = Assets/WarCore/Content/MapTools/MapGate.Hints.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aHintTests.WhatCheckReportsGivesNoHints
+note = an unreadable description throws
+original:
+| catch (InvalidDataException) { return none; }
+replacement:
+| catch (InvalidDataException) { throw; }
+
+[trv1a-hint-unbaked]
+file = Assets/WarCore/Content/MapTools/MapGate.Hints.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aHintTests.WhatCheckReportsGivesNoHints
+note = a description that does not bake is not passed over
+original:
+| if (map == null) return none;
+replacement:
+|
+
+[trv1a-hint-no-plates]
+file = Assets/WarCore/Content/MapTools/MapGate.Hints.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aHintTests.WhatCheckReportsGivesNoHints
+note = a description without plates is not passed over
+original:
+| if (desc.Plates.Count == 0) return none;
+replacement:
+|
+
+[trv1a-hint-in-check]
+file = Assets/WarCore/Content/MapTools/MapGate.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aHintTests.CheckDoesNotCarryHints
+note = hints go into Check
+original:
+| return Sorted(problems);
+replacement:
+| problems.AddRange(Hints(descBytes, pack).Select(h => new MapProblem(h.Code))); return Sorted(problems);
+
+[trv1a-hint-min-up]
+file = Assets/WarCore/Content/MapTools/MapGate.Hints.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aHintTests.AFloorTheGroundCannotReachIsNamedSideBySide
+note = a gap of 0.3 m plus 1 raw is not named
+original:
+| if (gap > LayeredNav.StepRaw && gap <= HintMaxGapRaw)
+replacement:
+| if (gap > LayeredNav.StepRaw + 1 && gap <= HintMaxGapRaw)
+
+[trv1a-self-restamp]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.TheSameStampSourceMayBeStampedAgain
+note = the clearance check counts the plate this stamp source placed before
+original:
+| geoms.RemoveAll(g => own.Contains(g.Id));
+replacement:
+| geoms.RemoveAll(g => false);
+
+[trv1a-self-other-part]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.TheSameStampSourceMayBeStampedAgain
+note = another part of the same instance is left out of the clearance check
+original:
+| && p.Src.Kind == MapEditKinds.Plate.Name && p.Src.Src == part)
+replacement:
+| && p.Src.Kind == MapEditKinds.Plate.Name)
+
+[trv1a-side-range]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.EachRefusalSaysWhy
+note = an undefined side is read as -z
+original:
+| if (outward > MapSide.MinusZ) throw new ArgumentOutOfRangeException(nameof(outward));
+replacement:
+| if (outward > MapSide.MinusZ + 1) throw new ArgumentOutOfRangeException(nameof(outward));
+
+[trv1a-door-limit]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.EachRefusalSaysWhy
+note = a doorway above the description's height limit is let through
+original:
+| if (doorTopRaw > MapDescReader.HeightLimit) throw
+replacement:
+| if (doorTopRaw > MapDescReader.HeightLimit + 1) throw
+
+[trv1a-thick-limit]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aRampTests.EachRefusalSaysWhy
+note = a ramp thicker than the description's height limit is let through
+original:
+| if (thick > MapDescReader.HeightLimit) throw
+replacement:
+| if (thick > 2L * MapDescReader.HeightLimit + 2) throw
+
+[trv1a-hint-nav-refused]
+file = Assets/WarCore/Content/MapTools/MapGate.Hints.cs
+filter = FullyQualifiedName~Trv1a
+expect = WarCore.Tests.Trv1aHintTests.GroundTheWalkingGraphRefusesGivesNoHints
+note = a description the walking graph refuses throws out of Hints
+original:
+| catch (ArgumentOutOfRangeException) { return none; }
+replacement:
+| catch (ArgumentOutOfRangeException) { throw; }

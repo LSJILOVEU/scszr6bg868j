@@ -75,8 +75,10 @@ namespace WarCore.Battle
                 if (unit.Weapon < 0) continue;
                 SimVec3 here = combat.Point(shooter);
                 SimFix range = combat.Pack.Weapons[unit.Weapon].FalloffEnd;
-                if (SimpleAiSystem.Arrived(here, lastKnown)
-                    || CombatSystem.Horizontal(lastKnown - here).LengthSquared > new SimVec3(range, default, default).LengthSquared
+                // ML-11b-1: the range is the combat's span (3D on a map with floor plates); P straight above or below on
+                // another height is not under the feet (the combat's vertical rule), the line of sight decides.
+                if ((SimpleAiSystem.Arrived(here, lastKnown) && !combat.Overhead(here, lastKnown))
+                    || combat.SpanSquared(here, lastKnown) > new SimVec3(range, default, default).LengthSquared
                     || !combat.Visible(shooter, lastKnown)) continue;
                 combat.Submit(c, FireIntent.Suppress(observer, lastKnown));
             }

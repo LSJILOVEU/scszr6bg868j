@@ -30,23 +30,31 @@ namespace WarCore.Combat
 
         // ML-3 muzzle of a unit: where its aimed and automatic shots start (new mode: foot + muzzle height; without a body:
         // the foot).
-        public SimVec3 MuzzlePoint(EntityId unit) => Lift(Point(unit), muzzleRaw);
-        internal SimVec3 MuzzleOver(SimVec3 foot) => Lift(foot, muzzleRaw);
+        public SimVec3 MuzzlePoint(EntityId unit) => Lift(Point(unit), MuzzleOf(unit));
+        internal SimVec3 MuzzleOver(SimVec3 foot, EntityId unit) => Lift(foot, MuzzleOf(unit));
 
         // ML-3 where the built-in aimed and automatic lines at a unit end (new mode: its viewpoint; without a body: its foot).
-        // A game-layer IAutoFire aims along ShotEnd(target) - MuzzlePoint(shooter), as the built-in decision does.
+        // VSPREAD-1: the built-in decision aims along ShotEnd(shooter, target) - MuzzlePoint(shooter), which is this point unless
+        // the pack's vertical spread aims at the middle of the body; a game-layer IAutoFire should do the same.
         public SimVec3 ShotEnd(EntityId target) => Lift(Point(target), AimEndRaw(target));
 
         // ML-3: a fire record's origin turned back into the point on the ground under the shooter. New mode: Origin minus the
         // muzzle height (all three shot paths record the muzzle). Without a body: Origin as recorded, including the 0.5 m an
         // explicit target shot has always recorded.
-        public SimVec3 GroundOfFireOrigin(in FireRecord fire) => bodied ? Lift(fire.Origin, -muzzleRaw) : fire.Origin;
+        // STANCE-1: with stances the record carries the muzzle height the shot left at (FireRecord.MuzzleRaw), so a shooter who
+        // changed stance since is still traced back to the foot it fired from.
+        public SimVec3 GroundOfFireOrigin(in FireRecord fire) => bodied ? Lift(fire.Origin, -(stances != null ? fire.MuzzleRaw : muzzleRaw)) : fire.Origin;
 
         // One body per pack (v1): a unit's eye and aim end are the pack's. A line that ends on a unit uses that unit's own
-        // value, a line that ends on a ground point the pack's standing default (D3); both are the same number until a pack
-        // carries postures or several bodies, when the ground-point readers need an explicit height.
-        private long EyeRaw(EntityId unit) => eyeRaw;
-        private long AimEndRaw(EntityId unit) => aimEndRaw;
+        // value, a line that ends on a ground point the pack's standing default (D3).
+        // STANCE-1: with stances a unit's eye, aim end (its eye) and muzzle are those of its stance now; ground points keep the
+        // standing default.
+        private long EyeRaw(EntityId unit) => stances != null ? stances.EyeRaw(unit) : eyeRaw;
+        private long AimEndRaw(EntityId unit) => stances != null ? stances.EyeRaw(unit) : aimEndRaw;
+        private long MuzzleOf(EntityId unit) => stances != null ? stances.MuzzleRaw(unit) : muzzleRaw;
+        // STANCE-1 (C-e): the spread factor of the unit's stance in permille: the stance now, the wider of the two while changing,
+        // 1000 without stances. Read only; the shot paths' spread is AIM-1's (ShotAngle takes it as its stance row).
+        public int StanceSpreadPermille(EntityId unit) => stances != null ? stances.SpreadPermille(unit) : 1000;
         private SimVec3 Eye(SimVec3 ground) => Lift(ground, eyeRaw);
         private SimVec3 Eye(SimVec3 foot, EntityId unit) => Lift(foot, EyeRaw(unit));
 
@@ -210,12 +218,13 @@ namespace WarCore.Combat
 
         // AI read port: is a living teammate the first thing on the straight (3D) line from the shooter towards a point, traced
         // out to range (the whole flight of a shot, not only to the point)? It is the line an aimed intent at the point flies
-        // along (ML-3: from the muzzle to the point lifted to the standing eye). A point straight above or below the shooter
+        // along (ML-3: from the muzzle to AimedEnd: the point lifted to the standing eye, or with a vertical spread aimed at the
+        // middle of the body an enemy at the player's point, VSPREAD-1). A point straight above or below the shooter
         // gives no line, except on a map with plates when the point's height differs from the shooter's foot (ML-9).
         public bool AllyBlocks(EntityId shooter, SimVec3 point, SimFix range)
         {
             SimVec3 origin = MuzzlePoint(shooter);
-            SimVec3 direction = Lift(point, aimEndRaw) - origin;
+            SimVec3 direction = AimedEnd(shooter, point) - origin;
             bool line = Horizontal(direction).LengthSquared.Sign != 0 || Overhead(Point(shooter), point) && direction.LengthSquared.Sign != 0;
             return line && AllyBlocks(shooter, origin, direction, range);
         }

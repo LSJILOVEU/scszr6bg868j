@@ -62,18 +62,18 @@ namespace WarCore.Presentation
             var catalog = new PlacedCatalog(content, placements);
             // The map path sizes the entity table to walls plus units; the plain path keeps the M1 default.
             SimConfig config = map == null ? null : new SimConfig(entityCapacity: placements.Length);
-            int projectiles = CombatFeature.ProjectileCapacity(recipe);
-            if (recipe.Combat != null) config = recipe.Combat.BuildConfig(placements.Length, recipe.Units.Length, projectiles);
+            int projectiles = CombatFeature.ProjectileCapacity(recipe), blasts = CombatFeature.BlastCommands(recipe, projectiles);
+            if (recipe.Combat != null) config = recipe.Combat.BuildConfig(placements.Length, recipe.Units.Length, projectiles, blasts);
             // The match installer made the mode in Prepare, one fresh instance per world; it is bound once the match systems exist.
             MatchMode mode = assembly.Mode;
             var sim = recipe.Match == null
                 ? Simulation.CreateRetainedWorld(recipe.Seed, catalog, config, content: content,
-                    gameplaySchema: recipe.Combat?.BuildSchema(recipe.Units.Length, projectiles))
+                    gameplaySchema: recipe.Combat?.BuildSchema(recipe.Units.Length, projectiles, blasts))
                 : Simulation.CreateRetainedWorld(recipe.Seed, catalog, config, content: content, mode: mode, modeId: mode.RuleSetId,
-                    gameplaySchema: recipe.Combat?.BuildSchema(recipe.Units.Length, projectiles));
+                    gameplaySchema: recipe.Combat?.BuildSchema(recipe.Units.Length, projectiles, blasts));
             assembly.Sim = sim;
             FeatureTable.RunComponents(assembly);
-            sim.ConfigureSpatial(assembly.Positions, assembly.Colliders, SimFix.FromInt(2),
+            sim.ConfigureSpatial(assembly.Positions, assembly.Colliders, SimFix.FromInt(2), postures: assembly.Postures,
                 footAnchoredLayers: WorldAssembly.FootAnchoredLayers(recipe.Combat));
             if (map != null)
             {
@@ -97,6 +97,8 @@ namespace WarCore.Presentation
             FeatureTable.RunSystems(assembly);
             FeatureTable.RunRules(assembly);
             sim.CompleteSpatialBoundary();
+            // TRV-7a: after the boundary, so the walls are in the spatial index the sight test reads; before the first tick.
+            assembly.Entries = EntryWiring.Of(assembly);
             ComponentType<UnitFacing>? facings = recipe.Facing ? assembly.Facings : (ComponentType<UnitFacing>?)null;
             bool dash = DashFeature.Instance.IsActive(assembly);
             var session = new SimSession(new SessionParts
@@ -106,7 +108,8 @@ namespace WarCore.Presentation
                 MatchPack = recipe.Match, Capture = assembly.Capture, Reinforce = assembly.Reinforce, Match = assembly.Match, Pressure = assembly.Pressure, Squads = assembly.Squads,
                 MaxHealthRaw = recipe.Combat?.MaxHealthRaw ?? 0, Controlled = assembly.Controlled, CombatPack = recipe.Combat,
                 Facings = facings, Terrain = assembly.Terrain, TerrainRules = recipe.TerrainPack?.Terrain,
-                Plates = assembly.Plates, Layers = PlateLayers.Of(assembly),
+                Plates = assembly.Plates, Layers = PlateLayers.Of(assembly), Stances = assembly.Stances, Gate = assembly.Gate,
+                Entries = assembly.Entries, EntryBuild = assembly.Reach != null ? () => EntryWiring.Of(assembly) : (Func<PointEntryTable>)null,
                 Dash = dash ? assembly.Locomotion : null, DashStates = dash ? sim.Entities.Resolve<DashState>() : (ComponentType<DashState>?)null,
             });
             foreach (BridgeCommand command in recipe.Script)

@@ -1,0 +1,589 @@
+# TRV-3: the link table of LayeredNav, A* and the reach table over links, the build overload with links (K16).
+# Filter: the TRV-3 tests (FullyQualifiedName~Trv3).
+# Not listed (equivalent or covered elsewhere, with the reason):
+#  - "links only on maps with plates" (appendix row T3-13): moved to TRV-4 with the world switch.
+#  - "derive does not leave out seams": a LinkDerive (TRV-2) branch, listed there as trv2-seam-ignored; here the table
+#    refuses such a link (trv3-check-seam).
+#  - "a link from a node to itself": no separate check; the one-layer neighbour check (dx = dz = 0) refuses it
+#    (a separate check survived as equivalent in the first run and was removed).
+#  - WithLinks sharing the source's tables instead of copying: nothing writes them after construction.
+
+[trv3-pf-span-one]
+file = Assets/WarCore/Sim/LayeredPathfinder.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3PathTests.T3_05_
+expect = WarCore.Tests.Trv3PathTests.T3_06_
+expect = WarCore.Tests.Trv3PathTests.TheLinkPricesTheCellItEnters
+note = link cost ignores the span
+original:
+| Relax(current, link.To, 1000L * link.Span * nav.Cost[link.To] + link.PathCost, target);
+replacement:
+| Relax(current, link.To, 1000L * nav.Cost[link.To] + link.PathCost, target);
+
+[trv3-pf-start-cost]
+file = Assets/WarCore/Sim/LayeredPathfinder.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3PathTests.TheLinkPricesTheCellItEnters
+expect = WarCore.Tests.Trv3ReachTests.T3_15_TheDenseGraphFitsTheHeaps
+note = link cost uses the start cell
+original:
+| Relax(current, link.To, 1000L * link.Span * nav.Cost[link.To] + link.PathCost, target);
+replacement:
+| Relax(current, link.To, 1000L * link.Span * nav.Cost[current.Key] + link.PathCost, target);
+
+[trv3-pf-no-path-cost]
+file = Assets/WarCore/Sim/LayeredPathfinder.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3PathTests.T3_04_
+expect = WarCore.Tests.Trv3PathTests.T3_05_
+expect = WarCore.Tests.Trv3PathTests.TheLinkPricesTheCellItEnters
+note = link cost leaves out the path cost
+original:
+| Relax(current, link.To, 1000L * link.Span * nav.Cost[link.To] + link.PathCost, target);
+replacement:
+| Relax(current, link.To, 1000L * link.Span * nav.Cost[link.To], target);
+
+[trv3-pf-1414]
+file = Assets/WarCore/Sim/LayeredPathfinder.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3PathTests.T3_04_
+expect = WarCore.Tests.Trv3PathTests.T3_05_
+expect = WarCore.Tests.Trv3PathTests.TheLinkPricesTheCellItEnters
+note = link step 1000 becomes 1414
+original:
+| Relax(current, link.To, 1000L * link.Span * nav.Cost[link.To] + link.PathCost, target);
+replacement:
+| Relax(current, link.To, 1414L * link.Span * nav.Cost[link.To] + link.PathCost, target);
+
+[trv3-pf-no-links]
+file = Assets/WarCore/Sim/LayeredPathfinder.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3PathTests.T3_04_
+expect = WarCore.Tests.Trv3PathTests.T3_05_
+note = A* never follows a link
+original:
+| if (nav.Links == null) continue;
+|                 for (int l = nav.LinkStart
+replacement:
+| continue;
+|                 for (int l = nav.LinkStart
+
+[trv3-pf-reverse-index]
+file = Assets/WarCore/Sim/LayeredPathfinder.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3PathTests.T3_04_
+expect = WarCore.Tests.Trv3PathTests.T3_06_
+expect = WarCore.Tests.Trv3PathTests.TheLinkPricesTheCellItEnters
+note = A* follows links backwards (end-node index)
+original:
+| for (int l = nav.LinkStart[current.Key]; l < nav.LinkStart[current.Key + 1]; l++)
+|                 {
+|                     if (l == skipLink) continue;
+|                     NavLink link = nav.Links[l];
+|                     Relax(current, link.To, 1000L * link.Span * nav.Cost[link.To] + link.PathCost, target);
+replacement:
+| for (int i = nav.InStart[current.Key]; i < nav.InStart[current.Key + 1]; i++)
+|                 {
+|                     int l = nav.InLinks[i];
+|                     if (l == skipLink) continue;
+|                     NavLink link = nav.Links[l];
+|                     Relax(current, link.From, 1000L * link.Span * nav.Cost[link.From] + link.PathCost, target);
+
+[trv3-pf-skip-ignored]
+file = Assets/WarCore/Sim/LayeredPathfinder.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3PathTests.T3_17_
+note = the left-out link is used anyway
+original:
+| if (l == skipLink) continue;
+replacement:
+|
+
+[trv3-pf-skip-by-kind]
+file = Assets/WarCore/Sim/LayeredPathfinder.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3PathTests.T3_17_
+note = leaves out every link whose kind equals the index
+original:
+| if (l == skipLink) continue;
+replacement:
+| if (nav.Links[l].Kind == skipLink) continue;
+
+[trv3-pf-skip-range]
+file = Assets/WarCore/Sim/LayeredPathfinder.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3PathTests.T3_17_
+note = any skip index accepted
+original:
+| if (skipLink < -1 || skipLink >= nav.LinkCount) throw new ArgumentOutOfRangeException(nameof(skipLink));
+replacement:
+|
+
+[trv3-pf-heap-no-links]
+file = Assets/WarCore/Sim/LayeredPathfinder.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3ReachTests.T3_15_TheHeapsCountTheLinks
+note = A* heap not sized for the links
+original:
+| long size = 8L * count + nav.Seams.Length + nav.LinkCount + 1;
+replacement:
+| long size = 8L * count + nav.Seams.Length + 1;
+
+[trv3-pf-limit-inclusive]
+file = Assets/WarCore/Sim/LayeredPathfinder.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3PathTests.T3_11_
+expect = WarCore.Tests.Trv3PathTests.TheLinkPricesTheCellItEnters
+note = limit: F > limit becomes >=
+original:
+| if (current.F > limitCost) return GridPathStatus.Unreachable;
+replacement:
+| if (current.F >= limitCost) return GridPathStatus.Unreachable;
+
+[trv3-reach-no-links]
+file = Assets/WarCore/Sim/LayeredReach.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3ReachTests.T3_09_
+expect = WarCore.Tests.Trv3ReachTests.T3_08_ReachEqualsAStarOnTheFixtures
+note = the reach table never follows a link
+original:
+| if (nav.Links == null) continue;
+|                 for (int i = nav.InStart[v]
+replacement:
+| continue;
+|                 for (int i = nav.InStart[v]
+
+[trv3-reach-forward-index]
+file = Assets/WarCore/Sim/LayeredReach.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3ReachTests.T3_09_
+expect = WarCore.Tests.Trv3ReachTests.T3_08_ReachEqualsAStarOnTheFixtures
+note = the reach table follows links forwards
+original:
+| for (int i = nav.InStart[v]; i < nav.InStart[v + 1]; i++)
+|                 {
+|                     NavLink link = nav.Links[nav.InLinks[i]];
+|                     Relax(heap, nodes, ref size, link.From, cost + 1000L * link.Span * enter + link.PathCost);
+replacement:
+| for (int i = nav.LinkStart[v]; i < nav.LinkStart[v + 1]; i++)
+|                 {
+|                     NavLink link = nav.Links[i];
+|                     Relax(heap, nodes, ref size, link.To, cost + 1000L * link.Span * nav.Cost[link.To] + link.PathCost);
+
+[trv3-reach-u-cost]
+file = Assets/WarCore/Sim/LayeredReach.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3ReachTests.T3_15_TheDenseGraphFitsTheHeaps
+expect = WarCore.Tests.Trv3PathTests.TheLinkPricesTheCellItEnters
+note = reach: link cost uses the start cell
+original:
+| Relax(heap, nodes, ref size, link.From, cost + 1000L * link.Span * enter + link.PathCost);
+replacement:
+| Relax(heap, nodes, ref size, link.From, cost + 1000L * link.Span * nav.Cost[link.From] + link.PathCost);
+
+[trv3-reach-span-one]
+file = Assets/WarCore/Sim/LayeredReach.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3ReachTests.T3_09_
+expect = WarCore.Tests.Trv3ReachTests.T3_08_ReachEqualsAStarOnTheFixtures
+note = reach: link cost ignores the span
+original:
+| Relax(heap, nodes, ref size, link.From, cost + 1000L * link.Span * enter + link.PathCost);
+replacement:
+| Relax(heap, nodes, ref size, link.From, cost + 1000L * enter + link.PathCost);
+
+[trv3-reach-no-path-cost]
+file = Assets/WarCore/Sim/LayeredReach.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3ReachTests.T3_09_
+expect = WarCore.Tests.Trv3ReachTests.T3_08_ReachEqualsAStarOnTheFixtures
+note = reach: link cost leaves out the path cost
+original:
+| Relax(heap, nodes, ref size, link.From, cost + 1000L * link.Span * enter + link.PathCost);
+replacement:
+| Relax(heap, nodes, ref size, link.From, cost + 1000L * link.Span * enter);
+
+[trv3-reach-heap-no-links]
+file = Assets/WarCore/Sim/LayeredReach.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3ReachTests.T3_15_TheHeapsCountTheLinks
+note = reach heap not sized for the links
+original:
+| long capacity = 8L * count + nav.Seams.Length + nav.LinkCount + 1;
+replacement:
+| long capacity = 8L * count + nav.Seams.Length + 1;
+
+[trv3-islands-one-way]
+file = Assets/WarCore/Sim/LayeredReach.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3ReachTests.T3_10_
+note = 单向链接也并岛: a one-way link joins islands too
+original:
+| if (islands[u] < 0 && nav.TryLink(u, v, out _)) { islands[u] = next; queue[tail++] = u; }
+replacement:
+| if (islands[u] < 0) { islands[u] = next; queue[tail++] = u; }
+
+[trv3-islands-no-links]
+file = Assets/WarCore/Sim/LayeredReach.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3ReachTests.T3_10_
+note = islands never follow a link
+original:
+| if (nav.Links == null) continue;
+|                     for (int l = nav.LinkStart[v]
+replacement:
+| continue;
+|                     for (int l = nav.LinkStart[v]
+
+[trv3-islands-forward-check]
+file = Assets/WarCore/Sim/LayeredReach.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3ReachTests.T3_10_
+note = the two-way check asks for the same link again
+original:
+| nav.TryLink(u, v, out _)
+replacement:
+| nav.TryLink(v, u, out _)
+
+[trv3-hash-null-adds-zero]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3TableTests.T3_01_
+expect = WarCore.Tests.Trv3TableTests.T3_19_
+note = no table still adds a zero to the digest
+original:
+| if (Links != null) HashLinks(hash);
+replacement:
+| if (Links != null) HashLinks(hash); else hash.Add(0);
+
+[trv3-hash-empty-as-null]
+file = Assets/WarCore/Sim/LayeredNav.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3TableTests.T3_16_
+expect = WarCore.Tests.Trv3TableTests.T3_21_
+note = an empty table is hashed as no table
+original:
+| if (Links != null) HashLinks(hash);
+replacement:
+| if (Links != null && Links.Length > 0) HashLinks(hash);
+
+[trv3-hash-no-tag]
+file = Assets/WarCore/Sim/LayeredNav.Links.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3TableTests.T3_16_
+expect = WarCore.Tests.Trv3TableTests.T3_02_
+note = the digest leaves out the tag
+original:
+| hash.Add(LinksTag);
+replacement:
+|
+
+[trv3-hash-no-count]
+file = Assets/WarCore/Sim/LayeredNav.Links.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3TableTests.T3_16_
+expect = WarCore.Tests.Trv3TableTests.T3_02_
+note = the digest leaves out the count
+original:
+| hash.Add(Links.Length);
+replacement:
+|
+
+[trv3-hash-no-gap]
+file = Assets/WarCore/Sim/LayeredNav.Links.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3TableTests.T3_02_
+expect = WarCore.Tests.Trv3TableTests.T3_20_
+note = the digest leaves out the gap
+original:
+| hash.Add(l.Cross); hash.Add(l.Gap);
+replacement:
+| hash.Add(l.Cross);
+
+[trv3-hash-no-kind]
+file = Assets/WarCore/Sim/LayeredNav.Links.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3TableTests.T3_02_
+note = the digest leaves out the kind
+original:
+| hash.Add(l.Kind); hash.Add(l.Ticks);
+replacement:
+| hash.Add(l.Ticks);
+
+[trv3-hash-no-path-cost]
+file = Assets/WarCore/Sim/LayeredNav.Links.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3TableTests.T3_02_
+note = the digest leaves out the path cost
+original:
+| hash.Add(l.Span); hash.Add(l.PathCost);
+replacement:
+| hash.Add(l.Span);
+
+[trv3-check-max]
+file = Assets/WarCore/Sim/LayeredNav.Links.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3TableTests.T3_18_BadTablesAreRefused
+note = more than 65535 links accepted
+original:
+| if (links.Count > MaxLinks) throw
+replacement:
+| if (links.Count > MaxLinks + 1) throw
+
+[trv3-check-node]
+file = Assets/WarCore/Sim/LayeredNav.Links.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3TableTests.T3_18_BadTablesAreRefused
+note = an end outside the graph is not refused here
+original:
+| if (l.From < 0 || l.From >= Count || l.To < 0 || l.To >= Count) throw new ArgumentException(at + "an end is not a node.", nameof(links));
+replacement:
+|
+
+[trv3-check-walkable]
+file = Assets/WarCore/Sim/LayeredNav.Links.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3TableTests.T3_18_BadTablesAreRefused
+note = an end that is not walkable is accepted
+original:
+| if (Cost[l.From] == 0 || Cost[l.To] == 0) throw
+replacement:
+| if (false) throw
+
+[trv3-check-repeat]
+file = Assets/WarCore/Sim/LayeredNav.Links.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3TableTests.T3_18_BadTablesAreRefused
+note = a repeated link is accepted
+original:
+| if (p.From == l.From && p.To == l.To) throw
+replacement:
+| if (false) throw
+
+[trv3-check-order]
+file = Assets/WarCore/Sim/LayeredNav.Links.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3TableTests.T3_18_BadTablesAreRefused
+note = links out of order are accepted
+original:
+| if (p.From > l.From || (p.From == l.From && p.To > l.To)) throw
+replacement:
+| if (false) throw
+
+[trv3-check-order-start-only]
+file = Assets/WarCore/Sim/LayeredNav.Links.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3TableTests.T3_18_BadTablesAreRefused
+note = order checked by start node only
+original:
+| if (p.From > l.From || (p.From == l.From && p.To > l.To)) throw
+replacement:
+| if (p.From > l.From) throw
+
+[trv3-check-span]
+file = Assets/WarCore/Sim/LayeredNav.Links.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3TableTests.T3_18_BadTablesAreRefused
+note = span outside 1..2 accepted
+original:
+| if (l.Span < 1 || l.Span > NavLink.MaxSpan) throw
+replacement:
+| if (false) throw
+
+[trv3-check-path-cost]
+file = Assets/WarCore/Sim/LayeredNav.Links.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3TableTests.T3_18_BadTablesAreRefused
+note = negative or too large path cost accepted
+original:
+| if (l.PathCost < 0 || l.PathCost > NavLink.MaxPathCost) throw
+replacement:
+| if (false) throw
+
+[trv3-check-path-cost-cap]
+file = Assets/WarCore/Sim/LayeredNav.Links.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3TableTests.T3_18_BadTablesAreRefused
+note = path cost cap exclusive
+original:
+| l.PathCost > NavLink.MaxPathCost) throw
+replacement:
+| l.PathCost >= NavLink.MaxPathCost) throw
+
+[trv3-check-kind]
+file = Assets/WarCore/Sim/LayeredNav.Links.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3TableTests.T3_18_BadTablesAreRefused
+note = negative kind accepted
+original:
+| if (l.Kind < 0) throw
+replacement:
+| if (false) throw
+
+[trv3-check-ticks]
+file = Assets/WarCore/Sim/LayeredNav.Links.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3TableTests.T3_18_BadTablesAreRefused
+note = zero ticks accepted
+original:
+| if (l.Ticks < 1) throw
+replacement:
+| if (false) throw
+
+[trv3-check-octile]
+file = Assets/WarCore/Sim/LayeredNav.Links.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3TableTests.T3_18_BadTablesAreRefused
+note = cells farther apart than the span accepted
+original:
+| > 1000L * l.Span) throw
+replacement:
+| > 2000L * l.Span) throw
+
+[trv3-check-octile-inclusive]
+file = Assets/WarCore/Sim/LayeredNav.Links.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3TableTests.T3_18_BadTablesAreRefused
+note = octile equal to the span refused
+original:
+| > 1000L * l.Span) throw
+replacement:
+| >= 1000L * l.Span) throw
+
+[trv3-check-neighbour]
+file = Assets/WarCore/Sim/LayeredNav.Links.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3TableTests.T3_18_BadTablesAreRefused
+note = neighbours on one layer accepted
+original:
+| if (NodeLayer[l.From] == NodeLayer[l.To] && dx <= 1 && dz <= 1) throw
+replacement:
+| if (false) throw
+
+[trv3-check-neighbour-orthogonal]
+file = Assets/WarCore/Sim/LayeredNav.Links.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3TableTests.T3_18_BadTablesAreRefused
+note = only orthogonal neighbours refused (diagonal accepted)
+original:
+| if (NodeLayer[l.From] == NodeLayer[l.To] && dx <= 1 && dz <= 1) throw
+replacement:
+| if (NodeLayer[l.From] == NodeLayer[l.To] && dx + dz <= 1) throw
+
+[trv3-check-seam]
+file = Assets/WarCore/Sim/LayeredNav.Links.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3TableTests.T3_18_BadTablesAreRefused
+note = a link beside a seam accepted
+original:
+| if (Seams[s] == l.To) throw
+replacement:
+| if (false) throw
+
+[trv3-index-from-by-to]
+file = Assets/WarCore/Sim/LayeredNav.Links.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3TableTests.TheIndexesAnswerFromAndTo
+note = start index counted by end node
+original:
+| start[l.From + 1]++;
+replacement:
+| start[l.To + 1]++;
+
+[trv3-index-to-by-from]
+file = Assets/WarCore/Sim/LayeredNav.Links.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3TableTests.TheIndexesAnswerFromAndTo
+expect = WarCore.Tests.Trv3ReachTests.T3_09_
+note = end index counted by start node
+original:
+| inStart[l.To + 1]++;
+replacement:
+| inStart[l.From + 1]++;
+
+[trv3-trylink-direction]
+file = Assets/WarCore/Sim/LayeredNav.Links.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3TableTests.TheIndexesAnswerFromAndTo
+expect = WarCore.Tests.Trv3ReachTests.T3_12_
+note = TryLink searches the wrong half
+original:
+| if (at < to) lo = mid + 1; else hi = mid - 1;
+replacement:
+| if (at > to) lo = mid + 1; else hi = mid - 1;
+
+[trv3-has-links-always]
+file = Assets/WarCore/Sim/LayeredNav.Links.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3TableTests.T3_01_
+expect = WarCore.Tests.Trv3TableTests.T3_19_
+note = HasLinks true without a table
+original:
+| public bool HasLinks => Links != null;
+replacement:
+| public bool HasLinks => true;
+
+[trv3-build-no-filter]
+file = Assets/WarCore/Content/WcMapLayeredNav.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3TableTests.T3_21_
+expect = WarCore.Tests.Trv3PathTests.T3_21_
+note = the shape filter keeps everything
+original:
+| if ((shapes & (l.Shape == TraversalShape.Edge ? TraversalShapes.Edge : TraversalShapes.Over)) == 0) continue;
+replacement:
+|
+
+[trv3-build-filter-inverted]
+file = Assets/WarCore/Content/WcMapLayeredNav.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3TableTests.T3_21_
+expect = WarCore.Tests.Trv3PathTests.T3_21_
+note = the shape filter keeps the shapes not chosen
+original:
+| ? TraversalShapes.Edge : TraversalShapes.Over)) == 0) continue;
+replacement:
+| ? TraversalShapes.Edge : TraversalShapes.Over)) != 0) continue;
+
+[trv3-build-span-two]
+file = Assets/WarCore/Content/WcMapLayeredNav.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3PathTests.T3_04_
+expect = WarCore.Tests.Trv3PathTests.T3_06_
+note = edge links get span 2
+original:
+| l.Shape == TraversalShape.Edge ? 1 : 2,
+replacement:
+| 2,
+
+[trv3-build-no-path-cost]
+file = Assets/WarCore/Content/WcMapLayeredNav.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3PathTests.T3_04_
+expect = WarCore.Tests.Trv3PathTests.T3_05_
+note = the kind's path cost is not carried over
+original:
+| traversal[l.Kind].PathCost, l.Kind
+replacement:
+| 0, l.Kind
+
+[trv3-build-no-zones]
+file = Assets/WarCore/Content/WcMapLayeredNav.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3PathTests.TheZonesReachTheMeasure
+note = the zones are not handed on
+original:
+| LinkDerive.Derive(map, nav, traversal, zones);
+replacement:
+| LinkDerive.Derive(map, nav, traversal, null);
+
+[trv3-build-null-rules-empty]
+file = Assets/WarCore/Content/WcMapLayeredNav.cs
+filter = FullyQualifiedName~Trv3
+expect = WarCore.Tests.Trv3TableTests.T3_19_
+note = no traversal rules gives an empty table instead of none
+original:
+| if (traversal == null || nav == null) return nav;
+replacement:
+| if (nav == null) return null;
+|             if (traversal == null) return nav.WithLinks(new NavLink[0]);

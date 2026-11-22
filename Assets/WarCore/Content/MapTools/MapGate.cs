@@ -28,7 +28,24 @@ namespace WarCore.Content.MapTools
         public override string ToString() => "wall " + WallId + " (" + CellX + ", " + CellZ + ") " + TopAboveGroundRaw + " raw " + Band;
     }
 
-    public static class MapGate
+    // One line of MapGate.Links (TRV-2): a measured traversal link with its kind id, both ends (layer, cell), the measures
+    // (raw; Gap LinkDerive.NoGap when nothing solid is above) and its ticks.
+    public readonly struct TraversalLinkLine
+    {
+        public readonly string KindId;
+        public readonly int FromLayer, FromX, FromZ, ToLayer, ToX, ToZ;
+        public readonly long Rise, Fall, Gap;
+        public readonly int Ticks;
+        public TraversalLinkLine(string kindId, int fromLayer, int fromX, int fromZ, int toLayer, int toX, int toZ, long rise, long fall, long gap, int ticks)
+        {
+            KindId = kindId; FromLayer = fromLayer; FromX = fromX; FromZ = fromZ; ToLayer = toLayer; ToX = toX; ToZ = toZ;
+            Rise = rise; Fall = fall; Gap = gap; Ticks = ticks;
+        }
+        public override string ToString() => KindId + " L" + FromLayer + " (" + FromX + ", " + FromZ + ") -> L" + ToLayer + " (" + ToX + ", " + ToZ
+            + ") rise " + Rise + " fall " + Fall + " gap " + (Gap == LinkDerive.NoGap ? "none" : Gap.ToString(CultureInfo.InvariantCulture)) + " ticks " + Ticks;
+    }
+
+    public static partial class MapGate
     {
         // The same as InterimLocomotion.UnitFootprint; Content does not reference Interim.
         public const long FootprintRaw = SimFix.Scale / 4;
@@ -298,6 +315,32 @@ namespace WarCore.Content.MapTools
                 if (above <= body.Eye.Raw) lines.Add(new WallHeightLine(wall.Id, wall.Cell.X, wall.Cell.Z, above, WallSightBand.SightPasses));
                 else if (above < body.Height.Raw) lines.Add(new WallHeightLine(wall.Id, wall.Cell.X, wall.Cell.Z, above, WallSightBand.BodyShows));
             }
+            return lines.AsReadOnly();
+        }
+
+        // ---- TRV-2 traversal link report (read only; nothing uses the links yet) ----
+
+        // Every traversal link LinkDerive measures on the baked map, one line each, in its order. Empty when the pack has no
+        // traversal section, the description cannot be read, does not bake without problems, or has no plates. Same
+        // arguments as Check; Check itself is unchanged.
+        public static IReadOnlyList<TraversalLinkLine> Links(byte[] descBytes, ContentPack pack)
+        {
+            if (descBytes == null) throw new ArgumentNullException(nameof(descBytes));
+            if (pack == null) throw new ArgumentNullException(nameof(pack));
+            var lines = new List<TraversalLinkLine>();
+            TraversalRules rules = pack.SectionOrNull<TraversalRules>();
+            if (rules == null) return lines.AsReadOnly();
+            MapDesc desc;
+            try { desc = MapDescJson.Read(descBytes); }
+            catch (InvalidDataException) { return lines.AsReadOnly(); }
+            if (!string.Equals(pack.Id, desc.Pack, StringComparison.Ordinal))
+                throw new ArgumentException("Content pack '" + pack.Id + "' is not the description's pack '" + desc.Pack + "'.", nameof(pack));
+            WcMap map = Bake(desc, new List<MapProblem>());
+            LayeredNav nav = map == null ? null : WcMapLayeredNav.Build(map, pack);
+            if (nav == null) return lines.AsReadOnly();
+            foreach (TraversalLink link in LinkDerive.Derive(map, nav, rules, null))
+                lines.Add(new TraversalLinkLine(rules[link.Kind].Id, nav.LayerOf(link.From), nav.XOf(link.From), nav.ZOf(link.From),
+                    nav.LayerOf(link.To), nav.XOf(link.To), nav.ZOf(link.To), link.Rise, link.Fall, link.Gap, link.Ticks));
             return lines.AsReadOnly();
         }
 

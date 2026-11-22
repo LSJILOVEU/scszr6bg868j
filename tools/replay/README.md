@@ -36,6 +36,14 @@ also has `qm`: triples of a leader's unit index, the squad's temper (1 normal, 2
 green, and draws a regrouping squad faint with dashed links. Such an export ends with `clips`, up to three stretches
 picked by `Clips.cs` (`k`: `rash`, `steady`, `regroup`; `team`, `leader`, `from` and `to` in ticks, `note`); the page
 shows a button for each that jumps there, circles the squad and plays the stretch at 1x.
+A setup whose combat pack has stances writes `p` on every frame: each unit's stance level (0 standing, 1 crouched,
+2 prone); the page draws a crouched unit as a smaller dot and a prone one as a flat oval.
+A frame that follows blasts has `x`: per blast its x, z and outer radius in decimetres and its team (BLAST-1); the page
+draws a ring of the outer radius for 1.5 s, fading. `blast-wall` is the BLAST-1 setup (run it with `EVERY=1`).
+`vspread-range` is the VSPREAD-1 setup: shots also spread up and down, which a view from above cannot show (a shot over a
+prone target's head looks like a hit). Its side view comes from the test `VSpread1RangeTests` with `VSPREAD1_SIDE_OUT` set
+to a file: every shot's lane, the height where its line crosses the target plane, and its outcome.
+Every frame carries `h`, the state hash after its tick (16 hex digits), so a picture of a frame can name the exact state.
 
 | Key | Meaning | Reads |
 |---|---|---|

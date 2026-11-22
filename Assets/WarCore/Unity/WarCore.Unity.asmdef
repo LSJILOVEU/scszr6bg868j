@@ -2,5 +2,8 @@
   "name": "WarCore.Unity",
   "rootNamespace": "WarCore.Unity",
   "references": ["WarCore.Presentation"],
-  "noEngineReferences": false
+  "noEngineReferences": false,
+  "versionDefines": [
+    { "name": "com.unity.modules.audio", "expression": "", "define": "WARCORE_AUDIO" }
+  ]
 }

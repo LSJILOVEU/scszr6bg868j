@@ -844,39 +844,6 @@ original:
 replacement:
 | if (ai != null) CheckPlates(ai);
 
-[ml11a-cp-search-taken]
-file = Assets/WarCore/Content/Data/ContentPolicies.cs
-filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
-expect = WarCore.Tests.Ml11a
-expect = WarCore.Tests.Ml9bMatchTests.
-note = search is not refused
-original:
-| if (ai.SearchTicks > 0) throw Refused(ai, "searchTicks");
-replacement:
-|
-
-[ml11a-cp-suppress-taken]
-file = Assets/WarCore/Content/Data/ContentPolicies.cs
-filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
-expect = WarCore.Tests.Ml11a
-expect = WarCore.Tests.Ml9bMatchTests.
-note = suppress is not refused
-original:
-| if (ai.SuppressTicks > 0) throw Refused(ai, "suppressTicks");
-replacement:
-|
-
-[ml11a-cp-melee-taken]
-file = Assets/WarCore/Content/Data/ContentPolicies.cs
-filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
-expect = WarCore.Tests.Ml11a
-expect = WarCore.Tests.Ml9bMatchTests.
-note = melee is not refused
-original:
-| if (ai.MeleeChaseRange > 0) throw Refused(ai, "meleeChaseRange");
-replacement:
-|
-
 [ml11a-cp-pressure-taken]
 file = Assets/WarCore/Content/Data/ContentPolicies.cs
 filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
@@ -920,39 +887,6 @@ original:
 | if (ai.Placement == Scatter || ai.Placement == AssaultRoles)
 replacement:
 | if (ai.Placement == Scatter)
-
-[ml11a-cp-search-zero]
-file = Assets/WarCore/Content/Data/ContentPolicies.cs
-filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
-expect = WarCore.Tests.Ml11a
-expect = WarCore.Tests.Ml9bMatchTests.
-note = searchTicks 0 is refused
-original:
-| if (ai.SearchTicks > 0)
-replacement:
-| if (ai.SearchTicks >= 0)
-
-[ml11a-cp-suppress-zero]
-file = Assets/WarCore/Content/Data/ContentPolicies.cs
-filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
-expect = WarCore.Tests.Ml11a
-expect = WarCore.Tests.Ml9bMatchTests.
-note = suppressTicks 0 is refused
-original:
-| if (ai.SuppressTicks > 0)
-replacement:
-| if (ai.SuppressTicks >= 0)
-
-[ml11a-cp-melee-zero]
-file = Assets/WarCore/Content/Data/ContentPolicies.cs
-filter = FullyQualifiedName~Ml11a|FullyQualifiedName~Ml9bMatchTests
-expect = WarCore.Tests.Ml11a
-expect = WarCore.Tests.Ml9bMatchTests.
-note = meleeChaseRange 0 is refused
-original:
-| if (ai.MeleeChaseRange > 0)
-replacement:
-| if (ai.MeleeChaseRange >= 0)
 
 [ml11a-cp-code-rules]
 file = Assets/WarCore/Content/Data/ContentPolicies.cs

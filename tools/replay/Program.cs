@@ -72,6 +72,9 @@ namespace WarCore.Replay
             var indexOf = new Dictionary<ulong, int>();
             for (int i = 0; i < keys.Count; i++) indexOf[keys[i]] = i;
             var bands = new int[keys.Count]; var inSquads = new int[2];
+            // STANCE-1: each unit's stance level per frame (0 = standing, 1 = crouched, 2 = prone), written only for a combat pack with stances.
+            bool stanced = recipe.Combat != null && recipe.Combat.HasStances;
+            var stanceOf = new int[keys.Count];
             var leash = new[] { new List<double>(), new List<double>() };
             // Tempers and regrouping: per unit its squad's temper and regroup mark, whether it is calm and how it stepped since
             // the previous recorded frame; per team the men in rash, steady and regrouping squads and, of the calm rash and
@@ -116,7 +119,7 @@ namespace WarCore.Replay
             first = true;
             foreach (var p in points) { if (!first) sb.Append(','); first = false; sb.Append('[').Append(F((float)p.x)).Append(',').Append(F((float)p.z)).Append(',').Append(F((float)p.r)).Append(']'); }
             sb.Append("],\"frames\":[");
-            var shots = new List<int>(); first = true;
+            var shots = new List<int>(); var blasts = new List<int>(); first = true;
             for (int tick = 0; tick <= maxTicks; tick++)
             {
                 if (tick > 0) { if (session.IsFinished) break; session.StepOnce(); }
@@ -128,6 +131,8 @@ namespace WarCore.Replay
                 }
                 foreach (ViewFire fire in frame.Fires)
                 { shots.Add(D(fire.X0)); shots.Add(D(fire.Z0)); shots.Add(D(fire.X1)); shots.Add(D(fire.Z1)); shots.Add(fire.Team); shots.Add(fire.Lethal ? 1 : 0); }
+                foreach (ViewBlast blast in frame.Blasts)
+                { blasts.Add(D(blast.X)); blasts.Add(D(blast.Z)); blasts.Add(D(blast.Radius)); blasts.Add(blast.Team); }
                 if (tick % every != 0 && !session.IsFinished) continue;
                 if (!first) sb.Append(','); first = false;
                 sb.Append("{\"t\":").Append(frame.Tick).Append(",\"o\":[");
@@ -145,8 +150,10 @@ namespace WarCore.Replay
                 {
                     if (i > 0) sb.Append(',');
                     bands[i] = -1;
+                    stanceOf[i] = 0;
                     if (frame.TryGet(keys[i], out ViewEntity e))
                     {
+                        stanceOf[i] = e.Stance;
                         if (e.Band != 0 && indexOf.TryGetValue(e.Band, out int lead))
                         {
                             bands[i] = lead; banded = true;
@@ -241,9 +248,12 @@ namespace WarCore.Replay
                     for (int l = 0; l < leaders.Count; l++)
                     { if (l > 0) sb.Append(','); sb.Append(leaders[l]).Append(',').Append(moods[leaders[l]]).Append(',').Append(rallies[leaders[l]]); }
                 }
+                if (stanced) sb.Append("],\"p\":[").Append(string.Join(",", stanceOf));
+                // Blasts since the previous recorded frame (x, z, outer radius in decimetres, team); written only when there are any.
+                if (blasts.Count > 0) sb.Append("],\"x\":[").Append(string.Join(",", blasts));
                 sb.Append("],\"s\":[").Append(string.Join(",", shots)).Append("],\"a\":[").Append(frame.Match.AliveOne).Append(',').Append(frame.Match.AliveTwo)
-                  .Append(',').Append(frame.Match.ReserveOne).Append(',').Append(frame.Match.ReserveTwo).Append("]}");
-                shots.Clear();
+                  .Append(',').Append(frame.Match.ReserveOne).Append(',').Append(frame.Match.ReserveTwo).Append("],\"h\":\"").Append(session.StateHash.ToString("X16")).Append("\"}");
+                shots.Clear(); blasts.Clear();
             }
             bool decided = session.IsFinished && session.Winner != 0;
             sb.Append("],\"metrics\":{\"attackRange\":").Append(N(Metrics.AttackRange)).Append(",\"slotRing\":").Append(N(ring)).Append(",\"decidedTick\":").Append(decided ? session.EndTick.ToString(CultureInfo.InvariantCulture) : "null");

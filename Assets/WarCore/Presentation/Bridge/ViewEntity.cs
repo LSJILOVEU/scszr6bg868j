@@ -23,10 +23,13 @@ namespace WarCore.Presentation
         public float Z { get; }
         // ML-10: the layer the unit stands on (0 = the ground, 1..N = a floor plate); always 0 on a map without plates.
         public int Layer { get; }
+        // STANCE-1: the unit's stance level now (0 = standing; always 0 in a world without stances).
+        public int Stance { get; }
 
         public ViewEntity(ulong key, int archetype, float x, float y, float z, int squad = 0, int team = 0, bool alive = true, int nerve = 0,
-            int layer = 0, ulong band = 0, int mood = 0, int regroup = 0)
+            int layer = 0, ulong band = 0, int stance = 0, int mood = 0, int regroup = 0)
         {
+            Stance = stance;
             Mood = mood;
             Regroup = regroup;
             Layer = layer;

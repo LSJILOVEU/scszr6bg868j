@@ -56,7 +56,7 @@ filter = FullyQualifiedName~WarCore.Tests.A3b
 expect = WarCore.Tests.A3bGateTests.Range_UsesTheWeaponsFalloffEnd
 note = the range gate is dropped: a point beyond the weapon's reach is fired at
 original:
-|                    || CombatSystem.Horizontal(lastKnown - here).LengthSquared > new SimVec3(range, default, default).LengthSquared
+|                    || combat.SpanSquared(here, lastKnown) > new SimVec3(range, default, default).LengthSquared
 replacement:
 
 [a3b-07-no-los]
@@ -75,7 +75,7 @@ filter = FullyQualifiedName~WarCore.Tests.A3b
 expect = WarCore.Tests.A3bSearchTests.WithSearch_NoShotWhileStandingOnP
 note = the arrival gate is dropped: a unit standing on the point fires at it
 original:
-|                if (SimpleAiSystem.Arrived(here, lastKnown)
+|                if ((SimpleAiSystem.Arrived(here, lastKnown) && !combat.Overhead(here, lastKnown))
 replacement:
 |                if (false
 
@@ -204,9 +204,9 @@ filter = FullyQualifiedName~WarCore.Tests.A3b
 expect = WarCore.Tests.A3bGateTests.Range_PointOnTheFalloffEnd_Fires
 note = a point exactly at the weapon's range is treated as out of range
 original:
-|                    || CombatSystem.Horizontal(lastKnown - here).LengthSquared > new SimVec3(range, default, default).LengthSquared
+|                    || combat.SpanSquared(here, lastKnown) > new SimVec3(range, default, default).LengthSquared
 replacement:
-|                    || CombatSystem.Horizontal(lastKnown - here).LengthSquared >= new SimVec3(range, default, default).LengthSquared
+|                    || combat.SpanSquared(here, lastKnown) >= new SimVec3(range, default, default).LengthSquared
 
 [a3b-22-keys-unsorted]
 file = Assets/WarCore/Battle/Ai/TargetSuppress.cs

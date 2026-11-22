@@ -122,6 +122,8 @@ namespace WarCore.Sim
         public int SkillCommandCount { get; }
         // The layer of the aim point (0 = the ground, 1..4096 = a floor plate); non-zero only in worlds with plates.
         public int AimLayer { get; }
+        // InputActions bits (stance request, reload, interact, give up); non-zero only in worlds with Sim.EnableInputActions.
+        public uint Actions { get; }
         public ReadOnlySpan<GameplayInputCommand> SkillCommands => skillCommands == null ? ReadOnlySpan<GameplayInputCommand>.Empty : skillCommands.AsSpan(0, SkillCommandCount);
         internal bool HasLayers => AimLayer != 0 || (Squad.HasValue && Squad.Value.TargetLayer != 0);
         internal bool HasValidSkillCommandShape => SkillCommandCount >= 0 && (skillCommands != null ? SkillCommandCount <= skillCommands.Length : SkillCommandCount == 0);
@@ -129,13 +131,16 @@ namespace WarCore.Sim
 
         // The frame borrows its bounded input block until Step starts; Step copies it before running systems.
         public InputFrame(SimVec3 move, SimVec3 aim, bool primaryAttack = false, bool block = false, bool @throw = false, int skillSlot = 0, SquadCommand? squad = null,
-            long gameplayTick = 0, GameplayInputCommand[] skillCommands = null, int skillCommandCount = -1, int aimLayer = 0)
+            long gameplayTick = 0, GameplayInputCommand[] skillCommands = null, int skillCommandCount = -1, int aimLayer = 0, uint actions = 0)
         {
             if (skillSlot < 0)
                 throw new ArgumentOutOfRangeException(nameof(skillSlot));
             if (aimLayer < 0 || aimLayer > PlateField.MaxPlates)
                 throw new ArgumentOutOfRangeException(nameof(aimLayer));
+            if (!InputActions.IsValid(actions))
+                throw new ArgumentOutOfRangeException(nameof(actions));
             AimLayer = aimLayer;
+            Actions = actions;
             Move = move;
             Aim = aim;
             PrimaryAttack = primaryAttack;
