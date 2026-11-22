@@ -370,7 +370,9 @@ namespace WarCore.Tests
         {
             M6World a = World(Units(), Pack()), b = World(Units(), Pack()), c = World(Units(), Pack());
             Go(a); Go(b); Go(c);
-            Assert.That((Saved(a.Reinforce), HashOf(a.Reinforce), a.Hash), Is.EqualTo((Saved(b.Reinforce), HashOf(b.Reinforce), b.Hash)), "equal before");
+            Assert.That(Saved(a.Reinforce), Is.EqualTo(Saved(b.Reinforce)), "equal bytes before");
+            Assert.That(HashOf(a.Reinforce), Is.EqualTo(HashOf(b.Reinforce)), "equal hash before");
+            Assert.That(a.Hash, Is.EqualTo(b.Hash), "equal worlds before");
             b.Reinforce.NoteTakeover(1);
             Assert.That(Counts(b, 1), Is.EqualTo((0L, 1L, -1L, 0L)));
             Assert.That(Saved(b.Reinforce), Is.Not.EqualTo(Saved(a.Reinforce)), "entered is in the bytes");

@@ -263,7 +263,9 @@ namespace WarCore.Tests
                 GoTo(w, died + Reentry - 1, start);
                 Assert.That((Counts(w, 1), Fielded(w, 1), Reserves(w, 1), DeadOf(w, 1)), Is.EqualTo(((death - 1L, death - 1L, 0L, death - 1L), 2, 6 - death, death)), "before the entry of death " + death);
                 Go(w, start);
-                Assert.That((Counts(w, 1), Fielded(w, 1), Reserves(w, 1)), Is.EqualTo(((death, death, 0L, death), 3, 5 - death)), "death " + death + " is replaced");
+                Assert.That(Counts(w, 1), Is.EqualTo(((long)death, (long)death, 0L, (long)death)), "death " + death + " is replaced: the counts");
+                Assert.That(Fielded(w, 1), Is.EqualTo(3), "death " + death + " is replaced: on the field");
+                Assert.That(Reserves(w, 1), Is.EqualTo(5 - death), "death " + death + " is replaced: waiting");
                 Assert.That((w.Sim.IsFinished, w.Match.EndReason, w.Match.Winner), Is.EqualTo((false, MatchEndReason.None, 0)));
             }
             GoTo(w, 709, start);
