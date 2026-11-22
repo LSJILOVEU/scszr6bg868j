@@ -68,6 +68,7 @@ namespace WarCore.Tests.Blast1
         [Test]
         public void TheRadiiAreChecked()
         {
+            Assert.That(() => BlastLook.Of(0f, 6f), Throws.Nothing);
             BlastLook coreless = BlastLook.Of(0f, 6f);
             Assert.That((coreless.HasCore, coreless.ScorchDiameter, coreless.DustRadius, coreless.RingRadius), Is.EqualTo((false, 0f, 0f, 6f)));
             Assert.That(() => BlastLook.Of(5.99f, 6f), Throws.Nothing);
