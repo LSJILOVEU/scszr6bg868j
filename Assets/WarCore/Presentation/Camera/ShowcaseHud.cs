@@ -12,13 +12,14 @@ namespace WarCore.Presentation
             "FIRE      left mouse button\n" +
             "DASH      Left Shift\n" +
             "BLOCK     Space or right mouse button\n" +
-            "GRENADE   G (preview only: it bursts but hurts nobody yet)\n" +
+            "GRENADE   G (real in stage 6; preview only elsewhere: it bursts but hurts nobody)\n" +
+            "ORDER     Y your team: stand, crouch, prone (stage 6)\n" +
             "CAMERA    Q E turn, R F tilt, wheel zoom\n" +
             "STAGE     Tab next, Backspace restart, P pause\n" +
             "SHOW      V squad lines, M missing list, H this help\n" +
             "SOUND     N on or off";
 
-        public const string GrenadeStub = "GRENADE PREVIEW: looks only. It bursts but hurts nobody; the real grenade is not in the game yet.";
+        public const string GrenadeStub = "GRENADE PREVIEW: looks only. It bursts but hurts nobody here; stage 6 has the real one.";
 
         // Stage line, both teams, the points, the player's unit and its respawn or takeover line.
         // status is null when no unit is controlled; inFlight is the number of projectiles in the air.
