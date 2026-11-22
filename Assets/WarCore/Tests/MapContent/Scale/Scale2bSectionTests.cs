@@ -154,6 +154,24 @@ namespace WarCore.Tests
             Accepted("railingMm", 1150); RefusedOnly("railingMm", 1151);
         }
 
+        // r is the pack's body radius (HC-1): a 0.2 m body moves the bounds that read r (2r = 26214, min(E, M) - r = 85197,
+        // max(E, M) + r = 111411 raw), past where the 0.25 m default would put them.
+        [Test]
+        public void SC7c_BoundsReadTheBodyRadius()
+        {
+            string thin = Layer("scale2b-thin", "rwr-body", "\"combat\": { \"body\": { \"height\": 1.75, \"eye\": 1.5, \"muzzle\": 1.5, \"radius\": 0.2 } }");
+            Assert.That(Loads(thin).Body.Value.Radius.Raw, Is.EqualTo(13107));
+            void Accepted(string field, int mm) =>
+                Assert.That(Loads(Layer("scale2b-test", "scale2b-thin", Scale((field, mm))), thin).SectionOrNull<ScaleRules>(), Is.Not.Null, field + " " + mm);
+            void RefusedOnly(string field, int mm) =>
+                Assert.That(Fields(Refused(Layer("scale2b-test", "scale2b-thin", Scale((field, mm))), thin)), Is.EqualTo(new[] { field }), field + " " + mm);
+            Accepted("lowWallMm", 400); RefusedOnly("lowWallMm", 399);
+            Accepted("lowWallMm", 1300); RefusedOnly("lowWallMm", 1301);
+            Accepted("windowSillMm", 400); RefusedOnly("windowSillMm", 399);
+            Accepted("windowSillMm", 1300); RefusedOnly("windowSillMm", 1301);
+            Accepted("windowTopMm", 1700); RefusedOnly("windowTopMm", 1699);
+        }
+
         // SC8: the high wall is at least the standing height.
         [Test]
         public void SC8_HighWall()

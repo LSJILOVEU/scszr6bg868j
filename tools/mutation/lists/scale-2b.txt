@@ -52,6 +52,16 @@ original:
 replacement:
 | s.HighWallRaw <= height
 
+[scale2b-radius]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC7c_BoundsReadTheBodyRadius
+note = the bounds use the default radius, not the body's
+original:
+| long r = body.Radius.Raw,
+replacement:
+| long r = CombatSection.UnitRadiusRaw,
+
 [scale2b-sill-lower]
 file = Assets/WarCore/Content/ScaleRules.cs
 filter = FullyQualifiedName~Scale2b
@@ -501,9 +511,9 @@ filter = FullyQualifiedName~Scale2b
 expect = WarCore.Tests.Scale2bSectionTests.SC3_ShippedNumbersAndEvenPadding
 note = the section is not in the table
 original:
-| new TraversalSection(), new ScaleSection() }
+| new StatsSection(), new ScaleSection() }
 replacement:
-| new TraversalSection() }
+| new StatsSection() }
 
 [scale2b-of-null]
 file = Assets/WarCore/Content/ScaleRules.cs

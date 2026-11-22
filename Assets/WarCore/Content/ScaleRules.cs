@@ -90,7 +90,7 @@ namespace WarCore.Content
             return (int)n;
         }
 
-        // The section's relations against one body (raw). r = unit radius; E, M, H = the standing body's eye, muzzle, height;
+        // The section's relations against one body (raw). r = the body's radius (HC-1); E, M, H = the standing body's eye, muzzle, height;
         // L = the highest eye or muzzle of any stance, and without stances L + r is 2r; the slope is the layer's walkable
         // slope (its terrain rules, else the height field's 2/1). One text per failing row, in the documented order
         // (docs/world-scale.md, section "Content section scale"); empty when every relation holds.
@@ -98,7 +98,7 @@ namespace WarCore.Content
             TraversalRules traversal)
         {
             var problems = new List<string>();
-            long r = CombatSection.UnitRadiusRaw, eye = body.Eye.Raw, muzzle = body.Muzzle.Raw, height = body.Height.Raw;
+            long r = body.Radius.Raw, eye = body.Eye.Raw, muzzle = body.Muzzle.Raw, height = body.Height.Raw;
             long low = Math.Min(eye, muzzle), high = Math.Max(eye, muzzle);
             long lowest = r;
             string lowestText = "2r";

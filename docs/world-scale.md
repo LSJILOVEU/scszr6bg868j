@@ -104,7 +104,7 @@ byte for byte as before. Tests: `Assets/WarCore/Tests/MapContent/Scale/Scale2b*.
 
 ### Wall height base (relations checked when a layer loads)
 
-r = unit radius 0.25 m; E, M, H = the standing body's eye, muzzle and height; L = the highest eye or muzzle of any stance
+r = the body's radius (`combat.body.radius`, default 0.25 m); E, M, H = the standing body's eye, muzzle and height; L = the highest eye or muzzle of any stance
 (without stances L + r is 2r); slope = the layer's walkable slope (its terrain rules, else the height field's 2/1). Low,
 chest and high walls are judged against each pack's own body; the base fixes no metre value for them.
 
@@ -178,7 +178,7 @@ Status after SCALE-2: each item says what changed or where it went.
 
 1. Worlds with a body now draw and pick it at the simulated size (`BodySizes`). Old layers without a body still draw 1 m (`AimPick.BodyHeight`): their collider is a 1 m capsule centred on the foot, so there is no simulated top to follow, and their pictures and goldens stay unchanged.
 2. With a body, silhouettes and layer cutting use the simulated top and see-through zones the simulated eye. Without a body they still use 1 m as head height while the simulated eye is 0.5 m, unchanged for the same reason as 1.
-3. The soldier radius is written in three places and means the same in three more; only W03 ties them together. Status: not changed, candidate pool RADIUS-ONE (W03 ties them).
+3. The soldier radius is written in three places and means the same in three more; only W03 ties them together. Status: HC-1 made it one pack key, `combat.body.radius` (default `BodyRadius.DefaultRaw`), and the `scale` relations read it.
 4. The comment on the window prefab computed with a 1 m sill; the default is 0.9 m and has no formula. Status: fixed (the comment says 0.9 m; the arithmetic did not change).
 5. The pressure range value in the code was not checked. Status: `ai.pressureDeathRadiusMm` and `pressureNearRadiusMm`: only `rwr-showcase` sets them, 3000 / 3000; code not changed.
 6. Plate slope has three limits (height field 2/1, gate 5/3, layer rule such as 3/4); a stair legal under one can be refused by another. Status: the effective slope is min(layer, 5/3), and 2/1 is the height field's bound when a layer has no rule; the `scale` stair check is that formula.
