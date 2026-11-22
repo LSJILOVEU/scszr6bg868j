@@ -80,13 +80,15 @@ namespace WarCore.Presentation
                 FirstLayer(d), "wall"));
         };
 
-        // MapPrefabs.Window (default sill and opening) stamped as "window-<n>", with the combat body of the description's layer.
+        // MapPrefabs.Window (sill and opening top from the layer's scale, defaults without one) stamped as "window-<n>", with the
+        // combat body of the description's layer.
         internal static Action<MapEdit> Window(int startX, int startZ, bool alongX, int length, int windowStart, int windowWidth, long topRaw) => e =>
         {
             MapDesc d = e.Current;
             CombatBody body = BodyOf(d.Pack);
+            ScaleRules scale = ScaleOf(d.Pack);
             e.Stamp(MapPrefabs.Window(d, FreeInstance(d, "window"), new MapXZ(startX, startZ), alongX, length, windowStart, windowWidth, topRaw,
-                FirstLayer(d), "wall", body));
+                FirstLayer(d), "wall", body, scale.WindowSillRaw, scale.WindowTopRaw));
         };
 
         // Removes every entry whose src names the instance (hand-edited ones too), each leaving its tombstone. Heights,
@@ -139,6 +141,9 @@ namespace WarCore.Presentation
             if (d.Layers.Count == 0) throw new InvalidOperationException("the description has no layer");
             return d.Layers[0].Name;
         }
+
+        // The layer's section "scale", or ScaleRules.Default when it has none.
+        internal static ScaleRules ScaleOf(string pack) => ScaleRules.Of(ContentCatalog.Find().Load(pack));
 
         internal static CombatBody BodyOf(string pack)
         {

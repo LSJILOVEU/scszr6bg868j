@@ -1,0 +1,649 @@
+# SCALE-2b: the content section "scale" (Tests/MapContent/Scale/Scale2b*.cs). Each entry moves one bound by one raw
+# or one comparison, drops one check, reads one value wrongly or swaps one value; the named test must fail on an assertion.
+# Constants replaced by equal literals are left out (const values are inlined, so the build would not change).
+
+[scale2b-low-lower]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC6_LowWall
+note = the low wall may not equal the highest stance eye or muzzle + r
+original:
+| s.LowWallRaw < lowest + r ||
+replacement:
+| s.LowWallRaw <= lowest + r ||
+
+[scale2b-low-upper]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC6_LowWall
+note = the low wall may not equal min(eye, muzzle) - r
+original:
+| s.LowWallRaw > low - r)
+replacement:
+| s.LowWallRaw >= low - r)
+
+[scale2b-chest-low]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC7_ChestWall
+note = a chest wall as high as the low wall is taken
+original:
+| s.ChestWallRaw <= s.LowWallRaw
+replacement:
+| s.ChestWallRaw < s.LowWallRaw
+
+[scale2b-chest-eye]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC7_ChestWall
+note = a chest wall at min(eye, muzzle) is taken
+original:
+| s.ChestWallRaw >= low)
+replacement:
+| s.ChestWallRaw > low)
+
+[scale2b-high]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC8_HighWall
+note = a high wall exactly the body height is refused
+original:
+| s.HighWallRaw < height
+replacement:
+| s.HighWallRaw <= height
+
+[scale2b-sill-lower]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bBuildTests.SC9_WindowBounds
+note = a sill of exactly 2r is refused
+original:
+| s.WindowSillRaw < 2 * r
+replacement:
+| s.WindowSillRaw <= 2 * r
+
+[scale2b-sill-padding]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bBuildTests.SC9_WindowBounds
+note = no raw left for the prefab's odd-height padding
+original:
+| s.WindowSillRaw + 1 > low - r
+replacement:
+| s.WindowSillRaw > low - r
+
+[scale2b-top-lower]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bBuildTests.SC9_WindowBounds
+expect = WarCore.Tests.Scale2bSectionTests.SC7b_EyeAndMuzzleDiffer
+note = a window top of exactly max(eye, muzzle) + r is refused
+original:
+| s.WindowTopRaw < high + r
+replacement:
+| s.WindowTopRaw <= high + r
+
+[scale2b-top-upper]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bBuildTests.SC9_WindowBounds
+note = a window top of exactly storey - plate is refused
+original:
+| s.WindowTopRaw > s.StoreyRaw - s.PlateRaw)
+replacement:
+| s.WindowTopRaw >= s.StoreyRaw - s.PlateRaw)
+
+[scale2b-top-no-upper]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bBuildTests.SC9_WindowBounds
+note = the window top may cut into the floor above
+original:
+| || s.WindowTopRaw > s.StoreyRaw - s.PlateRaw)
+replacement:
+| )
+
+[scale2b-plate]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bBuildTests.SC10_Storeys
+note = a 0.5 m plate is refused
+original:
+| s.PlateRaw < WcMapPlate.MinThickRaw
+replacement:
+| s.PlateRaw <= WcMapPlate.MinThickRaw
+
+[scale2b-storey]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bBuildTests.SC10_Storeys
+note = storey - plate of exactly the headroom is refused
+original:
+| s.StoreyRaw - s.PlateRaw < WallSpan.ClearanceRaw
+replacement:
+| s.StoreyRaw - s.PlateRaw <= WallSpan.ClearanceRaw
+
+[scale2b-stair-layer-edge]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bBuildTests.SC11_StairSlope
+note = a step exactly at the layer slope is refused
+original:
+| (long)s.StairRiseMm * slopeDen > slopeNum * s.StairRunMm
+replacement:
+| (long)s.StairRiseMm * slopeDen >= slopeNum * s.StairRunMm
+
+[scale2b-stair-only-plate]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bBuildTests.SC11_StairSlope
+note = only 5/3 is checked, not the layer slope
+original:
+| (long)s.StairRiseMm * slopeDen > slopeNum * s.StairRunMm
+replacement:
+| false
+
+[scale2b-stair-only-layer]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bBuildTests.SC11_StairSlope
+note = only the layer slope is checked, not 5/3
+original:
+| (long)s.StairRiseMm * MapGate.PlateSlopeDen > (long)MapGate.PlateSlopeNum * s.StairRunMm
+replacement:
+| false
+
+[scale2b-stair-plate-edge]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bBuildTests.SC11_StairSlope
+note = a step exactly at 5/3 is refused
+original:
+| (long)s.StairRiseMm * MapGate.PlateSlopeDen > (long)MapGate.PlateSlopeNum
+replacement:
+| (long)s.StairRiseMm * MapGate.PlateSlopeDen >= (long)MapGate.PlateSlopeNum
+
+[scale2b-railing-lower]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC12_RailingAndStreets
+note = a railing of exactly 2r is refused
+original:
+| s.RailingRaw < 2 * r
+replacement:
+| s.RailingRaw <= 2 * r
+
+[scale2b-railing-upper]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC12_RailingAndStreets
+note = a railing at min(eye, muzzle) - r is refused
+original:
+| s.RailingRaw > low - r)
+replacement:
+| s.RailingRaw >= low - r)
+
+[scale2b-street]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC12_RailingAndStreets
+note = a street narrower than one cell is taken
+original:
+| if (mm < 1000)
+replacement:
+| if (mm < 999)
+
+[scale2b-l-eye-only]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC6_LowWall
+note = L reads only the stances' eyes
+original:
+| Math.Max(stance.Body.Eye.Raw, stance.Body.Muzzle.Raw)
+replacement:
+| stance.Body.Eye.Raw
+
+[scale2b-l-first-only]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC6_LowWall
+note = L reads only the first stance
+original:
+| foreach (StanceDef stance in stances) lowest =
+replacement:
+| foreach (StanceDef stance in new[] { stances[0] }) lowest =
+
+[scale2b-l-standing]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC6_LowWall
+note = L includes the standing eye
+original:
+| lowest = 0;
+replacement:
+| lowest = eye;
+
+[scale2b-l-no-stances]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC6_LowWall
+note = without stances the lower bound is not 2r
+original:
+| long lowest = r;
+replacement:
+| long lowest = 0;
+
+[scale2b-min-eye]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC7b_EyeAndMuzzleDiffer
+note = min(eye, muzzle) always takes the eye
+original:
+| long low = Math.Min(eye, muzzle)
+replacement:
+| long low = eye
+
+[scale2b-min-muzzle]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC7b_EyeAndMuzzleDiffer
+note = min(eye, muzzle) always takes the muzzle
+original:
+| long low = Math.Min(eye, muzzle)
+replacement:
+| long low = muzzle
+
+[scale2b-max-eye]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC7b_EyeAndMuzzleDiffer
+note = max(eye, muzzle) always takes the eye
+original:
+| high = Math.Max(eye, muzzle);
+replacement:
+| high = eye;
+
+[scale2b-max-muzzle]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC7b_EyeAndMuzzleDiffer
+note = max(eye, muzzle) always takes the muzzle
+original:
+| high = Math.Max(eye, muzzle);
+replacement:
+| high = muzzle;
+
+[scale2b-pad-low]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC3_ShippedNumbersAndEvenPadding
+note = the low wall is not padded
+original:
+| LowWallRaw = Even(Raw(lowWallMm));
+replacement:
+| LowWallRaw = Raw(lowWallMm);
+
+[scale2b-pad-chest]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC3_ShippedNumbersAndEvenPadding
+note = the chest wall is not padded
+original:
+| ChestWallRaw = Even(Raw(chestWallMm));
+replacement:
+| ChestWallRaw = Raw(chestWallMm);
+
+[scale2b-pad-high]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC3_ShippedNumbersAndEvenPadding
+note = the high wall is not padded
+original:
+| HighWallRaw = Even(Raw(highWallMm));
+replacement:
+| HighWallRaw = Raw(highWallMm);
+
+[scale2b-pad-railing]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC3_ShippedNumbersAndEvenPadding
+note = the railing is not padded
+original:
+| RailingRaw = Even(Raw(railingMm));
+replacement:
+| RailingRaw = Raw(railingMm);
+
+[scale2b-pad-storey]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC3_ShippedNumbersAndEvenPadding
+note = the storey is not padded
+original:
+| StoreyRaw = Even(Raw(storeyMm));
+replacement:
+| StoreyRaw = Raw(storeyMm);
+
+[scale2b-pad-plate]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC3_ShippedNumbersAndEvenPadding
+note = the plate is padded
+original:
+| PlateRaw = Raw(plateMm);
+replacement:
+| PlateRaw = Even(Raw(plateMm));
+
+[scale2b-pad-sill]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC3_ShippedNumbersAndEvenPadding
+note = the sill is padded
+original:
+| WindowSillRaw = Raw(windowSillMm);
+replacement:
+| WindowSillRaw = Even(Raw(windowSillMm));
+
+[scale2b-pad-top]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC3_ShippedNumbersAndEvenPadding
+note = the window top is padded
+original:
+| WindowTopRaw = Raw(windowTopMm);
+replacement:
+| WindowTopRaw = Even(Raw(windowTopMm));
+
+[scale2b-pad-down]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC3_ShippedNumbersAndEvenPadding
+note = odd values are padded down
+original:
+| ? raw + 1 : raw
+replacement:
+| ? raw - 1 : raw
+
+[scale2b-trv-rise-only]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bEditorTests.SC13_TraversalAlignment
+note = the low wall check reads only RiseMax, not Matches
+original:
+| traversal.FirstMatch(TraversalShape.Over, s.LowWallRaw, s.LowWallRaw, LinkDerive.NoGap) < 0
+replacement:
+| traversal[0].RiseMax < s.LowWallRaw
+
+[scale2b-trv-first-only]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bEditorTests.SC13_TraversalAlignment
+note = the low wall check reads only the first kind
+original:
+| traversal.FirstMatch(TraversalShape.Over, s.LowWallRaw, s.LowWallRaw, LinkDerive.NoGap) < 0
+replacement:
+| !traversal[0].Matches(TraversalShape.Over, s.LowWallRaw, s.LowWallRaw, LinkDerive.NoGap)
+
+[scale2b-trv-edge-counts]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bEditorTests.SC13_TraversalAlignment
+note = edge kinds alone turn the check on
+original:
+| if (traversal[i].Shape == TraversalShape.Over) return true;
+replacement:
+| return true;
+
+[scale2b-trv-high-index]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bEditorTests.SC13_TraversalAlignment
+note = a high wall matching the first kind is not reported
+original:
+| if (k >= 0)
+replacement:
+| if (k > 0)
+
+[scale2b-trv-not-read]
+file = Assets/WarCore/Content/Data/Sections/ScaleSection.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bEditorTests.SC13_TraversalAlignment
+note = the section does not read the traversal table
+original:
+| b.PublishedOrNull<TraversalRules>()
+replacement:
+| null
+
+[scale2b-published-null]
+file = Assets/WarCore/Content/Data/Sections/SectionBuild.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bEditorTests.SC13_TraversalAlignment
+note = PublishedOrNull never finds a value
+original:
+| if (value is T typed) return typed;
+|             return null;
+replacement:
+| if (value is T typed) return null;
+|             return null;
+
+[scale2b-one-error]
+file = Assets/WarCore/Content/Data/Sections/ScaleSection.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC14_EveryFailureInOneMessage
+note = only the first failure is reported
+original:
+| string.Join("; ", problems)
+replacement:
+| problems[0]
+
+[scale2b-no-body]
+file = Assets/WarCore/Content/Data/Sections/ScaleSection.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC5_ScaleNeedsABody
+note = a layer without a body is not refused clearly
+original:
+| if (!b.Body.HasValue) throw
+replacement:
+| if (false) throw
+
+[scale2b-missing-default]
+file = Assets/WarCore/Content/Data/Sections/ScaleSection.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC4_FormatErrorsNameTheField
+note = a missing field takes a default
+original:
+| mm[i] = r.Int(Fields[i], 1, ScaleRules.MaxMm);
+replacement:
+| mm[i] = r.Has(Fields[i]) ? r.Int(Fields[i], 1, ScaleRules.MaxMm) : 1000;
+
+[scale2b-range-zero]
+file = Assets/WarCore/Content/Data/Sections/ScaleSection.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC4_FormatErrorsNameTheField
+note = 0 mm is read
+original:
+| r.Int(Fields[i], 1, ScaleRules.MaxMm)
+replacement:
+| r.Int(Fields[i], 0, ScaleRules.MaxMm)
+
+[scale2b-range-max]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC4_FormatErrorsNameTheField
+note = 100001 mm is read
+original:
+| public const int MaxMm = 100000;
+replacement:
+| public const int MaxMm = 100001;
+
+[scale2b-no-done]
+file = Assets/WarCore/Content/Data/Sections/ScaleSection.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC4_FormatErrorsNameTheField
+note = an unknown field is taken
+original:
+| r.Done();
+replacement:
+| ;
+
+[scale2b-stage-zero]
+file = Assets/WarCore/Content/Data/Sections/ScaleSection.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bBuildTests.SC11_StairSlope
+note = built before the terrain rules, so the slope is always 2/1
+original:
+| public override int BuildStage => 2;
+replacement:
+| public override int BuildStage => 0;
+
+[scale2b-not-registered]
+file = Assets/WarCore/Content/Data/SectionTable.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC3_ShippedNumbersAndEvenPadding
+note = the section is not in the table
+original:
+| new TraversalSection(), new ScaleSection() }
+replacement:
+| new TraversalSection() }
+
+[scale2b-of-null]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bSectionTests.SC1_OldLayersPublishNothingAndGetTheDefault
+note = Of gives null without the section
+original:
+| return pack.SectionOrNull<ScaleRules>() ?? Default;
+replacement:
+| return pack.SectionOrNull<ScaleRules>();
+
+[scale2b-stair-one]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bBuildTests.SC11_StairCellsFloorRange
+expect = WarCore.Tests.Scale2bBuildTests.SC17_StandardBuildings
+note = one floor does not get 1
+original:
+| if (floors == 1) return 1;
+replacement:
+| if (floors == 1) return 2;
+
+[scale2b-stair-floor-range]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bBuildTests.SC11_StairCellsFloorRange
+note = 0 floors is taken
+original:
+| if (floors < 1 ||
+replacement:
+| if (floors < 0 ||
+
+[scale2b-stair-no-stack]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bBuildTests.SC11_StairCells
+note = three floors do not keep stairs apart
+original:
+| if (floors >= 3) k = Math.Min(
+replacement:
+| if (floors >= 4) k = Math.Min(
+
+[scale2b-stair-zero]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bBuildTests.SC11_StairCells
+note = a rise of 0 raw per cell is not refused
+original:
+| if (k <= 0) throw
+replacement:
+| if (k < 0) throw
+
+[scale2b-stair-max]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bBuildTests.SC11_StairCells
+note = 509 cells are taken
+original:
+| if (n > MaxStairCells) throw
+replacement:
+| if (n > MaxStairCells + 1) throw
+
+[scale2b-stair-int]
+file = Assets/WarCore/Content/ScaleRules.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bBuildTests.SC11_StairCells
+note = rise * 65536 is computed in int
+original:
+| long k = (long)StairRiseMm * SimFix.Scale / StairRunMm;
+replacement:
+| long k = StairRiseMm * (int)SimFix.Scale / StairRunMm;
+
+[scale2b-editor-window-default]
+file = Assets/WarCore/Presentation/Maps/MapEntrySteps.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bEditorTests.SC15_EditorWindowsReadTheScale
+note = the editor window keeps the prefab defaults
+original:
+| FirstLayer(d), "wall", body, scale.WindowSillRaw, scale.WindowTopRaw));
+replacement:
+| FirstLayer(d), "wall", body));
+
+[scale2b-editor-window-on-default]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Buildings.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bEditorTests.SC15_EditorWindowsReadTheScale
+note = the editor window on a plate keeps the prefab defaults
+original:
+| "wall", body, scale.WindowSillRaw, scale.WindowTopRaw));
+replacement:
+| "wall", body));
+
+[scale2b-editor-scale-default]
+file = Assets/WarCore/Presentation/Maps/MapEntrySteps.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bEditorTests.SC15_EditorWindowsReadTheScale
+expect = WarCore.Tests.Scale2bEditorTests.SC18_EditorReadOut
+note = the editor reads Default instead of the layer
+original:
+| ScaleRules.Of(ContentCatalog.Find().Load(pack))
+replacement:
+| ScaleRules.Default
+
+[scale2b-readout-swap]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Scale.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bEditorTests.SC18_EditorReadOut
+note = two read-out fields are swapped
+original:
+| s.LaneRaw, s.SidewalkRaw, s.AlleyRaw
+replacement:
+| s.SidewalkRaw, s.LaneRaw, s.AlleyRaw
+
+[scale2b-standard-door]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Scale.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bBuildTests.SC17_StandardBuildings
+note = the standard door is two cells wide
+original:
+| doorAt, 1, stairAlongX
+replacement:
+| doorAt, 2, stairAlongX
+
+[scale2b-standard-plate]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Scale.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bBuildTests.SC17_StandardBuildings
+expect = WarCore.Tests.Scale2bEditorTests.SC18_EditorReadOut
+note = the standard building takes another value as its plate
+original:
+| s.StoreyRaw, s.PlateRaw, doorSide
+replacement:
+| s.StoreyRaw, s.LowWallRaw, doorSide
+
+[scale2b-standard-stair]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Scale.cs
+filter = FullyQualifiedName~Scale2b
+expect = WarCore.Tests.Scale2bBuildTests.SC17_StandardBuildings
+note = the stair length ignores the floor count
+original:
+| s.StairCells(floors)
+replacement:
+| s.StairCells(2)

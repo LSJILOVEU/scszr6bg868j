@@ -57,7 +57,7 @@ namespace WarCore.Content.MapTools
         // highest corner of the window cells, as for the door. Sill top = floor + sillRaw, opening top = floor + openingRaw
         // (the lintel's underside; its top is topRaw). Frames stand on floorRaw like the door's.
         // Placeholders (a feel choice, change here only): sill 0.9 m, opening top 2.0 m. With muzzle 1.5 m, radius 0.25 m and
-        // a 1 m sill the steepest shot out is (1.5 - 0.9) / 1.25 = 0.48 down and (2.0 - 1.5) / 1.25 = 0.4 up.
+        // a 0.9 m sill the steepest shot out is (1.5 - 0.9) / 1.25 = 0.48 down and (2.0 - 1.5) / 1.25 = 0.4 up.
         // Gate (r = unit radius, E = eye, M = muzzle of the body): sill >= 2r (lower is a threshold, use a door);
         // sill <= min(E, M) - r (sight and level shots clear the sill); opening top >= max(E, M) + r. Each bound inclusive.
         // On a flat map (no height table) the sill is a floor wall; on terrain it is a raised wall whose bottom is the lowest
