@@ -27,12 +27,18 @@ namespace WarCore.Presentation
         public string GrenadeBlast { get; }
         // SHOW-2: the squad a stance order (Y) goes to, or 0 where the stage takes no stance orders.
         public int OrderSquad { get; }
+        // AIM-2: the content layer the stage's combat pack comes from (not the palette layer: house and terrain draw with the
+        // playtest layer's colours but fight with another pack). Its "pick" section, if any, is the mouse's reach; null for a
+        // stage nobody aims in (the lineup), which then has no reach.
+        public string CombatLayer { get; }
 
         internal ShowcaseStage(string id, string title, float zoom, string paletteLayer, string[] shows, Func<byte[]> map, Func<WorldRecipe> recipe,
-            Func<(long AtTick, PlayerInput Input)[]> script, Func<BridgeCommand[]> commands = null, string grenadeBlast = null, int orderSquad = 0)
+            Func<(long AtTick, PlayerInput Input)[]> script, Func<BridgeCommand[]> commands = null, string grenadeBlast = null, int orderSquad = 0,
+            string combatLayer = null)
         {
             Id = id; Title = title; Zoom = zoom; Shows = Array.AsReadOnly(shows); this.map = map; this.recipe = recipe; this.script = script;
             this.paletteLayer = paletteLayer;
+            CombatLayer = combatLayer;
             this.commands = commands ?? (() => Array.Empty<BridgeCommand>());
             GrenadeBlast = grenadeBlast; OrderSquad = orderSquad;
         }
@@ -48,6 +54,10 @@ namespace WarCore.Presentation
             for (int i = 0; i < teams.Length; i++) teams[i] = palette.Team[i];
             return new ShowcaseColors(teams, palette.Neutral, palette.NoGround, palette.StructSide, palette.StructTop, surfaces);
         }
+
+        // AIM-2: the mouse's reach from the combat layer's pick section, or null when it has none (the old pick). Read it once
+        // per stage, not every frame.
+        public PickReach Reach() => CombatLayer == null ? null : PickReach.Of(ContentCatalog.Find().Load(CombatLayer));
 
         public byte[] MapBytes() => map();
         public WorldRecipe Recipe() => recipe();
@@ -96,6 +106,9 @@ namespace WarCore.Presentation
     {
         public const string BattleLayer = "rwr-showcase", BulletsLayer = "rwr-showcase-bullets";
         public const string HouseAiLayer = "rwr-ai-playtest", TerrainLayer = "rwr-ai-playtest", AncientLayer = "ancient-field";
+        // AIM-2: the house stage fights with the body and the mouse reach; the legacy house (LegacyHouse) keeps the map's pack.
+        public const string HouseLayer = "rwr-showcase-house";
+        private const string HousePack = "\"pack\": \"rwr-m6\"";
         private const string LanesMap = "Assets/WarCore/Maps/lanes-playtest.map.json";
         private const string LanesPack = "\"pack\": \"rwr-m6\"";
         // The speed the map-file route gives a soldier whose unit type names none (MapRecipe).
@@ -109,29 +122,24 @@ namespace WarCore.Presentation
                 "AI: squads, spread attack, bounding, pressure (pinned / broken), cover, bursts, memory",
                 "Player: rifle, dash, block, respawn into a reserve",
                 "Rifles hit on the tick they fire (tracer lines)",
-            }, () => Lanes(BattleLayer).WcMapBytes, () => Battle(BattleLayer), BattleScript),
+            }, () => Lanes(BattleLayer).WcMapBytes, () => Battle(BattleLayer), BattleScript, combatLayer: BattleLayer),
             new ShowcaseStage("bullets", "Flying bullets", 22f, BulletsLayer, new[]
             {
                 "The open battle with rifles that fire projectiles (150 m/s)",
                 "A bullet flies tick by tick and stops on the first body, wall or ground",
                 "Known gap: the pressure system does not react to projectiles, so nobody gets pinned here",
-            }, () => Lanes(BulletsLayer).WcMapBytes, () => Battle(BulletsLayer), BattleScript),
-            new ShowcaseStage("house", "House assault", 12f, HouseAiLayer, new[]
-            {
-                "Two-storey house with a stair; the point upstairs is reached by the stair only; 8 a side and 12 in reserve",
-                "AI climbs, searches, suppresses and chases by floor",
-                "Walls between the camera and the player fade; covered team mates show as silhouettes",
-            }, () => House().WcMapBytes, HouseRecipe, HouseScript),
+            }, () => Lanes(BulletsLayer).WcMapBytes, () => Battle(BulletsLayer), BattleScript, combatLayer: BulletsLayer),
+            HouseStage(HouseLayer),
             new ShowcaseStage("terrain", "Hills and mud", 16f, TerrainLayer, new[]
             {
                 "Height-field terrain: ridge, cliff band, plateau; road is fast, mud is slow",
                 "10 a side on the field and 30 in reserve; AI with memory, search and bursts",
-            }, TerrainDemo.MapBytes, TerrainRecipe, () => TerrainPlayerDemo.Script()),
+            }, TerrainDemo.MapBytes, TerrainRecipe, () => TerrainPlayerDemo.Script(), combatLayer: WarCore.Content.Rwr.RwrPack.M6Layer),
             new ShowcaseStage("melee", "Ancient melee", 16f, AncientLayer, new[]
             {
                 "Second cartridge: swords, spears and shields, 60 a side and 30 in reserve, no guns",
                 "Player: a guard (sword and shield); AI raises its shield against swings",
-            }, () => ShowcaseField.MapBytes("ancient.ground"), AncientRecipe, AncientScript),
+            }, () => ShowcaseField.MapBytes("ancient.ground"), AncientRecipe, AncientScript, combatLayer: AncientLayer),
             new ShowcaseStage("hamlet", "Swiss valley hamlet", 18f, HamletLayer, new[]
             {
                 "Real terrain: a 160 m crop of the Emmental valley with a hamlet; 62 walls, 5 points, 40 + 20 reserves a side",
@@ -140,7 +148,7 @@ namespace WarCore.Presentation
                 "G throws a real grenade: it bursts 1.1 s later and hurts everyone within 6 m, walls shield",
                 "Y orders your team's soldiers to stand, crouch or go prone (lower is slower, steadier and harder to see)",
                 "Known gap: the AI's cover rule refuses a height-field map, so nobody seeks cover here",
-            }, () => Hamlet().WcMapBytes, HamletRecipe, HamletScript, HamletCommands, HamletBlast, HamletOrderSquad),
+            }, () => Hamlet().WcMapBytes, HamletRecipe, HamletScript, HamletCommands, HamletBlast, HamletOrderSquad, HamletLayer),
         });
 
         // Not in the code base yet. The HUD lists these so nobody mistakes a gap for a bug.
@@ -205,16 +213,36 @@ namespace WarCore.Presentation
             (480L, new PlayerInput(1000, 0, 100000, 70000)),
         };
 
-        private static MapBakeResult House() => MapBake.Run(PlateAssaultMap.DescBytes());
+        // AIM-2: the house stage as it was before AIM-2 (the map's own pack, rwr-m6: no body, no reach), kept out of Stages for
+        // the tests that pin the old pick on a stage without a body.
+        internal static ShowcaseStage LegacyHouse { get; } = HouseStage(WarCore.Content.Rwr.RwrPack.M6Layer);
+
+        internal static ShowcaseStage HouseStage(string pack) => new ShowcaseStage("house", "House assault", 12f, HouseAiLayer, new[]
+            {
+                "Two-storey house with a stair; the point upstairs is reached by the stair only; 8 a side and 12 in reserve",
+                "AI climbs, searches, suppresses and chases by floor",
+                "Walls between the camera and the player fade; covered team mates show as silhouettes",
+            }, () => House(pack).WcMapBytes, () => HouseRecipe(pack), HouseScript, combatLayer: pack);
+
+        // The demo house with its pack line swapped in memory (rwr-m6 keeps the map as it is; PlateAssaultMap is not touched).
+        private static MapBakeResult House(string pack)
+        {
+            byte[] desc = PlateAssaultMap.DescBytes();
+            if (pack == WarCore.Content.Rwr.RwrPack.M6Layer) return MapBake.Run(desc);
+            string text = System.Text.Encoding.UTF8.GetString(desc);
+            if (text.IndexOf(HousePack, StringComparison.Ordinal) < 0)
+                throw new InvalidOperationException("The house map no longer says " + HousePack + ".");
+            return MapBake.Run(System.Text.Encoding.UTF8.GetBytes(text.Replace(HousePack, "\"pack\": \"" + pack + "\"")));
+        }
 
         // The assault demo house under the playtest AI rules (the setup of the ML-11b-1 battle tests) with HouseReserves more
         // soldiers a side waiting in reserve, team 1's first soldier as the player and respawn on. The description's own
         // units keep their keys; the reserves take the keys after them and wait where their team's first soldier starts.
         private const int HouseReserves = 12, RespawnTicks = 150, RespawnGuardTicks = 90;
 
-        private static WorldRecipe HouseRecipe()
+        private static WorldRecipe HouseRecipe(string packId)
         {
-            MapBakeResult baked = House();
+            MapBakeResult baked = House(packId);
             ContentCatalog catalog = ContentCatalog.Find();
             ContentPack pack = catalog.Load(baked.PackId);
             MapSetup setup = baked.Setup;
