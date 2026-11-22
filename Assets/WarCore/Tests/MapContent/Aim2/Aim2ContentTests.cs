@@ -46,7 +46,8 @@ namespace WarCore.Tests
         [TestCase("6000", "1000")]
         public void S5_TheBoundsAreAccepted(string radius, string height)
         {
-            PickRules r = Rules(Pick(radius, height));
+            PickRules r = null;
+            Assert.DoesNotThrow(() => r = Rules(Pick(radius, height)));
             Assert.That((r.RadiusPermille, r.HeightPermille), Is.EqualTo((int.Parse(radius), int.Parse(height))));
         }
 

@@ -263,6 +263,7 @@ replacement:
 file = Assets/WarCore/Presentation/Bridge/Showcase.cs
 filter = FullyQualifiedName~Scale2a|FullyQualifiedName~Aim2
 expect = WarCore.Tests.Scale2aGoldenTests.OldInputOfAStageWithoutABodyMatchesTheRecordedBits
+expect = WarCore.Tests.Scale2aSizesTests.S1_PacksWithoutABodyHaveNoSizes
 expect = WarCore.Tests.Aim2ContentTests.S7b_
 note = the old house stage takes the new pack (18)
 original:
