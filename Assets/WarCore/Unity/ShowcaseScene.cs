@@ -78,7 +78,7 @@ namespace WarCore.Unity
             teams[0] = Rgb(Colors.Neutral);
             for (int i = 0; i < Colors.Team.Count; i++) teams[i + 1] = Rgb(Colors.Team[i]);
             Points = new PointViews(Root.transform, Ground, teams);
-            Units = new ShowcaseUnits(Root.transform, Session, Colors.Team);
+            Units = new ShowcaseUnits(Root.transform, Session, Colors.Team, stage.StanceScales());
             Fx = new ShowcaseFx(Root.transform);
             Shots = new ShowcaseShots(Root.transform, Colors.Team, Ground, Fx);
             MiniMap = Own(Mini(map));
@@ -197,11 +197,17 @@ namespace WarCore.Unity
 
         // The grenade preview (drawn only, hurts nobody): from the controlled unit's hand to the aimed point. False when
         // there is no living controlled unit or one is already in the air.
-        public bool ThrowPreview(Vector3 at)
+        public bool ThrowPreview(Vector3 at) => Throw(at, true);
+
+        // SHOW-2: the drawn grenade of a real throw (ShowcaseActions queued its blast); it lands without a burst, and the
+        // simulation's blast is drawn when it goes off (Stepped).
+        public bool ThrowReal(Vector3 at) => Throw(at, false);
+
+        private bool Throw(Vector3 at, bool burst)
         {
             ulong? key = Session.ControlledKey;
             if (!key.HasValue || !Session.Current.TryGet(key.Value, out ViewEntity me) || !me.Alive) return false;
-            return Fx.Throw(new Vector3(me.X, me.Y + 1.5f, me.Z), at);
+            return Fx.Throw(new Vector3(me.X, me.Y + 1.5f, me.Z), at, burst);
         }
 
         // Empty when the drawn map, the simulation and the control points agree (TerrainHost.SelfCheck).
@@ -223,6 +229,13 @@ namespace WarCore.Unity
             killsSeen = Shots.PlayerKills;
             foreach (Vector3 at in Shots.Landed)
                 if ((at - playerAt).sqrMagnitude < NearMetres * NearMetres) Jolt(0.07f);
+            // SHOW-2: the blasts of this tick (a blast of a tick stepped over within one frame is not drawn).
+            foreach (ViewBlast blast in frame.Blasts)
+            {
+                var at = new Vector3(blast.X, blast.Y, blast.Z);
+                Fx.Explode(at);
+                Jolt((at - playerAt).sqrMagnitude < 4f * blast.Radius * blast.Radius ? 0.5f : 0.15f);
+            }
         }
 
         // Every frame. aim: the point the player aims at, or null (no mouse over the picture). dt: the real time since the

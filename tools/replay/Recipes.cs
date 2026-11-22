@@ -91,6 +91,8 @@ namespace WarCore.Replay
             ["blast-wall"] = new Entry("Blast next to a 3 m wall (rwr-blast)", () => BlastDemo.Recipe(), BlastDemo.MapBytes),
             // STANCE-1: a 1 m wall; squad 2 behind it crouches at tick 60 and stands up at tick 240 (StanceDemo).
             ["stance-wall"] = new Entry("1 m wall, team 2 crouches at 60 and stands at 240", StanceDemo.Recipe, StanceDemo.MapBytes),
+            // VSPREAD-1: three 30 m lanes, standing, crouched and prone targets, a fixed 2000 millidegree gun (VspreadDemo).
+            ["vspread-range"] = new Entry("rwr-vspread, three 30 m lanes: standing, crouched, prone targets", VspreadDemo.Recipe, VspreadDemo.MapBytes),
             // DOWN-1: a scripted rwr.frag of rwr-down on tick 30 downs A and stuns B 4 m away; all three are sent 3 m north (DownDemo).
             ["down-crawl"] = new Entry("rwr-down: one man downed and crawling, one stunned, one untouched", DownDemo.Recipe, DownDemo.MapBytes),
         };
