@@ -117,10 +117,10 @@ filter = FullyQualifiedName~Nerve1
 expect = WarCore.Tests.Nerve1.Nerve1SpreadTests.N1b_TheStatusTakesOneFactorForPressureAndOneForWounds
 note = C8 pinned and broken take a factor each
 original:
-|            if (status.HasNerve) AddSpreadDrag(new NerveDrag(this));
+|             if (status.HasNerve) AddSpreadDrag(new NerveDrag(this));
 replacement:
-|            if (status.HasPinned) AddSpreadDrag(new NerveDrag(this));
-|            if (status.HasBroken) AddSpreadDrag(new NerveDrag(this));
+|             if (status.HasPinned) AddSpreadDrag(new NerveDrag(this));
+|             if (status.HasBroken) AddSpreadDrag(new NerveDrag(this));
 
 [nv-missing-pressure-calm]
 file = Assets/WarCore/Presentation/Bridge/Features/NerveFeature.cs
@@ -128,10 +128,10 @@ filter = FullyQualifiedName~Nerve1
 expect = WarCore.Tests.Nerve1.Nerve1WorldTests.N8_PressureRowsNeedThePressureSystem
 note = C9 a world without the pressure system is built and its units count as calm
 original:
-|            if (a.Pressure == null)
-|                throw new InvalidOperationException("combat.status pinned or broken needs the pressure system: a match and AI rules with every pressure* field.");
+|             if (a.Pressure == null)
+|                 throw new InvalidOperationException("combat.status pinned or broken needs the pressure system: a match and AI rules with every pressure* field.");
 replacement:
-|            if (a.Pressure == null) return;
+|             if (a.Pressure == null) return;
 
 [nv-merged]
 file = Assets/WarCore/Combat/CombatSystem.Nerve.cs
@@ -359,8 +359,8 @@ filter = FullyQualifiedName~Nerve1
 expect = WarCore.Tests.Nerve1.Nerve1SpreadTests.N15_BindTheNerveSourceOnceAndOnlyWithPressureRows
 note = C21 a source is accepted without a pinned or broken row
 original:
-|            if (pack.Status == null || !pack.Status.HasNerve)
-|                throw new InvalidOperationException("combat.status has no pinned or broken row: no nerve source to bind.");
+|             if (pack.Status == null || !pack.Status.HasNerve)
+|                 throw new InvalidOperationException("combat.status has no pinned or broken row: no nerve source to bind.");
 replacement:
 |
 
@@ -370,10 +370,10 @@ filter = FullyQualifiedName~Nerve1
 expect = WarCore.Tests.Nerve1.Nerve1SpreadTests.N15_WithoutASourceOrWithALevelOutOfRangeAShotIsRefused
 note = C22 without a source the unit counts as calm
 original:
-|            if (nerveSource == null)
-|                throw new InvalidOperationException("combat.status pinned or broken needs a nerve source: a world with the pressure system (pressure*) or a bound script.");
+|             if (nerveSource == null)
+|                 throw new InvalidOperationException("combat.status pinned or broken needs a nerve source: a world with the pressure system (pressure*) or a bound script.");
 replacement:
-|            if (nerveSource == null) return NerveCalm;
+|             if (nerveSource == null) return NerveCalm;
 
 [nv-skip-removed]
 file = Assets/WarCore/Presentation/Bridge/Features/NerveFeature.cs
@@ -421,8 +421,8 @@ filter = FullyQualifiedName~Nerve1
 expect = WarCore.Tests.Nerve1.Nerve1ContentTests.N11_ConstructorsCheckTheirRanges
 note = C25 the combat pack does not check the floor
 original:
-|            if (spreadDragFloorPermille != 0 && (spreadDragFloorPermille < StatLine.MinPermille || spreadDragFloorPermille > MaxDragFloorPermille))
-|                throw new ArgumentOutOfRangeException(nameof(spreadDragFloorPermille));
+|             if (spreadDragFloorPermille != 0 && (spreadDragFloorPermille < StatLine.MinPermille || spreadDragFloorPermille > MaxDragFloorPermille))
+|                 throw new ArgumentOutOfRangeException(nameof(spreadDragFloorPermille));
 replacement:
 |
 
@@ -452,12 +452,12 @@ filter = FullyQualifiedName~Nerve1
 expect = WarCore.Tests.Nerve1.Nerve1ContentTests.N0_TheShippedLayerAndWholeReplacement
 note = a child's stats row merges field by field instead of replacing the parent's row
 original:
-|                entries.RemoveAll(e => e.Id == member.Name);
-|                var entry = new ContentEntry(SectionKey, member.Name, layer);
+|                 entries.RemoveAll(e => e.Id == member.Name);
+|                 var entry = new ContentEntry(SectionKey, member.Name, layer);
 replacement:
-|                var entry = entries.Find(e => e.Id == member.Name);
-|                if (entry == null) entries.Add(entry = new ContentEntry(SectionKey, member.Name, layer));
-|                foreach (JsonMember field in member.Value.Members) entry.Fields.RemoveAll(f => f.Name == field.Name);
+|                 var entry = entries.Find(e => e.Id == member.Name);
+|                 if (entry == null) entries.Add(entry = new ContentEntry(SectionKey, member.Name, layer));
+|                 foreach (JsonMember field in member.Value.Members) entry.Fields.RemoveAll(f => f.Name == field.Name);
 
 [nv-stats-row-needs-field]
 file = Assets/WarCore/Content/Data/Sections/StatsSection.cs
