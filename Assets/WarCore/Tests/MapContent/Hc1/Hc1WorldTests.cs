@@ -342,7 +342,9 @@ namespace WarCore.Tests
             for (int i = 0; i < 20; i++) s.StepOnce();
             Assert.That(s.StateHash, Is.EqualTo(BaselineHash));
             byte[] save = M3TestWorld.Sim(s).SaveRetainedSnapshot();
-            Assert.That(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(save)).ToLowerInvariant(), Is.EqualTo(BaselineSave));
+            byte[] sha;
+            using (var hasher = System.Security.Cryptography.SHA256.Create()) sha = hasher.ComputeHash(save);
+            Assert.That(BitConverter.ToString(sha).Replace("-", "").ToLowerInvariant(), Is.EqualTo(BaselineSave));
         }
 
         private const ulong BaselineHash = 8692015661068015648UL;
