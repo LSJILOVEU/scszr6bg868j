@@ -59,7 +59,7 @@ note = the interpolated frame loses the respawn state
 original:
 | current.Match, current.Respawn, current.blasts);
 replacement:
-| current.Match, null, current.blasts);
+| current.Match, default, current.blasts);
 
 [c2-07-wrong-team]
 file = Assets/WarCore/Presentation/Bridge/SimSession.cs
