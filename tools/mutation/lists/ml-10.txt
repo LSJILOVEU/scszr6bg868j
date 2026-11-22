@@ -103,9 +103,9 @@ filter = FullyQualifiedName~Ml10
 expect = WarCore.Tests.Ml10CutTests.FadingFollowsTheLine
 note = only the head line fades (the feet line is dropped)
 original:
-| foreach (float lift in new[] { FootLift, AimPick.BodyHeight })
+| foreach (float lift in new[] { FootLift, head })
 replacement:
-| foreach (float lift in new[] { AimPick.BodyHeight })
+| foreach (float lift in new[] { head })
 
 [ml10-cut-no-head-line]
 file = Assets/WarCore/Presentation/Camera/LayerCut.cs
@@ -113,7 +113,7 @@ filter = FullyQualifiedName~Ml10
 expect = WarCore.Tests.Ml10CutTests.TheHeadLineFadesWhatTheFeetPassUnder
 note = only the feet line fades (the head line is dropped)
 original:
-| foreach (float lift in new[] { FootLift, AimPick.BodyHeight })
+| foreach (float lift in new[] { FootLift, head })
 replacement:
 | foreach (float lift in new[] { FootLift })
 

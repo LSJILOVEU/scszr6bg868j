@@ -1,0 +1,436 @@
+# SCALE-2a: the body sizes the picture reads (BodySizes), the pick, silhouettes, cut and ring that use them, the drawn-parts
+# table (DrawnParts), the shot heights (ViewFire.Y0, Y1 from SimSession.ToView) and the two demo worlds (Scale2aDemo).
+# Filter: Scale2a; the old-path fall-back entries also run the older pick, see-through and cut tests. Not listed: Unity code
+# (no Unity here; Scale2aViewsTests covers it on the Mac); the lineup map's walls (a broken map throws on load, not an assertion).
+
+[scale2a-top-ignores-level]
+file = Assets/WarCore/Presentation/Bridge/Features/BodySizes.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S1_TheStancePacksSizesByLevel
+expect = WarCore.Tests.Scale2aSizesTests.S2_
+note = a body is always the standing one
+original:
+| public float Top(ViewEntity e) => top[Level(e.Stance)];
+replacement:
+| public float Top(ViewEntity e) => top[Level(e.Stance) * 0];
+
+[scale2a-stance-index-shifted]
+file = Assets/WarCore/Presentation/Bridge/Features/BodySizes.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S1_TheStancePacksSizesByLevel
+note = level n reads another stance than Stances[n - 1]
+original:
+| pack.Stances[level - 1].Body
+replacement:
+| pack.Stances[pack.Stances.Length - level].Body
+
+[scale2a-level-zero-refused]
+file = Assets/WarCore/Presentation/Bridge/Features/BodySizes.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S1_LevelsOutsideThePackThrow
+note = level 0 is refused
+original:
+| if (level < 0 || level >= top.Length)
+replacement:
+| if (level <= 0 || level >= top.Length)
+
+[scale2a-level-count-allowed]
+file = Assets/WarCore/Presentation/Bridge/Features/BodySizes.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S1_LevelsOutsideThePackThrow
+note = the level count is not refused
+original:
+| if (level < 0 || level >= top.Length)
+replacement:
+| if (level < 0 || level > top.Length)
+
+[scale2a-negative-level-allowed]
+file = Assets/WarCore/Presentation/Bridge/Features/BodySizes.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S1_LevelsOutsideThePackThrow
+note = a negative level is not refused
+original:
+| if (level < 0 || level >= top.Length)
+replacement:
+| if (level >= top.Length)
+
+[scale2a-eye-is-top]
+file = Assets/WarCore/Presentation/Bridge/Features/BodySizes.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S1_
+expect = WarCore.Tests.Scale2aSizesTests.S4_TheRingLooksFromTheStancesEye
+note = the eye reads the top
+original:
+| public float Eye(ViewEntity e) => eye[Level(e.Stance)];
+replacement:
+| public float Eye(ViewEntity e) => top[Level(e.Stance)];
+
+[scale2a-muzzle-is-eye]
+file = Assets/WarCore/Presentation/Bridge/Features/BodySizes.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S1_EyeAndMuzzleAreReadApart
+note = the muzzle reads the eye
+original:
+| public float Muzzle(ViewEntity e) => muzzle[Level(e.Stance)];
+replacement:
+| public float Muzzle(ViewEntity e) => eye[Level(e.Stance)];
+
+[scale2a-standing-height-not-level-zero]
+file = Assets/WarCore/Presentation/Bridge/Features/BodySizes.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S1_TheStancePacksSizesByLevel
+note = the standing height reads the lowest level
+original:
+| public float StandingHeight => top[0];
+replacement:
+| public float StandingHeight => top[top.Length - 1];
+
+[scale2a-no-body-gets-sizes]
+file = Assets/WarCore/Presentation/Bridge/Features/BodySizes.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S1_PacksWithoutABodyHaveNoSizes
+note = a pack without a body is not turned away
+original:
+| pack == null || !pack.Body.HasValue ? null
+replacement:
+| pack == null ? null
+
+[scale2a-no-combat-gets-sizes]
+file = Assets/WarCore/Presentation/Bridge/Features/BodySizes.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S1_AWorldWithoutCombatHasNoSizes
+note = a world without combat is not turned away
+original:
+| pack == null || !pack.Body.HasValue ? null
+replacement:
+| !pack.Body.HasValue ? null
+
+[scale2a-radius-not-the-collider]
+file = Assets/WarCore/Presentation/Bridge/Features/BodySizes.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S1_TheStancePacksSizesByLevel
+note = the radius is not the collider radius
+original:
+| internal const long RadiusRaw = BodyRadius.DefaultRaw;
+replacement:
+| internal const long RadiusRaw = SimFix.Scale / 5;
+
+[scale2a-old-top-is-tall]
+file = Assets/WarCore/Presentation/Bridge/Features/BodySizes.cs
+filter = FullyQualifiedName~Scale2a|FullyQualifiedName~Mt167AimPick|FullyQualifiedName~See1|FullyQualifiedName~Ml10|FullyQualifiedName~A4Pick
+expect = WarCore.Tests.Scale2aGoldenTests.OldPickRaysMatchTheOldCylinder
+expect = WarCore.Tests.Scale2aSizesTests.S3e_
+expect = WarCore.Tests.Mt167AimPickTests.RayAboveOneMetreBody_DoesNotSelectEnemy
+note = without sizes the body is 1.75 m
+original:
+| public static float TopOf(BodySizes sizes, ViewEntity e) => sizes == null ? AimPick.BodyHeight : sizes.Top(e);
+replacement:
+| public static float TopOf(BodySizes sizes, ViewEntity e) => sizes == null ? 1.75f : sizes.Top(e);
+
+[scale2a-old-top-is-zero]
+file = Assets/WarCore/Presentation/Bridge/Features/BodySizes.cs
+filter = FullyQualifiedName~Scale2a|FullyQualifiedName~Mt167AimPick|FullyQualifiedName~See1|FullyQualifiedName~Ml10|FullyQualifiedName~A4Pick
+expect = WarCore.Tests.Scale2aGoldenTests.OldPickRaysMatchTheOldCylinder
+expect = WarCore.Tests.Scale2aGoldenTests.OldInputOfAStageWithoutABodyMatchesTheRecordedBits
+note = without sizes the body has no height
+original:
+| public static float TopOf(BodySizes sizes, ViewEntity e) => sizes == null ? AimPick.BodyHeight : sizes.Top(e);
+replacement:
+| public static float TopOf(BodySizes sizes, ViewEntity e) => sizes == null ? 0f : sizes.Top(e);
+
+[scale2a-old-eye-is-tall]
+file = Assets/WarCore/Presentation/Bridge/Features/BodySizes.cs
+filter = FullyQualifiedName~Scale2a|FullyQualifiedName~Mt167AimPick|FullyQualifiedName~See1|FullyQualifiedName~Ml10|FullyQualifiedName~A4Pick
+expect = WarCore.Tests.Scale2aGoldenTests.OldSilhouettesCutAndRingMatchTheRecordedBits
+expect = WarCore.Tests.Scale2aSizesTests.S4_
+note = without sizes the eye is 1.5 m
+original:
+| public static float EyeOf(BodySizes sizes, ViewEntity e) => sizes == null ? AimPick.BodyHeight : sizes.Eye(e);
+replacement:
+| public static float EyeOf(BodySizes sizes, ViewEntity e) => sizes == null ? 1.5f : sizes.Eye(e);
+
+[scale2a-old-eye-is-zero]
+file = Assets/WarCore/Presentation/Bridge/Features/BodySizes.cs
+filter = FullyQualifiedName~Scale2a|FullyQualifiedName~Mt167AimPick|FullyQualifiedName~See1|FullyQualifiedName~Ml10|FullyQualifiedName~A4Pick
+expect = WarCore.Tests.Scale2aGoldenTests.OldSilhouettesCutAndRingMatchTheRecordedBits
+expect = WarCore.Tests.Scale2aSizesTests.S4_
+expect = WarCore.Tests.See1ZoneTests
+note = without sizes the eye is at the feet
+original:
+| public static float EyeOf(BodySizes sizes, ViewEntity e) => sizes == null ? AimPick.BodyHeight : sizes.Eye(e);
+replacement:
+| public static float EyeOf(BodySizes sizes, ViewEntity e) => sizes == null ? 0f : sizes.Eye(e);
+
+[scale2a-top-added-in-double]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Scale2a|FullyQualifiedName~Mt167AimPick|FullyQualifiedName~See1|FullyQualifiedName~Ml10|FullyQualifiedName~A4Pick
+expect = WarCore.Tests.Scale2aGoldenTests.OldPickRaysMatchTheOldCylinder
+expect = WarCore.Tests.Scale2aSizesTests.S3e_
+note = the feet and the height are added in double
+original:
+| top = e.Y + height;
+replacement:
+| top = (double)e.Y + height;
+
+[scale2a-pick-ignores-sizes]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S3b_
+expect = WarCore.Tests.Scale2aSizesTests.S3d_
+expect = WarCore.Tests.Scale2aSizesTests.S3g_
+expect = WarCore.Tests.Scale2aSizesTests.S2_
+note = the pick keeps the 1 m body
+original:
+| BodyHit(ox, oy, oz, fx, fy, fz, e, BodySizes.TopOf(sizes, e))
+replacement:
+| BodyHit(ox, oy, oz, fx, fy, fz, e, BodySizes.TopOf(null, e))
+
+[scale2a-side-top-exclusive]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Scale2a|FullyQualifiedName~Mt167AimPick|FullyQualifiedName~See1|FullyQualifiedName~Ml10|FullyQualifiedName~A4Pick
+expect = WarCore.Tests.Scale2aSizesTests.S3b_
+note = a ray entering exactly at the top misses the side
+original:
+| if (y1 >= bottom && y1 <= top)
+replacement:
+| if (y1 >= bottom && y1 < top)
+
+[scale2a-cap-one-metre]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S3d_
+note = the top cap stays 1 m up
+original:
+| double cap = (top - oy) / fy;
+replacement:
+| double cap = (e.Y + 1f - oy) / fy;
+
+[scale2a-straight-down-one-metre]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S3g_
+note = straight down meets a 1 m top
+original:
+| return c <= 0 && oy >= top ? (top - oy) / fy
+replacement:
+| return c <= 0 && oy >= top ? (e.Y + 1f - oy) / fy
+
+[scale2a-silhouette-from-eye]
+file = Assets/WarCore/Presentation/Camera/Silhouettes.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S4_SilhouettesTakeTheHeadFromTheStance
+note = the silhouette line starts at the eye
+original:
+| double oy = unit.Y + BodySizes.TopOf(sizes, unit);
+replacement:
+| double oy = unit.Y + BodySizes.EyeOf(sizes, unit);
+
+[scale2a-silhouette-ignores-sizes]
+file = Assets/WarCore/Presentation/Camera/Silhouettes.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S4_SilhouettesTakeTheHeadFromTheStance
+note = the silhouette keeps the 1 m head
+original:
+| double oy = unit.Y + BodySizes.TopOf(sizes, unit);
+replacement:
+| double oy = unit.Y + BodySizes.TopOf(null, unit);
+
+[scale2a-cut-head-one-metre]
+file = Assets/WarCore/Presentation/Camera/LayerCut.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S4_TheCutDrawsItsHeadLineFromTheStance
+note = the cut keeps the 1 m head line
+original:
+| float head = BodySizes.TopOf(sizes, me), highest
+replacement:
+| float head = BodySizes.TopOf(null, me), highest
+
+[scale2a-cut-drops-ring-sizes]
+file = Assets/WarCore/Presentation/Camera/LayerCut.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S4_TheRingLooksFromTheStancesEye
+note = the ring is not given the sizes
+original:
+| highest, plateStates, wallStates, sizes);
+replacement:
+| highest, plateStates, wallStates, null);
+
+[scale2a-ring-from-top]
+file = Assets/WarCore/Presentation/Camera/SeeZone.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S4_TheRingLooksFromTheStancesEye
+note = the ring looks from the top, not the eye
+original:
+| double eye = me.Y + BodySizes.EyeOf(sizes, me)
+replacement:
+| double eye = me.Y + BodySizes.TopOf(sizes, me)
+
+[scale2a-parts-by-current-top]
+file = Assets/WarCore/Presentation/Camera/DrawnParts.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S6_CrouchedIsTheSamePartsLower
+note = parts are sized by the stance top, not the standing height
+original:
+| float h = standingHeight, head = Head * h, shoulder = top - head;
+replacement:
+| float h = top, head = Head * h, shoulder = top - head;
+
+[scale2a-gun-by-share]
+file = Assets/WarCore/Presentation/Camera/DrawnParts.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S6_CrouchedIsTheSamePartsLower
+note = the gun sits at a share of the top, not the muzzle
+original:
+| new DrawnPart(GunOut * radius, muzzle, gun / 2
+replacement:
+| new DrawnPart(GunOut * radius, top * 0.857f, gun / 2
+
+[scale2a-gun-fixed-length]
+file = Assets/WarCore/Presentation/Camera/DrawnParts.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S6_PartsScaleWithTheStandingHeightButTheTorsoWidth
+note = the gun is 0.84 m whatever the height
+original:
+| float gun = Rifle * h, blade = BladeLength * h, depth
+replacement:
+| float gun = 0.84f, blade = BladeLength * h, depth
+
+[scale2a-torso-width-by-height]
+file = Assets/WarCore/Presentation/Camera/DrawnParts.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S6_PartsScaleWithTheStandingHeightButTheTorsoWidth
+note = the torso width grows with the height
+original:
+| new DrawnPart(0f, shoulder / 2, 0f, 2 * radius, shoulder, depth)
+replacement:
+| new DrawnPart(0f, shoulder / 2, 0f, 2 * radius * h / 1.75f, shoulder, depth)
+
+[scale2a-prone-not-squeezed]
+file = Assets/WarCore/Presentation/Camera/DrawnParts.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S6_ProneLiesFlatUnderItsTop
+note = a low prone top does not squeeze the pose
+original:
+| float k = Math.Min(1f, top / (depth + packDeep));
+replacement:
+| float k = 1f;
+
+[scale2a-prone-length-by-top]
+file = Assets/WarCore/Presentation/Camera/DrawnParts.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S6_ProneLiesFlatUnderItsTop
+note = the prone length follows the top
+original:
+| length = h - head;
+replacement:
+| length = top - head;
+
+[scale2a-never-lying]
+file = Assets/WarCore/Presentation/Camera/DrawnParts.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S6_ProneLiesFlatUnderItsTop
+note = prone is drawn upright
+original:
+| top < LyingBelow * standingHeight ?
+replacement:
+| top < 0f ?
+
+[scale2a-chips-share]
+file = Assets/WarCore/Presentation/Camera/DrawnParts.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S6_UprightPartsFollowTheTable
+note = chips fly at another share of the top
+original:
+| Ring = 0.4f, Chips = 0.63f;
+replacement:
+| Ring = 0.4f, Chips = 0.6f;
+
+[scale2a-fit-inverted]
+file = Assets/WarCore/Presentation/Camera/DrawnParts.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S7_ModelFit
+note = model fit upside down
+original:
+| return simHeight / modelHeight;
+replacement:
+| return modelHeight / simHeight;
+
+[scale2a-fit-takes-zero]
+file = Assets/WarCore/Presentation/Camera/DrawnParts.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S7_ModelFit
+note = a zero model height is taken
+original:
+| if (!(modelHeight > 0f) || float.IsInfinity(modelHeight))
+replacement:
+| if (!(modelHeight >= 0f) || float.IsInfinity(modelHeight))
+
+[scale2a-fit-takes-nan]
+file = Assets/WarCore/Presentation/Camera/DrawnParts.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S7_ModelFit
+note = a NaN model height is taken
+original:
+| if (!(modelHeight > 0f) || float.IsInfinity(modelHeight))
+replacement:
+| if (modelHeight <= 0f || float.IsInfinity(modelHeight))
+
+[scale2a-fit-takes-infinity]
+file = Assets/WarCore/Presentation/Camera/DrawnParts.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S7_ModelFit
+note = an infinite model height is taken
+original:
+| if (!(modelHeight > 0f) || float.IsInfinity(modelHeight))
+replacement:
+| if (!(modelHeight > 0f))
+
+[scale2a-shot-end-not-lifted]
+file = Assets/WarCore/Presentation/Camera/DrawnParts.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S8_ADrawnShotEndsNoLowerThanTheGround
+note = a drawn shot may end under the floor
+original:
+| Math.Max(y1, ground == null
+replacement:
+| Math.Min(y1, ground == null
+
+[scale2a-view-start-is-end]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S8_ShotHeightsAreTheSimulationsStartAndEnd
+note = the view start height takes the end
+original:
+| fire.DamageRaw > 0, (float)fire.Origin.Y.Raw / SimFix.Scale,
+replacement:
+| fire.DamageRaw > 0, (float)fire.End.Y.Raw / SimFix.Scale,
+
+[scale2a-view-end-is-start]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S8_ShotHeightsAreTheSimulationsStartAndEnd
+note = the view end height takes the start
+original:
+| , (float)fire.End.Y.Raw / SimFix.Scale);
+replacement:
+| , (float)fire.Origin.Y.Raw / SimFix.Scale);
+
+[scale2a-lineup-orders-swapped]
+file = Assets/WarCore/Presentation/Bridge/Features/Scale2aDemo.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S12_TheLineupStandsCrouchesAndLies
+note = squads 2 and 3 take each other's stance
+original:
+| BridgeCommand.Stance(CrouchTick, 2, 1), BridgeCommand.Stance(ProneTick, 3, 2)
+replacement:
+| BridgeCommand.Stance(CrouchTick, 2, 2), BridgeCommand.Stance(ProneTick, 3, 1)
+
+[scale2a-crouch-fire-stands]
+file = Assets/WarCore/Presentation/Bridge/Features/Scale2aDemo.cs
+filter = FullyQualifiedName~Scale2a
+expect = WarCore.Tests.Scale2aSizesTests.S8_ShotHeightsAreTheSimulationsStartAndEnd
+note = nobody crouches in the crouch-fire world
+original:
+| var script = new[] { BridgeCommand.Stance(CrouchTick, 2, 1) };
+replacement:
+| var script = new BridgeCommand[0];

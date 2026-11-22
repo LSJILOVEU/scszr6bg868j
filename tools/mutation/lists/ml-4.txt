@@ -362,7 +362,7 @@ filter = FullyQualifiedName~Ml4
 expect = WarCore.Tests.Ml4RuleTests.WallUnderThePlateDoesNotBlockIt
 note = band bottom 0.5 m: the wall under the plate blocks it
 original:
-| BelowRaw = SimFix.Scale / 4;
+| BelowRaw = BodyRadius.DefaultRaw;
 replacement:
 | BelowRaw = SimFix.Scale / 2;
 

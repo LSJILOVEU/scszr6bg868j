@@ -31,8 +31,8 @@ namespace WarCore.Presentation
     // turns true (integer bisection on the same test), and an enemy body on the ray in front of that point wins (snap).
     public static class AimPick
     {
-        public const float SnapRadius = 0.5f; // PLACEHOLDER: the drawn body (0.5 x 1 x 0.5 m) widened for the mouse; tune after play.
-        public const float BodyHeight = 1f;   // PLACEHOLDER: the drawn body height (EntityViews: bottom at Y, top at Y + 1).
+        public const float SnapRadius = 0.5f; // PLACEHOLDER: the body's diameter (2r, r = BodySizes.Radius) as the mouse's reach; tune after play.
+        public const float BodyHeight = 1f;   // The old drawn body height, for a world without body sizes (BodySizes.TopOf falls back to it).
         private const int Halvings = 24;
         private const long OneMetre = 65536;
 
@@ -44,18 +44,19 @@ namespace WarCore.Presentation
         // as it is (cut null: every plate); the nearest of the ground and those tops wins, a plate top as Plate with its layer
         // and the plate's height at the millimetre point (a hit whose millimetre point falls off the plate's solid cells is
         // skipped, so the bridge never refuses the layer). Units the cut hides are not snapped to. Plates null: as above.
+        // SCALE-2a: with sizes a body is as tall as its stance level now (BodySizes.Top); null keeps the old 1 m body.
         public static AimTarget Pick(IsoCamera camera, float screenX, float screenY, float screenWidth, float screenHeight,
-            ViewGround ground, FrameView shown, ulong? self, ViewPlates plates, LayerCutResult cut)
+            ViewGround ground, FrameView shown, ulong? self, ViewPlates plates, LayerCutResult cut, BodySizes sizes = null)
         {
             if (camera == null) throw new ArgumentNullException(nameof(camera));
             var o = camera.RayOrigin(screenX, screenY, screenWidth, screenHeight);
             var f = camera.Forward;
-            return PickRay(o.X, o.Y, o.Z, f.X, f.Y, f.Z, camera.GroundY, ground, shown, self, plates, cut);
+            return PickRay(o.X, o.Y, o.Z, f.X, f.Y, f.Z, camera.GroundY, ground, shown, self, plates, cut, sizes);
         }
 
         // The ray o + t f (f.Y < 0). Plane points use the same float formula as IsoCamera.ScreenToGround.
         internal static AimTarget PickRay(float ox, float oy, float oz, float fx, float fy, float fz, float groundY,
-            ViewGround ground, FrameView shown, ulong? self, ViewPlates plates = null, LayerCutResult cut = null)
+            ViewGround ground, FrameView shown, ulong? self, ViewPlates plates = null, LayerCutResult cut = null, BodySizes sizes = null)
         {
             if (!(fy < 0f)) throw new ArgumentOutOfRangeException(nameof(fy), "The pick ray must point down.");
             AimTarget onGround = ground == null ? PlanePoint(ox, oy, oz, fx, fy, fz, groundY, out double tGround)
@@ -77,7 +78,7 @@ namespace WarCore.Presentation
             {
                 if (!e.Alive || e.Team == 0 || e.Team == me.Team || e.Key == self.Value) continue;
                 if (cut != null && cut.IsHidden(e)) continue;
-                double t = BodyHit(ox, oy, oz, fx, fy, fz, e);
+                double t = BodyHit(ox, oy, oz, fx, fy, fz, e, BodySizes.TopOf(sizes, e));
                 if (t < best || (t == best && t < double.PositiveInfinity && e.Key < snapped.Key)) { best = t; snapped = e; }
             }
             if (!(best < tGround)) return onGround;
@@ -165,10 +166,11 @@ namespace WarCore.Presentation
             return ta <= tb;
         }
 
-        // First t at which the ray meets the upright cylinder of the body (side, or the top cap); +inf when it misses.
-        private static double BodyHit(double ox, double oy, double oz, double fx, double fy, double fz, ViewEntity e)
+        // First t at which the ray meets the upright cylinder of the body (side, or the top cap); +inf when it misses. height is
+        // added to the feet in float, then widened.
+        private static double BodyHit(double ox, double oy, double oz, double fx, double fy, double fz, ViewEntity e, float height)
         {
-            double r = SnapRadius, bottom = e.Y, top = e.Y + BodyHeight;
+            double r = SnapRadius, bottom = e.Y, top = e.Y + height;
             double px = ox - e.X, pz = oz - e.Z;
             double a = fx * fx + fz * fz, b = 2 * (px * fx + pz * fz), c = px * px + pz * pz - r * r;
             if (a == 0) // straight down: inside the circle it meets the top cap, else nothing

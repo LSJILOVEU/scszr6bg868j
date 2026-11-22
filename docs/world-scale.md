@@ -24,7 +24,7 @@ relation from the code or the shipped data. "none" means no test holds the value
 | Shipped body (`rwr-body`, `rwr-field`) | height 1.75, eye 1.5, muzzle 1.5 | `Content/Rwr/Data` | W04, `Body1GeometryTests` |
 | Body rule | 2r <= height <= headroom; r <= eye <= height - r; 0 <= muzzle <= height | `CombatSection` | W04 |
 | No body (older layers) | collider 1 m, eye 0.5 m, shot from the foot | `WorldAssembly.UnitHeight`, `CombatSystem` | `Body1GeometryTests.OldLayers_AOneMetreWallStillHidesTheTarget` |
-| Drawn body | 1 m tall | `Presentation/Camera/AimPick.cs` | none |
+| Drawn body | with a body: the simulated top per stance level (1.75 / 1.0 / 0.5 m shipped), radius r; without a body: 1 m (`AimPick.BodyHeight`) | `Presentation/Bridge/Features/BodySizes.cs`, `Presentation/Camera/DrawnParts.cs` | `Scale2aSizesTests`, `Scale2aViewsTests` |
 | Sight over a wall | wall top below the eye is seen over | `CombatSystem` | `Body1GeometryTests.Body_WallsUnderTheEyeAreSeenOver` |
 | Melee reach | start distance <= reach; reach > 2r | content `melee` | W13 |
 | Weapon falloff end | within the diagonal of the largest map | content `weapons` | W14 |
@@ -165,12 +165,19 @@ Four lengths share the word: the seam tolerance between layers 0.3 m (`LayeredNa
 the 1.414 m largest neighbour difference of generated terrain. The stair step of `scale` (`stairRiseMm`, `stairRunMm`) is
 a fifth, measured in millimetres.
 
+## Guard
+
+`Tests/EditMode/SizeLiteralGuardTests.cs` fails on a new literal in project code that matches the size, distance, time
+or speed shapes listed at the top of `SizeLiteralScanner.cs` (a bare integer passed as an argument is not one of them),
+unless `tools/size-guard/ledger.tsv` lists it as canon, ui or math with a note.
+Old copies are listed as debt. The test checks that `debt-max` equals the debt total; review checks that it never rises.
+
 ## Known mismatches
 
 Status after SCALE-2: each item says what changed or where it went.
 
-1. The drawn body is 1 m tall (`AimPick.BodyHeight`); shipped bodies are 1.75 m and an old body is a capsule centred on the foot.
-2. Silhouettes, see-through zones and layer cutting use that 1 m as head height; the simulated eye is 1.5 m (body) or 0.5 m (no body).
+1. Worlds with a body now draw and pick it at the simulated size (`BodySizes`). Old layers without a body still draw 1 m (`AimPick.BodyHeight`): their collider is a 1 m capsule centred on the foot, so there is no simulated top to follow, and their pictures and goldens stay unchanged.
+2. With a body, silhouettes and layer cutting use the simulated top and see-through zones the simulated eye. Without a body they still use 1 m as head height while the simulated eye is 0.5 m, unchanged for the same reason as 1.
 3. The soldier radius is written in three places and means the same in three more; only W03 ties them together. Status: not changed, candidate pool RADIUS-ONE (W03 ties them).
 4. The comment on the window prefab computed with a 1 m sill; the default is 0.9 m and has no formula. Status: fixed (the comment says 0.9 m; the arithmetic did not change).
 5. The pressure range value in the code was not checked. Status: `ai.pressureDeathRadiusMm` and `pressureNearRadiusMm`: only `rwr-showcase` sets them, 3000 / 3000; code not changed.
@@ -181,4 +188,4 @@ Status after SCALE-2: each item says what changed or where it went.
 10. There is no low or high wall class (wall kind is a free string); a grounded wall on terrain is at least 1 m, lower ones need a raised base. Status: `scale` wall classes (the wall height base above); grounded walls on terrain below 1 m still need a raised base.
 11. Sight is cut at 1.4 m and 1.6 m for a 1.5 m eye; a planned 1.2 m crossing limit would leave 1.2 to 1.4 m walls crossable but see-through and 1.4 to 1.6 m walls opaque but too high. Status: the three wall classes are named in `scale`, and a layer with an `over` traversal kind must let the low wall be vaulted and not the high one. The chest wall belongs to the traversal line. Finding for it: wall heights are even raw, and the test layer's 1.2 m limit is 78643 raw (odd), so a 1.2 m wall (78644 raw) cannot be vaulted; an even limit avoids that.
 12. Body height is capped at 2 m by content but at 32768 m by the `CombatBody` constructor; melee half height is 1 m in the shipped data while a 1.75 m body is centred at 0.875 m and an old body at the foot. Status: candidate pool BODY-CAP.
-13. Some older comments assume a body 0.5 m either side of its position; with 1.75 m bodies that is out of date. Status: the 0.5 m comments in `Combat/` (`CombatBody.cs:9`, `CombatSystem.cs`, `CombatSystem.Sight.cs`, `CombatSystem.Resolve.cs`, `CombatSystem.Melee.cs:153`) say they describe the legacy geometry without a body, which is right, so they stay. The drawn-body comments that take 1 m as the head (`Presentation/Camera/AimPick.cs:34-35`, `LayerCut.cs:39`, `SeeZone.cs:6-7`, `Silhouettes.cs:7`) sit in files another package changes: candidate pool COMMENT-13. No other out-of-date comment was found.
+13. Some older comments assume a body 0.5 m either side of its position; with 1.75 m bodies that is out of date. Status: the 0.5 m comments in `Combat/` (`CombatBody.cs:9`, `CombatSystem.cs`, `CombatSystem.Sight.cs`, `CombatSystem.Resolve.cs`, `CombatSystem.Melee.cs:153`) say they describe the legacy geometry without a body, which is right, so they stay. The drawn-body comments in `Presentation/Camera/` (`AimPick.cs`, `LayerCut.cs`, `SeeZone.cs`, `Silhouettes.cs`) now read the drawn sizes and keep 1 m only for worlds without sizes (SCALE-2a). No other out-of-date comment was found.

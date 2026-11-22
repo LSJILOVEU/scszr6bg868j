@@ -10,6 +10,7 @@ namespace WarCore.Unity
         private readonly Vector3 scale;
         private readonly float lift;
         private readonly Color[] palette;
+        private readonly BodySizes sizes;
         private readonly Dictionary<ulong, GameObject> cubes = new Dictionary<ulong, GameObject>();
         private readonly List<ulong> removed = new List<ulong>();
         // SEE-1: one flat see-through copy per covered team mate, drawn over everything ("Silhouette <key>").
@@ -17,8 +18,11 @@ namespace WarCore.Unity
         private readonly Dictionary<ulong, GameObject> silhouettes = new Dictionary<ulong, GameObject>();
 
         // Defaults keep the M1 look; a map demo passes a unit-sized scale, a lift to the feet, and a palette by squad.
-        public EntityViews(Transform parent, Vector3? scale = null, float lift = 0, Color[] palette = null)
+        // sizes (SCALE-2a, BodySizes.Of the session): when given, every cube is the unit's body as the simulation has it now,
+        // 2r wide and as tall as its stance (BodySizes.Top), standing on its feet; scale and lift are then not used. Null: as before.
+        public EntityViews(Transform parent, Vector3? scale = null, float lift = 0, Color[] palette = null, BodySizes sizes = null)
         {
+            this.sizes = sizes;
             this.parent = parent;
             this.scale = scale ?? Vector3.one;
             this.lift = lift;
@@ -67,9 +71,10 @@ namespace WarCore.Unity
                 {
                     // A corpse stays where it fell: grey and flat, so the fight reads from above.
                     cube.GetComponent<Renderer>().material.color = new Color(0.35f, 0.35f, 0.35f);
-                    cube.transform.localScale = new Vector3(scale.x, scale.y * 0.2f, scale.z);
+                    cube.transform.localScale = sizes == null ? new Vector3(scale.x, scale.y * 0.2f, scale.z) : Body(entity, 0.2f);
                 }
-                cube.transform.position = new Vector3(entity.X, entity.Y + lift, entity.Z);
+                else if (sizes != null) cube.transform.localScale = Body(entity, 1f);
+                cube.transform.position = new Vector3(entity.X, entity.Y + Lift(entity, cube.transform.localScale.y), entity.Z);
                 bool shown = cut == null || !cut.IsHidden(entity);
                 if (cube.activeSelf != shown) cube.SetActive(shown);
                 Silhouette(entity, shown && covered != null && covered.Contains(entity.Key));
@@ -89,9 +94,20 @@ namespace WarCore.Unity
                 body.GetComponent<Renderer>().sharedMaterial = SilhouetteMaterial(entity);
                 silhouettes.Add(entity.Key, body);
             }
-            body.transform.position = new Vector3(entity.X, entity.Y + lift, entity.Z);
+            if (sizes != null) body.transform.localScale = Body(entity, 1f);
+            body.transform.position = new Vector3(entity.X, entity.Y + Lift(entity, body.transform.localScale.y), entity.Z);
             if (body.activeSelf != on) body.SetActive(on);
         }
+
+        // The body box: 2r wide and deep, share of the stance's height tall.
+        private Vector3 Body(ViewEntity entity, float share)
+        {
+            float width = 2 * sizes.Radius;
+            return new Vector3(width, share * sizes.Top(entity), width);
+        }
+
+        // With sizes the box stands on the feet (half its height up); without, the old fixed lift.
+        private float Lift(ViewEntity entity, float height) => sizes == null ? lift : height / 2;
 
         // One flat colour that ignores depth: the team colour, darker, at 60 % (white without a palette).
         private Material SilhouetteMaterial(ViewEntity entity)

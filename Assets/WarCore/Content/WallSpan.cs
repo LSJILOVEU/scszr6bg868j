@@ -13,7 +13,8 @@ namespace WarCore.Content
     public static class WallSpan
     {
         public const long ClearanceRaw = 2 * SimFix.Scale;
-        public const long BelowRaw = SimFix.Scale / 4;
+        // The probe is the default body radius; a pack with a thinner body is still baked with it (conservative).
+        public const long BelowRaw = BodyRadius.DefaultRaw;
 
         public static bool BlocksWalk(long bottomRaw, long topRaw, long groundMinRaw, long groundMaxRaw) =>
             topRaw >= groundMinRaw - BelowRaw && bottomRaw < groundMaxRaw + ClearanceRaw;

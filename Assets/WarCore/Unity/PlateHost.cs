@@ -71,9 +71,9 @@ namespace WarCore.Unity
             GameObject mapRoot = MapView.Build(session.Map, NewMaterial(new Color(0.62f, 0.66f, 0.48f)), wall);
             plateViews = new PlateViews(mapRoot.transform, session.Map.Plates, session.Map, NewMaterial(new Color(0.7f, 0.6f, 0.45f)), wall);
             var palette = new[] { new Color(0.2f, 0.5f, 1f), new Color(1f, 0.85f, 0.2f) };
-            views = new EntityViews(transform, new Vector3(0.5f, 1f, 0.5f), 0.5f, palette);
+            views = new EntityViews(transform, new Vector3(0.5f, 1f, 0.5f), 0.5f, palette, BodySizes.Of(session));
             points = new PointViews(transform, ViewGround.For(session.Map));
-            shots = new ShotLines(transform, palette, 1.5f, ViewGround.For(session.Map));
+            shots = new ShotLines(transform, palette, 1.5f, ViewGround.For(session.Map), BodySizes.Of(session), session.Map.FloorY);
             isoCamera = new IsoCamera(12f, session.Map.FloorY);
             Show(session.Previous, session.Current, 0);
 
@@ -117,7 +117,7 @@ namespace WarCore.Unity
                 try
                 {
                     aim = AimPick.Pick(isoCamera, mouse.x, mouse.y, w, h, ViewGround.For(session.Map), shown, session.ControlledKey,
-                        session.Map.Plates, cut);
+                        session.Map.Plates, cut, BodySizes.Of(session));
                 }
                 catch (ArgumentOutOfRangeException) { aim = null; } // a pick outside the world bounds: keep the last aim
             }
@@ -153,8 +153,8 @@ namespace WarCore.Unity
             ViewEntity? me = Player(shown);
             if (me.HasValue)
                 isoCamera.Follow(me.Value.X, me.Value.Z);
-            cut = LayerCut.Run(session.Map.Plates, session.Map, me, isoCamera.Forward, LayerCut.SeeRadius);
-            covered = Silhouettes.Run(session.Map.Plates, session.Map, cut, me, shown.Entities, isoCamera.Forward);
+            cut = LayerCut.Run(session.Map.Plates, session.Map, me, isoCamera.Forward, LayerCut.SeeRadius, BodySizes.Of(session));
+            covered = Silhouettes.Run(session.Map.Plates, session.Map, cut, me, shown.Entities, isoCamera.Forward, BodySizes.Of(session));
             plateViews.Apply(cut);
             points.Apply(current);
             views.Apply(previous, current, alpha, cut, covered);

@@ -41,7 +41,7 @@ namespace WarCore.Presentation
             if (a.IsDeployedAtStart(spawn) && spawn.Layer == 0)
             {
                 SimVec3 point = a.SpawnPoint(spawn);
-                if (!a.Terrain.Nav.SegmentClear(point, point, InterimLocomotion.UnitFootprint))
+                if (!a.Terrain.Nav.SegmentClear(point, point, WorldAssembly.UnitRadius(a.Recipe.Combat)))
                     throw new ArgumentException("Unit spawn " + spawn.Key + " is not on standable ground in a terrain world.", "recipe");
             }
         }

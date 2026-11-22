@@ -41,6 +41,8 @@ namespace WarCore.Unity
         public ShowcaseUnits Units { get; }
         public ShowcaseShots Shots { get; }
         public ShowcaseFx Fx { get; }
+        // SCALE-2a: the session's body sizes (BodySizes.Of), or null for a world without a body (SHOW-1's fixed sizes).
+        public BodySizes Sizes { get; }
         // The map from above, one colour per cell (walls, ground or its surfaces): x to the right, z up.
         public Texture2D MiniMap { get; }
         // How far the picture is pushed sideways and up this frame, in metres on the camera's own axes.
@@ -65,6 +67,7 @@ namespace WarCore.Unity
         {
             Stage = stage ?? throw new ArgumentNullException(nameof(stage));
             Session = stage.Start();
+            Sizes = BodySizes.Of(Session);
             ViewMap map = Session.Map;
             Colors = stage.Colors(map);
             Ground = ViewGround.For(map);
@@ -78,9 +81,9 @@ namespace WarCore.Unity
             teams[0] = Rgb(Colors.Neutral);
             for (int i = 0; i < Colors.Team.Count; i++) teams[i + 1] = Rgb(Colors.Team[i]);
             Points = new PointViews(Root.transform, Ground, teams);
-            Units = new ShowcaseUnits(Root.transform, Session, Colors.Team);
+            Units = new ShowcaseUnits(Root.transform, Session, Colors.Team, stage.StanceScales());
             Fx = new ShowcaseFx(Root.transform);
-            Shots = new ShowcaseShots(Root.transform, Colors.Team, Ground, Fx);
+            Shots = new ShowcaseShots(Root.transform, Colors.Team, Ground, Fx, Sizes);
             MiniMap = Own(Mini(map));
             Camera = new IsoCamera(stage.Zoom, map.FloorY);
             tracker = new PlayerTracker(Session.ControlledKey);
@@ -196,13 +199,25 @@ namespace WarCore.Unity
         public void Jolt(float amount) => trauma = Mathf.Clamp01(trauma + amount);
 
         // The grenade preview (drawn only, hurts nobody): from the controlled unit's hand to the aimed point. False when
-        // there is no living controlled unit or one is already in the air.
-        public bool ThrowPreview(Vector3 at)
+        // there is no living controlled unit or one is already in the air. The hand: the body's muzzle with sizes (the
+        // simulation has no throw yet, so no release point to read), else SHOW-1's fixed height.
+        public bool ThrowPreview(Vector3 at) => Throw(at, true);
+
+        // SHOW-2: the drawn grenade of a real throw (ShowcaseActions queued its blast); it lands without a burst, and the
+        // simulation's blast is drawn when it goes off (Stepped).
+        public bool ThrowReal(Vector3 at) => Throw(at, false);
+
+        private bool Throw(Vector3 at, bool burst)
         {
             ulong? key = Session.ControlledKey;
             if (!key.HasValue || !Session.Current.TryGet(key.Value, out ViewEntity me) || !me.Alive) return false;
-            return Fx.Throw(new Vector3(me.X, me.Y + 1.5f, me.Z), at);
+            return Fx.Throw(new Vector3(me.X, me.Y + HandHeight(me), me.Z), at, burst);
         }
+
+        public float HandHeight(ViewEntity me) => Sizes == null ? ShowcaseLegacySizes.ThrowHeight : Sizes.Muzzle(me);
+
+        // Where chips fly off a hit unit, over its feet.
+        public float ChipsHeight(ViewEntity e) => Sizes == null ? ShowcaseLegacySizes.ChipsHeight : DrawnParts.ChipsHeight(Sizes.Top(e));
 
         // Empty when the drawn map, the simulation and the control points agree (TerrainHost.SelfCheck).
         public string SelfCheck() => TerrainHost.SelfCheck(Session.Map, Session, Session.Current, MapRoot.transform, Root.transform);
@@ -223,6 +238,16 @@ namespace WarCore.Unity
             killsSeen = Shots.PlayerKills;
             foreach (Vector3 at in Shots.Landed)
                 if ((at - playerAt).sqrMagnitude < NearMetres * NearMetres) Jolt(0.07f);
+            // SHOW-2: the blasts of this tick (a blast of a tick stepped over within one frame is not drawn).
+            foreach (ViewBlast blast in frame.Blasts) DrawBlast(blast);
+        }
+
+        // HC-4: one real blast, drawn from its own radii, and the camera shake it gives the player.
+        public void DrawBlast(ViewBlast blast)
+        {
+            var at = new Vector3(blast.X, blast.Y, blast.Z);
+            Fx.Explode(at, BlastLook.Of(blast.Inner, blast.Radius));
+            Jolt((at - playerAt).sqrMagnitude < 4f * blast.Radius * blast.Radius ? 0.5f : 0.15f);
         }
 
         // Every frame. aim: the point the player aims at, or null (no mouse over the picture). dt: the real time since the
@@ -269,8 +294,8 @@ namespace WarCore.Unity
                 Shake = new Vector2((Mathf.PerlinNoise(clock * 28f, 0.3f) * 2f - 1f) * reach, (Mathf.PerlinNoise(0.7f, clock * 28f) * 2f - 1f) * reach);
             }
             else Shake = Vector2.zero;
-            Cut = LayerCut.Run(Session.Map.Plates, Session.Map, me, Camera.Forward, LayerCut.SeeRadius);
-            covered = Silhouettes.Run(Session.Map.Plates, Session.Map, Cut, me, shown.Entities, Camera.Forward);
+            Cut = LayerCut.Run(Session.Map.Plates, Session.Map, me, Camera.Forward, LayerCut.SeeRadius, BodySizes.Of(Session));
+            covered = Silhouettes.Run(Session.Map.Plates, Session.Map, Cut, me, shown.Entities, Camera.Forward, BodySizes.Of(Session));
             Plates.Apply(Cut);
             Points.Apply(current);
             for (int i = 0; i < flags.Length; i++)
@@ -282,7 +307,7 @@ namespace WarCore.Unity
                 foreach (ViewEntity e in current.Entities)
                 {
                     if (!e.Alive || !Session.TryUnitStatus(e.Key, out UnitStatus status) || !Units.SetStatus(e.Key, status.Blocking, status.Health)) continue;
-                    Fx.Chips(new Vector3(e.X, e.Y + 1.1f, e.Z), e.Y, 4, true);
+                    Fx.Chips(new Vector3(e.X, e.Y + ChipsHeight(e), e.Z), e.Y, 4, true);
                     if (key.HasValue && key.Value == e.Key)
                     {
                         HurtLeft = HurtSeconds;

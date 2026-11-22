@@ -486,9 +486,9 @@ filter = FullyQualifiedName~WarCore.Tests.Aim1
 expect = WarCore.Tests.Aim1.Aim1ContentTests
 note = moveSpread may not hold an object
 original:
-| protected override bool IsNested(string field) => base.IsNested(field) || field == MoveSpreadField;
+| protected override bool IsNested(string field) => base.IsNested(field) || field == MoveSpreadField || field == VerticalSpreadField;
 replacement:
-| protected override bool IsNested(string field) => base.IsNested(field);
+| protected override bool IsNested(string field) => base.IsNested(field) || field == VerticalSpreadField;
 
 [ct-order]
 file = Assets/WarCore/Content/Data/Sections/CombatAim.cs

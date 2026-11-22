@@ -90,7 +90,7 @@ namespace WarCore.Content.MapTools
             long openingTop = board + openingRaw;
             if (((topRaw - openingTop) & 1) != 0) openingTop++;
 
-            long r = CombatSection.UnitRadiusRaw, eye = body.Eye.Raw, muzzle = body.Muzzle.Raw;
+            long r = body.Radius.Raw, eye = body.Eye.Raw, muzzle = body.Muzzle.Raw;
             long sill = sillTop - board, opening = openingTop - board;
             if (sill < 2 * r) throw new ArgumentException("the sill is lower than 2 x the unit radius; use a door", nameof(sillRaw));
             if (sill > Math.Min(eye, muzzle) - r) throw new ArgumentException("the sill is higher than min(eye, muzzle) - unit radius", nameof(sillRaw));
@@ -279,7 +279,7 @@ namespace WarCore.Content.MapTools
             long openingTop = floorTopRaw + openingRaw;
             if (((topRaw - openingTop) & 1) != 0) openingTop++;
 
-            long r = CombatSection.UnitRadiusRaw, eye = body.Eye.Raw, muzzle = body.Muzzle.Raw;
+            long r = body.Radius.Raw, eye = body.Eye.Raw, muzzle = body.Muzzle.Raw;
             long sill = sillTop - floorTopRaw, opening = openingTop - floorTopRaw;
             if (sill < 2 * r) throw new ArgumentException("the sill is lower than 2 x the unit radius; use a door", nameof(sillRaw));
             if (sill > Math.Min(eye, muzzle) - r) throw new ArgumentException("the sill is higher than min(eye, muzzle) - unit radius", nameof(sillRaw));

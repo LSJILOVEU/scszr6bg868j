@@ -85,7 +85,7 @@ namespace WarCore.Unity
                 return;
             }
             var palette = new[] { new Color(0.2f, 0.5f, 1f), new Color(1f, 0.85f, 0.2f) };
-            views = new EntityViews(transform, new Vector3(0.5f, 1f, 0.5f), 0.5f, palette);
+            views = new EntityViews(transform, new Vector3(0.5f, 1f, 0.5f), 0.5f, palette, BodySizes.Of(session));
             views.Apply(session.Previous, session.Current, 0);
             if (pathMode && !combatMode) // trails would bury the units and shots in a fight
             {
@@ -93,7 +93,7 @@ namespace WarCore.Unity
                 trails.Add(session.Current);
             }
             if (combatMode)
-                shots = new ShotLines(transform, palette, 1.5f, ViewGround.For(session.Map));
+                shots = new ShotLines(transform, palette, 1.5f, ViewGround.For(session.Map), BodySizes.Of(session), session.Map.FloorY);
             if (matchMode)
             {
                 points = new PointViews(transform, ViewGround.For(session.Map));

@@ -47,10 +47,9 @@ namespace WarCore.Content.MapTools
 
     public static partial class MapGate
     {
-        // The same as InterimLocomotion.UnitFootprint; Content does not reference Interim.
-        public const long FootprintRaw = SimFix.Scale / 4;
+        // The footprint of a pack without a body radius; a pack's own is ContentPack.UnitRadius.
+        public const long FootprintRaw = BodyRadius.DefaultRaw;
         private const uint MoverLayer = 1u;
-        private static readonly SimFix Footprint = SimFix.FromRaw(FootprintRaw);
 
         public static IReadOnlyList<MapProblem> Check(byte[] descBytes, ContentPack pack)
         {
@@ -221,6 +220,7 @@ namespace WarCore.Content.MapTools
             PlateSlopes(map, pack, problems);
             if (surfacesBroken) return;
             NavGrid nav = TerrainDerivation.Derive(map, pack).Nav;
+            SimFix footprint = pack.UnitRadius;
 
             // Anchors, units and point centres (ML-9b) with a plate id stand on a walkable node of that plate's layer (ML-6 graph
             // under the pack); the footprint on a plate is the movers' business. Without plate ids the graph is not built and
@@ -229,22 +229,22 @@ namespace WarCore.Content.MapTools
             var points = new List<MapPoint>();
             foreach (MapPoint point in desc.Points)
             {
-                if (point.Plate.HasValue ? OnPlate(layered, map, point.Plate.Value, point.At, out _) : Standable(nav, point.At)) { points.Add(point); continue; }
+                if (point.Plate.HasValue ? OnPlate(layered, map, point.Plate.Value, point.At, out _) : Standable(nav, point.At, footprint)) { points.Add(point); continue; }
                 problems.Add(new MapProblem("GATE_POINT_BLOCKED", "point " + Text(point.Id) + Layer(map, point.Plate), Cell(nav, At(point.At)), point.At));
             }
             var bases = new List<MapBase>();
             foreach (MapBase b in desc.Bases)
             {
-                if (b.Plate.HasValue ? OnPlate(layered, map, b.Plate.Value, b.At, out _) : Standable(nav, b.At)) { bases.Add(b); continue; }
+                if (b.Plate.HasValue ? OnPlate(layered, map, b.Plate.Value, b.At, out _) : Standable(nav, b.At, footprint)) { bases.Add(b); continue; }
                 problems.Add(FootprintProblem(nav, b.At, "base " + Text(b.Id) + Layer(map, b.Plate)));
             }
             foreach (MapPoint point in desc.Points)
-                if (point.Spawn.HasValue && !(point.SpawnPlate.HasValue ? OnPlate(layered, map, point.SpawnPlate.Value, point.Spawn.Value, out _) : Standable(nav, point.Spawn.Value)))
+                if (point.Spawn.HasValue && !(point.SpawnPlate.HasValue ? OnPlate(layered, map, point.SpawnPlate.Value, point.Spawn.Value, out _) : Standable(nav, point.Spawn.Value, footprint)))
                     problems.Add(FootprintProblem(nav, point.Spawn.Value, "spawn " + Text(point.Id) + Layer(map, point.SpawnPlate)));
             // Without control points there is no match, and the runtime places reserve units at the start too.
             bool reservesPlaced = desc.Points.Count == 0;
             foreach (MapUnit unit in desc.Units)
-                if ((reservesPlaced || !unit.Reserve) && !(unit.Plate.HasValue ? OnPlate(layered, map, unit.Plate.Value, unit.At, out _) : Standable(nav, unit.At)))
+                if ((reservesPlaced || !unit.Reserve) && !(unit.Plate.HasValue ? OnPlate(layered, map, unit.Plate.Value, unit.At, out _) : Standable(nav, unit.At, footprint)))
                     problems.Add(FootprintProblem(nav, unit.At, "unit " + Text(unit.Key) + Layer(map, unit.Plate)));
 
             // A base and a centre both on the ground: the ground grid, as before. Otherwise the layered graph from the base's
@@ -346,10 +346,10 @@ namespace WarCore.Content.MapTools
 
         private static MapProblem FootprintProblem(NavGrid nav, MapMm at, string id) => new MapProblem("GATE_SPAWN_FOOTPRINT", id, Cell(nav, At(at)), at);
 
-        private static bool Standable(NavGrid nav, MapMm at)
+        private static bool Standable(NavGrid nav, MapMm at, SimFix footprint)
         {
             SimVec3 p = At(at);
-            return nav.SegmentClear(p, p, Footprint);
+            return nav.SegmentClear(p, p, footprint);
         }
 
         private static SimVec3 At(MapMm at) => new SimVec3(SimFix.Ratio(at.X, 1000), SimFix.FromRaw(0), SimFix.Ratio(at.Z, 1000));

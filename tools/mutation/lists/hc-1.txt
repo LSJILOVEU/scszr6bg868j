@@ -1,0 +1,516 @@
+# HC-1: the one body radius (combat.body.radius, BodyRadius). Filter: the Hc1 tests.
+# Not listed: a child layer inheriting the parent radius (the body replaces the parent whole in ContentEntries; S2_ChildBodyDoesNotInheritTheParentsRadius pins it).
+# The 0.25 m values left in WallSpan.BelowRaw, MapGate.FootprintRaw, CombatSection.UnitRadiusRaw, BodySizes.RadiusRaw and InterimLocomotion.UnitFootprint
+# are the default radius under their old names (BodyRadius.DefaultRaw); the tests that use them keep passing by design.
+
+[radius-ignored]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1ContentTests.S2_RadiusIsReadInMetres
+note = the body is built without the radius it read
+original:
+| return new CombatBody(height, eye, muzzle, radius);
+replacement:
+| return new CombatBody(height, eye, muzzle);
+
+[radius-default-wrong]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1ContentTests.S2_RadiusIsReadInMetres
+note = a body that writes no radius gets the minimum instead of the default
+original:
+| r.Fix(RadiusField) : BodyRadius.Default;
+replacement:
+| r.Fix(RadiusField) : SimFix.FromRaw(BodyRadius.MinRaw);
+
+[radius-min-open]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1ContentTests.S2_RadiusIsReadInMetres
+note = the lower end 0.05 m is refused
+original:
+| radius.Raw, BodyRadius.MinRaw, BodyRadius.MaxRaw);
+replacement:
+| radius.Raw, BodyRadius.MinRaw + 1, BodyRadius.MaxRaw);
+
+[radius-min-closed]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1ContentTests.S2_RadiusOutsideTheRangeIsRefused
+note = one raw under the lower end is accepted
+original:
+| radius.Raw, BodyRadius.MinRaw, BodyRadius.MaxRaw);
+replacement:
+| radius.Raw, BodyRadius.MinRaw - 1, BodyRadius.MaxRaw);
+
+[radius-max-open]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1ContentTests.S2_RadiusOutsideTheRangeIsRefused
+note = one raw over the upper end is accepted by the reader
+original:
+| radius.Raw, BodyRadius.MinRaw, BodyRadius.MaxRaw);
+replacement:
+| radius.Raw, BodyRadius.MinRaw, BodyRadius.MaxRaw + 1);
+
+[radius-max-closed]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1ContentTests.S2_RadiusIsReadInMetres
+note = the upper end 0.25 m is refused
+original:
+| radius.Raw, BodyRadius.MinRaw, BodyRadius.MaxRaw);
+replacement:
+| radius.Raw, BodyRadius.MinRaw, BodyRadius.MaxRaw - 1);
+
+[body-height-default-r]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1ContentTests.S3_HeightFollowsTheRadius
+note = the body height floor uses the default radius
+original:
+| Within(r, "height", height.Raw, 2 * radius.Raw, WallSpan.ClearanceRaw);
+replacement:
+| Within(r, "height", height.Raw, 2 * UnitRadiusRaw, WallSpan.ClearanceRaw);
+
+[body-eye-low-default-r]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1ContentTests.S3_EyeFollowsTheRadiusOnBothSides
+note = the body eye floor uses the default radius
+original:
+| Within(r, "eye", eye.Raw, radius.Raw, height.Raw - radius.Raw);
+replacement:
+| Within(r, "eye", eye.Raw, UnitRadiusRaw, height.Raw - radius.Raw);
+
+[body-eye-high-default-r]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1ContentTests.S3_EyeFollowsTheRadiusOnBothSides
+note = the body eye ceiling uses the default radius
+original:
+| Within(r, "eye", eye.Raw, radius.Raw, height.Raw - radius.Raw);
+replacement:
+| Within(r, "eye", eye.Raw, radius.Raw, height.Raw - UnitRadiusRaw);
+
+[stance-height-default-r]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1ContentTests.S4_StanceHeightFollowsTheRadius
+note = the stance height floor uses the default radius
+original:
+| Within(e, "height", height.Raw, 2 * body.Value.Radius.Raw, WallSpan.ClearanceRaw);
+replacement:
+| Within(e, "height", height.Raw, 2 * UnitRadiusRaw, WallSpan.ClearanceRaw);
+
+[stance-eye-low-default-r]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1ContentTests.S4_StanceEyeFollowsTheRadiusOnBothSides
+note = the stance eye floor uses the default radius
+original:
+| Within(e, "eye", eye.Raw, body.Value.Radius.Raw, height.Raw - body.Value.Radius.Raw);
+replacement:
+| Within(e, "eye", eye.Raw, UnitRadiusRaw, height.Raw - body.Value.Radius.Raw);
+
+[stance-eye-high-default-r]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1ContentTests.S4_StanceEyeFollowsTheRadiusOnBothSides
+note = the stance eye ceiling uses the default radius
+original:
+| Within(e, "eye", eye.Raw, body.Value.Radius.Raw, height.Raw - body.Value.Radius.Raw);
+replacement:
+| Within(e, "eye", eye.Raw, body.Value.Radius.Raw, height.Raw - UnitRadiusRaw);
+
+[stance-body-default]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1ContentTests.S4_EveryStanceBodyCarriesThePacksRadius
+note = a stance body is built with the three argument constructor
+original:
+| new StanceDef(id, new CombatBody(height, eye, muzzle, body.Value.Radius), speed
+replacement:
+| new StanceDef(id, new CombatBody(height, eye, muzzle), speed
+
+[stance-radius-unchecked]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1ContentTests.S4_APackWithAStanceOfAnotherRadiusIsRefused
+note = a stance of another radius than the body is accepted
+original:
+| if (stances[i].Body.Radius.Raw != body.Value.Radius.Raw) throw
+replacement:
+| if (false) throw
+
+[hash-always]
+file = Assets/WarCore/Combat/CombatBody.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1ContentTests.S5_DefaultRadiusKeepsTheDigestOfBefore
+note = the radius is hashed also when it is the default
+original:
+| if (Radius.Raw != BodyRadius.DefaultRaw) { hash.Add("combat.body.radius.v1"); hash.Add(Radius.Raw); }
+replacement:
+| { hash.Add("combat.body.radius.v1"); hash.Add(Radius.Raw); }
+
+[hash-never]
+file = Assets/WarCore/Combat/CombatBody.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1ContentTests.S5_ARadiusOtherThanTheDefaultChangesTheDigest
+note = the radius is never hashed
+original:
+| if (Radius.Raw != BodyRadius.DefaultRaw) { hash.Add("combat.body.radius.v1"); hash.Add(Radius.Raw); }
+replacement:
+| { }
+
+[hash-tag-only]
+file = Assets/WarCore/Combat/CombatBody.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1ContentTests.S5_ARadiusOtherThanTheDefaultChangesTheDigest
+note = the marker is hashed without the radius value
+original:
+| hash.Add("combat.body.radius.v1"); hash.Add(Radius.Raw); }
+replacement:
+| hash.Add("combat.body.radius.v1"); }
+
+[ctor-unchecked]
+file = Assets/WarCore/Combat/CombatBody.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1ContentTests.S5_ConstructorRefusesARadiusOutsideTheRange
+note = the four argument constructor takes any radius
+original:
+| if (!BodyRadius.IsValid(radius)) throw new ArgumentOutOfRangeException(nameof(radius));
+replacement:
+|
+
+[valid-min-open]
+file = Assets/WarCore/Sim/BodyRadius.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1ContentTests.S5_ConstructorAcceptsTheRangeIncludingBothEnds
+expect = WarCore.Tests.Hc1ContentTests.S5_TheRangeIsTheDocumentedOne
+note = the lower end is refused
+original:
+| radius.Raw >= MinRaw
+replacement:
+| radius.Raw > MinRaw
+
+[valid-min-closed]
+file = Assets/WarCore/Sim/BodyRadius.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1ContentTests.S5_ConstructorRefusesARadiusOutsideTheRange
+expect = WarCore.Tests.Hc1ContentTests.S5_TheRangeIsTheDocumentedOne
+note = one raw under the lower end is accepted
+original:
+| radius.Raw >= MinRaw
+replacement:
+| radius.Raw >= MinRaw - 1
+
+[valid-max-open]
+file = Assets/WarCore/Sim/BodyRadius.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1ContentTests.S5_ConstructorRefusesARadiusOutsideTheRange
+expect = WarCore.Tests.Hc1ContentTests.S5_TheRangeIsTheDocumentedOne
+note = one raw over the upper end is accepted
+original:
+| radius.Raw <= MaxRaw
+replacement:
+| radius.Raw <= MaxRaw + 1
+
+[valid-max-closed]
+file = Assets/WarCore/Sim/BodyRadius.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1ContentTests.S5_ConstructorAcceptsTheRangeIncludingBothEnds
+expect = WarCore.Tests.Hc1ContentTests.S5_TheRangeIsTheDocumentedOne
+note = the upper end is refused
+original:
+| radius.Raw <= MaxRaw
+replacement:
+| radius.Raw < MaxRaw
+
+[pack-radius-default]
+file = Assets/WarCore/Content/Data/ContentPack.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1ContentTests.S2_RadiusIsReadInMetres
+note = the pack answers the default whatever its body says
+original:
+| public SimFix UnitRadius => Body.HasValue ? Body.Value.Radius : BodyRadius.Default;
+replacement:
+| public SimFix UnitRadius => BodyRadius.Default;
+
+[collider-default]
+file = Assets/WarCore/Presentation/Bridge/Features/MovementFeature.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1WorldTests.S6_PlacedUnitsGetThePacksRadius
+expect = WarCore.Tests.Hc1WorldTests.S6_AFlatWorldPlacesWithThePacksRadius
+note = units placed at the start get the default collider radius
+original:
+| new Collider(WorldAssembly.UnitRadius(a.Recipe.Combat), WorldAssembly.UnitHeight(a.Recipe.Combat))
+replacement:
+| new Collider(BodyRadius.Default, WorldAssembly.UnitHeight(a.Recipe.Combat))
+
+[mover-footprint-default]
+file = Assets/WarCore/Presentation/Bridge/Features/MovementFeature.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1WorldTests.S7_ThinBodyWalksToThePointNearTheWall
+note = the mover is built without the pack radius
+original:
+| a.PlayerStep, a.CrowdPass, a.Terrain, WorldAssembly.UnitRadius(a.Recipe.Combat));
+replacement:
+| a.PlayerStep, a.CrowdPass, a.Terrain);
+
+[adapter-radius-default]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1WorldTests.S6_AReserveUnitIsDeployedWithThePacksRadiusAndClearance
+note = the deployer takes the default radius
+original:
+| radius = WorldAssembly.UnitRadius(recipe.Combat);
+replacement:
+| radius = BodyRadius.Default;
+
+[reserve-collider-default]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1WorldTests.S6_AReserveUnitIsDeployedWithThePacksRadiusAndClearance
+note = a deployed reserve gets the default collider radius
+original:
+| new Collider(radius, unitHeight)
+replacement:
+| new Collider(BodyRadius.Default, unitHeight)
+
+[reserve-gap-default]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1WorldTests.S6_AReserveUnitIsDeployedWithThePacksRadiusAndClearance
+note = the spacing to a standing unit uses the default radius
+original:
+| SimFix gap = (radius + collider.Radius)
+replacement:
+| SimFix gap = (BodyRadius.Default + collider.Radius)
+
+[policy-default]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1WorldTests.S13_TheDeployersPolicyKeyFollowsTheRadius
+note = the deployer key names the default radius
+original:
+| hash.Add(radius.Raw); hash.Add(2);
+replacement:
+| hash.Add(BodyRadius.DefaultRaw); hash.Add(2);
+
+[deploy-ground-radius-default]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1WorldTests.S10_TheMatchDeploysWhereTheThinBodyStands
+note = the deploy ground is built without the pack radius
+original:
+| terrain, a.GroundRaw, WorldAssembly.UnitRadius(recipe.Combat))
+replacement:
+| terrain, a.GroundRaw)
+
+[terrain-feature-default]
+file = Assets/WarCore/Presentation/Bridge/Features/TerrainFeature.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1WorldTests.S10_TheWorldIsBuiltWhereTheThinBodyStands
+note = the world check of a spawn uses the default radius
+original:
+| SegmentClear(point, point, WorldAssembly.UnitRadius(a.Recipe.Combat))
+replacement:
+| SegmentClear(point, point, BodyRadius.Default)
+
+[sizes-default]
+file = Assets/WarCore/Presentation/Bridge/Features/BodySizes.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1WorldTests.S14_TheDrawnRadiusIsThePacksRadius
+expect = WarCore.Tests.Hc1WorldTests.S14_ThePictureAndTheColliderAgree
+note = the picture draws the default radius
+original:
+| radius = body.Radius.Raw / 65536f;
+replacement:
+| radius = BodyRadius.DefaultRaw / 65536f;
+
+[footprint-ctor-ignored]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1WorldTests.S7_ThinBodyWalksToThePointNearTheWall
+note = the radius given to the constructor is not kept
+original:
+| footprint = unitRadius.Value;
+replacement:
+|
+
+[footprint-ctor-unchecked]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1WorldTests.S7_TheMoverRefusesARadiusTheNavigationCannotProve
+note = the constructor takes any radius
+original:
+| if (unitRadius.Value.Raw <= 0 || unitRadius.Value.Raw > NavGrid.MaxClearRadiusRaw) throw new ArgumentOutOfRangeException(nameof(unitRadius));
+replacement:
+|
+
+[footprint-ctor-max-open]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1WorldTests.S7_TheMoverRefusesARadiusTheNavigationCannotProve
+note = one raw over the proved limit is accepted
+original:
+| unitRadius.Value.Raw > NavGrid.MaxClearRadiusRaw)
+replacement:
+| unitRadius.Value.Raw > NavGrid.MaxClearRadiusRaw + 1)
+
+[footprint-ctor-min-open]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1WorldTests.S7_TheMoverRefusesARadiusTheNavigationCannotProve
+note = a radius of zero is accepted
+original:
+| unitRadius.Value.Raw <= 0 ||
+replacement:
+| unitRadius.Value.Raw < 0 ||
+
+[path-default]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1WorldTests.S7_ThinBodyWalksToThePointNearTheWall
+note = the path mover tests the default radius on the ground
+original:
+| if (!layered) return grid.SegmentClear(point, next, footprint);
+replacement:
+| if (!layered) return grid.SegmentClear(point, next, UnitFootprint);
+
+[path-plate-default]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1WorldTests.S9_ThinBodyStandsNearTheEdgeOfAFloor
+note = the path mover tests the default radius on a floor
+original:
+| Settle(layer, point, ref next) && grid.SegmentClear(point, next, footprint, openCells)
+replacement:
+| Settle(layer, point, ref next) && grid.SegmentClear(point, next, UnitFootprint, openCells)
+
+[crowd-default]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1WorldTests.S7_ThinBodyWalksToThePointNearTheWall
+note = the crowd mover tests the default radius on the ground
+original:
+| if (terrain != null && !grid.SegmentClear(provisional[i].Point, next, footprint)) return false;
+replacement:
+| if (terrain != null && !grid.SegmentClear(provisional[i].Point, next, UnitFootprint)) return false;
+
+[crowd-plate-default]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1WorldTests.S9_ThinBodyStandsNearTheEdgeOfAFloor
+note = the crowd mover tests the default radius on a floor
+original:
+| if (layered) { if (!grid.SegmentClear(provisional[i].Point, next, footprint, openCells)) return false; }
+replacement:
+| if (layered) { if (!grid.SegmentClear(provisional[i].Point, next, UnitFootprint, openCells)) return false; }
+
+[plate-standable-default]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1WorldTests.S9_ThinBodyStandsNearTheEdgeOfAFloor
+note = a floor order point is kept or moved by the default radius
+original:
+| return grid.SegmentClear(p, p, footprint, openCells) ? p : NodeCentre(own);
+replacement:
+| return grid.SegmentClear(p, p, UnitFootprint, openCells) ? p : NodeCentre(own);
+
+[plate-can-stand-default]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1WorldTests.S9_TheStandingQueryOnAFloorUsesTheRadius
+note = the standing query on a floor uses the default radius
+original:
+| return grid.SegmentClear(at, at, footprint, openCells);
+replacement:
+| return grid.SegmentClear(at, at, UnitFootprint, openCells);
+
+[plate-settle-default]
+file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1WorldTests.S9_ThinBodyStandsNearTheEdgeOfAFloor
+note = the end of a step on a floor is tested with the default radius
+original:
+| if (!grid.SegmentClear(next, next, footprint, openCells)) return false;
+replacement:
+| if (!grid.SegmentClear(next, next, UnitFootprint, openCells)) return false;
+
+[deploy-flat-default]
+file = Assets/WarCore/Interim/DeployGround.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1WorldTests.S10_DeployGroundStandsAsCloseAsItsRadiusAllows
+note = the flat corner test uses the default radius
+original:
+| new SimVec3(radius * SimFix.FromInt(x), default, radius * SimFix.FromInt(z))
+replacement:
+| new SimVec3(BodyRadius.Default * SimFix.FromInt(x), default, BodyRadius.Default * SimFix.FromInt(z))
+
+[deploy-terrain-default]
+file = Assets/WarCore/Interim/DeployGround.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1WorldTests.S10_DeployGroundStandsAsCloseAsItsRadiusAllows
+expect = WarCore.Tests.Hc1WorldTests.S10_TerrainDeploymentIsExactAtTheRadius
+note = the terrain test uses the default radius
+original:
+| return grid.SegmentClear(at, at, radius);
+replacement:
+| return grid.SegmentClear(at, at, BodyRadius.Default);
+
+[deploy-ctor-ignored]
+file = Assets/WarCore/Interim/DeployGround.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1WorldTests.S10_DeployGroundStandsAsCloseAsItsRadiusAllows
+note = the constructor ignores the radius it is given
+original:
+| this.radius = radius ?? BodyRadius.Default;
+replacement:
+| this.radius = BodyRadius.Default;
+
+[deploy-ctor-unchecked]
+file = Assets/WarCore/Interim/DeployGround.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1WorldTests.S10_DeployGroundRefusesARadiusTheNavigationCannotProve
+note = the constructor takes any radius
+original:
+| if (this.radius.Raw <= 0 || this.radius.Raw > NavGrid.MaxClearRadiusRaw) throw new System.ArgumentOutOfRangeException(nameof(radius));
+replacement:
+|
+
+[gate-default]
+file = Assets/WarCore/Content/MapTools/MapGate.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1WorldTests.S11_TheGateChecksUnitsAgainstThePacksRadius
+note = the gate checks the default footprint
+original:
+| SimFix footprint = pack.UnitRadius;
+replacement:
+| SimFix footprint = SimFix.FromRaw(FootprintRaw);
+
+[window-default]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1ContentTests.S12_SillAtLeastTwiceThePacksRadius
+expect = WarCore.Tests.Hc1ContentTests.S12_SillAndOpeningLimitsFollowTheRadius
+note = the window gate uses the default radius
+original:
+| long r = body.Radius.Raw, eye = body.Eye.Raw, muzzle = body.Muzzle.Raw;
+|             long sill = sillTop - board, opening = openingTop - board;
+replacement:
+| long r = CombatSection.UnitRadiusRaw, eye = body.Eye.Raw, muzzle = body.Muzzle.Raw;
+|             long sill = sillTop - board, opening = openingTop - board;
+
+[window-floor-default]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Hc1
+expect = WarCore.Tests.Hc1ContentTests.S12_TheFloorWindowFollowsTheRadiusToo
+note = the floor window gate uses the default radius
+original:
+| long r = body.Radius.Raw, eye = body.Eye.Raw, muzzle = body.Muzzle.Raw;
+|             long sill = sillTop - floorTopRaw, opening = openingTop - floorTopRaw;
+replacement:
+| long r = CombatSection.UnitRadiusRaw, eye = body.Eye.Raw, muzzle = body.Muzzle.Raw;
+|             long sill = sillTop - floorTopRaw, opening = openingTop - floorTopRaw;

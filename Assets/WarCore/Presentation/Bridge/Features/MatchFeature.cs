@@ -32,16 +32,18 @@ namespace WarCore.Presentation
             // ML-9b: on a map with plates the match systems read layers (null without plates: the old rules).
             PlateLayers layers = PlateLayers.Of(a);
             var capture = new CaptureSystem(combat, recipe.Match, layers);
-            var adapter = new BattleAdapter(sim, a.Locomotion, recipe, new DeployGround(terrain != null ? terrain.Nav : WcMapNavigation.Create(a.Map), terrain, a.GroundRaw), a.GroundRaw, a.Standing,
+            var adapter = new BattleAdapter(sim, a.Locomotion, recipe, new DeployGround(terrain != null ? terrain.Nav : WcMapNavigation.Create(a.Map), terrain, a.GroundRaw, WorldAssembly.UnitRadius(recipe.Combat)), a.GroundRaw, a.Standing,
                 a.Plates != null ? a.Verticals : (ComponentType<VerticalState>?)null, a.Plates);
-            var reinforce = new ReinforceSystem(combat, recipe.Match, capture, adapter, layers: layers);
+            // RESPAWN-AI-2: with match.reentryTicks the system deploys by debt and reads death ticks and the controlled unit.
+            bool reentry = recipe.Match.ReentryTicks > 0;
+            var reinforce = new ReinforceSystem(combat, recipe.Match, capture, adapter, layers: layers, sim: reentry ? sim : null, controlled: reentry ? a.Controlled : null);
             var match = new MatchSystem(combat, recipe.Match, capture, a.Mode);
             a.Mode.Bind(match);
             sim.RegisterGameplay("battle.reinforce", reinforce, SimSystemPhase.Requests);
             // A positive match.respawnTicks with a player: the player takes over a reserve after the delay (PlayerFeature then adds no fallback).
             if (recipe.Match.RespawnTicks > 0 && a.Controlled != null)
             {
-                var respawn = new RespawnSystem(sim, combat, recipe.Match, capture, adapter, a.Controlled, layers);
+                var respawn = new RespawnSystem(sim, combat, recipe.Match, capture, adapter, a.Controlled, layers, reentry ? reinforce : null);
                 sim.RegisterGameplay("battle.respawn", respawn, SimSystemPhase.Requests);
                 if (recipe.Match.RespawnGuardTicks > 0) combat.SetDamageGuard(respawn);
             }
@@ -124,7 +126,7 @@ namespace WarCore.Presentation
         private readonly ComponentType<SquadStanding>? standing;
         private readonly ComponentType<VerticalState>? verticals;
         private readonly PlateWorld plates;
-        private static readonly SimFix Radius = SimFix.Ratio(1, 4);
+        private readonly SimFix radius;
         private readonly SimFix unitHeight;
         public ulong PolicyKey { get; }
         internal BattleAdapter(Simulation sim, InterimLocomotion locomotion, WorldRecipe recipe, DeployGround ground, long groundRaw, ComponentType<SquadStanding>? standing = null,
@@ -134,12 +136,13 @@ namespace WarCore.Presentation
             this.verticals = verticals;
             this.plates = plates;
             unitHeight = WorldAssembly.UnitHeight(recipe.Combat);
+            radius = WorldAssembly.UnitRadius(recipe.Combat);
             this.sim = sim; this.locomotion = locomotion; this.ground = ground; this.groundRaw = groundRaw;
             stage = new EntityStage(sim.Entities); spawns = recipe.Units.ToArray(); ids = new StableId[spawns.Length];
             positions = sim.Entities.Resolve<Position>(); colliders = sim.Entities.Resolve<Collider>();
             intents = sim.Entities.Resolve<MoveIntent>(); waypoints = sim.Entities.Resolve<MoveWaypoint>(); combatants = sim.Entities.Resolve<Combatant>();
             var hash = new StateHash(); hash.Add("bridge.deployer.v1"); hash.Add(ground.Digest); hash.Add(groundRaw);
-            hash.Add(Radius.Raw); hash.Add(2); hash.Add(spawns.Length);
+            hash.Add(radius.Raw); hash.Add(2); hash.Add(spawns.Length);
             for (int i = 0; i < spawns.Length; i++)
             {
                 ids[i] = StableEntityKey.Placed(1, spawns[i].Key).Id;
@@ -199,12 +202,12 @@ namespace WarCore.Presentation
                 // ML-9b: on a map with plates only units on the same layer keep their distance (one under a floor does not count).
                 if (verticals.HasValue && LayerOf(other) != layer) continue;
                 Collider collider = sim.Entities.Read(colliders, other);
-                SimFix gap = (Radius + collider.Radius) * SimFix.FromInt(2);
+                SimFix gap = (radius + collider.Radius) * SimFix.FromInt(2);
                 if (CombatSystem.Horizontal(at - position.Value).LengthSquared < new SimVec3(gap, default, default).LengthSquared) return false;
             }
             int index = Array.IndexOf(ids, stable); UnitSpawn spawn = spawns[index];
             sim.Entities.Set(positions, unit, new Position(at));
-            sim.Entities.Set(colliders, unit, new Collider(Radius, unitHeight));
+            sim.Entities.Set(colliders, unit, new Collider(radius, unitHeight));
             sim.Entities.Set(intents, unit, new MoveIntent(at, SimFix.Ratio(spawn.SpeedMmPerSec, 1000 * SimClock.TickRate), spawn.Squad, false));
             sim.Entities.Set(waypoints, unit, default);
             // The deployment's layer: a unit that stood on a plate before and comes back on the ground is on layer 0 again.
