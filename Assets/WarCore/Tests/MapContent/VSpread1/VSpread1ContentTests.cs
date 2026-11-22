@@ -70,7 +70,10 @@ namespace WarCore.Tests.VSpread1
         [Test]
         public void V2_TheShippedLayerReads()
         {
-            VerticalSpread v = Layer("rwr-vspread");
+            // The layer must load and its pack must carry the section (a load error or a missing section fails here, not later).
+            VerticalSpread v = null;
+            Assert.DoesNotThrow(() => v = Layer("rwr-vspread"));
+            Assert.That(v, Is.Not.Null);
             Assert.That(v.Permille, Is.EqualTo(1000));
             Assert.That(v.StancePermille.Length, Is.EqualTo(2));
             Assert.That(v.StancePermille[0], Is.EqualTo(800));
@@ -101,6 +104,12 @@ namespace WarCore.Tests.VSpread1
             Refused(Spread(aim: "center", snap: "5001"), "snapMm");
             Refused(Spread(extra: "\"reload\": 1"), "reload");
             Refused(Spread(extra: "\"reload\": { }"), "reload");
+            // An object or array where a number or a name belongs is refused as such, before any field is read.
+            foreach (string value in new[] { "{ }", "[ 1 ]" })
+            {
+                ContentException e = Assert.Throws<ContentException>(() => Load(Spread(extra: "\"aim\": " + value)).BuildCombat());
+                Assert.That(e.Message, Does.Contain("field 'aim': must be a number or a string"));
+            }
             Refused("[ 1000 ]", "verticalSpread");
         }
 
