@@ -47,9 +47,9 @@ filter = FullyQualifiedName~SizeLiteralScannerTests
 expect = WarCore.Tests.SizeLiteralScannerTests.R1_ColourLinesAreSkipped
 note = colour lines are scanned
 original:
-|                 if (line.IndexOf("Color(", StringComparison.Ordinal) < 0 && line.IndexOf("Color32(", StringComparison.Ordinal) < 0)
+|                 if (!Colour.IsMatch(line))
 replacement:
-|                 if (line.IndexOf("Color32(", StringComparison.Ordinal) < 0)
+|                 if (true)
 
 [hc0-colour32-skip]
 file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
@@ -57,9 +57,9 @@ filter = FullyQualifiedName~SizeLiteralScannerTests
 expect = WarCore.Tests.SizeLiteralScannerTests.R1_ColourLinesAreSkipped
 note = Color32 lines are scanned
 original:
-|                 if (line.IndexOf("Color(", StringComparison.Ordinal) < 0 && line.IndexOf("Color32(", StringComparison.Ordinal) < 0)
+|         private static readonly Regex Colour = new Regex(@"\bColor(?:32)?\(", RegexOptions.CultureInvariant);
 replacement:
-|                 if (line.IndexOf("Color(", StringComparison.Ordinal) < 0)
+|         private static readonly Regex Colour = new Regex(@"\bColor\(", RegexOptions.CultureInvariant);
 
 [hc0-zero-one]
 file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
@@ -158,9 +158,9 @@ filter = FullyQualifiedName~SizeLiteralScannerTests
 expect = WarCore.Tests.SizeLiteralScannerTests.R3_ScaleTimesOrOverALiteralIsFound
 note = Scale / 4 is missed
 original:
-|             @"(?<![\w.])\d+L?\s*\*\s*SimFix\.Scale(?![\w])|SimFix\.Scale\s*[*/]\s*\d+L?(?![\w.])", RegexOptions.CultureInvariant);
+|             @"(?<![\w.])" + D + @"L?\s*\*\s*SimFix\.Scale(?![\w])|SimFix\.Scale\s*[*/]\s*" + D + @"L?(?![\w.])", RegexOptions.CultureInvariant);
 replacement:
-|             @"(?<![\w.])\d+L?\s*\*\s*SimFix\.Scale(?![\w])|SimFix\.Scale\s*[*]\s*\d+L?(?![\w.])", RegexOptions.CultureInvariant);
+|             @"(?<![\w.])" + D + @"L?\s*\*\s*SimFix\.Scale(?![\w])|SimFix\.Scale\s*[*]\s*" + D + @"L?(?![\w.])", RegexOptions.CultureInvariant);
 
 [hc0-scale-left]
 file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
@@ -168,9 +168,9 @@ filter = FullyQualifiedName~SizeLiteralScannerTests
 expect = WarCore.Tests.SizeLiteralScannerTests.R3_ScaleTimesOrOverALiteralIsFound
 note = 2 * Scale is missed
 original:
-|             @"(?<![\w.])\d+L?\s*\*\s*SimFix\.Scale(?![\w])|SimFix\.Scale\s*[*/]\s*\d+L?(?![\w.])", RegexOptions.CultureInvariant);
+|             @"(?<![\w.])" + D + @"L?\s*\*\s*SimFix\.Scale(?![\w])|SimFix\.Scale\s*[*/]\s*" + D + @"L?(?![\w.])", RegexOptions.CultureInvariant);
 replacement:
-|             @"SimFix\.Scale\s*[*/]\s*\d+L?(?![\w.])", RegexOptions.CultureInvariant);
+|             @"SimFix\.Scale\s*[*/]\s*" + D + @"L?(?![\w.])", RegexOptions.CultureInvariant);
 
 [hc0-caps-counted]
 file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
