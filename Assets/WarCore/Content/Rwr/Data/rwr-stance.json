@@ -1,0 +1,11 @@
+{
+  "id": "rwr-stance",
+  "extends": "rwr-field",
+  "combat": {
+    "stances": [
+      { "id": "crouch", "height": 1.0, "eye": 0.75, "muzzle": 0.75, "speedPermille": 500, "spreadPermille": 700, "ticks": 6 },
+      { "id": "prone", "height": 0.5, "eye": 0.25, "muzzle": 0.25, "speedPermille": 250, "spreadPermille": 400, "ticks": 15,
+        "deny": ["dash", "traverse"] }
+    ]
+  }
+}

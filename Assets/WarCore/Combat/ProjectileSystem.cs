@@ -31,8 +31,14 @@ namespace WarCore.Combat
         public readonly int Team, Weapon, Flights;
         public readonly long LaunchTick;
         public readonly SimVec3 Origin, Step;
-        public ProjectileView(StableId launcher, int team, int weapon, long launchTick, SimVec3 origin, SimVec3 step, int flights)
-        { Launcher = launcher; Team = team; Weapon = weapon; LaunchTick = launchTick; Origin = origin; Step = step; Flights = flights; }
+        // STANCE-1: the point on the ground under the launcher when it fired (Origin less the muzzle height it fired at).
+        public readonly SimVec3 LaunchFoot;
+        public ProjectileView(StableId launcher, int team, int weapon, long launchTick, SimVec3 origin, SimVec3 step, int flights,
+            SimVec3 launchFoot = default)
+        {
+            Launcher = launcher; Team = team; Weapon = weapon; LaunchTick = launchTick; Origin = origin; Step = step; Flights = flights;
+            LaunchFoot = launchFoot;
+        }
         public SimVec3 PositionAt(long tick) => Origin + Step * SimFix.FromInt((int)(tick - LaunchTick));
     }
 
@@ -51,6 +57,10 @@ namespace WarCore.Combat
         private readonly long[] launchTicks;
         private readonly SimVec3[] origins, steps;
         private readonly SimFix[] stepLengths;
+        // STANCE-1: the muzzle height (raw, above the launcher's foot) each projectile left at; kept, saved and hashed only when
+        // the pack has stances (stanced), else every entry is the pack's muzzle.
+        private readonly long[] muzzles;
+        private readonly bool stanced;
         private readonly ProjectileImpact[] impacts;
         private int count, impactCount;
         private long lastTick;
@@ -63,7 +73,8 @@ namespace WarCore.Combat
             this.sim = sim; this.combat = combat; pack = combat.Pack;
             launchers = new StableId[capacity]; teams = new int[capacity]; weapons = new int[capacity];
             launchTicks = new long[capacity]; origins = new SimVec3[capacity]; steps = new SimVec3[capacity];
-            stepLengths = new SimFix[capacity]; impacts = new ProjectileImpact[capacity];
+            stepLengths = new SimFix[capacity]; impacts = new ProjectileImpact[capacity]; muzzles = new long[capacity];
+            stanced = pack.HasStances;
             combat.AttachProjectiles(this);
             hitStream = sim.Rng.Stream(HitStreamName);
         }
@@ -80,23 +91,26 @@ namespace WarCore.Combat
         {
             if ((uint)index >= (uint)count) throw new ArgumentOutOfRangeException(nameof(index));
             return new ProjectileView(launchers[index], teams[index], weapons[index], launchTicks[index], origins[index], steps[index],
-                pack.Projectiles[weapons[index]].Flights);
+                pack.Projectiles[weapons[index]].Flights, FootOf(index));
         }
+
+        // The launch foot of projectile i: its origin less the muzzle height it left at.
+        private SimVec3 FootOf(int i) => origins[i] - new SimVec3(default, SimFix.FromRaw(muzzles[i]), default);
         // The tick of the last step (or of the restore); positions in flight are PositionAt(LastTick).
         public long LastTick => lastTick;
 
-        internal void Add(StableId launcher, int team, int weapon, long tick, SimVec3 origin, SimVec3 direction)
+        internal void Add(StableId launcher, int team, int weapon, long tick, SimVec3 origin, SimVec3 direction, long muzzleRaw)
         {
             if (count == launchers.Length) throw new InvalidOperationException("Projectile capacity exceeded.");
             SimVec3 step = direction.Normalized * SimFix.FromRaw(pack.Projectiles[weapon].StepRaw);
             if (step.LengthSquared.Sign == 0) throw new InvalidOperationException("A projectile needs a direction.");
-            Put(count++, launcher, team, weapon, tick, origin, step);
+            Put(count++, launcher, team, weapon, tick, origin, step, stanced ? muzzleRaw : combat.MuzzleRaw);
         }
 
-        private void Put(int i, StableId launcher, int team, int weapon, long tick, SimVec3 origin, SimVec3 step)
+        private void Put(int i, StableId launcher, int team, int weapon, long tick, SimVec3 origin, SimVec3 step, long muzzle)
         {
             launchers[i] = launcher; teams[i] = team; weapons[i] = weapon; launchTicks[i] = tick;
-            origins[i] = origin; steps[i] = step; stepLengths[i] = step.Length;
+            origins[i] = origin; steps[i] = step; stepLengths[i] = step.Length; muzzles[i] = muzzle;
         }
 
         public void Step(SimContext c)
@@ -107,10 +121,10 @@ namespace WarCore.Combat
             for (int i = 0; i < count; i++)
             {
                 if (tick > launchTicks[i] && Land(c, i, tick)) continue;
-                if (kept != i) Put(kept, launchers[i], teams[i], weapons[i], launchTicks[i], origins[i], steps[i]);
+                if (kept != i) Put(kept, launchers[i], teams[i], weapons[i], launchTicks[i], origins[i], steps[i], muzzles[i]);
                 kept++;
             }
-            for (int i = kept; i < count; i++) Put(i, default, 0, 0, 0, default, default);
+            for (int i = kept; i < count; i++) Put(i, default, 0, 0, 0, default, default, 0);
             count = kept;
         }
 
@@ -138,8 +152,7 @@ namespace WarCore.Combat
                 case CombatSystem.Landing.Enemy:
                 case CombatSystem.Landing.Friend when pack.FriendlyFire:
                 {
-                    SimVec3 foot = origins[i] - new SimVec3(default, SimFix.FromRaw(combat.MuzzleRaw), default);
-                    long damage = combat.LandDamage(c, hitStream, launcher, launchTicks[i], foot, hit, in def, tick, out SimFix distance);
+                    long damage = combat.LandDamage(c, hitStream, launcher, launchTicks[i], FootOf(i), hit, in def, tick, out SimFix distance);
                     Record(i, combat.Entities.StableOf(hit), end, distance, damage,
                         landing == CombatSystem.Landing.Enemy ? FireOutcome.Hit : FireOutcome.FriendHit);
                     return true;
@@ -173,6 +186,7 @@ namespace WarCore.Combat
                 writer.Int64(origins[i].X.Raw); writer.Int64(origins[i].Y.Raw); writer.Int64(origins[i].Z.Raw);
                 writer.Int64(steps[i].X.Raw); writer.Int64(steps[i].Y.Raw); writer.Int64(steps[i].Z.Raw);
                 writer.Int32(pack.Projectiles[weapons[i]].Flights);
+                if (stanced) writer.Int64(muzzles[i]);
             }
         }
 
@@ -188,15 +202,17 @@ namespace WarCore.Combat
                 long launch = reader.Int64();
                 SimVec3 origin = ReadPoint(reader, MaxCoordinateRaw), step = ReadPoint(reader, MaxStepRaw);
                 int flights = reader.Int32();
+                long muzzle = stanced ? reader.Int64() : combat.MuzzleRaw;
+                SimStateReader.Require(muzzle >= 0 && muzzle <= pack.Body.Value.Height.Raw, "Projectile muzzle height is outside the body.");
                 SimStateReader.Require(team >= 0, "Projectile team is negative.");
                 SimStateReader.Require(weapon >= 0 && weapon < pack.Weapons.Length && pack.IsProjectile(weapon), "Projectile weapon is not a projectile weapon of the pack.");
                 SimStateReader.Require(flights == pack.Projectiles[weapon].Flights, "Projectile flight length differs from its weapon.");
                 SimStateReader.Require(launch <= tick && tick - launch < flights, "Projectile launch tick is outside its flight.");
                 SimStateReader.Require(step.LengthSquared.Sign != 0, "Projectile step is zero.");
                 SimStateReader.Require(i == 0 || launch >= launchTicks[i - 1], "Projectiles are not in firing order.");
-                Put(i, launcher, team, weapon, launch, origin, step);
+                Put(i, launcher, team, weapon, launch, origin, step, muzzle);
             }
-            for (int i = n; i < count; i++) Put(i, default, 0, 0, 0, default, default);
+            for (int i = n; i < count; i++) Put(i, default, 0, 0, 0, default, default, 0);
             count = n; impactCount = 0; lastTick = tick;
         }
 
@@ -218,6 +234,7 @@ namespace WarCore.Combat
                 hash.Add(launchers[i].Value); hash.Add(teams[i]); hash.Add(weapons[i]); hash.Add(launchTicks[i]);
                 hash.Add(origins[i].X.Raw); hash.Add(origins[i].Y.Raw); hash.Add(origins[i].Z.Raw);
                 hash.Add(steps[i].X.Raw); hash.Add(steps[i].Y.Raw); hash.Add(steps[i].Z.Raw);
+                if (stanced) hash.Add(muzzles[i]);
             }
         }
     }

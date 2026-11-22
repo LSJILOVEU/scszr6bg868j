@@ -1,0 +1,353 @@
+# ML-12a: the building stamp (MapBuildings, MapBuilding, MapBuildSpec), DoorOn, the building members of MapDocument and the
+# floor view. Filter: ML-12 tests.
+# Not listed: the ground-floor wall height's "- map.FloorRaw" (every fixture has floorRaw 0, the same as the old ML-1
+# walls); WindowOn (its checks are the ML-3 ones, compared byte for byte with the direct stamp); the cutout loop of Removal (without it the plate removal refuses a plate
+# that still has a cutout, an exception rather than a wrong result).
+[ml12a-src-no-part]
+file = Assets/WarCore/Content/MapTools/MapBuildings.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12FloorsTests
+expect = WarCore.Tests.Ml12HouseTests
+note = every part of a floor gets the same src
+original:
+|         public static ulong Src(int floor, int generation, ulong part) => (ulong)generation * GenerationStep + (ulong)floor * FloorStep + part;
+replacement:
+|         public static ulong Src(int floor, int generation, ulong part) => (ulong)generation * GenerationStep + (ulong)floor * FloorStep;
+
+[ml12a-decode-generation]
+file = Assets/WarCore/Content/MapTools/MapBuildings.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12FloorsTests
+note = a later generation decodes to a wrong floor
+original:
+|             floor = (int)(rest / FloorStep);
+replacement:
+|             floor = (int)(src / FloorStep);
+
+[ml12a-ground-not-flat]
+file = Assets/WarCore/Content/MapTools/MapBuildings.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12HouseTests
+note = uneven ground is accepted
+original:
+|             if (high - low > LayeredNav.StepRaw) throw
+replacement:
+|             if (high - low > 2 * LayeredNav.StepRaw) throw
+
+[ml12a-ground-ceiling]
+file = Assets/WarCore/Content/MapTools/MapBuildings.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12HouseTests
+note = the top floor may pass the ceiling
+original:
+|             if (high + b.Floors * b.StoreyRaw > map.CeilingRaw)
+replacement:
+|             if (high + (b.Floors - 1) * b.StoreyRaw > map.CeilingRaw)
+
+[ml12a-steep-whole-stair]
+file = Assets/WarCore/Content/MapTools/MapBuildings.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12HouseTests
+note = the slope is checked over the whole stair instead of its steepest cell
+original:
+|             if (b.Floors >= 2 && (rise * slopeDen > slopeNum * SimFix.Scale || rise * MapGate.PlateSlopeDen > MapGate.PlateSlopeNum * SimFix.Scale))
+replacement:
+|             if (b.Floors >= 2 && (b.StoreyRaw * slopeDen > slopeNum * b.StairLength * SimFix.Scale || b.StoreyRaw * MapGate.PlateSlopeDen > MapGate.PlateSlopeNum * b.StairLength * SimFix.Scale))
+
+[ml12a-steep-scale]
+file = Assets/WarCore/Content/MapTools/MapBuildings.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12HouseTests
+note = a stair four times too steep passes
+original:
+|             if (b.Floors >= 2 && (rise * slopeDen > slopeNum * SimFix.Scale || rise * MapGate.PlateSlopeDen > MapGate.PlateSlopeNum * SimFix.Scale))
+replacement:
+|             if (b.Floors >= 2 && (rise * slopeDen > 4 * slopeNum * SimFix.Scale || rise * MapGate.PlateSlopeDen > 4 * MapGate.PlateSlopeNum * SimFix.Scale))
+
+[ml12a-rise-floor]
+file = Assets/WarCore/Content/MapTools/MapBuildings.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12HouseTests
+note = the rise per cell is rounded down
+original:
+|             long rise = (b.StoreyRaw + b.StairLength - 1) / b.StairLength;
+replacement:
+|             long rise = b.StoreyRaw / b.StairLength;
+
+[ml12a-steep-one-floor]
+file = Assets/WarCore/Content/MapTools/MapBuildings.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12HouseTests
+note = a one-floor building is checked for a stair it does not have
+original:
+|             if (b.Floors >= 2 && (rise
+replacement:
+|             if (b.Floors >= 1 && (rise
+
+[ml12a-stacked-stairs]
+file = Assets/WarCore/Content/MapTools/MapBuildings.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12HouseTests
+note = stairs stacked with less than 2 m pass
+original:
+|             if (b.Floors >= 3 && rise > b.StoreyRaw - b.ThickRaw - WallSpan.ClearanceRaw)
+replacement:
+|             if (b.Floors >= 4 && rise > b.StoreyRaw - b.ThickRaw - WallSpan.ClearanceRaw)
+
+[ml12a-door-every-floor]
+file = Assets/WarCore/Content/MapTools/MapBuildings.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12FloorsTests
+expect = WarCore.Tests.Ml12HouseTests
+note = every floor gets the door
+original:
+|                     if (f == 0 && side == b.DoorSide)
+replacement:
+|                     if (side == b.DoorSide)
+
+[ml12a-wall-base]
+file = Assets/WarCore/Content/MapTools/MapBuildings.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12FloorsTests
+note = upper walls stand 2 raw too high
+original:
+|                         : new MapWall(0, "wall", layer, start, size, b.StoreyRaw, baseRaw: ground + f * b.StoreyRaw);
+replacement:
+|                         : new MapWall(0, "wall", layer, start, size, b.StoreyRaw, baseRaw: ground + f * b.StoreyRaw + 2);
+
+[ml12a-plate-inset]
+file = Assets/WarCore/Content/MapTools/MapBuildings.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12FloorsTests
+expect = WarCore.Tests.Ml12HouseTests
+note = the floor plate starts on the west wall
+original:
+| new MapPlate(0, new MapXZ(b.Cell.X + 1, b.Cell.Z + 1),
+replacement:
+| new MapPlate(0, new MapXZ(b.Cell.X, b.Cell.Z + 1),
+
+[ml12a-stair-generation]
+file = Assets/WarCore/Content/MapTools/MapBuildings.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12FloorsTests
+note = a stair takes the generation of its own floor
+original:
+|                 plates.Add(new MapStampEntry<MapPlate>(Src(f, b.Generations[f + 1], PartStair),
+replacement:
+|                 plates.Add(new MapStampEntry<MapPlate>(Src(f, b.Generations[f], PartStair),
+
+[ml12a-cutout-generation]
+file = Assets/WarCore/Content/MapTools/MapBuildings.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12FloorsTests
+note = cutouts look for generation 0 plates
+original:
+|                 ulong want = Src(f, b.Generations[f], PartPlate);
+replacement:
+|                 ulong want = Src(f, 0, PartPlate);
+
+[ml12a-cutout-any-instance]
+file = Assets/WarCore/Content/MapTools/MapBuildings.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12FloorsTests
+note = a cutout may take another building's plate
+original:
+|                     if (p.Src != null && p.Src.Instance == instance && p.Src.Src == want)
+replacement:
+|                     if (p.Src != null && p.Src.Src == want)
+
+[ml12a-removal-plates]
+file = Assets/WarCore/Content/MapTools/MapBuildings.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12FloorsTests
+note = removing floors leaves their plates and stairs
+original:
+|             foreach (MapPlate p in map.Plates) if (Above(p.Src, instance, keep))
+replacement:
+|             foreach (MapPlate p in map.Plates) if (false && Above(p.Src, instance, keep))
+
+[ml12a-removal-stair]
+file = Assets/WarCore/Content/MapTools/MapBuildings.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12FloorsTests
+note = the stair up to a removed floor stays
+original:
+|             return part == PartStair ? floor >= keep - 1 : floor >= keep;
+replacement:
+|             return floor >= keep;
+
+[ml12a-lowered-generation]
+file = Assets/WarCore/Content/MapTools/MapBuildings.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12FloorsTests
+note = a removed floor keeps its generation
+original:
+|                 gens[f]++;
+replacement:
+|                 gens[f] += 0;
+
+[ml12a-side-west]
+file = Assets/WarCore/Content/MapTools/MapBuildings.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12FloorsTests
+note = the west wall runs into the north wall
+original:
+|                 case 'w': start = new MapXZ(b.Cell.X, b.Cell.Z + 1); alongX = false; length = b.Size.Z - 2; return;
+replacement:
+|                 case 'w': start = new MapXZ(b.Cell.X, b.Cell.Z + 1); alongX = false; length = b.Size.Z - 1; return;
+
+[ml12a-view-ghost-own]
+file = Assets/WarCore/Presentation/Maps/MapFloorView.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12EditorTests
+expect = WarCore.Tests.Ml12FloorsTests
+note = the chosen floor is drawn as a ghost
+original:
+|             void Add(string kind, ulong id, int f) => items.Add(new MapFloorItem(kind, id, f, f > floor));
+replacement:
+|             void Add(string kind, ulong id, int f) => items.Add(new MapFloorItem(kind, id, f, f >= floor));
+
+[ml12a-view-cutout-ground]
+file = Assets/WarCore/Presentation/Maps/MapFloorView.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12EditorTests
+note = cutouts are on the ground
+original:
+|             foreach (MapCutout c in d.Cutouts) Add("cutout", c.Id, plateFloor.TryGetValue(c.Plate, out int f) ? f : 0);
+replacement:
+|             foreach (MapCutout c in d.Cutouts) Add("cutout", c.Id, 0);
+
+[ml12a-view-units-ground]
+file = Assets/WarCore/Presentation/Maps/MapFloorView.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12EditorTests
+note = units are on the ground
+original:
+|             foreach (MapUnit u in d.Units) Add("unit", u.Key, On(plateFloor, u.Plate));
+replacement:
+|             foreach (MapUnit u in d.Units) Add("unit", u.Key, 0);
+
+[ml12a-view-top-strict]
+file = Assets/WarCore/Presentation/Maps/MapFloorView.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12EditorTests
+note = a wall standing on a floor top counts one floor lower
+original:
+|                 foreach (long top in b.Tops) if (top <= bottom) floor++;
+replacement:
+|                 foreach (long top in b.Tops) if (top < bottom) floor++;
+
+[ml12a-view-outside]
+file = Assets/WarCore/Presentation/Maps/MapFloorView.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12EditorTests
+note = a raised wall east of the building counts as inside
+original:
+|                 if (w.Cell.X < b.X0 || w.Cell.Z < b.Z0 || w.Cell.X >= b.X1 || w.Cell.Z >= b.Z1) continue;
+replacement:
+|                 if (w.Cell.X < b.X0 || w.Cell.Z < b.Z0) continue;
+
+[ml12a-floors-without-file]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Buildings.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12EditorTests
+note = floors change without the build file
+original:
+|             if (buildJson == null)
+|                 throw new InvalidOperationException(
+replacement:
+|             if (false)
+|                 throw new InvalidOperationException(
+
+[ml12a-spec-not-checked]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Buildings.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12FloorsTests
+note = a build file for another map is taken
+original:
+|             spec.CheckFor(desc);
+replacement:
+|             ;
+
+[ml12a-no-cutouts]
+file = Assets/WarCore/Presentation/Maps/MapDocument.Buildings.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12HouseTests
+expect = WarCore.Tests.Ml12FloorsTests
+note = the building has no cutouts
+original:
+|             edit.Stamp(MapBuildings.Cutouts(edit.Current, instance, b));
+replacement:
+|             ;
+
+[ml12a-dooron-frame-ground]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12EditorTests
+note = the door frame stands on the ground
+original:
+|                 new MapStampEntry<MapWall>(1, new MapWall(0, kind, layer, left, leftSize, frame, baseRaw: floorTopRaw)),
+|                 new MapStampEntry<MapWall>(2, new MapWall(0, kind, layer, doorCell,
+replacement:
+|                 new MapStampEntry<MapWall>(1, new MapWall(0, kind, layer, left, leftSize, frame)),
+|                 new MapStampEntry<MapWall>(2, new MapWall(0, kind, layer, doorCell,
+
+[ml12a-dooron-lintel]
+file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12EditorTests
+note = the lintel is measured from the ground
+original:
+|             long bottom = floorTopRaw + WallSpan.ClearanceRaw;
+replacement:
+|             long bottom = WallSpan.ClearanceRaw + 2;
+
+[ml12a-spec-unknown-key]
+file = Assets/WarCore/Content/MapTools/MapBuildSpec.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12EditorTests
+note = unknown keys are read
+original:
+|                 if (Array.IndexOf(allowed, m.Name) < 0) throw Bad(
+replacement:
+|                 if (false) throw Bad(
+
+[ml12a-spec-pack]
+file = Assets/WarCore/Content/MapTools/MapBuildSpec.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12FloorsTests
+note = a file for another layer is taken
+original:
+|             if (map.Size.X != Width || map.Size.Z != Depth || !string.Equals(map.Pack, Pack, StringComparison.Ordinal))
+replacement:
+|             if (map.Size.X != Width || map.Size.Z != Depth)
+
+[ml12a-building-headroom]
+file = Assets/WarCore/Content/MapTools/MapBuilding.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12HouseTests
+note = 1.9 m under the plate passes
+original:
+|             if (storeyRaw - thickRaw < WallSpan.ClearanceRaw)
+replacement:
+|             if (storeyRaw - thickRaw < WallSpan.ClearanceRaw - 8000)
+
+[ml12a-building-door-at]
+file = Assets/WarCore/Content/MapTools/MapBuilding.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12EditorTests
+note = a door with no first frame passes
+original:
+|             if (doorAt < 1) throw
+replacement:
+|             if (doorAt < 0) throw
+
+[ml12a-building-stair-foot]
+file = Assets/WarCore/Content/MapTools/MapBuilding.cs
+filter = FullyQualifiedName~Ml12
+expect = WarCore.Tests.Ml12HouseTests
+note = a stair whose foot faces the wall passes
+original:
+|             if (footX < (long)cell.X + 1 || footZ
+replacement:
+|             if (footX < (long)cell.X || footZ

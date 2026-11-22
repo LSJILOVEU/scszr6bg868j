@@ -13,15 +13,17 @@ namespace WarCore.Content
         public readonly InterruptMode Interrupt;
         public readonly SimFix Sight, GridSpacing;
         public readonly int RespawnTicks, RespawnGuardTicks;
+        // RESPAWN-AI-1: match.reinforceSkipContested (optional, default false).
+        public readonly bool ReinforceSkipContested;
 
         public MatchRules(int num, int den, bool strict, int captureTicks, InterruptMode interrupt, int decayPerTick,
             int intervalTicks, int thinkInterval, int maxTicks, SimFix sight, int gridColumns, int gridRows, SimFix gridSpacing,
-            int respawnTicks = 0, int respawnGuardTicks = 0)
+            int respawnTicks = 0, int respawnGuardTicks = 0, bool reinforceSkipContested = false)
         {
             CaptureAdvantageNum = num; CaptureAdvantageDen = den; CaptureStrict = strict; CaptureTicks = captureTicks;
             Interrupt = interrupt; DecayPerTick = decayPerTick; IntervalTicks = intervalTicks; ThinkInterval = thinkInterval;
             MaxTicks = maxTicks; Sight = sight; GridColumns = gridColumns; GridRows = gridRows; GridSpacing = gridSpacing;
-            RespawnTicks = respawnTicks; RespawnGuardTicks = respawnGuardTicks;
+            RespawnTicks = respawnTicks; RespawnGuardTicks = respawnGuardTicks; ReinforceSkipContested = reinforceSkipContested;
         }
     }
 
@@ -53,6 +55,8 @@ namespace WarCore.Content
         public CombatBody? Body { get; }
         // PROJ-1: projectile speed per weapon in mm/s (0 = instant); passed to the combat pack as is.
         private readonly int[] projectileSpeeds;
+        // STANCE-1: the combat section's stances, or null; passed to the combat pack as is.
+        private readonly StanceDef[] stances;
 
         public string Id { get; }
         // Optional terrain rules (WP-22); null when the pack has none. Not part of any PolicyDigest.
@@ -63,9 +67,10 @@ namespace WarCore.Content
             bool friendlyFire, bool friendlyFireLocked, int allyCheckMissRaw, long allyHoldMilli,
             BlockSpec[] block, int[] unitTypeBlock, int[] unitTypeArchetypes, long?[] unitTypeSpeeds,
             string[] meleeIds = null, MeleeSpec[] melee = null, int[] unitTypeMelee = null, TerrainRules terrain = null, object[] sections = null, string[] ruleIds = null,
-            CombatBody? body = null, int[] projectileSpeeds = null)
+            CombatBody? body = null, int[] projectileSpeeds = null, StanceDef[] stances = null)
         {
             Body = body;
+            this.stances = stances;
             this.projectileSpeeds = projectileSpeeds ?? Array.Empty<int>();
             this.block = block; this.unitTypeBlock = unitTypeBlock;
             this.unitTypeArchetypes = unitTypeArchetypes; this.unitTypeSpeeds = unitTypeSpeeds;
@@ -146,9 +151,11 @@ namespace WarCore.Content
         {
             SimFix sight = selectorId == ContentPolicies.SightLimitedNearest ? Match.Sight : default;
             bool effective = friendlyFireLocked ? friendlyFire : requestedFriendlyFire ?? friendlyFire;
+            CombatAim aim = SectionOrNull<CombatAim>();
             return new CombatPack(weapons, ContentPolicies.Resolver(resolverId), ContentPolicies.Selector(selectorId, sight), maxHealthRaw,
                 effective, friendlyFireLocked, allyCheckMissRaw, allyHoldMilli, melee.Length == 0 ? null : melee, block.Length == 0 ? null : block, Body,
-                projectileSpeeds.Length == 0 ? null : projectileSpeeds);
+                projectileSpeeds.Length == 0 ? null : projectileSpeeds, aim?.MoveSpread, aim != null && aim.ManualReload, SectionOrNull<BlastRules>(),
+                stances, SectionOrNull<VerticalSpread>());
         }
 
         // Control points and spawn anchors are map data and stay with the caller.
@@ -159,7 +166,7 @@ namespace WarCore.Content
             {
                 return new MatchPack(points, bases, m.CaptureAdvantageNum, m.CaptureAdvantageDen, m.CaptureStrict, m.CaptureTicks,
                     m.Interrupt, m.DecayPerTick, m.IntervalTicks, m.ThinkInterval, m.MaxTicks, m.Sight, m.GridColumns, m.GridRows, m.GridSpacing,
-                    m.RespawnTicks, m.RespawnGuardTicks, ruleIds);
+                    m.RespawnTicks, m.RespawnGuardTicks, ruleIds, m.ReinforceSkipContested);
             }
             catch (ArgumentException e)
             {
