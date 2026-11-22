@@ -84,17 +84,21 @@ namespace WarCore.Tests.Down1
             Assert.That(() => Stance.Stance1Worlds.SimOf(Demo()).RestoreRetainedSnapshot(plainSave), Throws.Exception);
         }
 
-        // Units 0 and 2 (team 1) each shoot unit 1 (team 2, 100 health) for 60 on tick 3: the second shot downs it (the first
-        // went into this tick's ledger). One Sim runs tick 3, loads its own save of tick 2 and runs on: every hash matches the
-        // uninterrupted run (the ledger of the undone tick 3 is void after the load).
+        // On tick 3 units 0 and 2 (team 1) each shoot unit 1 (team 2, 100 health) for 60: the second shot downs it (the first
+        // went into this tick's ledger); units 1 and 3 shoot unit 0. One Sim runs tick 3, loads its own save of tick 2 and runs
+        // on: every hash matches the uninterrupted run. A load puts the units in other entity slots, so the stale ledger of
+        // the undone tick 3 would land on whichever unit now holds unit 1's old slot: unit 0, also hit on tick 3.
         [Test]
         public void D10_RewindingOverALedgerTick()
         {
             Down1World Make()
             {
-                var w = new Down1World(Pack(Rules(), new ScriptedDamage { Fallback = 60 }), new[] { U(0, 0, 1), U(2 * M, 0, 2), U(0, 2 * M, 1) });
+                var w = new Down1World(Pack(Rules(), new ScriptedDamage { Fallback = 60 }),
+                    new[] { U(0, 0, 1), U(2 * M, 0, 2), U(0, 2 * M, 1), U(2 * M, 2 * M, 2) });
                 w.Shoot(3, 0, 1);
                 w.Shoot(3, 2, 1);
+                w.Shoot(3, 1, 0);
+                w.Shoot(3, 3, 0);
                 return w;
             }
             Down1World a = Make(), b = Make();

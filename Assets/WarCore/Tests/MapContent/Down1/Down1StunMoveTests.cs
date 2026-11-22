@@ -98,24 +98,35 @@ namespace WarCore.Tests.Down1
 
         // ---- D9 the player ----
 
-        // The player (key 1, team 1, armed) aims and pulls the trigger at an unarmed enemy 10 m away from tick 2: downed on tick 1,
-        // no shot; not downed, shots.
+        // The player (key 1, team 1, armed, at (5, 8) m) aims north and pulls the trigger from tick 2: downed on tick 1, no shot and
+        // the facing stays; not downed, shots and the player turns north.
         [TestCase(true)]
         [TestCase(false)]
         public void D9_ADownedPlayerDoesNotFire(bool downed)
         {
-            var w = new Down1Session(Down1Session.DownPack(), new[] { Soldier(1, 1, 5000, 8000, 1), Soldier(2, 2, 15000, 8000, 2, -1) }, open: Player(1));
+            var w = new Down1Session(Down1Session.DownPack(), new[] { Soldier(1, 1, 5000, 8000, 1), Soldier(2, 2, 15000, 8000, 2, -1) },
+                open: r => Player(1)(r).WithFacing());
             if (downed) w.DownAt(1, 1);
             w.StepTo(1);
+            UnitFacing before = M3TestWorld.Component<UnitFacing>(w.S, 1);
             int fired = 0;
             for (int t = 0; t < 30; t++)
             {
-                w.S.SetPlayerInput(w.Tick + 1, new PlayerInput(0, 0, 15000, 8000, primary: true));
+                w.S.SetPlayerInput(w.Tick + 1, new PlayerInput(0, 0, 5000, 15000, primary: true));
                 w.Step();
                 foreach (FireRecord f in w.Combat.Fires) if (f.Shooter.Equals(w.Sim.Entities.StableOf(w.Unit(1)))) fired++;
             }
-            if (downed) Assert.That(fired, Is.EqualTo(0));
-            else Assert.That(fired, Is.GreaterThan(0));
+            UnitFacing after = M3TestWorld.Component<UnitFacing>(w.S, 1);
+            if (downed)
+            {
+                Assert.That(fired, Is.EqualTo(0));
+                Assert.That((after.X.Raw, after.Z.Raw), Is.EqualTo((before.X.Raw, before.Z.Raw)));
+            }
+            else
+            {
+                Assert.That(fired, Is.GreaterThan(0));
+                Assert.That((after.X.Raw, after.Z.Raw), Is.EqualTo((0L, SimFix.Scale)));
+            }
         }
 
         // The player (key 1) dies on tick 5; squad mates of team 1: key 2 downed (1 m away), key 3 stunned (3 m), key 4 living

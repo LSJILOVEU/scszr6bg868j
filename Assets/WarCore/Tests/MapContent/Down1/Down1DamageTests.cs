@@ -168,6 +168,21 @@ namespace WarCore.Tests.Down1
             });
         }
 
+        // The bleed-out is no hit: neither finish false nor a grace as long as the bleed holds it back (ticks 10, finishAfter 10).
+        [Test]
+        public void D5_TheBleedOutIgnoresFinishAndGrace()
+        {
+            Assert.DoesNotThrow(() =>
+            {
+                Down1World w = Pair(new ScriptedDamage().Then(100), Rules(ticks: 10, finishAfter: 10, finish: false));
+                w.Shoot(1, 0, 1);
+                w.StepTo(10);
+                Assert.That(w.Downed(1), Is.True);
+                w.Step();
+                Assert.That(w.Dead(1), Is.True);
+            });
+        }
+
         // Given up inside a step (Requests, order 3): dead in that step. Between steps: dead in the next one.
         [Test]
         public void D5_GiveUp()
