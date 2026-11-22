@@ -67,6 +67,6 @@ filter = FullyQualifiedName~Mt138MapDescReader
 expect = WarCore.Tests.Mt138MapDescReaderTests.SixtyFourOwnersAreAccepted
 note = Rejects an owner table containing exactly 64 entries.
 original:
-|             if (owners.Length < 1 || owners.Length > 64) throw Fail(OwnerCode, ownersNode.Line);
+| if (owners.Length < 1 || owners.Length > (Version2
 replacement:
-|             if (owners.Length < 1 || owners.Length >= 64) throw Fail(OwnerCode, ownersNode.Line);
+| if (owners.Length < 1 || owners.Length >= (Version2

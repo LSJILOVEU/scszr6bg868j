@@ -67,9 +67,9 @@ filter = FullyQualifiedName~AiP1Tests
 expect = WarCore.Tests.AiP1Tests.Battle_SixtyUnitsAtOnePoint(6000
 note = the scheduler builds no ring
 original:
-|             slots = new GuardSlots(pack.Points, parts.SlotSpacingRaw, parts.SlotRingRaw);
+| new GuardSlots(pack.Points, parts.SlotSpacingRaw, parts.SlotRingRaw, slotFloor);
 replacement:
-|             slots = new GuardSlots(pack.Points, parts.SlotSpacingRaw);
+| new GuardSlots(pack.Points, parts.SlotSpacingRaw, 0, slotFloor);
 
 [ai-p1-08-spacing-not-passed]
 file = Assets/WarCore/Battle/SimpleAiSystem.cs
@@ -77,9 +77,9 @@ filter = FullyQualifiedName~AiP1Tests
 expect = WarCore.Tests.AiP1Tests.Battle_SixtyUnitsAtOnePoint
 note = the scheduler keeps the 1 m lattice
 original:
-|             slots = new GuardSlots(pack.Points, parts.SlotSpacingRaw, parts.SlotRingRaw);
+| new GuardSlots(pack.Points, parts.SlotSpacingRaw, parts.SlotRingRaw, slotFloor);
 replacement:
-|             slots = new GuardSlots(pack.Points, GuardSlots.SpacingRaw, parts.SlotRingRaw);
+| new GuardSlots(pack.Points, GuardSlots.SpacingRaw, parts.SlotRingRaw, slotFloor);
 
 [ai-p1-09-spacing-not-folded]
 file = Assets/WarCore/Battle/SimpleAiSystem.cs
@@ -219,9 +219,9 @@ filter = FullyQualifiedName~AiP1Tests
 expect = WarCore.Tests.AiP1Tests.Content_TouchingSlotZonesAreAnError
 note = the battle never checks its points
 original:
-| ContentPolicies.Parts(ai, recipe.Match.Points)
+| ContentPolicies.Parts(ai, recipe.Match.Points,
 replacement:
-| ContentPolicies.Parts(ai)
+| ContentPolicies.Parts(ai, default,
 
 [ai-p1-23-spacing-low]
 file = Assets/WarCore/Content/Data/Sections/AiSection.cs
@@ -290,9 +290,9 @@ expect = WarCore.Tests.AiP1Tests.Content_BadFieldNamesPackEntryAndField
 expect = WarCore.Tests.AiP1Tests.Content_ParametersOfAnUnselectedDispatchAreFound
 note = scatterMm has no owner
 original:
-|             ("scatterMm", true, ContentPolicies.Scatter),
-replacement:
+|             ("scatterMm", PartKind.Placement, ContentPolicies.Scatter),
 |
+replacement:
 
 [ai-p1-30-owner-hold]
 file = Assets/WarCore/Content/Data/Sections/AiSection.cs
@@ -300,9 +300,9 @@ filter = FullyQualifiedName~AiP1Tests
 expect = WarCore.Tests.AiP1Tests.Content_ParametersOfAnUnselectedDispatchAreFound
 note = holdSharePermille has no owner
 original:
-|             ("holdSharePermille", false, ContentPolicies.NearestDispatch),
-replacement:
+|             ("holdSharePermille", PartKind.Dispatch, ContentPolicies.NearestDispatch),
 |
+replacement:
 
 [ai-p1-31-owner-kind]
 file = Assets/WarCore/Content/Data/Sections/AiSection.cs
@@ -311,9 +311,9 @@ expect = WarCore.Tests.AiP1Tests.Content_BadFieldNamesPackEntryAndField
 expect = WarCore.Tests.AiP1Tests.Content_ParametersOfAnUnselectedDispatchAreFound
 note = placement parameters are checked against the dispatch
 original:
-| (Owners[i].placement ? placement : dispatch) != Owners[i].part
+| Selected(Owners[i].kind, dispatch, placement, engage)
 replacement:
-| (Owners[i].placement ? dispatch : placement) != Owners[i].part
+| Selected(Owners[i].kind, placement, dispatch, engage)
 
 [ai-p1-32-ring-not-kept]
 file = Assets/WarCore/Content/Data/Sections/AiSection.cs
@@ -321,9 +321,11 @@ filter = FullyQualifiedName~AiP1Tests
 expect = WarCore.Tests.AiP1Tests.Content_FieldsAreReadAndBuildTheParts
 note = the ring is read but not kept
 original:
-| dispatch, placement, spacing, scatter, ring) {
+| dispatch, placement, spacing, scatter, ring,
+|
 replacement:
-| dispatch, placement, spacing, scatter, 0) {
+| dispatch, placement, spacing, scatter, 0,
+|
 
 [ai-p1-33-spacing-mm]
 file = Assets/WarCore/Content/Data/ContentPolicies.cs

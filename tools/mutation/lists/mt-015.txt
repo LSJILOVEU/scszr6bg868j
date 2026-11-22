@@ -17,6 +17,6 @@ filter = FullyQualifiedName~Mt015CombatSystemResolve
 expect = WarCore.Tests.Mt015CombatSystemResolveTests.AtTargetFiresAtMaximumRange
 note = Rejecting equality prevents targeted shots at exactly the maximum range.
 original:
-|                 || Horizontal(targetPosition.Value - origin).LengthSquared > new SimVec3(weapon.FalloffEnd, default, default).LengthSquared
+| || SpanSquared(origin, targetPosition.Value) > new SimVec3(weapon.FalloffEnd
 replacement:
-|                 || Horizontal(targetPosition.Value - origin).LengthSquared >= new SimVec3(weapon.FalloffEnd, default, default).LengthSquared
+| || SpanSquared(origin, targetPosition.Value) >= new SimVec3(weapon.FalloffEnd

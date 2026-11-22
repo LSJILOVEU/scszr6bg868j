@@ -164,9 +164,9 @@ filter = FullyQualifiedName~WarCore.Tests.A3b
 expect = WarCore.Tests.A3bGateTests.AllyBlocks_Table
 note = the public read port never finds a teammate
 original:
-|            return Horizontal(direction).LengthSquared.Sign != 0 && AllyBlocks(shooter, origin, direction, range);
+|             return line && AllyBlocks(shooter, origin, direction, range);
 replacement:
-|            return false;
+|             return false;
 
 [a3b-18-ally-only-to-point]
 file = Assets/WarCore/Combat/CombatSystem.cs

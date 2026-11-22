@@ -6,61 +6,61 @@ filter = FullyQualifiedName~WarCore.Tests.C1b
 expect = WarCore.Tests.C1bAnchorTests.EnemyInNearestPoint_UsesNextOwnedPoint
 note = the contest check is dropped from the anchor choice
 original:
-| && !Contested(team, pack.Points[i])) Closer(
+| && !presence.Contested(team, pack.Points[i]))
 replacement:
-| ) Closer(
+| )
 
 [c1b-02-own-team-contests]
-file = Assets/WarCore/Battle/RespawnSystem.cs
+file = Assets/WarCore/Battle/CaptureSystem.cs
 filter = FullyQualifiedName~WarCore.Tests.C1b
 expect = WarCore.Tests.C1bAnchorTests.EnemyInNearestPoint_UsesNextOwnedPoint
 expect = WarCore.Tests.C1bAnchorTests.AllyInPoint_NotContested
 note = the player's own team is taken as the enemy
 original:
-| unit.Team != team && unit.Team >= 1
+| other != team && Inside(unit, at, point)) return true;
 replacement:
-| unit.Team == team && unit.Team >= 1
+| other == team && Inside(unit, at, point)) return true;
 
 [c1b-03-enemy-team-fixed]
-file = Assets/WarCore/Battle/RespawnSystem.cs
+file = Assets/WarCore/Battle/CaptureSystem.cs
 filter = FullyQualifiedName~WarCore.Tests.C1b
 expect = WarCore.Tests.C1bAnchorTests.PlayerOnTeamTwo_TeamOneContests
 note = the enemy team is always team 2
 original:
-| unit.Team != team && unit.Team >= 1 && unit.Team <= pack.TeamCount
+| other != team && Inside(unit, at, point)) return true;
 replacement:
-| unit.Team == 2
+| other == 2 && Inside(unit, at, point)) return true;
 
 [c1b-04-bodies-contest]
-file = Assets/WarCore/Battle/RespawnSystem.cs
+file = Assets/WarCore/Battle/CaptureSystem.cs
 filter = FullyQualifiedName~WarCore.Tests.C1b
 expect = WarCore.Tests.C1bAnchorTests.DeadEnemyInPoint_NotContested
 note = dead enemies (bodies keep a Position) count as contesting
 original:
-| && !combat.IsDead(entity) && CaptureSystem.Inside(at.Value, point))
+| || !combat.Entities.TryGet(positions, unit, out Position position) || combat.IsDead(unit)) return false;
 replacement:
-| && CaptureSystem.Inside(at.Value, point))
+| || !combat.Entities.TryGet(positions, unit, out Position position)) return false;
 
 [c1b-05-circle-around-spawn]
-file = Assets/WarCore/Battle/RespawnSystem.cs
+file = Assets/WarCore/Battle/CaptureSystem.cs
 filter = FullyQualifiedName~WarCore.Tests.C1b
 expect = WarCore.Tests.C1bAnchorTests.EnemyAtTheCentre_FarFromTheSpawn_Contested
 expect = WarCore.Tests.C1bAnchorTests.EnemyOnTheSpawn_FarFromTheCentre_NotContested
 note = the circle is measured around the spawn instead of the centre
 original:
-| CaptureSystem.Inside(at.Value, point)
+| other != team && Inside(unit, at, point)) return true;
 replacement:
-| CaptureSystem.Inside(at.Value - point.Spawn + point.Center, point)
+| other != team && Inside(unit, at - point.Spawn + point.Center, point)) return true;
 
 [c1b-06-boundary-excluded]
-file = Assets/WarCore/Battle/RespawnSystem.cs
+file = Assets/WarCore/Battle/CaptureSystem.cs
 filter = FullyQualifiedName~WarCore.Tests.C1b
 expect = WarCore.Tests.C1bAnchorTests.EnemyOnTheBoundary_Contested
 note = a local strict comparison replaces CaptureSystem.Inside
 original:
-| CaptureSystem.Inside(at.Value, point)
+| other != team && Inside(unit, at, point)) return true;
 replacement:
-| CombatSystem.Horizontal(at.Value - point.Center).LengthSquared < new SimVec3(point.Radius, default, default).LengthSquared
+| other != team && CombatSystem.Horizontal(at - point.Center).LengthSquared < new SimVec3(point.Radius, default, default).LengthSquared) return true;
 
 [c1b-07-no-base-fallback]
 file = Assets/WarCore/Battle/RespawnSystem.cs
@@ -91,6 +91,6 @@ expect = WarCore.Tests.C1bAnchorTests.EvenNumbers_CapturingZero_StillContested
 expect = WarCore.Tests.C1bAnchorTests.PauseLeftover_CapturingSet_NoEnemy_NotContested
 note = PointState.Capturing replaces the living-enemy check
 original:
-| && !Contested(team, pack.Points[i])) Closer(
+| && !presence.Contested(team, pack.Points[i]))
 replacement:
-| && capture.Points[i].Capturing == 0) Closer(
+| && capture.Points[i].Capturing == 0)

@@ -36,9 +36,9 @@ filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarC
 expect = WarCore.Tests.M6CaptureTests.D1_PLACEHOLDER_EqualCountsNeverLeadEvenOneToOne_DeadAndReserveExcluded_BoundaryIncluded
 note = dead units still count toward capture
 original:
-|                     || !combat.Entities.TryGet(positions, unit, out Position position) || combat.IsDead(unit)) continue;
+| || !combat.Entities.TryGet(positions, unit, out Position position) || combat.IsDead(unit)) return false;
 replacement:
-|                     || !combat.Entities.TryGet(positions, unit, out Position position)) continue;
+| || !combat.Entities.TryGet(positions, unit, out Position position)) return false;
 
 [test-cap-c05-team-two-excluded]
 file = Assets/WarCore/Battle/CaptureSystem.cs
@@ -46,9 +46,9 @@ filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarC
 expect = WarCore.Tests.M6CaptureTests.D1_D2_PLACEHOLDER_RatioAndExactCaptureTick
 note = team two cannot contribute to capture
 original:
-|                 if (!combat.Entities.TryGet(combatants, unit, out Combatant value) || value.Team < 1 || value.Team > teams
+|             if (!combat.Entities.TryGet(combatants, unit, out Combatant value) || value.Team < 1 || value.Team > teams
 replacement:
-|                 if (!combat.Entities.TryGet(combatants, unit, out Combatant value) || value.Team < 1 || value.Team >= teams
+|             if (!combat.Entities.TryGet(combatants, unit, out Combatant value) || value.Team < 1 || value.Team >= teams
 
 [test-cap-c06-strict-inclusive]
 file = Assets/WarCore/Battle/CaptureSystem.cs
@@ -247,9 +247,9 @@ filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarC
 expect = WarCore.Tests.M6DeployTests.D5_PLACEHOLDER_ExactAttemptsStableOrderComponentsAnchorsAndExhaustion
 note = A team uses the opposing base.
 original:
-|                 foreach (var anchor in pack.Bases) if (anchor.Team == team) anchors[count++] = anchor.Point;
+| foreach (var anchor in pack.Bases) if (anchor.Team == team) options[count++]
 replacement:
-|                 foreach (var anchor in pack.Bases) if (anchor.Team != team) anchors[count++] = anchor.Point;
+| foreach (var anchor in pack.Bases) if (anchor.Team != team) options[count++]
 
 [test-cap-r09-wrong-owner-point]
 file = Assets/WarCore/Battle/ReinforceSystem.cs
@@ -257,9 +257,9 @@ filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarC
 expect = WarCore.Tests.M6DeployTests.D5_PLACEHOLDER_ExactAttemptsStableOrderComponentsAnchorsAndExhaustion
 note = A team uses a control point it does not own.
 original:
-|                     if (capture.Points[i].Owner == team && pack.Points[i].HasSpawn) anchors[count++] = pack.Points[i].Spawn;
+| if (capture.Points[i].Owner == team && pack.Points[i].HasSpawn && !(pack.ReinforceSkipContested
 replacement:
-|                     if (capture.Points[i].Owner != team && pack.Points[i].HasSpawn) anchors[count++] = pack.Points[i].Spawn;
+| if (capture.Points[i].Owner != team && pack.Points[i].HasSpawn && !(pack.ReinforceSkipContested
 
 [test-cap-r10-point-spawn-check-removed]
 file = Assets/WarCore/Battle/ReinforceSystem.cs
@@ -267,9 +267,9 @@ filter = FullyQualifiedName~WarCore.Tests.M6CaptureTests|FullyQualifiedName~WarC
 expect = WarCore.Tests.TestCapReinforceTests.OwnedPointWithoutSpawnDoesNotProvideAnchor
 note = An owned point without a spawn becomes a deployment anchor.
 original:
-|                     if (capture.Points[i].Owner == team && pack.Points[i].HasSpawn) anchors[count++] = pack.Points[i].Spawn;
+| if (capture.Points[i].Owner == team && pack.Points[i].HasSpawn && !(pack.ReinforceSkipContested
 replacement:
-|                     if (capture.Points[i].Owner == team) anchors[count++] = pack.Points[i].Spawn;
+| if (capture.Points[i].Owner == team && !(pack.ReinforceSkipContested
 
 [test-cap-r11-grid-cell-count-long]
 file = Assets/WarCore/Battle/ReinforceSystem.cs

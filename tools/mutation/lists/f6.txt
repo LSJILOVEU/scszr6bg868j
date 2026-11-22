@@ -6,9 +6,9 @@ filter = FullyQualifiedName~WarCore.Tests.F6UnitTypeSpawnTests
 expect = WarCore.Tests.F6UnitTypeSpawnTests.F6_OfType_MatchesManualSpawn
 note = OfType swaps the weapon and melee indices
 original:
-|             return new UnitSpawn(key, type.Archetype, squad, xMm, zMm, type.SpeedMmPerSec, team, type.Weapon, reserve, type.Melee, type.Block);
+| team, type.Weapon, reserve, type.Melee, type.Block, layer);
 replacement:
-|             return new UnitSpawn(key, type.Archetype, squad, xMm, zMm, type.SpeedMmPerSec, team, type.Melee, reserve, type.Weapon, type.Block);
+| team, type.Melee, reserve, type.Weapon, type.Block, layer);
 
 [f6-02-drop-unit-block]
 file = Assets/WarCore/Presentation/Bridge/WorldRecipe.cs
@@ -16,9 +16,9 @@ filter = FullyQualifiedName~WarCore.Tests.F6UnitTypeSpawnTests
 expect = WarCore.Tests.F6UnitTypeSpawnTests.F6_OfType_MatchesManualSpawn
 note = OfType discards the block index
 original:
-|             return new UnitSpawn(key, type.Archetype, squad, xMm, zMm, type.SpeedMmPerSec, team, type.Weapon, reserve, type.Melee, type.Block);
+| team, type.Weapon, reserve, type.Melee, type.Block, layer);
 replacement:
-|             return new UnitSpawn(key, type.Archetype, squad, xMm, zMm, type.SpeedMmPerSec, team, type.Weapon, reserve, type.Melee, -1);
+| team, type.Weapon, reserve, type.Melee, -1, layer);
 
 [f6-03-allow-unknown-block]
 file = Assets/WarCore/Content/Data/Sections/UnitTypesSection.cs
@@ -76,6 +76,6 @@ filter = FullyQualifiedName~WarCore.Tests.F6UnitTypeSpawnTests
 expect = WarCore.Tests.F6UnitTypeSpawnTests.F6_BlockLoadsAllThreeFieldsInEntryOrder
 note = BuildCombat discards the loaded block specs
 original:
-|                 effective, friendlyFireLocked, allyCheckMissRaw, allyHoldMilli, melee.Length == 0 ? null : melee, block.Length == 0 ? null : block);
+| melee.Length == 0 ? null : melee, block.Length == 0 ? null : block, Body,
 replacement:
-|                 effective, friendlyFireLocked, allyCheckMissRaw, allyHoldMilli, melee.Length == 0 ? null : melee, null);
+| melee.Length == 0 ? null : melee, null, Body,

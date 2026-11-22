@@ -61,9 +61,9 @@ filter = FullyQualifiedName~WarCore.Tests.P2
 expect = WarCore.Tests.P2StateTests.Restore_OtherInterval_IsRefused
 note = the load reads K and does not compare it
 original:
-|             if (senseTicks > 1) SimStateReader.Require(reader.Int32() == senseTicks, "AI sense interval differs.");
+|             SimStateReader.Require(reader.Int32() == senseTicks, "AI sense interval differs.");
 replacement:
-|             if (senseTicks > 1) reader.Int32();
+|             reader.Int32();
 
 [p2-07-version-one]
 file = Assets/WarCore/Battle/Ai/ReactionFire.cs
@@ -71,9 +71,9 @@ filter = FullyQualifiedName~WarCore.Tests.P2
 expect = WarCore.Tests.P2StateTests.Versions_AndTheManifestCheck
 note = the state version stays 1 with an interval
 original:
-|         public int StateVersion => senseTicks > 1 ? 2 : 1;
+| senseTicks > 1 ? 2 : 1;
 replacement:
-|         public int StateVersion => 1;
+| senseTicks > 1 ? 1 : 1;
 
 [p2-08-registration-without-interval]
 file = Assets/WarCore/Presentation/Bridge/Features/AiFireFeature.cs
@@ -81,9 +81,9 @@ filter = FullyQualifiedName~WarCore.Tests.P2
 expect = WarCore.Tests.P2ContentTests.Assembly_IntervalAlone_Registers
 note = the interval alone does not register the feature
 original:
-|             return ai.ReactionTicks > 0 || ai.SenseTicks > 1;
+| return ai.ReactionTicks > 0 || ai.SenseTicks > 1 || ai.BurstShots > 0;
 replacement:
-|             return ai.ReactionTicks > 0;
+| return ai.ReactionTicks > 0 || ai.BurstShots > 0;
 
 [p2-09-phase-from-slot]
 file = Assets/WarCore/Battle/Ai/ReactionFire.cs
@@ -113,10 +113,10 @@ filter = FullyQualifiedName~WarCore.Tests.P2
 expect = WarCore.Tests.P2AllyTests.BlockedShooter_NeverFires_AndTheHoldPushesDue
 note = TryAim computes the heading itself and fires, without the ally check
 original:
-|             return builtIn.AimAt(combat, shooter, in position, (EntityId)target, out direction);
+|             AutoFireAction action = builtIn.AimAt(combat, shooter, in position, (EntityId)target, out direction);
 replacement:
 |             direction = CombatSystem.Horizontal(combat.Point((EntityId)target) - position.Value);
-|             return AutoFireAction.Fire;
+|             AutoFireAction action = AutoFireAction.Fire;
 
 [p2-12-validity-without-dead]
 file = Assets/WarCore/Battle/Ai/ReactionFire.cs
@@ -144,9 +144,9 @@ filter = FullyQualifiedName~WarCore.Tests.P2
 expect = WarCore.Tests.P2BaselineTests.ZeroAndOne_RegisterNothing
 note = an interval of 1 registers the feature
 original:
-|             return ai.ReactionTicks > 0 || ai.SenseTicks > 1;
+| return ai.ReactionTicks > 0 || ai.SenseTicks > 1 || ai.BurstShots > 0;
 replacement:
-|             return ai.ReactionTicks > 0 || ai.SenseTicks >= 1;
+| return ai.ReactionTicks > 0 || ai.SenseTicks >= 1 || ai.BurstShots > 0;
 
 [p2-15-hash-without-interval]
 file = Assets/WarCore/Battle/Ai/ReactionFire.cs
@@ -154,9 +154,11 @@ filter = FullyQualifiedName~WarCore.Tests.P2
 expect = WarCore.Tests.P2StateTests.WriteState_EndsWithTheInterval
 note = the hash leaves K out (the save still writes it)
 original:
-|             if (senseTicks > 1) hash.Add(senseTicks);
+|             hash.Add(senseTicks);
+|
 replacement:
 |             // mutated: K is not hashed
+|
 
 [p2-16-save-without-interval]
 file = Assets/WarCore/Battle/Ai/ReactionFire.cs
@@ -165,7 +167,20 @@ expect = WarCore.Tests.P2StateTests.SaveState_PayloadIsVersionOnePlusTheInterval
 expect = WarCore.Tests.P2StateTests.Restore_OtherInterval_IsRefused
 note = the save does not write K and the load does not read it
 original:
-|             if (senseTicks > 1) writer.Int32(senseTicks);
+|             writer.Int32(senseTicks);
+|             if (StateVersion < 3) return;
+|             SaveBursts(writer);
+|             if (StateVersion >= 4) writer.Int32(traitSpread);
+|         }
+|
+|         private void SaveBursts(SimStateWriter writer)
+|         {
+|             writer.Int32(burstShots); writer.Int32(burstPauseTicks);
+|             foreach (EntityId entity in stage.Capture())
+|             {
+|                 if (!Exported(entity)) continue;
+|                 writer.Int32(shots[entity.Id]); writer.Int64(lastShots[entity.Id]);
+|             }
 |         }
 |
 |         public void LoadState(SimStateReader reader)
@@ -189,8 +204,22 @@ original:
 |                 SimStateReader.Require((uint)slot < (uint)has.Length, "AI reaction shooter is outside the entity capacity.");
 |                 has[slot] = true; shooters[slot] = shooter; targets[slot] = target; firsts[slot] = first; lasts[slot] = last;
 |             }
-|             if (senseTicks > 1) SimStateReader.Require(reader.Int32() == senseTicks, "AI sense interval differs.");
+|             if (StateVersion < 2) return;
+|             SimStateReader.Require(reader.Int32() == senseTicks, "AI sense interval differs.");
 replacement:
+|             if (StateVersion < 3) return;
+|             SaveBursts(writer);
+|             if (StateVersion >= 4) writer.Int32(traitSpread);
+|         }
+|
+|         private void SaveBursts(SimStateWriter writer)
+|         {
+|             writer.Int32(burstShots); writer.Int32(burstPauseTicks);
+|             foreach (EntityId entity in stage.Capture())
+|             {
+|                 if (!Exported(entity)) continue;
+|                 writer.Int32(shots[entity.Id]); writer.Int64(lastShots[entity.Id]);
+|             }
 |         }
 |
 |         public void LoadState(SimStateReader reader)
@@ -214,6 +243,8 @@ replacement:
 |                 SimStateReader.Require((uint)slot < (uint)has.Length, "AI reaction shooter is outside the entity capacity.");
 |                 has[slot] = true; shooters[slot] = shooter; targets[slot] = target; firsts[slot] = first; lasts[slot] = last;
 |             }
+|             if (StateVersion < 2) return;
+|
 
 [p2-17-overflowing-sum]
 file = Assets/WarCore/Battle/Ai/ReactionFire.cs
@@ -238,6 +269,7 @@ original:
 |                 return;
 |             }
 |             has[slot] = true; shooters[slot] = self; targets[slot] = selected; firsts[slot] = tick; lasts[slot] = tick;
+|             shots[slot] = 0; lastShots[slot] = 0;
 |         }
 |
 |         public AutoFireAction TryAim(CombatSystem combat, EntityId shooter, in Combatant unit, in Position position,
@@ -245,13 +277,24 @@ original:
 |         {
 |             int slot = shooter.Id;
 |             if ((uint)slot >= (uint)has.Length || !has[slot] || !shooters[slot].Equals(combat.Entities.StableOf(shooter))
-|                 || lasts[slot] != tick || tick - firsts[slot] < ticks
+|                 || lasts[slot] != tick || tick - firsts[slot] < ReactionOf(shooters[slot])
+|                 || (cadence != null && cadence.Paused(shooter, tick))
 |                 || !combat.Entities.TryResolve(targets[slot], out EntityRef target))
 |             {
 |                 direction = default;
 |                 return AutoFireAction.Pass;
 |             }
-|             return builtIn.AimAt(combat, shooter, in position, (EntityId)target, out direction);
+|             int burst = BurstOf(shooters[slot]);
+|             if (burst > 0 && shots[slot] == burst)
+|             {
+|                 if (tick - lastShots[slot] < PauseOf(shooters[slot]))
+|                 {
+|                     direction = default;
+|                     return AutoFireAction.Pass;
+|                 }
+|                 shots[slot] = 0;   // the pause is over: the next burst starts with this aim
+|             }
+|             AutoFireAction action = builtIn.AimAt(combat, shooter, in position, (EntityId)target, out direction);
 replacement:
 |             StableId selected = combat.Entities.StableOf(target);
 |             if (frozen == null) frozen = new SimVec3[has.Length];
@@ -262,6 +305,7 @@ replacement:
 |                 return;
 |             }
 |             has[slot] = true; shooters[slot] = self; targets[slot] = selected; firsts[slot] = tick; lasts[slot] = tick;
+|             shots[slot] = 0; lastShots[slot] = 0;
 |         }
 |
 |         private SimVec3[] frozen;
@@ -271,12 +315,23 @@ replacement:
 |         {
 |             int slot = shooter.Id;
 |             if ((uint)slot >= (uint)has.Length || !has[slot] || !shooters[slot].Equals(combat.Entities.StableOf(shooter))
-|                 || lasts[slot] != tick || tick - firsts[slot] < ticks
+|                 || lasts[slot] != tick || tick - firsts[slot] < ReactionOf(shooters[slot])
+|                 || (cadence != null && cadence.Paused(shooter, tick))
 |                 || !combat.Entities.TryResolve(targets[slot], out EntityRef target))
 |             {
 |                 direction = default;
 |                 return AutoFireAction.Pass;
 |             }
+|             int burst = BurstOf(shooters[slot]);
+|             if (burst > 0 && shots[slot] == burst)
+|             {
+|                 if (tick - lastShots[slot] < PauseOf(shooters[slot]))
+|                 {
+|                     direction = default;
+|                     return AutoFireAction.Pass;
+|                 }
+|                 shots[slot] = 0;   // the pause is over: the next burst starts with this aim
+|             }
 |             direction = CombatSystem.Horizontal(frozen[slot] - position.Value);
 |             if (direction.LengthSquared.Sign == 0) direction = new SimVec3(SimFix.FromInt(1), default, default);
-|             return AutoFireAction.Fire;
+|             AutoFireAction action = AutoFireAction.Fire;

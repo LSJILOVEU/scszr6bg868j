@@ -218,14 +218,14 @@ replacement:
 | ? 0 : 0;
 
 [ml9b-respawn-any-layer]
-file = Assets/WarCore/Battle/RespawnSystem.cs
+file = Assets/WarCore/Battle/CaptureSystem.cs
 filter = FullyQualifiedName~Ml9b
 expect = WarCore.Tests.Ml9bMatchTests.AnEnemyUnderTheFloorDoesNotContest
 note = an enemy under the floor contests the point
 original:
-| CaptureSystem.Inside(layers, entity, at.Value, point))
+| other != team && Inside(unit, at, point)) return true;
 replacement:
-| CaptureSystem.Inside(at.Value, point))
+| other != team && CaptureSystem.Inside(at, point)) return true;
 
 [ml9b-respawn-not-wired]
 file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
@@ -317,9 +317,9 @@ filter = FullyQualifiedName~Ml9b
 expect = WarCore.Tests.Ml9bMatchTests.TheAiDoesNotLeadSoldiersOffTheFloor
 note = the bridge gives the AI's slots no floor
 original:
-| terrain == null), pressure, layers), SimSystemPhase.Requests);
+| ), pressure, layers, layers,
 replacement:
-| terrain == null), pressure, null), SimSystemPhase.Requests);
+| ), pressure, null, layers,
 
 [ml9b-cover-on-plate]
 file = Assets/WarCore/Battle/ConcealedSight.cs

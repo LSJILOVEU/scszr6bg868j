@@ -19,9 +19,9 @@ filter = FullyQualifiedName~E1b
 expect = WarCore.Tests.E1bRecipeTests.SoldiersMapFieldByField
 note = equivalent: comment only
 original:
-| // PLACEHOLDER: one speed for every unit
+| // Legacy maps omit unit-type speed; keep their spawn values unless explicitly enabled.
 replacement:
-| // PLACEHOLDER (self-test comment): one speed for every unit
+| // Legacy maps omit unit-type speed (self-test comment); keep their spawn values unless explicitly enabled.
 
 [selftest-3]
 file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs

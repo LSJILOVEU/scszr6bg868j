@@ -47,6 +47,6 @@ filter = FullyQualifiedName~Mt005ConcealedSight
 expect = WarCore.Tests.Perception.Mt005ConcealedSightTests.OutsideTheGrid_AtSightLimit_IsSelected
 note = Targets outside the grid must remain visible at the full sight limit.
 original:
-|                 int k = grid.TryCell(at, out int key) ? conceal[key] : 1000;
+| ? conceal[key] : 1000;
 replacement:
-|                 int k = grid.TryCell(at, out int key) ? conceal[key] : 999;
+| ? conceal[key] : 999;

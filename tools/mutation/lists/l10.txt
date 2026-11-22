@@ -48,11 +48,9 @@ filter = FullyQualifiedName~WarCore.Tests.L10
 expect = WarCore.Tests.L10SpeedTests.L10Speed_XStepBySurface
 note = the multiplier is always 1000
 original:
-|                 throw new InvalidOperationException("Terrain worlds cap a unit step at 0.25 m per tick.");
-|             long milli = grid.TryCell(point, out int cell) ? terrain.SpeedMilliAt(cell) : 1000;
+| long milli = layered ? PlateSpeedMilli(LayerOf(provisional[i].Unit), point) : grid.TryCell(point, out int cell) ? terrain.SpeedMilliAt(cell) : 1000;
 replacement:
-|                 throw new InvalidOperationException("Terrain worlds cap a unit step at 0.25 m per tick.");
-|             long milli = 1000;
+| long milli = layered ? PlateSpeedMilli(LayerOf(provisional[i].Unit), point) : 1000;
 
 [l10-06-target-cell-decides]
 file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
@@ -60,11 +58,9 @@ filter = FullyQualifiedName~WarCore.Tests.L10
 expect = WarCore.Tests.L10SpeedTests.L10Speed_TheStartCellDecides
 note = the multiplier comes from the cell after the unscaled step
 original:
-|                 throw new InvalidOperationException("Terrain worlds cap a unit step at 0.25 m per tick.");
-|             long milli = grid.TryCell(point, out int cell) ? terrain.SpeedMilliAt(cell) : 1000;
+| long milli = layered ? PlateSpeedMilli(LayerOf(provisional[i].Unit), point) : grid.TryCell(point, out int cell) ? terrain.SpeedMilliAt(cell) : 1000;
 replacement:
-|                 throw new InvalidOperationException("Terrain worlds cap a unit step at 0.25 m per tick.");
-|             long milli = grid.TryCell(point + displacement, out int cell) ? terrain.SpeedMilliAt(cell) : 1000;
+| long milli = layered ? PlateSpeedMilli(LayerOf(provisional[i].Unit), point) : grid.TryCell(point + displacement, out int cell) ? terrain.SpeedMilliAt(cell) : 1000;
 
 [l10-07-cap-inclusive]
 file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
@@ -113,9 +109,9 @@ filter = FullyQualifiedName~WarCore.Tests.L10
 expect = WarCore.Tests.L10GroundTests.L10Ground_SlideAlongTheCliffTakesXOnly
 note = the X-only candidate is never taken
 original:
-|                 if (d.X.Raw == 0 || !ControlledAllows(context, i, next))
+| if (d.X.Raw == 0 || !ControlledTry(context, i, ref next))
 replacement:
-|                 if (d.X.Raw == 0 || d.X.Raw != 0)
+| if (d.X.Raw == 0 || d.X.Raw != 0)
 
 [l10-12-z-before-x]
 file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
@@ -124,16 +120,16 @@ expect = WarCore.Tests.L10ClearanceTests.L10Clearance_XOnlyComesBeforeZOnly
 note = the Z-only candidate is tried before the X-only one
 original:
 |                 next = Grounded(point + new SimVec3(d.X, default, default));
-|                 if (d.X.Raw == 0 || !ControlledAllows(context, i, next))
+|                 if (d.X.Raw == 0 || !ControlledTry(context, i, ref next))
 |                 {
 |                     next = Grounded(point + new SimVec3(default, default, d.Z));
-|                     if (d.Z.Raw == 0 || !ControlledAllows(context, i, next)) return;
+|                     if (d.Z.Raw == 0 || !ControlledTry(context, i, ref next)) return false;
 replacement:
 |                 next = Grounded(point + new SimVec3(default, default, d.Z));
-|                 if (d.Z.Raw == 0 || !ControlledAllows(context, i, next))
+|                 if (d.Z.Raw == 0 || !ControlledTry(context, i, ref next))
 |                 {
 |                     next = Grounded(point + new SimVec3(d.X, default, default));
-|                     if (d.X.Raw == 0 || !ControlledAllows(context, i, next)) return;
+|                     if (d.X.Raw == 0 || !ControlledTry(context, i, ref next)) return false;
 
 [l10-13-terrain-allows]
 file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
@@ -141,21 +137,9 @@ filter = FullyQualifiedName~WarCore.Tests.L10
 expect = WarCore.Tests.L10ClearanceTests.L10Clearance_UnitsBlockOnTheSlope
 note = the AI clearance (no units) replaces the controlled one
 original:
-|             if (!ControlledAllows(context, i, next))
-|             {
-|                 next = Grounded(point + new SimVec3(d.X, default, default));
-|                 if (d.X.Raw == 0 || !ControlledAllows(context, i, next))
-|                 {
-|                     next = Grounded(point + new SimVec3(default, default, d.Z));
-|                     if (d.Z.Raw == 0 || !ControlledAllows(context, i, next)) return;
+| Point, ref next)) && ControlledAllows(context, i, next);
 replacement:
-|             if (!TerrainAllows(context, i, next))
-|             {
-|                 next = Grounded(point + new SimVec3(d.X, default, default));
-|                 if (d.X.Raw == 0 || !TerrainAllows(context, i, next))
-|                 {
-|                     next = Grounded(point + new SimVec3(default, default, d.Z));
-|                     if (d.Z.Raw == 0 || !TerrainAllows(context, i, next)) return;
+| Point, ref next)) && TerrainAllows(context, i, next);
 
 [l10-14-guard-back]
 file = Assets/WarCore/Presentation/Bridge/Features/TerrainFeature.cs
@@ -164,11 +148,11 @@ expect = WarCore.Tests.L10GroundTests
 expect = WarCore.Tests.Wp23GuardTests.PlayerOnTerrain_IsAllowed_WithThePack
 note = the terrain player guard is restored
 original:
-|             if (a.Recipe.TerrainPack == null)
+|             if (a.Recipe.TerrainPack == null && a.Map.HasTerrain)
 replacement:
 |             if (a.Recipe.PlayerKey.HasValue)
 |                 throw new NotSupportedException("Player control on terrain maps is not supported before T1c.");
-|             if (a.Recipe.TerrainPack == null)
+|             if (a.Recipe.TerrainPack == null && a.Map.HasTerrain)
 
 [l10-15-no-respawn]
 file = Assets/WarCore/Presentation/Bridge/TerrainPlayerDemo.cs

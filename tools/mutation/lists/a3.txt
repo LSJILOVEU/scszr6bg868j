@@ -132,9 +132,9 @@ filter = FullyQualifiedName~WarCore.Tests.A3Memory
 expect = WarCore.Tests.A3MemoryBehaviourTests.WalkingObserver_SameRun
 note = with the memory on, a walking AI no longer stops when it selects a target
 original:
-|                 { contacts?.Saw(id, seen, c.Clock.Tick); if (moving) StopUnit(id, here, target); continue; }
+| if (answer == AiEngage.Hold || answer == AiEngage.Cover) { if (moving) StopUnit(id, here, target); continue; }
 replacement:
-|                 { contacts?.Saw(id, seen, c.Clock.Tick); if (moving && contacts == null) StopUnit(id, here, target); continue; }
+| if (answer == AiEngage.Hold || answer == AiEngage.Cover) { if (moving && contacts == null) StopUnit(id, here, target); continue; }
 
 [a3-13-switch-only-ignored]
 file = Assets/WarCore/Battle/Ai/TargetMemory.cs

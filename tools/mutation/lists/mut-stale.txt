@@ -1,0 +1,81 @@
+# MUT-STALE: the list check in tools/headless/MutationListTests.cs, one rule per mutation.
+
+[ms-01-at-least-once]
+file = tools/headless/MutationListTests.cs
+filter = FullyQualifiedName~WarCore.Tests.MutationListTests
+expect = WarCore.Tests.MutationListTests.SampleCountsMustBeExactlyOne
+note = an original found twice passes
+original:
+|                     if (found != 1) problems.Add(
+replacement:
+|                     if (found < 1) problems.Add(
+
+[ms-02-first-list-only]
+file = tools/headless/MutationListTests.cs
+filter = FullyQualifiedName~WarCore.Tests.MutationListTests
+expect = WarCore.Tests.MutationListTests.SampleEveryListIsRead
+note = only the first list is checked
+original:
+|             foreach (KeyValuePair<string, string> list in lists)
+replacement:
+|             foreach (KeyValuePair<string, string> list in lists.Take(1))
+
+[ms-03-no-file-check]
+file = tools/headless/MutationListTests.cs
+filter = FullyQualifiedName~WarCore.Tests.MutationListTests
+expect = WarCore.Tests.MutationListTests.SampleMissingFileIsReported
+note = a missing file is skipped silently
+original:
+|                     if (bytes == null) { problems.Add(
+replacement:
+|                     if (bytes == null) { continue; problems.Add(
+
+[ms-04-overlapping]
+file = tools/headless/MutationListTests.cs
+filter = FullyQualifiedName~WarCore.Tests.MutationListTests
+expect = WarCore.Tests.MutationListTests.SampleOverlappingOccurrencesCountOnce
+note = overlapping occurrences are counted
+original:
+|                 rest = rest.Slice(at + needle.Length);
+replacement:
+|                 rest = rest.Slice(at + 1);
+
+[ms-05-crlf-kept]
+file = tools/headless/MutationListTests.cs
+filter = FullyQualifiedName~WarCore.Tests.MutationListTests
+expect = WarCore.Tests.MutationListTests.SampleBlocksJoinLikeTheTool
+note = CRLF list lines keep their carriage return
+original:
+|             string[] lines = text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
+replacement:
+|             string[] lines = text.Split('\n');
+
+[ms-06-duplicate-id]
+file = tools/headless/MutationListTests.cs
+filter = FullyQualifiedName~WarCore.Tests.MutationListTests
+expect = WarCore.Tests.MutationListTests.SampleBadListsAreRefused
+note = a duplicate id is accepted
+original:
+|                     if (!ids.Add(id)) throw Bad(n, "duplicate id " + id);
+replacement:
+|                     ids.Add(id);
+
+[ms-07-link-followed]
+file = tools/headless/MutationListTests.cs
+filter = FullyQualifiedName~WarCore.Tests.MutationListTests
+expect = WarCore.Tests.MutationListTests.SampleSymbolicLinkIsNotRead
+note = a symbolic link on the path is followed
+original:
+|                 if (info.Exists ? info.LinkTarget != null : new DirectoryInfo(path).LinkTarget != null) return null;
+replacement:
+|                 if (false) return null;
+
+[ms-08-empty-segment]
+file = tools/headless/MutationListTests.cs
+filter = FullyQualifiedName~WarCore.Tests.MutationListTests
+expect = WarCore.Tests.MutationListTests.SampleBadListsAreRefused
+note = a path with an empty segment is accepted
+original:
+|                 if (segment.Length == 0 || segment == "." || segment == "..") return false;
+replacement:
+|                 if (segment == "..") return false;

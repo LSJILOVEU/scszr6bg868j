@@ -7,10 +7,8 @@ filter = FullyQualifiedName~Mt140MapEdit
 expect = WarCore.Tests.Mt140MapEditTests.UnknownEntryKindIsRejected
 note = Unknown entry kinds return no owner instead of throwing ArgumentException.
 original:
-|                 case "unit": owner = Find(MapEditKinds.Unit, Current.Units, id).Owner; break;
 |                 default: throw new ArgumentException("unknown entry kind: " + kind);
 replacement:
-|                 case "unit": owner = Find(MapEditKinds.Unit, Current.Units, id).Owner; break;
 |                 default: return null;
 
 [mt-140-02]

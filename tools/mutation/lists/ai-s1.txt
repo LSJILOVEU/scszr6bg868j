@@ -17,9 +17,9 @@ filter = FullyQualifiedName~WarCore.Tests.AiS1Tests.Bound_AdvanceSkipsSuppressio
 expect = WarCore.Tests.AiS1Tests.Bound_AdvanceSkipsSuppressionAndSearch
 note = an Advance think still starts suppression
 original:
-|                 if (!advance && suppress != null && unit.Weapon >= 0) suppress.Decide(id, c.Clock.Tick);
+| if (!advance && !fallback && suppress != null
 replacement:
-|                 if (suppress != null && unit.Weapon >= 0) suppress.Decide(id, c.Clock.Tick);
+| if (!fallback && suppress != null
 
 [ai-s1-03-advance-runs-search]
 file = Assets/WarCore/Battle/SimpleAiSystem.cs
@@ -27,9 +27,9 @@ filter = FullyQualifiedName~WarCore.Tests.AiS1Tests.Bound_AdvanceSkipsSuppressio
 expect = WarCore.Tests.AiS1Tests.Bound_AdvanceSkipsSuppressionAndSearch
 note = an Advance think still asks the search (goes to the enemy)
 original:
-|                 if (!advance && search != null && unit.Weapon >= 0)
+| if (!advance && !fallback && search != null
 replacement:
-|                 if (search != null && unit.Weapon >= 0)
+| if (!fallback && search != null
 
 [ai-s1-04-advance-ignored]
 file = Assets/WarCore/Battle/SimpleAiSystem.cs
@@ -37,9 +37,9 @@ filter = FullyQualifiedName~WarCore.Tests.AiS1Tests.Bound_MinimumRangeInTheSched
 expect = WarCore.Tests.AiS1Tests.Bound_MinimumRangeInTheScheduler
 note = Advance stands like Hold
 original:
-|                     if (engage.Decide(in thinker, combat.Point(seen), field) == AiEngage.Hold) { if (moving) StopUnit(id, here, target); continue; }
+| if (answer == AiEngage.Hold || answer == AiEngage.Cover) {
 replacement:
-|                     if (engage.Decide(in thinker, combat.Point(seen), field) != (AiEngage)7) { if (moving) StopUnit(id, here, target); continue; }
+| if (answer == AiEngage.Hold || answer == AiEngage.Cover || answer == AiEngage.Advance) {
 
 [ai-s1-05-enemy-is-self]
 file = Assets/WarCore/Battle/SimpleAiSystem.cs
@@ -47,9 +47,9 @@ filter = FullyQualifiedName~WarCore.Tests.AiS1Tests.Bound_MinimumRangeInTheSched
 expect = WarCore.Tests.AiS1Tests.Bound_MinimumRangeInTheScheduler
 note = the part is asked with the unit's own point instead of the enemy's
 original:
-|                     if (engage.Decide(in thinker, combat.Point(seen), field) == AiEngage.Hold) { if (moving) StopUnit(id, here, target); continue; }
+| AiEngage answer = engage.Decide(in thinker, combat.Point(seen), field);
 replacement:
-|                     if (engage.Decide(in thinker, here, field) == AiEngage.Hold) { if (moving) StopUnit(id, here, target); continue; }
+| AiEngage answer = engage.Decide(in thinker, here, field);
 
 [ai-s1-06-share-edge]
 file = Assets/WarCore/Battle/Ai/BoundEngage.cs
@@ -197,6 +197,6 @@ filter = FullyQualifiedName~WarCore.Tests.AiS1Tests.Content_WindowsMustBeWholeTh
 expect = WarCore.Tests.AiS1Tests.Content_WindowsMustBeWholeThinks
 note = the battle does not pass its thinkInterval
 original:
-|             sim.RegisterGameplay("battle.ai", new SimpleAiSystem(combat, recipe.Combat, recipe.Match, capture, adapter, a.Controlled, memory, contacts, search, suppress, meleeChaseRange, fair, recipe.Seed, ContentPolicies.Parts(ai, recipe.Match.Points, recipe.Match.ThinkInterval)), SimSystemPhase.Requests);
+| recipe.Match.Points, recipe.Match.ThinkInterval, terrain == null
 replacement:
-|             sim.RegisterGameplay("battle.ai", new SimpleAiSystem(combat, recipe.Combat, recipe.Match, capture, adapter, a.Controlled, memory, contacts, search, suppress, meleeChaseRange, fair, recipe.Seed, ContentPolicies.Parts(ai, recipe.Match.Points)), SimSystemPhase.Requests);
+| recipe.Match.Points, 1, terrain == null

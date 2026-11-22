@@ -790,9 +790,9 @@ filter = FullyQualifiedName~Ml4
 expect = WarCore.Tests.Ml4EditTests.HandAddReplaceRemove
 note = a cutout of a missing plate accepted by hand
 original:
-| if (plate.Id == cutout.Plate) return cutout;
+| if (plate.Id == cutout.Plate) return;
 replacement:
-| return cutout;
+| return;
 
 [ml4-76-runtime-accepts]
 file = Assets/WarCore/Presentation/Bridge/WorldBuilder.cs
@@ -800,9 +800,9 @@ filter = FullyQualifiedName~Ml4
 expect = WarCore.Tests.Ml4GateTests.RuntimeRefusesPlates
 note = the runtime takes a map with plates
 original:
-| if (map != null && map.Plates.Count > 0)
+| if (map != null && map.Plates.Count > 0 && !recipe.PlatesPreview)
 replacement:
-| if (map != null && map.Plates.Count > 3)
+| if (map != null && map.Plates.Count > 3 && !recipe.PlatesPreview)
 
 [ml4-77-release-cutout]
 file = Assets/WarCore/Content/MapTools/MapEdit.cs

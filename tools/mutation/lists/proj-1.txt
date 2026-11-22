@@ -124,9 +124,9 @@ filter = FullyQualifiedName~WarCore.Tests.Projectile
 expect = WarCore.Tests.Projectile.Proj1PackTests.SpeedBoundsLoad
 note = the speeds never reach the combat pack
 original:
-| projectileSpeeds.Length == 0 ? null : projectileSpeeds);
+| projectileSpeeds.Length == 0 ? null : projectileSpeeds, aim?.MoveSpread,
 replacement:
-| null);
+| null, aim?.MoveSpread,
 
 [proj1-12-digest-always]
 file = Assets/WarCore/Combat/CombatPack.cs
@@ -157,9 +157,9 @@ filter = FullyQualifiedName~WarCore.Tests.Projectile
 expect = WarCore.Tests.Projectile.Proj1PackTests.WithSelectorKeepsTheProjectiles
 note = WithSelector drops the projectile section
 original:
-| projectileSpeeds.Length == 0 ? null : projectileSpeeds);
+| projectileSpeeds.Length == 0 ? null : projectileSpeeds, MoveSpread, ManualReload, Blasts,
 replacement:
-| null);
+| null, MoveSpread, ManualReload, Blasts,
 
 [proj1-15-no-settle]
 file = Assets/WarCore/Combat/CombatSystem.Projectile.cs
@@ -178,9 +178,9 @@ filter = FullyQualifiedName~WarCore.Tests.Projectile
 expect = WarCore.Tests.Projectile.Proj1LaunchTests.LaunchSpendsTheShotAndLandsNothing
 note = a launch writes a fire record
 original:
-| projectileSystem.Add(Entities.StableOf(shooter), unit.Team, unit.Weapon, tick, origin, direction);
+| projectileSystem.Add(Entities.StableOf(shooter), unit.Team, unit.Weapon, tick, origin, direction, muzzleRaw);
 replacement:
-| projectileSystem.Add(Entities.StableOf(shooter), unit.Team, unit.Weapon, tick, origin, direction); fires[fireCount++] = new FireRecord(Entities.StableOf(shooter), default, origin, origin, default, 0, unit.Team, FireOutcome.Open);
+| projectileSystem.Add(Entities.StableOf(shooter), unit.Team, unit.Weapon, tick, origin, direction, muzzleRaw); fires[fireCount++] = new FireRecord(Entities.StableOf(shooter), default, origin, origin, default, 0, unit.Team, FireOutcome.Open, muzzleRaw);
 
 [proj1-17-moves-on-launch-tick]
 file = Assets/WarCore/Combat/ProjectileSystem.cs
@@ -342,9 +342,9 @@ expect = WarCore.Tests.Projectile.Proj1CapacityTests.LimitsGrowByP
 expect = WarCore.Tests.Projectile.Proj1CapacityTests.MoreLandingsThanUnitsAllSettle
 note = the damage command limit leaves out P
 original:
-| checked(unitCount * MaxHitsPerAction + projectiles),
+| checked(unitCount * MaxHitsPerAction + projectiles + blastCommands),
 replacement:
-| checked(unitCount * MaxHitsPerAction),
+| checked(unitCount * MaxHitsPerAction + blastCommands),
 
 [proj1-33-staging-unchecked]
 file = Assets/WarCore/Combat/CombatPack.cs
@@ -352,9 +352,11 @@ filter = FullyQualifiedName~WarCore.Tests.Projectile
 expect = WarCore.Tests.Projectile.Proj1CapacityTests.CapacityAboveTheSettlementLimitIsRefused
 note = the settlement limit is not checked
 original:
-| if (staging > GameplayMath.MaxPackets)
+|             long staging = 2 * (units * MaxHitsPerAction + total) + 2 * units + 1;
+|             if (staging > GameplayMath.MaxPackets)
 replacement:
-| if (false)
+|             long staging = 2 * (units * MaxHitsPerAction + total) + 2 * units + 1;
+|             if (false)
 
 [proj1-34-full-pool-dropped]
 file = Assets/WarCore/Combat/ProjectileSystem.cs
@@ -493,6 +495,6 @@ filter = FullyQualifiedName~WarCore.Tests.Projectile
 expect = WarCore.Tests.Projectile.Proj1LaunchTests.TargetIntentFiresAtTheViewpoint
 note = the explicit target path updates the spread state
 original:
-| Launch(shooter, in unit, in weapon, tick, muzzle, toward, unit.SpreadStored, unit.SpreadLastMilli);
+| Launch(shooter, in unit, in weapon, tick, muzzle, from, toward, unit.SpreadStored, unit.SpreadLastMilli);
 replacement:
-| Launch(shooter, in unit, in weapon, tick, muzzle, toward, unit.SpreadStored + 1, tick * 1000);
+| Launch(shooter, in unit, in weapon, tick, muzzle, from, toward, unit.SpreadStored + 1, tick * 1000);

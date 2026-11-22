@@ -17,9 +17,9 @@ filter = FullyQualifiedName~Mt154FeatureTable
 expect = WarCore.Tests.Mt154FeatureTableTests.PlayerWithoutPrimaryInput_DoesNotAutoFire
 note = Constructs combat without player control, allowing automatic player fire.
 original:
-|         internal static readonly IWorldStageFeature[] Connect = { PlayerFeature.Instance, CombatFeature.Instance, CrowdPassFeature.Instance };
+| { PlayerFeature.Instance, CombatFeature.Instance, StanceFeature.Instance,
 replacement:
-|         internal static readonly IWorldStageFeature[] Connect = { CombatFeature.Instance, PlayerFeature.Instance, CrowdPassFeature.Instance };
+| { CombatFeature.Instance, PlayerFeature.Instance, StanceFeature.Instance,
 
 [mt-154-03]
 file = Assets/WarCore/Presentation/Bridge/Features/FeatureTable.cs

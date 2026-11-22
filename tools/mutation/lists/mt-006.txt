@@ -7,6 +7,6 @@ filter = FullyQualifiedName~Mt006GuardSlots
 expect = WarCore.Tests.Mt006GuardSlotsTests.NearestIncludesTheSlotExactlyOneMetreAway
 note = Excludes the nearest slot at exactly one metre of horizontal distance.
 original:
-|                     if (distance <= oneSquared && (best < 0 || distance < bestDistance)) { best = s; bestDistance = distance; }
+| if (distance <= adjacentSquared && (best < 0
 replacement:
-|                     if (distance < oneSquared && (best < 0 || distance < bestDistance)) { best = s; bestDistance = distance; }
+| if (distance < adjacentSquared && (best < 0

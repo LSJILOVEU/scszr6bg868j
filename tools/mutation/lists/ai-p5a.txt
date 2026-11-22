@@ -1270,7 +1270,7 @@ filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndResto
 expect = WarCore.Tests.AiP5aTests.TheViewShowsEachMansSquad
 note = an interpolated frame loses the band
 original:
-| layer: next.Layer, band: next.Band);
+| layer: next.Layer, band: next.Band,
 replacement:
-| layer: next.Layer);
+| layer: next.Layer,
 

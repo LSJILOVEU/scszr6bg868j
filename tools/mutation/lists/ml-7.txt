@@ -61,9 +61,9 @@ expect = WarCore.Tests.Ml7InputTests.WithoutTheSwitchLayersAreRefused
 note = a legacy world takes the switch
 original:
 |             Entities.RequireStableWorld();
-|             if (warmed)
+|             if (warmed) throw new InvalidOperationException("Input layers
 replacement:
-|             if (warmed)
+|             if (warmed) throw new InvalidOperationException("Input layers
 
 [ml7-switch-after-warmup]
 file = Assets/WarCore/Sim/StableInput.cs
@@ -159,9 +159,9 @@ filter = FullyQualifiedName~Ml7
 expect = WarCore.Tests.Ml7InputTests.ALayerChangesItsTicksHash
 note = the hash leaves the layers out
 original:
-| stableInput.Save(stableWriter,inputLayers);
+| stableInput.Save(stableWriter,inputLayers,inputActions);
 replacement:
-| stableInput.Save(stableWriter,false);
+| stableInput.Save(stableWriter,false,inputActions);
 
 [ml7-bind-drops-target]
 file = Assets/WarCore/Sim/StableInput.cs
@@ -466,7 +466,7 @@ filter = FullyQualifiedName~Ml7
 expect = WarCore.Tests.Ml7SessionTests.DeploymentIsOnTheGround
 note = no reset on deploy
 original:
-|             if (verticals.HasValue) sim.Entities.Set(verticals.Value, unit, new VerticalState(0, 0));
+| if (verticals.HasValue) sim.Entities.Set(verticals.Value, unit, new VerticalState(layer, 0));
 replacement:
 
 [ml7-deploy-no-verticals]
@@ -475,9 +475,9 @@ filter = FullyQualifiedName~Ml7
 expect = WarCore.Tests.Ml7SessionTests.DeploymentIsOnTheGround
 note = the adapter gets no state
 original:
-| a.Plates != null ? a.Verticals : (ComponentType<VerticalState>?)null);
+| a.Plates != null ? a.Verticals : (ComponentType<VerticalState>?)null, a.Plates);
 replacement:
-| (ComponentType<VerticalState>?)null);
+| (ComponentType<VerticalState>?)null, a.Plates);
 
 [ml7-spawn-no-plates]
 file = Assets/WarCore/Presentation/Bridge/Features/PlateFeature.cs
@@ -529,14 +529,14 @@ replacement:
 | return tops[0].TryHeightAt(x, z, out y);
 
 [ml7-floor-rounds]
-file = Assets/WarCore/Presentation/Bridge/Features/PlateWorld.cs
+file = Assets/WarCore/Content/MapCells.cs
 filter = FullyQualifiedName~Ml7
 expect = WarCore.Tests.Ml7SessionTests.CommandsOffTheirLayerAreRefused
 note = the cell rounds instead of flooring
 original:
-| long cx = (x.Raw - map.Min.X.Raw) >> 16
+| long ix = (x.Raw - map.Min.X.Raw) >> 16
 replacement:
-| long cx = (x.Raw - map.Min.X.Raw + 32768) >> 16
+| long ix = (x.Raw - map.Min.X.Raw + 32768) >> 16
 
 [ml7-check-ground]
 file = Assets/WarCore/Presentation/Bridge/SimSession.cs
@@ -643,9 +643,9 @@ filter = FullyQualifiedName~Ml7
 expect = WarCore.Tests.Ml7SessionTests.TheAimCarriesItsLayer
 note = Equals ignores the layer
 original:
-|             && AimLayer == other.AimLayer;
+| && AimLayer == other.AimLayer && Dash == other.Dash;
 replacement:
-|             && true;
+| && true && Dash == other.Dash;
 
 [ml7-input-hash]
 file = Assets/WarCore/Presentation/Bridge/PlayerInput.cs
@@ -653,9 +653,9 @@ filter = FullyQualifiedName~Ml7
 expect = WarCore.Tests.Ml7SessionTests.TheAimCarriesItsLayer
 note = layer 0 changes the hash code
 original:
-| return AimLayer == 0 ? hash : hash * 397 ^ AimLayer;
+| if (AimLayer != 0) hash = hash * 397 ^ AimLayer;
 replacement:
-| return hash * 397 ^ AimLayer;
+| hash = hash * 397 ^ AimLayer;
 
 [ml7-input-range]
 file = Assets/WarCore/Presentation/Bridge/PlayerInput.cs

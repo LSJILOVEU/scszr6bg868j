@@ -19,9 +19,9 @@ filter = FullyQualifiedName~AiSplitTests
 expect = WarCore.Tests.AiSplitTests.Split_InRangeIsRead
 note = the field is accepted but not kept
 original:
-| chase, fair, follows, hold, spread, dispatch, placement));
+| chase, fair, follows, hold, spread, dispatch,
 replacement:
-| chase, fair, follows, 0, spread, dispatch, placement));
+| chase, fair, follows, 0, spread, dispatch,
 
 [ai-p0-c-ai-split-1-04-salt]
 file = Assets/WarCore/Battle/Ai/NearestDispatch.cs
@@ -79,9 +79,9 @@ filter = FullyQualifiedName~AiSplitTests
 expect = WarCore.Tests.AiSplitTests.Split_NoOwnedPointMeansNoHolders
 note = holders without an owned point stand still instead of attacking
 original:
-| bool attack = nearest < 0; SimWide best = default;
+| ? field.Frontline(unit.Team) : -1;
 replacement:
-| bool attack = !Holds(unit.Id.Value, holdSharePermille); SimWide best = default;
+| ? field.Frontline(unit.Team) : -1; if (nearest < 0 && holdSharePermille > 0 && Holds(unit.Id.Value, holdSharePermille)) return -1;
 
 [ai-p0-c-ai-split-1-10-digest]
 file = Assets/WarCore/Battle/Ai/NearestDispatch.cs
@@ -119,9 +119,9 @@ filter = FullyQualifiedName~AiSpreadTests
 expect = WarCore.Tests.AiSpreadTests.Spread_InRangeIsRead(8)
 note = the field is accepted but not kept
 original:
-| chase, fair, follows, hold, spread, dispatch, placement));
+| chase, fair, follows, hold, spread, dispatch,
 replacement:
-| chase, fair, follows, hold, 1, dispatch, placement));
+| chase, fair, follows, hold, 1, dispatch,
 
 [ai-p0-c-ai-split-2-05-salt]
 file = Assets/WarCore/Battle/Ai/NearestDispatch.cs
@@ -193,9 +193,9 @@ filter = FullyQualifiedName~AiSpreadTests
 expect = WarCore.Tests.AiSpreadTests.Spread_AttackersTakeTheKthNearestPoint(8)
 note = owned points count towards the rank range
 original:
-|             for (int i = 0; i < field.PointCount; i++) if (field.Owner(i) != team) count++;
+| if (field.Owner(i) != team && field.TrySpan(from, layer, i, out _)) count++;
 replacement:
-|             for (int i = 0; i < field.PointCount; i++) count++;
+| if (field.TrySpan(from, layer, i, out _)) count++;
 
 [ai-p0-c-ai-split-2-12-holders-spread]
 file = Assets/WarCore/Battle/Ai/NearestDispatch.cs
@@ -203,9 +203,9 @@ filter = FullyQualifiedName~AiSpreadTests
 expect = WarCore.Tests.AiSpreadTests.Spread_WithHoldShare
 note = holders are spread as well and leave the front line
 original:
-| if (attack && attackSpreadPoints > 1) { nearest = SpreadTarget(
+| if (nearest < 0 && attackSpreadPoints > 1) nearest = SpreadTarget(
 replacement:
-| if (attackSpreadPoints > 1) { nearest = SpreadTarget(
+| if (attackSpreadPoints > 1) nearest = SpreadTarget(
 
 [ai-p0-c-ai-split-2-13-digest]
 file = Assets/WarCore/Battle/Ai/NearestDispatch.cs
@@ -246,8 +246,8 @@ expect = WarCore.Tests.AiSpreadTests.Spread_TargetStaysWhileNoPointFlips
 expect = WarCore.Tests.AiSpreadTests.Spread_MeasuresFromTheFrontLine
 note = distances count from the walking unit, so its rank points at a different point as it moves
 original:
-|             if (front >= 0) from = field.Center(front);
-|             else if (field.TryBase(team, out SimVec3 anchor)) from = anchor;
+|             if (front >= 0) { from = field.Center(front); layer = field.Layer(front); }
+|             else if (field.TryBase(team, out SimVec3 anchor, out int anchorLayer)) { from = anchor; layer = anchorLayer; }
 replacement:
 
 [ai-p0-c-ai-split-2-17-no-base]
@@ -257,7 +257,7 @@ expect = WarCore.Tests.AiSpreadTests.Spread_NoFrontlineMeasuresFromTheBase("base
 expect = WarCore.Tests.AiSpreadTests.Spread_TargetStaysWhileNoPointFlips(False)
 note = a team without a front line measures from the walking unit, not from its spawn anchor
 original:
-|             else if (field.TryBase(team, out SimVec3 anchor)) from = anchor;
+|             else if (field.TryBase(team, out SimVec3 anchor, out int anchorLayer)) { from = anchor; layer = anchorLayer; }
 replacement:
 
 [ai-p0-c-ai-split-2-18-last-base]
@@ -267,12 +267,12 @@ expect = WarCore.Tests.AiSpreadTests.Spread_NoFrontlineMeasuresFromTheBase("two"
 note = the team's last spawn anchor counts instead of its first
 original:
 |             foreach (SpawnAnchor anchor in pack.Bases)
-|                 if (anchor.Team == team) { at = anchor.Point; return true; }
-|             at = default; return false;
+|                 if (anchor.Team == team) { at = anchor.Point; layer = anchor.Layer; return true; }
+|             at = default; layer = 0; return false;
 replacement:
-|             at = default; bool found = false;
+|             at = default; layer = 0; bool found = false;
 |             foreach (SpawnAnchor anchor in pack.Bases)
-|                 if (anchor.Team == team) { at = anchor.Point; found = true; }
+|                 if (anchor.Team == team) { at = anchor.Point; layer = anchor.Layer; found = true; }
 |             return found;
 
 [ai-p0-c-ai-split-2-19-any-base]
@@ -281,9 +281,9 @@ filter = FullyQualifiedName~AiSpreadTests
 expect = WarCore.Tests.AiSpreadTests.Spread_NoFrontlineMeasuresFromTheBase("two")
 note = team 1 takes the first anchor of either team
 original:
-|                 if (anchor.Team == team) { at = anchor.Point; return true; }
+|                 if (anchor.Team == team) { at = anchor.Point; layer = anchor.Layer; return true; }
 replacement:
-|                 { at = anchor.Point; return true; }
+|                 { at = anchor.Point; layer = anchor.Layer; return true; }
 
 [ai-p0-c-ai-split-2-20-no-unit-fallback]
 file = Assets/WarCore/Battle/Ai/NearestDispatch.cs
@@ -321,9 +321,9 @@ filter = FullyQualifiedName~AiPartsTests
 expect = WarCore.Tests.AiPartsTests.Parts_UnitsGoWhereTheDispatchSays
 note = the scheduler always uses the default dispatch
 original:
-| int point = dispatch.Pick(in thinker, field);
+| : dispatch.Pick(in thinker, field);
 replacement:
-| int point = new NearestDispatch().Pick(in thinker, field);
+| : new NearestDispatch().Pick(in thinker, field);
 
 [ai-p0-02-placement-not-asked]
 file = Assets/WarCore/Battle/SimpleAiSystem.cs
@@ -351,9 +351,9 @@ filter = FullyQualifiedName~AiPartsTests
 expect = WarCore.Tests.AiPartsTests.Parts_UnitsGoWhereTheDispatchSays
 note = the parts see team 0
 original:
-| new AiUnit(id, unit.Team, here)
+| new AiUnit(id, unit.Team, here,
 replacement:
-| new AiUnit(id, 0, here)
+| new AiUnit(id, 0, here,
 
 [ai-p0-05-unit-here]
 file = Assets/WarCore/Battle/SimpleAiSystem.cs
@@ -361,9 +361,9 @@ filter = FullyQualifiedName~AiPartsTests
 expect = WarCore.Tests.AiPartsTests.Parts_UnitsGoWhereTheDispatchSays
 note = the parts see the unit at the origin
 original:
-| new AiUnit(id, unit.Team, here)
+| new AiUnit(id, unit.Team, here,
 replacement:
-| new AiUnit(id, unit.Team, default)
+| new AiUnit(id, unit.Team, default,
 
 [ai-p0-06-anchor-tie]
 file = Assets/WarCore/Battle/SimpleAiSystem.cs
@@ -463,9 +463,9 @@ filter = FullyQualifiedName~AiPartsTests
 expect = WarCore.Tests.AiPartsTests.Parts_UnitsGoWhereTheDispatchSays
 note = the field shows another team's spawn anchor
 original:
-|                 if (anchor.Team == team) { at = anchor.Point; return true; }
+|                 if (anchor.Team == team) { at = anchor.Point; layer = anchor.Layer; return true; }
 replacement:
-|                 if (anchor.Team != team) { at = anchor.Point; return true; }
+|                 if (anchor.Team != team) { at = anchor.Point; layer = anchor.Layer; return true; }
 
 [ai-p0-16-owner-initial]
 file = Assets/WarCore/Battle/Ai/AiParts.cs
@@ -493,9 +493,9 @@ filter = FullyQualifiedName~AiPartsTests
 expect = WarCore.Tests.AiPartsTests.Parts_FrontlineFollowsTheOwners
 note = the content parts never reach the AI system
 original:
-| recipe.Seed, ContentPolicies.Parts(ai, recipe.Match.Points))
+| ContentPolicies.Parts(ai, recipe.Match.Points, recipe.Match.ThinkInterval, terrain == null, layers != null, squads)
 replacement:
-| recipe.Seed, null)
+| null
 
 [ai-p0-19-content-hold-dropped]
 file = Assets/WarCore/Content/Data/ContentPolicies.cs
@@ -533,7 +533,7 @@ filter = FullyQualifiedName~AiPartsTests
 expect = WarCore.Tests.AiPartsTests.Parts_UnknownIdNamesPackEntryAndField("placement"
 note = every placement id is accepted
 original:
-| public static bool IsPlacement(string id) => id == NearestSlot;
+| public static bool IsPlacement(string id) => id == NearestSlot || id == Scatter || id == AssaultRoles;
 replacement:
 | public static bool IsPlacement(string id) => true;
 
@@ -553,9 +553,9 @@ filter = FullyQualifiedName~AiPartsTests
 expect = WarCore.Tests.AiPartsTests.Parts_IdsAreReadWithDefaults
 note = the default placement id is not nearest-slot
 original:
-| NearestSlot = "nearest-slot";
+| NearestSlot = "nearest-slot",
 replacement:
-| NearestSlot = "closest-slot";
+| NearestSlot = "closest-slot",
 
 [ai-p0-25-placement-check-skipped]
 file = Assets/WarCore/Content/Data/Sections/AiSection.cs
@@ -593,6 +593,6 @@ filter = FullyQualifiedName~AiPartsTests
 expect = WarCore.Tests.AiPartsTests.Parts_StepAllocatesZero
 note = every think allocates
 original:
-| int point = dispatch.Pick(in thinker, field);
+| : dispatch.Pick(in thinker, field);
 replacement:
-| int point = dispatch.Pick(in thinker, field); GC.KeepAlive(new int[1]);
+| : dispatch.Pick(in thinker, field); GC.KeepAlive(new int[1]);
