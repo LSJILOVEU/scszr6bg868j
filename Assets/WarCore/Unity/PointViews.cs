@@ -11,11 +11,18 @@ namespace WarCore.Unity
         private static readonly Color[] Teams = { Neutral, new Color(1f, 0.85f, 0.2f), new Color(0.2f, 0.5f, 1f) };
         private readonly Transform parent;
         private readonly ViewGround ground;
+        private readonly Color[] teams;
         private GameObject[] discs = System.Array.Empty<GameObject>();
         private LineRenderer[] rings = System.Array.Empty<LineRenderer>();
 
         // ground: the map's height field, or null on a flat map (then every height is the old constant).
-        public PointViews(Transform parent, ViewGround ground = null) { this.parent = parent; this.ground = ground; }
+        // teams: index 0 is the neutral colour, 1.. the team colours; null keeps the built-in set.
+        public PointViews(Transform parent, ViewGround ground = null, Color[] teams = null)
+        {
+            this.parent = parent;
+            this.ground = ground;
+            this.teams = teams == null || teams.Length == 0 ? Teams : teams;
+        }
 
         private float Base(float x, float z) => ground == null ? 0f : ground.HeightAt(x, z, 0f);
 
@@ -46,12 +53,12 @@ namespace WarCore.Unity
                 ViewPoint p = points[i];
                 discs[i].transform.position = new Vector3(p.X, Base(p.X, p.Z) + 0.02f, p.Z);
                 discs[i].transform.localScale = new Vector3(p.Radius * 2, 0.01f, p.Radius * 2);
-                Color owner = Teams[p.Owner % Teams.Length];
+                Color owner = teams[p.Owner % teams.Length];
                 discs[i].GetComponent<Renderer>().sharedMaterial.color = Color.Lerp(owner, new Color(0.2f, 0.3f, 0.2f), 0.55f);
                 int count = Mathf.Max(0, Mathf.RoundToInt(p.Progress * RingSegments));
                 rings[i].enabled = count > 0;
                 rings[i].positionCount = count + 1;
-                rings[i].sharedMaterial.color = Teams[p.Capturing % Teams.Length];
+                rings[i].sharedMaterial.color = teams[p.Capturing % teams.Length];
                 for (int k = 0; k <= count; k++)
                 {
                     float angle = k * 2 * Mathf.PI / RingSegments;

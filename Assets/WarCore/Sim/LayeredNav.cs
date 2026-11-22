@@ -14,7 +14,10 @@ namespace WarCore.Sim
     // of that edge the two layers' heights differ by at most StepRaw. Ground height is the height field's point, or the
     // given flat height on a map without one; a plate's height is its own top point table (the one PlateField uses, K11).
     // Seams are listed per node in ascending order of the other node and are only made between walkable nodes.
-    public sealed class LayeredNav
+    //
+    // TRV-3: an optional table of directed links (LayeredNav.Links.cs). Without one (null) every table and the digest are
+    // exactly as before; with one, even an empty one, the digest ends with the links.
+    public sealed partial class LayeredNav
     {
         public const int AlgorithmVersion = 1;
         // 0.3 m (19660.8 raw) rounded down: a difference <= StepRaw is exactly a difference of at most 0.3 m in whole raw.
@@ -43,7 +46,7 @@ namespace WarCore.Sim
         // ground: the ground's derived tables. flatGroundRaw: the ground height on a map without a height field (ignored when
         // ground.Ground is set). costs[k], speeds[k]: plate k's cells, row-major, 0 exactly on the cells that are not walkable.
         public LayeredNav(TerrainTables ground, long flatGroundRaw, IReadOnlyList<PlateSlab> plates,
-            IReadOnlyList<byte[]> costs, IReadOnlyList<ushort[]> speeds)
+            IReadOnlyList<byte[]> costs, IReadOnlyList<ushort[]> speeds, IReadOnlyList<NavLink> links = null)
         {
             Ground = ground ?? throw new ArgumentNullException(nameof(ground));
             if (plates == null) throw new ArgumentNullException(nameof(plates));
@@ -115,6 +118,7 @@ namespace WarCore.Sim
             }
             layerStart[LayerCount] = Count;
             BuildSeams(perCell, out SeamStart, out Seams);
+            if (links != null) BuildLinks(links, out Links, out LinkStart, out InStart, out InLinks);
             Digest = Hash();
         }
 
@@ -252,6 +256,7 @@ namespace WarCore.Sim
             hash.Add(Seams.Length);
             foreach (int s in SeamStart) hash.Add(s);
             foreach (int s in Seams) hash.Add(s);
+            if (Links != null) HashLinks(hash);
             return hash.Value;
         }
     }

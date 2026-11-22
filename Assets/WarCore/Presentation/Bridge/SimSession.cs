@@ -49,9 +49,14 @@ namespace WarCore.Presentation
         internal PlateWorld Plates;
         // ML-10: the plates for the picture and each unit's layer; both null without plates.
         internal WarCore.Battle.IUnitLayers Layers;
+        // TRV-7a: each point's entries and watch cells, and how to build them again from the world as it is now; null without
+        // plates or without a match.
+        internal PointEntryTable Entries;
+        internal Func<PointEntryTable> EntryBuild;
         // M7b: the locomotion and the dash state table when a recipe unit has a dash (DashFeature on); both null otherwise.
         internal InterimLocomotion Dash;
         internal ComponentType<DashState>? DashStates;
+        internal StanceSystem Stances; internal ActionGate Gate; // STANCE-1, when the combat pack has stances; else null
     }
 
     /// <summary>
@@ -84,6 +89,7 @@ namespace WarCore.Presentation
         private readonly ComponentType<UnitFacing>? facings;
         private readonly InterimLocomotion dash;
         private readonly ComponentType<DashState>? dashStates;
+        internal StanceSystem Stances { get; } internal ActionGate Gate { get; } // STANCE-1, null in a world without stances
         private readonly List<BridgeCommand> pending = new List<BridgeCommand>();
         private readonly List<BridgeCommand> commandLog = new List<BridgeCommand>();
         private readonly List<PlayerInputRecord> pendingPlayer = new List<PlayerInputRecord>();
@@ -92,6 +98,7 @@ namespace WarCore.Presentation
         private readonly long groundRaw;
         private readonly PlateWorld plates;
         private readonly WarCore.Battle.IUnitLayers layers;
+        private readonly Func<PointEntryTable> entryBuild;
         private readonly long maxHealthRaw;
         private readonly WcMap map;
         private readonly uint wallMask;
@@ -129,7 +136,7 @@ namespace WarCore.Presentation
         {
             facings = parts.Facings;
             dash = parts.Dash;
-            dashStates = parts.DashStates;
+            dashStates = parts.DashStates; Stances = parts.Stances; Gate = parts.Gate;
             combatPack = parts.CombatPack;
             controlled = parts.Controlled;
             maxHealthRaw = parts.MaxHealthRaw;
@@ -138,6 +145,8 @@ namespace WarCore.Presentation
             groundRaw = parts.GroundRaw;
             plates = parts.Plates;
             layers = parts.Layers;
+            Entries = parts.Entries;
+            entryBuild = parts.EntryBuild;
             map = parts.Map;
             wallMask = parts.WallMask;
             Map = parts.View;
@@ -164,6 +173,12 @@ namespace WarCore.Presentation
         internal TerrainRules TerrainRules { get; }
         // The match the session runs (null without one); read by PointCheck.
         internal MatchPack MatchPack => matchPack;
+        internal ProjectileSystem ProjectilesForView => combat?.Projectiles; // PROJ-1, read by ViewProjectiles.Read only
+        // TRV-7a: each point's entries and watch cells (by the match's point index), built once with the world; null without
+        // plates or without a match. Read by tests and reports only: no match system reads it.
+        internal PointEntryTable Entries { get; }
+        // The same table built again from the world as it is now (after a restore, say); null where Entries is null.
+        internal PointEntryTable RebuildEntriesForCheck() => entryBuild?.Invoke();
         // View key is the original UnitSpawn.Key, not the hashed StableId or the physical entity slot.
         public ulong? ControlledKey
         {
@@ -276,6 +291,15 @@ namespace WarCore.Presentation
             throw new ArgumentException("Follow target is not a unit of this session.", nameof(key));
         }
 
+        // AIM-1 TryReload, STANCE-1 TryStance: ask each unit of the squad that the player does not control, in spawn key order
+        // (spawns are sorted by key). The system asked refuses what it must (dead, full magazine, changing stance...).
+        private void AskSquad(int squad, Func<EntityId, bool> ask)
+        {
+            for (int i = 0; i < spawns.Length; i++)
+                if (spawns[i].Squad == squad && (controlled == null || !controlled.Current.Equals(sim.Entities.Resolve(new EntityLink(units[i])))))
+                    ask(sim.Entities.Resolve(new EntityLink(units[i])));
+        }
+
         // A squad target travels as a link beside the frame; frames without one take the plain path.
         private void StepSim(InputFrame input, EntityLink followTarget)
         {
@@ -294,6 +318,12 @@ namespace WarCore.Presentation
             }
             else if (command.Kind == BridgeCommandKind.Follow && !HasUnit(command.TargetKey))
                 throw new ArgumentException("Follow target is not a unit of this session.", nameof(command));
+            else if (command.Kind == BridgeCommandKind.Stance && command.Level >= (Stances?.Levels ?? 1)) throw new ArgumentOutOfRangeException(nameof(command), "This world has stance levels 0 to " + ((Stances?.Levels ?? 1) - 1) + ".");
+            else if (command.Kind == BridgeCommandKind.Blast)
+            {
+                BlastIndex(command.BlastId);
+                BlastPoint(command.XMm, command.ZMm, command.Layer, nameof(command));
+            }
             int index = 0;
             while (index < pending.Count && pending[index].AtTick < command.AtTick)
                 index++;
@@ -348,7 +378,13 @@ namespace WarCore.Presentation
             SquadCommand? squad = null;
             EntityLink followTarget = default;
             bool hasCommand = pending.Count > 0 && pending[0].AtTick == nextTick;
-            if (hasCommand)
+            // AIM-1 reload, STANCE-1 stance: no squad order; asked here, before the step, and the frame carries no squad command.
+            // BLAST-1: a blast command is no squad command either; it is taken apart here, before the squad switch below.
+            bool blast = hasCommand && pending[0].Kind == BridgeCommandKind.Blast;
+            BridgeCommand head = hasCommand ? pending[0] : default;
+            if (hasCommand && head.Kind == BridgeCommandKind.Reload) { if (combat != null) AskSquad(head.Squad, combat.TryReload); }
+            else if (hasCommand && head.Kind == BridgeCommandKind.Stance) { if (Stances != null) AskSquad(head.Squad, u => Stances.TryStance(u, head.Level)); }
+            else if (hasCommand && !blast)
             {
                 BridgeCommand command = pending[0];
                 squad = command.Kind switch
@@ -381,9 +417,15 @@ namespace WarCore.Presentation
                 if (dash != null && nextPlayerInput.Dash && !heldPlayerInput.Dash)
                 {
                     EntityId unit = controlled.Current;
-                    if (sim.Entities.TryGet(positions, unit, out Position at) && (combat == null || !combat.IsDead(unit)))
+                    if (sim.Entities.TryGet(positions, unit, out Position at) && (combat == null || !combat.IsDead(unit)) && (Gate == null || Gate.Allows(unit, UnitAction.Dash)))
                         dash.TryDash(unit, move.X.Raw != 0 || move.Z.Raw != 0 ? move : aim - at.Value);
                 }
+            }
+            // The blast goes into the queue before the step, so it goes off on this tick (the blast system runs at Order 28).
+            if (blast)
+            {
+                BridgeCommand command = pending[0];
+                combat.Blasts.Enqueue(BlastPoint(command.XMm, command.ZMm, command.Layer, nameof(command)), BlastIndex(command.BlastId), default, 0);
             }
             if (StepTimingEnabled && stepSampleCount < stepSamples.Length)
             {
@@ -446,11 +488,19 @@ namespace WarCore.Presentation
                     (float)point.Z.Raw / SimFix.Scale, spawns[i].Squad,
                     team, alive, pressure != null && alive ? (int)pressure.Level(sim.Entities.StableOf(unit)) : 0,
                     layers == null ? 0 : layers.LayerOf(unit),
-                    squads != null && alive ? BandKey(squads.SquadOf(sim.Entities.StableOf(unit))) : 0));
+                    squads != null && alive ? BandKey(squads.SquadOf(sim.Entities.StableOf(unit))) : 0, Stances == null ? 0 : Stances.StanceOf(unit).Level));
             }
             var fires = new ViewFire[combat == null ? 0 : combat.Fires.Length];
             for (int i = 0; i < fires.Length; i++)
                 fires[i] = ToView(combat.Fires[i]);
+            BlastSystem blasts = combat?.Blasts;
+            var blastViews = new ViewBlast[blasts == null ? 0 : blasts.Records.Length];
+            for (int i = 0; i < blastViews.Length; i++)
+            {
+                BlastRecord record = blasts.Records[i];
+                blastViews[i] = new ViewBlast((float)record.Point.X.Raw / SimFix.Scale, (float)record.Point.Y.Raw / SimFix.Scale,
+                    (float)record.Point.Z.Raw / SimFix.Scale, (float)blasts.Rules.Kinds[record.Blast].OuterRaw / SimFix.Scale, record.Team);
+            }
             var points = new ViewPoint[capture == null ? 0 : capture.Points.Length];
             for (int i = 0; i < points.Length; i++)
             {
@@ -476,7 +526,7 @@ namespace WarCore.Presentation
                 }
             }
             return new FrameView(Tick, views.ToArray(), fires, points,
-                new ViewMatch(Winner, (int)EndTick, EndReason, aliveOne, aliveTwo, reserveOne, reserveTwo, IsFinished), respawn);
+                new ViewMatch(Winner, (int)EndTick, EndReason, aliveOne, aliveTwo, reserveOne, reserveTwo, IsFinished), respawn, blastViews);
         }
 
         public static ViewFire ToView(in FireRecord fire) => new ViewFire(
@@ -500,6 +550,30 @@ namespace WarCore.Presentation
             const long limitMm = SimVec3.WorldLimitMetres * 1000L;
             if (yMm < -limitMm || yMm > limitMm)
                 throw new ArgumentOutOfRangeException("aimYMm", "Aim height exceeds the world bounds.");
+        }
+
+        // BLAST-1: the index of a blast kind of this session's combat pack.
+        private int BlastIndex(string blastId)
+        {
+            BlastSystem blasts = combat?.Blasts;
+            if (blasts == null) throw new InvalidOperationException("This session's combat pack has no blasts.");
+            int index = blasts.Rules.IndexOf(blastId);
+            if (index < 0) throw new ArgumentException("The combat pack has no blast '" + blastId + "'.", nameof(blastId));
+            return index;
+        }
+
+        // BLAST-1: where a blast command goes off: (x, z) on the ground (the terrain's height there, else the map's floor) or, for
+        // a layer above 0, on that floor plate's surface.
+        private SimVec3 BlastPoint(long xMm, long zMm, int layer, string parameter)
+        {
+            CheckLayer(xMm, zMm, layer, "Blast point", parameter);
+            if (layer > 0) return PlateTarget(xMm, zMm, layer);
+            SimVec3 point = Target(xMm, zMm, groundRaw);
+            HeightField ground = Terrain?.Ground;
+            if (ground == null) return point;
+            if (!ground.TryHeightAt(point.X, point.Z, out SimFix y))
+                throw new ArgumentException("Blast point is outside the terrain.", parameter);
+            return new SimVec3(point.X, y, point.Z);
         }
 
         // A point on a layer above the ground must lie on a solid cell of that plate of this map.

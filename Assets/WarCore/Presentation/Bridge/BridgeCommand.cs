@@ -2,7 +2,7 @@ using System;
 
 namespace WarCore.Presentation
 {
-    public enum BridgeCommandKind { MoveTo, Hold, Follow }
+    public enum BridgeCommandKind { MoveTo, Hold, Follow, Reload, Blast, Stance }
 
     public readonly struct BridgeCommand
     {
@@ -10,14 +10,23 @@ namespace WarCore.Presentation
         public int Squad { get; }
         public long XMm { get; }
         public long ZMm { get; }
-        // MoveTo (the default) uses XMm/ZMm; Hold uses neither; Follow uses TargetKey (a UnitSpawn.Key).
+        // MoveTo (the default) uses XMm/ZMm; Hold uses neither; Follow uses TargetKey (a UnitSpawn.Key). Reload (AIM-1) uses
+        // neither: it is no squad order, the session asks a manual reload of every living unit of the squad before that tick.
         public BridgeCommandKind Kind { get; }
         public ulong TargetKey { get; }
         // The layer of a MoveTo target: 0 = the ground, 1..N = a floor plate of the map (worlds with plates only).
         public int Layer { get; }
+        // STANCE-1: the stance level a Stance command asks for (0 = standing).
+        public int Level { get; }
+        // BLAST-1: the blast kind (an id of the combat pack's blasts) a Blast command sets off at XMm/ZMm on Layer; null otherwise.
+        public string BlastId { get; }
 
-        private BridgeCommand(long atTick, int squad, long xMm, long zMm, BridgeCommandKind kind = BridgeCommandKind.MoveTo, ulong targetKey = 0, int layer = 0)
+        private BridgeCommand(long atTick, int squad, long xMm, long zMm, BridgeCommandKind kind = BridgeCommandKind.MoveTo, ulong targetKey = 0, int layer = 0,
+            string blastId = null, int level = 0)
         {
+            if (level < 0 || level > CombatStances)
+                throw new ArgumentOutOfRangeException(nameof(level), "A stance level is 0 to " + CombatStances + ".");
+            Level = level;
             if (atTick < 1)
                 throw new ArgumentOutOfRangeException(nameof(atTick));
             if (layer < 0 || layer > UnitSpawn.MaxLayer)
@@ -29,6 +38,7 @@ namespace WarCore.Presentation
             ZMm = zMm;
             Kind = kind;
             TargetKey = targetKey;
+            BlastId = blastId;
         }
 
         public static BridgeCommand MoveTo(long atTick, int squad, long xMm, long zMm)
@@ -42,5 +52,24 @@ namespace WarCore.Presentation
 
         public static BridgeCommand Follow(long atTick, int squad, ulong targetKey)
             => new BridgeCommand(atTick, squad, 0, 0, BridgeCommandKind.Follow, targetKey);
+
+        public static BridgeCommand Reload(long atTick, int squad)
+            => new BridgeCommand(atTick, squad, 0, 0, BridgeCommandKind.Reload);
+
+        // BLAST-1: sets off a blast of kind blastId on tick atTick at (xMm, zMm) on the ground (layer 0) or on a floor plate. The
+        // session puts it on the ground or plate surface there and queues it before the tick's step, so it goes off on that tick;
+        // no source, team 0. Like every command it takes the tick alone: a second command for the same tick is dropped.
+        public static BridgeCommand Blast(long atTick, long xMm, long zMm, string blastId, int layer = 0)
+        {
+            if (string.IsNullOrEmpty(blastId)) throw new ArgumentException("A blast command needs a blast id.", nameof(blastId));
+            return new BridgeCommand(atTick, 0, xMm, zMm, BridgeCommandKind.Blast, layer: layer, blastId: blastId);
+        }
+
+        // STANCE-1: at that tick every living unit of the squad on the field (in key order, the player's unit left out) is asked
+        // to change to level, before the tick's step. No squad order goes into that tick's input.
+        public static BridgeCommand Stance(long atTick, int squad, int level)
+            => new BridgeCommand(atTick, squad, 0, 0, BridgeCommandKind.Stance, level: level);
+
+        private const int CombatStances = WarCore.Combat.CombatPack.MaxStances;
     }
 }

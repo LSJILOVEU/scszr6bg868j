@@ -312,23 +312,35 @@ namespace WarCore.Interim
             EntityId unit = provisional[i].Unit;
             if (entities.Get(intents, unit).SpeedPerTick.Raw > MaxTerrainStepRaw)
                 throw new InvalidOperationException("Terrain worlds cap a unit step at 0.25 m per tick.");
-            long milli = layered ? PlateSpeedMilli(LayerOf(unit), point) : grid.TryCell(point, out int cell) ? terrain.SpeedMilliAt(cell) : 1000;
+            if (!ControlledTerrainCandidate(context, i, displacement, out SimVec3 next)) return;
+            if (layered) CommitLayer(unit);
+            context.SubmitMovement(unit, next);
+            Face(unit, point, next);
+            provisional[i].Point = next;
+        }
+
+        // The candidate a controlled step on a terrain map takes from the member's provisional point, without submitting it:
+        // the displacement scaled by the surface at that point, then whole step, X only, Z only. False when none can
+        // be taken, or when the scaled step is nothing on both axes. On a plate world the taken candidate's layer is left in
+        // candidateLayer for CommitLayer.
+        private bool ControlledTerrainCandidate(SimContext context, int i, SimVec3 displacement, out SimVec3 next)
+        {
+            SimVec3 point = provisional[i].Point;
+            long milli = layered ? PlateSpeedMilli(LayerOf(provisional[i].Unit), point) : grid.TryCell(point, out int cell) ? terrain.SpeedMilliAt(cell) : 1000;
             var d = new SimVec3(SimFix.FromRaw(displacement.X.Raw * milli / 1000), default, SimFix.FromRaw(displacement.Z.Raw * milli / 1000));
-            if (d.X.Raw == 0 && d.Z.Raw == 0) return;
-            SimVec3 next = Grounded(point + d);
+            next = point;
+            if (d.X.Raw == 0 && d.Z.Raw == 0) return false;
+            next = Grounded(point + d);
             if (!ControlledTry(context, i, ref next))
             {
                 next = Grounded(point + new SimVec3(d.X, default, default));
                 if (d.X.Raw == 0 || !ControlledTry(context, i, ref next))
                 {
                     next = Grounded(point + new SimVec3(default, default, d.Z));
-                    if (d.Z.Raw == 0 || !ControlledTry(context, i, ref next)) return;
+                    if (d.Z.Raw == 0 || !ControlledTry(context, i, ref next)) return false;
                 }
             }
-            if (layered) CommitLayer(unit);
-            context.SubmitMovement(unit, next);
-            Face(unit, point, next);
-            provisional[i].Point = next;
+            return true;
         }
     
         // A terrain candidate of crowd member i: placed on its layer first on a plate world, then units, then terrain (the

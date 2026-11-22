@@ -42,6 +42,8 @@ namespace WarCore.Interim
         // The step length of a moving unit comes from the motion model; the default reproduces the unit's own speed exactly.
         private IMotionModel motion = new InstantMotion();
         public void BindMotion(IMotionModel model) { motion = model ?? throw new ArgumentNullException(nameof(model)); }
+        // The motion model bound now (a wrapper such as the speed line takes it).
+        public IMotionModel Motion => motion;
 
         private void Face(EntityId unit, SimVec3 from, SimVec3 to)
         {

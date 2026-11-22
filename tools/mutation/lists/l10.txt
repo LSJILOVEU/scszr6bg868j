@@ -1,4 +1,6 @@
 # L10 terrain player step: the required mutations of the work package. Test classes are named L10*.
+# DASH-T moved the candidate search into ControlledTerrainCandidate: l10-02 and l10-10 name its lines (out parameter, bool
+# return); l10-19 faces the unscaled whole step, which points the same way as the scaled one it named before.
 
 [l10-01-no-terrain-branch]
 file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
@@ -16,9 +18,9 @@ filter = FullyQualifiedName~WarCore.Tests.L10
 expect = WarCore.Tests.L10GroundTests.L10Ground_UpTheSlopeOnGrass
 note = the whole-step candidate keeps the old Y
 original:
-|             SimVec3 next = Grounded(point + d);
+|             next = Grounded(point + d);
 replacement:
-|             SimVec3 next = point + d;
+|             next = point + d;
 
 [l10-03-x-only-not-grounded]
 file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
@@ -101,9 +103,9 @@ filter = FullyQualifiedName~WarCore.Tests.L10
 expect = WarCore.Tests.L10SpeedTests.L10Speed_ZStepInMud
 note = a step with no X is dropped
 original:
-|             if (d.X.Raw == 0 && d.Z.Raw == 0) return;
+|             if (d.X.Raw == 0 && d.Z.Raw == 0) return false;
 replacement:
-|             if (d.X.Raw == 0) return;
+|             if (d.X.Raw == 0) return false;
 
 [l10-11-skip-x-only]
 file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
@@ -208,7 +210,7 @@ original:
 |             Face(unit, point, next);
 |             provisional[i].Point = next;
 replacement:
-|             Face(unit, point, point + d);
+|             Face(unit, point, point + displacement);
 |             provisional[i].Point = next;
 
 [l10-20-terrain-short-step-swept]
