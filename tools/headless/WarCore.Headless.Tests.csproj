@@ -27,6 +27,8 @@
     <Compile Include="HeadlessSetup.cs" />
     <!-- Headless only: binds the sources with Roslyn to back the Unity-side shape-read name lock (block 3a). -->
     <Compile Include="ShapeReadSymbolTests.cs" />
+    <!-- Headless only: every mutation list entry still applies exactly once (tools/mutation/lists). -->
+    <Compile Include="MutationListTests.cs" />
     <ProjectReference Include="Control/WarCore.Control.csproj" />
     <ProjectReference Include="Sim/WarCore.Sim.csproj" />
     <ProjectReference Include="Combat/WarCore.Combat.csproj" />
