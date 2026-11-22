@@ -108,9 +108,9 @@ filter = FullyQualifiedName~WarCore.Tests.A4|FullyQualifiedName~WarCore.Tests.Wp
 expect = WarCore.Tests.A4PickTests.A4Pick_Snap_OnAFlatMap_HasNoHeight
 note = a snap on a map without a height field carries a height
 original:
-| long? yMm = ground == null && snapped.Layer == 0 ? (long?)null
+|             long? yMm = ground == null && snapped.Layer == 0 ? (long?)null
 replacement:
-| long? yMm = false ? (long?)null
+|             long? yMm = false ? (long?)null
 
 [a4-11-no-bisection]
 file = Assets/WarCore/Presentation/Camera/AimPick.cs
