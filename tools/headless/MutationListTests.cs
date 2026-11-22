@@ -245,7 +245,8 @@ namespace WarCore.Tests
             List<Entry> lf = Parse("a.txt", OneEntry("multi", "f.cs", "first", "", "third") + "# a comment\n");
             Assert.That(lf.Count, Is.EqualTo(1));
             Assert.That(lf[0].Original, Is.EqualTo("first\n\nthird"));
-            List<Entry> crlf = Parse("a.txt", OneEntry("multi", "f.cs", "first", "", "third").Replace("\n", "\r\n"));
+            List<Entry> crlf = null;
+            Assert.That(() => crlf = Parse("a.txt", OneEntry("multi", "f.cs", "first", "", "third").Replace("\n", "\r\n")), Throws.Nothing);
             Assert.That(crlf[0].Original, Is.EqualTo("first\n\nthird"));
             Assert.That(crlf[0].File, Is.EqualTo("f.cs"));
         }
