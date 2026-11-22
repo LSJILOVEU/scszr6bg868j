@@ -152,10 +152,11 @@ namespace WarCore.Content
             SimFix sight = selectorId == ContentPolicies.SightLimitedNearest ? Match.Sight : default;
             bool effective = friendlyFireLocked ? friendlyFire : requestedFriendlyFire ?? friendlyFire;
             CombatAim aim = SectionOrNull<CombatAim>();
+            StatClamps stats = SectionOrNull<StatClamps>();
             return new CombatPack(weapons, ContentPolicies.Resolver(resolverId), ContentPolicies.Selector(selectorId, sight), maxHealthRaw,
                 effective, friendlyFireLocked, allyCheckMissRaw, allyHoldMilli, melee.Length == 0 ? null : melee, block.Length == 0 ? null : block, Body,
                 projectileSpeeds.Length == 0 ? null : projectileSpeeds, aim?.MoveSpread, aim != null && aim.ManualReload, SectionOrNull<BlastRules>(),
-                stances);
+                stances, SectionOrNull<CombatStatus>(), stats?.FloorOf(StatClamps.Spread) ?? 0, stats?.CeilOf(StatClamps.Spread) ?? 0);
         }
 
         // Control points and spawn anchors are map data and stay with the caller.

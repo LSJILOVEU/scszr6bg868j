@@ -31,8 +31,9 @@ namespace WarCore.Presentation
         internal static readonly IWorldStageFeature[] Connect = { PlayerFeature.Instance, CombatFeature.Instance, StanceFeature.Instance, CrowdPassFeature.Instance };
         internal static readonly IWorldFeature[] Systems = { MovementFeature.Instance, FacingFeature.Instance, PlateFeature.Instance, DashFeature.Instance };
         // After the movement systems: the match needs the locomotion; the player systems need it and the mode.
-        // Stances last: the speed line wraps whatever motion model the systems (extensions included) bound.
-        internal static readonly IWorldStageFeature[] Rules = { MatchFeature.Instance, AiFireFeature.Instance, BlockAiFeature.Instance, PlayerFeature.Instance, StanceFeature.Instance };
+        // Stances after every feature that binds or configures the motion model: the speed line wraps it.
+        // Features after the stances only add gears to the speed line, building it the same way when no stance did; they never bind or configure the motion model under it.
+        internal static readonly IWorldStageFeature[] Rules = { MatchFeature.Instance, AiFireFeature.Instance, BlockAiFeature.Instance, PlayerFeature.Instance, StanceFeature.Instance, NerveFeature.Instance };
 
         private static IEnumerable<IWorldFeature> Active(IWorldFeature[] table, WorldAssembly assembly)
         {

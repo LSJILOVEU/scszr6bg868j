@@ -52,12 +52,23 @@ namespace WarCore.Combat
         public MoveSpread MoveSpread { get; }
         // AIM-1 combat.manualReload: CombatSystem.TryReload may start a reload before the magazine is empty (false = off).
         public bool ManualReload { get; }
+        // NERVE-1 combat.status: pressure and wounds widen the shot (null = off; the pack hashes as before).
+        public CombatStatus Status { get; }
+        // NERVE-1 stats.spread: floor and ceiling of the spread line's drag product, permille (0 = none). X1 bounds: floor 1..1000,
+        // ceiling 1000..4000, so a unit whose drags are all 1000 is never moved by them.
+        public int SpreadDragFloorPermille { get; }
+        public int SpreadDragCeilPermille { get; }
+        public const int MaxDragFloorPermille = 1000, MinDragCeilPermille = 1000;
 
         public CombatPack(WeaponDef[] weapons, IHitResolver resolver, ITargetSelector selector, long maxHealthRaw,
             bool friendlyFire = false, bool friendlyFireLocked = false, int allyCheckMissRaw = 0, long allyHoldMilli = 30000, MeleeSpec[] melee = null, BlockSpec[] block = null,
             CombatBody? body = null, int[] projectileSpeeds = null, MoveSpread moveSpread = null, bool manualReload = false, BlastRules blasts = null,
-            StanceDef[] stances = null)
+            StanceDef[] stances = null, CombatStatus status = null, int spreadDragFloorPermille = 0, int spreadDragCeilPermille = 0)
         {
+            if (spreadDragFloorPermille != 0 && (spreadDragFloorPermille < StatLine.MinPermille || spreadDragFloorPermille > MaxDragFloorPermille))
+                throw new ArgumentOutOfRangeException(nameof(spreadDragFloorPermille));
+            if (spreadDragCeilPermille != 0 && (spreadDragCeilPermille < MinDragCeilPermille || spreadDragCeilPermille > StatLine.MaxPermille))
+                throw new ArgumentOutOfRangeException(nameof(spreadDragCeilPermille));
             if (moveSpread != null && moveSpread.WeaponSlots != 0 && moveSpread.WeaponSlots != weapons.Length)
                 throw new ArgumentException("A move-spread table per weapon needs one slot per weapon.", nameof(moveSpread));
             if (allyCheckMissRaw < 0 || allyCheckMissRaw > SimFix.Scale) throw new ArgumentOutOfRangeException(nameof(allyCheckMissRaw));
@@ -74,6 +85,7 @@ namespace WarCore.Combat
             Body = body;
             MoveSpread = moveSpread; ManualReload = manualReload;
             Blasts = blasts;
+            Status = status; SpreadDragFloorPermille = spreadDragFloorPermille; SpreadDragCeilPermille = spreadDragCeilPermille;
             projectiles = BuildProjectiles(this.weapons, projectileSpeeds, body);
             this.projectileSpeeds = projectiles.Length == 0 ? Array.Empty<int>() : (int[])projectileSpeeds.Clone();
             this.stances = CheckStances(stances, body);
@@ -97,7 +109,12 @@ namespace WarCore.Combat
             { hash.Add("combat.pack.movespread.v1"); moveSpread.WriteState(hash); }
             if (manualReload)
                 hash.Add("combat.pack.reload.v1");
-            // KB4: later optional sections go before this one, every one only when present.
+            // Optional sections, each appended only when present, in this order: melee, block, body, projectile, stances, move
+            // spread, manual reload, vertical spread (VSPREAD-1), status (NERVE-1), spread clamp (NERVE-1, stats.spread), blasts,
+            // throwables, armour, downed (DOWN-1), revive.
+            status?.WriteState(hash);
+            if (spreadDragFloorPermille != 0 || spreadDragCeilPermille != 0)
+            { hash.Add("combat.pack.spreadclamp.v1"); hash.Add(spreadDragFloorPermille); hash.Add(spreadDragCeilPermille); }
             if (blasts != null) blasts.WriteState(hash);
             PolicyDigest = hash.Value;
         }
@@ -160,7 +177,7 @@ namespace WarCore.Combat
         public CombatPack WithSelector(ITargetSelector selector) => new CombatPack(weapons, Resolver, selector, MaxHealthRaw,
             FriendlyFire, FriendlyFireLocked, AllyCheckMissRaw, AllyHoldMilli, melee.Length == 0 ? null : melee, block.Length == 0 ? null : block, Body,
             projectileSpeeds.Length == 0 ? null : projectileSpeeds, MoveSpread, ManualReload, Blasts,
-            stances.Length == 0 ? null : stances);
+            stances.Length == 0 ? null : stances, Status, SpreadDragFloorPermille, SpreadDragCeilPermille);
 
         // BLAST-1 blast commands B for a world of these units: PerTick blasts a tick, each landing at most one damage command on
         // every unit, so B = PerTick * N; 0 for a pack without blasts. Refused when the damage settlement's staging

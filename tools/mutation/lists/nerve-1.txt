@@ -1,0 +1,480 @@
+# NERVE-1 (WP-41): combat.status (pinned, broken, wounded spread drags), stats.spread (drag floor and ceiling), the nerve
+# source and NerveFeature. Filter: the Nerve1 tests. Groups follow the dispatch card's appendix C.
+
+[nv-swap-rows]
+file = Assets/WarCore/Combat/CombatSystem.Nerve.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1SpreadTests.N2_CalmPinnedBroken
+note = C1 a pinned unit shoots with the broken row
+original:
+|                case NervePinned: return pack.Status.HasPinned ? pack.Status.PinnedPermille : 1000;
+replacement:
+|                case NervePinned: return pack.Status.HasPinned ? pack.Status.BrokenPermille : 1000;
+
+[nv-broken-both]
+file = Assets/WarCore/Combat/CombatSystem.Nerve.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1SpreadTests.N2_CalmPinnedBroken
+note = C2 a broken unit multiplies both rows
+original:
+|                case NerveBroken: return pack.Status.HasBroken ? pack.Status.BrokenPermille : 1000;
+replacement:
+|                case NerveBroken: return pack.Status.HasBroken ? (int)((long)pack.Status.BrokenPermille * (pack.Status.HasPinned ? pack.Status.PinnedPermille : 1000) / 1000) : 1000;
+
+[nv-adapter-pinned]
+file = Assets/WarCore/Presentation/Bridge/Features/NerveFeature.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1WorldTests.N3_TheLevelLineIsThePressureSystemsOwn
+note = C3 the adapter maps Pinned to 2
+original:
+|                    case AiNerve.Pinned: return CombatSystem.NervePinned;
+replacement:
+|                    case AiNerve.Pinned: return CombatSystem.NerveBroken;
+
+[nv-adapter-broken]
+file = Assets/WarCore/Presentation/Bridge/Features/NerveFeature.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1WorldTests.N15_ABrokenUnitOfThePressureSystemShootsWithTheBrokenRow
+note = C3 the adapter maps Broken to 1
+original:
+|                    case AiNerve.Broken: return CombatSystem.NerveBroken;
+replacement:
+|                    case AiNerve.Broken: return CombatSystem.NervePinned;
+
+[nv-no-player]
+file = Assets/WarCore/Combat/CombatSystem.Nerve.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1SpreadTests.N5_ThePlayersUnitIsPressedToo
+note = C4 the player's unit is left out
+original:
+|            switch (NerveLevelOf(unit))
+replacement:
+|            switch (IsPlayer(unit) ? NerveCalm : NerveLevelOf(unit))
+
+[nv-wound-le]
+file = Assets/WarCore/Combat/CombatSystem.Nerve.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1SpreadTests.N6_TheWoundLineIsAShareOfTheMaximum
+note = C5 exactly on the line counts as wounded
+original:
+|            return HealthRaw(id) * 1000 < HealthMaxRaw(id) * status.WoundedBelowPermille;
+replacement:
+|            return HealthRaw(id) * 1000 <= HealthMaxRaw(id) * status.WoundedBelowPermille;
+
+[nv-wound-constant]
+file = Assets/WarCore/Combat/CombatSystem.Nerve.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1SpreadTests.N6_TheWoundLineIsAShareOfTheMaximum
+note = C6 the wound line is a constant, not the maximum
+original:
+|        public long HealthMaxRaw(StableId unit) => pack.MaxHealthRaw;
+replacement:
+|        public long HealthMaxRaw(StableId unit) => 100 * SimFix.Scale;
+
+[nv-wound-current]
+file = Assets/WarCore/Combat/CombatSystem.Nerve.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1SpreadTests.N6_TheWoundLineIsAShareOfTheMaximum
+note = C6 the wound line is measured against the current health
+original:
+|            return HealthRaw(id) * 1000 < HealthMaxRaw(id) * status.WoundedBelowPermille;
+replacement:
+|            return HealthRaw(id) * 1000 < HealthRaw(id) * status.WoundedBelowPermille;
+
+[nv-nerve-gear]
+file = Assets/WarCore/Combat/CombatSystem.Nerve.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1SpreadTests.N7_DragsMultiplyWithGearsAndAreClampedOnce
+note = C7 the pressure drag is registered as a gear (not clamped)
+original:
+|            if (status.HasNerve) AddSpreadDrag(new NerveDrag(this));
+replacement:
+|            if (status.HasNerve) AddSpreadGear(new NerveDrag(this));
+
+[nv-wound-gear]
+file = Assets/WarCore/Combat/CombatSystem.Nerve.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1SpreadTests.N7_DragsMultiplyWithGearsAndAreClampedOnce
+note = C7 the wound drag is registered as a gear (not clamped)
+original:
+|            if (status.HasWounded) AddSpreadDrag(new WoundDrag(this));
+replacement:
+|            if (status.HasWounded) AddSpreadGear(new WoundDrag(this));
+
+[nv-wound-always]
+file = Assets/WarCore/Combat/CombatSystem.Nerve.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1SpreadTests.N1b_TheStatusTakesOneFactorForPressureAndOneForWounds
+note = C8 the wound drag is registered without a wounded row
+original:
+|            if (status.HasWounded) AddSpreadDrag(new WoundDrag(this));
+replacement:
+|            AddSpreadDrag(new WoundDrag(this));
+
+[nv-two-slots]
+file = Assets/WarCore/Combat/CombatSystem.Nerve.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1SpreadTests.N1b_TheStatusTakesOneFactorForPressureAndOneForWounds
+note = C8 pinned and broken take a factor each
+original:
+|            if (status.HasNerve) AddSpreadDrag(new NerveDrag(this));
+replacement:
+|            if (status.HasPinned) AddSpreadDrag(new NerveDrag(this));
+|            if (status.HasBroken) AddSpreadDrag(new NerveDrag(this));
+
+[nv-missing-pressure-calm]
+file = Assets/WarCore/Presentation/Bridge/Features/NerveFeature.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1WorldTests.N8_PressureRowsNeedThePressureSystem
+note = C9 a world without the pressure system is built and its units count as calm
+original:
+|            if (a.Pressure == null)
+|                throw new InvalidOperationException("combat.status pinned or broken needs the pressure system: a match and AI rules with every pressure* field.");
+replacement:
+|            if (a.Pressure == null) return;
+
+[nv-merged]
+file = Assets/WarCore/Combat/CombatSystem.Nerve.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1SpreadTests.N7_DragsMultiplyWithGearsAndAreClampedOnce
+note = C10 the two drags merged into one factor (divided twice)
+original:
+|            public int SpreadPermille(EntityId unit) => combat.NerveSpreadPermille(unit);
+replacement:
+|            public int SpreadPermille(EntityId unit) => (int)((long)combat.NerveSpreadPermille(unit) * combat.WoundSpreadPermille(unit) / 1000) * 1000 / combat.WoundSpreadPermille(unit);
+
+[nv-digest-status]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1ContentTests.N13_TheDigestTellsEveryNumberApart
+note = C11 the digest leaves the status out
+original:
+|            status?.WriteState(hash);
+replacement:
+|
+
+[nv-digest-clamp]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1ContentTests.N13_TheDigestTellsEveryNumberApart
+note = C11 the digest leaves the spread clamp out
+original:
+|            { hash.Add("combat.pack.spreadclamp.v1"); hash.Add(spreadDragFloorPermille); hash.Add(spreadDragCeilPermille); }
+replacement:
+|            { hash.Add("combat.pack.spreadclamp.v1"); }
+
+[nv-selector-copy]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1ContentTests.N12_ASelectorCopyKeepsTheStatusAndTheClamp
+note = C12 a selector copy drops the status and the clamp
+original:
+|            stances.Length == 0 ? null : stances, Status, SpreadDragFloorPermille, SpreadDragCeilPermille);
+replacement:
+|            stances.Length == 0 ? null : stances);
+
+[nv-no-clamp]
+file = Assets/WarCore/Combat/CombatSystem.Nerve.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1SpreadTests.N7_DragsMultiplyWithGearsAndAreClampedOnce
+note = C13 the pack's clamp is never set
+original:
+|                SetSpreadClamp(pack.SpreadDragFloorPermille, pack.SpreadDragCeilPermille);
+replacement:
+|                SetSpreadClamp(0, 0);
+
+[nv-ceil-only]
+file = Assets/WarCore/Combat/CombatSystem.Nerve.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1SpreadTests.N7_DragsMultiplyWithGearsAndAreClampedOnce
+note = C13 only the ceiling is passed on
+original:
+|                SetSpreadClamp(pack.SpreadDragFloorPermille, pack.SpreadDragCeilPermille);
+replacement:
+|                SetSpreadClamp(0, pack.SpreadDragCeilPermille);
+
+[nv-stats-swap]
+file = Assets/WarCore/Content/Data/ContentPack.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1ContentTests.N0_TheShippedLayerAndWholeReplacement
+note = C14 floor and ceiling swapped when the pack is built
+original:
+|                stances, SectionOrNull<CombatStatus>(), stats?.FloorOf(StatClamps.Spread) ?? 0, stats?.CeilOf(StatClamps.Spread) ?? 0);
+replacement:
+|                stances, SectionOrNull<CombatStatus>(), stats?.CeilOf(StatClamps.Spread) ?? 0, stats?.FloorOf(StatClamps.Spread) ?? 0);
+
+[nv-below-999]
+file = Assets/WarCore/Combat/CombatStatus.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1ContentTests.N11_StatusRefusals
+note = C15 belowPermille tops out at 999
+original:
+|        public const int MinBelowPermille = 1, MaxBelowPermille = 1000;
+replacement:
+|        public const int MinBelowPermille = 1, MaxBelowPermille = 999;
+
+[nv-spread-0]
+file = Assets/WarCore/Combat/CombatStatus.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1ContentTests.N11_StatusRefusals
+note = C15 spreadPermille 0 accepted
+original:
+|        public const int MinSpreadPermille = StatLine.MinPermille, MaxSpreadPermille = StatLine.MaxPermille;
+replacement:
+|        public const int MinSpreadPermille = 0, MaxSpreadPermille = StatLine.MaxPermille;
+
+[nv-floor-999]
+file = Assets/WarCore/Content/Data/Sections/StatsSection.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1ContentTests.N11_StatsRefusals
+note = C15 floor tops out at 999
+original:
+|            new StatRowDef(SpreadRow, 1, 1000, 1000, 4000),
+replacement:
+|            new StatRowDef(SpreadRow, 1, 999, 1000, 4000),
+
+[nv-floor-1001]
+file = Assets/WarCore/Content/Data/Sections/StatsSection.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1ContentTests.N11_StatsRefusals
+note = C15 floor 1001 accepted
+original:
+|            new StatRowDef(SpreadRow, 1, 1000, 1000, 4000),
+replacement:
+|            new StatRowDef(SpreadRow, 1, 1001, 1000, 4000),
+
+[nv-ceil-999]
+file = Assets/WarCore/Content/Data/Sections/StatsSection.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1ContentTests.N11_StatsRefusals
+note = C15 ceiling 999 accepted
+original:
+|            new StatRowDef(SpreadRow, 1, 1000, 1000, 4000),
+replacement:
+|            new StatRowDef(SpreadRow, 1, 1000, 999, 4000),
+
+[nv-ceil-1001]
+file = Assets/WarCore/Content/Data/Sections/StatsSection.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1ContentTests.N11_StatsRefusals
+note = C15 ceiling starts at 1001
+original:
+|            new StatRowDef(SpreadRow, 1, 1000, 1000, 4000),
+replacement:
+|            new StatRowDef(SpreadRow, 1, 1000, 1001, 4000),
+
+[nv-empty-status]
+file = Assets/WarCore/Content/Data/Sections/CombatNerve.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1ContentTests.N11_StatusRefusals
+note = C16 an empty status is not refused by the reader
+original:
+|            if (!any) throw Bad(pack, field.Layer, where, null, "status needs at least one of pinned, broken, wounded");
+replacement:
+|
+
+[nv-below-optional]
+file = Assets/WarCore/Content/Data/Sections/CombatNerve.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1ContentTests.N11_StatusRefusals
+note = C16 wounded without belowPermille accepted
+original:
+|                if (member.Name == WoundedRow) below = r.Int(BelowField, CombatStatus.MinBelowPermille, CombatStatus.MaxBelowPermille);
+replacement:
+|                if (member.Name == WoundedRow) below = r.Has(BelowField) ? r.Int(BelowField, CombatStatus.MinBelowPermille, CombatStatus.MaxBelowPermille) : 500;
+
+[nv-spread-optional]
+file = Assets/WarCore/Content/Data/Sections/CombatNerve.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1ContentTests.N11_StatusRefusals
+note = C16 a row without spreadPermille accepted
+original:
+|                int spread = r.Int(SpreadField, CombatStatus.MinSpreadPermille, CombatStatus.MaxSpreadPermille);
+replacement:
+|                int spread = r.Has(SpreadField) ? r.Int(SpreadField, CombatStatus.MinSpreadPermille, CombatStatus.MaxSpreadPermille) : 1000;
+
+[nv-not-nested]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1ContentTests.N0_TheShippedLayerAndWholeReplacement
+note = C17 combat.status is not an object field kept whole
+original:
+|        protected override bool IsNested(string field) => base.IsNested(field) || field == MoveSpreadField || field == StatusField;
+replacement:
+|        protected override bool IsNested(string field) => base.IsNested(field) || field == MoveSpreadField;
+
+[nv-level-range]
+file = Assets/WarCore/Combat/CombatSystem.Nerve.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1SpreadTests.N15_WithoutASourceOrWithALevelOutOfRangeAShotIsRefused
+note = C18 levels -1 and 3 are not refused
+original:
+|            if (level < NerveCalm || level > NerveBroken)
+replacement:
+|            if (level < NerveCalm - 1)
+
+[nv-stored]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1SpreadTests.N2_AShotKeepsTheWeaponsOwnSpreadState
+note = C19 the drags reach the weapon's own spread state
+original:
+|                    else FireRay(c, shooter, in unit, in position, in weapon, tick, origin, direction, angle);
+replacement:
+|                    else FireRay(c, shooter, in unit, in position, in weapon, tick, origin, direction, shot);
+
+[nv-broken-falls-back]
+file = Assets/WarCore/Combat/CombatSystem.Nerve.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1SpreadTests.N2a_ALevelWhoseRowIsAbsentCountsOneThousand
+note = C20 a broken unit falls back to the pinned row
+original:
+|                case NerveBroken: return pack.Status.HasBroken ? pack.Status.BrokenPermille : 1000;
+replacement:
+|                case NerveBroken: return pack.Status.HasBroken ? pack.Status.BrokenPermille : pack.Status.PinnedPermille;
+
+[nv-only-pinned-registers]
+file = Assets/WarCore/Combat/CombatSystem.Nerve.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1SpreadTests.N2a_ALevelWhoseRowIsAbsentCountsOneThousand
+note = C20 the pressure drag is registered only with a pinned row
+original:
+|            if (status.HasNerve) AddSpreadDrag(new NerveDrag(this));
+replacement:
+|            if (status.HasPinned) AddSpreadDrag(new NerveDrag(this));
+
+[nv-bind-twice]
+file = Assets/WarCore/Combat/CombatSystem.Nerve.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1SpreadTests.N15_BindTheNerveSourceOnceAndOnlyWithPressureRows
+note = C21 a second source is accepted
+original:
+|            if (nerveSource != null) throw new InvalidOperationException("A nerve source is already bound.");
+replacement:
+|
+
+[nv-bind-without-rows]
+file = Assets/WarCore/Combat/CombatSystem.Nerve.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1SpreadTests.N15_BindTheNerveSourceOnceAndOnlyWithPressureRows
+note = C21 a source is accepted without a pinned or broken row
+original:
+|            if (pack.Status == null || !pack.Status.HasNerve)
+|                throw new InvalidOperationException("combat.status has no pinned or broken row: no nerve source to bind.");
+replacement:
+|
+
+[nv-no-source-calm]
+file = Assets/WarCore/Combat/CombatSystem.Nerve.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1SpreadTests.N15_WithoutASourceOrWithALevelOutOfRangeAShotIsRefused
+note = C22 without a source the unit counts as calm
+original:
+|            if (nerveSource == null)
+|                throw new InvalidOperationException("combat.status pinned or broken needs a nerve source: a world with the pressure system (pressure*) or a bound script.");
+replacement:
+|            if (nerveSource == null) return NerveCalm;
+
+[nv-skip-removed]
+file = Assets/WarCore/Presentation/Bridge/Features/NerveFeature.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1WorldTests.N8_PressureRowsNeedThePressureSystem
+note = C23 NerveFeature ignores a source bound in Connect
+original:
+|            if (a.Combat.HasNerveSource) return;
+replacement:
+|
+
+[nv-skip-inverted]
+file = Assets/WarCore/Presentation/Bridge/Features/NerveFeature.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1WorldTests.N3_TheLevelLineIsThePressureSystemsOwn
+note = C23 NerveFeature binds only when a source is already bound
+original:
+|            if (a.Combat.HasNerveSource) return;
+replacement:
+|            if (!a.Combat.HasNerveSource) return;
+
+[nv-active-pinned-only]
+file = Assets/WarCore/Presentation/Bridge/Features/NerveFeature.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1WorldTests.N8_PressureRowsNeedThePressureSystem
+note = C24 NerveFeature is active only with a pinned row
+original:
+|        public override bool IsActive(WorldAssembly a) => a.Recipe.Combat?.Status != null && a.Recipe.Combat.Status.HasNerve;
+replacement:
+|        public override bool IsActive(WorldAssembly a) => a.Recipe.Combat?.Status != null && a.Recipe.Combat.Status.HasPinned;
+
+[nv-status-ctor]
+file = Assets/WarCore/Combat/CombatStatus.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1ContentTests.N11_ConstructorsCheckTheirRanges
+note = C25 the status constructor does not check its spreads
+original:
+|            if (permille != 0 && (permille < MinSpreadPermille || permille > MaxSpreadPermille)) throw new ArgumentOutOfRangeException(name);
+replacement:
+|
+
+[nv-pack-ctor]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1ContentTests.N11_ConstructorsCheckTheirRanges
+note = C25 the combat pack does not check the floor
+original:
+|            if (spreadDragFloorPermille != 0 && (spreadDragFloorPermille < StatLine.MinPermille || spreadDragFloorPermille > MaxDragFloorPermille))
+|                throw new ArgumentOutOfRangeException(nameof(spreadDragFloorPermille));
+replacement:
+|
+
+[nv-pack-x1]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1ContentTests.N11_ConstructorsCheckTheirRanges
+note = C26 the pack takes a ceiling under 1000 (a calm unit would be clamped)
+original:
+|        public const int MaxDragFloorPermille = 1000, MinDragCeilPermille = 1000;
+replacement:
+|        public const int MaxDragFloorPermille = 1000, MinDragCeilPermille = 1;
+
+[nv-stats-empty]
+file = Assets/WarCore/Content/Data/Sections/StatsSection.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1ContentTests.N11_StatsRefusals
+note = C26 stats {} is accepted
+original:
+|            if (node.Members.Count == 0) throw new ContentException("content layer '" + layer + "' stats {} must not be empty");
+replacement:
+|
+
+[nv-stats-row-replace]
+file = Assets/WarCore/Content/Data/Sections/StatsSection.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1ContentTests.N0_TheShippedLayerAndWholeReplacement
+note = a child's stats row merges field by field instead of replacing the parent's row
+original:
+|                entries.RemoveAll(e => e.Id == member.Name);
+|                var entry = new ContentEntry(SectionKey, member.Name, layer);
+replacement:
+|                var entry = entries.Find(e => e.Id == member.Name);
+|                if (entry == null) entries.Add(entry = new ContentEntry(SectionKey, member.Name, layer));
+|                foreach (JsonMember field in member.Value.Members) entry.Fields.RemoveAll(f => f.Name == field.Name);
+
+[nv-stats-row-needs-field]
+file = Assets/WarCore/Content/Data/Sections/StatsSection.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1ContentTests.N11_StatsRefusals
+note = a stats row with neither field accepted
+original:
+|                if (!r.Has(FloorField) && !r.Has(CeilField))
+replacement:
+|                if (false)
+
+[nv-default-off-wiring]
+file = Assets/WarCore/Presentation/Bridge/Features/FeatureTable.cs
+filter = FullyQualifiedName~Nerve1
+expect = WarCore.Tests.Nerve1.Nerve1WorldTests.N3_TheLevelLineIsThePressureSystemsOwn
+note = NerveFeature is left out of the Rules table
+original:
+|PlayerFeature.Instance, StanceFeature.Instance, NerveFeature.Instance };
+replacement:
+|PlayerFeature.Instance, StanceFeature.Instance };

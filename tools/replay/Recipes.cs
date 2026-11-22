@@ -91,6 +91,8 @@ namespace WarCore.Replay
             ["blast-wall"] = new Entry("Blast next to a 3 m wall (rwr-blast)", () => BlastDemo.Recipe(), BlastDemo.MapBytes),
             // STANCE-1: a 1 m wall; squad 2 behind it crouches at tick 60 and stands up at tick 240 (StanceDemo).
             ["stance-wall"] = new Entry("1 m wall, team 2 crouches at 60 and stands at 240", StanceDemo.Recipe, StanceDemo.MapBytes),
+            // NERVE-1: three shooters 30 m from unarmed targets; from tick 150 one is pinned and one broken by a script (NerveDemo).
+            ["nerve-fire"] = new Entry("rwr-nerve, shooters calm / pinned / broken from tick 150", NerveDemo.Recipe, NerveDemo.MapBytes),
         };
 
         private const string SquadAi = "\"squadMinSize\": 4, \"squadMaxSize\": 9, \"squadSkirmisherPermille\": 300, \"squadRecruitRadiusMm\": 30000, "
