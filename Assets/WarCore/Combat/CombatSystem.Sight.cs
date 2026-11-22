@@ -34,7 +34,8 @@ namespace WarCore.Combat
         internal SimVec3 MuzzleOver(SimVec3 foot, EntityId unit) => Lift(foot, MuzzleOf(unit));
 
         // ML-3 where the built-in aimed and automatic lines at a unit end (new mode: its viewpoint; without a body: its foot).
-        // A game-layer IAutoFire aims along ShotEnd(target) - MuzzlePoint(shooter), as the built-in decision does.
+        // VSPREAD-1: the built-in decision aims along ShotEnd(shooter, target) - MuzzlePoint(shooter), which is this point unless
+        // the pack's vertical spread aims at the middle of the body; a game-layer IAutoFire should do the same.
         public SimVec3 ShotEnd(EntityId target) => Lift(Point(target), AimEndRaw(target));
 
         // ML-3: a fire record's origin turned back into the point on the ground under the shooter. New mode: Origin minus the
@@ -217,12 +218,13 @@ namespace WarCore.Combat
 
         // AI read port: is a living teammate the first thing on the straight (3D) line from the shooter towards a point, traced
         // out to range (the whole flight of a shot, not only to the point)? It is the line an aimed intent at the point flies
-        // along (ML-3: from the muzzle to the point lifted to the standing eye). A point straight above or below the shooter
+        // along (ML-3: from the muzzle to AimedEnd: the point lifted to the standing eye, or with a vertical spread aimed at the
+        // middle of the body an enemy at the player's point, VSPREAD-1). A point straight above or below the shooter
         // gives no line, except on a map with plates when the point's height differs from the shooter's foot (ML-9).
         public bool AllyBlocks(EntityId shooter, SimVec3 point, SimFix range)
         {
             SimVec3 origin = MuzzlePoint(shooter);
-            SimVec3 direction = Lift(point, aimEndRaw) - origin;
+            SimVec3 direction = AimedEnd(shooter, point) - origin;
             bool line = Horizontal(direction).LengthSquared.Sign != 0 || Overhead(Point(shooter), point) && direction.LengthSquared.Sign != 0;
             return line && AllyBlocks(shooter, origin, direction, range);
         }
