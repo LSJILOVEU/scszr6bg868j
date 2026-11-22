@@ -475,6 +475,6 @@ filter = FullyQualifiedName~Nerve1
 expect = WarCore.Tests.Nerve1.Nerve1WorldTests.N3_TheLevelLineIsThePressureSystemsOwn
 note = NerveFeature is left out of the Rules table
 original:
-|PlayerFeature.Instance, StanceFeature.Instance, NerveFeature.Instance };
+| PlayerFeature.Instance, StanceFeature.Instance, NerveFeature.Instance };
 replacement:
-|PlayerFeature.Instance, StanceFeature.Instance };
+| PlayerFeature.Instance, StanceFeature.Instance };
