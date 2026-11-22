@@ -6,7 +6,7 @@
 # A new literal is read from the content pack or from the one named source; it is not added here as debt.
 # Debt notes name the family in the audit: H1 body radius, H2 headroom, H3 speed, H4 grenade, M1 eye, M2 play distances,
 # L3 fixed-point scale.
-debt-max	488
+debt-max	519
 Battle/Ai/AssaultRolesPlacement.cs	SimFix.Scale/1000	1	debt	
 Battle/Ai/CommanderQuota.cs	CoordinateLimitMetres=8192	1	debt	
 Battle/Ai/Cover.cs	SimFix.Ratio(3,2)	1	debt	
@@ -88,15 +88,34 @@ Presentation/Bridge/Features/BlastDemo.cs	SimFix.Ratio(1,2)	1	debt
 Presentation/Bridge/Features/BlastDemo.cs	WallDepth=16	1	debt	
 Presentation/Bridge/Features/BlastDemo.cs	WallHeight=3	1	debt	
 Presentation/Bridge/Features/BlastDemo.cs	Width=40	1	debt	
+Presentation/Bridge/Features/BodySizes.cs	65536f	4	debt	L3 fixed-point scale
+Presentation/Bridge/Features/BodySizes.cs	SimFix.Scale/4	1	debt	H1 body radius copy (SCALE-2a; HC-1 removes)
 Presentation/Bridge/Features/CrowdPassFeature.cs	EngagedTicks=60	1	debt	
 Presentation/Bridge/Features/MatchFeature.cs	SimFix.FromInt(2)	1	debt	
 Presentation/Bridge/Features/MatchFeature.cs	SimFix.Ratio(1,4)	1	debt	H1 body radius copy
 Presentation/Bridge/Features/MovementFeature.cs	SimFix.Ratio(1,4)	1	debt	H1 body radius copy
+Presentation/Bridge/Features/NerveDemo.cs	Depth=40	1	debt	
+Presentation/Bridge/Features/NerveDemo.cs	SimFix.FromInt(6)	1	debt	
+Presentation/Bridge/Features/NerveDemo.cs	Speed=6000	1	debt	H3 speed in code
+Presentation/Bridge/Features/NerveDemo.cs	Width=50	1	debt	
 Presentation/Bridge/Features/PlateCheck.cs	SimFix.Scale/2	2	debt	
 Presentation/Bridge/Features/PlateCheck.cs	SimFix.Scale/4	2	debt	
 Presentation/Bridge/Features/PlateDemo.cs	SimFix.FromInt(2)	3	debt	
 Presentation/Bridge/Features/PlateDemo.cs	SimFix.FromInt(35)	1	debt	
 Presentation/Bridge/Features/PlateDemo.cs	SpeedMmPerSec=3000	1	debt	H3 speed in code
+Presentation/Bridge/Features/Scale2aDemo.cs	3*SimFix.Scale	1	debt	
+Presentation/Bridge/Features/Scale2aDemo.cs	5.5f	1	debt	
+Presentation/Bridge/Features/Scale2aDemo.cs	6.5f	1	debt	
+Presentation/Bridge/Features/Scale2aDemo.cs	6f	1	debt	
+Presentation/Bridge/Features/Scale2aDemo.cs	FireDepth=10	1	debt	
+Presentation/Bridge/Features/Scale2aDemo.cs	FireWidth=20	1	debt	
+Presentation/Bridge/Features/Scale2aDemo.cs	LineupDepth=10	1	debt	
+Presentation/Bridge/Features/Scale2aDemo.cs	LineupWidth=16	1	debt	
+Presentation/Bridge/Features/Scale2aDemo.cs	SillRaw=58982	1	debt	
+Presentation/Bridge/Features/Scale2aDemo.cs	SimFix.FromInt(6)	2	debt	
+Presentation/Bridge/Features/Scale2aDemo.cs	SimFix.Ratio(1,2)	1	debt	
+Presentation/Bridge/Features/Scale2aDemo.cs	SimFix.Ratio(13,2)	1	debt	
+Presentation/Bridge/Features/Scale2aDemo.cs	Speed=6000	1	debt	H3 speed in code
 Presentation/Bridge/Features/StanceDemo.cs	Depth=16	1	debt	
 Presentation/Bridge/Features/StanceDemo.cs	SimFix.FromInt(6)	1	debt	
 Presentation/Bridge/Features/StanceDemo.cs	Speed=6000	1	debt	H3 speed in code
@@ -135,6 +154,27 @@ Presentation/Bridge/WorldBuilder.cs	SimFix.FromInt(1)	1	debt
 Presentation/Bridge/WorldBuilder.cs	SimFix.FromInt(2)	2	debt	
 Presentation/Camera/AimPick.cs	0.5f	1	debt	pick radius (AIM-2)
 Presentation/Camera/AimPick.cs	OneMetre=65536	1	debt	L3 copy of SimFix.Scale
+Presentation/Camera/DrawnParts.cs	0.03f	1	ui	drawn share of standing height or body radius (SCALE-2a table)
+Presentation/Camera/DrawnParts.cs	0.046f	1	ui	drawn share of standing height or body radius (SCALE-2a table)
+Presentation/Camera/DrawnParts.cs	0.057f	1	ui	drawn share of standing height or body radius (SCALE-2a table)
+Presentation/Camera/DrawnParts.cs	0.12f	1	ui	drawn share of standing height or body radius (SCALE-2a table)
+Presentation/Camera/DrawnParts.cs	0.14f	1	ui	drawn share of standing height or body radius (SCALE-2a table)
+Presentation/Camera/DrawnParts.cs	0.16f	2	ui	drawn share of standing height or body radius (SCALE-2a table)
+Presentation/Camera/DrawnParts.cs	0.17f	1	ui	drawn share of standing height or body radius (SCALE-2a table)
+Presentation/Camera/DrawnParts.cs	0.24f	1	ui	drawn share of standing height or body radius (SCALE-2a table)
+Presentation/Camera/DrawnParts.cs	0.25f	1	ui	drawn share of standing height or body radius (SCALE-2a table)
+Presentation/Camera/DrawnParts.cs	0.2f	3	ui	drawn share of standing height or body radius (SCALE-2a table)
+Presentation/Camera/DrawnParts.cs	0.35f	1	ui	drawn share of standing height or body radius (SCALE-2a table)
+Presentation/Camera/DrawnParts.cs	0.3f	2	ui	drawn share of standing height or body radius (SCALE-2a table)
+Presentation/Camera/DrawnParts.cs	0.45f	1	ui	drawn share of standing height or body radius (SCALE-2a table)
+Presentation/Camera/DrawnParts.cs	0.46f	1	ui	drawn share of standing height or body radius (SCALE-2a table)
+Presentation/Camera/DrawnParts.cs	0.48f	1	ui	drawn share of standing height or body radius (SCALE-2a table)
+Presentation/Camera/DrawnParts.cs	0.4f	3	ui	drawn share of standing height or body radius (SCALE-2a table)
+Presentation/Camera/DrawnParts.cs	0.5f	2	ui	drawn share of standing height or body radius (SCALE-2a table)
+Presentation/Camera/DrawnParts.cs	0.63f	1	ui	drawn share of standing height or body radius (SCALE-2a table)
+Presentation/Camera/DrawnParts.cs	0.8f	1	ui	drawn share of standing height or body radius (SCALE-2a table)
+Presentation/Camera/DrawnParts.cs	1.12f	1	ui	drawn share of standing height or body radius (SCALE-2a table)
+Presentation/Camera/DrawnParts.cs	35f	1	ui	drawn blade tilt in degrees (SCALE-2a)
 Presentation/Camera/IsoCamera.cs	100f	1	debt	
 Presentation/Camera/IsoCamera.cs	120f	1	debt	
 Presentation/Camera/IsoCamera.cs	180f	1	debt	
@@ -168,7 +208,7 @@ Unity/Editor/L7Terrain.cs	ShotWidth=1600	1	debt
 Unity/Editor/M1Demo.cs	0.1f	1	debt	
 Unity/Editor/M1Demo.cs	0.5f	2	debt	
 Unity/Editor/M1Demo.cs	0.6f	1	debt	
-Unity/EntityViews.cs	0.2f	1	debt	
+Unity/EntityViews.cs	0.2f	2	debt	
 Unity/IsoCameraInput.cs	0.1f	1	debt	
 Unity/IsoCameraInput.cs	0.9f	1	debt	
 Unity/IsoCameraInput.cs	3f	1	debt	
@@ -201,6 +241,11 @@ Unity/PointViews.cs	0.01f	1	debt
 Unity/PointViews.cs	0.02f	1	debt	
 Unity/PointViews.cs	0.05f	1	debt	
 Unity/PointViews.cs	0.35f	1	debt	
+Unity/Scale2aLineupHost.cs	1.1f	1	debt	
+Unity/Scale2aLineupHost.cs	30f	1	debt	
+Unity/Scale2aLineupHost.cs	50f	1	debt	
+Unity/Scale2aLineupHost.cs	ShotHeight=1080	1	debt	
+Unity/Scale2aLineupHost.cs	ShotWidth=1920	1	debt	
 Unity/ShotLines.cs	0.08f	1	debt	
 Unity/ShotLines.cs	0.22f	1	debt	
 Unity/ShotLines.cs	LifeTicks=6	1	debt	
@@ -268,6 +313,29 @@ Unity/ShowcaseHost.cs	70f	1	debt
 Unity/ShowcaseHost.cs	9f	1	debt	
 Unity/ShowcaseHost.cs	ShotHeight=1080	1	debt	
 Unity/ShowcaseHost.cs	ShotWidth=1920	1	debt	
+Unity/ShowcaseLegacySizes.cs	0.05f	1	debt	SHOW-1 fixed soldier size, moved here by SCALE-2a
+Unity/ShowcaseLegacySizes.cs	0.08f	2	debt	SHOW-1 fixed soldier size, moved here by SCALE-2a
+Unity/ShowcaseLegacySizes.cs	0.12f	1	debt	SHOW-1 fixed soldier size, moved here by SCALE-2a
+Unity/ShowcaseLegacySizes.cs	0.1f	3	debt	SHOW-1 fixed soldier size, moved here by SCALE-2a
+Unity/ShowcaseLegacySizes.cs	0.28f	4	debt	SHOW-1 fixed soldier size, moved here by SCALE-2a
+Unity/ShowcaseLegacySizes.cs	0.2f	1	debt	SHOW-1 fixed soldier size, moved here by SCALE-2a
+Unity/ShowcaseLegacySizes.cs	0.35f	1	debt	SHOW-1 fixed soldier size, moved here by SCALE-2a
+Unity/ShowcaseLegacySizes.cs	0.3f	6	debt	SHOW-1 fixed soldier size, moved here by SCALE-2a
+Unity/ShowcaseLegacySizes.cs	0.42f	1	debt	SHOW-1 fixed soldier size, moved here by SCALE-2a
+Unity/ShowcaseLegacySizes.cs	0.45f	1	debt	SHOW-1 fixed soldier size, moved here by SCALE-2a
+Unity/ShowcaseLegacySizes.cs	0.5f	2	debt	SHOW-1 fixed soldier size, moved here by SCALE-2a
+Unity/ShowcaseLegacySizes.cs	0.62f	1	debt	SHOW-1 fixed soldier size, moved here by SCALE-2a
+Unity/ShowcaseLegacySizes.cs	0.7f	2	debt	SHOW-1 fixed soldier size, moved here by SCALE-2a
+Unity/ShowcaseLegacySizes.cs	0.8f	1	debt	SHOW-1 fixed soldier size, moved here by SCALE-2a
+Unity/ShowcaseLegacySizes.cs	0.9f	3	debt	SHOW-1 fixed soldier size, moved here by SCALE-2a
+Unity/ShowcaseLegacySizes.cs	1.05f	1	debt	SHOW-1 fixed soldier size, moved here by SCALE-2a
+Unity/ShowcaseLegacySizes.cs	1.1f	3	debt	SHOW-1 fixed soldier size, moved here by SCALE-2a
+Unity/ShowcaseLegacySizes.cs	1.25f	1	debt	SHOW-1 fixed soldier size, moved here by SCALE-2a
+Unity/ShowcaseLegacySizes.cs	1.3f	1	debt	SHOW-1 fixed soldier size, moved here by SCALE-2a
+Unity/ShowcaseLegacySizes.cs	1.4f	1	debt	SHOW-1 fixed soldier size, moved here by SCALE-2a
+Unity/ShowcaseLegacySizes.cs	1.5f	1	debt	SHOW-1 fixed soldier size, moved here by SCALE-2a
+Unity/ShowcaseLegacySizes.cs	1.7f	1	debt	SHOW-1 fixed soldier size, moved here by SCALE-2a
+Unity/ShowcaseLegacySizes.cs	35f	1	debt	SHOW-1 fixed soldier size, moved here by SCALE-2a
 Unity/ShowcaseScene.cs	0.06f	2	debt	
 Unity/ShowcaseScene.cs	0.07f	1	debt	
 Unity/ShowcaseScene.cs	0.08f	1	debt	
@@ -284,9 +352,7 @@ Unity/ShowcaseScene.cs	0.75f	1	debt
 Unity/ShowcaseScene.cs	0.7f	1	debt	
 Unity/ShowcaseScene.cs	0.94f	1	debt	
 Unity/ShowcaseScene.cs	0.9f	2	debt	
-Unity/ShowcaseScene.cs	1.1f	1	debt	
 Unity/ShowcaseScene.cs	1.4f	1	debt	
-Unity/ShowcaseScene.cs	1.5f	1	debt	
 Unity/ShowcaseScene.cs	1.6f	1	debt	
 Unity/ShowcaseScene.cs	16f	1	debt	
 Unity/ShowcaseScene.cs	2.5f	1	debt	
@@ -304,10 +370,7 @@ Unity/ShowcaseShots.cs	0.25f	2	debt
 Unity/ShowcaseShots.cs	0.55f	1	debt	
 Unity/ShowcaseShots.cs	0.5f	4	debt	
 Unity/ShowcaseShots.cs	0.6f	1	debt	
-Unity/ShowcaseShots.cs	0.9f	1	debt	
-Unity/ShowcaseShots.cs	1.1f	1	debt	
 Unity/ShowcaseShots.cs	1.2f	1	debt	
-Unity/ShowcaseShots.cs	1.4f	1	debt	drawn muzzle height (SCALE-2a)
 Unity/ShowcaseShots.cs	FlashTicks=2	1	debt	
 Unity/ShowcaseShots.cs	PuffTicks=8	1	debt	
 Unity/ShowcaseShots.cs	TracerTicks=4	1	debt	
@@ -344,36 +407,20 @@ Unity/ShowcaseSound.cs	70f	1	debt
 Unity/ShowcaseSound.cs	75f	1	debt	
 Unity/ShowcaseSound.cs	7f	1	debt	
 Unity/ShowcaseUnits.cs	0.01f	1	debt	
-Unity/ShowcaseUnits.cs	0.05f	2	debt	
+Unity/ShowcaseUnits.cs	0.05f	1	debt	
 Unity/ShowcaseUnits.cs	0.06f	1	debt	
 Unity/ShowcaseUnits.cs	0.07f	1	debt	
-Unity/ShowcaseUnits.cs	0.08f	3	debt	
+Unity/ShowcaseUnits.cs	0.08f	1	debt	
 Unity/ShowcaseUnits.cs	0.09f	1	debt	
-Unity/ShowcaseUnits.cs	0.12f	1	debt	
 Unity/ShowcaseUnits.cs	0.15f	3	debt	
-Unity/ShowcaseUnits.cs	0.1f	3	debt	
-Unity/ShowcaseUnits.cs	0.28f	4	debt	
-Unity/ShowcaseUnits.cs	0.2f	1	debt	
-Unity/ShowcaseUnits.cs	0.35f	2	debt	
-Unity/ShowcaseUnits.cs	0.3f	6	debt	
-Unity/ShowcaseUnits.cs	0.42f	1	debt	
-Unity/ShowcaseUnits.cs	0.45f	2	debt	
-Unity/ShowcaseUnits.cs	0.5f	3	debt	
-Unity/ShowcaseUnits.cs	0.62f	1	debt	
+Unity/ShowcaseUnits.cs	0.35f	1	debt	
+Unity/ShowcaseUnits.cs	0.45f	1	debt	
+Unity/ShowcaseUnits.cs	0.5f	1	debt	
 Unity/ShowcaseUnits.cs	0.6f	1	debt	
-Unity/ShowcaseUnits.cs	0.7f	2	debt	
-Unity/ShowcaseUnits.cs	0.8f	1	debt	
-Unity/ShowcaseUnits.cs	0.9f	2	debt	
-Unity/ShowcaseUnits.cs	1.05f	1	debt	
-Unity/ShowcaseUnits.cs	1.1f	1	debt	
-Unity/ShowcaseUnits.cs	1.25f	1	debt	
-Unity/ShowcaseUnits.cs	1.3f	1	debt	
-Unity/ShowcaseUnits.cs	1.7f	1	debt	drawn body height (SCALE-2a)
 Unity/ShowcaseUnits.cs	10f	1	debt	
 Unity/ShowcaseUnits.cs	16f	1	debt	
 Unity/ShowcaseUnits.cs	2.4f	1	debt	
-Unity/ShowcaseUnits.cs	20f	1	debt	
-Unity/ShowcaseUnits.cs	35f	1	debt	
+Unity/ShowcaseUnits.cs	20f	2	debt	
 Unity/ShowcaseUnits.cs	3f	1	debt	
 Unity/ShowcaseUnits.cs	40f	1	debt	
 Unity/ShowcaseUnits.cs	45f	2	debt	
@@ -381,7 +428,7 @@ Unity/ShowcaseUnits.cs	5f	2	debt
 Unity/ShowcaseUnits.cs	60f	1	debt	
 Unity/ShowcaseUnits.cs	720f	1	debt	
 Unity/ShowcaseUnits.cs	8f	1	debt	
-Unity/ShowcaseUnits.cs	90f	1	debt	
+Unity/ShowcaseUnits.cs	90f	2	debt	
 Unity/ShowcaseUnits.cs	AimTicks=20	1	debt	
 Unity/TerrainBake.cs	1.05f	1	debt	
 Unity/TerrainHost.cs	0.02f	1	debt	
