@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using WarCore.Presentation;
@@ -16,6 +17,9 @@ namespace WarCore.Unity
     {
         public const string ShotDirKey = "WarCore.Show1.ShotDir", StageKey = "WarCore.Show1.Stage";
         public const string Prefix = "SHOW1";
+        // MAP-BL0: the stage set to play ("" = the main showcase); WardSet plays the walled ward alone (ShowcaseSets).
+        public const string SetKey = "WarCore.Show1.Set";
+        public const string WardSet = WardDemo.SetId;
         public static readonly long[] ShotTicks = { 0, 150, 300, 600 };
         private const int ShotWidth = 1920, ShotHeight = 1080;
         private const float BarHeight = 44f, Margin = 12f, StubSeconds = 3f, MiniSize = 210f;
@@ -37,6 +41,9 @@ namespace WarCore.Unity
         private GUIStyle box, banner, button;
         private RenderTexture target;
         private Texture2D shot;
+        private string set = "";
+        private IReadOnlyList<ShowcaseStage> stages = Showcase.Stages;
+        private string prefix = Prefix;
 
         public ShowcaseScene Scene => scene;
         public int StageIndex => index;
@@ -47,8 +54,10 @@ namespace WarCore.Unity
 #if UNITY_EDITOR
             dir = UnityEditor.SessionState.GetString(ShotDirKey, "");
             index = UnityEditor.SessionState.GetInt(StageKey, 0);
+            set = UnityEditor.SessionState.GetString(SetKey, "");
             UnityEditor.SessionState.EraseString(ShotDirKey);
             UnityEditor.SessionState.EraseInt(StageKey);
+            UnityEditor.SessionState.EraseString(SetKey);
 #endif
             auto = Environment.GetEnvironmentVariable("WARCORE_EXIT_AFTER_SHOTS") == "1";
             Application.runInBackground = true;
@@ -60,6 +69,27 @@ namespace WarCore.Unity
                 problem = "key table: " + e.Message;
                 Debug.LogError("SHOW-1 " + problem);
                 return;
+            }
+            if (set != "")
+            {
+                try
+                {
+                    IReadOnlyList<ShowcaseStage> chosen = ShowcaseSets.Stages(set);
+                    string chosenPrefix = ShowcaseSets.ShotPrefix(set);
+                    stages = chosen;
+                    prefix = chosenPrefix;
+                }
+                catch (ArgumentException e)
+                {
+                    if (dir != "")
+                    {
+                        Fail("stage set: " + e.Message);
+                        return;
+                    }
+                    problem = "stage set: " + e.Message;
+                    Debug.LogError("SHOW-1 " + problem);
+                    return;
+                }
             }
             StartStage(index);
             if (dir != "")
@@ -90,7 +120,7 @@ namespace WarCore.Unity
         // Replace the running stage by stage i (wrapped). A stage that fails to start leaves its reason on screen.
         public void StartStage(int i)
         {
-            int count = Showcase.Stages.Count;
+            int count = stages.Count;
             index = (i % count + count) % count;
             if (scene != null) scene.Dispose();
             scene = null;
@@ -100,7 +130,7 @@ namespace WarCore.Unity
             aimPoint = null;
             mapper = new PlayerInputMapper(PlayerKeys.Default);
             liveInput = new LivePlayerInput();
-            ShowcaseStage stage = Showcase.Stages[index];
+            ShowcaseStage stage = stages[index];
             try
             {
                 scene = new ShowcaseScene(stage);
@@ -247,7 +277,7 @@ namespace WarCore.Unity
             SimSession session = scene.Session;
             ulong? key = session.ControlledKey;
             UnitStatus? mine = key.HasValue && session.TryUnitStatus(key.Value, out UnitStatus found) ? found : (UnitStatus?)null;
-            status = ShowcaseHud.Status(scene.Stage, index, Showcase.Stages.Count, session.Current, key, mine, scene.LostPlayer,
+            status = ShowcaseHud.Status(scene.Stage, index, stages.Count, session.Current, key, mine, scene.LostPlayer,
                 scene.PlayerAlive, scene.InFlight) + (actions == null ? "" : actions.Line(session.Tick)) + ShowcaseHud.Squad(session.Current, key)
                 + ShowcaseHud.Score(scene.Shots.PlayerShots, scene.Shots.PlayerKills);
         }
@@ -337,7 +367,7 @@ namespace WarCore.Unity
             else if (Time.unscaledTime < stubUntil)
                 GUI.Box(new Rect(w * 0.15f, h * 0.72f, w * 0.7f, 64f), ShowcaseHud.GrenadeStub, banner);
 
-            int count = Showcase.Stages.Count;
+            int count = stages.Count;
             float each = (w - 2 * Margin) / (count + 1);
             for (int i = 0; i <= count; i++)
             {
@@ -347,7 +377,7 @@ namespace WarCore.Unity
                     if (GUI.Button(at, "Restart stage", button)) StartStage(index);
                     continue;
                 }
-                string label = (i == index ? "> " : "") + (i + 1) + "  " + Showcase.Stages[i].Title;
+                string label = (i == index ? "> " : "") + (i + 1) + "  " + stages[i].Title;
                 if (GUI.Button(at, label, button) && i != index) StartStage(i);
             }
         }
@@ -368,7 +398,7 @@ namespace WarCore.Unity
             Debug.LogError("SHOW-1 capture failed: " + what);
             if (dir != "")
             {
-                try { File.WriteAllText(Path.Combine(dir, Prefix + "-failed.txt"), what + "\n"); }
+                try { File.WriteAllText(Path.Combine(dir, prefix + "-failed.txt"), what + "\n"); }
                 catch (Exception e) { Debug.LogError("SHOW-1 report not written: " + e.GetType().Name); }
             }
             Quit(1);
@@ -380,10 +410,10 @@ namespace WarCore.Unity
         {
             for (int i = 0; i < 30; i++)
                 yield return null; // let the editor finish compiling shaders before the first picture
-            string csv = Path.Combine(dir, Prefix + "-shots.csv");
+            string csv = Path.Combine(dir, prefix + "-shots.csv");
             string error = TryRun(() => File.WriteAllText(csv, "name,stage,tick,hash,alive1,alive2,inflight\n"));
             long last = ShotTicks[ShotTicks.Length - 1];
-            for (int s = 0; s < Showcase.Stages.Count && error == null; s++)
+            for (int s = 0; s < stages.Count && error == null; s++)
             {
                 StartStage(s);
                 if (scene == null) { error = problem; break; }
@@ -406,7 +436,7 @@ namespace WarCore.Unity
                             scene.Stepped();
                         }
                         if (Array.IndexOf(ShotTicks, now) < 0) return;
-                        string name = FormattableString.Invariant($"{Prefix}-{s + 1}-{scene.Stage.Id}-t{now:0000}.png");
+                        string name = FormattableString.Invariant($"{prefix}-{s + 1}-{scene.Stage.Id}-t{now:0000}.png");
                         WriteShot(Path.Combine(dir, name), s);
                         ViewMatch m = scene.Session.Current.Match;
                         File.AppendAllText(csv, FormattableString.Invariant(
@@ -422,7 +452,7 @@ namespace WarCore.Unity
                 yield break;
             }
             capturing = false;
-            Debug.Log("SHOW-1 shots written: " + Showcase.Stages.Count * ShotTicks.Length + " pictures");
+            Debug.Log("SHOW-1 shots written: " + stages.Count * ShotTicks.Length + " pictures");
             Quit(0);
         }
 

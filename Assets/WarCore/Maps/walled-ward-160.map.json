@@ -1,0 +1,5229 @@
+{
+  "format": "warcore.map",
+  "version": 2,
+  "id": "walled-ward-160",
+  "content": "rwr",
+  "pack": "rwr-showcase",
+  "size": [160, 160],
+  "origin": [0, 0],
+  "floorRaw": 0,
+  "ceilingRaw": 1048576,
+  "layers": [
+    {
+      "name": "walls",
+      "bit": 1
+    }
+  ],
+  "walls": [
+    {
+      "id": 1,
+      "kind": "ward-wall",
+      "layer": "walls",
+      "cell": [8, 8],
+      "size": [2, 70],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 2,
+      "kind": "ward-wall",
+      "layer": "walls",
+      "cell": [8, 82],
+      "size": [2, 70],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 3,
+      "kind": "ward-wall",
+      "layer": "walls",
+      "cell": [150, 8],
+      "size": [2, 70],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 4,
+      "kind": "ward-wall",
+      "layer": "walls",
+      "cell": [150, 82],
+      "size": [2, 70],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 5,
+      "kind": "ward-wall",
+      "layer": "walls",
+      "cell": [10, 8],
+      "size": [68, 2],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 6,
+      "kind": "ward-wall",
+      "layer": "walls",
+      "cell": [82, 8],
+      "size": [68, 2],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 7,
+      "kind": "ward-wall",
+      "layer": "walls",
+      "cell": [10, 150],
+      "size": [68, 2],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 8,
+      "kind": "ward-wall",
+      "layer": "walls",
+      "cell": [82, 150],
+      "size": [68, 2],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 9,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 44],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 2,
+      "src": {
+        "instance": "door-1",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 10,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 45],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 2,
+      "src": {
+        "instance": "door-1",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 11,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 46],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 2,
+      "src": {
+        "instance": "door-1",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 12,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 47],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 3,
+      "src": {
+        "instance": "window-1",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 13,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 48],
+      "size": [1, 1],
+      "heightRaw": 58982,
+      "owner": 3,
+      "src": {
+        "instance": "window-1",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 14,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 48],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 3,
+      "src": {
+        "instance": "window-1",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 15,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 49],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 3,
+      "src": {
+        "instance": "window-1",
+        "kind": "wall",
+        "src": 4
+      }
+    },
+    {
+      "id": 16,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [68, 44],
+      "size": [1, 6],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 17,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [69, 44],
+      "size": [3, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 18,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [69, 49],
+      "size": [3, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 19,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 50],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 4,
+      "src": {
+        "instance": "door-2",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 20,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 51],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 4,
+      "src": {
+        "instance": "door-2",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 21,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 52],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 4,
+      "src": {
+        "instance": "door-2",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 22,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 53],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 5,
+      "src": {
+        "instance": "window-2",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 23,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 54],
+      "size": [1, 1],
+      "heightRaw": 58982,
+      "owner": 5,
+      "src": {
+        "instance": "window-2",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 24,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 54],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 5,
+      "src": {
+        "instance": "window-2",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 25,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 55],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 5,
+      "src": {
+        "instance": "window-2",
+        "kind": "wall",
+        "src": 4
+      }
+    },
+    {
+      "id": 26,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [68, 50],
+      "size": [1, 6],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 27,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [69, 50],
+      "size": [3, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 28,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [69, 55],
+      "size": [3, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 29,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 56],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 6,
+      "src": {
+        "instance": "door-3",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 30,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 57],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 6,
+      "src": {
+        "instance": "door-3",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 31,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 58],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 6,
+      "src": {
+        "instance": "door-3",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 32,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 59],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 7,
+      "src": {
+        "instance": "window-3",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 33,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 60],
+      "size": [1, 1],
+      "heightRaw": 58982,
+      "owner": 7,
+      "src": {
+        "instance": "window-3",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 34,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 60],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 7,
+      "src": {
+        "instance": "window-3",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 35,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 61],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 7,
+      "src": {
+        "instance": "window-3",
+        "kind": "wall",
+        "src": 4
+      }
+    },
+    {
+      "id": 36,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [68, 56],
+      "size": [1, 6],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 37,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [69, 56],
+      "size": [3, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 38,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [69, 61],
+      "size": [3, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 39,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [44, 72],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 8,
+      "src": {
+        "instance": "door-4",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 40,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [45, 72],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 8,
+      "src": {
+        "instance": "door-4",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 41,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [46, 72],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 8,
+      "src": {
+        "instance": "door-4",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 42,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [47, 72],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 9,
+      "src": {
+        "instance": "window-4",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 43,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [48, 72],
+      "size": [1, 1],
+      "heightRaw": 58982,
+      "owner": 9,
+      "src": {
+        "instance": "window-4",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 44,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [48, 72],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 9,
+      "src": {
+        "instance": "window-4",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 45,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [49, 72],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 9,
+      "src": {
+        "instance": "window-4",
+        "kind": "wall",
+        "src": 4
+      }
+    },
+    {
+      "id": 46,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [44, 68],
+      "size": [6, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 47,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [44, 69],
+      "size": [1, 3],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 48,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [49, 69],
+      "size": [1, 3],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 49,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [50, 72],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 10,
+      "src": {
+        "instance": "door-5",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 50,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [51, 72],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 10,
+      "src": {
+        "instance": "door-5",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 51,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [52, 72],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 10,
+      "src": {
+        "instance": "door-5",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 52,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [53, 72],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 11,
+      "src": {
+        "instance": "window-5",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 53,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [54, 72],
+      "size": [1, 1],
+      "heightRaw": 58982,
+      "owner": 11,
+      "src": {
+        "instance": "window-5",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 54,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [54, 72],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 11,
+      "src": {
+        "instance": "window-5",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 55,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [55, 72],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 11,
+      "src": {
+        "instance": "window-5",
+        "kind": "wall",
+        "src": 4
+      }
+    },
+    {
+      "id": 56,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [50, 68],
+      "size": [6, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 57,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [50, 69],
+      "size": [1, 3],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 58,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [55, 69],
+      "size": [1, 3],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 59,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 44],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 12,
+      "src": {
+        "instance": "door-6",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 60,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 45],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 12,
+      "src": {
+        "instance": "door-6",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 61,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 46],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 12,
+      "src": {
+        "instance": "door-6",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 62,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 47],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 13,
+      "src": {
+        "instance": "window-6",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 63,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 48],
+      "size": [1, 1],
+      "heightRaw": 58982,
+      "owner": 13,
+      "src": {
+        "instance": "window-6",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 64,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 48],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 13,
+      "src": {
+        "instance": "window-6",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 65,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 49],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 13,
+      "src": {
+        "instance": "window-6",
+        "kind": "wall",
+        "src": 4
+      }
+    },
+    {
+      "id": 66,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [91, 44],
+      "size": [1, 6],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 67,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [88, 44],
+      "size": [3, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 68,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [88, 49],
+      "size": [3, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 69,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 50],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 14,
+      "src": {
+        "instance": "door-7",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 70,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 51],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 14,
+      "src": {
+        "instance": "door-7",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 71,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 52],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 14,
+      "src": {
+        "instance": "door-7",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 72,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 53],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 15,
+      "src": {
+        "instance": "window-7",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 73,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 54],
+      "size": [1, 1],
+      "heightRaw": 58982,
+      "owner": 15,
+      "src": {
+        "instance": "window-7",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 74,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 54],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 15,
+      "src": {
+        "instance": "window-7",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 75,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 55],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 15,
+      "src": {
+        "instance": "window-7",
+        "kind": "wall",
+        "src": 4
+      }
+    },
+    {
+      "id": 76,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [91, 50],
+      "size": [1, 6],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 77,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [88, 50],
+      "size": [3, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 78,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [88, 55],
+      "size": [3, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 79,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 56],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 16,
+      "src": {
+        "instance": "door-8",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 80,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 57],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 16,
+      "src": {
+        "instance": "door-8",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 81,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 58],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 16,
+      "src": {
+        "instance": "door-8",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 82,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 59],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 17,
+      "src": {
+        "instance": "window-8",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 83,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 60],
+      "size": [1, 1],
+      "heightRaw": 58982,
+      "owner": 17,
+      "src": {
+        "instance": "window-8",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 84,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 60],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 17,
+      "src": {
+        "instance": "window-8",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 85,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 61],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 17,
+      "src": {
+        "instance": "window-8",
+        "kind": "wall",
+        "src": 4
+      }
+    },
+    {
+      "id": 86,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [91, 56],
+      "size": [1, 6],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 87,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [88, 56],
+      "size": [3, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 88,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [88, 61],
+      "size": [3, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 89,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [104, 72],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 18,
+      "src": {
+        "instance": "door-9",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 90,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [105, 72],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 18,
+      "src": {
+        "instance": "door-9",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 91,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [106, 72],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 18,
+      "src": {
+        "instance": "door-9",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 92,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [107, 72],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 19,
+      "src": {
+        "instance": "window-9",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 93,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [108, 72],
+      "size": [1, 1],
+      "heightRaw": 58982,
+      "owner": 19,
+      "src": {
+        "instance": "window-9",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 94,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [108, 72],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 19,
+      "src": {
+        "instance": "window-9",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 95,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [109, 72],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 19,
+      "src": {
+        "instance": "window-9",
+        "kind": "wall",
+        "src": 4
+      }
+    },
+    {
+      "id": 96,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [104, 68],
+      "size": [6, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 97,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [104, 69],
+      "size": [1, 3],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 98,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [109, 69],
+      "size": [1, 3],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 99,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [110, 72],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 20,
+      "src": {
+        "instance": "door-10",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 100,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [111, 72],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 20,
+      "src": {
+        "instance": "door-10",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 101,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [112, 72],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 20,
+      "src": {
+        "instance": "door-10",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 102,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [113, 72],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 21,
+      "src": {
+        "instance": "window-10",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 103,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [114, 72],
+      "size": [1, 1],
+      "heightRaw": 58982,
+      "owner": 21,
+      "src": {
+        "instance": "window-10",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 104,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [114, 72],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 21,
+      "src": {
+        "instance": "window-10",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 105,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [115, 72],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 21,
+      "src": {
+        "instance": "window-10",
+        "kind": "wall",
+        "src": 4
+      }
+    },
+    {
+      "id": 106,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [110, 68],
+      "size": [6, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 107,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [110, 69],
+      "size": [1, 3],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 108,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [115, 69],
+      "size": [1, 3],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 109,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 93],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 22,
+      "src": {
+        "instance": "door-11",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 110,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 94],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 22,
+      "src": {
+        "instance": "door-11",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 111,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 95],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 22,
+      "src": {
+        "instance": "door-11",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 112,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 96],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 23,
+      "src": {
+        "instance": "window-11",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 113,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 97],
+      "size": [1, 1],
+      "heightRaw": 58982,
+      "owner": 23,
+      "src": {
+        "instance": "window-11",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 114,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 97],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 23,
+      "src": {
+        "instance": "window-11",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 115,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 98],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 23,
+      "src": {
+        "instance": "window-11",
+        "kind": "wall",
+        "src": 4
+      }
+    },
+    {
+      "id": 116,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [68, 93],
+      "size": [1, 6],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 117,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [69, 93],
+      "size": [3, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 118,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [69, 98],
+      "size": [3, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 119,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 99],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 24,
+      "src": {
+        "instance": "door-12",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 120,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 100],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 24,
+      "src": {
+        "instance": "door-12",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 121,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 101],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 24,
+      "src": {
+        "instance": "door-12",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 122,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 102],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 25,
+      "src": {
+        "instance": "window-12",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 123,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 103],
+      "size": [1, 1],
+      "heightRaw": 58982,
+      "owner": 25,
+      "src": {
+        "instance": "window-12",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 124,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 103],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 25,
+      "src": {
+        "instance": "window-12",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 125,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 104],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 25,
+      "src": {
+        "instance": "window-12",
+        "kind": "wall",
+        "src": 4
+      }
+    },
+    {
+      "id": 126,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [68, 99],
+      "size": [1, 6],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 127,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [69, 99],
+      "size": [3, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 128,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [69, 104],
+      "size": [3, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 129,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 105],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 26,
+      "src": {
+        "instance": "door-13",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 130,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 106],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 26,
+      "src": {
+        "instance": "door-13",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 131,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 107],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 26,
+      "src": {
+        "instance": "door-13",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 132,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 108],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 27,
+      "src": {
+        "instance": "window-13",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 133,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 109],
+      "size": [1, 1],
+      "heightRaw": 58982,
+      "owner": 27,
+      "src": {
+        "instance": "window-13",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 134,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 109],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 27,
+      "src": {
+        "instance": "window-13",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 135,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [72, 110],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 27,
+      "src": {
+        "instance": "window-13",
+        "kind": "wall",
+        "src": 4
+      }
+    },
+    {
+      "id": 136,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [68, 105],
+      "size": [1, 6],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 137,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [69, 105],
+      "size": [3, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 138,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [69, 110],
+      "size": [3, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 139,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [44, 87],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 28,
+      "src": {
+        "instance": "door-14",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 140,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [45, 87],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 28,
+      "src": {
+        "instance": "door-14",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 141,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [46, 87],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 28,
+      "src": {
+        "instance": "door-14",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 142,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [47, 87],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 29,
+      "src": {
+        "instance": "window-14",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 143,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [48, 87],
+      "size": [1, 1],
+      "heightRaw": 58982,
+      "owner": 29,
+      "src": {
+        "instance": "window-14",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 144,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [48, 87],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 29,
+      "src": {
+        "instance": "window-14",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 145,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [49, 87],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 29,
+      "src": {
+        "instance": "window-14",
+        "kind": "wall",
+        "src": 4
+      }
+    },
+    {
+      "id": 146,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [44, 91],
+      "size": [6, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 147,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [44, 88],
+      "size": [1, 3],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 148,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [49, 88],
+      "size": [1, 3],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 149,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [50, 87],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 30,
+      "src": {
+        "instance": "door-15",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 150,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [51, 87],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 30,
+      "src": {
+        "instance": "door-15",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 151,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [52, 87],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 30,
+      "src": {
+        "instance": "door-15",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 152,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [53, 87],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 31,
+      "src": {
+        "instance": "window-15",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 153,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [54, 87],
+      "size": [1, 1],
+      "heightRaw": 58982,
+      "owner": 31,
+      "src": {
+        "instance": "window-15",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 154,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [54, 87],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 31,
+      "src": {
+        "instance": "window-15",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 155,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [55, 87],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 31,
+      "src": {
+        "instance": "window-15",
+        "kind": "wall",
+        "src": 4
+      }
+    },
+    {
+      "id": 156,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [50, 91],
+      "size": [6, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 157,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [50, 88],
+      "size": [1, 3],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 158,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [55, 88],
+      "size": [1, 3],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 159,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 93],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 32,
+      "src": {
+        "instance": "door-16",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 160,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 94],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 32,
+      "src": {
+        "instance": "door-16",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 161,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 95],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 32,
+      "src": {
+        "instance": "door-16",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 162,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 96],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 33,
+      "src": {
+        "instance": "window-16",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 163,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 97],
+      "size": [1, 1],
+      "heightRaw": 58982,
+      "owner": 33,
+      "src": {
+        "instance": "window-16",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 164,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 97],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 33,
+      "src": {
+        "instance": "window-16",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 165,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 98],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 33,
+      "src": {
+        "instance": "window-16",
+        "kind": "wall",
+        "src": 4
+      }
+    },
+    {
+      "id": 166,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [91, 93],
+      "size": [1, 6],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 167,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [88, 93],
+      "size": [3, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 168,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [88, 98],
+      "size": [3, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 169,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 99],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 34,
+      "src": {
+        "instance": "door-17",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 170,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 100],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 34,
+      "src": {
+        "instance": "door-17",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 171,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 101],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 34,
+      "src": {
+        "instance": "door-17",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 172,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 102],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 35,
+      "src": {
+        "instance": "window-17",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 173,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 103],
+      "size": [1, 1],
+      "heightRaw": 58982,
+      "owner": 35,
+      "src": {
+        "instance": "window-17",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 174,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 103],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 35,
+      "src": {
+        "instance": "window-17",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 175,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 104],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 35,
+      "src": {
+        "instance": "window-17",
+        "kind": "wall",
+        "src": 4
+      }
+    },
+    {
+      "id": 176,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [91, 99],
+      "size": [1, 6],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 177,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [88, 99],
+      "size": [3, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 178,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [88, 104],
+      "size": [3, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 179,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 105],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 36,
+      "src": {
+        "instance": "door-18",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 180,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 106],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 36,
+      "src": {
+        "instance": "door-18",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 181,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 107],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 36,
+      "src": {
+        "instance": "door-18",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 182,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 108],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 37,
+      "src": {
+        "instance": "window-18",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 183,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 109],
+      "size": [1, 1],
+      "heightRaw": 58982,
+      "owner": 37,
+      "src": {
+        "instance": "window-18",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 184,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 109],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 37,
+      "src": {
+        "instance": "window-18",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 185,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [87, 110],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 37,
+      "src": {
+        "instance": "window-18",
+        "kind": "wall",
+        "src": 4
+      }
+    },
+    {
+      "id": 186,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [91, 105],
+      "size": [1, 6],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 187,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [88, 105],
+      "size": [3, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 188,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [88, 110],
+      "size": [3, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 189,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [104, 87],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 38,
+      "src": {
+        "instance": "door-19",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 190,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [105, 87],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 38,
+      "src": {
+        "instance": "door-19",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 191,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [106, 87],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 38,
+      "src": {
+        "instance": "door-19",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 192,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [107, 87],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 39,
+      "src": {
+        "instance": "window-19",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 193,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [108, 87],
+      "size": [1, 1],
+      "heightRaw": 58982,
+      "owner": 39,
+      "src": {
+        "instance": "window-19",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 194,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [108, 87],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 39,
+      "src": {
+        "instance": "window-19",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 195,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [109, 87],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 39,
+      "src": {
+        "instance": "window-19",
+        "kind": "wall",
+        "src": 4
+      }
+    },
+    {
+      "id": 196,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [104, 91],
+      "size": [6, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 197,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [104, 88],
+      "size": [1, 3],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 198,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [109, 88],
+      "size": [1, 3],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 199,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [110, 87],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 40,
+      "src": {
+        "instance": "door-20",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 200,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [111, 87],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 40,
+      "src": {
+        "instance": "door-20",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 201,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [112, 87],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 40,
+      "src": {
+        "instance": "door-20",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 202,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [113, 87],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 41,
+      "src": {
+        "instance": "window-20",
+        "kind": "wall",
+        "src": 1
+      }
+    },
+    {
+      "id": 203,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [114, 87],
+      "size": [1, 1],
+      "heightRaw": 58982,
+      "owner": 41,
+      "src": {
+        "instance": "window-20",
+        "kind": "wall",
+        "src": 2
+      }
+    },
+    {
+      "id": 204,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [114, 87],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "baseRaw": 131072,
+      "owner": 41,
+      "src": {
+        "instance": "window-20",
+        "kind": "wall",
+        "src": 3
+      }
+    },
+    {
+      "id": 205,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [115, 87],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 41,
+      "src": {
+        "instance": "window-20",
+        "kind": "wall",
+        "src": 4
+      }
+    },
+    {
+      "id": 206,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [110, 91],
+      "size": [6, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 207,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [110, 88],
+      "size": [1, 3],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 208,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [115, 88],
+      "size": [1, 3],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 209,
+      "kind": "solid-house",
+      "layer": "walls",
+      "cell": [58, 44],
+      "size": [7, 18],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 210,
+      "kind": "solid-house",
+      "layer": "walls",
+      "cell": [44, 58],
+      "size": [11, 7],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 211,
+      "kind": "solid-house",
+      "layer": "walls",
+      "cell": [44, 44],
+      "size": [11, 11],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 212,
+      "kind": "solid-house",
+      "layer": "walls",
+      "cell": [30, 44],
+      "size": [11, 11],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 213,
+      "kind": "solid-house",
+      "layer": "walls",
+      "cell": [30, 58],
+      "size": [11, 11],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 214,
+      "kind": "solid-house",
+      "layer": "walls",
+      "cell": [95, 44],
+      "size": [7, 18],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 215,
+      "kind": "solid-house",
+      "layer": "walls",
+      "cell": [105, 58],
+      "size": [11, 7],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 216,
+      "kind": "solid-house",
+      "layer": "walls",
+      "cell": [105, 44],
+      "size": [11, 11],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 217,
+      "kind": "solid-house",
+      "layer": "walls",
+      "cell": [119, 44],
+      "size": [11, 11],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 218,
+      "kind": "solid-house",
+      "layer": "walls",
+      "cell": [119, 58],
+      "size": [11, 11],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 219,
+      "kind": "solid-house",
+      "layer": "walls",
+      "cell": [58, 93],
+      "size": [7, 18],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 220,
+      "kind": "solid-house",
+      "layer": "walls",
+      "cell": [44, 95],
+      "size": [11, 7],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 221,
+      "kind": "solid-house",
+      "layer": "walls",
+      "cell": [44, 105],
+      "size": [11, 11],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 222,
+      "kind": "solid-house",
+      "layer": "walls",
+      "cell": [30, 105],
+      "size": [11, 11],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 223,
+      "kind": "solid-house",
+      "layer": "walls",
+      "cell": [30, 91],
+      "size": [11, 11],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 224,
+      "kind": "solid-house",
+      "layer": "walls",
+      "cell": [95, 93],
+      "size": [7, 18],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 225,
+      "kind": "solid-house",
+      "layer": "walls",
+      "cell": [105, 95],
+      "size": [11, 7],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 226,
+      "kind": "solid-house",
+      "layer": "walls",
+      "cell": [105, 105],
+      "size": [11, 11],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 227,
+      "kind": "solid-house",
+      "layer": "walls",
+      "cell": [119, 105],
+      "size": [11, 11],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 228,
+      "kind": "solid-house",
+      "layer": "walls",
+      "cell": [119, 91],
+      "size": [11, 11],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 229,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [75, 16],
+      "size": [1, 2],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 230,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [75, 26],
+      "size": [1, 2],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 231,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [75, 38],
+      "size": [1, 2],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 232,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [75, 50],
+      "size": [1, 2],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 233,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [75, 58],
+      "size": [1, 2],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 234,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [84, 16],
+      "size": [1, 2],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 235,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [84, 26],
+      "size": [1, 2],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 236,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [84, 38],
+      "size": [1, 2],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 237,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [84, 50],
+      "size": [1, 2],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 238,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [84, 58],
+      "size": [1, 2],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 239,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [75, 88],
+      "size": [1, 2],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 240,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [75, 100],
+      "size": [1, 2],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 241,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [75, 142],
+      "size": [1, 2],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 242,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [84, 88],
+      "size": [1, 2],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 243,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [84, 100],
+      "size": [1, 2],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 244,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [84, 142],
+      "size": [1, 2],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 245,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [20, 75],
+      "size": [2, 1],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 246,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [30, 75],
+      "size": [2, 1],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 247,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [48, 75],
+      "size": [2, 1],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 248,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [58, 75],
+      "size": [2, 1],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 249,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [20, 84],
+      "size": [2, 1],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 250,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [30, 84],
+      "size": [2, 1],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 251,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [48, 84],
+      "size": [2, 1],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 252,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [58, 84],
+      "size": [2, 1],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 253,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [138, 75],
+      "size": [2, 1],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 254,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [128, 75],
+      "size": [2, 1],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 255,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [110, 75],
+      "size": [2, 1],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 256,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [100, 75],
+      "size": [2, 1],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 257,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [138, 84],
+      "size": [2, 1],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 258,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [128, 84],
+      "size": [2, 1],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 259,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [110, 84],
+      "size": [2, 1],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 260,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [100, 84],
+      "size": [2, 1],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 261,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [68, 117],
+      "size": [2, 1],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 262,
+      "kind": "stall",
+      "layer": "walls",
+      "cell": [90, 117],
+      "size": [2, 1],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 263,
+      "kind": "handcart",
+      "layer": "walls",
+      "cell": [75, 32],
+      "size": [1, 2],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 264,
+      "kind": "handcart",
+      "layer": "walls",
+      "cell": [84, 32],
+      "size": [1, 2],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 265,
+      "kind": "handcart",
+      "layer": "walls",
+      "cell": [36, 75],
+      "size": [2, 1],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 266,
+      "kind": "handcart",
+      "layer": "walls",
+      "cell": [36, 84],
+      "size": [2, 1],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 267,
+      "kind": "handcart",
+      "layer": "walls",
+      "cell": [122, 75],
+      "size": [2, 1],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 268,
+      "kind": "handcart",
+      "layer": "walls",
+      "cell": [122, 84],
+      "size": [2, 1],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 269,
+      "kind": "oxcart",
+      "layer": "walls",
+      "cell": [68, 113],
+      "size": [3, 2],
+      "heightRaw": 131072,
+      "owner": 0
+    },
+    {
+      "id": 270,
+      "kind": "oxcart",
+      "layer": "walls",
+      "cell": [89, 113],
+      "size": [3, 2],
+      "heightRaw": 131072,
+      "owner": 0
+    },
+    {
+      "id": 271,
+      "kind": "oxcart",
+      "layer": "walls",
+      "cell": [68, 131],
+      "size": [3, 2],
+      "heightRaw": 131072,
+      "owner": 0
+    },
+    {
+      "id": 272,
+      "kind": "oxcart",
+      "layer": "walls",
+      "cell": [89, 131],
+      "size": [3, 2],
+      "heightRaw": 131072,
+      "owner": 0
+    },
+    {
+      "id": 273,
+      "kind": "well",
+      "layer": "walls",
+      "cell": [74, 113],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 274,
+      "kind": "well",
+      "layer": "walls",
+      "cell": [22, 22],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 275,
+      "kind": "well",
+      "layer": "walls",
+      "cell": [131, 131],
+      "size": [1, 1],
+      "heightRaw": 65536,
+      "owner": 0
+    },
+    {
+      "id": 276,
+      "kind": "tree",
+      "layer": "walls",
+      "cell": [75, 22],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 277,
+      "kind": "tree",
+      "layer": "walls",
+      "cell": [75, 44],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 278,
+      "kind": "tree",
+      "layer": "walls",
+      "cell": [75, 64],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 279,
+      "kind": "tree",
+      "layer": "walls",
+      "cell": [84, 22],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 280,
+      "kind": "tree",
+      "layer": "walls",
+      "cell": [84, 44],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 281,
+      "kind": "tree",
+      "layer": "walls",
+      "cell": [84, 64],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 282,
+      "kind": "tree",
+      "layer": "walls",
+      "cell": [75, 94],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 283,
+      "kind": "tree",
+      "layer": "walls",
+      "cell": [75, 138],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 284,
+      "kind": "tree",
+      "layer": "walls",
+      "cell": [84, 94],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 285,
+      "kind": "tree",
+      "layer": "walls",
+      "cell": [84, 138],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 286,
+      "kind": "tree",
+      "layer": "walls",
+      "cell": [16, 75],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 287,
+      "kind": "tree",
+      "layer": "walls",
+      "cell": [42, 75],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 288,
+      "kind": "tree",
+      "layer": "walls",
+      "cell": [64, 75],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 289,
+      "kind": "tree",
+      "layer": "walls",
+      "cell": [16, 84],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 290,
+      "kind": "tree",
+      "layer": "walls",
+      "cell": [42, 84],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 291,
+      "kind": "tree",
+      "layer": "walls",
+      "cell": [64, 84],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 292,
+      "kind": "tree",
+      "layer": "walls",
+      "cell": [143, 75],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 293,
+      "kind": "tree",
+      "layer": "walls",
+      "cell": [117, 75],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 294,
+      "kind": "tree",
+      "layer": "walls",
+      "cell": [95, 75],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 295,
+      "kind": "tree",
+      "layer": "walls",
+      "cell": [143, 84],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 296,
+      "kind": "tree",
+      "layer": "walls",
+      "cell": [117, 84],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 297,
+      "kind": "tree",
+      "layer": "walls",
+      "cell": [95, 84],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 298,
+      "kind": "tree",
+      "layer": "walls",
+      "cell": [76, 133],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 299,
+      "kind": "tree",
+      "layer": "walls",
+      "cell": [83, 133],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 300,
+      "kind": "tree",
+      "layer": "walls",
+      "cell": [20, 40],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 301,
+      "kind": "tree",
+      "layer": "walls",
+      "cell": [130, 40],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    },
+    {
+      "id": 302,
+      "kind": "tree",
+      "layer": "walls",
+      "cell": [20, 120],
+      "size": [1, 1],
+      "heightRaw": 196608,
+      "owner": 0
+    }
+  ],
+  "points": [
+    {
+      "id": 1,
+      "at": [80000, 80000],
+      "radiusMm": 6000,
+      "initialOwner": 0,
+      "spawn": [80000, 80000],
+      "owner": 0
+    },
+    {
+      "id": 2,
+      "at": [80000, 123000],
+      "radiusMm": 6000,
+      "initialOwner": 0,
+      "spawn": [80000, 123000],
+      "owner": 0
+    }
+  ],
+  "bases": [
+    {
+      "id": 1,
+      "team": 1,
+      "at": [4000, 80000],
+      "owner": 0
+    },
+    {
+      "id": 2,
+      "team": 2,
+      "at": [156000, 80000],
+      "owner": 0
+    }
+  ],
+  "units": [
+    {
+      "key": 1,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [17500, 77500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 2,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [18500, 77500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 3,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [19500, 77500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 4,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [20500, 77500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 5,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [21500, 77500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 6,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [22500, 77500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 7,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [17500, 78500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 8,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [18500, 78500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 9,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [19500, 78500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 10,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [20500, 78500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 11,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [21500, 78500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 12,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [22500, 78500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 13,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [17500, 79500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 14,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [18500, 79500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 15,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [19500, 79500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 16,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [20500, 79500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 17,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [21500, 79500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 18,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [22500, 79500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 19,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [17500, 80500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 20,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [18500, 80500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 21,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [19500, 80500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 22,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [20500, 80500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 23,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [21500, 80500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 24,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [22500, 80500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 25,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [17500, 81500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 26,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [18500, 81500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 27,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [19500, 81500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 28,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [20500, 81500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 29,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [21500, 81500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 30,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [22500, 81500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 31,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [17500, 82500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 32,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [18500, 82500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 33,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [2500, 78500],
+      "reserve": true,
+      "owner": 0
+    },
+    {
+      "key": 34,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [3500, 78500],
+      "reserve": true,
+      "owner": 0
+    },
+    {
+      "key": 35,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [4500, 78500],
+      "reserve": true,
+      "owner": 0
+    },
+    {
+      "key": 36,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [5500, 78500],
+      "reserve": true,
+      "owner": 0
+    },
+    {
+      "key": 37,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [2500, 79500],
+      "reserve": true,
+      "owner": 0
+    },
+    {
+      "key": 38,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [3500, 79500],
+      "reserve": true,
+      "owner": 0
+    },
+    {
+      "key": 39,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [4500, 79500],
+      "reserve": true,
+      "owner": 0
+    },
+    {
+      "key": 40,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [5500, 79500],
+      "reserve": true,
+      "owner": 0
+    },
+    {
+      "key": 41,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [2500, 80500],
+      "reserve": true,
+      "owner": 0
+    },
+    {
+      "key": 42,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [3500, 80500],
+      "reserve": true,
+      "owner": 0
+    },
+    {
+      "key": 43,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [4500, 80500],
+      "reserve": true,
+      "owner": 0
+    },
+    {
+      "key": 44,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [5500, 80500],
+      "reserve": true,
+      "owner": 0
+    },
+    {
+      "key": 45,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [2500, 81500],
+      "reserve": true,
+      "owner": 0
+    },
+    {
+      "key": 46,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [3500, 81500],
+      "reserve": true,
+      "owner": 0
+    },
+    {
+      "key": 47,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [4500, 81500],
+      "reserve": true,
+      "owner": 0
+    },
+    {
+      "key": 48,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [5500, 81500],
+      "reserve": true,
+      "owner": 0
+    },
+    {
+      "key": 49,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [137500, 77500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 50,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [138500, 77500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 51,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [139500, 77500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 52,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [140500, 77500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 53,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [141500, 77500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 54,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [142500, 77500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 55,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [137500, 78500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 56,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [138500, 78500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 57,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [139500, 78500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 58,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [140500, 78500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 59,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [141500, 78500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 60,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [142500, 78500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 61,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [137500, 79500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 62,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [138500, 79500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 63,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [139500, 79500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 64,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [140500, 79500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 65,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [141500, 79500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 66,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [142500, 79500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 67,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [137500, 80500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 68,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [138500, 80500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 69,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [139500, 80500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 70,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [140500, 80500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 71,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [141500, 80500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 72,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [142500, 80500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 73,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [137500, 81500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 74,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [138500, 81500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 75,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [139500, 81500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 76,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [140500, 81500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 77,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [141500, 81500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 78,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [142500, 81500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 79,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [137500, 82500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 80,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [138500, 82500],
+      "reserve": false,
+      "owner": 0
+    },
+    {
+      "key": 81,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [154500, 78500],
+      "reserve": true,
+      "owner": 0
+    },
+    {
+      "key": 82,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [155500, 78500],
+      "reserve": true,
+      "owner": 0
+    },
+    {
+      "key": 83,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [156500, 78500],
+      "reserve": true,
+      "owner": 0
+    },
+    {
+      "key": 84,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [157500, 78500],
+      "reserve": true,
+      "owner": 0
+    },
+    {
+      "key": 85,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [154500, 79500],
+      "reserve": true,
+      "owner": 0
+    },
+    {
+      "key": 86,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [155500, 79500],
+      "reserve": true,
+      "owner": 0
+    },
+    {
+      "key": 87,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [156500, 79500],
+      "reserve": true,
+      "owner": 0
+    },
+    {
+      "key": 88,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [157500, 79500],
+      "reserve": true,
+      "owner": 0
+    },
+    {
+      "key": 89,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [154500, 80500],
+      "reserve": true,
+      "owner": 0
+    },
+    {
+      "key": 90,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [155500, 80500],
+      "reserve": true,
+      "owner": 0
+    },
+    {
+      "key": 91,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [156500, 80500],
+      "reserve": true,
+      "owner": 0
+    },
+    {
+      "key": 92,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [157500, 80500],
+      "reserve": true,
+      "owner": 0
+    },
+    {
+      "key": 93,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [154500, 81500],
+      "reserve": true,
+      "owner": 0
+    },
+    {
+      "key": 94,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [155500, 81500],
+      "reserve": true,
+      "owner": 0
+    },
+    {
+      "key": 95,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [156500, 81500],
+      "reserve": true,
+      "owner": 0
+    },
+    {
+      "key": 96,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [157500, 81500],
+      "reserve": true,
+      "owner": 0
+    }
+  ],
+  "run": {
+    "seed": 41,
+    "crowdPass": "teamIdle"
+  },
+  "owners": ["hand", "stamp:terrain", "stamp:door-1", "stamp:window-1", "stamp:door-2", "stamp:window-2", "stamp:door-3", "stamp:window-3", "stamp:door-4", "stamp:window-4", "stamp:door-5", "stamp:window-5", "stamp:door-6", "stamp:window-6", "stamp:door-7", "stamp:window-7", "stamp:door-8", "stamp:window-8", "stamp:door-9", "stamp:window-9", "stamp:door-10", "stamp:window-10", "stamp:door-11", "stamp:window-11", "stamp:door-12", "stamp:window-12", "stamp:door-13", "stamp:window-13", "stamp:door-14", "stamp:window-14", "stamp:door-15", "stamp:window-15", "stamp:door-16", "stamp:window-16", "stamp:door-17", "stamp:window-17", "stamp:door-18", "stamp:window-18", "stamp:door-19", "stamp:window-19", "stamp:door-20", "stamp:window-20"],
+  "stamps": [
+    {
+      "instance": "door-1",
+      "kind": "wall",
+      "src": 1,
+      "id": 9
+    },
+    {
+      "instance": "door-1",
+      "kind": "wall",
+      "src": 2,
+      "id": 10
+    },
+    {
+      "instance": "door-1",
+      "kind": "wall",
+      "src": 3,
+      "id": 11
+    },
+    {
+      "instance": "window-1",
+      "kind": "wall",
+      "src": 1,
+      "id": 12
+    },
+    {
+      "instance": "window-1",
+      "kind": "wall",
+      "src": 2,
+      "id": 13
+    },
+    {
+      "instance": "window-1",
+      "kind": "wall",
+      "src": 3,
+      "id": 14
+    },
+    {
+      "instance": "window-1",
+      "kind": "wall",
+      "src": 4,
+      "id": 15
+    },
+    {
+      "instance": "door-2",
+      "kind": "wall",
+      "src": 1,
+      "id": 19
+    },
+    {
+      "instance": "door-2",
+      "kind": "wall",
+      "src": 2,
+      "id": 20
+    },
+    {
+      "instance": "door-2",
+      "kind": "wall",
+      "src": 3,
+      "id": 21
+    },
+    {
+      "instance": "window-2",
+      "kind": "wall",
+      "src": 1,
+      "id": 22
+    },
+    {
+      "instance": "window-2",
+      "kind": "wall",
+      "src": 2,
+      "id": 23
+    },
+    {
+      "instance": "window-2",
+      "kind": "wall",
+      "src": 3,
+      "id": 24
+    },
+    {
+      "instance": "window-2",
+      "kind": "wall",
+      "src": 4,
+      "id": 25
+    },
+    {
+      "instance": "door-3",
+      "kind": "wall",
+      "src": 1,
+      "id": 29
+    },
+    {
+      "instance": "door-3",
+      "kind": "wall",
+      "src": 2,
+      "id": 30
+    },
+    {
+      "instance": "door-3",
+      "kind": "wall",
+      "src": 3,
+      "id": 31
+    },
+    {
+      "instance": "window-3",
+      "kind": "wall",
+      "src": 1,
+      "id": 32
+    },
+    {
+      "instance": "window-3",
+      "kind": "wall",
+      "src": 2,
+      "id": 33
+    },
+    {
+      "instance": "window-3",
+      "kind": "wall",
+      "src": 3,
+      "id": 34
+    },
+    {
+      "instance": "window-3",
+      "kind": "wall",
+      "src": 4,
+      "id": 35
+    },
+    {
+      "instance": "door-4",
+      "kind": "wall",
+      "src": 1,
+      "id": 39
+    },
+    {
+      "instance": "door-4",
+      "kind": "wall",
+      "src": 2,
+      "id": 40
+    },
+    {
+      "instance": "door-4",
+      "kind": "wall",
+      "src": 3,
+      "id": 41
+    },
+    {
+      "instance": "window-4",
+      "kind": "wall",
+      "src": 1,
+      "id": 42
+    },
+    {
+      "instance": "window-4",
+      "kind": "wall",
+      "src": 2,
+      "id": 43
+    },
+    {
+      "instance": "window-4",
+      "kind": "wall",
+      "src": 3,
+      "id": 44
+    },
+    {
+      "instance": "window-4",
+      "kind": "wall",
+      "src": 4,
+      "id": 45
+    },
+    {
+      "instance": "door-5",
+      "kind": "wall",
+      "src": 1,
+      "id": 49
+    },
+    {
+      "instance": "door-5",
+      "kind": "wall",
+      "src": 2,
+      "id": 50
+    },
+    {
+      "instance": "door-5",
+      "kind": "wall",
+      "src": 3,
+      "id": 51
+    },
+    {
+      "instance": "window-5",
+      "kind": "wall",
+      "src": 1,
+      "id": 52
+    },
+    {
+      "instance": "window-5",
+      "kind": "wall",
+      "src": 2,
+      "id": 53
+    },
+    {
+      "instance": "window-5",
+      "kind": "wall",
+      "src": 3,
+      "id": 54
+    },
+    {
+      "instance": "window-5",
+      "kind": "wall",
+      "src": 4,
+      "id": 55
+    },
+    {
+      "instance": "door-6",
+      "kind": "wall",
+      "src": 1,
+      "id": 59
+    },
+    {
+      "instance": "door-6",
+      "kind": "wall",
+      "src": 2,
+      "id": 60
+    },
+    {
+      "instance": "door-6",
+      "kind": "wall",
+      "src": 3,
+      "id": 61
+    },
+    {
+      "instance": "window-6",
+      "kind": "wall",
+      "src": 1,
+      "id": 62
+    },
+    {
+      "instance": "window-6",
+      "kind": "wall",
+      "src": 2,
+      "id": 63
+    },
+    {
+      "instance": "window-6",
+      "kind": "wall",
+      "src": 3,
+      "id": 64
+    },
+    {
+      "instance": "window-6",
+      "kind": "wall",
+      "src": 4,
+      "id": 65
+    },
+    {
+      "instance": "door-7",
+      "kind": "wall",
+      "src": 1,
+      "id": 69
+    },
+    {
+      "instance": "door-7",
+      "kind": "wall",
+      "src": 2,
+      "id": 70
+    },
+    {
+      "instance": "door-7",
+      "kind": "wall",
+      "src": 3,
+      "id": 71
+    },
+    {
+      "instance": "window-7",
+      "kind": "wall",
+      "src": 1,
+      "id": 72
+    },
+    {
+      "instance": "window-7",
+      "kind": "wall",
+      "src": 2,
+      "id": 73
+    },
+    {
+      "instance": "window-7",
+      "kind": "wall",
+      "src": 3,
+      "id": 74
+    },
+    {
+      "instance": "window-7",
+      "kind": "wall",
+      "src": 4,
+      "id": 75
+    },
+    {
+      "instance": "door-8",
+      "kind": "wall",
+      "src": 1,
+      "id": 79
+    },
+    {
+      "instance": "door-8",
+      "kind": "wall",
+      "src": 2,
+      "id": 80
+    },
+    {
+      "instance": "door-8",
+      "kind": "wall",
+      "src": 3,
+      "id": 81
+    },
+    {
+      "instance": "window-8",
+      "kind": "wall",
+      "src": 1,
+      "id": 82
+    },
+    {
+      "instance": "window-8",
+      "kind": "wall",
+      "src": 2,
+      "id": 83
+    },
+    {
+      "instance": "window-8",
+      "kind": "wall",
+      "src": 3,
+      "id": 84
+    },
+    {
+      "instance": "window-8",
+      "kind": "wall",
+      "src": 4,
+      "id": 85
+    },
+    {
+      "instance": "door-9",
+      "kind": "wall",
+      "src": 1,
+      "id": 89
+    },
+    {
+      "instance": "door-9",
+      "kind": "wall",
+      "src": 2,
+      "id": 90
+    },
+    {
+      "instance": "door-9",
+      "kind": "wall",
+      "src": 3,
+      "id": 91
+    },
+    {
+      "instance": "window-9",
+      "kind": "wall",
+      "src": 1,
+      "id": 92
+    },
+    {
+      "instance": "window-9",
+      "kind": "wall",
+      "src": 2,
+      "id": 93
+    },
+    {
+      "instance": "window-9",
+      "kind": "wall",
+      "src": 3,
+      "id": 94
+    },
+    {
+      "instance": "window-9",
+      "kind": "wall",
+      "src": 4,
+      "id": 95
+    },
+    {
+      "instance": "door-10",
+      "kind": "wall",
+      "src": 1,
+      "id": 99
+    },
+    {
+      "instance": "door-10",
+      "kind": "wall",
+      "src": 2,
+      "id": 100
+    },
+    {
+      "instance": "door-10",
+      "kind": "wall",
+      "src": 3,
+      "id": 101
+    },
+    {
+      "instance": "window-10",
+      "kind": "wall",
+      "src": 1,
+      "id": 102
+    },
+    {
+      "instance": "window-10",
+      "kind": "wall",
+      "src": 2,
+      "id": 103
+    },
+    {
+      "instance": "window-10",
+      "kind": "wall",
+      "src": 3,
+      "id": 104
+    },
+    {
+      "instance": "window-10",
+      "kind": "wall",
+      "src": 4,
+      "id": 105
+    },
+    {
+      "instance": "door-11",
+      "kind": "wall",
+      "src": 1,
+      "id": 109
+    },
+    {
+      "instance": "door-11",
+      "kind": "wall",
+      "src": 2,
+      "id": 110
+    },
+    {
+      "instance": "door-11",
+      "kind": "wall",
+      "src": 3,
+      "id": 111
+    },
+    {
+      "instance": "window-11",
+      "kind": "wall",
+      "src": 1,
+      "id": 112
+    },
+    {
+      "instance": "window-11",
+      "kind": "wall",
+      "src": 2,
+      "id": 113
+    },
+    {
+      "instance": "window-11",
+      "kind": "wall",
+      "src": 3,
+      "id": 114
+    },
+    {
+      "instance": "window-11",
+      "kind": "wall",
+      "src": 4,
+      "id": 115
+    },
+    {
+      "instance": "door-12",
+      "kind": "wall",
+      "src": 1,
+      "id": 119
+    },
+    {
+      "instance": "door-12",
+      "kind": "wall",
+      "src": 2,
+      "id": 120
+    },
+    {
+      "instance": "door-12",
+      "kind": "wall",
+      "src": 3,
+      "id": 121
+    },
+    {
+      "instance": "window-12",
+      "kind": "wall",
+      "src": 1,
+      "id": 122
+    },
+    {
+      "instance": "window-12",
+      "kind": "wall",
+      "src": 2,
+      "id": 123
+    },
+    {
+      "instance": "window-12",
+      "kind": "wall",
+      "src": 3,
+      "id": 124
+    },
+    {
+      "instance": "window-12",
+      "kind": "wall",
+      "src": 4,
+      "id": 125
+    },
+    {
+      "instance": "door-13",
+      "kind": "wall",
+      "src": 1,
+      "id": 129
+    },
+    {
+      "instance": "door-13",
+      "kind": "wall",
+      "src": 2,
+      "id": 130
+    },
+    {
+      "instance": "door-13",
+      "kind": "wall",
+      "src": 3,
+      "id": 131
+    },
+    {
+      "instance": "window-13",
+      "kind": "wall",
+      "src": 1,
+      "id": 132
+    },
+    {
+      "instance": "window-13",
+      "kind": "wall",
+      "src": 2,
+      "id": 133
+    },
+    {
+      "instance": "window-13",
+      "kind": "wall",
+      "src": 3,
+      "id": 134
+    },
+    {
+      "instance": "window-13",
+      "kind": "wall",
+      "src": 4,
+      "id": 135
+    },
+    {
+      "instance": "door-14",
+      "kind": "wall",
+      "src": 1,
+      "id": 139
+    },
+    {
+      "instance": "door-14",
+      "kind": "wall",
+      "src": 2,
+      "id": 140
+    },
+    {
+      "instance": "door-14",
+      "kind": "wall",
+      "src": 3,
+      "id": 141
+    },
+    {
+      "instance": "window-14",
+      "kind": "wall",
+      "src": 1,
+      "id": 142
+    },
+    {
+      "instance": "window-14",
+      "kind": "wall",
+      "src": 2,
+      "id": 143
+    },
+    {
+      "instance": "window-14",
+      "kind": "wall",
+      "src": 3,
+      "id": 144
+    },
+    {
+      "instance": "window-14",
+      "kind": "wall",
+      "src": 4,
+      "id": 145
+    },
+    {
+      "instance": "door-15",
+      "kind": "wall",
+      "src": 1,
+      "id": 149
+    },
+    {
+      "instance": "door-15",
+      "kind": "wall",
+      "src": 2,
+      "id": 150
+    },
+    {
+      "instance": "door-15",
+      "kind": "wall",
+      "src": 3,
+      "id": 151
+    },
+    {
+      "instance": "window-15",
+      "kind": "wall",
+      "src": 1,
+      "id": 152
+    },
+    {
+      "instance": "window-15",
+      "kind": "wall",
+      "src": 2,
+      "id": 153
+    },
+    {
+      "instance": "window-15",
+      "kind": "wall",
+      "src": 3,
+      "id": 154
+    },
+    {
+      "instance": "window-15",
+      "kind": "wall",
+      "src": 4,
+      "id": 155
+    },
+    {
+      "instance": "door-16",
+      "kind": "wall",
+      "src": 1,
+      "id": 159
+    },
+    {
+      "instance": "door-16",
+      "kind": "wall",
+      "src": 2,
+      "id": 160
+    },
+    {
+      "instance": "door-16",
+      "kind": "wall",
+      "src": 3,
+      "id": 161
+    },
+    {
+      "instance": "window-16",
+      "kind": "wall",
+      "src": 1,
+      "id": 162
+    },
+    {
+      "instance": "window-16",
+      "kind": "wall",
+      "src": 2,
+      "id": 163
+    },
+    {
+      "instance": "window-16",
+      "kind": "wall",
+      "src": 3,
+      "id": 164
+    },
+    {
+      "instance": "window-16",
+      "kind": "wall",
+      "src": 4,
+      "id": 165
+    },
+    {
+      "instance": "door-17",
+      "kind": "wall",
+      "src": 1,
+      "id": 169
+    },
+    {
+      "instance": "door-17",
+      "kind": "wall",
+      "src": 2,
+      "id": 170
+    },
+    {
+      "instance": "door-17",
+      "kind": "wall",
+      "src": 3,
+      "id": 171
+    },
+    {
+      "instance": "window-17",
+      "kind": "wall",
+      "src": 1,
+      "id": 172
+    },
+    {
+      "instance": "window-17",
+      "kind": "wall",
+      "src": 2,
+      "id": 173
+    },
+    {
+      "instance": "window-17",
+      "kind": "wall",
+      "src": 3,
+      "id": 174
+    },
+    {
+      "instance": "window-17",
+      "kind": "wall",
+      "src": 4,
+      "id": 175
+    },
+    {
+      "instance": "door-18",
+      "kind": "wall",
+      "src": 1,
+      "id": 179
+    },
+    {
+      "instance": "door-18",
+      "kind": "wall",
+      "src": 2,
+      "id": 180
+    },
+    {
+      "instance": "door-18",
+      "kind": "wall",
+      "src": 3,
+      "id": 181
+    },
+    {
+      "instance": "window-18",
+      "kind": "wall",
+      "src": 1,
+      "id": 182
+    },
+    {
+      "instance": "window-18",
+      "kind": "wall",
+      "src": 2,
+      "id": 183
+    },
+    {
+      "instance": "window-18",
+      "kind": "wall",
+      "src": 3,
+      "id": 184
+    },
+    {
+      "instance": "window-18",
+      "kind": "wall",
+      "src": 4,
+      "id": 185
+    },
+    {
+      "instance": "door-19",
+      "kind": "wall",
+      "src": 1,
+      "id": 189
+    },
+    {
+      "instance": "door-19",
+      "kind": "wall",
+      "src": 2,
+      "id": 190
+    },
+    {
+      "instance": "door-19",
+      "kind": "wall",
+      "src": 3,
+      "id": 191
+    },
+    {
+      "instance": "window-19",
+      "kind": "wall",
+      "src": 1,
+      "id": 192
+    },
+    {
+      "instance": "window-19",
+      "kind": "wall",
+      "src": 2,
+      "id": 193
+    },
+    {
+      "instance": "window-19",
+      "kind": "wall",
+      "src": 3,
+      "id": 194
+    },
+    {
+      "instance": "window-19",
+      "kind": "wall",
+      "src": 4,
+      "id": 195
+    },
+    {
+      "instance": "door-20",
+      "kind": "wall",
+      "src": 1,
+      "id": 199
+    },
+    {
+      "instance": "door-20",
+      "kind": "wall",
+      "src": 2,
+      "id": 200
+    },
+    {
+      "instance": "door-20",
+      "kind": "wall",
+      "src": 3,
+      "id": 201
+    },
+    {
+      "instance": "window-20",
+      "kind": "wall",
+      "src": 1,
+      "id": 202
+    },
+    {
+      "instance": "window-20",
+      "kind": "wall",
+      "src": 2,
+      "id": 203
+    },
+    {
+      "instance": "window-20",
+      "kind": "wall",
+      "src": 3,
+      "id": 204
+    },
+    {
+      "instance": "window-20",
+      "kind": "wall",
+      "src": 4,
+      "id": 205
+    }
+  ],
+  "removed": [],
+  "next": {
+    "wall": 303,
+    "point": 3,
+    "base": 3,
+    "unit": 97
+  }
+}

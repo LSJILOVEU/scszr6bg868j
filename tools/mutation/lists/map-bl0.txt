@@ -1,0 +1,373 @@
+# MAP-BL0: the walled ward (WardBuild, WardDemo, the skeleton table of WardLayout) and the stage sets (ShowcaseSets).
+# Filter: the Ward tests outside the Manual category (the writer and the 20-seed report are not run). The W3, W4 and W5
+# tests read the build code's document, so a change to the build code shows there; W1 also turns red on every build change.
+# Not listed: the numbers of the layout lists (the D counter-examples and W1 hold them), Unity code (no Unity here).
+
+[bl0-sets-empty-is-main]
+file = Assets/WarCore/Presentation/Bridge/ShowcaseSets.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardSetsTests.TheEmptySetIsTheMainShowcaseItself
+note = the empty set plays the ward
+original:
+| if (string.Equals(set, "", StringComparison.Ordinal)) return Showcase.Stages;
+replacement:
+| if (string.Equals(set, "", StringComparison.Ordinal)) return WardDemo.Stages;
+
+[bl0-sets-unknown-falls-back]
+file = Assets/WarCore/Presentation/Bridge/ShowcaseSets.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardSetsTests.AnyOtherSetIsRefusedByName
+note = an unknown set plays the main showcase instead of throwing
+original:
+| return WardDemo.Stages;
+|             throw Unknown(set);
+replacement:
+| return WardDemo.Stages;
+|             return Showcase.Stages;
+
+[bl0-sets-case]
+file = Assets/WarCore/Presentation/Bridge/ShowcaseSets.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardSetsTests.AnyOtherSetIsRefusedByName
+note = the set name is compared without case
+original:
+| if (string.Equals(set, WardDemo.SetId, StringComparison.Ordinal)) return WardDemo.Stages;
+replacement:
+| if (string.Equals(set, WardDemo.SetId, StringComparison.OrdinalIgnoreCase)) return WardDemo.Stages;
+
+[bl0-sets-prefix]
+file = Assets/WarCore/Presentation/Bridge/ShowcaseSets.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardSetsTests.TheWardSetIsTheWardStageAlone
+note = the ward's pictures keep the main prefix
+original:
+| return WardDemo.ShotPrefix;
+replacement:
+| return "SHOW1";
+
+[bl0-sets-prefix-unknown]
+file = Assets/WarCore/Presentation/Bridge/ShowcaseSets.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardSetsTests.TheMainShowcaseHasNoSetPrefix
+expect = WarCore.Tests.WardSetsTests.AnyOtherSetIsRefusedByName
+note = any set has a prefix
+original:
+| return WardDemo.ShotPrefix;
+|             throw Unknown(set);
+replacement:
+| return WardDemo.ShotPrefix;
+|             return "SHOW1";
+
+[bl0-sets-null-named]
+file = Assets/WarCore/Presentation/Bridge/ShowcaseSets.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardSetsTests.AnyOtherSetIsRefusedByName
+note = a null set is not named in the message
+original:
+| (set ?? "null")
+replacement:
+| set
+
+[bl0-ward-wall-height]
+file = Assets/WarCore/Presentation/Bridge/Features/WardBuild.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardFileTests.TheSkeletonIsTheCards
+note = the ward wall is 2 m high
+original:
+| doc = Add(doc, WardLayout.WardWallKind, b, layout.WardWallRaw);
+replacement:
+| doc = Add(doc, WardLayout.WardWallKind, b, layout.WardWallRaw - 65536);
+
+[bl0-ward-wall-length]
+file = Assets/WarCore/Presentation/Bridge/Features/WardLayout.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardFileTests.TheSkeletonIsTheCards
+note = the west wall's south piece is 71 long and the west gate 3 cells wide
+original:
+| new WardBox(8, 8, 2, 70), new WardBox(8, 82, 2, 70),
+replacement:
+| new WardBox(8, 8, 2, 71), new WardBox(8, 82, 2, 70),
+
+[bl0-ward-wall-order]
+file = Assets/WarCore/Presentation/Bridge/Features/WardLayout.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardFileTests.TheSkeletonIsTheCards
+note = the west wall's two pieces swap ids
+original:
+| new WardBox(8, 8, 2, 70), new WardBox(8, 82, 2, 70),
+replacement:
+| new WardBox(8, 82, 2, 70), new WardBox(8, 8, 2, 70),
+
+[bl0-window-is-wall]
+file = Assets/WarCore/Presentation/Bridge/Features/WardBuild.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardPieceTests.EachShopHasOneDoorAndOneWindowOnItsStreet
+expect = WarCore.Tests.WardPieceTests.TheBuiltLayoutPassesEveryCheck
+note = the window part of a shop on a north-south street is a plain wall
+original:
+| doc = s.AlongZ ? doc.WithWindow(x, z + 3, alongX, 3, 1, 1, layout.ShopTopRaw)
+replacement:
+| doc = s.AlongZ ? Add(doc, WardLayout.ShopKind, new WardBox(x, z + 3, 1, 3), layout.ShopTopRaw)
+
+[bl0-door-at-back]
+file = Assets/WarCore/Presentation/Bridge/Features/WardBuild.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardPieceTests.EachShopHasOneDoorAndOneWindowOnItsStreet
+expect = WarCore.Tests.WardPieceTests.TheBuiltLayoutPassesEveryCheck
+note = the door part stands on the back wall's line
+original:
+| doc = doc.WithDoorWall(x, z, alongX, 3, 1, 1, layout.ShopTopRaw);
+replacement:
+| doc = doc.WithDoorWall(s.AlongZ ? s.Back : x, s.AlongZ ? z : s.Back, alongX, 3, 1, 1, layout.ShopTopRaw);
+
+[bl0-window-top]
+file = Assets/WarCore/Presentation/Bridge/Features/WardBuild.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardPieceTests.EachShopHasOneDoorAndOneWindowOnItsStreet
+expect = WarCore.Tests.WardPieceTests.TheBuiltLayoutPassesEveryCheck
+note = the window part of a north-south shop is 4 m high (frames 4 m, lintel 2 m; the gate and the file accept it)
+original:
+| doc = s.AlongZ ? doc.WithWindow(x, z + 3, alongX, 3, 1, 1, layout.ShopTopRaw)
+replacement:
+| doc = s.AlongZ ? doc.WithWindow(x, z + 3, alongX, 3, 1, 1, layout.ShopTopRaw + 65536)
+
+[bl0-side-wall-on-back]
+file = Assets/WarCore/Presentation/Bridge/Features/WardBuild.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardPieceTests.TheBuiltLayoutPassesEveryCheck
+note = the first side wall of a north-south shop starts on the back wall
+original:
+| doc = Add(doc, WardLayout.ShopKind, new WardBox(low + 1, s.Start, 3, 1), layout.ShopTopRaw);
+replacement:
+| doc = Add(doc, WardLayout.ShopKind, new WardBox(low, s.Start, 3, 1), layout.ShopTopRaw);
+
+[bl0-back-wall-short]
+file = Assets/WarCore/Presentation/Bridge/Features/WardBuild.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardPieceTests.TheBuiltLayoutPassesEveryCheck
+note = the back wall of an east-west shop is one cell short (the shop is open at a corner)
+original:
+| new WardBox(s.Start, s.Back, WardLayout.ShopLength, 1)
+replacement:
+| new WardBox(s.Start, s.Back, WardLayout.ShopLength - 1, 1)
+
+[bl0-house-height]
+file = Assets/WarCore/Presentation/Bridge/Features/WardBuild.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardPieceTests.EachKindHasTheCardsCountSizeAndHeight
+note = solid houses are 2 m high
+original:
+| doc = Add(doc, WardLayout.HouseKind, layout.Houses[i], layout.HouseRaw);
+replacement:
+| doc = Add(doc, WardLayout.HouseKind, layout.Houses[i], layout.HouseRaw - 65536);
+
+[bl0-stall-height]
+file = Assets/WarCore/Presentation/Bridge/Features/WardBuild.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardPieceTests.EachKindHasTheCardsCountSizeAndHeight
+note = stalls are 2 m high (a height rule 5 allows; only the kind-by-kind check sees it)
+original:
+| doc = Add(doc, WardLayout.StallKind, layout.Stalls[i], layout.StallRaw);
+replacement:
+| doc = Add(doc, WardLayout.StallKind, layout.Stalls[i], layout.StallRaw * 2);
+
+[bl0-stall-kind]
+file = Assets/WarCore/Presentation/Bridge/Features/WardBuild.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardPieceTests.EachKindHasTheCardsCountSizeAndHeight
+note = stalls are written as hand carts
+original:
+| doc = Add(doc, WardLayout.StallKind, layout.Stalls[i], layout.StallRaw);
+replacement:
+| doc = Add(doc, WardLayout.HandcartKind, layout.Stalls[i], layout.StallRaw);
+
+[bl0-stall-one-short]
+file = Assets/WarCore/Presentation/Bridge/Features/WardBuild.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardPieceTests.EachKindHasTheCardsCountSizeAndHeight
+note = the last stall of the layout is left out
+original:
+| for (int i = 0; i < layout.Stalls.Count; i++)
+replacement:
+| for (int i = 0; i < layout.Stalls.Count - 1; i++)
+
+[bl0-oxcart-height]
+file = Assets/WarCore/Presentation/Bridge/Features/WardBuild.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardPieceTests.EachKindHasTheCardsCountSizeAndHeight
+note = ox carts are 1 m high
+original:
+| doc = Add(doc, WardLayout.OxcartKind, layout.Oxcarts[i], layout.OxcartRaw);
+replacement:
+| doc = Add(doc, WardLayout.OxcartKind, layout.Oxcarts[i], layout.HandcartRaw);
+
+[bl0-handcart-one-short]
+file = Assets/WarCore/Presentation/Bridge/Features/WardBuild.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardPieceTests.EachKindHasTheCardsCountSizeAndHeight
+note = the last hand cart is left out
+original:
+| for (int i = 0; i < layout.Handcarts.Count; i++)
+replacement:
+| for (int i = 0; i < layout.Handcarts.Count - 1; i++)
+
+[bl0-well-kind]
+file = Assets/WarCore/Presentation/Bridge/Features/WardBuild.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardPieceTests.EachKindHasTheCardsCountSizeAndHeight
+note = wells are written as trees
+original:
+| doc = Add(doc, WardLayout.WellKind, layout.Wells[i], layout.WellRaw);
+replacement:
+| doc = Add(doc, WardLayout.TreeKind, layout.Wells[i], layout.WellRaw);
+
+[bl0-tree-one-short]
+file = Assets/WarCore/Presentation/Bridge/Features/WardBuild.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardPieceTests.EachKindHasTheCardsCountSizeAndHeight
+note = the last tree is left out
+original:
+| for (int i = 0; i < layout.Trees.Count; i++)
+replacement:
+| for (int i = 0; i < layout.Trees.Count - 1; i++)
+
+[bl0-seed-ignored]
+file = Assets/WarCore/Presentation/Bridge/Features/WardBuild.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardFileTests.AnotherSeedChangesTheSeedAndNothingElse
+note = every document is seed 41
+original:
+| CeilingRaw = WardLayout.CeilingRaw, Seed = seed,
+replacement:
+| CeilingRaw = WardLayout.CeilingRaw, Seed = WardLayout.Seed,
+
+[bl0-crowd-pass]
+file = Assets/WarCore/Presentation/Bridge/Features/WardBuild.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardFileTests.TheDescriptionIsTheOneTheCardNames
+note = the crowd pass is off
+original:
+| CrowdPass = WardLayout.CrowdPass,
+replacement:
+| CrowdPass = "none",
+
+[bl0-point-centre]
+file = Assets/WarCore/Presentation/Bridge/Features/WardBuild.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardStartTests.PointsAndBasesAreTheCardsTable
+note = the points sit 10 m south of their spawns
+original:
+| new MapPointInfo(x, z, WardLayout.PointRadiusMm
+replacement:
+| new MapPointInfo(x, z - 10000, WardLayout.PointRadiusMm
+
+[bl0-base-team]
+file = Assets/WarCore/Presentation/Bridge/Features/WardBuild.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardStartTests.PointsAndBasesAreTheCardsTable
+note = the bases swap teams
+original:
+| doc = doc.WithBaseAdded(new MapBaseInfo(team, 
+replacement:
+| doc = doc.WithBaseAdded(new MapBaseInfo(3 - team, 
+
+[bl0-field-is-reserve]
+file = Assets/WarCore/Presentation/Bridge/Features/WardBuild.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardStartTests.ThirtyTwoASideOnTheFieldAndSixteenInReserve
+note = the deployed squads start in reserve
+original:
+| fx, fz, WardLayout.OnField, false);
+replacement:
+| fx, fz, WardLayout.OnField, true);
+
+[bl0-reserves-at-formation]
+file = Assets/WarCore/Presentation/Bridge/Features/WardBuild.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardStartTests.ThirtyTwoASideOnTheFieldAndSixteenInReserve
+note = the reserves wait at the formation inside the gate instead of at the base
+original:
+| team, team, bx, bz, WardLayout.Reserve, true);
+replacement:
+| team, team, fx, fz, WardLayout.Reserve, true);
+
+[bl0-ai-recipe-player]
+file = Assets/WarCore/Presentation/Bridge/Features/WardDemo.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardStartTests.TheRecipeIsTheOpenBattlesWithKeyOneAsThePlayer
+note = the AI recipe has a player
+original:
+| return MapRecipe.From(baked, pack, useUnitTypes: true).WithAiRules(pack).WithFacing();
+replacement:
+| return MapRecipe.From(baked, pack, useUnitTypes: true).WithAiRules(pack).WithFacing().WithPlayer(PlayerKey);
+
+[bl0-no-ai-rules]
+file = Assets/WarCore/Presentation/Bridge/Features/WardDemo.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardStartTests.TheRecipeIsTheOpenBattlesWithKeyOneAsThePlayer
+note = the recipe runs without the layer's AI rules
+original:
+| .WithAiRules(pack).WithFacing();
+replacement:
+| .WithFacing();
+
+[bl0-no-facing]
+file = Assets/WarCore/Presentation/Bridge/Features/WardDemo.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardStartTests.TheRecipeIsTheOpenBattlesWithKeyOneAsThePlayer
+note = the recipe has no facing option
+original:
+| .WithAiRules(pack).WithFacing();
+replacement:
+| .WithAiRules(pack);
+
+[bl0-no-unit-types]
+file = Assets/WarCore/Presentation/Bridge/Features/WardDemo.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardStartTests.TheRecipeIsTheOpenBattlesWithKeyOneAsThePlayer
+note = the recipe ignores the layer's unit types (no guard for the player)
+original:
+| useUnitTypes: true)
+replacement:
+| useUnitTypes: false)
+
+[bl0-player-key]
+file = Assets/WarCore/Presentation/Bridge/Features/WardDemo.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardStartTests.TheRecipeIsTheOpenBattlesWithKeyOneAsThePlayer
+expect = WarCore.Tests.WardSetsTests.TheWardStageStartsOnTheCommittedMapWithKeyOneAsThePlayer
+note = the player is the second soldier
+original:
+| public const ulong PlayerKey = 1;
+replacement:
+| public const ulong PlayerKey = 2;
+
+[bl0-script-dash]
+file = Assets/WarCore/Presentation/Bridge/Features/WardDemo.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardSetsTests.TheScriptWalksToTheCrossroadsAndFiresDashesAndBlocks
+note = the script never dashes
+original:
+| (180L, new PlayerInput(1000, 0, 80000, 80000, dash: true)),
+replacement:
+| (180L, new PlayerInput(1000, 0, 80000, 80000, dash: false)),
+
+[bl0-script-block]
+file = Assets/WarCore/Presentation/Bridge/Features/WardDemo.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardSetsTests.TheScriptWalksToTheCrossroadsAndFiresDashesAndBlocks
+note = the script never blocks
+original:
+| (300L, new PlayerInput(0, 0, 80000, 80000, block: true)),
+replacement:
+| (300L, new PlayerInput(0, 0, 80000, 80000, block: false)),
+
+[bl0-stage-id]
+file = Assets/WarCore/Presentation/Bridge/Features/WardDemo.cs
+filter = FullyQualifiedName~WarCore.Tests.Ward&TestCategory!=Manual
+expect = WarCore.Tests.WardSetsTests.TheWardSetIsTheWardStageAlone
+note = the stage id is not "ward"
+original:
+| StageId = "ward";
+replacement:
+| StageId = "battle";

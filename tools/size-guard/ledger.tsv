@@ -137,6 +137,9 @@ Presentation/Bridge/Features/VspreadDemo.cs	SimFix.FromInt(6)	1	debt
 Presentation/Bridge/Features/VspreadDemo.cs	Speed=6000	1	debt	H3 speed in code
 Presentation/Bridge/Features/VspreadDemo.cs	TargetXMm=35000	1	debt	
 Presentation/Bridge/Features/VspreadDemo.cs	Width=48	1	debt	
+Presentation/Bridge/Features/WardDemo.cs	20f	1	ui	starting zoom of the walled ward stage (half the picture height in metres), drawn only (MAP-BL0)
+Presentation/Bridge/Features/WardLayout.cs	CeilingRaw=1048576	1	canon	walled ward map ceiling, 16 m; ward layout, defined only here (MAP-BL0)
+Presentation/Bridge/Features/WardLayout.cs	PointRadiusMm=6000	1	canon	walled ward point radius; ward layout, defined only here (MAP-BL0)
 Presentation/Bridge/Features/WorldAssembly.cs	SimFix.FromInt(1)	1	debt	
 Presentation/Bridge/MapRecipe.cs	SpeedMmPerSec=6000	1	debt	H3 speed in code
 Presentation/Bridge/Showcase.cs	12f	1	debt	
