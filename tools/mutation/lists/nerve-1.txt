@@ -169,9 +169,9 @@ filter = FullyQualifiedName~Nerve1
 expect = WarCore.Tests.Nerve1.Nerve1ContentTests.N12_ASelectorCopyKeepsTheStatusAndTheClamp
 note = C12 a selector copy drops the status and the clamp
 original:
-|            stances.Length == 0 ? null : stances, Status, SpreadDragFloorPermille, SpreadDragCeilPermille);
+|            stances.Length == 0 ? null : stances, VerticalSpread, Status, SpreadDragFloorPermille, SpreadDragCeilPermille);
 replacement:
-|            stances.Length == 0 ? null : stances);
+|            stances.Length == 0 ? null : stances, VerticalSpread);
 
 [nv-no-clamp]
 file = Assets/WarCore/Combat/CombatSystem.Nerve.cs
