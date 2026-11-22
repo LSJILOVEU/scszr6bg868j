@@ -280,13 +280,16 @@ namespace WarCore.Tests.Scale
         private static readonly string[] DrawnParts =
             { "stand top", "stand eye", "stand muzzle", "crouch top", "crouch eye", "crouch muzzle", "prone top", "prone eye", "prone muzzle" };
 
-        // B11: the farthest an enemy may be from a straight-down mouse ray and still be snapped to, found by bisection.
+        // B11: the farthest an enemy may be from a straight-down mouse ray and still be snapped to, found by bisection, with the
+        // AIM-2 reach a pack's "pick" section gives (here the least one, 2 x the body radius: 0.5 m for the reference body, the
+        // old fixed reach). A pack without the section keeps the fixed AimPick.SnapRadius (see the report).
         private static long[] PickReach(ProbeBody b)
         {
             BodySizes sizes = BodySizes.For(ProbeBodies.DirectPack(b));
+            var reach = new PickReach(PickRules.MinRadiusPermille, PickRules.MinHeightPermille);
             var shown = new FrameView(1, new[] { new ViewEntity(1, 0, 2f, 0f, 4.5f, team: 1), new ViewEntity(2, 0, 9f, 0f, 4.5f, team: 2) });
             float above = sizes.StandingHeight + 10f;
-            Func<double, bool> snaps = d => AimPick.PickRay((float)(9.0 + d), above, 4.5f, 0f, -1f, 0f, 0f, null, shown, 1, sizes: sizes).Kind == AimKind.Unit;
+            Func<double, bool> snaps = d => AimPick.PickRay((float)(9.0 + d), above, 4.5f, 0f, -1f, 0f, 0f, null, shown, 1, sizes: sizes, reach: reach).Kind == AimKind.Unit;
             double low = 0, high = 10;
             if (!snaps(low) || snaps(high)) throw new InvalidOperationException("no reach to bisect");
             for (int i = 0; i < 60; i++)
@@ -337,7 +340,7 @@ namespace WarCore.Tests.Scale
                 DrawnParts, FloatTolerance, DrawnHeights),
             new Probe("B10", "H1", "drawn radius", "API BodySizes.Radius", "Presentation/Bridge/Features/BodySizes.cs:25,54; cap Sim/BodyRadius.cs:13",
                 One, FloatTolerance, b => new[] { Raw(BodySizes.For(ProbeBodies.DirectPack(b)).Radius) }),
-            new Probe("B11", "H1", "mouse snap reach", "behaviour AimPick.PickRay", "Presentation/Camera/AimPick.cs:34",
+            new Probe("B11", "H1", "mouse snap reach", "behaviour AimPick.PickRay with a PickReach", "Presentation/Camera/PickReach.cs; cap Sim/BodyRadius.cs:13",
                 One, FloatTolerance, PickReach),
             new Probe("B12", "M1", "see-through ring height (standing eye)", "constant LayerCut.MinSeeHeight", "Presentation/Camera/LayerCut.cs:47",
                 One, FloatTolerance, b => new[] { Raw(LayerCut.MinSeeHeight) }, b => new[] { b.Body.Eye.Raw }),

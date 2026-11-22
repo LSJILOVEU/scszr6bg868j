@@ -4,14 +4,13 @@
 # A change that makes a probe follow deletes its row and lowers gaps-max in the same pull request; a probe measured by a
 # constant changes its measuring point there too. A new row needs an answer in review: why the body stopped being followed.
 # Regenerate the rows with BodyProbeTests.PrintReport (manual).
-gaps-max	24
+gaps-max	23
 B01	giant	H2	the reader caps the height at a headroom no layer can raise
 B03	giant	H1	0.2500 m, want 0.4286
 B04	giant	H1	0.2500 m, want 0.4286
 B05	giant	H1	0.2500 m, want 0.4286
 B10	giant	H1	0.2500 m, want 0.4286
 B11	giant	H1	0.5000 m, want 0.8571
-B11	tiny	H1	0.5000 m, want 0.1429
 B12	giant	M1	1.5000 m, want 2.5714
 B12	tiny	M1	1.5000 m, want 0.4286
 B14	giant	M2	1.0000 m, want 1.7143
