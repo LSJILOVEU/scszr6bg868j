@@ -111,10 +111,13 @@ namespace WarCore.Tests
         [Test]
         public void Content_TheSharesFitAndUntilIsAtLeastBelow()
         {
-            Assert.That(Read(Json(Seven, Rules(400, 600, 0, 0))).Temper.Value.SteadyPermille, Is.EqualTo(600));
+            SquadRules met = default;
+            Assert.DoesNotThrow(() => met = Read(Json(Seven, Rules(400, 600, 0, 0))));
+            Assert.That(met.Temper.Value.SteadyPermille, Is.EqualTo(600));
             var e = Assert.Throws<ContentException>(() => Pack(Json(Seven, Rules(400, 601, 0, 0))));
             Assert.That(e.Message, Is.EqualTo(Head + "field 'squadSteadyPermille': squadRashPermille + squadSteadyPermille must be at most 1000, got 1001"));
-            Assert.That(Read(Json(Seven, null, Rules(500, 500, 1))).Regroup.Value.UntilPermille, Is.EqualTo(500));
+            Assert.DoesNotThrow(() => met = Read(Json(Seven, null, Rules(500, 500, 1))));
+            Assert.That(met.Regroup.Value.UntilPermille, Is.EqualTo(500));
             e = Assert.Throws<ContentException>(() => Pack(Json(Seven, null, Rules(500, 499, 1))));
             Assert.That(e.Message, Is.EqualTo(Head + "field 'squadRegroupUntilPermille': must be at least squadRegroupBelowPermille (500)"));
         }
@@ -148,7 +151,7 @@ namespace WarCore.Tests
             Assert.DoesNotThrow(() => new SquadTemper(0, 1000, 0, 0));
             Assert.DoesNotThrow(() => new SquadTemper(400, 600, 0, 0));
             Assert.Throws<ArgumentOutOfRangeException>(() => new SquadTemper(-1, 0, 0, 0));
-            Assert.Throws<ArgumentOutOfRangeException>(() => new SquadTemper(1001, 0, 0, 0));
+            Assert.That(Assert.Throws<ArgumentOutOfRangeException>(() => new SquadTemper(1001, 0, 0, 0)).ParamName, Is.EqualTo("rashPermille"));
             Assert.Throws<ArgumentOutOfRangeException>(() => new SquadTemper(0, -1, 0, 0));
             Assert.Throws<ArgumentOutOfRangeException>(() => new SquadTemper(400, 601, 0, 0));
             Assert.Throws<ArgumentOutOfRangeException>(() => new SquadTemper(0, 0, -1, 0));
@@ -157,7 +160,7 @@ namespace WarCore.Tests
             Assert.DoesNotThrow(() => new SquadRegroup(1, 1, 1));
             Assert.DoesNotThrow(() => new SquadRegroup(1000, 1000, 1));
             Assert.Throws<ArgumentOutOfRangeException>(() => new SquadRegroup(0, 1, 1));
-            Assert.Throws<ArgumentOutOfRangeException>(() => new SquadRegroup(1001, 1001, 1));
+            Assert.That(Assert.Throws<ArgumentOutOfRangeException>(() => new SquadRegroup(1001, 1001, 1)).ParamName, Is.EqualTo("belowPermille"));
             Assert.Throws<ArgumentOutOfRangeException>(() => new SquadRegroup(2, 1, 1));
             Assert.Throws<ArgumentOutOfRangeException>(() => new SquadRegroup(1, 1001, 1));
             Assert.Throws<ArgumentOutOfRangeException>(() => new SquadRegroup(1, 1, 0));

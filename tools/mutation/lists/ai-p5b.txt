@@ -919,7 +919,8 @@ replacement:
 [ai-p5b-pick-regroup-off]
 file = Assets/WarCore/Battle/Ai/SquadParts.cs
 filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
-expect = WarCore.Tests.AiP5bTests.WithoutAMarkOrAPointOfItsOwnASquadAsksTheInnerPart
+expect = WarCore.Tests.AiP5bTests.ARegroupingSquadGoesToItsTeamsPointNearestItsLeader
+expect = WarCore.Tests.AiP5bTests.ABeatenSquadGoesBackFillsUpAndSetsOutAgain
 note = the dispatch wrapper never sends a squad back
 original:
 | if (squads.regrouping && squads.TryRally(in unit, field, out int point)) return point;
@@ -943,7 +944,7 @@ replacement:
 [ai-p5b-wire-engage-tempers-only]
 file = Assets/WarCore/Content/Data/ContentPolicies.cs
 filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
-expect = WarCore.Tests.AiP5bTests.RegroupingAloneWrapsTheEngagePartToo
+expect = WarCore.Tests.AiP5bTests.World_EachOfTheSevenNewNumbersIsInThePolicy
 note = the engage part is not wrapped with regrouping alone
 original:
 | if (squads.Rules.Temper != null || squads.Rules.Regroup != null) engage
@@ -1115,7 +1116,6 @@ replacement:
 file = Assets/WarCore/Content/Data/Sections/AiSection.cs
 filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndRestore
 expect = WarCore.Tests.AiP5bTests.Content_TheSharesFitAndUntilIsAtLeastBelow
-expect = WarCore.Tests.AiP5bTests.WithTheTwoSharesMeetingNoSquadIsNormal
 note = two shares that add up to 1000 are refused
 original:
 | if (rash + steady > 1000)
