@@ -511,9 +511,9 @@ filter = FullyQualifiedName~Scale2b
 expect = WarCore.Tests.Scale2bSectionTests.SC3_ShippedNumbersAndEvenPadding
 note = the section is not in the table
 original:
-| new StatsSection(), new ScaleSection() }
+| new PickSection(), new ScaleSection() }
 replacement:
-| new StatsSection() }
+| new PickSection() }
 
 [scale2b-of-null]
 file = Assets/WarCore/Content/ScaleRules.cs
