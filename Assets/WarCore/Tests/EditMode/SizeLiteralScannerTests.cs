@@ -52,10 +52,13 @@ namespace WarCore.Tests
         [Test]
         public void R1_DigitSeparatorsAndLeadingDotsAreFound()
         {
-            Assert.That(Tokens("float a = 1_500f; double b = 2_000.25; float c = .25f; float d = 1__5f;"),
-                Is.EqualTo(new[] { "1500f", "2000.25", ".25f", "15f" }));
-            Assert.That(() => Tokens("float m = mm / 1_000f;"), Throws.Nothing);
-            Assert.That(Tokens("float m = mm / 1_000f;"), Is.Empty);
+            const string Reals = "float a = 1_500f; double b = 2_000.25; float c = .25f; float d = 1__5f;";
+            const string Exempt = "float m = mm / 1_000f;";
+            // Checked for throwing first, so a separator left in a token fails here as an assertion.
+            Assert.That(() => Tokens(Reals), Throws.Nothing);
+            Assert.That(() => Tokens(Exempt), Throws.Nothing);
+            Assert.That(Tokens(Reals), Is.EqualTo(new[] { "1500f", "2000.25", ".25f", "15f" }));
+            Assert.That(Tokens(Exempt), Is.Empty);
             Assert.That(Tokens("var r = arr[1..5]; int _2f = x;"), Is.Empty);
         }
 
