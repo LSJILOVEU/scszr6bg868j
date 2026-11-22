@@ -544,9 +544,9 @@ filter = FullyQualifiedName~Down1
 expect = WarCore.Tests.Down1.Down1ContentTests.D1_WithSelector
 note = WithSelector drops downed
 original:
-|             stances.Length == 0 ? null : stances, Downed);
+|             stances.Length == 0 ? null : stances, VerticalSpread, Downed);
 replacement:
-|             stances.Length == 0 ? null : stances, null);
+|             stances.Length == 0 ? null : stances, VerticalSpread, null);
 
 [default-off]
 file = Assets/WarCore/Presentation/Bridge/Features/DownedFeature.cs
@@ -678,3 +678,23 @@ original:
 replacement:
 |                 int stun = r.Has("stunTicks") ? r.Int("stunTicks", 0, BlastSpec.MaxStunTicks + 1) : 0;
 
+
+[dn-snap-targetable]
+file = Assets/WarCore/Combat/CombatSystem.Vertical.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1SnapTests.
+note = the player's snap passes over a casualty the AI may not pick
+original:
+|                 if (!IsEnemy(shooter, unit) || !Entities.TryGet(positions, unit, out Position position)) continue;
+replacement:
+|                 if (!IsEnemy(shooter, unit) || !Targetable(unit) || !Entities.TryGet(positions, unit, out Position position)) continue;
+
+[dn-snap-downed]
+file = Assets/WarCore/Combat/CombatSystem.Vertical.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1SnapTests.
+note = the player's snap passes over a downed enemy
+original:
+|                 if (!IsEnemy(shooter, unit) || !Entities.TryGet(positions, unit, out Position position)) continue;
+replacement:
+|                 if (!IsEnemy(shooter, unit) || IsDowned(unit) || !Entities.TryGet(positions, unit, out Position position)) continue;
