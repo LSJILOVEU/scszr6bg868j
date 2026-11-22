@@ -353,14 +353,14 @@ replacement:
 |                 int point = dispatch.Pick(in thinker, field);
 
 [ai-s3-36-refuge-enemy-point]
-file = Assets/WarCore/Battle/Ai/AssaultRolesPlacement.cs
+file = Assets/WarCore/Battle/SimpleAiSystem.cs
 filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Broken_FallsBackToTheNearestOwnPointAndReturns
 expect = WarCore.Tests.AiS3Tests.Broken_FallsBackToTheNearestOwnPointAndReturns
 note = the refuge is a point the team does not own
 original:
-|                 if (field.Owner(i) != team) continue;
+| if (field.Owner(i) != team || !field.TrySpan(here, layer, i, out SimWide distance)) continue;
 replacement:
-|                 if (field.Owner(i) == team) continue;
+| if (field.Owner(i) == team || !field.TrySpan(here, layer, i, out SimWide distance)) continue;
 
 [ai-s3-37-refuge-no-base]
 file = Assets/WarCore/Battle/SimpleAiSystem.cs
