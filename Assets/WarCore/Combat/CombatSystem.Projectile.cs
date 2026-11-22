@@ -93,9 +93,7 @@ namespace WarCore.Combat
             int roll = sim.Rng.NextInt(stream, 65536);
             long damage = pack.Resolver.DamageRaw(in weapon, falloff, roll, pack.MaxHealthRaw);
             StableId victim = Entities.StableOf(target);
-            if (Shielded(victim, tick)) damage = 0;
-            c.Damage(sim.GameplayTarget(victim), new GameplayApplyKey(launcher, (ulong)launchTick, 0, launcher, (ulong)launchTick, ProjectileActionOrdinal), 1, damage);
-            return damage;
+            return SubmitDamage(c, victim, new GameplayApplyKey(launcher, (ulong)launchTick, 0, launcher, (ulong)launchTick, ProjectileActionOrdinal), damage, tick);
         }
 
         internal const uint ProjectileActionOrdinal = 2;

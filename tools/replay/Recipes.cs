@@ -81,6 +81,15 @@ namespace WarCore.Replay
                 () => Lanes(Layer("replay-lanes-allon-squads", LanesBake().PackId, WithSquads(AllOn(ScatterPart)))), () => LanesBake().WcMapBytes, P1RingMm),
             ["lanes-allon-roles-squads"] = new Entry("Three-lane map, all finished AI on (assault-roles) + squads",
                 () => Lanes(Layer("replay-lanes-allon-roles-squads", LanesBake().PackId, WithSquads(AllOn(RolesPart)))), () => LanesBake().WcMapBytes, P1RingMm),
+            // RESPAWN-AI-2 (PLACEHOLDER value: 90 ticks, 3 s): the three-lane map and default AI with match.reentryTicks, so a
+            // reserve enters 3 s after each death instead of one every 90 ticks; only the pack line is swapped. Each team has
+            // the map's 50 reserves and no more.
+            ["lanes-reentry"] = new Entry("Three-lane map, default AI, a reserve enters 3 s after each death", LanesReentry, () => LanesReentryBake().WcMapBytes),
+            // AI-P5b (PLACEHOLDER values): tempers and regrouping on top of the squad setups.
+            ["lanes-allon-squads-temper"] = new Entry("Three-lane map, all finished AI on (scatter) + squads with tempers and regrouping",
+                () => Lanes(Layer("replay-lanes-allon-squads-temper", LanesBake().PackId, WithTempers(WithSquads(AllOn(ScatterPart))))), () => LanesBake().WcMapBytes, P1RingMm),
+            ["lanes-allon-roles-squads-temper"] = new Entry("Three-lane map, all finished AI on (assault-roles) + squads with tempers and regrouping",
+                () => Lanes(Layer("replay-lanes-allon-roles-squads-temper", LanesBake().PackId, WithTempers(WithSquads(AllOn(RolesPart))))), () => LanesBake().WcMapBytes, P1RingMm),
             // ANC-2: ancient-field layer (spear), 60 against 60 on a flat 96 x 64 m field; the same layout as Tests/MapContent/Ancient.
             ["ancient-field"] = new Entry("Ancient field, 60 v 60 with spears", AncientField, AncientFieldMap),
             // AI-M1: the ancient layer on the same field, shields in front and swords behind, as it was and with the
@@ -97,11 +106,18 @@ namespace WarCore.Replay
             ["stance-wall"] = new Entry("1 m wall, team 2 crouches at 60 and stands at 240", StanceDemo.Recipe, StanceDemo.MapBytes),
             // VSPREAD-1: three 30 m lanes, standing, crouched and prone targets, a fixed 2000 millidegree gun (VspreadDemo).
             ["vspread-range"] = new Entry("rwr-vspread, three 30 m lanes: standing, crouched, prone targets", VspreadDemo.Recipe, VspreadDemo.MapBytes),
+            // NERVE-1: three shooters 30 m from unarmed targets; from tick 150 one is pinned and one broken by a script (NerveDemo).
+            ["nerve-fire"] = new Entry("rwr-nerve, shooters calm / pinned / broken from tick 150", NerveDemo.Recipe, NerveDemo.MapBytes),
+            // DOWN-1: a scripted rwr.frag of rwr-down on tick 30 downs A and stuns B 4 m away; all three are sent 3 m north (DownDemo).
+            ["down-crawl"] = new Entry("rwr-down: one man downed and crawling, one stunned, one untouched", DownDemo.Recipe, DownDemo.MapBytes),
         };
 
         private const string SquadAi = "\"squadMinSize\": 4, \"squadMaxSize\": 9, \"squadSkirmisherPermille\": 300, \"squadRecruitRadiusMm\": 30000, "
             + "\"squadFormTicks\": 15, \"squadSpreadMinMm\": 1500, \"squadSpreadMaxMm\": 6000";
         private static string WithSquads(string ai) => ai.Substring(0, ai.Length - 2) + ", " + SquadAi + " }";
+        private const string TemperAi = "\"squadRashPermille\": 300, \"squadSteadyPermille\": 250, \"squadShakenPermille\": 600, \"squadRashMinRangeMm\": 8000, "
+            + "\"squadRegroupBelowPermille\": 500, \"squadRegroupUntilPermille\": 750, \"squadRegroupMaxTicks\": 1200";
+        private static string WithTempers(string ai) => ai.Substring(0, ai.Length - 2) + ", " + TemperAi + " }";
         private const string PlaytestFields = "\"failedSlotTicks\": 90, \"targetMemoryTicks\": 300, \"searchTicks\": 90, \"reactionTicks\": 15, "
             + "\"senseTicks\": 6, \"burstShots\": 3, \"burstPauseTicks\": 30, \"suppressTicks\": 90, \"meleeChaseRange\": 12, "
             + "\"holdSharePermille\": 300, \"attackSpreadPoints\": 3";
@@ -145,6 +161,23 @@ namespace WarCore.Replay
             }
             return MapBake.Run(System.Text.Encoding.UTF8.GetBytes(text));
         }
+        // The three-lane map with its pack line swapped for a layer that exists only here: rwr-m6 with match.reentryTicks.
+        private const string ReentryPack = "replay-lanes-reentry";
+        public const int ReentryTicks = 90;
+        private static MapBakeResult LanesReentryBake()
+        {
+            string text = File.ReadAllText(LanesPath);
+            if (text.IndexOf(BakedPack, StringComparison.Ordinal) < 0) throw new InvalidOperationException("The three-lane map no longer says " + BakedPack + ".");
+            text = text.Replace(BakedPack, "\"pack\": \"" + ReentryPack + "\"");
+            if (LanesSeed != null)
+            {
+                if (text.IndexOf(BakedSeed, StringComparison.Ordinal) < 0) throw new InvalidOperationException("The three-lane map no longer says " + BakedSeed + ".");
+                text = text.Replace(BakedSeed, "\"seed\": " + LanesSeed.Value);
+            }
+            return MapBake.Run(System.Text.Encoding.UTF8.GetBytes(text));
+        }
+        private static WorldRecipe LanesReentry() => MapRecipe.From(LanesReentryBake(), ContentLoader.Load(new OneLayer(ReentryPack,
+            "{ \"id\": \"" + ReentryPack + "\", \"extends\": \"rwr-m6\", \"match\": { \"reentryTicks\": " + ReentryTicks + " } }"), ReentryPack));
         private static WorldRecipe LanesBody()
         {
             MapBakeResult bake = LanesBodyBake();

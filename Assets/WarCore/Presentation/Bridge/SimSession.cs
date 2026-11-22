@@ -66,7 +66,7 @@ namespace WarCore.Presentation
     /// requeue it for the next tick, then reload later inputs and commands. Unconsumed
     /// scheduled inputs are not in PlayerLog; the caller must retain them separately.
     /// </summary>
-    public sealed class SimSession
+    public sealed partial class SimSession
     {
         public const int MaxTicksPerFrame = 5;
         public const int TickRate = SimClock.TickRate;
@@ -77,7 +77,7 @@ namespace WarCore.Presentation
         private readonly Squads squads;
         // Stable identity -> spawn key, built on first use: the view names a squad by its leader's spawn key.
         private System.Collections.Generic.Dictionary<ulong, ulong> spawnKeys;
-        private readonly CombatPack combatPack;
+        private readonly CombatPack combatPack; internal CombatPack CombatPackForView => combatPack; // SCALE-2a, read by BodySizes.Of only
         private readonly IControlTarget controlled;
         private readonly StableId[] units;
         private readonly MatchPack matchPack;
@@ -444,18 +444,6 @@ namespace WarCore.Presentation
             }
         }
 
-        // The spawn key of the unit with this stable identity; 0 for 0 (no squad) and for an identity that is no unit's.
-        private ulong BandKey(ulong leader)
-        {
-            if (leader == 0) return 0;
-            if (spawnKeys == null)
-            {
-                spawnKeys = new System.Collections.Generic.Dictionary<ulong, ulong>(units.Length);
-                for (int i = 0; i < units.Length; i++) spawnKeys[units[i].Value] = spawns[i].Key;
-            }
-            return spawnKeys.TryGetValue(leader, out ulong key) ? key : 0;
-        }
-
         private FrameView Capture()
         {
             var views = new List<ViewEntity>(units.Length);
@@ -472,12 +460,15 @@ namespace WarCore.Presentation
                 }
                 if (alive) { if (team == 1) aliveOne++; else if (team == 2) aliveTwo++; }
                 SimVec3 point = position.Value;
+                bool banded = squads != null && alive;
+                StableId stable = banded ? sim.Entities.StableOf(unit) : default;
                 views.Add(new ViewEntity(spawns[i].Key, spawns[i].Archetype,
                     (float)point.X.Raw / SimFix.Scale, (float)point.Y.Raw / SimFix.Scale,
                     (float)point.Z.Raw / SimFix.Scale, spawns[i].Squad,
                     team, alive, pressure != null && alive ? (int)pressure.Level(sim.Entities.StableOf(unit)) : 0,
                     layers == null ? 0 : layers.LayerOf(unit),
-                    squads != null && alive ? BandKey(squads.SquadOf(sim.Entities.StableOf(unit))) : 0, Stances == null ? 0 : Stances.StanceOf(unit).Level));
+                    banded ? BandKey(squads.SquadOf(stable)) : 0, Stances == null ? 0 : Stances.StanceOf(unit).Level,
+                    banded ? (int)squads.MoodOf(stable) : 0, banded ? (int)squads.RegroupOf(stable) : 0));
             }
             var fires = new ViewFire[combat == null ? 0 : combat.Fires.Length];
             for (int i = 0; i < fires.Length; i++)
@@ -487,8 +478,8 @@ namespace WarCore.Presentation
             for (int i = 0; i < blastViews.Length; i++)
             {
                 BlastRecord record = blasts.Records[i];
-                blastViews[i] = new ViewBlast((float)record.Point.X.Raw / SimFix.Scale, (float)record.Point.Y.Raw / SimFix.Scale,
-                    (float)record.Point.Z.Raw / SimFix.Scale, (float)blasts.Rules.Kinds[record.Blast].OuterRaw / SimFix.Scale, record.Team);
+                blastViews[i] = new ViewBlast((float)record.Point.X.Raw / SimFix.Scale, (float)record.Point.Y.Raw / SimFix.Scale, (float)record.Point.Z.Raw / SimFix.Scale,
+                    (float)blasts.Rules.Kinds[record.Blast].InnerRaw / SimFix.Scale, (float)blasts.Rules.Kinds[record.Blast].OuterRaw / SimFix.Scale, record.Team);
             }
             var points = new ViewPoint[capture == null ? 0 : capture.Points.Length];
             for (int i = 0; i < points.Length; i++)
@@ -521,7 +512,7 @@ namespace WarCore.Presentation
         public static ViewFire ToView(in FireRecord fire) => new ViewFire(
             (float)fire.Origin.X.Raw / SimFix.Scale, (float)fire.Origin.Z.Raw / SimFix.Scale,
             (float)fire.End.X.Raw / SimFix.Scale, (float)fire.End.Z.Raw / SimFix.Scale,
-            fire.ShooterTeam, fire.DamageRaw > 0);
+            fire.ShooterTeam, fire.DamageRaw > 0, (float)fire.Origin.Y.Raw / SimFix.Scale, (float)fire.End.Y.Raw / SimFix.Scale);
 
         // A4: an aim point with its own height. X and Z convert and check exactly as in Target; Y = yMm / 1000 m.
         internal static SimVec3 TargetAt(long xMm, long yMm, long zMm)

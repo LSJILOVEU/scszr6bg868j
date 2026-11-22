@@ -15,15 +15,20 @@ namespace WarCore.Content
         public readonly int RespawnTicks, RespawnGuardTicks;
         // RESPAWN-AI-1: match.reinforceSkipContested (optional, default false).
         public readonly bool ReinforceSkipContested;
+        // RESPAWN-AI-2: match.reentryTicks (optional, default 0 = off); match.reserveCount and match.reserveType (optional;
+        // the type is null without a positive count).
+        public readonly int ReentryTicks, ReserveCount;
+        public readonly string ReserveType;
 
         public MatchRules(int num, int den, bool strict, int captureTicks, InterruptMode interrupt, int decayPerTick,
             int intervalTicks, int thinkInterval, int maxTicks, SimFix sight, int gridColumns, int gridRows, SimFix gridSpacing,
-            int respawnTicks = 0, int respawnGuardTicks = 0, bool reinforceSkipContested = false)
+            int respawnTicks = 0, int respawnGuardTicks = 0, bool reinforceSkipContested = false, int reentryTicks = 0, int reserveCount = 0, string reserveType = null)
         {
             CaptureAdvantageNum = num; CaptureAdvantageDen = den; CaptureStrict = strict; CaptureTicks = captureTicks;
             Interrupt = interrupt; DecayPerTick = decayPerTick; IntervalTicks = intervalTicks; ThinkInterval = thinkInterval;
             MaxTicks = maxTicks; Sight = sight; GridColumns = gridColumns; GridRows = gridRows; GridSpacing = gridSpacing;
             RespawnTicks = respawnTicks; RespawnGuardTicks = respawnGuardTicks; ReinforceSkipContested = reinforceSkipContested;
+            ReentryTicks = reentryTicks; ReserveCount = reserveCount; ReserveType = reserveCount > 0 ? reserveType : null;
         }
     }
 
@@ -53,6 +58,8 @@ namespace WarCore.Content
         private readonly object[] sections;
         // ML-3: the combat section's optional body; null keeps the legacy geometry.
         public CombatBody? Body { get; }
+        // HC-1: the body's radius, the one every unit of this pack is placed and walked with (the default without a body).
+        public SimFix UnitRadius => Body.HasValue ? Body.Value.Radius : BodyRadius.Default;
         // PROJ-1: projectile speed per weapon in mm/s (0 = instant); passed to the combat pack as is.
         private readonly int[] projectileSpeeds;
         // STANCE-1: the combat section's stances, or null; passed to the combat pack as is.
@@ -152,10 +159,12 @@ namespace WarCore.Content
             SimFix sight = selectorId == ContentPolicies.SightLimitedNearest ? Match.Sight : default;
             bool effective = friendlyFireLocked ? friendlyFire : requestedFriendlyFire ?? friendlyFire;
             CombatAim aim = SectionOrNull<CombatAim>();
+            StatClamps stats = SectionOrNull<StatClamps>();
             return new CombatPack(weapons, ContentPolicies.Resolver(resolverId), ContentPolicies.Selector(selectorId, sight), maxHealthRaw,
                 effective, friendlyFireLocked, allyCheckMissRaw, allyHoldMilli, melee.Length == 0 ? null : melee, block.Length == 0 ? null : block, Body,
                 projectileSpeeds.Length == 0 ? null : projectileSpeeds, aim?.MoveSpread, aim != null && aim.ManualReload, SectionOrNull<BlastRules>(),
-                stances, SectionOrNull<VerticalSpread>());
+                stances, SectionOrNull<VerticalSpread>(), SectionOrNull<CombatStatus>(), stats?.FloorOf(StatClamps.Spread) ?? 0,
+                stats?.CeilOf(StatClamps.Spread) ?? 0, SectionOrNull<DownedRules>());
         }
 
         // Control points and spawn anchors are map data and stay with the caller.
@@ -166,7 +175,7 @@ namespace WarCore.Content
             {
                 return new MatchPack(points, bases, m.CaptureAdvantageNum, m.CaptureAdvantageDen, m.CaptureStrict, m.CaptureTicks,
                     m.Interrupt, m.DecayPerTick, m.IntervalTicks, m.ThinkInterval, m.MaxTicks, m.Sight, m.GridColumns, m.GridRows, m.GridSpacing,
-                    m.RespawnTicks, m.RespawnGuardTicks, ruleIds, m.ReinforceSkipContested);
+                    m.RespawnTicks, m.RespawnGuardTicks, ruleIds, m.ReinforceSkipContested, m.ReentryTicks, m.ReserveCount, m.ReserveType);
             }
             catch (ArgumentException e)
             {

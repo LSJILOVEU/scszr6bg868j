@@ -41,7 +41,7 @@ namespace WarCore.Control
             foreach (EntityId unit in stage.Capture())
             {
                 if (!combat.Entities.TryGet(combatants, unit, out Combatant candidate) || candidate.Team != team
-                    || !combat.Entities.TryGet(positions, unit, out Position point) || combat.IsDead(unit)) continue;
+                    || !combat.Entities.TryGet(positions, unit, out Position point) || combat.IsDead(unit) || combat.IsDowned(unit)) continue;
                 SimWide distance = CombatSystem.Horizontal(point.Value - origin).LengthSquared;
                 StableId id = combat.Entities.StableOf(unit);
                 if (!found || distance < best || (distance == best && id.Value < nearestId.Value))

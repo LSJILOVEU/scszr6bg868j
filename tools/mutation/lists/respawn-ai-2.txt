@@ -1,0 +1,824 @@
+# RESPAWN-AI-2: reinforcement by debt (match.reentryTicks) and reserves made from the content pack (match.reserveCount,
+# match.reserveType). Test classes are named RespawnAi2*; the whole-match class is left out of the filter (slow, reports only).
+
+[respawn-ai-2-01-due-one-late]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.A2_
+expect = WarCore.Tests.RespawnAi2Tests.A3_
+note = a unit is due one tick late
+original:
+| if (tick >= sim.GameplayLife(id).EnteredTick + pack.ReentryTicks) due[unit.Team - 1]++;
+replacement:
+| if (tick > sim.GameplayLife(id).EnteredTick + pack.ReentryTicks) due[unit.Team - 1]++;
+
+[respawn-ai-2-02-due-one-early]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.A2_
+note = a unit is due one tick early
+original:
+| if (tick >= sim.GameplayLife(id).EnteredTick + pack.ReentryTicks) due[unit.Team - 1]++;
+replacement:
+| if (tick + 1 >= sim.GameplayLife(id).EnteredTick + pack.ReentryTicks) due[unit.Team - 1]++;
+
+[respawn-ai-2-03-counts-the-living]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.A4_
+note = living units are counted, not dead ones
+original:
+| || !combat.IsDead(entity)) continue;
+replacement:
+| || combat.IsDead(entity)) continue;
+
+[respawn-ai-2-04-counts-the-downed]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2DownedTests.A7_
+note = a downed unit is counted
+original:
+| || !combat.IsDead(entity)) continue;
+replacement:
+| || sim.GameplayLife(combat.Entities.StableOf(entity)).State == GameplayLifeState.Active) continue;
+
+[respawn-ai-2-05-counts-the-players-body]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.A8_
+note = the body the player controls is counted
+original:
+|                 if (id.Equals(player)) continue;
+|
+replacement:
+
+[respawn-ai-2-06-two-a-step]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.A3_
+note = a team deploys twice in one step
+original:
+|             for (int team = 1; team <= pack.TeamCount; team++)
+|             {
+|                 int index = team - 1;
+replacement:
+|             for (int pass = 0; pass < 2; pass++) for (int team = 1; team <= pack.TeamCount; team++)
+|             {
+|                 int index = team - 1;
+
+[respawn-ai-2-07-failure-counted]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.A6_
+note = a failed placement counts as entered
+original:
+| if (!deployer.TryDeploy(reserve, point, entry.Layer)) continue;
+replacement:
+| if (!deployer.TryDeploy(reserve, point, entry.Layer)) { if (ByDebt) entered[index]++; continue; }
+
+[respawn-ai-2-08-deploys-when-owed-zero]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.A4_
+expect = WarCore.Tests.RespawnAi2Tests.A2_
+note = a team that is owed nothing deploys
+original:
+| if (due[index] - entered[index] <= 0) continue;
+replacement:
+| if (due[index] - entered[index] < 0) continue;
+
+[respawn-ai-2-09-deploys-when-owed-negative]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.A8_ATakeoverBeforeTheBodyIsDue
+note = a team with a negative debt deploys
+original:
+| if (due[index] - entered[index] <= 0) continue;
+replacement:
+| if (due[index] - entered[index] == 0) continue;
+
+[respawn-ai-2-10-still-by-the-clock]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.A4_
+expect = WarCore.Tests.RespawnAi2Tests.A2_
+note = with the switch the clock still deploys
+original:
+|                 if (ByDebt)
+|                 {
+|                     if (due
+replacement:
+|                 if (false)
+|                 {
+|                     if (due
+
+[respawn-ai-2-11-attempt-is-entered]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.A5_TheAttemptIsNotTheEnteredCount
+note = the attempt number is the entered count
+original:
+| attempt = successes[index];
+replacement:
+| attempt = entered[index];
+
+[respawn-ai-2-12-entered-not-saved]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.A10_
+note = entered is not saved
+original:
+| writer.Int64(entered[i]); writer.Int64(successes[i]);
+replacement:
+| writer.Int64(0); writer.Int64(successes[i]);
+
+[respawn-ai-2-13-successes-not-saved]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.A10_
+note = successes are not saved by debt
+original:
+| writer.Int64(entered[i]); writer.Int64(successes[i]);
+replacement:
+| writer.Int64(entered[i]); writer.Int64(0);
+
+[respawn-ai-2-14-entered-not-hashed]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.A10_
+note = entered is not hashed
+original:
+| hash.Add(entered[i]); hash.Add(successes[i]);
+replacement:
+| hash.Add(successes[i]);
+
+[respawn-ai-2-15-successes-not-hashed]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.A10_
+note = successes are not hashed by debt
+original:
+| hash.Add(entered[i]); hash.Add(successes[i]);
+replacement:
+| hash.Add(entered[i]);
+
+[respawn-ai-2-16-entered-not-loaded]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.A10_
+note = entered is not loaded
+original:
+| entered[i] = reader.Int64(); successes[i] = reader.Int64();
+replacement:
+| reader.Int64(); successes[i] = reader.Int64();
+
+[respawn-ai-2-17-successes-not-loaded]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.A10_
+note = successes are not loaded by debt
+original:
+| entered[i] = reader.Int64(); successes[i] = reader.Int64();
+replacement:
+| entered[i] = reader.Int64(); reader.Int64();
+
+[respawn-ai-2-18-version-same-with-switch]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.A10_
+expect = WarCore.Tests.RespawnAi2Tests.A5_
+note = the state version does not change with the switch
+original:
+| + (ByDebt ? 4 : 0)
+replacement:
+| + (ByDebt ? 0 : 0)
+
+[respawn-ai-2-19-version-changed-without-switch]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2LockTests.
+expect = WarCore.Tests.RespawnAi2Tests.A1_
+note = the state version changes without the switch
+original:
+| + (ByDebt ? 4 : 0)
+replacement:
+| + (ByDebt ? 4 : 4)
+
+[respawn-ai-2-20-team-below-range-counted]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.A6_TheDeadOfNoTeamAreNotCounted
+note = a dead unit of team 0 is counted
+original:
+| unit.Team < 1 || unit.Team > pack.TeamCount
+replacement:
+| unit.Team > pack.TeamCount
+
+[respawn-ai-2-21-team-above-range-counted]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.A6_TheDeadOfNoTeamAreNotCounted
+note = a dead unit of a team above the count is counted
+original:
+| unit.Team < 1 || unit.Team > pack.TeamCount
+replacement:
+| unit.Team < 1
+
+[respawn-ai-2-22-zero-switches-the-path]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2LockTests.
+expect = WarCore.Tests.RespawnAi2Tests.A1_
+note = reentryTicks 0 also deploys by debt
+original:
+| public bool ByDebt => pack.ReentryTicks > 0;
+replacement:
+| public bool ByDebt => pack.ReentryTicks >= 0;
+
+[respawn-ai-2-23-due-not-cleared]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.A2_
+expect = WarCore.Tests.RespawnAi2Tests.A3_
+note = the due count piles up over steps
+original:
+|             Array.Clear(due, 0, due.Length);
+|             StableId player = default;
+replacement:
+|             StableId player = default;
+
+[respawn-ai-2-24-success-not-entered]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.A2_
+expect = WarCore.Tests.RespawnAi2Tests.A3_
+note = a deployment does not count as entered
+original:
+|                         if (ByDebt) entered[index]++;
+|
+replacement:
+
+[respawn-ai-2-25-takeover-without-switch]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.A1_ZeroIsLeftOut_AndKeepsTheLockedRun
+note = a takeover is counted without the switch
+original:
+|             if (!ByDebt) throw new InvalidOperationException("Takeovers are counted only with match.reentryTicks.");
+|
+replacement:
+
+[respawn-ai-2-26-takeover-other-team]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.A8_
+note = a takeover is counted for the other team
+original:
+| entered[team - 1]++;
+replacement:
+| entered[pack.TeamCount - team]++;
+
+[respawn-ai-2-27-sim-not-required]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.TheSwitchNeedsItsParts
+note = the switch does not require the simulation
+original:
+|             if (pack.ReentryTicks > 0 && sim == null) throw new ArgumentNullException(nameof(sim), "match.reentryTicks reads death ticks from the simulation.");
+|
+replacement:
+
+[respawn-ai-2-28-due-kept-over-a-load]
+file = Assets/WarCore/Battle/ReinforceSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.A10_
+note = a load keeps the due count of the world before
+original:
+|                 Array.Clear(due, 0, due.Length);
+|                 return;
+replacement:
+|                 return;
+
+[respawn-ai-2-29-takeover-not-reported]
+file = Assets/WarCore/Battle/RespawnSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.A8_
+note = the player takeover is not reported
+original:
+|                 reentry?.NoteTakeover(team);
+|
+replacement:
+
+[respawn-ai-2-30-respawn-not-requiring-system]
+file = Assets/WarCore/Battle/RespawnSystem.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.TheSwitchNeedsItsParts
+note = the player respawn does not require the system
+original:
+|             if (pack.ReentryTicks > 0 && reentry == null) throw new ArgumentNullException(nameof(reentry), "match.reentryTicks counts takeovers in the reinforcement system.");
+|
+replacement:
+
+[respawn-ai-2-31-controlled-not-passed]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.A8_
+note = the system is not told which unit the player controls
+original:
+| controlled: reentry ? a.Controlled : null
+replacement:
+| controlled: null
+
+[respawn-ai-2-32-respawn-told-without-switch]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.A1_ZeroKeepsTheLockedPlayerRun
+expect = WarCore.Tests.RespawnAi2LockTests.RespawnAi2Lock_OldPlayerWorldIsUnchanged
+note = the respawn reports takeovers without the switch
+original:
+| a.Controlled, layers, reentry ? reinforce : null)
+replacement:
+| a.Controlled, layers, reinforce)
+
+[respawn-ai-2-33-reentry-negative-accepted]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.A1_ThePackBoundsReentryTicks
+note = a negative reentryTicks is accepted
+original:
+| if (reentryTicks < 0 || reentryTicks > MaxReentryTicks)
+replacement:
+| if (reentryTicks > MaxReentryTicks)
+
+[respawn-ai-2-34-reentry-too-large-accepted]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.A1_ThePackBoundsReentryTicks
+note = reentryTicks above the cap is accepted
+original:
+| if (reentryTicks < 0 || reentryTicks > MaxReentryTicks)
+replacement:
+| if (reentryTicks < 0)
+
+[respawn-ai-2-35-reentry-cap-moved]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.A1_MaxReentryTicksIs36000
+expect = WarCore.Tests.RespawnAi2ContentTests.A11_
+note = the cap is not 36000
+original:
+| MaxReentryTicks = 36000;
+replacement:
+| MaxReentryTicks = 36001;
+
+[respawn-ai-2-36-reentry-number-not-in-digest]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A11_ReentryTicksInTheDigest
+expect = WarCore.Tests.RespawnAi2Tests.A1_
+note = the number is not in the digest
+original:
+| if (reentryTicks > 0) { hash.Add("battle.pack.reentry.v1"); hash.Add(reentryTicks); }
+replacement:
+| if (reentryTicks > 0) { hash.Add("battle.pack.reentry.v1"); }
+
+[respawn-ai-2-37-reentry-tag-not-in-digest]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.A1_ZeroIsLeftOut_AndKeepsTheLockedRun
+note = the tag is not in the digest
+original:
+| if (reentryTicks > 0) { hash.Add("battle.pack.reentry.v1"); hash.Add(reentryTicks); }
+replacement:
+| if (reentryTicks > 0) { hash.Add(reentryTicks); }
+
+[respawn-ai-2-38-reentry-zero-in-digest]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2LockTests.
+expect = WarCore.Tests.RespawnAi2Tests.A1_
+note = reentryTicks 0 changes the digest
+original:
+| if (reentryTicks > 0) { hash.Add("battle.pack.reentry.v1"); hash.Add(reentryTicks); }
+replacement:
+| if (reentryTicks >= 0) { hash.Add("battle.pack.reentry.v1"); hash.Add(reentryTicks); }
+
+[respawn-ai-2-39-reserve-negative-accepted]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A16_ThePackBoundsTheReserve
+note = a negative reserveCount is accepted
+original:
+| if (reserveCount < 0 || reserveCount > MaxReserveCount)
+replacement:
+| if (reserveCount > MaxReserveCount)
+
+[respawn-ai-2-40-reserve-too-large-accepted]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A16_ThePackBoundsTheReserve
+note = reserveCount above the cap is accepted
+original:
+| if (reserveCount < 0 || reserveCount > MaxReserveCount)
+replacement:
+| if (reserveCount < 0)
+
+[respawn-ai-2-41-reserve-cap-moved]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A16_
+note = the cap is not 1024
+original:
+| MaxReserveCount = 1024;
+replacement:
+| MaxReserveCount = 1025;
+
+[respawn-ai-2-42-reserve-type-not-required]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A16_ThePackBoundsTheReserve
+note = a count without a type is accepted
+original:
+|             if (reserveCount > 0 && string.IsNullOrEmpty(reserveType)) throw new ArgumentException("A reserve count needs a reserve type.", nameof(reserveType));
+|
+replacement:
+
+[respawn-ai-2-43-reserve-type-kept-at-zero]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A16_ThePackBoundsTheReserve
+note = the pack keeps a type without a count
+original:
+| ReserveCount = reserveCount; ReserveType = reserveCount > 0 ? reserveType : null;
+replacement:
+| ReserveCount = reserveCount; ReserveType = reserveType;
+
+[respawn-ai-2-44-reserve-count-not-in-digest]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A16_CountAndTypeInTheDigest
+note = the count is not in the digest
+original:
+| if (reserveCount > 0) { hash.Add("battle.pack.reserve.v1"); hash.Add(reserveCount); hash.Add(reserveType); }
+replacement:
+| if (reserveCount > 0) { hash.Add("battle.pack.reserve.v1"); hash.Add(reserveType); }
+
+[respawn-ai-2-45-reserve-type-not-in-digest]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A16_CountAndTypeInTheDigest
+note = the type is not in the digest
+original:
+| if (reserveCount > 0) { hash.Add("battle.pack.reserve.v1"); hash.Add(reserveCount); hash.Add(reserveType); }
+replacement:
+| if (reserveCount > 0) { hash.Add("battle.pack.reserve.v1"); hash.Add(reserveCount); }
+
+[respawn-ai-2-46-reserve-tag-not-in-digest]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A16_CountAndTypeInTheDigest
+note = the tag is not in the digest
+original:
+| if (reserveCount > 0) { hash.Add("battle.pack.reserve.v1"); hash.Add(reserveCount); hash.Add(reserveType); }
+replacement:
+| if (reserveCount > 0) { hash.Add(reserveCount); hash.Add(reserveType); }
+
+[respawn-ai-2-47-reserve-zero-in-digest]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2LockTests.
+expect = WarCore.Tests.RespawnAi2ContentTests.A16_ZeroIsLeftOut
+note = reserveCount 0 changes the digest
+original:
+| if (reserveCount > 0) { hash.Add("battle.pack.reserve.v1"); hash.Add(reserveCount); hash.Add(reserveType); }
+replacement:
+| if (reserveCount >= 0) { hash.Add("battle.pack.reserve.v1"); hash.Add(reserveCount); hash.Add(reserveType); }
+
+[respawn-ai-2-48-built-pack-drops-reentry]
+file = Assets/WarCore/Content/Data/ContentPack.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A11_
+expect = WarCore.Tests.RespawnAi2ContentTests.A15_
+note = the built match pack loses reentryTicks
+original:
+| m.ReinforceSkipContested, m.ReentryTicks, m.ReserveCount, m.ReserveType);
+replacement:
+| m.ReinforceSkipContested, 0, m.ReserveCount, m.ReserveType);
+
+[respawn-ai-2-49-built-pack-drops-reserve]
+file = Assets/WarCore/Content/Data/ContentPack.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A16_
+note = the built match pack loses the reserve count and type
+original:
+| m.ReinforceSkipContested, m.ReentryTicks, m.ReserveCount, m.ReserveType);
+replacement:
+| m.ReinforceSkipContested, m.ReentryTicks, 0, null);
+
+[respawn-ai-2-50-section-reentry-negative]
+file = Assets/WarCore/Content/Data/Sections/MatchSection.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A11_ReentryTicksOutOfRangeNamesTheField
+note = the section accepts a negative reentryTicks
+original:
+| mr.Int("reentryTicks", 0, MatchPack.MaxReentryTicks)
+replacement:
+| mr.Int("reentryTicks", -1, MatchPack.MaxReentryTicks)
+
+[respawn-ai-2-51-section-reentry-too-large]
+file = Assets/WarCore/Content/Data/Sections/MatchSection.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A11_ReentryTicksOutOfRangeNamesTheField
+note = the section accepts reentryTicks above the cap
+original:
+| mr.Int("reentryTicks", 0, MatchPack.MaxReentryTicks)
+replacement:
+| mr.Int("reentryTicks", 0, MatchPack.MaxReentryTicks + 1)
+
+[respawn-ai-2-52-section-reserve-negative]
+file = Assets/WarCore/Content/Data/Sections/MatchSection.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A16_ReserveFieldsRefusedNameTheField
+note = the section accepts a negative reserveCount
+original:
+| mr.Int("reserveCount", 0, MatchPack.MaxReserveCount)
+replacement:
+| mr.Int("reserveCount", -1, MatchPack.MaxReserveCount)
+
+[respawn-ai-2-53-section-reserve-too-large]
+file = Assets/WarCore/Content/Data/Sections/MatchSection.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A16_ReserveFieldsRefusedNameTheField
+note = the section accepts reserveCount above the cap
+original:
+| mr.Int("reserveCount", 0, MatchPack.MaxReserveCount)
+replacement:
+| mr.Int("reserveCount", 0, MatchPack.MaxReserveCount + 1)
+
+[respawn-ai-2-54-section-type-not-checked]
+file = Assets/WarCore/Content/Data/Sections/MatchSection.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A16_ReserveFieldsRefusedNameTheField
+note = an unknown unit type is accepted
+original:
+|                 if (System.Array.IndexOf(b.UnitIds, reserveType) < 0) throw mr.Bad(mr.FieldOf("reserveType"), "unit type '" + reserveType + "' does not exist");
+|
+replacement:
+
+[respawn-ai-2-55-section-type-read-at-zero]
+file = Assets/WarCore/Content/Data/Sections/MatchSection.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A16_ZeroIsLeftOut
+note = the type is required and checked without a count
+original:
+|             if (reserveCount > 0)
+|             {
+|                 reserveType = mr.Str("reserveType");
+replacement:
+|             if (reserveCount >= 0)
+|             {
+|                 reserveType = mr.Str("reserveType");
+
+[respawn-ai-2-56-section-type-unread-refused]
+file = Assets/WarCore/Content/Data/Sections/MatchSection.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A16_ZeroIsLeftOut
+note = a type without a count is refused as unread
+original:
+|             else if (mr.Has("reserveType")) mr.FieldOf("reserveType").Used = true;
+|
+replacement:
+
+[respawn-ai-2-57-section-drops-reentry]
+file = Assets/WarCore/Content/Data/Sections/MatchSection.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A11_
+expect = WarCore.Tests.RespawnAi2ContentTests.A15_
+note = the section does not pass reentryTicks on
+original:
+| skipContested, reentry, reserveCount, reserveType);
+replacement:
+| skipContested, 0, reserveCount, reserveType);
+
+[respawn-ai-2-58-made-units-on-the-field]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A14_TheLayerMakesReserves
+note = the made units are not reserves
+original:
+| units[n++] = Spawn(pack, useUnitTypes, ++last, type, team, team, 0, 0, true, 0);
+replacement:
+| units[n++] = Spawn(pack, useUnitTypes, ++last, type, team, team, 0, 0, false, 0);
+
+[respawn-ai-2-59-only-team-one]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A14_TheLayerMakesReserves
+note = only team 1 gets reserves
+original:
+| if (!HasBase(bases, team)) continue;
+replacement:
+| if (!HasBase(bases, team) || team > 1) continue;
+
+[respawn-ai-2-60-one-short]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A14_
+note = each team gets one reserve too few
+original:
+| for (int i = 0; i < perTeam; i++) units[n++]
+replacement:
+| for (int i = 0; i < perTeam - 1; i++) units[n++]
+
+[respawn-ai-2-61-key-collides]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A14_
+note = the first made key is the highest map key
+original:
+| units[n++] = Spawn(pack, useUnitTypes, ++last, type, team, team, 0, 0, true, 0);
+replacement:
+| units[n++] = Spawn(pack, useUnitTypes, last++, type, team, team, 0, 0, true, 0);
+
+[respawn-ai-2-62-teams-reversed]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A14_TheLayerMakesReserves
+note = the higher team is keyed first
+original:
+|                 for (int team = 1; team <= MatchPack.MaxTeams; team++)
+|                 {
+replacement:
+|                 for (int team = MatchPack.MaxTeams; team >= 1; team--)
+|                 {
+
+[respawn-ai-2-63-squad-zero]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A14_TheLayerMakesReserves
+note = the made units are in squad 0
+original:
+| units[n++] = Spawn(pack, useUnitTypes, ++last, type, team, team, 0, 0, true, 0);
+replacement:
+| units[n++] = Spawn(pack, useUnitTypes, ++last, type, 0, team, 0, 0, true, 0);
+
+[respawn-ai-2-64-squad-of-other-team]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A14_TheLayerMakesReserves
+note = the made units are in the other team's squad
+original:
+| units[n++] = Spawn(pack, useUnitTypes, ++last, type, team, team, 0, 0, true, 0);
+replacement:
+| units[n++] = Spawn(pack, useUnitTypes, ++last, type, 3 - team, team, 0, 0, true, 0);
+
+[respawn-ai-2-65-teams-without-base-made]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A14_OnlyTeamsWithABaseGetReserves
+note = a team without a base gets reserves
+original:
+| foreach (SpawnAnchor anchor in bases) if (anchor.Team == team) return true;
+replacement:
+| foreach (SpawnAnchor anchor in bases) return true;
+
+[respawn-ai-2-66-teams-without-base-counted]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A14_OnlyTeamsWithABaseGetReserves
+note = a team without a base is counted in
+original:
+| if (HasBase(bases, team)) teams++;
+replacement:
+| teams++;
+
+[respawn-ai-2-67-made-without-points]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A14_NoPointsNoReserves
+note = a map without control points gets reserves
+original:
+| perTeam = setup.ControlPoints.Length != 0 ? pack.Match.ReserveCount : 0;
+replacement:
+| perTeam = pack.Match.ReserveCount;
+
+[respawn-ai-2-68-type-from-the-map]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A14_TheLayerMakesReserves
+note = the made units have a map soldier's type
+original:
+| string type = pack.Match.ReserveType;
+replacement:
+| string type = setup.Soldiers[0].Type;
+
+[respawn-ai-2-69-keys-refused-one-early]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A14_KeysThatRunOutAreRefused
+note = keys that just fit are refused
+original:
+| if (last > ulong.MaxValue - (ulong)(extraTeams * perTeam))
+replacement:
+| if (last >= ulong.MaxValue - (ulong)(extraTeams * perTeam))
+
+[respawn-ai-2-70-keys-not-checked]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A14_KeysThatRunOutAreRefused
+note = keys that run out are not refused
+original:
+| if (last > ulong.MaxValue - (ulong)(extraTeams * perTeam))
+replacement:
+| if (false && last > ulong.MaxValue - (ulong)(extraTeams * perTeam))
+
+[respawn-ai-2-71-last-key-not-highest]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A14_KeysGoOnFromTheHighest
+note = keys go on from the last map key, not the highest
+original:
+| if (s.Key > last) last = s.Key;
+replacement:
+| last = s.Key;
+
+[respawn-ai-2-72-made-units-ignore-unit-types]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2ContentTests.A14_TheLayerMakesReserves
+note = the made units are built the old way under unit types
+original:
+| units[n++] = Spawn(pack, useUnitTypes, ++last, type, team, team, 0, 0, true, 0);
+replacement:
+| units[n++] = Spawn(pack, false, ++last, type, team, team, 0, 0, true, 0);
+
+[respawn-ai-2-73-session-reports-without-switch]
+file = Assets/WarCore/Presentation/Bridge/SimSession.Reentry.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.TheSessionReportsTheCounts
+note = the session reports counts without the switch
+original:
+| if (!HasReentry || team < 1 || team > matchPack.TeamCount) return false;
+replacement:
+| if (reinforce == null || team < 1 || team > matchPack.TeamCount) return false;
+
+[respawn-ai-2-74-session-team-above]
+file = Assets/WarCore/Presentation/Bridge/SimSession.Reentry.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.TheSessionReportsTheCounts
+note = the session reports a team above the count
+original:
+| if (!HasReentry || team < 1 || team > matchPack.TeamCount) return false;
+replacement:
+| if (!HasReentry || team < 1 || team > matchPack.TeamCount + 1) return false;
+
+[respawn-ai-2-75-session-team-zero]
+file = Assets/WarCore/Presentation/Bridge/SimSession.Reentry.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.TheSessionReportsTheCounts
+note = the session reports team 0
+original:
+| if (!HasReentry || team < 1 || team > matchPack.TeamCount) return false;
+replacement:
+| if (!HasReentry || team < 0 || team > matchPack.TeamCount) return false;
+
+[respawn-ai-2-76-session-counts-swapped]
+file = Assets/WarCore/Presentation/Bridge/SimSession.Reentry.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.TheSessionReportsTheCounts
+expect = WarCore.Tests.RespawnAi2Tests.A8_
+note = the session swaps owed and entered
+original:
+| owed = reinforce.Owed(team); entered = reinforce.Entered(team);
+replacement:
+| owed = reinforce.Entered(team); entered = reinforce.Owed(team);
+
+[respawn-ai-2-77-session-has-reentry-always]
+file = Assets/WarCore/Presentation/Bridge/SimSession.Reentry.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.TheSessionReportsTheCounts
+note = HasReentry is true without the switch
+original:
+| internal bool HasReentry => reinforce != null && reinforce.ByDebt;
+replacement:
+| internal bool HasReentry => reinforce != null;
+
+[respawn-ai-2-78-session-null-has]
+file = Assets/WarCore/Presentation/Bridge/SimSession.Reentry.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.TheSessionReportsTheCounts
+note = Has takes a null session
+original:
+| (session ?? throw new ArgumentNullException(nameof(session))).HasReentry;
+replacement:
+| session != null && session.HasReentry;
+
+[respawn-ai-2-79-session-null-counts]
+file = Assets/WarCore/Presentation/Bridge/SimSession.Reentry.cs
+filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
+expect = WarCore.Tests.RespawnAi2Tests.TheSessionReportsTheCounts
+note = TryCounts takes a null session
+original:
+|             (session ?? throw new ArgumentNullException(nameof(session))).TryReentry(team, out owed, out entered);
+replacement:
+|             (session ?? throw new InvalidOperationException()).TryReentry(team, out owed, out entered);

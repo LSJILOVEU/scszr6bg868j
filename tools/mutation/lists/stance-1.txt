@@ -311,9 +311,9 @@ filter = FullyQualifiedName~Stance1
 expect = WarCore.Tests.Stance.Stance1ContentTests.S1_Heights
 note = an eye at the top of the stance passes
 original:
-|                 Within(e, "eye", eye.Raw, UnitRadiusRaw, height.Raw - UnitRadiusRaw);
+|                 Within(e, "eye", eye.Raw, body.Value.Radius.Raw, height.Raw - body.Value.Radius.Raw);
 replacement:
-|                 Within(e, "eye", eye.Raw, UnitRadiusRaw, height.Raw);
+|                 Within(e, "eye", eye.Raw, body.Value.Radius.Raw, height.Raw);
 
 [cs-ticks]
 file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
@@ -554,9 +554,9 @@ filter = FullyQualifiedName~Stance1
 expect = WarCore.Tests.Stance.Stance1CommandTests.S11_TheCommandAsksTheLivingUnitsOfTheSquad
 note = the frame shows no stance
 original:
-|                     squads != null && alive ? BandKey(squads.SquadOf(sim.Entities.StableOf(unit))) : 0, Stances == null ? 0 : Stances.StanceOf(unit).Level));
+|                     banded ? BandKey(squads.SquadOf(stable)) : 0, Stances == null ? 0 : Stances.StanceOf(unit).Level,
 replacement:
-|                     squads != null && alive ? BandKey(squads.SquadOf(sim.Entities.StableOf(unit))) : 0));
+|                     banded ? BandKey(squads.SquadOf(stable)) : 0, 0,
 
 [fv-stance]
 file = Assets/WarCore/Presentation/Bridge/FrameView.cs
@@ -564,9 +564,9 @@ filter = FullyQualifiedName~Stance1
 expect = WarCore.Tests.Stance.Stance1CommandTests.S11_TheCommandAsksTheLivingUnitsOfTheSquad
 note = an interpolated frame drops the stance
 original:
-|                     old.X + dx * alpha, old.Y + dy * alpha, old.Z + dz * alpha, next.Squad, next.Team, next.Alive, layer: next.Layer, band: next.Band, stance: next.Stance);
+|                     old.X + dx * alpha, old.Y + dy * alpha, old.Z + dz * alpha, next.Squad, next.Team, next.Alive, layer: next.Layer, band: next.Band, stance: next.Stance,
 replacement:
-|                     old.X + dx * alpha, old.Y + dy * alpha, old.Z + dz * alpha, next.Squad, next.Team, next.Alive, layer: next.Layer, band: next.Band);
+|                     old.X + dx * alpha, old.Y + dy * alpha, old.Z + dz * alpha, next.Squad, next.Team, next.Alive, layer: next.Layer, band: next.Band,
 
 [cs-spread-gear]
 file = Assets/WarCore/Combat/CombatSystem.cs
