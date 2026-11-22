@@ -1,0 +1,31 @@
+# Body-gap ledger (HC-6). Read by Tests/MapContent/Scale/BodyProbeTests.cs (GapsMatchTheLedger); probes in BodyProbes.cs.
+# Columns: probe id <TAB> body (giant = 3 m, tiny = 0.5 m) <TAB> family <TAB> note (not compared; a crash is "threw <Type>").
+# Each row is a place that does not follow the body yet. gaps-max must equal the number of rows and may only go down.
+# A change that makes a probe follow deletes its row and lowers gaps-max in the same pull request; a probe measured by a
+# constant changes its measuring point there too. A new row needs an answer in review: why the body stopped being followed.
+# Regenerate the rows with BodyProbeTests.PrintReport (manual).
+gaps-max	24
+B01	giant	H2	the reader caps the height at a headroom no layer can raise
+B03	giant	H1	0.2500 m, want 0.4286
+B04	giant	H1	0.2500 m, want 0.4286
+B05	giant	H1	0.2500 m, want 0.4286
+B10	giant	H1	0.2500 m, want 0.4286
+B11	giant	H1	0.5000 m, want 0.8571
+B11	tiny	H1	0.5000 m, want 0.1429
+B12	giant	M1	1.5000 m, want 2.5714
+B12	tiny	M1	1.5000 m, want 0.4286
+B14	giant	M2	1.0000 m, want 1.7143
+B14	tiny	M2	1.0000 m, want 0.2857
+B15	giant	M2	0.6000 m, want 1.0285
+B15	tiny	M2	0.6000 m, want 0.1714
+B16	giant	M2	1.0000 m, want 1.7143
+B16	tiny	M2	1.0000 m, want 0.2857
+B17	giant	M2	2.0000 m, want 3.4286
+B17	tiny	M2	2.0000 m, want 0.5714
+B19	giant	H1	0.2500 m, want 0.4286
+B20	giant	H1	threw ArgumentOutOfRangeException
+B21	giant	H1	0.2500 m, want 0.4286
+B21	tiny	H1	0.2500 m, want 0.0714
+B22	giant	H1	the layer is refused (B01), the gate never sees this body
+B23	giant	M1	0.1000 m, want 0.1714
+B23	tiny	M1	0.1000 m, want 0.0286
