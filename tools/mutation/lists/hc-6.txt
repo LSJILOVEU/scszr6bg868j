@@ -1,0 +1,212 @@
+# HC-6: the giant and tiny body probe (tests only). Targets are the probe's own files under Tests/MapContent/Scale.
+# Filter: the Scale body tests. Every mutation must fail an assertion (an escaped exception is invalid, not a kill).
+
+[hc6-ratio-always-pass]
+file = Assets/WarCore/Tests/MapContent/Scale/BodyProbes.cs
+filter = FullyQualifiedName~WarCore.Tests.Scale.Body
+expect = WarCore.Tests.Scale.BodyProbeTests.GapsMatchTheLedger
+note = the ratio judgement passes everything
+original:
+|                 if (!BodyProbes.Within(actual[i], expected[i], Tolerance))
+replacement:
+|                 if (false)
+
+[hc6-ratio-always-fail]
+file = Assets/WarCore/Tests/MapContent/Scale/BodyProbes.cs
+filter = FullyQualifiedName~WarCore.Tests.Scale.Body
+expect = WarCore.Tests.Scale.BodyProbeTests.ReferenceBodyPassesEverything
+note = the ratio judgement fails everything
+original:
+|                 if (!BodyProbes.Within(actual[i], expected[i], Tolerance))
+replacement:
+|                 if (true)
+
+[hc6-tolerance-wide]
+file = Assets/WarCore/Tests/MapContent/Scale/BodyProbes.cs
+filter = FullyQualifiedName~WarCore.Tests.Scale.Body
+expect = WarCore.Tests.Scale.BodyGapLedgerTests.Tolerance_OneRawUnitOrTwoOnTheFloatPath
+note = the raw tolerance is 1000 units
+original:
+| internal const long RawTolerance = 1,
+replacement:
+| internal const long RawTolerance = 1000,
+
+[hc6-tolerance-strict]
+file = Assets/WarCore/Tests/MapContent/Scale/BodyProbes.cs
+filter = FullyQualifiedName~WarCore.Tests.Scale.Body
+expect = WarCore.Tests.Scale.BodyGapLedgerTests.Tolerance_OneRawUnitOrTwoOnTheFloatPath
+note = the tolerance bound is exclusive
+original:
+| Math.Abs(actual - expected) <= tolerance;
+replacement:
+| Math.Abs(actual - expected) < tolerance;
+
+[hc6-k-unscaled]
+file = Assets/WarCore/Tests/MapContent/Scale/BodyProbeBodies.cs
+filter = FullyQualifiedName~WarCore.Tests.Scale.Body
+expect = WarCore.Tests.Scale.BodyProbeTests.ScaledBodies_AreTheShippedBodyScaledDown
+note = the scaled body is the reference body
+original:
+| long num = targetRaw, den = body.Height.Raw;
+replacement:
+| long num = body.Height.Raw, den = body.Height.Raw;
+
+[hc6-k-off]
+file = Assets/WarCore/Tests/MapContent/Scale/BodyProbeBodies.cs
+filter = FullyQualifiedName~WarCore.Tests.Scale.Body
+expect = WarCore.Tests.Scale.BodyProbeTests.ScaledBodies_AreTheShippedBodyScaledDown
+note = the factor is off (12/8 for the giant)
+original:
+| long num = targetRaw, den = body.Height.Raw;
+replacement:
+| long num = targetRaw, den = body.Height.Raw * 8 / 7;
+
+[hc6-round-nearest]
+file = Assets/WarCore/Tests/MapContent/Scale/BodyProbeBodies.cs
+filter = FullyQualifiedName~WarCore.Tests.Scale.Body
+expect = WarCore.Tests.Scale.BodyProbeTests.ScaledBodies_AreTheShippedBodyScaledDown
+note = scaling rounds to nearest instead of down
+original:
+| new CombatBody(SimFix.FromRaw(b.Height.Raw * num / den), SimFix.FromRaw(b.Eye.Raw * num / den), SimFix.FromRaw(b.Muzzle.Raw * num / den), radius);
+replacement:
+| new CombatBody(SimFix.FromRaw((b.Height.Raw * num + den / 2) / den), SimFix.FromRaw((b.Eye.Raw * num + den / 2) / den), SimFix.FromRaw((b.Muzzle.Raw * num + den / 2) / den), radius);
+
+[hc6-stance-unscaled]
+file = Assets/WarCore/Tests/MapContent/Scale/BodyProbeBodies.cs
+filter = FullyQualifiedName~WarCore.Tests.Scale.Body
+expect = WarCore.Tests.Scale.BodyProbeTests.ScaledBodies_AreTheShippedBodyScaledDown
+note = stance heights are not scaled
+original:
+| new StanceDef(s.Id, ScaleBody(s.Body, num, den, radius),
+replacement:
+| new StanceDef(s.Id, s.Body,
+
+[hc6-ledger-extra-ok]
+file = Assets/WarCore/Tests/MapContent/Scale/BodyGapLedger.cs
+filter = FullyQualifiedName~WarCore.Tests.Scale.Body
+expect = WarCore.Tests.Scale.BodyGapLedgerTests.LedgerHasAnExtraRow_IsFixed
+note = a ledger row nobody finds passes
+original:
+|                 if (!now.Contains(row.Key)) problems.Add(
+replacement:
+|                 if (false) problems.Add(
+
+[hc6-ledger-missing-ok]
+file = Assets/WarCore/Tests/MapContent/Scale/BodyGapLedger.cs
+filter = FullyQualifiedName~WarCore.Tests.Scale.Body
+expect = WarCore.Tests.Scale.BodyGapLedgerTests.ProbesFindAnExtraGap_IsNew
+note = a gap the ledger lacks passes
+original:
+|                 if (!listed.Contains(f.Key))
+replacement:
+|                 if (false)
+
+[hc6-gapsmax-unchecked]
+file = Assets/WarCore/Tests/MapContent/Scale/BodyGapLedger.cs
+filter = FullyQualifiedName~WarCore.Tests.Scale.Body
+expect = WarCore.Tests.Scale.BodyGapLedgerTests.GapsMaxDiffersFromTheRows_IsReported
+note = gaps-max is not compared with the rows
+original:
+|             else if (ledger.GapsMax != ledger.Rows.Count)
+replacement:
+|             else if (false)
+
+[hc6-key-ignores-body]
+file = Assets/WarCore/Tests/MapContent/Scale/BodyGapLedger.cs
+filter = FullyQualifiedName~WarCore.Tests.Scale.Body
+expect = WarCore.Tests.Scale.BodyGapLedgerTests.SameIdOtherBody_IsOneFixedAndOneNew
+note = rows match by probe id only
+original:
+| internal static string KeyOf(string id, string body) => id + " " + body;
+replacement:
+| internal static string KeyOf(string id, string body) => id;
+
+[hc6-crlf]
+file = Assets/WarCore/Tests/MapContent/Scale/BodyGapLedger.cs
+filter = FullyQualifiedName~WarCore.Tests.Scale.Body
+expect = WarCore.Tests.Scale.BodyGapLedgerTests.CrlfLines_Parse
+note = CR line ends are kept
+original:
+| string line = lines[i].TrimEnd('\r');
+replacement:
+| string line = lines[i];
+
+[hc6-throw-escapes]
+file = Assets/WarCore/Tests/MapContent/Scale/BodyProbes.cs
+filter = FullyQualifiedName~WarCore.Tests.Scale.Body
+expect = WarCore.Tests.Scale.BodyProbeTests.CrashedProbe_IsRecordedAsThrew
+note = a probe's exception escapes
+original:
+|             catch (Exception e)
+|             {
+|                 while
+replacement:
+|             catch (Exception e) when (e == null)
+|             {
+|                 while
+
+[hc6-b09-unscaled]
+file = Assets/WarCore/Tests/MapContent/Scale/BodyProbes.cs
+filter = FullyQualifiedName~WarCore.Tests.Scale.Body
+expect = WarCore.Tests.Scale.BodyProbeTests.GapsMatchTheLedger
+note = B09 measures the reference body
+original:
+|         private static long[] DrawnHeights(ProbeBody b)
+|         {
+|             BodySizes sizes = BodySizes.For(ProbeBodies.DirectPack(b));
+replacement:
+|         private static long[] DrawnHeights(ProbeBody b)
+|         {
+|             BodySizes sizes = BodySizes.For(ProbeBodies.DirectPack(ProbeBodies.Reference));
+
+[hc6-threw-not-gap]
+file = Assets/WarCore/Tests/MapContent/Scale/BodyProbes.cs
+filter = FullyQualifiedName~WarCore.Tests.Scale.Body
+expect = WarCore.Tests.Scale.BodyProbeTests.GapsMatchTheLedger
+expect = WarCore.Tests.Scale.BodyProbeTests.CrashedProbe_IsRecordedAsThrew
+note = a crash is not a gap
+original:
+| internal bool IsGap => Verdict == Verdict.Gap || Verdict == Verdict.Threw;
+replacement:
+| internal bool IsGap => Verdict == Verdict.Gap;
+
+[hc6-not-applicable-gap]
+file = Assets/WarCore/Tests/MapContent/Scale/BodyProbes.cs
+filter = FullyQualifiedName~WarCore.Tests.Scale.Body
+expect = WarCore.Tests.Scale.BodyProbeTests.GapsMatchTheLedger
+note = a probe that does not apply counts as a gap
+original:
+| internal bool IsGap => Verdict == Verdict.Gap || Verdict == Verdict.Threw;
+replacement:
+| internal bool IsGap => Verdict != Verdict.Pass;
+
+[hc6-b18-inverted]
+file = Assets/WarCore/Tests/MapContent/Scale/BodyProbes.cs
+filter = FullyQualifiedName~WarCore.Tests.Scale.Body
+expect = WarCore.Tests.Scale.BodyProbeTests.ReferenceBodyPassesEverything
+note = B18 expects the opposite of the headroom rule
+original:
+| string want = fits ? "accepted" : "refused",
+replacement:
+| string want = fits ? "refused" : "accepted",
+
+[hc6-b08-sight-ignored]
+file = Assets/WarCore/Tests/MapContent/Scale/BodyProbes.cs
+filter = FullyQualifiedName~WarCore.Tests.Scale.Body
+expect = WarCore.Tests.Scale.BodyProbeTests.ReferenceBodyPassesEverything
+note = B08 wants the line cut by both walls
+original:
+| under && !over ? eye : 0
+replacement:
+| under && over ? eye : 0
+
+[hc6-radius-unscaled]
+file = Assets/WarCore/Tests/MapContent/Scale/BodyProbeBodies.cs
+filter = FullyQualifiedName~WarCore.Tests.Scale.Body
+expect = WarCore.Tests.Scale.BodyProbeTests.ScaledBodies_AreTheShippedBodyScaledDown
+expect = WarCore.Tests.Scale.BodyProbeTests.GapsMatchTheLedger
+note = the radius is not scaled
+original:
+|             long radiusWanted = body.Radius.Raw * num / den;
+replacement:
+|             long radiusWanted = body.Radius.Raw;
