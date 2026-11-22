@@ -1,9 +1,10 @@
 name: unity-editmode
 
-# Trial: runs the full Unity EditMode suite in the Unity editor (GameCI image), the same suite run by hand before merge.
-# Trial, not yet a required check: it runs only on manual dispatch, or on a pull request into main that carries the
-# `unity-editmode` label (elsewhere the job is skipped). On a labelled pull request automerge sees it like any other check. Needs repository secrets UNITY_LICENSE (text of the .ulf file), UNITY_EMAIL and
-# UNITY_PASSWORD. Only the result XML is uploaded, never the editor log.
+# Trial: runs the full Unity EditMode suite in the Unity editor (GameCI image), the suite otherwise run by hand before
+# merge. Not yet a required check: it runs only on manual dispatch, or on a pull request into main that carries the
+# `unity-editmode` label (elsewhere the job is skipped). On a labelled pull request automerge sees it like any other
+# check. Needs repository secrets UNITY_LICENSE (text of the .ulf file), UNITY_EMAIL and UNITY_PASSWORD.
+# Only the result XML is uploaded, never the editor log.
 on:
   workflow_dispatch:
   pull_request:
