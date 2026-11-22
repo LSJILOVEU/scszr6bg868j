@@ -112,6 +112,7 @@ namespace WarCore.Tests
             Assert.That(Tokens("string s = \"1.5f\" + @\"0.25\" + $\"{x} 3.5f\"; char c = '1';"), Is.Empty);
             Assert.That(Tokens("string s = \"a \\\" 1.5f\"; float f = 2.5f;"), Is.EqualTo(new[] { "2.5f" }));
             Assert.That(Tokens("string s = @\"a \"\" 1.5f\"; float f = 2.5f;"), Is.EqualTo(new[] { "2.5f" }));
+            Assert.That(Tokens("string s = @\"a \"\" \\\"; float f = 2.5f;"), Is.EqualTo(new[] { "2.5f" }));
             Assert.That(Tokens("char q = '\"'; float f = 2.5f; char e = '\\''; float g = 3.5f;"), Is.EqualTo(new[] { "2.5f", "3.5f" }));
         }
 
@@ -127,6 +128,7 @@ namespace WarCore.Tests
         {
             Assert.That(SizeLiteralScanner.InScope("Unity/ShowcaseFx.cs"), Is.True);
             Assert.That(SizeLiteralScanner.InScope("Unity/TestsHelper.cs"), Is.True);
+            Assert.That(SizeLiteralScanner.InScope("Unity/TestsData/Helper.cs"), Is.True);
             Assert.That(SizeLiteralScanner.InScope("Unity/Tests/Show1ViewsTests.cs"), Is.False);
             Assert.That(SizeLiteralScanner.InScope("Tests/EditMode/A.cs"), Is.False);
             Assert.That(SizeLiteralScanner.InScope("Verification/Generated/B.cs"), Is.False);
@@ -192,7 +194,10 @@ namespace WarCore.Tests
             Assert.That(SizeLiteralGuardTests.Parse(new[] { "debt-max\t0", "Unity/A.cs\t1.5f\t1\tui\tx", "Unity/A.cs\t1.5f\t1\tui\ty" }).Problems,
                 Is.EqualTo(new[] { "line 3: Unity/A.cs 1.5f is listed twice" }));
             Assert.That(SizeLiteralGuardTests.Parse(new[] { "debt-max\tx" }).Problems[0], Is.EqualTo("line 1: debt-max needs one whole number"));
-            Assert.That(SizeLiteralGuardTests.Parse(new[] { "debt-max\t0", "Unity/A.cs\t1.5f" }).Problems,
+            Assert.That(() => SizeLiteralGuardTests.Parse(new[] { "debt-max\t0", "Unity/A.cs\t1.5f\t1" }), Throws.Nothing);
+            Assert.That(SizeLiteralGuardTests.Parse(new[] { "debt-max\t0", "Unity/A.cs\t1.5f\t1" }).Problems,
+                Is.EqualTo(new[] { "line 2: needs file, token, count, tag and an optional note" }));
+            Assert.That(SizeLiteralGuardTests.Parse(new[] { "debt-max\t0", "Unity/A.cs\t1.5f\t1\tui\tnote\textra" }).Problems,
                 Is.EqualTo(new[] { "line 2: needs file, token, count, tag and an optional note" }));
         }
 
