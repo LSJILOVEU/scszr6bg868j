@@ -57,6 +57,6 @@ filter = FullyQualifiedName~Mt163ViewMap
 expect = WarCore.Tests.TerrainView.Mt163ViewMapTests.Origin_UsesSeparateAxesInMetres
 note = Fixed point map coordinates must use 65536 raw units per metre.
 original:
-|         private static float Metres(long raw) => (float)raw / 65536f;
+|         internal static float Metres(long raw) => (float)raw / WcMap.RawPerMetre;
 replacement:
-|         private static float Metres(long raw) => (float)raw / 65535f;
+|         internal static float Metres(long raw) => (float)raw / (WcMap.RawPerMetre - 1);

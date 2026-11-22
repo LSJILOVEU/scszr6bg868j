@@ -111,15 +111,15 @@ namespace WarCore.Content
         internal const int MaxBurstPauseTicks = 1000000;
         internal const int MaxTraitSpreadPermille = 500;
         internal const int MaxSuppressTicks = 1000000;
-        internal const int MaxMeleeChaseRange = 512; // PLACEHOLDER: maximum map side length in metres.
+        internal const int MaxMeleeChaseRange = WcMapValidation.MaxSide; // the map side limit (WcMapValidation.MaxSide), metres.
         internal const int MaxHoldSharePermille = 1000;
         internal const int MaxAttackSpreadPoints = 8;
         internal const int MinSlotSpacingMm = 500, MaxSlotSpacingMm = 5000;
         internal const int MaxScatterMm = 50000;
         internal const int MaxSlotRingMm = 50000;
         internal const int MaxBoundTicks = 100000;
-        internal const int MaxBoundMinRangeMm = 512000; // PLACEHOLDER: maximum map side length.
-        internal const int MaxPressureRadiusMm = 512000; // PLACEHOLDER: maximum map side length.
+        internal const int MaxBoundMinRangeMm = WcMapValidation.MaxSideMm; // the map side limit (WcMapValidation.MaxSide).
+        internal const int MaxPressureRadiusMm = WcMapValidation.MaxSideMm; // the map side limit (WcMapValidation.MaxSide).
         internal const int MinCoverRadiusMm = 1000, MaxCoverRadiusMm = 30000, MinCoverStepMm = 250, MaxCoverStepMm = 5000, MinCoverDepthMm = 250, MaxCoverDepthMm = 10000; // PLACEHOLDER bounds.
         // What counts as a teammate brought down (pressureFall, optional, only with the ten fields): "hit" (the default) any
         // enemy shot with damage, right for rules where a hit either kills or does nothing; "kill" only a unit whose damage
@@ -156,12 +156,12 @@ namespace WarCore.Content
         // The squad fields: written all seven or none. PLACEHOLDER bounds.
         internal static readonly string[] SquadFields =
             { "squadMinSize", "squadMaxSize", "squadSkirmisherPermille", "squadRecruitRadiusMm", "squadFormTicks", "squadSpreadMinMm", "squadSpreadMaxMm" };
-        internal const int MaxSquadSize = 64, MaxSquadRadiusMm = 512000, MaxSquadFormTicks = 100000, MaxSquadSpreadMm = 50000;
+        internal const int MaxSquadSize = 64, MaxSquadRadiusMm = WcMapValidation.MaxSideMm, MaxSquadFormTicks = 100000, MaxSquadSpreadMm = 50000;
         // Squad tempers (all four or none) and regrouping (all three or none); both need the seven squad fields.
         // PLACEHOLDER bounds.
         internal static readonly string[] TemperFields = { "squadRashPermille", "squadSteadyPermille", "squadShakenPermille", "squadRashMinRangeMm" };
         internal static readonly string[] RegroupFields = { "squadRegroupBelowPermille", "squadRegroupUntilPermille", "squadRegroupMaxTicks" };
-        internal const int MaxSquadRashRangeMm = 512000, MaxSquadRegroupTicks = 100000;
+        internal const int MaxSquadRashRangeMm = WcMapValidation.MaxSideMm, MaxSquadRegroupTicks = 100000;
         // The first field of the group that the entry has written, in the group's order; null when it has written none.
         private static string FirstWritten(EntryReader r, string[] fields)
         {
@@ -171,7 +171,7 @@ namespace WarCore.Content
         internal static readonly string[] AssaultFields =
             { "frontPermille", "flankPermille", "rearPermille", "frontArcMm", "flankSideMm", "rearOutMm", "flankMinMm", "anchorMm", "arriveMm" };
         private static readonly int[] AssaultMin = { 0, 0, 0, 0, 1000, 1000, 0, 1000, 250 };
-        private static readonly int[] AssaultMax = { 1000, 1000, 1000, 50000, 100000, 100000, 512000, 50000, 20000 };
+        private static readonly int[] AssaultMax = { 1000, 1000, 1000, 50000, 100000, 100000, WcMapValidation.MaxSideMm, 50000, 20000 };
         private static string Selected(PartKind kind, string dispatch, string placement, string engage) =>
             kind == PartKind.Dispatch ? dispatch : kind == PartKind.Placement ? placement : engage;
         // Index in Owners of the first parameter written for a part that is not selected; -1 when there is none.

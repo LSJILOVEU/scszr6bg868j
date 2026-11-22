@@ -7,9 +7,9 @@ filter = FullyQualifiedName~Mt080SpatialQuery
 expect = WarCore.Tests.Mt080SpatialQueryTests.WithHeightAcceptsExactMinimum
 note = Rejects the valid minimum height for capsules and boxes.
 original:
-| if (height.Raw < minimum || height.Raw > 32768 * SimFix.Scale)
+| if (height.Raw < minimum || height.Raw > HeightLimit)
 replacement:
-| if (height.Raw <= minimum || height.Raw > 32768 * SimFix.Scale)
+| if (height.Raw <= minimum || height.Raw > HeightLimit)
 
 [mt-080-02]
 file = Assets/WarCore/Sim/SpatialQuery.cs

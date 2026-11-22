@@ -217,7 +217,7 @@ namespace WarCore.Combat
         }
 
         // Positions stay within 2^32 raw (65536 m); a step is at most twice the largest per-tick step.
-        private const long MaxCoordinateRaw = 1L << 32, MaxStepRaw = 2L * ProjectileSpec.MaxSpeed * SimFix.Scale / 30000;
+        private const long MaxCoordinateRaw = 1L << 32, MaxStepRaw = 2L * ProjectileSpec.MaxSpeed * SimFix.Scale / SimClock.MilliTicksPerSecond;
 
         private static SimVec3 ReadPoint(SimStateReader reader, long bound)
         {

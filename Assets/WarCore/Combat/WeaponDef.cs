@@ -4,8 +4,8 @@ using WarCore.Sim;
 namespace WarCore.Combat
 {
     // Horizontal aim spread in thousandths of a degree. All zero = no spread (the weapon draws no random number).
-    // The angle of the next shot is clamp(max(Base, stored - RecoverPerSec * elapsedMilli / 30000), <= Max); after a shot
-    // stored = min(Max, angle + Growth). One second = 30000 thousandths of a tick.
+    // The angle of the next shot is clamp(max(Base, stored - RecoverPerSec * elapsedMilli / MilliTicksPerSecond), <= Max);
+    // after a shot stored = min(Max, angle + Growth). One second is SimClock.MilliTicksPerSecond thousandths of a tick.
     public readonly struct SpreadSpec : IStateHash
     {
         public const int MaxLegalMilliDegrees = 90000;
@@ -26,7 +26,7 @@ namespace WarCore.Combat
         public int AngleAt(int stored, long lastMilli, long timeMilli)
         {
             if (IsNone) return 0;
-            long recovered = RecoverPerSecMilli * Math.Max(0, timeMilli - lastMilli) / 30000;
+            long recovered = RecoverPerSecMilli * Math.Max(0, timeMilli - lastMilli) / SimClock.MilliTicksPerSecond;
             long angle = Math.Max(BaseMilli, stored - recovered);
             return (int)Math.Min(MaxMilli, angle);
         }

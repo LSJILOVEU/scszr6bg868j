@@ -99,7 +99,7 @@ namespace WarCore.Combat
         // Derived data is valid only inside Step; AI Requests and external selectors retain the original path.
         public bool MayHaveEnemyWithin(EntityId shooter, SimFix range)
         {
-            if (!cacheValid || exclusionDisabled || range.Raw <= 0 || range.Raw > 16384L * SimFix.Scale
+            if (!cacheValid || exclusionDisabled || range.Raw <= 0 || range.Raw > SimVec3.WorldLimitMetres * SimFix.Scale
                 || !Entities.TryGet(combatants, shooter, out Combatant unit)
                 || !Entities.TryGet(positions, shooter, out Position position)) return true;
             if (unit.Team == 0) return false;
