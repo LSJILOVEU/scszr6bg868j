@@ -72,6 +72,13 @@ relation from the code or the shipped data. "none" means no test holds the value
 | Surface speed multiplier | up to 2x | `SurfaceDef.MaxSpeedMilli` | W11 |
 | Dash | at most 100 m, 10 m per step | `UnitDashes`, `Dash` | none |
 
+## Guard
+
+`Tests/EditMode/SizeLiteralGuardTests.cs` fails on a new literal in project code that matches the size, distance, time
+or speed shapes listed at the top of `SizeLiteralScanner.cs` (a bare integer passed as an argument is not one of them),
+unless `tools/size-guard/ledger.tsv` lists it as canon, ui or math with a note.
+Old copies are listed as debt. The test checks that `debt-max` equals the debt total; review checks that it never rises.
+
 ## Known mismatches
 
 Recorded only, nothing changed here. Each goes to SCALE-2 or the candidate pool.

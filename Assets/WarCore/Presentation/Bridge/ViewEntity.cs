@@ -12,6 +12,12 @@ namespace WarCore.Presentation
         // The AI squad the unit is in: the spawn key of its leader (its own key for a leader); 0 for a unit in no squad, a
         // dead unit and a battle without squads.
         public ulong Band { get; }
+        // The temper of the unit's AI squad: 0 none (no squad, a dead unit, a battle without tempers), 1 normal, 2 rash,
+        // 3 steady.
+        public int Mood { get; }
+        // The regroup mark of the unit's AI squad: 0 none (no squad, a dead unit, a battle without regrouping, a squad that
+        // is not regrouping), 1 regrouping, 2 short of members and not regrouping.
+        public int Regroup { get; }
         public float X { get; }
         public float Y { get; }
         public float Z { get; }
@@ -21,9 +27,11 @@ namespace WarCore.Presentation
         public int Stance { get; }
 
         public ViewEntity(ulong key, int archetype, float x, float y, float z, int squad = 0, int team = 0, bool alive = true, int nerve = 0,
-            int layer = 0, ulong band = 0, int stance = 0)
+            int layer = 0, ulong band = 0, int stance = 0, int mood = 0, int regroup = 0)
         {
             Stance = stance;
+            Mood = mood;
+            Regroup = regroup;
             Layer = layer;
             Key = key;
             Squad = squad;
