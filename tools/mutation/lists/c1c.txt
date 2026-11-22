@@ -1,16 +1,16 @@
 # C1c spawn guard after respawn: the required mutations of the work package. Test classes are named C1c*.
 
 [c1c-01-ranged-unguarded]
-file = Assets/WarCore/Combat/CombatSystem.Resolve.cs
+file = Assets/WarCore/Combat/CombatSystem.Blast.cs
 filter = FullyQualifiedName~WarCore.Tests.C1c
 expect = WarCore.Tests.C1cRangedTests.C1cRanged_GuardZeroesHitsForTenTicks_ThenTheHitKills
 expect = WarCore.Tests.C1cRangedTests.C1cRanged_GuardOne_ShieldsOnlyTheSwitchTick
 expect = WarCore.Tests.C1cRangedTests.C1cRanged_EverySwitchHasItsOwnWindow
 note = the ranged hit ignores the guard
 original:
-|             if (Shielded(victim, tick)) damage = 0;
+|            if (Shielded(victim, tick)) damageRaw = 0;
 replacement:
-|             _ = victim;
+|            _ = victim;
 
 [c1c-02-melee-unguarded]
 file = Assets/WarCore/Combat/CombatSystem.Melee.cs
@@ -41,7 +41,7 @@ original:
 |                     }
 |                 }
 |                 var key = new GameplayApplyKey(source, (ulong)state.StartTick, 0, source, (ulong)state.StartTick, 1, (uint)i);
-|                 GameplayFailure failure = c.Damage(sim.GameplayTarget(victim), key, 1, damage);
+|                 damage = SubmitDamage(c, victim, key, damage, tick, out GameplayFailure failure);
 replacement:
 |                 if (pack.HasBlock && TryBlock(meleeTargets[i].Entity, origin, out BlockSpec shield))
 |                 {
@@ -55,7 +55,7 @@ replacement:
 |                 }
 |                 var key = new GameplayApplyKey(source, (ulong)state.StartTick, 0, source, (ulong)state.StartTick, 1, (uint)i);
 |                 if (Shielded(victim, tick)) damage = 0;
-|                 GameplayFailure failure = c.Damage(sim.GameplayTarget(victim), key, 1, damage);
+|                 damage = SubmitDamage(c, victim, key, damage, tick, out GameplayFailure failure);
 
 [c1c-04-shield-everyone]
 file = Assets/WarCore/Battle/RespawnSystem.cs
@@ -189,14 +189,14 @@ replacement:
 |             long damage = Shielded(Entities.StableOf(target), tick) ? 0 : pack.Resolver.DamageRaw(in weapon, falloff, roll, pack.MaxHealthRaw);
 
 [c1c-15-shielded-hit-not-settled]
-file = Assets/WarCore/Combat/CombatSystem.Resolve.cs
+file = Assets/WarCore/Combat/CombatSystem.Blast.cs
 filter = FullyQualifiedName~WarCore.Tests.C1c
 expect = WarCore.Tests.C1cRangedTests.C1cRanged_GuardZeroesHitsForTenTicks_ThenTheHitKills
 note = a shielded ranged hit skips the zero-damage command
 original:
-|             c.Damage(sim.GameplayTarget(victim), new GameplayApplyKey(source, (ulong)tick, 0, source, (ulong)tick, 0), 1, damage);
+|            failure = c.Damage(sim.GameplayTarget(victim), key, 1, damageRaw);
 replacement:
-|             if (!Shielded(victim, tick)) c.Damage(sim.GameplayTarget(victim), new GameplayApplyKey(source, (ulong)tick, 0, source, (ulong)tick, 0), 1, damage);
+|            failure = Shielded(victim, tick) ? GameplayFailure.None : c.Damage(sim.GameplayTarget(victim), key, 1, damageRaw);
 
 [c1c-16-guard-slot-not-hashed]
 file = Assets/WarCore/Battle/RespawnSystem.cs

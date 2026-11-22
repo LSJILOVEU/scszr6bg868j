@@ -169,9 +169,9 @@ filter = FullyQualifiedName~Nerve1
 expect = WarCore.Tests.Nerve1.Nerve1ContentTests.N12_ASelectorCopyKeepsTheStatusAndTheClamp
 note = C12 a selector copy drops the status and the clamp
 original:
-|            stances.Length == 0 ? null : stances, VerticalSpread, Status, SpreadDragFloorPermille, SpreadDragCeilPermille);
+|            stances.Length == 0 ? null : stances, VerticalSpread, Status, SpreadDragFloorPermille, SpreadDragCeilPermille, Downed);
 replacement:
-|            stances.Length == 0 ? null : stances, VerticalSpread);
+|            stances.Length == 0 ? null : stances, VerticalSpread, null, 0, 0, Downed);
 
 [nv-no-clamp]
 file = Assets/WarCore/Combat/CombatSystem.Nerve.cs
@@ -200,10 +200,10 @@ expect = WarCore.Tests.Nerve1.Nerve1ContentTests.N0_TheShippedLayerAndWholeRepla
 note = C14 floor and ceiling swapped when the pack is built
 original:
 |                stances, SectionOrNull<VerticalSpread>(), SectionOrNull<CombatStatus>(), stats?.FloorOf(StatClamps.Spread) ?? 0,
-|                 stats?.CeilOf(StatClamps.Spread) ?? 0);
+|                 stats?.CeilOf(StatClamps.Spread) ?? 0, SectionOrNull<DownedRules>());
 replacement:
 |                stances, SectionOrNull<VerticalSpread>(), SectionOrNull<CombatStatus>(), stats?.CeilOf(StatClamps.Spread) ?? 0,
-|                 stats?.FloorOf(StatClamps.Spread) ?? 0);
+|                 stats?.FloorOf(StatClamps.Spread) ?? 0, SectionOrNull<DownedRules>());
 
 [nv-below-999]
 file = Assets/WarCore/Combat/CombatStatus.cs
@@ -301,9 +301,9 @@ filter = FullyQualifiedName~Nerve1
 expect = WarCore.Tests.Nerve1.Nerve1ContentTests.N0_TheShippedLayerAndWholeReplacement
 note = C17 combat.status is not an object field kept whole
 original:
-|            base.IsNested(field) || field == MoveSpreadField || field == VerticalSpreadField || field == StatusField;
+|            base.IsNested(field) || field == MoveSpreadField || field == VerticalSpreadField || field == StatusField
 replacement:
-|            base.IsNested(field) || field == MoveSpreadField || field == VerticalSpreadField;
+|            base.IsNested(field) || field == MoveSpreadField || field == VerticalSpreadField
 
 [nv-level-range]
 file = Assets/WarCore/Combat/CombatSystem.Nerve.cs
@@ -477,6 +477,6 @@ filter = FullyQualifiedName~Nerve1
 expect = WarCore.Tests.Nerve1.Nerve1WorldTests.N3_TheLevelLineIsThePressureSystemsOwn
 note = NerveFeature is left out of the Rules table
 original:
-| PlayerFeature.Instance, StanceFeature.Instance, NerveFeature.Instance };
+| StanceFeature.Instance, NerveFeature.Instance,
 replacement:
-| PlayerFeature.Instance, StanceFeature.Instance };
+| StanceFeature.Instance,
