@@ -112,6 +112,8 @@ namespace WarCore.Presentation
 
         // ML-3: the unit collider height follows the combat pack's body (its height), else the legacy 1 m.
         internal static SimFix UnitHeight(CombatPack pack) => pack?.Body?.Height ?? SimFix.FromInt(1);
+        // HC-1: the unit collider radius and walking clearance follow the pack's body (its radius), else the default body radius.
+        internal static SimFix UnitRadius(CombatPack pack) => pack?.Body?.Radius ?? BodyRadius.Default;
         // ML-3: the spatial index anchors the unit layer at the foot exactly when the combat pack has a body.
         internal static uint FootAnchoredLayers(CombatPack pack) => pack?.Body != null ? MoverLayer : 0u;
         internal static SimFix SpawnSpeed(in UnitSpawn spawn) => SimFix.Ratio(spawn.SpeedMmPerSec, 1000 * SimClock.TickRate);
