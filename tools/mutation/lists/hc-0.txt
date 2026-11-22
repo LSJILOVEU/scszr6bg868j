@@ -1,0 +1,433 @@
+# HC-0: the size-literal scanner and the ledger rules. Filter: SizeLiteralScannerTests (unit tests on snippets).
+# Not listed: SizeLiteralGuardTests.LedgerIsWellFormed file-exists check and PrintLedgerForTheTree (whole-tree tests).
+
+[hc0-scope-tests]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.ScopeLeavesOutTestsAndVerification
+note = Tests directories are scanned
+original:
+|                 if (parts[i] == "Tests" || parts[i] == "Verification") return false;
+replacement:
+|                 if (parts[i] == "Verification") return false;
+
+[hc0-scope-verification]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.ScopeLeavesOutTestsAndVerification
+note = Verification is scanned
+original:
+|                 if (parts[i] == "Tests" || parts[i] == "Verification") return false;
+replacement:
+|                 if (parts[i] == "Tests") return false;
+
+[hc0-scope-segment]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.ScopeLeavesOutTestsAndVerification
+note = a file name containing Tests is skipped
+original:
+|                 if (parts[i] == "Tests" || parts[i] == "Verification") return false;
+replacement:
+|                 if (parts[i].StartsWith("Tests") || parts[i] == "Verification") return false;
+
+[hc0-scope-extension]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.ScopeLeavesOutTestsAndVerification
+note = non-.cs files are scanned
+original:
+|             if (!relativePath.EndsWith(".cs", StringComparison.Ordinal)) return false;
+replacement:
+|             if (false) return false;
+
+[hc0-colour-skip]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.R1_ColourLinesAreSkipped
+note = colour lines are scanned
+original:
+|                 if (line.IndexOf("Color(", StringComparison.Ordinal) < 0 && line.IndexOf("Color32(", StringComparison.Ordinal) < 0)
+replacement:
+|                 if (line.IndexOf("Color32(", StringComparison.Ordinal) < 0)
+
+[hc0-colour32-skip]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.R1_ColourLinesAreSkipped
+note = Color32 lines are scanned
+original:
+|                 if (line.IndexOf("Color(", StringComparison.Ordinal) < 0 && line.IndexOf("Color32(", StringComparison.Ordinal) < 0)
+replacement:
+|                 if (line.IndexOf("Color(", StringComparison.Ordinal) < 0)
+
+[hc0-zero-one]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.R1_ZeroAndOneAreNotSizes
+note = 0 and 1 count as sizes
+original:
+|             if (v == 0.0 || v == 1.0 || v == 1000.0 || v == 1000000.0) return true;
+replacement:
+|             if (v == 1000.0 || v == 1000000.0) return true;
+
+[hc0-conversions]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.R1_TolerancesAndUnitConversionsAreNotSizes
+note = unit conversions count as sizes
+original:
+|             if (v == 0.0 || v == 1.0 || v == 1000.0 || v == 1000000.0) return true;
+replacement:
+|             if (v == 0.0 || v == 1.0) return true;
+
+[hc0-exponent]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.R1_TolerancesAndUnitConversionsAreNotSizes
+note = tolerances count as sizes
+original:
+|             if (literal.IndexOf('e') >= 0 || literal.IndexOf('E') >= 0) return true;
+replacement:
+|             if (literal.IndexOf('e') >= 0) return true;
+
+[hc0-half-not-exempt]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.R1_HalvingAndDoublingAreNotSizes
+note = 0.5 is never a halving
+original:
+|             if (v != 2.0 && v != 0.5) return false;
+replacement:
+|             if (v != 2.0) return false;
+
+[hc0-halving-anywhere]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.R1_HalvingAndDoublingAreNotSizes
+note = every 2 and 0.5 is exempt
+original:
+|             if (v != 2.0 && v != 0.5) return false;
+replacement:
+|             if (v != 2.0 && v != 0.5) return false;
+|              return true;
+
+[hc0-halving-divide]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.R1_HalvingAndDoublingAreNotSizes
+note = w / 2f counts
+original:
+|             return before.EndsWith("*", StringComparison.Ordinal) || before.EndsWith("/", StringComparison.Ordinal)
+replacement:
+|             return before.EndsWith("*", StringComparison.Ordinal)
+
+[hc0-halving-before]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.R1_HalvingAndDoublingAreNotSizes
+note = 2f * w counts
+original:
+|                 || after.StartsWith("*", StringComparison.Ordinal);
+replacement:
+|                 || false;
+
+[hc0-fix-zero-skip]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.R2_ZeroOrComputedArgumentsAreNotSizes
+note = all-zero calls count
+original:
+|                     if (!AllZero(m)) hits.Add(new Hit(i + 1, Normal(m.Value), line.Trim()));
+replacement:
+|                     hits.Add(new Hit(i + 1, Normal(m.Value), line.Trim()));
+
+[hc0-fix-one-zero-side]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.R2_ARatioWithOneZeroSideIsFound
+note = a ratio with a zero numerator is skipped
+original:
+|             IsZero(m.Groups[1].Value) && (!m.Groups[2].Success || IsZero(m.Groups[2].Value));
+replacement:
+|             IsZero(m.Groups[1].Value);
+
+[hc0-scale-divide]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.R3_ScaleTimesOrOverALiteralIsFound
+note = Scale / 4 is missed
+original:
+|             @"(?<![\w.])\d+L?\s*\*\s*SimFix\.Scale(?![\w])|SimFix\.Scale\s*[*/]\s*\d+L?(?![\w.])", RegexOptions.CultureInvariant);
+replacement:
+|             @"(?<![\w.])\d+L?\s*\*\s*SimFix\.Scale(?![\w])|SimFix\.Scale\s*[*]\s*\d+L?(?![\w.])", RegexOptions.CultureInvariant);
+
+[hc0-scale-left]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.R3_ScaleTimesOrOverALiteralIsFound
+note = 2 * Scale is missed
+original:
+|             @"(?<![\w.])\d+L?\s*\*\s*SimFix\.Scale(?![\w])|SimFix\.Scale\s*[*/]\s*\d+L?(?![\w.])", RegexOptions.CultureInvariant);
+replacement:
+|             @"SimFix\.Scale\s*[*/]\s*\d+L?(?![\w.])", RegexOptions.CultureInvariant);
+
+[hc0-caps-counted]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.R4_CapsCountsAndPlainVariablesAreNot
+note = Max and Min caps count
+original:
+|             @"^(?!Max|Min)\w*(Mm|Raw|Metres|Metre|MmPerSec|Ticks|Seconds|Radius|Height|Reach|Width|Depth|Speed|Range|Distance)$",
+replacement:
+|             @"^\w*(Mm|Raw|Metres|Metre|MmPerSec|Ticks|Seconds|Radius|Height|Reach|Width|Depth|Speed|Range|Distance)$",
+
+[hc0-unit-words]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.R4_UnitNamedConstantsAreFound
+note = Ticks and Height names are missed
+original:
+|             @"^(?!Max|Min)\w*(Mm|Raw|Metres|Metre|MmPerSec|Ticks|Seconds|Radius|Height|Reach|Width|Depth|Speed|Range|Distance)$",
+replacement:
+|             @"^(?!Max|Min)\w*(Mm|Raw|Metres|Metre|MmPerSec|Seconds|Radius|Reach|Width|Depth|Speed|Range|Distance)$",
+
+[hc0-static-readonly]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.R4_UnitNamedConstantsAreFound
+note = static readonly declarations are missed
+original:
+|         private static readonly Regex Declares = new Regex(@"\bconst\b|\bstatic\s+readonly\b", RegexOptions.CultureInvariant);
+replacement:
+|         private static readonly Regex Declares = new Regex(@"\bconst\b", RegexOptions.CultureInvariant);
+
+[hc0-r4-paren]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.R4_ADeclarationAlreadyCaughtByR3IsCountedOnce
+note = a call value is counted twice
+original:
+|                         if (!UnitName.IsMatch(name) || value.IndexOf('(') >= 0 || Real.IsMatch(value) || Scale.IsMatch(value)) continue;
+replacement:
+|                         if (!UnitName.IsMatch(name) || Real.IsMatch(value) || Scale.IsMatch(value)) continue;
+
+[hc0-r4-real]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.R4_ADeclarationAlreadyCaughtByR3IsCountedOnce
+note = a real value is counted twice
+original:
+|                         if (!UnitName.IsMatch(name) || value.IndexOf('(') >= 0 || Real.IsMatch(value) || Scale.IsMatch(value)) continue;
+replacement:
+|                         if (!UnitName.IsMatch(name) || value.IndexOf('(') >= 0 || Scale.IsMatch(value)) continue;
+
+[hc0-r4-scale]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.R4_ADeclarationAlreadyCaughtByR3IsCountedOnce
+note = a Scale value is counted twice
+original:
+|                         if (!UnitName.IsMatch(name) || value.IndexOf('(') >= 0 || Real.IsMatch(value) || Scale.IsMatch(value)) continue;
+replacement:
+|                         if (!UnitName.IsMatch(name) || value.IndexOf('(') >= 0 || Real.IsMatch(value)) continue;
+
+[hc0-r4-one]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.R4_CapsCountsAndPlainVariablesAreNot
+note = a value of 1 counts
+original:
+|                 if (d.Length > 1 || (d.Length == 1 && d != "1")) return true;
+replacement:
+|                 if (d.Length > 0) return true;
+
+[hc0-block-comment]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.CommentsStringsAndCharsAreBlanked
+note = block comments are scanned
+original:
+|                 if (c == '/' && next == '*')
+replacement:
+|                 if (false)
+
+[hc0-block-lines]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.LineNumbersSurviveBlockComments
+note = block comments lose their line breaks
+original:
+|                     for (int k = i; k < end + 2 && k < n; k++) if (source[k] == '\n') text.Append('\n');
+replacement:
+|                     for (int k = i; k < end + 2 && k < n; k++) { }
+
+[hc0-line-comment]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.CommentsStringsAndCharsAreBlanked
+note = line comments are scanned
+original:
+|                 if (c == '/' && next == '/')
+replacement:
+|                 if (false)
+
+[hc0-escape]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.CommentsStringsAndCharsAreBlanked
+note = an escaped quote ends the string
+original:
+|                         if (!verbatim && source[i] == '\\') { i += 2; continue; }
+replacement:
+|                         if (false) { i += 2; continue; }
+
+[hc0-verbatim-quote]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.CommentsStringsAndCharsAreBlanked
+note = a doubled quote ends a verbatim string
+original:
+|                             if (verbatim && i + 1 < n && source[i + 1] == '"') { i += 2; continue; }
+replacement:
+|                             if (false) { i += 2; continue; }
+
+[hc0-char-literal]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.CommentsStringsAndCharsAreBlanked
+note = a quote char starts a string
+original:
+|                 if (c == '\'')
+replacement:
+|                 if (false)
+
+[hc0-compare-new]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralGuardTests.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.CompareAcceptsAnExactLedger
+note = an exact count is reported as new
+original:
+|                 if (entry.Value.Count > allowed)
+replacement:
+|                 if (entry.Value.Count >= allowed)
+
+[hc0-compare-new-off]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralGuardTests.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.CompareReportsANewLiteral
+note = a new literal passes
+original:
+|                 if (entry.Value.Count > allowed)
+replacement:
+|                 if (false)
+
+[hc0-compare-fewer]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralGuardTests.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.CompareAcceptsAnExactLedger
+note = an exact count is reported as fewer
+original:
+|                 if (now < row.Count)
+replacement:
+|                 if (now <= row.Count)
+
+[hc0-compare-fewer-off]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralGuardTests.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.CompareReportsARemovedLiteral
+note = a removed literal passes
+original:
+|                 if (now < row.Count)
+replacement:
+|                 if (false)
+
+[hc0-debt-sum]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralGuardTests.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.ParseRefusesABadLedger
+note = debt-max is not checked
+original:
+|             else if (debt != ledger.DebtMax)
+replacement:
+|             else if (false)
+
+[hc0-debt-missing]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralGuardTests.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.ParseRefusesABadLedger
+note = a missing debt-max passes
+original:
+|             if (ledger.DebtMax < 0) ledger.Problems.Add("the debt-max line is missing");
+replacement:
+|             if (false) ledger.Problems.Add("the debt-max line is missing");
+
+[hc0-count-zero]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralGuardTests.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.ParseRefusesABadLedger
+note = a zero count passes
+original:
+|                 if (!int.TryParse(cells[2], NumberStyles.None, CultureInfo.InvariantCulture, out row.Count) || row.Count < 1)
+replacement:
+|                 if (!int.TryParse(cells[2], NumberStyles.None, CultureInfo.InvariantCulture, out row.Count))
+
+[hc0-tag-check]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralGuardTests.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.ParseRefusesABadLedger
+note = any tag passes
+original:
+|                 if (Array.IndexOf(Tags, row.Tag) < 0) ledger.Problems.Add("line " + (i + 1) + ": tag must be canon, ui, math or debt");
+replacement:
+|                 if (false) ledger.Problems.Add("line " + (i + 1) + ": tag must be canon, ui, math or debt");
+
+[hc0-note-check]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralGuardTests.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.ParseRefusesABadLedger
+note = a canon row without a note passes
+original:
+|                 if (row.Tag != "debt" && row.Note.Trim().Length == 0)
+replacement:
+|                 if (false)
+
+[hc0-note-debt]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralGuardTests.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.ParseRefusesABadLedger
+note = a debt row needs a note
+original:
+|                 if (row.Tag != "debt" && row.Note.Trim().Length == 0)
+replacement:
+|                 if (row.Note.Trim().Length == 0)
+
+[hc0-scope-check]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralGuardTests.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.ParseRefusesABadLedger
+note = a row outside the scanned code passes
+original:
+|                 if (!SizeLiteralScanner.InScope(row.File)) ledger.Problems.Add("line " + (i + 1) + ": " + row.File + " is outside the scanned code");
+replacement:
+|                 if (false) ledger.Problems.Add("line " + (i + 1) + ": " + row.File + " is outside the scanned code");
+
+[hc0-duplicate]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralGuardTests.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.ParseRefusesABadLedger
+note = a duplicate row passes
+original:
+|                 if (!seen.Add(row.Key)) ledger.Problems.Add("line " + row.Line + ": " + row.File + " " + row.Token + " is listed twice");
+replacement:
+|                 if (false) ledger.Problems.Add("line " + row.Line + ": " + row.File + " " + row.Token + " is listed twice");
+
+[hc0-cells]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralGuardTests.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.ParseRefusesABadLedger
+note = a short row passes
+original:
+|                 if (cells.Length < 4 || cells.Length > 5)
+replacement:
+|                 if (cells.Length > 5)
