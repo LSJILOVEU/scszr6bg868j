@@ -38,6 +38,10 @@ draws a ring of the outer radius for 1.5 s, fading. `blast-wall` is the BLAST-1 
 prone target's head looks like a hit). Its side view comes from the test `VSpread1RangeTests` with `VSPREAD1_SIDE_OUT` set
 to a file: every shot's lane, the height where its line crosses the target plane, and its outcome.
 Every frame carries `h`, the state hash after its tick (16 hex digits), so a picture of a frame can name the exact state.
+`lanes-reentry` is the RESPAWN-AI-2 setup: the three-lane map with `match.reentryTicks` 90, so a reserve enters 3 s after each
+death instead of on the clock. Such a setup writes `r` on every frame: `[owed1, entered1, owed2, entered2]` (owed may be
+negative); the page shows them as 已补 / 待补 per team. In any replay the page draws a fading ring round a unit for one
+second after it comes onto the field.
 
 | Key | Meaning | Reads |
 |---|---|---|

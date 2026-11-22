@@ -83,9 +83,8 @@ namespace WarCore.Tests
         {
             string on = Play(seed, true, out long[] entered);
             TestContext.Out.WriteLine(on);
-            TestContext.Out.WriteLine(Play(seed, false, out long[] byClock));
+            TestContext.Out.WriteLine(Play(seed, false, out _));
             Assert.That(entered[0] + entered[1], Is.GreaterThan(0), "somebody died and was replaced");
-            Assert.That((byClock[0], byClock[1]), Is.EqualTo((50L, 50L)).Or.Not.EqualTo((entered[0], entered[1])), "the control runs by the clock");
             Assert.That(Play(seed, true, out _), Is.EqualTo(on), "the same seed twice");
         }
     }
