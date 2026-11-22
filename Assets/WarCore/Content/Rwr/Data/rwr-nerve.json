@@ -1,0 +1,24 @@
+{
+  "id": "rwr-nerve",
+  "extends": "rwr-field",
+  "combat": {
+    "status": {
+      "pinned": { "spreadPermille": 1400 },
+      "broken": { "spreadPermille": 1800 },
+      "wounded": { "belowPermille": 500, "spreadPermille": 1250 }
+    }
+  },
+  "stats": { "spread": { "dragCeilPermille": 3000 } },
+  "ai": {
+    "pressureDeathRadiusMm": 3000,
+    "pressureDeathShock": 2000,
+    "pressureNearRadiusMm": 3000,
+    "pressureNearShock": 1000,
+    "pressureDecayPermille": 12,
+    "pressureBrokenAt": 7000,
+    "pressureRecoverAt": 1000,
+    "pressurePinnedAt": 2000,
+    "pressureSpreadPermille": 500,
+    "pressureBreakSharePermille": 300
+  }
+}

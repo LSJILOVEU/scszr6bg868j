@@ -107,6 +107,17 @@ namespace WarCore.Replay
             Expect("squadLeash leaves its input as it was", leashes[0] == 9 && leashes[4] == 4);
             Expect("squadLeash undefined below MinMembers", double.IsNaN(Metrics.Leash(leashes.GetRange(0, Metrics.MinMembers - 1), 0.5)));
 
+            // Tempers: walking needs more than 0.1 m since the previous frame; a part of an empty whole is undefined.
+            Expect("a step of exactly 0.1 m is not walking", !Metrics.Moved(0.1, 0) && Metrics.Moved(0.08, 0.08));
+            Expect("part 3 of 4", Metrics.Part(3, 4) == 0.75 && Metrics.Part(0, 4) == 0);
+            Expect("part of nothing is undefined", double.IsNaN(Metrics.Part(0, 0)));
+            var seenWall = new List<(double x, double z, double sx, double sz)> { (0, 10, 10, 1) };
+            var behind = new List<(double x, double z)> { (0, 20) };
+            Expect("an enemy behind a wall is not in sight, one past its end is, one out of range is not",
+                !Metrics.AnySeenWithin((0, 0), behind, 25, seenWall) && Metrics.AnySeenWithin((12, 0), behind, 25, seenWall)
+                && !Metrics.AnySeenWithin((12, 0), behind, 20, seenWall) && Metrics.AnySeenWithin((0, 0), behind, 20, new List<(double x, double z, double sx, double sz)>()));
+            ClipChecks();
+
             string a = Program.Export("base", 300, 3, out _), b = Program.Export("base", 300, 3, out _);
             Expect("export repeats byte for byte", a == b);
             Expect("an export without squads has no squad frames", !a.Contains("\"q\":[") && a.Contains("\"squadShare\":{\"mean\":null"));
@@ -115,9 +126,99 @@ namespace WarCore.Replay
             Recipes.LanesSeed = null;
             Expect("an export with squads repeats byte for byte", once == twice);
             Expect("an export with squads has squad frames", once.Contains("\"q\":[") && !once.Contains("\"squadShare\":{\"mean\":null"));
+            Expect("an export without tempers has no temper frames and no clips", !once.Contains("\"qm\":[") && !once.Contains("\"clips\":[")
+                && once.Contains("\"rashShare\":{\"mean\":null") && once.Contains("\"regroupShare\":{\"mean\":null"));
+            Expect("the five temper numbers come after the sixteen", once.Contains("\"squadLeashP90\":{") && once.IndexOf("\"squadLeashP90\":{", StringComparison.Ordinal) < once.IndexOf("\"rashShare\":{", StringComparison.Ordinal)
+                && Values(once) == 42 && Values(a) == 42);
+            Recipes.LanesSeed = 42;
+            string hot = Program.Export("lanes-allon-squads-temper", 900, 3, out _), again = Program.Export("lanes-allon-squads-temper", 900, 3, out _);
+            Recipes.LanesSeed = null;
+            Expect("an export with tempers repeats byte for byte, clips included", hot == again);
+            Expect("an export with tempers has temper frames and clips", hot.Contains("\"qm\":[") && hot.Contains("\"clips\":[{\"k\":\"")
+                && !hot.Contains("\"rashShare\":{\"mean\":null") && !hot.Contains("\"regroupShare\":{\"mean\":null"));
 
             Console.WriteLine(failures == 0 ? "selftest: all passed" : $"selftest: {failures} failed");
             return failures == 0 ? 0 : 1;
+        }
+
+        // The number of values in the first frame's metrics.
+        private static int Values(string export)
+        {
+            int from = export.IndexOf("\"m\":[", StringComparison.Ordinal) + 5, to = export.IndexOf(']', from);
+            return export.Substring(from, to - from).Split(',').Length;
+        }
+
+        // Clips on hand-built tapes: frames are 3 ticks apart; squads are named by leader.
+        private static void ClipChecks()
+        {
+            Clips.Row walk(int leader, int team = 1) => new Clips.Row(leader, team, Clips.Rash, 0, true, Clips.Walked);
+            Clips.Row stand(int leader, int team = 2) => new Clips.Row(leader, team, Clips.Steady, 0, true, Clips.Stood);
+            Clips.Row rally(int leader, int mark) => new Clips.Row(leader, 1, 1, mark, false, Clips.Walked);
+            string show(List<Clips.Clip> clips)
+            {
+                var sb = new System.Text.StringBuilder(); Clips.Write(sb, clips); return sb.ToString();
+            }
+            // 100 frames. Squad 4 walks in frames 10..29, squad 5 beside it when asked, squad 2 in 30..38 and in 40..59 (as
+            // long, later); squad 7 stands from frame 15 on (or another) for a number of frames, squad 9 in 60..89 (longer,
+            // outside the rash clip, which with its padding is frames 0..49).
+            Clips.Tape build(int standing, bool extra = false, int from = 15)
+            {
+                var tape = new Clips.Tape();
+                for (int f = 0; f < 100; f++)
+                {
+                    tape.Begin(f * 3);
+                    if (f >= 30 && f <= 59 && f != 39) tape.Add(walk(2));
+                    if (f >= 10 && f <= 29) tape.Add(walk(4));
+                    if (extra && f >= 10 && f <= 29) tape.Add(walk(5));
+                    if (f >= from && f < from + standing) tape.Add(stand(7));
+                    if (f >= 60 && f <= 89) tape.Add(stand(9));
+                }
+                return tape;
+            }
+            Expect("clips: the longest walk wins, the earlier of two equal ones, the lower leader of two at once; the steady squad standing meanwhile",
+                show(Clips.Pick(build(10, extra: true))) == ",\"clips\":[{\"k\":\"rash\",\"team\":1,\"leader\":4,\"from\":0,\"to\":147,\"note\":1},"
+                    + "{\"k\":\"steady\",\"team\":2,\"leader\":7,\"from\":0,\"to\":147,\"note\":1}]");
+            Expect("clips: nine standing frames are too few, the longest stand anywhere is shown and marked as another stretch",
+                show(Clips.Pick(build(9))) == ",\"clips\":[{\"k\":\"rash\",\"team\":1,\"leader\":4,\"from\":0,\"to\":147,\"note\":1},"
+                    + "{\"k\":\"steady\",\"team\":2,\"leader\":9,\"from\":120,\"to\":297,\"note\":0}]");
+            Expect("clips: standing in the ticks shown before and after the walk counts as meanwhile, standing after them does not",
+                show(Clips.Pick(build(10, from: 40))).Contains("\"k\":\"steady\",\"team\":2,\"leader\":7,\"from\":0,\"to\":147,\"note\":1}")
+                && show(Clips.Pick(build(10, from: 41))).Contains("\"k\":\"steady\",\"team\":2,\"leader\":9,"));
+            Expect("clips: the same tape gives the same clips", show(Clips.Pick(build(10))) == show(Clips.Pick(build(10))));
+
+            // A walking rash squad that is regrouping, pinned, with no enemy near or with no previous frame is not a walk.
+            var none = new Clips.Tape();
+            for (int f = 0; f < 20; f++)
+            {
+                none.Begin(f * 3);
+                none.Add(new Clips.Row(1, 1, Clips.Rash, Clips.Regrouping, true, Clips.Walked));
+                none.Add(new Clips.Row(2, 1, Clips.Rash, 0, false, Clips.Walked));
+                none.Add(new Clips.Row(3, 1, Clips.Rash, 0, true, Clips.Unknown));
+                none.Add(new Clips.Row(4, 1, Clips.Rash, 0, true, Clips.Stood));
+                none.Add(new Clips.Row(5, 1, 1, 0, true, Clips.Walked));
+                none.Add(new Clips.Row(6, 2, Clips.Steady, Clips.Regrouping, true, Clips.Stood));
+                none.Add(new Clips.Row(7, 2, Clips.Steady, 0, true, Clips.Walked));
+            }
+            Expect("clips: nothing to show gives no clips", show(Clips.Pick(none)) == ",\"clips\":[]" && Clips.Pick(new Clips.Tape()).Count == 0);
+
+            // Regrouping: squad 3 regroups in frames 5..19 and then waits; squad 6 in 8..29 and comes out filled in 30; squad
+            // 8 regroups in 2..4 and is gone in 5.
+            Clips.Tape marks(bool fills)
+            {
+                var tape = new Clips.Tape();
+                for (int f = 0; f < 100; f++)
+                {
+                    tape.Begin(f * 3);
+                    tape.Add(rally(3, f >= 5 && f <= 19 ? Clips.Regrouping : f >= 20 ? Clips.Waiting : 0));
+                    if (fills) tape.Add(rally(6, f >= 8 && f <= 29 ? Clips.Regrouping : 0));
+                    if (f < 5) tape.Add(rally(8, f >= 2 ? Clips.Regrouping : 0));
+                }
+                return tape;
+            }
+            Expect("clips: the first regrouping that fills up is shown, though another ended earlier by waiting",
+                show(Clips.Pick(marks(true))) == ",\"clips\":[{\"k\":\"regroup\",\"team\":1,\"leader\":6,\"from\":0,\"to\":150,\"note\":1}]");
+            Expect("clips: without one, the first that ended by waiting; a squad that broke up while regrouping is not shown",
+                show(Clips.Pick(marks(false))) == ",\"clips\":[{\"k\":\"regroup\",\"team\":1,\"leader\":3,\"from\":0,\"to\":120,\"note\":0}]");
         }
 
         private static void Expect(string name, bool ok)

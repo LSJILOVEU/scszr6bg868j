@@ -81,6 +81,11 @@ namespace WarCore.Replay
                 () => Lanes(Layer("replay-lanes-allon-squads", LanesBake().PackId, WithSquads(AllOn(ScatterPart)))), () => LanesBake().WcMapBytes, P1RingMm),
             ["lanes-allon-roles-squads"] = new Entry("Three-lane map, all finished AI on (assault-roles) + squads",
                 () => Lanes(Layer("replay-lanes-allon-roles-squads", LanesBake().PackId, WithSquads(AllOn(RolesPart)))), () => LanesBake().WcMapBytes, P1RingMm),
+            // AI-P5b (PLACEHOLDER values): tempers and regrouping on top of the squad setups.
+            ["lanes-allon-squads-temper"] = new Entry("Three-lane map, all finished AI on (scatter) + squads with tempers and regrouping",
+                () => Lanes(Layer("replay-lanes-allon-squads-temper", LanesBake().PackId, WithTempers(WithSquads(AllOn(ScatterPart))))), () => LanesBake().WcMapBytes, P1RingMm),
+            ["lanes-allon-roles-squads-temper"] = new Entry("Three-lane map, all finished AI on (assault-roles) + squads with tempers and regrouping",
+                () => Lanes(Layer("replay-lanes-allon-roles-squads-temper", LanesBake().PackId, WithTempers(WithSquads(AllOn(RolesPart))))), () => LanesBake().WcMapBytes, P1RingMm),
             // ANC-2: ancient-field layer (spear), 60 against 60 on a flat 96 x 64 m field; the same layout as Tests/MapContent/Ancient.
             ["ancient-field"] = new Entry("Ancient field, 60 v 60 with spears", AncientField, AncientFieldMap),
             // AIM-1: rwr-aim without damage; team 1 (4) stands, team 2 (4) runs to and fro along x 30 m in front at 6 m/s (the top
@@ -93,11 +98,16 @@ namespace WarCore.Replay
             ["stance-wall"] = new Entry("1 m wall, team 2 crouches at 60 and stands at 240", StanceDemo.Recipe, StanceDemo.MapBytes),
             // VSPREAD-1: three 30 m lanes, standing, crouched and prone targets, a fixed 2000 millidegree gun (VspreadDemo).
             ["vspread-range"] = new Entry("rwr-vspread, three 30 m lanes: standing, crouched, prone targets", VspreadDemo.Recipe, VspreadDemo.MapBytes),
+            // NERVE-1: three shooters 30 m from unarmed targets; from tick 150 one is pinned and one broken by a script (NerveDemo).
+            ["nerve-fire"] = new Entry("rwr-nerve, shooters calm / pinned / broken from tick 150", NerveDemo.Recipe, NerveDemo.MapBytes),
         };
 
         private const string SquadAi = "\"squadMinSize\": 4, \"squadMaxSize\": 9, \"squadSkirmisherPermille\": 300, \"squadRecruitRadiusMm\": 30000, "
             + "\"squadFormTicks\": 15, \"squadSpreadMinMm\": 1500, \"squadSpreadMaxMm\": 6000";
         private static string WithSquads(string ai) => ai.Substring(0, ai.Length - 2) + ", " + SquadAi + " }";
+        private const string TemperAi = "\"squadRashPermille\": 300, \"squadSteadyPermille\": 250, \"squadShakenPermille\": 600, \"squadRashMinRangeMm\": 8000, "
+            + "\"squadRegroupBelowPermille\": 500, \"squadRegroupUntilPermille\": 750, \"squadRegroupMaxTicks\": 1200";
+        private static string WithTempers(string ai) => ai.Substring(0, ai.Length - 2) + ", " + TemperAi + " }";
         private const string PlaytestFields = "\"failedSlotTicks\": 90, \"targetMemoryTicks\": 300, \"searchTicks\": 90, \"reactionTicks\": 15, "
             + "\"senseTicks\": 6, \"burstShots\": 3, \"burstPauseTicks\": 30, \"suppressTicks\": 90, \"meleeChaseRange\": 12, "
             + "\"holdSharePermille\": 300, \"attackSpreadPoints\": 3";

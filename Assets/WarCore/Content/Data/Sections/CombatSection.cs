@@ -12,9 +12,12 @@ namespace WarCore.Content
         internal CombatSection() : base(SectionKey) { }
         protected override string NestedObject => "body";
         // AIM-1: combat.moveSpread is an object too (bands and optional per-weapon tables), kept whole across layers.
-        // VSPREAD-1: combat.verticalSpread is an object (with byStance inside), kept whole across layers.
-        internal const string MoveSpreadField = "moveSpread", ManualReloadField = "manualReload", VerticalSpreadField = "verticalSpread";
-        protected override bool IsNested(string field) => base.IsNested(field) || field == MoveSpreadField || field == VerticalSpreadField;
+        // VSPREAD-1: combat.verticalSpread is an object (with byStance inside), kept whole across layers; so is NERVE-1
+        // combat.status (CombatNerveReader).
+        internal const string MoveSpreadField = "moveSpread", ManualReloadField = "manualReload", VerticalSpreadField = "verticalSpread",
+            StatusField = "status";
+        protected override bool IsNested(string field) =>
+            base.IsNested(field) || field == MoveSpreadField || field == VerticalSpreadField || field == StatusField;
         // STANCE-1 combat.stances and BLAST-1 combat.blasts are arrays, each kept whole across layers.
         private static readonly string[] Arrays = { StancesField, BlastsField };
         protected override string[] NestedArrays => Arrays;
@@ -176,6 +179,8 @@ namespace WarCore.Content
             if (moveField != null) moveField.Used = true;
             bool manualReload = cr.Has(ManualReloadField) && cr.Bool(ManualReloadField);
             BlastRules blasts = Blasts(b.Pack, cr);
+            ContentField status = cr.FieldOf(StatusField);
+            if (status != null) status.Used = true;
             ContentField stances = cr.FieldOf(StancesField);
             if (stances != null)
             {
@@ -187,6 +192,7 @@ namespace WarCore.Content
             cr.Done();
             MoveSpread moveSpread = moveField == null ? null : CombatAimReader.MoveSpread(b.Pack, moveField, b.WeaponIds);
             if (moveSpread != null || manualReload) b.Publish(new CombatAim(moveSpread, manualReload));
+            if (status != null) b.Publish(CombatNerveReader.Status(b.Pack, status));
             if (body != null) b.Body = Body(b.Pack, body);
             if (stances != null) b.Stances = Stances(b.Pack, combat, stances, b.Body);
             if (vertical != null) b.Publish(CombatVSpreadReader.Read(b.Pack, vertical, b.Body.HasValue, b.Stances));
