@@ -200,6 +200,16 @@ namespace WarCore.Tests
                 foreach (MapWallInfo w in inside.Where(v => v.Stamp == ""))
                     if (w.HeightRaw != Top || w.HasBase) found.Add("W4: shop wall " + w.Id + " is " + w.HeightRaw + " raw high");
                 if (inside.Count != 10) found.Add("W4: shop " + s + " has " + inside.Count + " walls");
+                // The floor walls close the whole ring of the footprint but the doorway, and leave the inside free.
+                var floor = new HashSet<(int, int)>(inside.Where(w => !w.HasBase).SelectMany(Cells));
+                for (int x = box.X; x <= box.X1; x++)
+                    for (int z = box.Z; z <= box.Z1; z++)
+                    {
+                        bool ring = x == box.X || x == box.X1 || z == box.Z || z == box.Z1;
+                        bool want = ring && (x, z) != s.Door;
+                        if (floor.Contains((x, z)) != want)
+                            found.Add("W4: shop " + s + " cell (" + x + ", " + z + ") is " + (want ? "open" : "walled"));
+                    }
             }
         }
 
