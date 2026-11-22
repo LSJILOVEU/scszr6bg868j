@@ -181,9 +181,9 @@ expect = WarCore.Tests.Scale2aSizesTests.S3g_
 expect = WarCore.Tests.Scale2aSizesTests.S2_
 note = the pick keeps the 1 m body
 original:
-| BodyHit(ox, oy, oz, fx, fy, fz, e, BodySizes.TopOf(sizes, e))
+| BodyHit(ox, oy, oz, fx, fy, fz, e, BodySizes.TopOf(sizes, e), SnapRadius)
 replacement:
-| BodyHit(ox, oy, oz, fx, fy, fz, e, BodySizes.TopOf(null, e))
+| BodyHit(ox, oy, oz, fx, fy, fz, e, BodySizes.TopOf(null, e), SnapRadius)
 
 [scale2a-side-top-exclusive]
 file = Assets/WarCore/Presentation/Camera/AimPick.cs

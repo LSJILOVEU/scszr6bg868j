@@ -83,8 +83,7 @@ namespace WarCore.Presentation
             if (reach == null)
                 foreach (ViewEntity e in shown.Entities)
                 {
-                    if (!e.Alive || e.Team == 0 || e.Team == me.Team || e.Key == self.Value) continue;
-                    if (cut != null && cut.IsHidden(e)) continue;
+                    if (!Snappable(e, me, self.Value, cut)) continue;
                     double t = BodyHit(ox, oy, oz, fx, fy, fz, e, BodySizes.TopOf(sizes, e), SnapRadius);
                     if (t < best || (t == best && t < double.PositiveInfinity && e.Key < snapped.Key)) { best = t; snapped = e; }
                 }
@@ -93,8 +92,7 @@ namespace WarCore.Presentation
                 double bestDistance = double.PositiveInfinity;
                 foreach (ViewEntity e in shown.Entities)
                 {
-                    if (!e.Alive || e.Team == 0 || e.Team == me.Team || e.Key == self.Value) continue;
-                    if (cut != null && cut.IsHidden(e)) continue;
+                    if (!Snappable(e, me, self.Value, cut)) continue; // the same filter as without a reach
                     float top = sizes.Top(e);
                     double t = BodyHit(ox, oy, oz, fx, fy, fz, e, reach.Height(top), reach.Radius(sizes.Radius));
                     if (!(t < tGround)) continue;
@@ -110,6 +108,14 @@ namespace WarCore.Presentation
             long? yMm = ground == null && snapped.Layer == 0 ? (long?)null
                 : (long)Math.Round((double)snapped.Y * 1000.0, MidpointRounding.AwayFromZero);
             return new AimTarget(AimKind.Unit, snapped.X, snapped.Y, snapped.Z, yMm, snapped.Key);
+        }
+
+        // Who the pick can snap to: a living unit of another team than the player's (team 0 is nobody's), not the player,
+        // and not hidden by the cut.
+        private static bool Snappable(ViewEntity e, ViewEntity me, ulong self, LayerCutResult cut)
+        {
+            if (!e.Alive || e.Team == 0 || e.Team == me.Team || e.Key == self) return false;
+            return cut == null || !cut.IsHidden(e);
         }
 
         // The first top of the plate of this layer in front of tLimit, at a millimetre point on a solid cell of that plate.

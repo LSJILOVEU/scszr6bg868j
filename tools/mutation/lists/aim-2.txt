@@ -1,6 +1,7 @@
 # AIM-2: the mouse reach (PickReach), the nearest-to-the-ray choice in AimPick, the content section "pick" and the
 # showcase wiring (the house stage's body, the legacy house, the combat layer). Numbers in the notes are the card's table.
 # Not listed: 17 (the pick in a pack hash) has no site, since nothing in Sim or Combat reads PickRules; S6 is its guard.
+# The reach loop and the old loop share Snappable; the self check is not mutated (the player is always on its own team).
 # The Unity host's wiring (ShowcaseHost passes stage.Reach()) runs on the Mac only.
 
 [aim2-no-reach-takes-new-path]
@@ -280,3 +281,53 @@ original:
 | PickReach.Of(ContentCatalog.Find().Load(CombatLayer))
 replacement:
 | PickReach.Of(ContentCatalog.Find().Load(paletteLayer))
+
+[aim2-reach-skips-filter]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ReachTests.TheReachPicksOnlyLivingVisibleEnemies
+note = the reach loop snaps to anyone
+original:
+| if (!Snappable(e, me, self.Value, cut)) continue; // the same filter as without a reach
+replacement:
+| if (Snappable(e, me, self.Value, cut) && false) continue; // the same filter as without a reach
+
+[aim2-filter-dead-snaps]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ReachTests.TheReachPicksOnlyLivingVisibleEnemies
+note = a dead unit is snapped to
+original:
+| if (!e.Alive || e.Team == 0 || e.Team == me.Team || e.Key == self) return false;
+replacement:
+| if (e.Team == 0 || e.Team == me.Team || e.Key == self) return false;
+
+[aim2-filter-no-team-snaps]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ReachTests.TheReachPicksOnlyLivingVisibleEnemies
+note = a unit of no team is snapped to
+original:
+| if (!e.Alive || e.Team == 0 || e.Team == me.Team || e.Key == self) return false;
+replacement:
+| if (!e.Alive || e.Team == me.Team || e.Key == self) return false;
+
+[aim2-filter-team-mate-snaps]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ReachTests.TheReachPicksOnlyLivingVisibleEnemies
+note = a team mate is snapped to
+original:
+| if (!e.Alive || e.Team == 0 || e.Team == me.Team || e.Key == self) return false;
+replacement:
+| if (!e.Alive || e.Team == 0 || e.Key == self) return false;
+
+[aim2-filter-hidden-snaps]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ReachTests.TheReachPicksOnlyLivingVisibleEnemies
+note = a unit the cut hides is snapped to
+original:
+| return cut == null || !cut.IsHidden(e);
+replacement:
+| return true;

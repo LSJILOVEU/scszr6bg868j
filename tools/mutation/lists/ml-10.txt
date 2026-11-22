@@ -174,10 +174,9 @@ filter = FullyQualifiedName~Ml10
 expect = WarCore.Tests.Ml10PickTests.HiddenUnitsAreNotSnapped
 note = a hidden unit is snapped to
 original:
-|                 if (cut != null && cut.IsHidden(e)) continue;
-| 
+|             return cut == null || !cut.IsHidden(e);
 replacement:
-| 
+|             return true;
 
 [ml10-pick-unit-height]
 file = Assets/WarCore/Presentation/Camera/AimPick.cs

@@ -154,6 +154,35 @@ namespace WarCore.Tests
             Assert.That(a.YMm, Is.EqualTo(3000L));
         }
 
+        // The reach keeps the old filter: under the demo house's first floor (the cut hides layer 2) a ray through a hidden
+        // enemy upstairs lands where a team mate, a dead enemy and a unit of no team stand right on it; a living enemy 0.5 m
+        // beside it is the one picked. Without the cut the enemy upstairs is picked.
+        [Test]
+        public void TheReachPicksOnlyLivingVisibleEnemies()
+        {
+            (float X, float Y, float Z) f = new IsoCamera(12f).Forward;
+            ViewPlates plates = ViewPlates.From(WcMapReader.Read(PlateDemo.MapBytes()));
+            var me = new ViewEntity(1, 0, 11.5f, 0f, 7.5f, team: 1);
+            float px = 12.5f, py = 4f, pz = 7.5f, tq = -py / f.Y;
+            float qx = px + f.X * tq, qz = pz + f.Z * tq;
+            float sx = -f.Z, sz = f.X, side = 0.5f / MathF.Sqrt(sx * sx + sz * sz);
+            var shown = new FrameView(1, new[]
+            {
+                me,
+                new ViewEntity(3, 0, qx, 0f, qz, team: 1),
+                new ViewEntity(4, 0, qx, 0f, qz, team: 2, alive: false),
+                new ViewEntity(5, 0, qx, 0f, qz, team: 0),
+                new ViewEntity(6, 0, qx + sx * side, 0f, qz + sz * side, team: 2),
+                new ViewEntity(9, 0, px, 3f, pz, team: 2, layer: 2),
+            });
+            LayerCutResult under = LayerCut.Run(plates, ViewMap.Parse(PlateDemo.MapBytes()), me, f);
+            Assert.That(under.IsHidden(shown.Entities[5]), Is.True, "the enemy upstairs is hidden");
+            AimTarget Ray(LayerCutResult cut) =>
+                AimPick.PickRay(px - f.X * 30, py - f.Y * 30, pz - f.Z * 30, f.X, f.Y, f.Z, 0f, null, shown, 1, plates, cut, Sizes, Reach);
+            Assert.That(Snapped(Ray(under)), Is.EqualTo(6UL));
+            Assert.That(Snapped(Ray(null)), Is.EqualTo(9UL));
+        }
+
         // A ridge 6 m high at x 12 (slope 1), 24 x 8 m, as the A4 fixture builds its height fields.
         private static ViewGround HighRidge() => ViewGround.For(ViewMap.Parse(WcMapWriter.Write(Wp23.Make(24, 8, 0, 12 * A4.S,
             Array.Empty<(int, int, int, int)>(), 2 * A4.S, (i, j) => i >= 6 && i <= 18 ? (int)((6 - Math.Abs(i - 12)) * A4.S) : 0, A4.Names,
