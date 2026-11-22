@@ -177,11 +177,19 @@ namespace WarCore.Tests
         public void A14_NoPointsNoReserves()
         {
             MapBakeResult map = MapW(points: "");
-            WorldRecipe recipe = MapRecipe.From(map, LoadW(Five));
+            WorldRecipe recipe = From(map, LoadW(Five));
             Assert.That((recipe.Units.Length, recipe.Match), Is.EqualTo((6, (MatchPack)null)));
             M6World w = null;
             Assert.DoesNotThrow(() => w = new M6World(recipe, map.WcMapBytes));
             Assert.That((Fielded(w, 1), Fielded(w, 2)), Is.EqualTo((3, 3)));
+        }
+
+        // The start of a map, inside an assertion: a start that throws fails the test as a failed assertion.
+        private static WorldRecipe From(MapBakeResult map, ContentPack pack)
+        {
+            WorldRecipe recipe = null;
+            Assert.DoesNotThrow(() => recipe = MapRecipe.From(map, pack));
+            return recipe;
         }
 
         // A14: a team without a base gets none (its reserves could never deploy), though it has soldiers. Such a map does
@@ -189,10 +197,10 @@ namespace WarCore.Tests
         [Test]
         public void A14_OnlyTeamsWithABaseGetReserves()
         {
-            WorldRecipe recipe = MapRecipe.From(MapW(bases: Base1W), LoadW(Five));
+            WorldRecipe recipe = From(MapW(bases: Base1W), LoadW(Five));
             Assert.That(recipe.Units.Length, Is.EqualTo(11));
             AssertMade(recipe, 6, 1, HighestKey + 1, false);
-            WorldRecipe second = MapRecipe.From(MapW(bases: Base2W), LoadW(Five));
+            WorldRecipe second = From(MapW(bases: Base2W), LoadW(Five));
             Assert.That(second.Units.Length, Is.EqualTo(11));
             AssertMade(second, 6, 2, HighestKey + 1, false);
         }
@@ -201,7 +209,7 @@ namespace WarCore.Tests
         [Test]
         public void A14_ABaseWithoutSoldiersStillGetsReserves()
         {
-            WorldRecipe recipe = MapRecipe.From(MapW(soldiers: SoldiersW(teamOne: false)), LoadW(Five));
+            WorldRecipe recipe = From(MapW(soldiers: SoldiersW(teamOne: false)), LoadW(Five));
             Assert.That(recipe.Units.Length, Is.EqualTo(13));
             AssertMade(recipe, 3, 1, HighestKey + 1, false);
             AssertMade(recipe, 8, 2, HighestKey + 6, false);
@@ -213,7 +221,7 @@ namespace WarCore.Tests
         public void A14_KeysGoOnFromTheHighest()
         {
             string high = E1bSamples.Unit(500, "w.line", 1, 1, 10500, 6500, false) + ", " + SoldiersW();
-            WorldRecipe recipe = MapRecipe.From(MapW(soldiers: high, nextUnit: 501), LoadW(Five));
+            WorldRecipe recipe = From(MapW(soldiers: high, nextUnit: 501), LoadW(Five));
             Assert.That(recipe.Units.Length, Is.EqualTo(17));
             AssertMade(recipe, 7, 1, 501, false);
             AssertMade(recipe, 12, 2, 506, false);

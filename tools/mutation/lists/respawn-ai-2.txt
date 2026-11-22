@@ -261,8 +261,7 @@ replacement:
 [respawn-ai-2-25-takeover-without-switch]
 file = Assets/WarCore/Battle/ReinforceSystem.cs
 filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
-expect = WarCore.Tests.RespawnAi2Tests.TheSwitchNeedsItsParts
-expect = WarCore.Tests.RespawnAi2Tests.A8_
+expect = WarCore.Tests.RespawnAi2Tests.A1_ZeroIsLeftOut_AndKeepsTheLockedRun
 note = a takeover is counted without the switch
 original:
 |             if (!ByDebt) throw new InvalidOperationException("Takeovers are counted only with match.reentryTicks.");

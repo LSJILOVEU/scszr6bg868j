@@ -395,13 +395,18 @@ namespace WarCore.Tests
         public void TheSessionReportsTheCounts()
         {
             M6World w = World(Units(), Pack());
-            Kill(w, D, 2, 3);
+            Kill(w, D, 1, 2, 3);
             GoTo(w, D + Reentry);
             Assert.That(w.Session.HasReentry, Is.True);
-            Assert.That((w.Session.TryReentry(1, out long owed, out long entered), owed, entered), Is.EqualTo((true, 1L, 1L)));
+            // Three died on one tick and one has entered: two are still owed.
+            Assert.That((w.Session.TryReentry(1, out long owed, out long entered), owed, entered), Is.EqualTo((true, 2L, 1L)));
             Assert.That((w.Session.TryReentry(2, out owed, out entered), owed, entered), Is.EqualTo((true, 0L, 0L)));
-            Assert.That((w.Session.TryReentry(0, out owed, out entered), owed, entered), Is.EqualTo((false, 0L, 0L)));
-            Assert.That((w.Session.TryReentry(3, out owed, out entered), owed, entered), Is.EqualTo((false, 0L, 0L)));
+            foreach (int outside in new[] { 0, 3, -1 })
+            {
+                (bool, long, long) got = (true, -1L, -1L);
+                Assert.DoesNotThrow(() => { bool known = w.Session.TryReentry(outside, out long o, out long e); got = (known, o, e); }, "team " + outside);
+                Assert.That(got, Is.EqualTo((false, 0L, 0L)), "team " + outside);
+            }
             M6World off = World(Units(), Pack(reentry: 0));
             Assert.DoesNotThrow(() => off.Step(Interval));
             Assert.That(off.Reinforce.Successes(1), Is.EqualTo(1L));
