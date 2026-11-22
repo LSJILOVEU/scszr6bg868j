@@ -40,12 +40,15 @@ namespace WarCore.Unity
         private readonly Material[] team, link, silhouette;
         private readonly Material skin, dark, steel, dead, pinned, broken, leader, white;
         private readonly LineRenderer ring;
+        private readonly float[] stanceScales;
 
-        // session: asked once per unit whether it carries a weapon. colors: 0xRRGGBB per team, team 1 first.
-        public ShowcaseUnits(Transform parent, SimSession session, IReadOnlyList<int> colors)
+        // session: asked once per unit whether it carries a weapon. colors: 0xRRGGBB per team, team 1 first. stanceScales
+        // (SHOW-2): how tall each stance level draws as a share of standing (ShowcaseStage.StanceScales); null: all standing.
+        public ShowcaseUnits(Transform parent, SimSession session, IReadOnlyList<int> colors, float[] stanceScales = null)
         {
             this.parent = parent;
             this.session = session;
+            this.stanceScales = stanceScales ?? new[] { 1f };
             team = new Material[colors.Count];
             link = new Material[colors.Count];
             silhouette = new Material[colors.Count];
@@ -248,7 +251,8 @@ namespace WarCore.Unity
                 return;
             }
             bool walking = speed > WalkSpeed;
-            float duck = entity.Nerve == 1 ? DuckScale : 1f, lean = !walking ? 0f : entity.Nerve >= 2 ? 20f : 8f;
+            float stance = entity.Stance >= 0 && entity.Stance < stanceScales.Length ? stanceScales[entity.Stance] : 1f;
+            float duck = Mathf.Min(stance, entity.Nerve == 1 ? DuckScale : 1f), lean = !walking ? 0f : entity.Nerve >= 2 ? 20f : 8f;
             body.Duck = still ? duck : Mathf.MoveTowards(body.Duck, duck, dt * 3f);
             body.Lean = still ? lean : Mathf.MoveTowards(body.Lean, lean, dt * 60f);
             body.ShownYaw = still ? body.Yaw : Mathf.MoveTowardsAngle(body.ShownYaw, body.Yaw, dt * 720f);

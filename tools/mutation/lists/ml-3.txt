@@ -190,7 +190,7 @@ expect = WarCore.Tests.Ml3ShotTests.MuzzleBelowTheEyeStartsLowAndRises
 expect = WarCore.Tests.Ml3ShotTests.TwoMetreWallHidesAndStops
 note = P4: aimed lines end at the aimed ground point
 original:
-| direction = Lift(intents[shooter.Id].Point, aimEndRaw) - origin;
+| direction = AimedEnd(shooter, intents[shooter.Id].Point) - origin;
 replacement:
 | direction = intents[shooter.Id].Point - origin;
 
@@ -210,7 +210,7 @@ filter = FullyQualifiedName~Ml3
 expect = WarCore.Tests.Ml3ShotTests.MuzzleBelowTheEyeStartsLowAndRises
 note = P6: automatic lines end at the target muzzle
 original:
-| direction = combat.ShotEnd(target) - origin;
+| direction = combat.ShotEnd(shooter, target) - origin;
 replacement:
 | direction = combat.MuzzlePoint(target) - origin;
 
@@ -740,7 +740,7 @@ filter = FullyQualifiedName~Ml3
 expect = WarCore.Tests.Ml3SightPortsTests.AllyBlocksRunsMuzzleToTheLiftedPoint
 note = AllyBlocks ends on the ground point
 original:
-| SimVec3 direction = Lift(point, aimEndRaw) - origin;
+| SimVec3 direction = AimedEnd(shooter, point) - origin;
 replacement:
 | SimVec3 direction = point - origin;
 
