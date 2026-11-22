@@ -62,12 +62,16 @@ namespace WarCore.Combat
         public int SpreadDragFloorPermille { get; }
         public int SpreadDragCeilPermille { get; }
         public const int MaxDragFloorPermille = 1000, MinDragCeilPermille = 1000;
+        // DOWN-1 combat.downed: a lethal hit downs the unit instead (null = off; the pack hashes as before).
+        public DownedRules Downed { get; }
+        // DOWN-1: the world keeps casualties (downed or stunned units) when the pack has combat.downed or a blast that stuns.
+        public bool UsesCasualties => Downed != null || (Blasts != null && Blasts.Stuns);
 
         public CombatPack(WeaponDef[] weapons, IHitResolver resolver, ITargetSelector selector, long maxHealthRaw,
             bool friendlyFire = false, bool friendlyFireLocked = false, int allyCheckMissRaw = 0, long allyHoldMilli = 30000, MeleeSpec[] melee = null, BlockSpec[] block = null,
             CombatBody? body = null, int[] projectileSpeeds = null, MoveSpread moveSpread = null, bool manualReload = false, BlastRules blasts = null,
             StanceDef[] stances = null, VerticalSpread verticalSpread = null, CombatStatus status = null, int spreadDragFloorPermille = 0,
-            int spreadDragCeilPermille = 0)
+            int spreadDragCeilPermille = 0, DownedRules downed = null)
         {
             if (spreadDragFloorPermille != 0 && (spreadDragFloorPermille < StatLine.MinPermille || spreadDragFloorPermille > MaxDragFloorPermille))
                 throw new ArgumentOutOfRangeException(nameof(spreadDragFloorPermille));
@@ -98,6 +102,9 @@ namespace WarCore.Combat
             if (verticalSpread != null && verticalSpread.StancePermille.Length != this.stances.Length)
                 throw new ArgumentException("A vertical spread needs one value per stance (" + this.stances.Length + ").", nameof(verticalSpread));
             VerticalSpread = verticalSpread;
+            if (downed != null && downed.StanceLevel > this.stances.Length)
+                throw new ArgumentException("The downed stance level " + downed.StanceLevel + " is not a stance of the combat pack.", nameof(downed));
+            Downed = downed;
             var hash = new StateHash();
             hash.Add("combat.pack.v2"); hash.Add(weapons.Length);
             foreach (var weapon in this.weapons) weapon.WriteState(hash);
@@ -126,6 +133,7 @@ namespace WarCore.Combat
             // body, projectile, stances, move spread, manual reload, vertical spread (VSPREAD-1), status (NERVE-1), spread cap
             // (NERVE-1, stats.spread), blasts, throwables, armour, downed (DOWN-1), rescue.
             if (blasts != null) blasts.WriteState(hash);
+            if (downed != null) downed.WriteState(hash);
             PolicyDigest = hash.Value;
         }
 
@@ -188,7 +196,7 @@ namespace WarCore.Combat
         public CombatPack WithSelector(ITargetSelector selector) => new CombatPack(weapons, Resolver, selector, MaxHealthRaw,
             FriendlyFire, FriendlyFireLocked, AllyCheckMissRaw, AllyHoldMilli, melee.Length == 0 ? null : melee, block.Length == 0 ? null : block, Body,
             projectileSpeeds.Length == 0 ? null : projectileSpeeds, MoveSpread, ManualReload, Blasts,
-            stances.Length == 0 ? null : stances, VerticalSpread, Status, SpreadDragFloorPermille, SpreadDragCeilPermille);
+            stances.Length == 0 ? null : stances, VerticalSpread, Status, SpreadDragFloorPermille, SpreadDragCeilPermille, Downed);
 
         // BLAST-1 blast commands B for a world of these units: PerTick blasts a tick, each landing at most one damage command on
         // every unit, so B = PerTick * N; 0 for a pack without blasts. Refused when the damage settlement's staging

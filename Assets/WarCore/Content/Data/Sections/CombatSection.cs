@@ -13,11 +13,12 @@ namespace WarCore.Content
         protected override string NestedObject => "body";
         // AIM-1: combat.moveSpread is an object too (bands and optional per-weapon tables), kept whole across layers.
         // VSPREAD-1: combat.verticalSpread is an object (with byStance inside), kept whole across layers; so is NERVE-1
-        // combat.status (CombatNerveReader).
+        // combat.status (CombatNerveReader). DOWN-1: combat.downed is one value as well (CombatDownedReader).
         internal const string MoveSpreadField = "moveSpread", ManualReloadField = "manualReload", VerticalSpreadField = "verticalSpread",
             StatusField = "status";
         protected override bool IsNested(string field) =>
-            base.IsNested(field) || field == MoveSpreadField || field == VerticalSpreadField || field == StatusField;
+            base.IsNested(field) || field == MoveSpreadField || field == VerticalSpreadField || field == StatusField
+            || field == CombatDownedReader.Field;
         // STANCE-1 combat.stances and BLAST-1 combat.blasts are arrays, each kept whole across layers.
         private static readonly string[] Arrays = { StancesField, BlastsField };
         protected override string[] NestedArrays => Arrays;
@@ -112,7 +113,8 @@ namespace WarCore.Content
 
         // BLAST-1 "blasts": [ { id, innerMm, outerMm, damage, friendly, walls } ], 1 to 32 kinds with distinct ids (a child layer's
         // array replaces the parent's whole), plus "blastPerTick" (1..64, default 4) and "blastQueue" (1..4096, default 64), which
-        // are refused without "blasts". damage 1..32767 health units; outerMm 1..100000; innerMm 0..outerMm - 1.
+        // are refused without "blasts". damage 1..32767 health units; outerMm 1..100000; innerMm 0..outerMm - 1; DOWN-1 stunTicks
+        // 0..600, default 0 (a unit hurt but not downed is stunned that long).
         private static BlastRules Blasts(string pack, EntryReader cr)
         {
             ContentField field = cr.FieldOf(BlastsField);
@@ -137,8 +139,9 @@ namespace WarCore.Content
                 if (inner >= outer) throw r.Bad(r.FieldOf("innerMm"), "must be less than outerMm (" + outer + ")");
                 int damage = r.Int("damage", 1, BlastSpec.MaxDamage);
                 bool friendly = r.Bool("friendly"), walls = r.Bool("walls");
+                int stun = r.Has("stunTicks") ? r.Int("stunTicks", 0, BlastSpec.MaxStunTicks) : 0;
                 r.Done();
-                kinds[i] = new BlastSpec(entries[i].Id, inner, outer, damage, friendly, walls);
+                kinds[i] = new BlastSpec(entries[i].Id, inner, outer, damage, friendly, walls, stun);
             }
             int perTick = cr.Has("blastPerTick") ? cr.Int("blastPerTick", 1, BlastRules.MaxPerTick) : BlastRules.DefaultPerTick;
             int queue = cr.Has("blastQueue") ? cr.Int("blastQueue", 1, BlastRules.MaxQueue) : BlastRules.DefaultQueue;
@@ -193,6 +196,8 @@ namespace WarCore.Content
             }
             ContentField vertical = cr.FieldOf(VerticalSpreadField);
             if (vertical != null) vertical.Used = true;
+            ContentField downed = cr.FieldOf(CombatDownedReader.Field);
+            if (downed != null) downed.Used = true;
             cr.Done();
             MoveSpread moveSpread = moveField == null ? null : CombatAimReader.MoveSpread(b.Pack, moveField, b.WeaponIds);
             if (moveSpread != null || manualReload) b.Publish(new CombatAim(moveSpread, manualReload));
@@ -206,6 +211,7 @@ namespace WarCore.Content
                     throw new ContentException("content pack '" + b.Pack + "' weapon '" + b.WeaponIds[i] + "' field '" + WeaponsSection.ProjectileField
                         + "': a projectile weapon needs the combat section's body");
             if (blasts != null) b.Publish(blasts);
+            if (downed != null) b.Publish(CombatDownedReader.Read(b.Pack, downed, b.Stances));
             b.MaxHealthRaw = maxHealth.Raw; b.ResolverId = resolver; b.SelectorId = selector;
             b.FriendlyFire = friendlyFire; b.FriendlyFireLocked = friendlyFireLocked; b.AllyCheckMissRaw = (int)missRate.Raw; b.AllyHoldMilli = holdMilli;
         }

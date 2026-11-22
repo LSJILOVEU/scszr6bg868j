@@ -119,7 +119,7 @@ namespace WarCore.Combat
             for (int i = 0; i < hits.Length; i++)
             {
                 EntityId entity = hits[i].Entity;
-                if (!IsEnemy(shooter, entity) || !Entities.TryGet(positions, entity, out Position other)) continue;
+                if (!IsEnemy(shooter, entity) || !Targetable(entity) || !Entities.TryGet(positions, entity, out Position other)) continue;
                 SimVec3 delta = Horizontal(other.Value - origin);
                 SimWide distance = SpanSquared(origin, other.Value);
                 if (distance > Reach(range)) continue;
@@ -184,7 +184,7 @@ namespace WarCore.Combat
                     }
                 }
                 var key = new GameplayApplyKey(source, (ulong)state.StartTick, 0, source, (ulong)state.StartTick, 1, (uint)i);
-                GameplayFailure failure = c.Damage(sim.GameplayTarget(victim), key, 1, damage);
+                damage = SubmitDamage(c, victim, key, damage, tick, out GameplayFailure failure);
                 switch (failure)
                 {
                     case GameplayFailure.None:
