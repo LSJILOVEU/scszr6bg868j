@@ -40,6 +40,7 @@ namespace WarCore.Unity.Tests
         [TestCase("house")]
         [TestCase("terrain")]
         [TestCase("melee")]
+        [TestCase("hamlet")]
         public void AStageBuildsCleanWithASoldierPerUnitAndAFlagPerPoint(string id)
         {
             using (ShowcaseScene scene = Scripted(id))

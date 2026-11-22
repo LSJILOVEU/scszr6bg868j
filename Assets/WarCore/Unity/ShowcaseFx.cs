@@ -15,7 +15,7 @@ namespace WarCore.Unity
 
         private struct Chip { public Transform Item; public Vector3 Speed; public float Left, Floor; }
         private struct Burst { public Transform Item; public float Age, Life, Size; }
-        private struct Thrown { public Vector3 From, To; public float Age; public bool Live; }
+        private struct Thrown { public Vector3 From, To; public float Age; public bool Live, Burst; }
 
         private readonly Transform parent;
         private readonly Material dust, dirt, spark, blood, flash, smoke, scorch, shell;
@@ -139,13 +139,14 @@ namespace WarCore.Unity
         }
 
         // Start the preview grenade from the thrower's hand toward a point on the ground (cut to GrenadeReach). False while
-        // one is already in the air.
-        public bool Throw(Vector3 from, Vector3 to)
+        // one is already in the air. burst false (SHOW-2, the real grenade): it vanishes on landing without a burst, which the
+        // simulation's blast then draws.
+        public bool Throw(Vector3 from, Vector3 to, bool burst = true)
         {
             if (thrown.Live) return false;
             Vector3 flat = new Vector3(to.x - from.x, 0f, to.z - from.z);
             if (flat.magnitude > GrenadeReach) to = from + flat.normalized * GrenadeReach + Vector3.up * (to.y - from.y);
-            thrown = new Thrown { From = from, To = to, Age = 0f, Live = true };
+            thrown = new Thrown { From = from, To = to, Age = 0f, Live = true, Burst = burst };
             grenade.position = from;
             grenade.gameObject.SetActive(true);
             return true;
@@ -168,7 +169,7 @@ namespace WarCore.Unity
                 {
                     thrown.Live = false;
                     grenade.gameObject.SetActive(false);
-                    Explode(thrown.To);
+                    if (thrown.Burst) Explode(thrown.To);
                 }
             }
             for (int i = 0; i < chips.Count; i++)
