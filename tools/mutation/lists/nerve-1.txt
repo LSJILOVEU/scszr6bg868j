@@ -199,9 +199,11 @@ filter = FullyQualifiedName~Nerve1
 expect = WarCore.Tests.Nerve1.Nerve1ContentTests.N0_TheShippedLayerAndWholeReplacement
 note = C14 floor and ceiling swapped when the pack is built
 original:
-|                stances, SectionOrNull<CombatStatus>(), stats?.FloorOf(StatClamps.Spread) ?? 0, stats?.CeilOf(StatClamps.Spread) ?? 0);
+|                stances, SectionOrNull<VerticalSpread>(), SectionOrNull<CombatStatus>(), stats?.FloorOf(StatClamps.Spread) ?? 0,
+|                 stats?.CeilOf(StatClamps.Spread) ?? 0);
 replacement:
-|                stances, SectionOrNull<CombatStatus>(), stats?.CeilOf(StatClamps.Spread) ?? 0, stats?.FloorOf(StatClamps.Spread) ?? 0);
+|                stances, SectionOrNull<VerticalSpread>(), SectionOrNull<CombatStatus>(), stats?.CeilOf(StatClamps.Spread) ?? 0,
+|                 stats?.FloorOf(StatClamps.Spread) ?? 0);
 
 [nv-below-999]
 file = Assets/WarCore/Combat/CombatStatus.cs
@@ -299,9 +301,9 @@ filter = FullyQualifiedName~Nerve1
 expect = WarCore.Tests.Nerve1.Nerve1ContentTests.N0_TheShippedLayerAndWholeReplacement
 note = C17 combat.status is not an object field kept whole
 original:
-|        protected override bool IsNested(string field) => base.IsNested(field) || field == MoveSpreadField || field == StatusField;
+|            base.IsNested(field) || field == MoveSpreadField || field == VerticalSpreadField || field == StatusField;
 replacement:
-|        protected override bool IsNested(string field) => base.IsNested(field) || field == MoveSpreadField;
+|            base.IsNested(field) || field == MoveSpreadField || field == VerticalSpreadField;
 
 [nv-level-range]
 file = Assets/WarCore/Combat/CombatSystem.Nerve.cs
