@@ -226,7 +226,7 @@ namespace WarCore.Combat
                     SimVec3 origin = Lift(position.Value, MuzzleOf(shooter)), direction;
                     if (hasIntent)
                     {
-                        direction = Lift(intents[shooter.Id].Point, aimEndRaw) - origin;
+                        direction = AimedEnd(shooter, intents[shooter.Id].Point) - origin;
                         if (Horizontal(direction).LengthSquared.Sign == 0
                             && !(Overhead(position.Value, intents[shooter.Id].Point) && direction.LengthSquared.Sign != 0)) continue;
                         // Positions are final here (after movement): an intent that avoids allies is declined for this tick
@@ -249,6 +249,8 @@ namespace WarCore.Combat
                     // AIM-1: the turn uses the spread line's angle; the weapon's spread state below keeps the weapon's angle.
                     int shot = ShotAngle(shooter, in unit, angle, tick);
                     if (shot > 0) direction = Rotate(direction, shot, sim.Rng.NextInt(spreadStream, 65536));
+                    // VSPREAD-1: then the vertical tilt, from the same stream (nothing without combat.verticalSpread).
+                    if (pack.VerticalSpread != null) direction = TiltShot(shooter, shot, direction);
                     if (pack.IsProjectile(unit.Weapon)) LaunchRay(shooter, in unit, in weapon, tick, origin, direction, angle);
                     else FireRay(c, shooter, in unit, in position, in weapon, tick, origin, direction, angle);
                 }
