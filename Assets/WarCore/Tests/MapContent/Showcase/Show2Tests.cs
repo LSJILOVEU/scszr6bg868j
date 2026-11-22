@@ -200,13 +200,13 @@ namespace WarCore.Tests
             var actions = new ShowcaseActions(Stage(Id), 3);
             Assert.That(s.Current.TryGet(1, out ViewEntity me), Is.True);
             long fromX = (long)Math.Round(me.X * 1000.0), fromZ = (long)Math.Round(me.Z * 1000.0);
-            Assert.That(actions.Line(s.Tick), Is.EqualTo("GRENADE ready (G)  TEAM standing (C)\n"));
+            Assert.That(actions.Line(s.Tick), Is.EqualTo("GRENADE ready (G)  TEAM standing (Y)\n"));
             Assert.That(actions.TryThrow(s, fromX, fromZ + 100000, out long x, out long z), Is.True);
             Assert.That(new[] { x, z }, Is.EqualTo(new[] { fromX, fromZ + ShowcaseActions.ReachMm }), "cut to 28 m straight ahead");
             Assert.That(actions.Thrown, Is.EqualTo(1));
             long thrownAt = s.Tick;
             Assert.That(actions.WaitTicks(thrownAt), Is.EqualTo(ShowcaseActions.CooldownTicks));
-            Assert.That(actions.Line(thrownAt), Is.EqualTo("GRENADE 3.0 s (G)  TEAM standing (C)\n"));
+            Assert.That(actions.Line(thrownAt), Is.EqualTo("GRENADE 3.0 s (G)  TEAM standing (Y)\n"));
             Assert.That(actions.TryThrow(s, fromX, fromZ + 5000, out _, out _), Is.False, "cooling down");
             Assert.That(actions.Thrown, Is.EqualTo(1));
             long burst = -1;
@@ -299,7 +299,7 @@ namespace WarCore.Tests
                 }
                 Assert.That(ordered, Is.GreaterThan(30), "order " + k);
                 Assert.That(other, Is.EqualTo(0), "order " + k);
-                Assert.That(actions.Line(s.Tick), Does.EndWith("TEAM " + ShowcaseActions.StanceName(actions.Stance) + " (C)\n"));
+                Assert.That(actions.Line(s.Tick), Does.EndWith("TEAM " + ShowcaseActions.StanceName(actions.Stance) + " (Y)\n"));
             }
             Assert.That(seen, Is.EqualTo(new[] { 1, 2, 0, 1 }));
             Assert.That(new[] { ShowcaseActions.StanceName(0), ShowcaseActions.StanceName(1), ShowcaseActions.StanceName(2), ShowcaseActions.StanceName(3) },

@@ -25,7 +25,7 @@ namespace WarCore.Presentation
         public float Zoom { get; }
         // SHOW-2: the blast kind the player's grenade sets off (G), or null where the grenade is the drawn-only preview.
         public string GrenadeBlast { get; }
-        // SHOW-2: the squad a stance order (C) goes to, or 0 where the stage takes no stance orders.
+        // SHOW-2: the squad a stance order (Y) goes to, or 0 where the stage takes no stance orders.
         public int OrderSquad { get; }
 
         internal ShowcaseStage(string id, string title, float zoom, string paletteLayer, string[] shows, Func<byte[]> map, Func<WorldRecipe> recipe,
@@ -138,7 +138,7 @@ namespace WarCore.Presentation
                 "AI: squads, spread attack, bounding, pressure (pinned / broken), bursts, memory, search, suppression",
                 "Player: rifle, dash, block, respawn; aim spreads while moving",
                 "G throws a real grenade: it bursts 1.1 s later and hurts everyone within 6 m, walls shield",
-                "C orders your team's soldiers to stand, crouch or go prone (lower is slower, steadier and harder to see)",
+                "Y orders your team's soldiers to stand, crouch or go prone (lower is slower, steadier and harder to see)",
                 "Known gap: the AI's cover rule refuses a height-field map, so nobody seeks cover here",
             }, () => Hamlet().WcMapBytes, HamletRecipe, HamletScript, HamletCommands, HamletBlast, HamletOrderSquad),
         });

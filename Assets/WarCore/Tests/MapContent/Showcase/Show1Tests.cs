@@ -375,7 +375,7 @@ namespace WarCore.Tests
         [Test]
         public void TheHelpNamesEveryKeyAndTheMissingListSaysWhatIsNotBuilt()
         {
-            foreach (string word in new[] { "W A S D", "left mouse button", "Left Shift", "Space", "G (real in stage 6; preview only elsewhere", "C your team: stand, crouch, prone", "Q E", "Tab", "Backspace", "P pause", "V squad lines", "M missing list" })
+            foreach (string word in new[] { "W A S D", "left mouse button", "Left Shift", "Space", "G (real in stage 6; preview only elsewhere", "Y your team: stand, crouch, prone", "Q E", "Tab", "Backspace", "P pause", "V squad lines", "M missing list" })
                 Assert.That(ShowcaseHud.Keys, Does.Contain(word));
             Assert.That(ShowcaseHud.GrenadeStub, Does.StartWith("GRENADE PREVIEW: looks only."));
             Assert.That(ShowcaseHud.GrenadeStub, Does.Contain("hurts nobody"));

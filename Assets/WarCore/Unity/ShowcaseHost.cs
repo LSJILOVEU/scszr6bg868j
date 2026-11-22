@@ -9,7 +9,7 @@ namespace WarCore.Unity
     // SHOW-1: the playable showcase. One stage at a time (Showcase.Stages), built at run time by ShowcaseScene in any scene:
     // the host makes a camera and a light when the scene has none. Keys and mouse drive the controlled soldier; Tab goes to
     // the next stage, Backspace restarts it, P pauses, G throws a grenade (real where the stage has one, else the drawn-only
-    // preview), C orders the team's stance where the stage takes orders (SHOW-2). The HUD lists what is on in
+    // preview), Y orders the team's stance where the stage takes orders (SHOW-2). The HUD lists what is on in
     // the stage and what is not built yet, and shows a small map with every soldier, the player's squad and the points.
     // With a shot directory (the capture menu item) it plays every stage's script instead and writes pictures at ShotTicks.
     public sealed class ShowcaseHost : MonoBehaviour
@@ -145,7 +145,7 @@ namespace WarCore.Unity
                 if (Input.GetKeyDown(KeyCode.P)) paused = !paused;
                 if (Input.GetKeyDown(KeyCode.N)) sound.Muted = !sound.Muted;
                 if (Input.GetKeyDown(KeyCode.G)) Throw();
-                if (Input.GetKeyDown(KeyCode.C) && scene != null && actions != null && !paused && problem == "") actions.NextStance(scene.Session);
+                if (Input.GetKeyDown(KeyCode.Y) && scene != null && actions != null && !paused && problem == "") actions.NextStance(scene.Session);
                 if (scene != null && Input.GetKeyDown(KeyCode.V)) scene.SquadLines = !scene.SquadLines;
             }
             if (scene == null)

@@ -13,7 +13,7 @@ namespace WarCore.Presentation
             "DASH      Left Shift\n" +
             "BLOCK     Space or right mouse button\n" +
             "GRENADE   G (real in stage 6; preview only elsewhere: it bursts but hurts nobody)\n" +
-            "ORDER     C your team: stand, crouch, prone (stage 6)\n" +
+            "ORDER     Y your team: stand, crouch, prone (stage 6)\n" +
             "CAMERA    Q E turn, R F tilt, wheel zoom\n" +
             "STAGE     Tab next, Backspace restart, P pause\n" +
             "SHOW      V squad lines, M missing list, H this help\n" +

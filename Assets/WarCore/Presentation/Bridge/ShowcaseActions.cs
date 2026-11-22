@@ -4,7 +4,7 @@ namespace WarCore.Presentation
 {
     // SHOW-2: the two orders a person gives in a stage that takes them, built on public session commands only (nothing in the
     // simulation changes): G throws a grenade, a blast of the stage's kind that bursts FuseTicks later where the player aimed,
-    // cut to Reach from the player; C steps the stance order of the stage's squad: stand, crouch, prone, stand... The grenade
+    // cut to Reach from the player; Y steps the stance order of the stage's squad: stand, crouch, prone, stand... The grenade
     // does not fly in the simulation (the drawn one flies for the length of the fuse). PLACEHOLDER numbers.
     public sealed class ShowcaseActions
     {
@@ -74,7 +74,7 @@ namespace WarCore.Presentation
             if (!RealGrenades && !StanceOrders) return "";
             string text = "";
             if (RealGrenades) text += "GRENADE " + (WaitTicks(tick) > 0 ? ShowcaseHud.Seconds(WaitTicks(tick)) : "ready") + " (G)";
-            if (StanceOrders) text += (text == "" ? "" : "  ") + "TEAM " + StanceName(Stance) + " (C)";
+            if (StanceOrders) text += (text == "" ? "" : "  ") + "TEAM " + StanceName(Stance) + " (Y)";
             return text + "\n";
         }
 
