@@ -243,7 +243,8 @@ namespace WarCore.Tests.Scale
         // B08: the viewpoint over the foot (EyePoint), and the same height found by the sight test: a wall between the two
         // standing units just under the eye leaves them seeing each other, one just over it cuts the line. The walls are the
         // nearest even raw heights under and over the eye (1 or 2 raw away: the map writer halves a wall's height). The second
-        // part is the eye when both walls agree with it, else 0.
+        // part is the eye when both walls agree with it, else 0. Both parts are compared with the body's own standing eye (which is
+        // the reference eye scaled), so a sight test that is wrong for every body still fails.
         private static long[] EyeHeights(ProbeBody b)
         {
             CombatPack pack = ProbeBodies.DirectPack(b);
@@ -331,7 +332,7 @@ namespace WarCore.Tests.Scale
             new Probe("B07", "-", "muzzle height, stand and crouch", "API CombatSystem.MuzzlePoint", "Combat/CombatSystem.Sight.cs:33",
                 new[] { "stand", "crouch" }, RawTolerance, MuzzleHeights),
             new Probe("B08", "-", "eye height and the sight line over a wall", "API CombatSystem.EyePoint + Visible", "Combat/CombatSystem.Sight.cs:29,127",
-                new[] { "eye", "sight" }, RawTolerance, EyeHeights),
+                new[] { "eye", "sight" }, RawTolerance, EyeHeights, b => new[] { b.Body.Eye.Raw, b.Body.Eye.Raw }),
             new Probe("B09", "-", "drawn top, eye and muzzle per stance", "API BodySizes", "Presentation/Bridge/Features/BodySizes.cs:38-57",
                 DrawnParts, FloatTolerance, DrawnHeights),
             new Probe("B10", "H1", "drawn radius", "API BodySizes.Radius", "Presentation/Bridge/Features/BodySizes.cs:25,54; cap Sim/BodyRadius.cs:13",
