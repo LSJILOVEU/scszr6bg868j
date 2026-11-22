@@ -12,7 +12,8 @@ namespace WarCore.Presentation
     public static class PlateDemo
     {
         public const ulong PlayerKey = 1;
-        private const long SpeedMmPerSec = 3000;
+        // The demo walks at a soldier's speed over PaceDivisor: the scripted ticks for pictures are laid out for that pace.
+        private const long PaceDivisor = 2;
 
         public static byte[] MapBytes() => PlateDemoMap.Bytes();
 
@@ -20,14 +21,16 @@ namespace WarCore.Presentation
         {
             ContentPack content = RwrPack.Load(RwrPack.M6Layer);
             int weapon = content.WeaponOfUnitType("rwr.soldier-1");
+            long speed = content.SpeedOfUnitType("rwr.soldier-1") / PaceDivisor;
             var units = new[]
             {
-                new UnitSpawn(PlayerKey, 0, 1, 4500, 8500, SpeedMmPerSec, 1, weapon),
-                new UnitSpawn(2, 0, 2, 11500, 7500, SpeedMmPerSec, 1, layer: 2),
-                new UnitSpawn(3, 0, 2, 12500, 6500, SpeedMmPerSec, 1, layer: 2),
-                new UnitSpawn(10, 0, 3, 20500, 3500, SpeedMmPerSec, 2),
-                new UnitSpawn(11, 0, 3, 20500, 12500, SpeedMmPerSec, 2),
+                new UnitSpawn(PlayerKey, 0, 1, 4500, 8500, speed, 1, weapon),
+                new UnitSpawn(2, 0, 2, 11500, 7500, speed, 1, layer: 2),
+                new UnitSpawn(3, 0, 2, 12500, 6500, speed, 1, layer: 2),
+                new UnitSpawn(10, 0, 3, 20500, 3500, speed, 2),
+                new UnitSpawn(11, 0, 3, 20500, 12500, speed, 2),
             };
+            foreach (UnitSpawn unit in units) MapRecipe.CheckStep(content, "rwr.soldier-1", unit);
             var points = new[]
             {
                 new ControlPointDef(1, SimVec3.Metres(5, 0, 13), SimFix.FromInt(2), 1),

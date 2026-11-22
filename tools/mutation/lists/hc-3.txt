@@ -1,0 +1,155 @@
+# HC-3: one default unit speed (ContentPack.DefaultUnitSpeedMmPerSec), SpeedOfUnitType, the half-speed demos and the step cap
+# checked when a recipe for a map with terrain or plates is built (MapRecipe.CheckStep). Filter: Hc3SpeedTests.
+# The showcase house and terrain stages and the four standing demos load fixed layers and are not mutated here.
+
+[hc3-named-ignored]
+file = Assets/WarCore/Content/Data/ContentPack.cs
+filter = FullyQualifiedName~Hc3SpeedTests
+expect = WarCore.Tests.Hc3SpeedTests.S2_
+note = SpeedOfUnitType ignores the type's own speed
+original:
+|             return unitTypeSpeeds[index] ?? DefaultUnitSpeedMmPerSec;
+replacement:
+|             return DefaultUnitSpeedMmPerSec;
+
+[hc3-default-other]
+file = Assets/WarCore/Content/Data/ContentPack.cs
+filter = FullyQualifiedName~Hc3SpeedTests
+expect = WarCore.Tests.Hc3SpeedTests.S2_
+note = a type without a speed gets another number
+original:
+|             return unitTypeSpeeds[index] ?? DefaultUnitSpeedMmPerSec;
+replacement:
+|             return unitTypeSpeeds[index] ?? MaxUnitSpeedMmPerSec;
+
+[hc3-unknown-default]
+file = Assets/WarCore/Content/Data/ContentPack.cs
+filter = FullyQualifiedName~Hc3SpeedTests
+expect = WarCore.Tests.Hc3SpeedTests.S4_
+note = an unknown unit type gets the default instead of an error
+original:
+|             if (index < 0) throw new ContentException("content pack '" + Id + "' has no unit type '" + unitTypeId + "'");
+|             return unitTypeSpeeds[index] ?? DefaultUnitSpeedMmPerSec;
+replacement:
+|             if (index < 0) return DefaultUnitSpeedMmPerSec;
+|             return unitTypeSpeeds[index] ?? DefaultUnitSpeedMmPerSec;
+
+[hc3-map-default-reads-type]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~Hc3SpeedTests|FullyQualifiedName~GenMapSpawnTests
+expect = WarCore.Tests.Hc3SpeedTests.S3_DefaultRouteGivesTheDefaultSpeed
+note = the default route reads the unit type's speed
+original:
+|                 : new UnitSpawn(key, 0, squad, xMm, zMm, ContentPack.DefaultUnitSpeedMmPerSec, team, pack.WeaponOfUnitType(type), reserve,
+replacement:
+|                 : new UnitSpawn(key, 0, squad, xMm, zMm, pack.SpeedOfUnitType(type), team, pack.WeaponOfUnitType(type), reserve,
+
+[hc3-cap-removed]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~Hc3SpeedTests
+expect = WarCore.Tests.Hc3SpeedTests.S5_TooFastOnTerrainIsRefusedAtTheRecipe
+note = the map's own units are not checked
+original:
+|                 if (capped) CheckStep(pack, s.Type, units[i]);
+replacement:
+|                 if (capped && i < 0) CheckStep(pack, s.Type, units[i]);
+
+[hc3-cap-check-off]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~Hc3SpeedTests
+expect = WarCore.Tests.Hc3SpeedTests.S5_TooFast
+note = the check never refuses
+original:
+|             if (WorldAssembly.SpawnSpeed(spawn).Raw > InterimLocomotion.MaxTerrainStepRaw)
+replacement:
+|             if (WorldAssembly.SpawnSpeed(spawn).Raw < 0)
+
+[hc3-cap-ge]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~Hc3SpeedTests
+expect = WarCore.Tests.Hc3SpeedTests.S5_TheCapItselfBuildsAndWalks
+note = the cap itself is refused
+original:
+|             if (WorldAssembly.SpawnSpeed(spawn).Raw > InterimLocomotion.MaxTerrainStepRaw)
+replacement:
+|             if (WorldAssembly.SpawnSpeed(spawn).Raw >= InterimLocomotion.MaxTerrainStepRaw)
+
+[hc3-cap-terrain-only]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~Hc3SpeedTests
+expect = WarCore.Tests.Hc3SpeedTests.S5_TooFastOnPlatesIsRefusedAtTheRecipe
+note = only maps with terrain are checked
+original:
+|             bool capped = map.HasTerrain || map.Plates.Count > 0;
+replacement:
+|             bool capped = map.HasTerrain;
+
+[hc3-cap-plates-only]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~Hc3SpeedTests
+expect = WarCore.Tests.Hc3SpeedTests.S5_TooFastOnTerrainIsRefusedAtTheRecipe
+note = only maps with plates are checked
+original:
+|             bool capped = map.HasTerrain || map.Plates.Count > 0;
+replacement:
+|             bool capped = map.Plates.Count > 0;
+
+[hc3-cap-flat]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~Hc3SpeedTests
+expect = WarCore.Tests.Hc3SpeedTests.S5_FlatMapsAreNotCapped
+note = flat maps are checked too
+original:
+|             bool capped = map.HasTerrain || map.Plates.Count > 0;
+replacement:
+|             bool capped = true;
+
+[hc3-cap-first-only]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~Hc3SpeedTests
+expect = WarCore.Tests.Hc3SpeedTests.S5_TooFastOnTerrainIsRefusedAtTheRecipe
+note = only the first unit is checked
+original:
+|                 if (capped) CheckStep(pack, s.Type, units[i]);
+replacement:
+|                 if (capped && i == 0) CheckStep(pack, s.Type, units[i]);
+
+[hc3-cap-default-route-only]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~Hc3SpeedTests
+expect = WarCore.Tests.Hc3SpeedTests.S5_TooFastOnTerrainIsRefusedAtTheRecipe
+note = only the default route is checked
+original:
+|                 if (capped) CheckStep(pack, s.Type, units[i]);
+replacement:
+|                 if (capped && !useUnitTypes) CheckStep(pack, s.Type, units[i]);
+
+[hc3-cap-skip-reserves]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~Hc3SpeedTests
+expect = WarCore.Tests.Hc3SpeedTests.S5_TooFastReservesAreRefused
+note = the pack's extra reserves are not checked
+original:
+|                 for (int k = soldiers; k < n && capped; k++) CheckStep(pack, type, units[k]);
+replacement:
+|                 for (int k = soldiers; k < soldiers && capped; k++) CheckStep(pack, type, units[k]);
+
+[hc3-half-full-plate]
+file = Assets/WarCore/Presentation/Bridge/Features/PlateDemo.cs
+filter = FullyQualifiedName~Hc3SpeedTests
+expect = WarCore.Tests.Hc3SpeedTests.S6_
+note = the plate demo walks at full speed
+original:
+|             long speed = content.SpeedOfUnitType("rwr.soldier-1") / PaceDivisor;
+replacement:
+|             long speed = content.SpeedOfUnitType("rwr.soldier-1");
+
+[hc3-half-full-street]
+file = Assets/WarCore/Presentation/Bridge/Features/StreetDemo.cs
+filter = FullyQualifiedName~Hc3SpeedTests
+expect = WarCore.Tests.Hc3SpeedTests.S6_
+note = the street demo walks at full speed
+original:
+|             long speed = content.SpeedOfUnitType("rwr.soldier-1") / PaceDivisor;
+replacement:
+|             long speed = content.SpeedOfUnitType("rwr.soldier-1");

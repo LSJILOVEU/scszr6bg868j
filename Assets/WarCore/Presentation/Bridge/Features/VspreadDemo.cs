@@ -12,7 +12,7 @@ namespace WarCore.Presentation
     {
         public const string Layer = "rwr-vspread", DemoLayer = "vspread-range";
         public const int Width = 48, Depth = 30, Lanes = 3;
-        public const long ShooterXMm = 5000, TargetXMm = 35000, Speed = 6000, SettleTick = 30;
+        public const long ShooterXMm = 5000, TargetXMm = 35000, SettleTick = 30;
         private const long FirstLaneZMm = 5000, LaneStepMm = 10000;
 
         // The z of a lane (mm); shooters have keys 1..3, targets 4..6 (lane = key - 1 and key - 4).
@@ -24,11 +24,12 @@ namespace WarCore.Presentation
         {
             ContentPack pack = Content();
             int weapon = pack.WeaponIndex("rwr.weapon-1");
+            long speed1 = pack.SpeedOfUnitType(WarCore.Content.Rwr.RwrPack.SoldierTeam1), speed2 = pack.SpeedOfUnitType(WarCore.Content.Rwr.RwrPack.SoldierTeam2);
             var units = new UnitSpawn[2 * Lanes];
             for (int lane = 0; lane < Lanes; lane++)
             {
-                units[lane] = new UnitSpawn((ulong)lane + 1, 0, lane + 1, ShooterXMm, LaneZMm(lane), Speed, 1, weapon);
-                units[lane + Lanes] = new UnitSpawn((ulong)lane + 4, 0, lane + 4, TargetXMm, LaneZMm(lane), Speed, 2, -1);
+                units[lane] = new UnitSpawn((ulong)lane + 1, 0, lane + 1, ShooterXMm, LaneZMm(lane), speed1, 1, weapon);
+                units[lane + Lanes] = new UnitSpawn((ulong)lane + 4, 0, lane + 4, TargetXMm, LaneZMm(lane), speed2, 2, -1);
             }
             var script = new[] { BridgeCommand.Stance(1, 5, 1), BridgeCommand.Stance(2, 6, 2) };
             return new WorldRecipe(41, MoverKind.InterimCrowd, units, script).WithCombat(pack.BuildCombat());

@@ -98,8 +98,6 @@ namespace WarCore.Presentation
         public const string HouseAiLayer = "rwr-ai-playtest", TerrainLayer = "rwr-ai-playtest", AncientLayer = "ancient-field";
         private const string LanesMap = "Assets/WarCore/Maps/lanes-playtest.map.json";
         private const string LanesPack = "\"pack\": \"rwr-m6\"";
-        // The speed the map-file route gives a soldier whose unit type names none (MapRecipe).
-        private const long SoldierSpeedMmPerSec = 6000;
 
         public static IReadOnlyList<ShowcaseStage> Stages { get; } = Array.AsReadOnly(new[]
         {
@@ -230,16 +228,19 @@ namespace WarCore.Presentation
                     homeX[s.Team - 1] = s.XMm;
                     homeZ[s.Team - 1] = s.ZMm;
                 }
-                units.Add(new UnitSpawn(s.Key, 0, s.Squad, s.XMm, s.ZMm, SoldierSpeedMmPerSec, s.Team, pack.WeaponOfUnitType(s.Type), s.Reserve,
+                units.Add(new UnitSpawn(s.Key, 0, s.Squad, s.XMm, s.ZMm, pack.SpeedOfUnitType(s.Type), s.Team, pack.WeaponOfUnitType(s.Type), s.Reserve,
                     pack.MeleeOfUnitType(s.Type), layer: s.Layer));
+                MapRecipe.CheckStep(pack, s.Type, units[units.Count - 1]);
                 if (s.Key > last) last = s.Key;
             }
             SpawnAnchor[] bases = setup.Bases;
             for (int i = 0; i < 2 * HouseReserves; i++)
             {
                 int team = i % 2 + 1;
-                units.Add(new UnitSpawn(++last, 0, team, homeX[team - 1], homeZ[team - 1], SoldierSpeedMmPerSec, team,
-                    pack.WeaponOfUnitType(team == 1 ? WarCore.Content.Rwr.RwrPack.SoldierTeam1 : WarCore.Content.Rwr.RwrPack.SoldierTeam2), true));
+                string type = team == 1 ? WarCore.Content.Rwr.RwrPack.SoldierTeam1 : WarCore.Content.Rwr.RwrPack.SoldierTeam2;
+                units.Add(new UnitSpawn(++last, 0, team, homeX[team - 1], homeZ[team - 1], pack.SpeedOfUnitType(type), team,
+                    pack.WeaponOfUnitType(type), true));
+                MapRecipe.CheckStep(pack, type, units[units.Count - 1]);
             }
             WorldRecipe recipe = new WorldRecipe(setup.Seed, MoverKind.InterimCrowd, units.ToArray(), Array.Empty<BridgeCommand>())
                 .WithCombat(pack.BuildCombat()).WithMatch(pack.BuildMatch(setup.ControlPoints, bases)).WithPlatesPreview()
@@ -273,8 +274,10 @@ namespace WarCore.Presentation
             {
                 int team = i < perTeam ? 1 : 2, rank = i % perTeam;
                 var offset = WorldBuilder.FormationOffsetMm(rank % 10, 10);
-                units[i] = new UnitSpawn((ulong)i + 1, 0, team, (team == 1 ? 3500 : 44500) + offset.X, 16500 + offset.Z, SoldierSpeedMmPerSec, team,
-                    content.WeaponOfUnitType(team == 1 ? WarCore.Content.Rwr.RwrPack.SoldierTeam1 : WarCore.Content.Rwr.RwrPack.SoldierTeam2), rank >= 10);
+                string type = team == 1 ? WarCore.Content.Rwr.RwrPack.SoldierTeam1 : WarCore.Content.Rwr.RwrPack.SoldierTeam2;
+                units[i] = new UnitSpawn((ulong)i + 1, 0, team, (team == 1 ? 3500 : 44500) + offset.X, 16500 + offset.Z, content.SpeedOfUnitType(type), team,
+                    content.WeaponOfUnitType(type), rank >= 10);
+                MapRecipe.CheckStep(content, type, units[i]);
             }
             WorldRecipe recipe = new WorldRecipe(41, MoverKind.InterimCrowd, units, Array.Empty<BridgeCommand>())
                 .WithCombat(content.BuildCombat()).WithMatch(TerrainDemoMap.BuildMatch(content))

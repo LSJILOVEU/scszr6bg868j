@@ -16,18 +16,18 @@ namespace WarCore.Presentation
         public const long PressTick = 150;
         public const ulong Calm = 1, Pinned = 2, Broken = 3;
         private const int Width = 50, Depth = 40;
-        private const long Speed = 6000;
 
         public static WorldRecipe Recipe()
         {
             ContentPack pack = ContentLoader.Load(new DemoSource(), DemoLayer);
             int weapon = pack.WeaponOfUnitType(WarCore.Content.Rwr.RwrPack.SoldierTeam1);
+            long speed1 = pack.SpeedOfUnitType(WarCore.Content.Rwr.RwrPack.SoldierTeam1), speed2 = pack.SpeedOfUnitType(WarCore.Content.Rwr.RwrPack.SoldierTeam2);
             var units = new UnitSpawn[6];
             for (int i = 0; i < 3; i++)
             {
                 long z = 10500 + 10000 * i;
-                units[i] = new UnitSpawn((ulong)i + 1, 0, 1, 5500, z, Speed, 1, weapon);
-                units[i + 3] = new UnitSpawn((ulong)i + 4, 0, 2, 35500, z, Speed, 2, -1);
+                units[i] = new UnitSpawn((ulong)i + 1, 0, 1, 5500, z, speed1, 1, weapon);
+                units[i + 3] = new UnitSpawn((ulong)i + 4, 0, 2, 35500, z, speed2, 2, -1);
             }
             return new WorldRecipe(41, MoverKind.InterimCrowd, units, Array.Empty<BridgeCommand>()).WithCombat(pack.BuildCombat())
                 .With(Script((Pinned, PressTick, CombatSystem.NervePinned), (Broken, PressTick, CombatSystem.NerveBroken)));

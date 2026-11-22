@@ -16,7 +16,8 @@ namespace WarCore.Presentation
     {
         public const ulong PlayerKey = 1;
         private const long M = SimFix.Scale;
-        private const long SpeedMmPerSec = 3000;
+        // The demo walks at a soldier's speed over PaceDivisor: the scripted ticks for pictures are laid out for that pace.
+        private const long PaceDivisor = 2;
 
         public static MapDesc Desc()
         {
@@ -46,15 +47,16 @@ namespace WarCore.Presentation
         {
             ContentPack content = RwrPack.Load(RwrPack.M6Layer);
             int weapon = content.WeaponOfUnitType("rwr.soldier-1");
+            long speed = content.SpeedOfUnitType("rwr.soldier-1") / PaceDivisor;
             var units = new[]
             {
-                new UnitSpawn(PlayerKey, 0, 1, 4500, 19000, SpeedMmPerSec, 1, weapon),
-                new UnitSpawn(2, 0, 2, 15500, 16000, SpeedMmPerSec, 1),
-                new UnitSpawn(3, 0, 2, 34500, 17000, SpeedMmPerSec, 1),
-                new UnitSpawn(4, 0, 2, 46000, 22000, SpeedMmPerSec, 1),
-                new UnitSpawn(10, 0, 3, 16500, 16500, SpeedMmPerSec, 2),
-                new UnitSpawn(11, 0, 3, 36000, 16000, SpeedMmPerSec, 2),
-                new UnitSpawn(12, 0, 3, 56000, 19000, SpeedMmPerSec, 2),
+                new UnitSpawn(PlayerKey, 0, 1, 4500, 19000, speed, 1, weapon),
+                new UnitSpawn(2, 0, 2, 15500, 16000, speed, 1),
+                new UnitSpawn(3, 0, 2, 34500, 17000, speed, 1),
+                new UnitSpawn(4, 0, 2, 46000, 22000, speed, 1),
+                new UnitSpawn(10, 0, 3, 16500, 16500, speed, 2),
+                new UnitSpawn(11, 0, 3, 36000, 16000, speed, 2),
+                new UnitSpawn(12, 0, 3, 56000, 19000, speed, 2),
             };
             var points = new[]
             {

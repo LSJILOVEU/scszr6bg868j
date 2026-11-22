@@ -12,19 +12,19 @@ namespace WarCore.Presentation
         public const string Layer = "rwr-stance";
         public const long CrouchTick = 60, StandTick = 240;
         private const int Width = 40, Depth = 16;
-        private const long Speed = 6000;
         private const long WallX0 = 24000, WallX1 = 25000, WallZ0 = 3000, WallZ1 = 13000, WallTopRaw = SimFix.Scale;
 
         public static WorldRecipe Recipe()
         {
             ContentPack pack = ContentLoader.Load(new DemoSource(), DemoLayer);
             int weapon1 = pack.WeaponOfUnitType(WarCore.Content.Rwr.RwrPack.SoldierTeam1), weapon2 = pack.WeaponOfUnitType(WarCore.Content.Rwr.RwrPack.SoldierTeam2);
+            long speed1 = pack.SpeedOfUnitType(WarCore.Content.Rwr.RwrPack.SoldierTeam1), speed2 = pack.SpeedOfUnitType(WarCore.Content.Rwr.RwrPack.SoldierTeam2);
             var units = new UnitSpawn[8];
             for (int i = 0; i < 4; i++)
             {
                 long z = 5000 + 2000 * i;
-                units[i] = new UnitSpawn((ulong)i + 1, 0, 1, 5500, z, Speed, 1, weapon1);
-                units[i + 4] = new UnitSpawn((ulong)i + 5, 0, 2, 25500, z, Speed, 2, weapon2);
+                units[i] = new UnitSpawn((ulong)i + 1, 0, 1, 5500, z, speed1, 1, weapon1);
+                units[i + 4] = new UnitSpawn((ulong)i + 5, 0, 2, 25500, z, speed2, 2, weapon2);
             }
             var script = new[] { BridgeCommand.Stance(CrouchTick, 2, 1), BridgeCommand.Stance(StandTick, 2, 0) };
             return new WorldRecipe(41, MoverKind.InterimCrowd, units, script).WithCombat(pack.BuildCombat());

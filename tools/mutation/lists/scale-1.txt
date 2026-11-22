@@ -114,14 +114,14 @@ replacement:
 |         public const long MaxEffectiveStepRaw = SimFix.Scale / 5;
 
 [scale-12-recipe-speed]
-file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
-filter = FullyQualifiedName~WarCore.Tests.WorldScaleTests
-expect = WarCore.Tests.WorldScaleTests.W10_
-note = recipe soldier speed 9000 mm/s is above the terrain step cap
+file = Assets/WarCore/Content/Data/ContentPack.cs
+filter = FullyQualifiedName~WarCore.Tests.WorldScaleTests|FullyQualifiedName~WarCore.Tests.Hc3SpeedTests
+expect = WarCore.Tests.Hc3SpeedTests.S3_DefaultSpeedFitsTheTerrainStepCap
+note = default soldier speed 9000 mm/s is above the terrain step cap (MapRecipe.CheckStep now refuses it before W10 asserts)
 original:
-|         private const long SpeedMmPerSec = 6000;
+|         public const long DefaultUnitSpeedMmPerSec = 6000;
 replacement:
-|         private const long SpeedMmPerSec = 9000;
+|         public const long DefaultUnitSpeedMmPerSec = 9000;
 
 [scale-13-max-side]
 file = Assets/WarCore/Sim/HeightField.cs

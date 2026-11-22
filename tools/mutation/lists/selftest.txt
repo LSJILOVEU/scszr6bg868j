@@ -4,14 +4,14 @@
 # not an assertion (exception), not an assertion (TearDown).
 
 [selftest-1]
-file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+file = Assets/WarCore/Content/Data/ContentPack.cs
 filter = FullyQualifiedName~E1b
 expect = WarCore.Tests.E1bRecipeTests.SoldiersMapFieldByField
 note = must kill: speed 6000 to 6001 fails the field-by-field assertion
 original:
-| private const long SpeedMmPerSec = 6000;
+| public const long DefaultUnitSpeedMmPerSec = 6000;
 replacement:
-| private const long SpeedMmPerSec = 6001;
+| public const long DefaultUnitSpeedMmPerSec = 6001;
 
 [selftest-2]
 file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
@@ -44,14 +44,14 @@ replacement:
 | Assert.That(sample.MeetsZeroContract, Is.True);
 
 [selftest-5]
-file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+file = Assets/WarCore/Content/Data/ContentPack.cs
 filter = FullyQualifiedName~E1b
 expect = WarCore.Tests.E1bRecipeTests.SoldiersMapFieldByField
 note = old assembly loaded: needs WARCORE_MUTATION_SELFTEST=stale-loaded@selftest-5
 original:
-| private const long SpeedMmPerSec = 6000;
+| public const long DefaultUnitSpeedMmPerSec = 6000;
 replacement:
-| private const long SpeedMmPerSec = 6001;
+| public const long DefaultUnitSpeedMmPerSec = 6001;
 
 [selftest-6]
 file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
