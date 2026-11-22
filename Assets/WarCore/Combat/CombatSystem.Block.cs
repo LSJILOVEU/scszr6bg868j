@@ -36,6 +36,8 @@ namespace WarCore.Combat
         public void Hold(EntityId unit, SimVec3 direction)
         {
             if (!CanBlock(unit)) throw new InvalidOperationException("The unit cannot block.");
+            // DOWN-1: a casualty cannot hold a block; asking for one lowers it.
+            if (IsDowned(unit) || IsStunned(unit)) { Release(unit); return; }
             SimVec3 flat = Horizontal(direction);
             if (flat.LengthSquared.Sign == 0) throw new ArgumentException("A hold needs a direction.", nameof(direction));
             flat = flat.Normalized;
@@ -76,7 +78,7 @@ namespace WarCore.Combat
         {
             spec = default;
             if (!Entities.TryGet(blockStates, victim, out BlockState state) || !state.Holding || state.Spec < 0
-                || !Entities.TryGet(positions, victim, out Position at)) return false;
+                || !Entities.TryGet(positions, victim, out Position at) || IsDowned(victim) || IsStunned(victim)) return false;
             SimVec3 toward = Horizontal(from - at.Value);
             if (toward.LengthSquared.Sign == 0) return false;
             spec = pack.Block[state.Spec];

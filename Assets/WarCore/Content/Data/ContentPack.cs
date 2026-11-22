@@ -162,7 +162,7 @@ namespace WarCore.Content
                 effective, friendlyFireLocked, allyCheckMissRaw, allyHoldMilli, melee.Length == 0 ? null : melee, block.Length == 0 ? null : block, Body,
                 projectileSpeeds.Length == 0 ? null : projectileSpeeds, aim?.MoveSpread, aim != null && aim.ManualReload, SectionOrNull<BlastRules>(),
                 stances, SectionOrNull<VerticalSpread>(), SectionOrNull<CombatStatus>(), stats?.FloorOf(StatClamps.Spread) ?? 0,
-                stats?.CeilOf(StatClamps.Spread) ?? 0);
+                stats?.CeilOf(StatClamps.Spread) ?? 0, SectionOrNull<DownedRules>());
         }
 
         // Control points and spawn anchors are map data and stay with the caller.

@@ -104,6 +104,8 @@ namespace WarCore.Replay
             ["vspread-range"] = new Entry("rwr-vspread, three 30 m lanes: standing, crouched, prone targets", VspreadDemo.Recipe, VspreadDemo.MapBytes),
             // NERVE-1: three shooters 30 m from unarmed targets; from tick 150 one is pinned and one broken by a script (NerveDemo).
             ["nerve-fire"] = new Entry("rwr-nerve, shooters calm / pinned / broken from tick 150", NerveDemo.Recipe, NerveDemo.MapBytes),
+            // DOWN-1: a scripted rwr.frag of rwr-down on tick 30 downs A and stuns B 4 m away; all three are sent 3 m north (DownDemo).
+            ["down-crawl"] = new Entry("rwr-down: one man downed and crawling, one stunned, one untouched", DownDemo.Recipe, DownDemo.MapBytes),
         };
 
         private const string SquadAi = "\"squadMinSize\": 4, \"squadMaxSize\": 9, \"squadSkirmisherPermille\": 300, \"squadRecruitRadiusMm\": 30000, "

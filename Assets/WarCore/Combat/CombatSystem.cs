@@ -206,7 +206,8 @@ namespace WarCore.Combat
                     if (!Entities.TryGet(combatants, shooter, out Combatant unit)
                         || !Entities.TryGet(positions, shooter, out Position position)) continue;
                     if (bodied) RequireBodyHeight(shooter);
-                    if (IsDead(shooter))
+                    // DOWN-1: a downed or stunned unit is skipped as a dead one (CannotAct is IsDead without casualties).
+                    if (CannotAct(shooter))
                     {
                         if (pack.HasMelee) CancelMelee(shooter);
                         continue;
@@ -263,7 +264,7 @@ namespace WarCore.Combat
         { writer.UInt64(pack.PolicyDigest); writer.UInt64(wallMask); writer.UInt64(unitLayerMask); if (controlled != null) writer.Bool(true); }
         public void LoadState(SimStateReader reader)
         {
-            cacheValid = false; ClearIntents(); lastStepTick = sim.Clock.Tick;
+            cacheValid = false; ClearIntents(); VoidLedger(); lastStepTick = sim.Clock.Tick;
             if (reader.UInt64() != pack.PolicyDigest || reader.UInt64() != wallMask || reader.UInt64() != unitLayerMask)
                 throw new InvalidOperationException("Combat policy or layer masks differ from the saved configuration.");
             if (controlled != null && !reader.Bool())

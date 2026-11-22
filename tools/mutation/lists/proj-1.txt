@@ -294,13 +294,12 @@ replacement:
 | hitStream = sim.Rng.Stream("combat.hit");
 
 [proj1-28-no-shield]
-file = Assets/WarCore/Combat/CombatSystem.Projectile.cs
+file = Assets/WarCore/Combat/CombatSystem.Blast.cs
 filter = FullyQualifiedName~WarCore.Tests.Projectile
 expect = WarCore.Tests.Projectile.Proj1LandingTests.ShieldedVictimTakesNothing
 note = the shield is ignored
 original:
-|             if (Shielded(victim, tick)) damage = 0;
-| 
+|            if (Shielded(victim, tick)) damageRaw = 0;
 replacement:
 |
 
