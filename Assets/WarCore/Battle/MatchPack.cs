@@ -73,6 +73,12 @@ namespace WarCore.Battle
         public int RespawnGuardTicks { get; }
         // RESPAWN-AI-1: the timed reinforcement leaves out points another team contests (PointPresence); false keeps the old list.
         public bool ReinforceSkipContested { get; }
+        // RESPAWN-AI-2: ticks from a death to the reserve that replaces it; 0 keeps the timed reinforcement.
+        public int ReentryTicks { get; }
+        // RESPAWN-AI-2: reserves a map file start adds for each team with a base, and their unit type id; 0 adds none. The
+        // pack only carries the two: MapRecipe.From makes the units.
+        public int ReserveCount { get; }
+        public string ReserveType { get; }
         public ulong PolicyDigest { get; }
         // NT-1: teams 1..TeamCount take part; 0 is no team. At least 2, else the highest team a base anchor or an initial owner
         // names. Fixed by the pack (never by the units), so state sized by it is known when the world is built. Not hashed:
@@ -80,13 +86,15 @@ namespace WarCore.Battle
         public int TeamCount { get; }
         public const int MaxTeams = 8;
         public const int MaxRespawnTicks = 36000;
+        public const int MaxReentryTicks = 36000;
+        public const int MaxReserveCount = 1024;
         // The highest layer an anchor may name: the plate limit of a map (as UnitSpawn.MaxLayer and the Sim's).
         public const int MaxLayer = 4096;
 
         public MatchPack(ControlPointDef[] points, SpawnAnchor[] bases, int num, int den, bool strict,
             int captureTicks, InterruptMode interrupt, int decayPerTick, int intervalTicks, int thinkInterval,
             int maxTicks, SimFix sight, int gridColumns, int gridRows, SimFix gridSpacing, int respawnTicks = 0, int respawnGuardTicks = 0,
-            string[] rules = null, bool reinforceSkipContested = false)
+            string[] rules = null, bool reinforceSkipContested = false, int reentryTicks = 0, int reserveCount = 0, string reserveType = null)
         {
             if (den < 1 || num < den) throw new ArgumentOutOfRangeException(nameof(num));
             if (captureTicks < 1 || intervalTicks < 1 || thinkInterval < 1 || maxTicks < 1)
@@ -99,6 +107,9 @@ namespace WarCore.Battle
             if (respawnTicks < 0 || respawnTicks > MaxRespawnTicks) throw new ArgumentOutOfRangeException(nameof(respawnTicks));
             if (respawnGuardTicks < 0 || respawnGuardTicks > MaxRespawnTicks || (respawnGuardTicks > 0 && respawnTicks == 0))
                 throw new ArgumentOutOfRangeException(nameof(respawnGuardTicks));
+            if (reentryTicks < 0 || reentryTicks > MaxReentryTicks) throw new ArgumentOutOfRangeException(nameof(reentryTicks));
+            if (reserveCount < 0 || reserveCount > MaxReserveCount) throw new ArgumentOutOfRangeException(nameof(reserveCount));
+            if (reserveCount > 0 && string.IsNullOrEmpty(reserveType)) throw new ArgumentException("A reserve count needs a reserve type.", nameof(reserveType));
             this.rules = rules == null ? DefaultRules : (string[])rules.Clone();
             for (int i = 0; i < this.rules.Length; i++)
                 if (!MatchMode.RuleFactories.ContainsKey(this.rules[i])) throw new ArgumentException("rules contains unknown id '" + this.rules[i] + "'.", nameof(rules));
@@ -116,6 +127,7 @@ namespace WarCore.Battle
             DecayPerTick = decayPerTick; IntervalTicks = intervalTicks; ThinkInterval = thinkInterval; MaxTicks = maxTicks;
             Sight = sight; GridColumns = gridColumns; GridRows = gridRows; GridSpacing = gridSpacing; RespawnTicks = respawnTicks; RespawnGuardTicks = respawnGuardTicks;
             ReinforceSkipContested = reinforceSkipContested;
+            ReentryTicks = reentryTicks; ReserveCount = reserveCount; ReserveType = reserveCount > 0 ? reserveType : null;
             var hash = new StateHash(); hash.Add("battle.pack.v1"); hash.Add(points.Length);
             foreach (var point in this.points) point.WriteState(hash);
             hash.Add(bases.Length); foreach (var anchor in this.bases) { hash.Add(anchor.Team); anchor.Point.WriteState(hash); }
@@ -143,6 +155,9 @@ namespace WarCore.Battle
             }
             // RESPAWN-AI-1: only when on, so a pack without the switch keeps its digest.
             if (reinforceSkipContested) hash.Add("battle.pack.reinforce-skip.v1");
+            // RESPAWN-AI-2: each only when on, so a pack without them keeps its digest. The type is not hashed without a count.
+            if (reentryTicks > 0) { hash.Add("battle.pack.reentry.v1"); hash.Add(reentryTicks); }
+            if (reserveCount > 0) { hash.Add("battle.pack.reserve.v1"); hash.Add(reserveCount); hash.Add(reserveType); }
             PolicyDigest = hash.Value;
         }
         private bool HasLayers()
