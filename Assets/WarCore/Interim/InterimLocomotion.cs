@@ -45,6 +45,11 @@ namespace WarCore.Interim
         // The motion model bound now (a wrapper such as the speed line takes it).
         public IMotionModel Motion => motion;
 
+        // DOWN-1: the rule that holds units in place, or null (nobody is held).
+        private IUnitHold hold;
+        public void BindHold(IUnitHold rule) { hold = rule ?? throw new ArgumentNullException(nameof(rule)); }
+        private bool Held(EntityId unit) => hold != null && hold.Holds(unit);
+
         private void Face(EntityId unit, SimVec3 from, SimVec3 to)
         {
             if (!faceMovement) return;
@@ -116,6 +121,7 @@ namespace WarCore.Interim
                 if (!entities.TryGet(intents, unit, out MoveIntent intent) || !intent.Active
                     || !entities.TryGet(positions, unit, out Position position))
                     continue;
+                if (Held(unit)) continue;
                 if (grid != null)
                 {
                     if (terrain != null) StepPathTerrain(context, unit, intent, position.Value);

@@ -1,0 +1,657 @@
+# VSPREAD-1 (WP-40): vertical shot spread, centre aim, the player snap, the reader and the digest section. Filter: the VSpread1 tests.
+# Not listed: VerticalPermille reads only the shooter (no target is in reach of it); a pack hashing the section while off has no
+# null section to hash (WriteState is called on the object).
+
+[vs-angle-permille]
+file = Assets/WarCore/Combat/VerticalSpread.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1AngleTests.V4_AngleIsShotTimesTheLevelPermille
+note = the level permille is not applied
+original:
+| (long)shotAngle * permille / 1000);
+replacement:
+| (long)shotAngle);
+
+[vs-angle-div]
+file = Assets/WarCore/Combat/VerticalSpread.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1AngleTests.V4_AngleIsShotTimesTheLevelPermille
+note = divided by 100
+original:
+| (long)shotAngle * permille / 1000);
+replacement:
+| (long)shotAngle * permille / 100);
+
+[vs-angle-cap]
+file = Assets/WarCore/Combat/VerticalSpread.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1AngleTests.V4_AngleIsShotTimesTheLevelPermille
+note = capped at 90000
+original:
+| Math.Min(MaxVerticalMilli, (long)shotAngle
+replacement:
+| Math.Min(90000, (long)shotAngle
+
+[vs-tilt-scale]
+file = Assets/WarCore/Combat/VerticalSpread.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1AngleTests.V6_TheCardsFormulaAndARecordedValue
+note = the horizontal part is not scaled by across / h
+original:
+| return new SimVec3(SimFix.FromRaw(d.X.Raw * across.Raw / h.Raw), up, SimFix.FromRaw(d.Z.Raw * across.Raw / h.Raw));
+replacement:
+| return new SimVec3(d.X, up, d.Z);
+
+[vs-tilt-sign]
+file = Assets/WarCore/Combat/VerticalSpread.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1AngleTests.V6_TheEndRollsAreMinusAndPlusTheAngle
+expect = WarCore.Tests.VSpread1.VSpread1AngleTests.V6_TheCardsFormulaAndARecordedValue
+note = the sine has the wrong sign
+original:
+| up = h * sin + d.Y * cos;
+replacement:
+| up = d.Y * cos - h * sin;
+
+[vs-tilt-normalize]
+file = Assets/WarCore/Combat/VerticalSpread.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1AngleTests.V6_LengthDoesNotMatter
+note = the direction is not normalized first
+original:
+| SimVec3 d = direction.Normalized;
+replacement:
+| SimVec3 d = direction;
+
+[vs-tilt-h0]
+file = Assets/WarCore/Combat/VerticalSpread.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1AngleTests.V6_AVerticalDirectionComesBackUntouched
+note = a vertical direction comes back normalized
+original:
+| if (h.Raw == 0) return direction;
+replacement:
+| if (h.Raw == 0) return d;
+
+[vs-check-low]
+file = Assets/WarCore/Combat/VerticalSpread.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V2_TheSpecChecksItsNumbers
+note = permille 0 is taken
+original:
+| if (permille < StatLine.MinPermille || permille > StatLine.MaxPermille)
+replacement:
+| if (permille > StatLine.MaxPermille)
+
+[vs-check-high]
+file = Assets/WarCore/Combat/VerticalSpread.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V2_TheSpecChecksItsNumbers
+note = permille 4001 is taken
+original:
+| if (permille < StatLine.MinPermille || permille > StatLine.MaxPermille)
+replacement:
+| if (permille < StatLine.MinPermille)
+
+[vs-snap-low]
+file = Assets/WarCore/Combat/VerticalSpread.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V2_TheSpecChecksItsNumbers
+note = snap 0 is taken
+original:
+| if (snapMm < MinSnapMm || snapMm > MaxSnapMm)
+replacement:
+| if (snapMm > MaxSnapMm)
+
+[vs-snap-high]
+file = Assets/WarCore/Combat/VerticalSpread.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V2_TheSpecChecksItsNumbers
+note = snap 5001 is taken
+original:
+| if (snapMm < MinSnapMm || snapMm > MaxSnapMm)
+replacement:
+| if (snapMm < MinSnapMm)
+
+[vs-aim-check]
+file = Assets/WarCore/Combat/VerticalSpread.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V2_TheSpecChecksItsNumbers
+note = an unknown aim is taken
+original:
+| if (aim != VerticalAim.Eye && aim != VerticalAim.Center) throw new ArgumentOutOfRangeException(nameof(aim));
+replacement:
+|
+
+[vs-copy]
+file = Assets/WarCore/Combat/VerticalSpread.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V2_TheSpecChecksItsNumbers
+note = the levels are not copied
+original:
+| (int[])stancePermille.Clone();
+replacement:
+| stancePermille;
+
+[vs-hash-permille]
+file = Assets/WarCore/Combat/VerticalSpread.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V3_TheSectionAndEveryNumberChangeTheDigest
+note = the standing value is not hashed
+original:
+| hash.Add("combat.pack.vspread.v1"); hash.Add(Permille);
+replacement:
+| hash.Add("combat.pack.vspread.v1");
+
+[vs-hash-levels]
+file = Assets/WarCore/Combat/VerticalSpread.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V3_TheSectionAndEveryNumberChangeTheDigest
+note = the level values are not hashed
+original:
+| foreach (int value in stancePermille) hash.Add(value);
+replacement:
+|
+
+[vs-hash-aim]
+file = Assets/WarCore/Combat/VerticalSpread.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V3_TheSectionAndEveryNumberChangeTheDigest
+note = aim is not hashed
+original:
+| hash.Add((int)Aim); hash.Add(SnapMm);
+replacement:
+| hash.Add(SnapMm);
+
+[vs-hash-snap]
+file = Assets/WarCore/Combat/VerticalSpread.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V3_TheSectionAndEveryNumberChangeTheDigest
+note = snap is not hashed
+original:
+| hash.Add((int)Aim); hash.Add(SnapMm);
+replacement:
+| hash.Add((int)Aim);
+
+[cv-port-low]
+file = Assets/WarCore/Combat/CombatSystem.Vertical.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1AngleTests.V4_TheReadPortRefusesAnAngleOutOfRange
+note = -1 is read
+original:
+| if (shotAngle < 0 || shotAngle > SpreadSpec.MaxLegalMilliDegrees)
+replacement:
+| if (shotAngle > SpreadSpec.MaxLegalMilliDegrees)
+
+[cv-port-high]
+file = Assets/WarCore/Combat/CombatSystem.Vertical.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1AngleTests.V4_TheReadPortRefusesAnAngleOutOfRange
+note = 90001 is read
+original:
+| if (shotAngle < 0 || shotAngle > SpreadSpec.MaxLegalMilliDegrees)
+replacement:
+| if (shotAngle < 0 || shotAngle > SpreadSpec.MaxLegalMilliDegrees + 1)
+
+[cv-port-off]
+file = Assets/WarCore/Combat/CombatSystem.Vertical.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1AngleTests.V4_TheReadPortRefusesAnAngleOutOfRange
+note = the range is checked only with the section
+original:
+| if (shotAngle < 0 || shotAngle > SpreadSpec.MaxLegalMilliDegrees)
+replacement:
+| if (pack.VerticalSpread != null && (shotAngle < 0 || shotAngle > SpreadSpec.MaxLegalMilliDegrees))
+
+[cv-port-off-zero]
+file = Assets/WarCore/Combat/CombatSystem.Vertical.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1AngleTests.V4_AnUnnamedLevelAndNoStancesTakeTheStandingValue
+note = off returns the standing value
+original:
+| return vertical == null ? 0 : VerticalSpread.Angle
+replacement:
+| return vertical == null ? shotAngle : VerticalSpread.Angle
+
+[cv-changing-min]
+file = Assets/WarCore/Combat/CombatSystem.Vertical.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1AngleTests.V4_WhileChangingTheWiderLevel
+note = while changing the narrower level
+original:
+| Math.Max(now, vertical.PermilleOf(view.Target))
+replacement:
+| Math.Min(now, vertical.PermilleOf(view.Target))
+
+[cv-changing-now]
+file = Assets/WarCore/Combat/CombatSystem.Vertical.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1AngleTests.V4_WhileChangingTheWiderLevel
+note = while changing the level now only
+original:
+| return view.IsChanging ? Math.Max(now, vertical.PermilleOf(view.Target)) : now;
+replacement:
+| return now;
+
+[cv-changing-target]
+file = Assets/WarCore/Combat/CombatSystem.Vertical.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1AngleTests.V4_WhileChangingTheWiderLevel
+note = while changing the target level only
+original:
+| return view.IsChanging ? Math.Max(now, vertical.PermilleOf(view.Target)) : now;
+replacement:
+| return view.IsChanging ? vertical.PermilleOf(view.Target) : now;
+
+[cv-nostances-1000]
+file = Assets/WarCore/Combat/CombatSystem.Vertical.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1AngleTests.V4_AnUnnamedLevelAndNoStancesTakeTheStandingValue
+note = no stances: 1000
+original:
+| if (stances == null) return vertical.Permille;
+replacement:
+| if (stances == null) return 1000;
+
+[cv-draw-zero]
+file = Assets/WarCore/Combat/CombatSystem.Vertical.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1ShotTests.V5_DrawsPerShot
+note = a zero vertical angle still draws
+original:
+| return angle > 0 ? VerticalSpread.Tilt
+replacement:
+| return angle >= 0 ? VerticalSpread.Tilt
+
+[cv-center-height]
+file = Assets/WarCore/Combat/CombatSystem.Vertical.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1AimTests.V8_AutoFireAimsAtHalfTheStanceHeight
+note = the middle ignores the stance
+original:
+| stances != null ? stances.HeightRaw(target) / 2 : centerRaw
+replacement:
+| centerRaw
+
+[cv-center-eye]
+file = Assets/WarCore/Combat/CombatSystem.Vertical.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1AimTests.V8_AutoFireAimsAtHalfTheStanceHeight
+note = the middle is the eye
+original:
+| stances != null ? stances.HeightRaw(target) / 2 : centerRaw
+replacement:
+| stances != null ? stances.EyeRaw(target) : centerRaw
+
+[cv-center-nostance]
+file = Assets/WarCore/Combat/CombatSystem.Vertical.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1AimTests.V8_EyeOffAndNoStances
+note = without stances the eye
+original:
+| stances != null ? stances.HeightRaw(target) / 2 : centerRaw
+replacement:
+| stances != null ? stances.HeightRaw(target) / 2 : eyeRaw
+
+[cv-fallback-inverted]
+file = Assets/WarCore/Combat/CombatSystem.Vertical.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1AimTests.V8_
+note = the fallback is inverted
+original:
+| return LineClear(MuzzlePoint(shooter), middle) ? middle : ShotEnd(target);
+replacement:
+| return !LineClear(MuzzlePoint(shooter), middle) ? middle : ShotEnd(target);
+
+[cv-fallback-none]
+file = Assets/WarCore/Combat/CombatSystem.Vertical.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1AimTests.V8_ACutMiddleFallsBackToTheEye
+note = no fallback
+original:
+| return LineClear(MuzzlePoint(shooter), middle) ? middle : ShotEnd(target);
+replacement:
+| return middle;
+
+[cv-aim-ignored]
+file = Assets/WarCore/Combat/CombatSystem.Vertical.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1AimTests.V8_EyeOffAndNoStances
+expect = WarCore.Tests.VSpread1.VSpread1AimTests.V9_EyeAndOffNeverSnap
+note = aim eye aims at the middle too
+original:
+| private bool AimsAtCenter => pack.VerticalSpread != null && pack.VerticalSpread.Aim == VerticalAim.Center;
+replacement:
+| private bool AimsAtCenter => pack.VerticalSpread != null;
+
+[cv-snap-edge]
+file = Assets/WarCore/Combat/CombatSystem.Vertical.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1AimTests.V9_TheSnapEdge
+note = the snap edge is exclusive
+original:
+| if (span > limit) continue;
+replacement:
+| if (span >= limit) continue;
+
+[cv-snap-farthest]
+file = Assets/WarCore/Combat/CombatSystem.Vertical.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1AimTests.V9_NearestThenSmallerStableId
+note = the farthest enemy
+original:
+| if (found && (span > best || (span == best && id.CompareTo(bestId) >= 0))) continue;
+replacement:
+| if (found && (span < best || (span == best && id.CompareTo(bestId) >= 0))) continue;
+
+[cv-snap-tie]
+file = Assets/WarCore/Combat/CombatSystem.Vertical.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1AimTests.V9_NearestThenSmallerStableId
+note = a tie goes to the larger StableId
+original:
+| if (found && (span > best || (span == best && id.CompareTo(bestId) >= 0))) continue;
+replacement:
+| if (found && (span > best || (span == best && id.CompareTo(bestId) <= 0))) continue;
+
+[cv-snap-friend]
+file = Assets/WarCore/Combat/CombatSystem.Vertical.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1AimTests.V9_TeammatesTheDeadAndOtherShootersDoNotSnap
+note = teammates snap
+original:
+| if (!IsEnemy(shooter, unit) || !Entities.TryGet(positions, unit, out Position position)) continue;
+replacement:
+| if (!(IsEnemy(shooter, unit) || IsFriend(shooter, unit)) || !Entities.TryGet(positions, unit, out Position position)) continue;
+
+[cv-snap-dead]
+file = Assets/WarCore/Combat/CombatSystem.Vertical.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1AimTests.V9_TeammatesTheDeadAndOtherShootersDoNotSnap
+note = the dead snap
+original:
+| if (!IsEnemy(shooter, unit) || !Entities.TryGet(positions, unit, out Position position)) continue;
+replacement:
+| if (!Entities.TryGet(combatants, unit, out Combatant other) || other.Team == 0 || other.Team == Unit(shooter).Team || !Entities.TryGet(positions, unit, out Position position)) continue;
+
+[cv-snap-anyone]
+file = Assets/WarCore/Combat/CombatSystem.Vertical.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1AimTests.V9_TeammatesTheDeadAndOtherShootersDoNotSnap
+note = any shooter snaps
+original:
+| if (AimsAtCenter && IsPlayer(shooter) && TrySnap
+replacement:
+| if (AimsAtCenter && TrySnap
+
+[cv-snap-no-center]
+file = Assets/WarCore/Combat/CombatSystem.Vertical.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1AimTests.V9_TheSnapEdge
+note = the snap ends at the eye
+original:
+| return ShotEnd(shooter, enemy);
+replacement:
+| return ShotEnd(enemy);
+
+[cs-tilt-first]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1ShotTests.V5_HorizontalFirstThenVertical
+note = vertical before horizontal
+original:
+|                     if (shot > 0) direction = Rotate(direction, shot, sim.Rng.NextInt(spreadStream, 65536));
+|                     // VSPREAD-1: then the vertical tilt, from the same stream (nothing without combat.verticalSpread).
+|                     if (pack.VerticalSpread != null) direction = TiltShot(shooter, shot, direction);
+replacement:
+|                     if (pack.VerticalSpread != null) direction = TiltShot(shooter, shot, direction);
+|                     if (shot > 0) direction = Rotate(direction, shot, sim.Rng.NextInt(spreadStream, 65536));
+
+[cs-tilt-none]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1ShotTests.V5_DrawsPerShot
+expect = WarCore.Tests.VSpread1.VSpread1ShotTests.V5_HorizontalFirstThenVertical
+note = no tilt
+original:
+| if (pack.VerticalSpread != null) direction = TiltShot(shooter, shot, direction);
+replacement:
+|
+
+[cs-aimed-old]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1AimTests.V10_PointingAtALowEnemyHits
+expect = WarCore.Tests.VSpread1.VSpread1AimTests.V9_TheShotAndTheReadPortShareTheEnd
+note = the shot keeps the old end
+original:
+| direction = AimedEnd(shooter, intents[shooter.Id].Point) - origin;
+replacement:
+| direction = Lift(intents[shooter.Id].Point, aimEndRaw) - origin;
+
+[si-aimed-old]
+file = Assets/WarCore/Combat/CombatSystem.Sight.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1AimTests.V9_TheShotAndTheReadPortShareTheEnd
+note = the read port keeps the old end
+original:
+| SimVec3 direction = AimedEnd(shooter, point) - origin;
+replacement:
+| SimVec3 direction = Lift(point, aimEndRaw) - origin;
+
+[df-old-end]
+file = Assets/WarCore/Combat/DefaultAutoFire.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1AimTests.V8_AutoFireAimsAtHalfTheStanceHeight
+note = automatic fire keeps the eye
+original:
+| direction = combat.ShotEnd(shooter, target) - origin;
+replacement:
+| direction = combat.ShotEnd(target) - origin;
+
+[st-height-target]
+file = Assets/WarCore/Combat/StanceSystem.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1AimTests.V8_AChangingTargetCountsAtItsOldStance
+note = the height of the level being changed to
+original:
+| public long HeightRaw(EntityId unit) => BodyOf(Level(unit)).Height.Raw;
+replacement:
+| public long HeightRaw(EntityId unit) => BodyOf(StanceOf(unit).IsChanging ? StanceOf(unit).Target : Level(unit)).Height.Raw;
+
+[pk-body]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V2_ThePackChecksBodyAndLevels
+note = no body is taken
+original:
+| if (verticalSpread != null && !body.HasValue)
+replacement:
+| if (false)
+
+[pk-levels]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V2_ThePackChecksBodyAndLevels
+note = a wrong level count is taken
+original:
+| if (verticalSpread != null && verticalSpread.StancePermille.Length != this.stances.Length)
+replacement:
+| if (false)
+
+[pk-hash]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V3_TheSectionAndEveryNumberChangeTheDigest
+expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V3_TheSectionSitsBeforeTheBlasts
+note = the section is not hashed
+original:
+|             if (verticalSpread != null) verticalSpread.WriteState(hash);
+replacement:
+|
+
+[pk-hash-place]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V3_TheSectionSitsBeforeTheBlasts
+note = the section after the blasts
+original:
+|             if (verticalSpread != null) verticalSpread.WriteState(hash);
+|             // KB4: later optional sections go before this one, every one only when present. The whole order (X2): melee, block,
+|             // body, projectile, stances, move spread, manual reload, vertical spread (VSPREAD-1), status (NERVE-1), spread cap
+|             // (NERVE-1, stats.spread), blasts, throwables, armour, downed (DOWN-1), rescue.
+|             if (blasts != null) blasts.WriteState(hash);
+replacement:
+|             if (blasts != null) blasts.WriteState(hash);
+|             if (verticalSpread != null) verticalSpread.WriteState(hash);
+
+[pk-selector]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V3_WithSelectorKeepsTheSection
+note = WithSelector drops the section
+original:
+| stances.Length == 0 ? null : stances, VerticalSpread);
+replacement:
+| stances.Length == 0 ? null : stances, null);
+
+[rd-body]
+file = Assets/WarCore/Content/Data/Sections/CombatVSpread.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V2_Refusals
+note = no body is read
+original:
+| if (!bodied) throw Bad(pack, field.Layer, CombatSection.SectionKey, field.Name, "needs the combat section's body");
+replacement:
+|
+
+[rd-snap-eye]
+file = Assets/WarCore/Content/Data/Sections/CombatVSpread.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V2_Refusals
+note = snapMm with aim eye is read
+original:
+| if (aim != VerticalAim.Center) throw r.Bad(r.FieldOf(SnapField), "is allowed only with aim \"center\"");
+replacement:
+|
+
+[rd-snap-range]
+file = Assets/WarCore/Content/Data/Sections/CombatVSpread.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V2_Refusals
+note = snapMm is not range checked here
+original:
+| snap = r.Int(SnapField, VerticalSpread.MinSnapMm, VerticalSpread.MaxSnapMm);
+replacement:
+| snap = r.Int(SnapField);
+
+[rd-permille-range]
+file = Assets/WarCore/Content/Data/Sections/CombatVSpread.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V2_Refusals
+note = permille is not range checked here
+original:
+| int permille = r.Int(PermilleField, StatLine.MinPermille, StatLine.MaxPermille);
+replacement:
+| int permille = r.Int(PermilleField);
+
+[rd-key]
+file = Assets/WarCore/Content/Data/Sections/CombatVSpread.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V2_Refusals
+note = an unknown stance key is not refused
+original:
+| if (level < 0) throw Bad(pack, field.Layer, at, member.Name, "is not a stance of this pack");
+replacement:
+| if (level < 0) continue;
+
+[rd-value-range]
+file = Assets/WarCore/Content/Data/Sections/CombatVSpread.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V2_Refusals
+note = a byStance value is not range checked here
+original:
+| levels[level] = new EntryReader(pack, one).Int(member.Name, StatLine.MinPermille, StatLine.MaxPermille);
+replacement:
+| levels[level] = new EntryReader(pack, one).Int(member.Name);
+
+[rd-unnamed]
+file = Assets/WarCore/Content/Data/Sections/CombatVSpread.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1AngleTests.V4_AnUnnamedLevelAndNoStancesTakeTheStandingValue
+expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V2_Defaults
+note = an unnamed level takes 1000
+original:
+| for (int i = 0; i < count; i++) levels[i] = permille;
+replacement:
+| for (int i = 0; i < count; i++) levels[i] = 1000;
+
+[rd-no-stances]
+file = Assets/WarCore/Content/Data/Sections/CombatVSpread.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V2_Refusals
+note = byStance without stances is not refused by name
+original:
+| if (count == 0) throw Bad(pack, field.Layer, where, ByStanceField, "needs the combat section's stances");
+replacement:
+|
+
+[rd-done]
+file = Assets/WarCore/Content/Data/Sections/CombatVSpread.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V2_Refusals
+note = unknown fields are read
+original:
+|             r.Done();
+replacement:
+|
+
+[rd-aim]
+file = Assets/WarCore/Content/Data/Sections/CombatVSpread.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V2_Refusals
+note = an unknown aim is not refused here
+original:
+| if (index < 0) throw r.Bad(r.FieldOf(AimField), "unknown aim '" + name + "', allowed: " + string.Join(", ", AimNames));
+replacement:
+| if (index < 0) index = 0;
+
+[rd-bystance-object]
+file = Assets/WarCore/Content/Data/Sections/CombatVSpread.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V2_Refusals
+note = byStance as an array is not refused
+original:
+| if (byStance.Kind != JsonKind.Object) throw Bad(pack, field.Layer, where, ByStanceField, "must be an object");
+replacement:
+|
+
+[rd-nested]
+file = Assets/WarCore/Content/Data/Sections/CombatVSpread.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V2_Refusals
+note = an object field inside is taken
+original:
+| if (member.Value.Kind == JsonKind.Object || member.Value.Kind == JsonKind.Array)
+replacement:
+| if (false)
+
+[se-nested]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V2_TheShippedLayerReads
+note = verticalSpread is not an object field
+original:
+| || field == MoveSpreadField || field == VerticalSpreadField;
+replacement:
+| || field == MoveSpreadField;
+
+[cp-pass]
+file = Assets/WarCore/Content/Data/ContentPack.cs
+filter = FullyQualifiedName~VSpread1
+expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V2_TheShippedLayerReads
+note = the content pack does not pass the section
+original:
+| stances, SectionOrNull<VerticalSpread>());
+replacement:
+| stances, null);

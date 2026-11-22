@@ -11,8 +11,9 @@ namespace WarCore.Content
     // and one row here.
     //   * Merge order and the order of the "allowed" list in the unknown-key error are the table order.
     //   * Build order is (BuildStage, table order): that is how surfaces merge before the slope rule yet build after it.
-    //   * Unlisted sections (TRV-2: traversal; SLOPE-1: movement, stats) come after the listed ones. Their keys are accepted,
-    //     merged and built like the others but left out of the "allowed" list, so that recorded message stays the same.
+    //   * Unlisted sections (TRV-2: traversal; NERVE-1 and SLOPE-1: stats; SLOPE-1: movement) come after the listed ones. Their
+    //     keys are accepted, merged and built like the others but left out of the "allowed" list, so that recorded message stays
+    //     the same.
     //     Sections not listed stay unlisted until MIX-1 lists every optional section at once; a layer that turns one on does
     //     not list it by itself.
     internal sealed class SectionTable

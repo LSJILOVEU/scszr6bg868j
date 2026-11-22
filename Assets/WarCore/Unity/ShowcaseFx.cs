@@ -1,31 +1,41 @@
 using System.Collections.Generic;
 using UnityEngine;
+using WarCore.Presentation;
 
 namespace WarCore.Unity
 {
     // SHOW-1: drawn-only effects that run on real time, not on ticks: chips that fly off where a shot lands, the burst of the
     // grenade preview (flash, dust ring, chips, a scorch mark) and the preview grenade itself. Nothing here touches the
     // simulation: the grenade preview hurts nobody. Everything is pooled and capped. PLACEHOLDER art and numbers.
+    // HC-4: a real blast is drawn from its own radii (BlastLook) with a fading ring at the outer radius; the grenade's reach
+    // and flight time are read from ShowcaseActions, the one place they are set.
     public sealed class ShowcaseFx
     {
         public const string ChipName = "Chip", BurstName = "Burst", ScorchName = "Scorch", GrenadeName = "Grenade preview";
-        public const float GrenadeSeconds = 1.1f, GrenadeReach = 28f, BurstRadius = 5f;
-        private const int MaxChips = 220, MaxBursts = 24, MaxScorches = 16;
+        public const string DangerRingName = "Danger ring";
+        public const float BurstRadius = 5f;
+        public static readonly float GrenadeSeconds = BlastLook.FlightSeconds(ShowcaseActions.FuseTicks);
+        public static readonly float GrenadeReach = BlastLook.ReachMetres(ShowcaseActions.ReachMm);
+        public const int MaxRings = 8;
+        private const int MaxChips = 220, MaxBursts = 24, MaxScorches = 16, RingSegments = 64;
         private const float Gravity = 14f;
 
         private struct Chip { public Transform Item; public Vector3 Speed; public float Left, Floor; }
         private struct Burst { public Transform Item; public float Age, Life, Size; }
-        private struct Thrown { public Vector3 From, To; public float Age; public bool Live; }
+        private struct Thrown { public Vector3 From, To; public float Age; public bool Live, Burst; }
+        private struct Ring { public LineRenderer Line; public float Age; }
 
         private readonly Transform parent;
-        private readonly Material dust, dirt, spark, blood, flash, smoke, scorch, shell;
+        private readonly Material dust, dirt, spark, blood, flash, smoke, scorch, shell, danger;
         private readonly List<Chip> chips = new List<Chip>();
         private readonly List<Burst> bursts = new List<Burst>();
         private readonly List<Transform> scorches = new List<Transform>();
+        private readonly List<Ring> rings = new List<Ring>();
+        private static readonly Color DangerColour = new Color(1f, 0.3f, 0.15f);
         private readonly List<Vector3> burstsThisFrame = new List<Vector3>();
         private readonly Transform grenade;
         private Thrown thrown;
-        private int nextChip, nextBurst, nextScorch;
+        private int nextChip, nextBurst, nextScorch, nextRing;
 
         public ShowcaseFx(Transform parent)
         {
@@ -38,6 +48,8 @@ namespace WarCore.Unity
             smoke = ShowcaseScene.Flat(new Color(0.3f, 0.3f, 0.3f));
             scorch = ShowcaseScene.Flat(new Color(0.12f, 0.11f, 0.1f));
             shell = ShowcaseScene.Lit(new Color(0.2f, 0.3f, 0.2f));
+            // Sprites/Default blends by each line's own colour, so a danger ring fades out through its alpha.
+            danger = new Material(Shader.Find("Sprites/Default") ?? Shader.Find("Unlit/Color"));
             grenade = Make(PrimitiveType.Sphere, GrenadeName, shell);
             grenade.localScale = new Vector3(0.28f, 0.28f, 0.28f);
             grenade.gameObject.SetActive(false);
@@ -116,36 +128,97 @@ namespace WarCore.Unity
         }
 
         // The preview burst at a point on the ground: flash, smoke, a ring of dust, chips and a scorch mark.
-        public void Explode(Vector3 at)
+        public void Explode(Vector3 at) => Blow(at, 3.2f, 4.6f, 2.2f, BurstRadius * 0.7f);
+
+        // HC-4: a real blast, sized by its radii: the burst of the preview with the dust ring and scorch at the inner radius
+        // (none when there is no full-harm core), and a ring on the ground at the outer radius that fades out.
+        public void Explode(Vector3 at, BlastLook look)
         {
-            Grow(at + Vector3.up * 0.6f, flash, 3.2f, 0.16f);
-            Grow(at + Vector3.up * 0.9f, smoke, 4.6f, 0.9f);
-            for (int i = 0; i < 8; i++)
+            Blow(at, look.FlashSize, look.SmokeSize, look.DustRadius, look.ScorchDiameter);
+            DangerRing(at, look.RingRadius);
+        }
+
+        // The radius a danger ring is drawn at (its first point's distance from its centre).
+        public static float RingRadiusOf(Transform ring) => ring.GetComponent<LineRenderer>().GetPosition(0).magnitude;
+
+        private void Blow(Vector3 at, float flashSize, float smokeSize, float dustRadius, float scorchDiameter)
+        {
+            Grow(at + Vector3.up * 0.6f, flash, flashSize, 0.16f);
+            Grow(at + Vector3.up * 0.9f, smoke, smokeSize, 0.9f);
+            for (int i = 0; dustRadius > 0f && i < 8; i++)
             {
                 float angle = i * Mathf.PI / 4f;
-                Grow(at + new Vector3(Mathf.Cos(angle) * 2.2f, 0.3f, Mathf.Sin(angle) * 2.2f), dust, 1.8f, 0.6f);
+                Grow(at + new Vector3(Mathf.Cos(angle) * dustRadius, 0.3f, Mathf.Sin(angle) * dustRadius), dust, 1.8f, 0.6f);
             }
             Chips(at + Vector3.up * 0.3f, at.y + 0.05f, 26, false, 7f);
-            Transform mark;
-            if (scorches.Count < MaxScorches)
+            if (scorchDiameter > 0f)
             {
-                mark = Make(PrimitiveType.Cylinder, ScorchName, scorch);
-                scorches.Add(mark);
+                Transform mark;
+                if (scorches.Count < MaxScorches)
+                {
+                    mark = Make(PrimitiveType.Cylinder, ScorchName, scorch);
+                    scorches.Add(mark);
+                }
+                else mark = scorches[nextScorch = (nextScorch + 1) % scorches.Count];
+                mark.position = at + Vector3.up * 0.03f;
+                mark.localScale = new Vector3(scorchDiameter, 0.01f, scorchDiameter);
             }
-            else mark = scorches[nextScorch = (nextScorch + 1) % scorches.Count];
-            mark.position = at + Vector3.up * 0.03f;
-            mark.localScale = new Vector3(BurstRadius * 0.7f, 0.01f, BurstRadius * 0.7f);
             burstsThisFrame.Add(at);
         }
 
+        private void DangerRing(Vector3 at, float radius)
+        {
+            int slot = -1;
+            for (int k = 0; k < rings.Count && slot < 0; k++)
+                if (!rings[k].Line.gameObject.activeSelf) slot = k;
+            if (slot < 0 && rings.Count < MaxRings)
+            {
+                var made = new GameObject(DangerRingName);
+                made.transform.SetParent(parent, false);
+                LineRenderer line = made.AddComponent<LineRenderer>();
+                line.sharedMaterial = danger;
+                line.useWorldSpace = false;
+                line.loop = true;
+                line.positionCount = RingSegments;
+                line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                // The band faces along the ring's own z axis, which is turned to point down, so the ring lies flat on the ground.
+                line.alignment = LineAlignment.TransformZ;
+                made.transform.localRotation = Quaternion.FromToRotation(Vector3.forward, Vector3.down);
+                rings.Add(new Ring { Line = line });
+                slot = rings.Count - 1;
+            }
+            if (slot < 0) slot = nextRing = (nextRing + 1) % rings.Count;
+            Ring r = rings[slot];
+            for (int i = 0; i < RingSegments; i++)
+            {
+                float angle = i * 2f * Mathf.PI / RingSegments;
+                r.Line.SetPosition(i, new Vector3(Mathf.Cos(angle) * radius, Mathf.Sin(angle) * radius, 0f));
+            }
+            r.Line.transform.position = at + Vector3.up * BlastLook.RingLift;
+            r.Line.widthMultiplier = BlastLook.RingWidth;
+            SetAlpha(r.Line, 1f);
+            r.Line.gameObject.SetActive(true);
+            r.Age = 0f;
+            rings[slot] = r;
+        }
+
+        private static void SetAlpha(LineRenderer line, float alpha)
+        {
+            Color c = DangerColour;
+            c.a = alpha;
+            line.startColor = c;
+            line.endColor = c;
+        }
+
         // Start the preview grenade from the thrower's hand toward a point on the ground (cut to GrenadeReach). False while
-        // one is already in the air.
-        public bool Throw(Vector3 from, Vector3 to)
+        // one is already in the air. burst false (SHOW-2, the real grenade): it vanishes on landing without a burst, which the
+        // simulation's blast then draws.
+        public bool Throw(Vector3 from, Vector3 to, bool burst = true)
         {
             if (thrown.Live) return false;
             Vector3 flat = new Vector3(to.x - from.x, 0f, to.z - from.z);
             if (flat.magnitude > GrenadeReach) to = from + flat.normalized * GrenadeReach + Vector3.up * (to.y - from.y);
-            thrown = new Thrown { From = from, To = to, Age = 0f, Live = true };
+            thrown = new Thrown { From = from, To = to, Age = 0f, Live = true, Burst = burst };
             grenade.position = from;
             grenade.gameObject.SetActive(true);
             return true;
@@ -168,7 +241,7 @@ namespace WarCore.Unity
                 {
                     thrown.Live = false;
                     grenade.gameObject.SetActive(false);
-                    Explode(thrown.To);
+                    if (thrown.Burst) Explode(thrown.To);
                 }
             }
             for (int i = 0; i < chips.Count; i++)
@@ -182,6 +255,16 @@ namespace WarCore.Unity
                 c.Item.position = at;
                 if (c.Left <= 0f) c.Item.gameObject.SetActive(false);
                 chips[i] = c;
+            }
+            for (int i = 0; i < rings.Count; i++)
+            {
+                Ring r = rings[i];
+                if (!r.Line.gameObject.activeSelf) continue;
+                r.Age += dt;
+                float left = BlastLook.RingAlpha(r.Age);
+                SetAlpha(r.Line, left);
+                if (left <= 0f) r.Line.gameObject.SetActive(false);
+                rings[i] = r;
             }
             for (int i = 0; i < bursts.Count; i++)
             {

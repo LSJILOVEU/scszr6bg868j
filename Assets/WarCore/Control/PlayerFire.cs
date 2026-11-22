@@ -35,6 +35,8 @@ namespace WarCore.Control
             if (sim.GameplayLife(stable).State == GameplayLifeState.Dead
                 || !sim.Entities.TryGet(positions, unit, out Position position)
                 || !sim.Entities.TryGet(combatants, unit, out Combatant state)) return;
+            // DOWN-1: a downed or stunned player lowers any block and does nothing else.
+            if (combat.CannotAct(unit)) { combat.Release(unit); return; }
             // Holding the block input keeps a hold toward the aim point (the facing when the aim is on the unit); letting go releases it.
             if (combat.CanBlock(unit))
             {

@@ -13,6 +13,7 @@ namespace WarCore.Presentation
         private readonly Func<byte[]> map;
         private readonly Func<WorldRecipe> recipe;
         private readonly Func<(long AtTick, PlayerInput Input)[]> script;
+        private readonly Func<BridgeCommand[]> commands;
 
         private readonly string paletteLayer;
 
@@ -22,12 +23,18 @@ namespace WarCore.Presentation
         public IReadOnlyList<string> Shows { get; }
         // Half the height of the picture in metres when the stage starts.
         public float Zoom { get; }
+        // SHOW-2: the blast kind the player's grenade sets off (G), or null where the grenade is the drawn-only preview.
+        public string GrenadeBlast { get; }
+        // SHOW-2: the squad a stance order (Y) goes to, or 0 where the stage takes no stance orders.
+        public int OrderSquad { get; }
 
         internal ShowcaseStage(string id, string title, float zoom, string paletteLayer, string[] shows, Func<byte[]> map, Func<WorldRecipe> recipe,
-            Func<(long AtTick, PlayerInput Input)[]> script)
+            Func<(long AtTick, PlayerInput Input)[]> script, Func<BridgeCommand[]> commands = null, string grenadeBlast = null, int orderSquad = 0)
         {
             Id = id; Title = title; Zoom = zoom; Shows = Array.AsReadOnly(shows); this.map = map; this.recipe = recipe; this.script = script;
             this.paletteLayer = paletteLayer;
+            this.commands = commands ?? (() => Array.Empty<BridgeCommand>());
+            GrenadeBlast = grenadeBlast; OrderSquad = orderSquad;
         }
 
         // The colours of the cartridge that holds the stage's layer (its palette.json, or the built-in ones), for this map.
@@ -48,6 +55,22 @@ namespace WarCore.Presentation
         public SimSession Start() => SimSession.Create(recipe(), map());
         // The scripted player for pictures taken without a person at the keys. A new array each call.
         public (long AtTick, PlayerInput Input)[] Script() => script();
+        // SHOW-2: the scripted orders (grenades, stance orders) queued with the script for pictures taken without a person. A
+        // new array each call; empty for most stages.
+        public BridgeCommand[] Commands() => commands();
+
+        // SHOW-2: how tall each stance level of the stage's combat pack draws, as a share of the standing body (level 0 is 1).
+        // Just [1] for a pack without stances.
+        public float[] StanceScales()
+        {
+            WarCore.Combat.CombatPack combat = recipe().Combat;
+            if (combat == null || !combat.HasStances || !combat.Body.HasValue) return new[] { 1f };
+            ReadOnlySpan<WarCore.Combat.StanceDef> stances = combat.Stances;
+            var scales = new float[stances.Length + 1];
+            scales[0] = 1f;
+            for (int i = 0; i < stances.Length; i++) scales[i + 1] = (float)stances[i].Body.Height.Raw / combat.Body.Value.Height.Raw;
+            return scales;
+        }
     }
 
     // Colours as 0xRRGGBB. Team[k] is team k + 1; Surface[i] is the map's surface i (empty for a map without a surface table).
@@ -66,10 +89,10 @@ namespace WarCore.Presentation
         }
     }
 
-    // SHOW-1: every finished feature switched on at once, in a few stages a person can play. Nothing here is a rule of the
+    // SHOW-1: every finished feature switched on at once, in a few stages a person can play (SHOW-2 added the sixth, Showcase.Hamlet.cs). Nothing here is a rule of the
     // game: each stage only combines maps, content layers and recipe switches that already exist. PLACEHOLDER values throughout
     // (they come from the content layers "rwr-showcase", "rwr-showcase-bullets", "rwr-ai-playtest" and "ancient-field").
-    public static class Showcase
+    public static partial class Showcase
     {
         public const string BattleLayer = "rwr-showcase", BulletsLayer = "rwr-showcase-bullets";
         public const string HouseAiLayer = "rwr-ai-playtest", TerrainLayer = "rwr-ai-playtest", AncientLayer = "ancient-field";
@@ -109,13 +132,23 @@ namespace WarCore.Presentation
                 "Second cartridge: swords, spears and shields, 60 a side and 30 in reserve, no guns",
                 "Player: a guard (sword and shield); AI raises its shield against swings",
             }, () => ShowcaseField.MapBytes("ancient.ground"), AncientRecipe, AncientScript),
+            new ShowcaseStage("hamlet", "Swiss valley hamlet", 18f, HamletLayer, new[]
+            {
+                "Real terrain: a 160 m crop of the Emmental valley with a hamlet; 62 walls, 5 points, 40 + 20 reserves a side",
+                "AI: squads, spread attack, bounding, pressure (pinned / broken), bursts, memory, search, suppression",
+                "Player: rifle, dash, block, respawn; aim spreads while moving",
+                "G throws a real grenade: it bursts after a short fuse and hurts everyone inside the ring it draws, walls shield",
+                "Y orders your team's soldiers to stand, crouch or go prone (lower is slower, steadier and harder to see)",
+                "Known gap: the AI's cover rule refuses a height-field map, so nobody seeks cover here",
+            }, () => Hamlet().WcMapBytes, HamletRecipe, HamletScript, HamletCommands, HamletBlast, HamletOrderSquad),
         });
 
         // Not in the code base yet. The HUD lists these so nobody mistakes a gap for a bug.
         public static IReadOnlyList<string> Missing { get; } = Array.AsReadOnly(new[]
         {
-            "Grenades and explosions (the throw key reaches the simulation, nothing consumes it)",
-            "Stances: crouch and prone",
+            "AI grenades; the player's grenade is real in stage 6 only (it bursts after a fixed fuse and does not fly in the simulation)",
+            "Your own crouch and prone (stances work in stage 6, but only as orders to your team); AI that picks its own stance",
+            "Cover seeking on height-field maps (the AI's cover rule refuses them)",
             "Climbing over walls and through windows",
             "AI reserves with a ticket count; an AI commander that splits forces",
             "Vehicles, water, day and night",

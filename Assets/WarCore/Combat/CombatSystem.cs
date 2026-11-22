@@ -83,6 +83,7 @@ namespace WarCore.Combat
             InitMelee();
             InitBlock();
             InitAim();
+            InitNerve();
         }
 
         private const long LegacyEyeRaw = SimFix.Scale / 2;
@@ -205,7 +206,8 @@ namespace WarCore.Combat
                     if (!Entities.TryGet(combatants, shooter, out Combatant unit)
                         || !Entities.TryGet(positions, shooter, out Position position)) continue;
                     if (bodied) RequireBodyHeight(shooter);
-                    if (IsDead(shooter))
+                    // DOWN-1: a downed or stunned unit is skipped as a dead one (CannotAct is IsDead without casualties).
+                    if (CannotAct(shooter))
                     {
                         if (pack.HasMelee) CancelMelee(shooter);
                         continue;
@@ -226,7 +228,7 @@ namespace WarCore.Combat
                     SimVec3 origin = Lift(position.Value, MuzzleOf(shooter)), direction;
                     if (hasIntent)
                     {
-                        direction = Lift(intents[shooter.Id].Point, aimEndRaw) - origin;
+                        direction = AimedEnd(shooter, intents[shooter.Id].Point) - origin;
                         if (Horizontal(direction).LengthSquared.Sign == 0
                             && !(Overhead(position.Value, intents[shooter.Id].Point) && direction.LengthSquared.Sign != 0)) continue;
                         // Positions are final here (after movement): an intent that avoids allies is declined for this tick
@@ -249,6 +251,8 @@ namespace WarCore.Combat
                     // AIM-1: the turn uses the spread line's angle; the weapon's spread state below keeps the weapon's angle.
                     int shot = ShotAngle(shooter, in unit, angle, tick);
                     if (shot > 0) direction = Rotate(direction, shot, sim.Rng.NextInt(spreadStream, 65536));
+                    // VSPREAD-1: then the vertical tilt, from the same stream (nothing without combat.verticalSpread).
+                    if (pack.VerticalSpread != null) direction = TiltShot(shooter, shot, direction);
                     if (pack.IsProjectile(unit.Weapon)) LaunchRay(shooter, in unit, in weapon, tick, origin, direction, angle);
                     else FireRay(c, shooter, in unit, in position, in weapon, tick, origin, direction, angle);
                 }
@@ -260,7 +264,7 @@ namespace WarCore.Combat
         { writer.UInt64(pack.PolicyDigest); writer.UInt64(wallMask); writer.UInt64(unitLayerMask); if (controlled != null) writer.Bool(true); }
         public void LoadState(SimStateReader reader)
         {
-            cacheValid = false; ClearIntents(); lastStepTick = sim.Clock.Tick;
+            cacheValid = false; ClearIntents(); VoidLedger(); lastStepTick = sim.Clock.Tick;
             if (reader.UInt64() != pack.PolicyDigest || reader.UInt64() != wallMask || reader.UInt64() != unitLayerMask)
                 throw new InvalidOperationException("Combat policy or layer masks differ from the saved configuration.");
             if (controlled != null && !reader.Bool())

@@ -40,7 +40,7 @@ filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
 expect = WarCore.Tests.Ml1WallSpanTests.BandBottomIsTheProbeSphereInclusive
 note = band bottom at the ground instead of 0.25 m below
 original:
-| BelowRaw = SimFix.Scale / 4;
+| BelowRaw = BodyRadius.DefaultRaw;
 replacement:
 | BelowRaw = 0;
 

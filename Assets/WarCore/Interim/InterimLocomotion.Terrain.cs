@@ -11,20 +11,28 @@ namespace WarCore.Interim
         // thick, and `base * 2000` stays far inside a long.
         public const long MaxTerrainStepRaw = SimFix.Scale / 4;
         public const long MaxEffectiveStepRaw = SimFix.Scale / 2;
-        // Clearance radius of a unit against blocked cells and the map edge (T1a-2a uses 0.25 m for every unit).
-        public static SimFix UnitFootprint => SimFix.FromRaw(SimFix.Scale / 4);
+        // Clearance radius of a unit against blocked cells and the map edge when the caller gives none: the default body
+        // radius (HC-1; a content pack's own radius is passed to the constructor).
+        public static SimFix UnitFootprint => BodyRadius.Default;
         // Steps without getting closer before a re-plan, re-plans per order, and the order-level limit (4 x StallLimit).
         public const int StallLimit = 60, MaxRetries = 3, OrderStallLimit = 240;
 
         private readonly TerrainTables terrain;
+        // The clearance radius this mover tests every step with (HC-1); BodyRadius.Default unless the constructor was given one.
+        private readonly SimFix footprint = BodyRadius.Default;
         // Non-null only when the map has a height field: then distances are horizontal and Y follows the ground.
         private readonly HeightField ground;
         private readonly ComponentType<MoveProgress> progress;
 
         public InterimLocomotion(EntityStore entities, uint wallMask, NavGrid navGrid, bool crowd,
-            IControlledStep controlledStep, ICrowdPass pass, TerrainTables terrain)
+            IControlledStep controlledStep, ICrowdPass pass, TerrainTables terrain, SimFix? unitRadius = null)
             : this(entities, wallMask, terrain == null ? navGrid : terrain.Nav, crowd, controlledStep, pass)
         {
+            if (unitRadius.HasValue)
+            {
+                if (unitRadius.Value.Raw <= 0 || unitRadius.Value.Raw > NavGrid.MaxClearRadiusRaw) throw new ArgumentOutOfRangeException(nameof(unitRadius));
+                footprint = unitRadius.Value;
+            }
             if (terrain == null) return;
             if (navGrid != null && !ReferenceEquals(navGrid, terrain.Nav))
                 throw new ArgumentException("Navigation must be the terrain's own grid.", nameof(navGrid));
@@ -161,8 +169,8 @@ namespace WarCore.Interim
         // open for the start and the end of the step.
         private bool PathClear(int layer, SimVec3 point, ref SimVec3 next)
         {
-            if (!layered) return grid.SegmentClear(point, next, UnitFootprint);
-            return Settle(layer, point, ref next) && grid.SegmentClear(point, next, UnitFootprint, openCells);
+            if (!layered) return grid.SegmentClear(point, next, footprint);
+            return Settle(layer, point, ref next) && grid.SegmentClear(point, next, footprint, openCells);
         }
 
         private bool WallHit(SimContext context, EntityId unit, SimVec3 from, SimVec3 to)

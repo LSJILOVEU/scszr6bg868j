@@ -66,18 +66,26 @@ namespace WarCore.Combat
                 if (spec.Walls && !LineClear(from, centre)) continue;
                 StableId victim = Entities.StableOf(entity);
                 long applied = SubmitDamage(c, victim, key, damage, tick);
+                // DOWN-1: a unit this blast hurt is stunned, unless it is down (this blast may have downed it).
+                if (applied > 0 && spec.StunTicks > 0) StunAt(entity, spec.StunTicks, tick);
                 victims[offset + written] = victim; damages[offset + written] = applied; distances[offset + written] = distance;
                 written++;
             }
             return written;
         }
 
-        // The one damage entry of the combat layer (BLAST-1 C3.7): zero while the victim is shielded, then the damage command.
-        // Only blasts use it so far; the other damage sites move here with the package that rewrites damage (downed, gear).
-        internal long SubmitDamage(SimContext c, StableId victim, GameplayApplyKey key, long damageRaw, long tick)
+        // The one damage entry of the combat layer (BLAST-1 C3.7; DOWN-1 C3), used by shots, melee, projectiles and blasts: zero
+        // while the victim is shielded, then (GEAR-1 goes here) the casualty rule, then the damage command; only a command the
+        // Sim admitted is added to this step's ledger. Returns the damage as issued; failure is the command's answer.
+        internal long SubmitDamage(SimContext c, StableId victim, GameplayApplyKey key, long damageRaw, long tick) =>
+            SubmitDamage(c, victim, key, damageRaw, tick, out _);
+
+        internal long SubmitDamage(SimContext c, StableId victim, GameplayApplyKey key, long damageRaw, long tick, out GameplayFailure failure)
         {
             if (Shielded(victim, tick)) damageRaw = 0;
-            c.Damage(sim.GameplayTarget(victim), key, 1, damageRaw);
+            if (casualtyBound) damageRaw = CasualtyRule(victim, damageRaw, tick);
+            failure = c.Damage(sim.GameplayTarget(victim), key, 1, damageRaw);
+            if (casualtyBound && failure == GameplayFailure.None) Charge(victim, damageRaw, tick);
             return damageRaw;
         }
     }

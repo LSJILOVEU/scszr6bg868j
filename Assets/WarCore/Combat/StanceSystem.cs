@@ -161,6 +161,8 @@ namespace WarCore.Combat
         // Eye and muzzle heights (raw, above the foot) of the unit's stance now.
         public long EyeRaw(EntityId unit) => BodyOf(Level(unit)).Eye.Raw;
         public long MuzzleRaw(EntityId unit) => BodyOf(Level(unit)).Muzzle.Raw;
+        // VSPREAD-1: the body height (raw) of the unit's stance now (the old stance until the change is due).
+        public long HeightRaw(EntityId unit) => BodyOf(Level(unit)).Height.Raw;
 
         // The stance's speed factor (permille): while changing, the slower of the two levels.
         public int SpeedPermille(EntityId unit)
