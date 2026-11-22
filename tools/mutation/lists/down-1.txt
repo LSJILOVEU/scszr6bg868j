@@ -544,9 +544,9 @@ filter = FullyQualifiedName~Down1
 expect = WarCore.Tests.Down1.Down1ContentTests.D1_WithSelector
 note = WithSelector drops downed
 original:
-|             stances.Length == 0 ? null : stances, VerticalSpread, Downed);
+|             stances.Length == 0 ? null : stances, VerticalSpread, Status, SpreadDragFloorPermille, SpreadDragCeilPermille, Downed);
 replacement:
-|             stances.Length == 0 ? null : stances, VerticalSpread, null);
+|             stances.Length == 0 ? null : stances, VerticalSpread, Status, SpreadDragFloorPermille, SpreadDragCeilPermille, null);
 
 [default-off]
 file = Assets/WarCore/Presentation/Bridge/Features/DownedFeature.cs
