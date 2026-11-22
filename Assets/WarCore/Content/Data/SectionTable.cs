@@ -16,6 +16,7 @@ namespace WarCore.Content
     //     the same.
     //     Sections not listed stay unlisted until MIX-1 lists every optional section at once; a layer that turns one on does
     //     not list it by itself.
+    //     AIM-2: pick is unlisted by design and stays so: only the picture and the mouse pick read it, never Sim.
     internal sealed class SectionTable
     {
         // Weapons come before unit types and combat before match: later sections read what earlier ones built.
@@ -23,7 +24,7 @@ namespace WarCore.Content
         {
             new WeaponsSection(), new MeleeSection(), new BlockSection(), new UnitTypesSection(), new CombatSection(), new MatchSection(),
             new SurfacesSection(), new SlopeRuleSection(), new AiSection(), new RulesSection(),
-        }, new IContentSection[] { new TraversalSection(), new MovementSection(), new StatsSection() });
+        }, new IContentSection[] { new TraversalSection(), new MovementSection(), new StatsSection(), new PickSection() });
 
         private readonly IContentSection[] sections, all, buildOrder;
         private readonly string[] allowedKeys;

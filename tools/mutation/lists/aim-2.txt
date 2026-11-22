@@ -1,0 +1,333 @@
+# AIM-2: the mouse reach (PickReach), the nearest-to-the-ray choice in AimPick, the content section "pick" and the
+# showcase wiring (the house stage's body, the legacy house, the combat layer). Numbers in the notes are the card's table.
+# Not listed: 17 (the pick in a pack hash) has no site, since nothing in Sim or Combat reads PickRules; S6 is its guard.
+# The reach loop and the old loop share Snappable; the self check is not mutated (the player is always on its own team).
+# The Unity host's wiring (ShowcaseHost passes stage.Reach()) runs on the Mac only.
+
+[aim2-no-reach-takes-new-path]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Aim2|FullyQualifiedName~Scale2a|FullyQualifiedName~A4Pick|FullyQualifiedName~Mt167AimPick|FullyQualifiedName~Ml10
+expect = WarCore.Tests.Aim2GoldenTests.S1_ThePickWithoutAReachMatchesTheRecordedBits
+note = without a reach the pick goes the new way (1)
+original:
+| if (reach == null)
+replacement:
+| if (reach == null && sizes == null)
+
+[aim2-radius-not-scaled]
+file = Assets/WarCore/Presentation/Camera/PickReach.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ReachTests.S2_TheRadiusIsTheBodyTimesThePermille
+expect = WarCore.Tests.Aim2ReachTests.TheReachScalesTheBodyInFloat
+note = the cylinder is the bare body radius (2)
+original:
+| public float Radius(float bodyRadius) => bodyRadius * RadiusPermille / 1000f;
+replacement:
+| public float Radius(float bodyRadius) => bodyRadius;
+
+[aim2-height-not-scaled]
+file = Assets/WarCore/Presentation/Camera/PickReach.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ReachTests.S2_TheHeightIsTheStanceTopTimesThePermille
+expect = WarCore.Tests.Aim2ReachTests.TheReachScalesTheBodyInFloat
+note = the cylinder is the bare body height (3)
+original:
+| public float Height(float bodyTop) => bodyTop * HeightPermille / 1000f;
+replacement:
+| public float Height(float bodyTop) => bodyTop;
+
+[aim2-height-always-standing]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ReachTests.S2_TheHeightIsTheStanceTopTimesThePermille
+note = the height ignores the stance (4)
+original:
+| float top = sizes.Top(e);
+replacement:
+| float top = sizes.StandingHeight;
+
+[aim2-first-hit-wins]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ReachTests.S3a_
+note = the first hit wins again, not the nearest (5)
+original:
+| if (distance < bestDistance || (distance == bestDistance && (t < best || (t == best && e.Key < snapped.Key))))
+replacement:
+| if (t < best || (t == best && e.Key < snapped.Key))
+
+[aim2-tie-later-hit-wins]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ReachTests.S3b_
+note = at the same distance the later hit wins (6)
+original:
+| if (distance < bestDistance || (distance == bestDistance && (t < best || (t == best && e.Key < snapped.Key))))
+replacement:
+| if (distance < bestDistance || (distance == bestDistance && (t > best || (t == best && e.Key < snapped.Key))))
+
+[aim2-tie-larger-key-wins]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ReachTests.S3c_
+note = at the same distance and hit the larger key wins (7)
+original:
+| if (distance < bestDistance || (distance == bestDistance && (t < best || (t == best && e.Key < snapped.Key))))
+replacement:
+| if (distance < bestDistance || (distance == bestDistance && (t < best || (t == best && e.Key > snapped.Key))))
+
+[aim2-hidden-enemy-competes]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ReachTests.S4_AHiddenEnemyDoesNotTakeThePickFromAVisibleOne
+note = an enemy behind the ground takes part in the choice (8)
+original:
+| if (!(t < tGround)) continue;
+replacement:
+| if (double.IsNaN(t)) continue;
+
+[aim2-final-ground-check-dropped]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Aim2|FullyQualifiedName~Scale2a|FullyQualifiedName~A4Pick|FullyQualifiedName~Mt167AimPick|FullyQualifiedName~Ml10
+expect = WarCore.Tests.Aim2GoldenTests.S1_ThePickWithoutAReachMatchesTheRecordedBits
+note = a unit behind the ground is picked on the old path (8)
+original:
+| if (!(best < tGround)) return onGround;
+replacement:
+| if (double.IsInfinity(best)) return onGround;
+
+[aim2-axis-widened]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ReachTests.S3d_
+note = the axis ends at the widened top (9)
+original:
+| e.X, e.Y, e.Y + top, e.Z)
+replacement:
+| e.X, e.Y, e.Y + reach.Height(top), e.Z)
+
+[aim2-reach-without-sizes-allowed]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ReachTests.S3e_
+note = a reach without sizes is not refused (10)
+original:
+| if (reach != null && sizes == null) throw
+replacement:
+| if (reach != null && sizes == null && reach == null) throw
+
+[aim2-negative-t-counts]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ReachTests.S3_ARayStartingInsideTheCylinderDoesNotPickIt
+note = a hit behind the ray's start counts (20)
+original:
+| return t1 >= 0 ? t1 : double.PositiveInfinity;
+replacement:
+| return t1;
+
+[aim2-radius-min-up]
+file = Assets/WarCore/Content/Data/Sections/PickSection.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ContentTests.S5_TheBoundsAreAccepted
+note = 2000 refused (11)
+original:
+| public const int MinRadiusPermille = 2000, MaxRadiusPermille = 6000, MinHeightPermille = 1000, MaxHeightPermille = 2000;
+replacement:
+| public const int MinRadiusPermille = 2001, MaxRadiusPermille = 6000, MinHeightPermille = 1000, MaxHeightPermille = 2000;
+
+[aim2-radius-min-down]
+file = Assets/WarCore/Content/Data/Sections/PickSection.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ContentTests.S5_OutOfRangeOrNotWholeIsRejected
+expect = WarCore.Tests.Aim2ReachTests.TheReachScalesTheBodyInFloat
+note = 1999 accepted (11)
+original:
+| public const int MinRadiusPermille = 2000, MaxRadiusPermille = 6000, MinHeightPermille = 1000, MaxHeightPermille = 2000;
+replacement:
+| public const int MinRadiusPermille = 1999, MaxRadiusPermille = 6000, MinHeightPermille = 1000, MaxHeightPermille = 2000;
+
+[aim2-radius-max-down]
+file = Assets/WarCore/Content/Data/Sections/PickSection.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ContentTests.S5_TheBoundsAreAccepted
+note = 6000 refused (12)
+original:
+| public const int MinRadiusPermille = 2000, MaxRadiusPermille = 6000, MinHeightPermille = 1000, MaxHeightPermille = 2000;
+replacement:
+| public const int MinRadiusPermille = 2000, MaxRadiusPermille = 5999, MinHeightPermille = 1000, MaxHeightPermille = 2000;
+
+[aim2-radius-max-up]
+file = Assets/WarCore/Content/Data/Sections/PickSection.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ContentTests.S5_OutOfRangeOrNotWholeIsRejected
+expect = WarCore.Tests.Aim2ReachTests.TheReachScalesTheBodyInFloat
+note = 6001 accepted (12)
+original:
+| public const int MinRadiusPermille = 2000, MaxRadiusPermille = 6000, MinHeightPermille = 1000, MaxHeightPermille = 2000;
+replacement:
+| public const int MinRadiusPermille = 2000, MaxRadiusPermille = 6001, MinHeightPermille = 1000, MaxHeightPermille = 2000;
+
+[aim2-height-min-up]
+file = Assets/WarCore/Content/Data/Sections/PickSection.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ContentTests.S5_TheBoundsAreAccepted
+note = 1000 refused (11)
+original:
+| public const int MinRadiusPermille = 2000, MaxRadiusPermille = 6000, MinHeightPermille = 1000, MaxHeightPermille = 2000;
+replacement:
+| public const int MinRadiusPermille = 2000, MaxRadiusPermille = 6000, MinHeightPermille = 1001, MaxHeightPermille = 2000;
+
+[aim2-height-min-down]
+file = Assets/WarCore/Content/Data/Sections/PickSection.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ContentTests.S5_OutOfRangeOrNotWholeIsRejected
+expect = WarCore.Tests.Aim2ReachTests.TheReachScalesTheBodyInFloat
+note = 999 accepted (11)
+original:
+| public const int MinRadiusPermille = 2000, MaxRadiusPermille = 6000, MinHeightPermille = 1000, MaxHeightPermille = 2000;
+replacement:
+| public const int MinRadiusPermille = 2000, MaxRadiusPermille = 6000, MinHeightPermille = 999, MaxHeightPermille = 2000;
+
+[aim2-height-max-down]
+file = Assets/WarCore/Content/Data/Sections/PickSection.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ContentTests.S5_TheBoundsAreAccepted
+note = 2000 refused (12)
+original:
+| public const int MinRadiusPermille = 2000, MaxRadiusPermille = 6000, MinHeightPermille = 1000, MaxHeightPermille = 2000;
+replacement:
+| public const int MinRadiusPermille = 2000, MaxRadiusPermille = 6000, MinHeightPermille = 1000, MaxHeightPermille = 1999;
+
+[aim2-height-max-up]
+file = Assets/WarCore/Content/Data/Sections/PickSection.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ContentTests.S5_OutOfRangeOrNotWholeIsRejected
+expect = WarCore.Tests.Aim2ReachTests.TheReachScalesTheBodyInFloat
+note = 2001 accepted (12)
+original:
+| public const int MinRadiusPermille = 2000, MaxRadiusPermille = 6000, MinHeightPermille = 1000, MaxHeightPermille = 2000;
+replacement:
+| public const int MinRadiusPermille = 2000, MaxRadiusPermille = 6000, MinHeightPermille = 1000, MaxHeightPermille = 2001;
+
+[aim2-radius-optional]
+file = Assets/WarCore/Content/Data/Sections/PickSection.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ContentTests.S5_UnknownAndMissingFieldsAreRejected
+note = a missing radius defaults (13)
+original:
+| int radius = r.Int(RadiusField, PickRules.MinRadiusPermille, PickRules.MaxRadiusPermille);
+replacement:
+| int radius = r.Has(RadiusField) ? r.Int(RadiusField, PickRules.MinRadiusPermille, PickRules.MaxRadiusPermille) : 3000;
+
+[aim2-height-optional]
+file = Assets/WarCore/Content/Data/Sections/PickSection.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ContentTests.S5_UnknownAndMissingFieldsAreRejected
+note = a missing height defaults (13)
+original:
+| int height = r.Int(HeightField, PickRules.MinHeightPermille, PickRules.MaxHeightPermille);
+replacement:
+| int height = r.Has(HeightField) ? r.Int(HeightField, PickRules.MinHeightPermille, PickRules.MaxHeightPermille) : 1150;
+
+[aim2-unknown-field-passes]
+file = Assets/WarCore/Content/Data/Sections/PickSection.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ContentTests.S5_UnknownAndMissingFieldsAreRejected
+note = an unknown field is let through (14)
+original:
+| r.Done();
+replacement:
+| r.Has(RadiusField);
+
+[aim2-no-body-passes]
+file = Assets/WarCore/Content/Data/Sections/PickSection.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ContentTests.S5_APickWithoutABodyIsRejected
+note = a pick without a body is let through (15)
+original:
+| if (!b.Body.HasValue)
+replacement:
+| if (b.Body.HasValue && !b.Body.HasValue)
+
+[aim2-house-keeps-old-pack]
+file = Assets/WarCore/Presentation/Bridge/Showcase.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ContentTests.S7b_
+note = the listed house stage keeps rwr-m6 (16)
+original:
+|             HouseStage(HouseLayer),
+replacement:
+|             HouseStage(WarCore.Content.Rwr.RwrPack.M6Layer),
+
+[aim2-legacy-house-changes-pack]
+file = Assets/WarCore/Presentation/Bridge/Showcase.cs
+filter = FullyQualifiedName~Scale2a|FullyQualifiedName~Aim2
+expect = WarCore.Tests.Scale2aGoldenTests.OldInputOfAStageWithoutABodyMatchesTheRecordedBits
+expect = WarCore.Tests.Scale2aSizesTests.S1_PacksWithoutABodyHaveNoSizes
+expect = WarCore.Tests.Aim2ContentTests.S7b_
+note = the old house stage takes the new pack (18)
+original:
+| LegacyHouse { get; } = HouseStage(WarCore.Content.Rwr.RwrPack.M6Layer);
+replacement:
+| LegacyHouse { get; } = HouseStage(HouseLayer);
+
+[aim2-reach-from-palette]
+file = Assets/WarCore/Presentation/Bridge/Showcase.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ContentTests.S7b_
+note = the reach is read from the palette layer (19)
+original:
+| PickReach.Of(ContentCatalog.Find().Load(CombatLayer))
+replacement:
+| PickReach.Of(ContentCatalog.Find().Load(paletteLayer))
+
+[aim2-reach-skips-filter]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ReachTests.TheReachPicksOnlyLivingVisibleEnemies
+note = the reach loop snaps to anyone
+original:
+| if (!Snappable(e, me, self.Value, cut)) continue; // the same filter as without a reach
+replacement:
+| if (Snappable(e, me, self.Value, cut) && false) continue; // the same filter as without a reach
+
+[aim2-filter-dead-snaps]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ReachTests.TheReachPicksOnlyLivingVisibleEnemies
+note = a dead unit is snapped to
+original:
+| if (!e.Alive || e.Team == 0 || e.Team == me.Team || e.Key == self) return false;
+replacement:
+| if (e.Team == 0 || e.Team == me.Team || e.Key == self) return false;
+
+[aim2-filter-no-team-snaps]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ReachTests.TheReachPicksOnlyLivingVisibleEnemies
+note = a unit of no team is snapped to
+original:
+| if (!e.Alive || e.Team == 0 || e.Team == me.Team || e.Key == self) return false;
+replacement:
+| if (!e.Alive || e.Team == me.Team || e.Key == self) return false;
+
+[aim2-filter-team-mate-snaps]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ReachTests.TheReachPicksOnlyLivingVisibleEnemies
+note = a team mate is snapped to
+original:
+| if (!e.Alive || e.Team == 0 || e.Team == me.Team || e.Key == self) return false;
+replacement:
+| if (!e.Alive || e.Team == 0 || e.Key == self) return false;
+
+[aim2-filter-hidden-snaps]
+file = Assets/WarCore/Presentation/Camera/AimPick.cs
+filter = FullyQualifiedName~Aim2
+expect = WarCore.Tests.Aim2ReachTests.TheReachPicksOnlyLivingVisibleEnemies
+note = a unit the cut hides is snapped to
+original:
+| return cut == null || !cut.IsHidden(e);
+replacement:
+| return true;
