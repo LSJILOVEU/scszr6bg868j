@@ -11,19 +11,25 @@ namespace WarCore.Unity
     // Motion, all of it drawn only (the simulation never reads it): a walking unit bobs and leans, a fleeing one leans further,
     // a pinned one ducks, a shooter's gun kicks, a unit that lost health flashes white and staggers, a dead one falls on its
     // back and turns grey. dt is the real time since the last frame; with dt <= 0 every pose jumps to its end (pictures, tests).
+    // SCALE-2a: in a world with body sizes (BodySizes.Of the session) every part comes from DrawnParts and follows the unit's
+    // stance: the head's top at the stance's Top, the tool at its Muzzle, a backpack on the back; crouched the same parts lower,
+    // prone lying on the front. There a pinned unit leans forward (PinnedLean) instead of ducking, so it stays as tall as the
+    // simulation has it. A world without sizes keeps SHOW-1's look (ShowcaseLegacySizes).
     // PLACEHOLDER art: every size, speed and colour here is a stand-in.
     public sealed class ShowcaseUnits
     {
-        public const string Prefix = "Soldier ", RingName = "Player ring";
-        public const float BodyHeight = 1.7f, BodyWidth = 0.5f;
-        public const float DuckScale = 0.62f, FallSeconds = 0.35f, FlashSeconds = 0.09f;
+        public const string Prefix = "Soldier ", RingName = "Player ring", PackName = "Pack";
+        public const float BodyHeight = ShowcaseLegacySizes.BodyHeight, BodyWidth = ShowcaseLegacySizes.BodyWidth;
+        public const float DuckScale = ShowcaseLegacySizes.DuckScale, FallSeconds = 0.35f, FlashSeconds = 0.09f;
+        public const float PinnedLean = 20f, BrokenLean = 20f, WalkLean = 8f;
         private const int AimTicks = 20, RingSegments = 24;
-        private const float RingRadius = 0.7f, ShooterReach = 0.6f, WalkSpeed = 0.5f;
+        private const float ShooterReach = 0.6f, WalkSpeed = 0.5f;
 
         private sealed class Body
         {
-            public GameObject Root, Tool, Shield, NerveMark, LeaderMark, Silhouette;
+            public GameObject Root, Tool, Shield, NerveMark, LeaderMark, Silhouette, Pack;
             public Renderer Torso, Head, Nerve;
+            public int Level = -1; // the stance level the parts are laid out for (sizes only)
             public LineRenderer Link;
             public Material Colour;
             public Vector3 ToolAt;
@@ -35,6 +41,7 @@ namespace WarCore.Unity
 
         private readonly Transform parent;
         private readonly SimSession session;
+        private readonly BodySizes sizes;
         private readonly Dictionary<ulong, Body> bodies = new Dictionary<ulong, Body>();
         private readonly List<ulong> removed = new List<ulong>();
         private readonly Material[] team, link, silhouette;
@@ -42,12 +49,14 @@ namespace WarCore.Unity
         private readonly LineRenderer ring;
         private readonly float[] stanceScales;
 
-        // session: asked once per unit whether it carries a weapon. colors: 0xRRGGBB per team, team 1 first. stanceScales
-        // (SHOW-2): how tall each stance level draws as a share of standing (ShowcaseStage.StanceScales); null: all standing.
+        // session: asked once per unit whether it carries a weapon, and once for its body sizes (BodySizes.Of).
+        // colors: 0xRRGGBB per team, team 1 first. stanceScales (SHOW-2): without body sizes, how tall each stance level draws
+        // as a share of standing (ShowcaseStage.StanceScales); null: all standing. With sizes the stance's own top is drawn.
         public ShowcaseUnits(Transform parent, SimSession session, IReadOnlyList<int> colors, float[] stanceScales = null)
         {
             this.parent = parent;
             this.session = session;
+            sizes = session == null ? null : BodySizes.Of(session);
             this.stanceScales = stanceScales ?? new[] { 1f };
             team = new Material[colors.Count];
             link = new Material[colors.Count];
@@ -79,6 +88,8 @@ namespace WarCore.Unity
         }
 
         public int Count => bodies.Count;
+        // The body sizes the soldiers are drawn by; null: SHOW-1's fixed sizes.
+        public BodySizes Sizes => sizes;
 
         // A shot or a projectile of that team left (x0, z0) toward (x1, z1) on the frame's tick: the living unit of the team
         // nearest that spot (within ShooterReach) turns its gun that way and takes the recoil. Returns its key, or null.
@@ -181,7 +192,8 @@ namespace WarCore.Unity
                     for (int k = 0; k < RingSegments; k++)
                     {
                         float angle = k * 2 * Mathf.PI / RingSegments;
-                        ring.SetPosition(k, new Vector3(entity.X + Mathf.Cos(angle) * RingRadius, entity.Y + 0.06f, entity.Z + Mathf.Sin(angle) * RingRadius));
+                        float radius = sizes == null ? ShowcaseLegacySizes.RingRadius : DrawnParts.Ring * sizes.StandingHeight;
+                        ring.SetPosition(k, new Vector3(entity.X + Mathf.Cos(angle) * radius, entity.Y + 0.06f, entity.Z + Mathf.Sin(angle) * radius));
                     }
                 }
             }
@@ -194,21 +206,26 @@ namespace WarCore.Unity
             body.Root.transform.SetParent(parent, false);
             Material colour = body.Colour = team[Index(entity.Team)];
             body.Torso = Part(body.Root, PrimitiveType.Capsule, "Body", new Vector3(0f, BodyHeight / 2, 0f), new Vector3(BodyWidth, BodyHeight / 2, BodyWidth), colour);
-            body.Head = Part(body.Root, PrimitiveType.Sphere, "Head", new Vector3(0f, BodyHeight - 0.12f, 0f), new Vector3(0.3f, 0.3f, 0.3f), skin);
+            body.Head = Part(body.Root, PrimitiveType.Sphere, "Head", ShowcaseLegacySizes.HeadAt, ShowcaseLegacySizes.HeadScale, skin);
             bool armed = session != null && session.TryUnitStatus(entity.Key, out UnitStatus status) && status.HasWeapon;
             // A gun is short, dark and level; a blade is long, bright and tilted up.
             body.Tool = armed
-                ? Part(body.Root, PrimitiveType.Cube, "Gun", new Vector3(0.2f, 1.25f, 0.45f), new Vector3(0.08f, 0.1f, 0.9f), dark).gameObject
-                : Part(body.Root, PrimitiveType.Cube, "Blade", new Vector3(0.28f, 1.3f, 0.5f), new Vector3(0.05f, 0.1f, 1.1f), steel).gameObject;
-            if (!armed) body.Tool.transform.localRotation = Quaternion.Euler(-35f, 0f, 0f);
+                ? Part(body.Root, PrimitiveType.Cube, "Gun", ShowcaseLegacySizes.GunAt, ShowcaseLegacySizes.GunScale, dark).gameObject
+                : Part(body.Root, PrimitiveType.Cube, "Blade", ShowcaseLegacySizes.BladeAt, ShowcaseLegacySizes.BladeScale, steel).gameObject;
+            if (!armed) body.Tool.transform.localRotation = Quaternion.Euler(ShowcaseLegacySizes.BladeTilt, 0f, 0f);
             body.ToolAt = body.Tool.transform.localPosition;
-            body.Shield = Part(body.Root, PrimitiveType.Cube, "Shield", new Vector3(-0.1f, 1.05f, 0.42f), new Vector3(0.7f, 0.9f, 0.08f), steel).gameObject;
+            body.Shield = Part(body.Root, PrimitiveType.Cube, "Shield", ShowcaseLegacySizes.ShieldAt, ShowcaseLegacySizes.ShieldScale, steel).gameObject;
             body.Shield.SetActive(false);
-            body.Nerve = Part(body.Root, PrimitiveType.Cube, "Nerve", new Vector3(0f, BodyHeight + 0.35f, 0f), new Vector3(0.28f, 0.28f, 0.28f), pinned);
+            body.Nerve = Part(body.Root, PrimitiveType.Cube, "Nerve", ShowcaseLegacySizes.NerveAt, ShowcaseLegacySizes.NerveScale, pinned);
             body.NerveMark = body.Nerve.gameObject;
             body.NerveMark.SetActive(false);
-            body.LeaderMark = Part(body.Root, PrimitiveType.Cube, "Leader", new Vector3(0f, BodyHeight + 0.8f, 0f), new Vector3(0.3f, 0.3f, 0.3f), leader).gameObject;
+            body.LeaderMark = Part(body.Root, PrimitiveType.Cube, "Leader", ShowcaseLegacySizes.LeaderAt, ShowcaseLegacySizes.LeaderScale, leader).gameObject;
             body.LeaderMark.transform.localRotation = Quaternion.Euler(45f, 0f, 45f);
+            if (sizes != null)
+            {
+                body.Pack = Part(body.Root, PrimitiveType.Cube, PackName, Vector3.zero, Vector3.one, dark).gameObject;
+                Layout(body, entity.Stance);
+            }
             body.LeaderMark.SetActive(false);
             body.Link = new GameObject("Squad line").AddComponent<LineRenderer>();
             body.Link.transform.SetParent(body.Root.transform, false);
@@ -218,6 +235,60 @@ namespace WarCore.Unity
             body.Link.sharedMaterial = link[Index(entity.Team)];
             body.Link.enabled = false;
             return body;
+        }
+
+        // SCALE-2a: every part where DrawnParts puts it for this stance level (sizes only); nothing when the level is unchanged.
+        private void Layout(Body body, int level)
+        {
+            if (body.Level == level) return;
+            body.Level = level;
+            var at = new ViewEntity(0, 0, 0f, 0f, 0f, stance: level);
+            DrawnBody d = Drawn(sizes, at);
+            Place(body.Torso.transform, d.Torso, d.Lying);
+            Place(body.Head.transform, d.Head, false);
+            bool blade = body.Tool.name == "Blade";
+            Place(body.Tool.transform, blade ? d.Blade : d.Gun, false);
+            body.Tool.transform.localRotation = blade ? Quaternion.Euler(d.BladeTilt, 0f, 0f) : Quaternion.identity;
+            body.ToolAt = body.Tool.transform.localPosition;
+            Place(body.Shield.transform, d.Shield, false);
+            Place(body.Pack.transform, d.Pack, false);
+            Place(body.NerveMark.transform, d.NerveMark, false);
+            Place(body.LeaderMark.transform, d.LeaderMark, false);
+        }
+
+        // The drawn body of a unit at its stance now (DrawnParts.For: lying when the stance is low enough to be prone).
+        public static DrawnBody Drawn(BodySizes sizes, ViewEntity e) =>
+            DrawnParts.For(sizes.StandingHeight, sizes.Radius, sizes.Top(e), sizes.Muzzle(e));
+
+        // A capsule's height is twice its y scale; lying, it is turned to run along z.
+        private static void Place(Transform t, DrawnPart p, bool lyingCapsule)
+        {
+            t.localPosition = new Vector3(p.X, p.Y, p.Z);
+            if (lyingCapsule)
+            {
+                t.localRotation = Quaternion.Euler(90f, 0f, 0f);
+                t.localScale = new Vector3(p.SizeX, p.SizeZ / 2, p.SizeY);
+            }
+            else
+            {
+                bool capsule = t.name == "Body";
+                if (capsule) t.localRotation = Quaternion.identity;
+                t.localScale = new Vector3(p.SizeX, capsule ? p.SizeY / 2 : p.SizeY, p.SizeZ);
+            }
+        }
+
+        // SCALE-2a: scale a model so that its drawn height (the union of its renderers' bounds) is simHeight, through
+        // DrawnParts.ModelFit; every real model goes through it. Returns the factor applied to its local scale.
+        public static float FitModel(GameObject model, float simHeight)
+        {
+            if (model == null) throw new System.ArgumentNullException(nameof(model));
+            Renderer[] drawn = model.GetComponentsInChildren<Renderer>(true);
+            if (drawn.Length == 0) throw new System.ArgumentException("the model draws nothing", nameof(model));
+            Bounds all = drawn[0].bounds;
+            for (int i = 1; i < drawn.Length; i++) all.Encapsulate(drawn[i].bounds);
+            float fit = DrawnParts.ModelFit(all.size.y, simHeight);
+            model.transform.localScale *= fit;
+            return fit;
         }
 
         private int Index(int unitTeam) => unitTeam <= 0 ? 0 : (unitTeam - 1) % team.Length;
@@ -245,14 +316,27 @@ namespace WarCore.Unity
             {
                 body.Fall = still ? 1f : Mathf.Min(1f, body.Fall + dt / FallSeconds);
                 float down = 1f - (1f - body.Fall) * (1f - body.Fall);
-                t.position = new Vector3(entity.X, entity.Y + down * BodyWidth / 2, entity.Z);
+                float width = sizes == null ? BodyWidth : 2 * sizes.Radius;
+                t.position = new Vector3(entity.X, entity.Y + down * width / 2, entity.Z);
                 t.rotation = Quaternion.Euler(-90f * down, body.FallYaw, 0f);
                 t.localScale = Vector3.one;
                 return;
             }
             bool walking = speed > WalkSpeed;
-            float stance = entity.Stance >= 0 && entity.Stance < stanceScales.Length ? stanceScales[entity.Stance] : 1f;
-            float duck = Mathf.Min(stance, entity.Nerve == 1 ? DuckScale : 1f), lean = !walking ? 0f : entity.Nerve >= 2 ? 20f : 8f;
+            float duck, lean;
+            if (sizes == null)
+            {
+                float stance = entity.Stance >= 0 && entity.Stance < stanceScales.Length ? stanceScales[entity.Stance] : 1f;
+                duck = Mathf.Min(stance, entity.Nerve == 1 ? DuckScale : 1f);
+                lean = !walking ? 0f : entity.Nerve >= 2 ? BrokenLean : WalkLean;
+            }
+            else
+            {
+                // As tall as the simulation has it: pinned leans forward instead of ducking; lying, no lean.
+                Layout(body, entity.Stance);
+                duck = 1f;
+                lean = Drawn(sizes, entity).Lying ? 0f : entity.Nerve == 1 ? PinnedLean : !walking ? 0f : entity.Nerve >= 2 ? BrokenLean : WalkLean;
+            }
             body.Duck = still ? duck : Mathf.MoveTowards(body.Duck, duck, dt * 3f);
             body.Lean = still ? lean : Mathf.MoveTowards(body.Lean, lean, dt * 60f);
             body.ShownYaw = still ? body.Yaw : Mathf.MoveTowardsAngle(body.ShownYaw, body.Yaw, dt * 720f);
@@ -269,6 +353,7 @@ namespace WarCore.Unity
         private void LieDown(Body body, ulong key)
         {
             body.Dead = true;
+            if (sizes != null) Layout(body, 0); // it falls from its full height
             body.Flash = FlashSeconds;
             // Onto its back, turned a little to one side or the other so that a heap of bodies does not look combed.
             body.FallYaw = body.ShownYaw + ((key * 37) % 80) - 40f;
@@ -311,7 +396,10 @@ namespace WarCore.Unity
                 body.Silhouette.transform.localScale = new Vector3(BodyWidth, BodyHeight, BodyWidth);
                 body.Silhouette.GetComponent<Renderer>().sharedMaterial = silhouette[Index(entity.Team)];
             }
-            body.Silhouette.transform.position = new Vector3(entity.X, entity.Y + BodyHeight / 2, entity.Z);
+            // With sizes: the body's column as the pick and the cut have it (2r wide, as tall as the stance).
+            float height = sizes == null ? BodyHeight : sizes.Top(entity);
+            if (sizes != null) body.Silhouette.transform.localScale = new Vector3(2 * sizes.Radius, height, 2 * sizes.Radius);
+            body.Silhouette.transform.position = new Vector3(entity.X, entity.Y + height / 2, entity.Z);
             if (body.Silhouette.activeSelf != on) body.Silhouette.SetActive(on);
         }
     }

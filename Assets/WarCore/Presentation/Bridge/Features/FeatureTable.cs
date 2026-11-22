@@ -37,7 +37,8 @@ namespace WarCore.Presentation
         // stances only add gears to the speed line, building it the same way when no stance did; they never bind or configure the
         // motion model under it.
         internal static readonly IWorldStageFeature[] Rules =
-            { MatchFeature.Instance, AiFireFeature.Instance, BlockAiFeature.Instance, PlayerFeature.Instance, StanceFeature.Instance, DownedFeature.Instance };
+            { MatchFeature.Instance, AiFireFeature.Instance, BlockAiFeature.Instance, PlayerFeature.Instance, StanceFeature.Instance, NerveFeature.Instance,
+              DownedFeature.Instance };
 
         private static IEnumerable<IWorldFeature> Active(IWorldFeature[] table, WorldAssembly assembly)
         {

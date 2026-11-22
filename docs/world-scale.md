@@ -24,7 +24,7 @@ relation from the code or the shipped data. "none" means no test holds the value
 | Shipped body (`rwr-body`, `rwr-field`) | height 1.75, eye 1.5, muzzle 1.5 | `Content/Rwr/Data` | W04, `Body1GeometryTests` |
 | Body rule | 2r <= height <= headroom; r <= eye <= height - r; 0 <= muzzle <= height | `CombatSection` | W04 |
 | No body (older layers) | collider 1 m, eye 0.5 m, shot from the foot | `WorldAssembly.UnitHeight`, `CombatSystem` | `Body1GeometryTests.OldLayers_AOneMetreWallStillHidesTheTarget` |
-| Drawn body | 1 m tall | `Presentation/Camera/AimPick.cs` | none |
+| Drawn body | with a body: the simulated top per stance level (1.75 / 1.0 / 0.5 m shipped), radius r; without a body: 1 m (`AimPick.BodyHeight`) | `Presentation/Bridge/Features/BodySizes.cs`, `Presentation/Camera/DrawnParts.cs` | `Scale2aSizesTests`, `Scale2aViewsTests` |
 | Sight over a wall | wall top below the eye is seen over | `CombatSystem` | `Body1GeometryTests.Body_WallsUnderTheEyeAreSeenOver` |
 | Melee reach | start distance <= reach; reach > 2r | content `melee` | W13 |
 | Weapon falloff end | within the diagonal of the largest map | content `weapons` | W14 |
@@ -76,8 +76,8 @@ relation from the code or the shipped data. "none" means no test holds the value
 
 Recorded only, nothing changed here. Each goes to SCALE-2 or the candidate pool.
 
-1. The drawn body is 1 m tall (`AimPick.BodyHeight`); shipped bodies are 1.75 m and an old body is a capsule centred on the foot.
-2. Silhouettes, see-through zones and layer cutting use that 1 m as head height; the simulated eye is 1.5 m (body) or 0.5 m (no body).
+1. Worlds with a body now draw and pick it at the simulated size (`BodySizes`). Old layers without a body still draw 1 m (`AimPick.BodyHeight`): their collider is a 1 m capsule centred on the foot, so there is no simulated top to follow, and their pictures and goldens stay unchanged.
+2. With a body, silhouettes and layer cutting use the simulated top and see-through zones the simulated eye. Without a body they still use 1 m as head height while the simulated eye is 0.5 m, unchanged for the same reason as 1.
 3. The soldier radius is written in three places and means the same in three more; only W03 ties them together.
 4. The comment on the window prefab still computes with a 1 m sill; the default is 0.9 m and has no formula.
 5. The pressure range value in the code was not checked.

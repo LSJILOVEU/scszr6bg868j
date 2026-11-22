@@ -164,7 +164,7 @@ namespace WarCore.Unity
                 {
                     FrameView shown = ShowcaseScene.Blend(session.Previous, session.Current, session.Alpha);
                     aim = AimPick.Pick(scene.Camera, mouse.x, mouse.y, w, h, scene.Ground, shown, session.ControlledKey,
-                        session.Map.Plates, scene.Cut);
+                        session.Map.Plates, scene.Cut, BodySizes.Of(session));
                 }
                 catch (ArgumentOutOfRangeException) { aim = null; } // a pick outside the world bounds
             }

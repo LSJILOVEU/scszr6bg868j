@@ -4,7 +4,7 @@ namespace WarCore.Presentation
 {
     // SEE-1 rule 1: the ground round the player's unit. 16 sample points: 8 directions (0 degrees is +x, 90 degrees +z), each at
     // half the radius and at the whole radius, at the unit's feet height. A sample counts when the unit can see it: the level
-    // line from its eye (y + BodyHeight) to the sample crosses no wall. From each counted sample the line back to the camera
+    // line from its eye (y + BodySizes.EyeOf: the body's eye, or 1 m without sizes) to the sample crosses no wall. From each counted sample the line back to the camera
     // (the same line as the cut's feet line, from y + FootLift) fades the walls and plates it crosses that are still Shown,
     // other than the plate under the unit, and only those whose top is more than MinSeeHeight over the feet, so sandbags and
     // low walls stay. Hidden stays hidden. Slopes are not followed: the samples take the unit's own height.
@@ -13,12 +13,12 @@ namespace WarCore.Presentation
         private const int Directions = 8;
 
         internal static void Fade(ViewPlates plates, ViewMap map, ViewEntity me, (float X, float Y, float Z) forward, float radius,
-            double highest, CutState[] plateStates, CutState[] wallStates)
+            double highest, CutState[] plateStates, CutState[] wallStates, BodySizes sizes = null)
         {
             int plateCount = plateStates.Length, wallCount = wallStates.Length;
             var plateTops = new double[plateCount];
             for (int k = 0; k < plateCount; k++) plateTops[k] = HighestTop(plates[k]);
-            double eye = me.Y + AimPick.BodyHeight, start = me.Y + LayerCut.FootLift;
+            double eye = me.Y + BodySizes.EyeOf(sizes, me), start = me.Y + LayerCut.FootLift;
             double length = (highest + 1 - start) / -forward.Y;
             if (length <= 0) return;
             double dx = -forward.X * length, dy = -forward.Y * length, dz = -forward.Z * length;

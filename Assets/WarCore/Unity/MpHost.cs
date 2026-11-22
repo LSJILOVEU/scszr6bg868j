@@ -75,9 +75,9 @@ namespace WarCore.Unity
             }
             wallViews = new PlateViews(baked.transform, session.Map.Plates, session.Map, wallMaterial, wallMaterial);
             var palette = new[] { new Color(0.2f, 0.5f, 1f), new Color(1f, 0.85f, 0.2f) };
-            views = new EntityViews(transform, new Vector3(0.5f, 1f, 0.5f), 0.5f, palette);
+            views = new EntityViews(transform, new Vector3(0.5f, 1f, 0.5f), 0.5f, palette, BodySizes.Of(session));
             points = new PointViews(transform, ViewGround.For(session.Map));
-            shots = new ShotLines(transform, palette, 1.5f, ViewGround.For(session.Map));
+            shots = new ShotLines(transform, palette, 1.5f, ViewGround.For(session.Map), BodySizes.Of(session), session.Map.FloorY);
             tracker = new PlayerTracker(session.ControlledKey);
             Show();
         }
@@ -115,8 +115,8 @@ namespace WarCore.Unity
             ViewEntity? followed = key.HasValue && shown.TryGet(key.Value, out ViewEntity me) ? me : (ViewEntity?)null;
             if (followed.HasValue)
                 isoCamera.Follow(followed.Value.X, followed.Value.Z);
-            LayerCutResult cut = LayerCut.Run(session.Map.Plates, session.Map, followed, isoCamera.Forward, LayerCut.SeeRadius);
-            HashSet<ulong> covered = Silhouettes.Run(session.Map.Plates, session.Map, cut, followed, shown.Entities, isoCamera.Forward);
+            LayerCutResult cut = LayerCut.Run(session.Map.Plates, session.Map, followed, isoCamera.Forward, LayerCut.SeeRadius, BodySizes.Of(session));
+            HashSet<ulong> covered = Silhouettes.Run(session.Map.Plates, session.Map, cut, followed, shown.Entities, isoCamera.Forward, BodySizes.Of(session));
             wallViews.Apply(cut);
             points.Apply(current);
             views.Apply(session.Previous, current, session.Alpha, cut, covered);
