@@ -1,0 +1,5 @@
+{
+  "id": "rwr-showcase-house",
+  "extends": "rwr-body",
+  "pick": { "radiusPermille": 3000, "heightPermille": 1150 }
+}

@@ -84,9 +84,9 @@ filter = FullyQualifiedName~WarCore.Tests.A4|FullyQualifiedName~WarCore.Tests.Wp
 expect = WarCore.Tests.A4PickTests.A4Pick_Snap_OnlyLivingEnemiesInFrontOfTheGround
 note = snapping does not look at the team
 original:
-|                 if (!e.Alive || e.Team == 0 || e.Team == me.Team || e.Key == self.Value) continue;
+|             if (!e.Alive || e.Team == 0 || e.Team == me.Team || e.Key == self) return false;
 replacement:
-|                 if (!e.Alive || e.Team == 0 || e.Key == self.Value) continue;
+|             if (!e.Alive || e.Team == 0 || e.Key == self) return false;
 
 [a4-09-snap-through-ground]
 file = Assets/WarCore/Presentation/Camera/AimPick.cs
@@ -104,9 +104,9 @@ filter = FullyQualifiedName~WarCore.Tests.A4|FullyQualifiedName~WarCore.Tests.Wp
 expect = WarCore.Tests.A4PickTests.A4Pick_Snap_OnAFlatMap_HasNoHeight
 note = a snap on a map without a height field carries a height
 original:
-|             long? yMm = ground == null ? (long?)null : (long)Math.Round((double)snapped.Y * 1000.0, MidpointRounding.AwayFromZero);
+|             long? yMm = ground == null && snapped.Layer == 0 ? (long?)null
 replacement:
-|             long? yMm = (long)Math.Round((double)snapped.Y * 1000.0, MidpointRounding.AwayFromZero);
+|             long? yMm = false ? (long?)null
 
 [a4-11-no-bisection]
 file = Assets/WarCore/Presentation/Camera/AimPick.cs

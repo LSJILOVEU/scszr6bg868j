@@ -112,7 +112,7 @@ namespace WarCore.Tests
             Assert.That(Read(() => BodySizes.For(RwrPack.Load("rwr-m6").BuildCombat())), Is.Null);
             Assert.That(Read(() => BodySizes.For(RwrPack.Load("rwr-terrain-demo").BuildCombat())), Is.Null);
             Assert.That(Read(() => BodySizes.For(ContentLoader.Load(new FileContentSource("Assets/WarCore/Content/Ancient/Data"), "ancient-field").BuildCombat())), Is.Null);
-            foreach (ShowcaseStage stage in Showcase.Stages)
+            foreach (ShowcaseStage stage in Showcase.Stages.Where(s => s.Id != "house").Append(Showcase.LegacyHouse)) // AIM-2: the old house
             {
                 SimSession session = stage.Start();
                 if (stage.Id == "house" || stage.Id == "terrain" || stage.Id == "melee")
