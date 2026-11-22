@@ -262,6 +262,11 @@ namespace WarCore.Tests
             Assert.That(actions.Stance, Is.EqualTo(0));
             Assert.That(actions.Line(s.Tick), Is.EqualTo(""));
             Assert.That(s.CommandLog.Count, Is.EqualTo(0));
+            // A stage without an order squad takes no stance orders even with stance levels to give.
+            var noSquad = new ShowcaseActions(Stage("battle"), 3);
+            Assert.That(noSquad.StanceOrders, Is.False);
+            Assert.That(noSquad.NextStance(s), Is.False);
+            Assert.That(s.CommandLog.Count, Is.EqualTo(0));
             // The hamlet's stage on a pack read as having no stances takes no stance orders either.
             var flat = new ShowcaseActions(Stage(Id), 1);
             Assert.That(flat.StanceOrders, Is.False);

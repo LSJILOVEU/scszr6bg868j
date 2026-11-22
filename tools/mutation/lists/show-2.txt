@@ -1,17 +1,9 @@
 # SHOW-2: the hamlet stage (Showcase.Hamlet.cs, the stage fields and StanceScales in Showcase.cs) and the player's orders
 # (ShowcaseActions). Filter: Show1Tests and Show2Tests. Not listed: null guards; the pack swap and recipe switches whose
-# removal makes the stage throw on start (a crash is not an assertion); the content layer (JSON has no assembly); Unity
+# removal makes the stage throw on start (a crash is not an assertion); the RealGrenades test in TryThrow (without it a
+# stage with no blast kind still queues nothing: BridgeCommand.Blast refuses an empty id and the refusal is caught, so the
+# mutant is equivalent); the content layer (JSON has no assembly); Unity
 # code (no Unity here; Show2ViewsTests runs in Unity EditMode).
-
-[show2-grenade-needs-a-blast]
-file = Assets/WarCore/Presentation/Bridge/ShowcaseActions.cs
-filter = FullyQualifiedName~WarCore.Tests.Show2Tests|FullyQualifiedName~WarCore.Tests.Show1Tests
-expect = WarCore.Tests.Show2Tests.StagesWithoutOrdersRefuseThemAndQueueNothing
-note = a stage without a real grenade throws one anyway
-original:
-| if (!RealGrenades || WaitTicks(session.Tick) > 0) return false;
-replacement:
-| if (WaitTicks(session.Tick) > 0) return false;
 
 [show2-cooldown-last-tick]
 file = Assets/WarCore/Presentation/Bridge/ShowcaseActions.cs
