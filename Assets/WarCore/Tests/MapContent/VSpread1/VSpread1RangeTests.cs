@@ -12,8 +12,8 @@ namespace WarCore.Tests.VSpread1
 {
     // VSPREAD-1 V11 (a prone target is much harder to hit) and V15 (the "vspread-range" replay: three lanes, 1000 shots each,
     // standing > crouched > prone). Shots count from VspreadDemo.SettleTick on, when every target has reached its stance.
-    // With VSPREAD1_SIDE_OUT set the test writes every counted shot (lane, height where its line crosses the target plane,
-    // outcome) as JSON for the side view page.
+    // With VSPREAD1_SIDE_OUT set the test writes every counted shot (lane, height and sideways offset where its line crosses
+    // the target plane, outcome) as JSON for the side view page.
     public sealed class VSpread1RangeTests
     {
         private const int PerLane = 1000;
@@ -45,12 +45,14 @@ namespace WarCore.Tests.VSpread1
                     if (lane < 0 || lanes.Shots[lane] == PerLane) continue;
                     lanes.Shots[lane]++;
                     if (f.Outcome == FireOutcome.Hit) lanes.Hits[lane]++;
-                    double ox = f.Origin.X.Raw / 65536.0, oy = f.Origin.Y.Raw / 65536.0, ex = f.End.X.Raw / 65536.0, ey = f.End.Y.Raw / 65536.0;
+                    double ox = f.Origin.X.Raw / 65536.0, oy = f.Origin.Y.Raw / 65536.0, oz = f.Origin.Z.Raw / 65536.0;
+                    double ex = f.End.X.Raw / 65536.0, ey = f.End.Y.Raw / 65536.0, ez = f.End.Z.Raw / 65536.0;
                     bool stopped = f.Outcome == FireOutcome.WallBlocked || ex < plane - 0.5;
-                    double y = stopped || ex == ox ? ey : oy + (ey - oy) * (plane - ox) / (ex - ox);
+                    double k = stopped || ex == ox ? 1 : (plane - ox) / (ex - ox);
+                    double y = oy + (ey - oy) * k, z = oz + (ez - oz) * k;
                     if (lanes.Side.Length > 0) lanes.Side.Append(",\n");
                     lanes.Side.Append(string.Format(CultureInfo.InvariantCulture, "{{\"lane\":{0},\"y\":{1:F4},\"z\":{2:F4},\"outcome\":\"{3}\",\"short\":{4}}}",
-                        lane, y, f.End.Z.Raw / 65536.0 - VspreadDemo.LaneZMm(lane) / 1000.0, f.Outcome, stopped ? "true" : "false"));
+                        lane, y, z - VspreadDemo.LaneZMm(lane) / 1000.0, f.Outcome, stopped ? "true" : "false"));
                 }
             }
             lanes.LastTick = s.Tick;

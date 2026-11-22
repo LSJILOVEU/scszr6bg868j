@@ -3,7 +3,7 @@ using WarCore.Sim;
 
 namespace WarCore.Presentation
 {
-    // VSPREAD-1 "vspread-range": three lanes 10 m apart on a flat 40 x 32 m map with no walls. In each lane a standing shooter
+    // VSPREAD-1 "vspread-range": three lanes 10 m apart on a flat 48 x 30 m map with no walls. In each lane a standing shooter
     // (team 1) at x = 5 m fires at an unarmed target (team 2) 30 m away: standing in lane 0, crouched in lane 1, prone in
     // lane 2 (asked at ticks 1 and 2, the session takes one command a tick; all settled by SettleTick). The demo layer is
     // rwr-vspread with weapon 1 made a fixed 2000 millidegree gun (no growth, no recovery) that fires every tick from a
@@ -11,9 +11,9 @@ namespace WarCore.Presentation
     public static class VspreadDemo
     {
         public const string Layer = "rwr-vspread", DemoLayer = "vspread-range";
-        public const int Width = 40, Depth = 32, Lanes = 3;
+        public const int Width = 48, Depth = 30, Lanes = 3;
         public const long ShooterXMm = 5000, TargetXMm = 35000, Speed = 6000, SettleTick = 30;
-        private const long FirstLaneZMm = 6000, LaneStepMm = 10000;
+        private const long FirstLaneZMm = 5000, LaneStepMm = 10000;
 
         // The z of a lane (mm); shooters have keys 1..3, targets 4..6 (lane = key - 1 and key - 4).
         public static long LaneZMm(int lane) => FirstLaneZMm + LaneStepMm * lane;
