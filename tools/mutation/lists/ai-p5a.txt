@@ -1257,7 +1257,7 @@ replacement:
 | bool banded = squads != null;
 
 [ai-p5a-view-band-id]
-file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+file = Assets/WarCore/Presentation/Bridge/SimSession.Squads.cs
 filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
 expect = WarCore.Tests.AiP5aTests.TheViewShowsEachMansSquad
 note = the band is the leader's id, not his spawn key

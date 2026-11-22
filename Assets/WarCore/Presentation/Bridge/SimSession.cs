@@ -66,7 +66,7 @@ namespace WarCore.Presentation
     /// requeue it for the next tick, then reload later inputs and commands. Unconsumed
     /// scheduled inputs are not in PlayerLog; the caller must retain them separately.
     /// </summary>
-    public sealed class SimSession
+    public sealed partial class SimSession
     {
         public const int MaxTicksPerFrame = 5;
         public const int TickRate = SimClock.TickRate;
@@ -442,18 +442,6 @@ namespace WarCore.Presentation
                 Previous = Current;
                 remainder = 0;
             }
-        }
-
-        // The spawn key of the unit with this stable identity; 0 for 0 (no squad) and for an identity that is no unit's.
-        private ulong BandKey(ulong leader)
-        {
-            if (leader == 0) return 0;
-            if (spawnKeys == null)
-            {
-                spawnKeys = new System.Collections.Generic.Dictionary<ulong, ulong>(units.Length);
-                for (int i = 0; i < units.Length; i++) spawnKeys[units[i].Value] = spawns[i].Key;
-            }
-            return spawnKeys.TryGetValue(leader, out ulong key) ? key : 0;
         }
 
         private FrameView Capture()
