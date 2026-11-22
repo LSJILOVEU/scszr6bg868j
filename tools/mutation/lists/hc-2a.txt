@@ -1,0 +1,86 @@
+# HC-2a: the see-through ring's threshold is the body's standing eye (LegacySeeHeight without a body), and the layer cut's
+# headroom is WallSpan's walk clearance. Filter: Hc2aSeeTests (and Ml10 for the headroom).
+
+[hc2a-eye-fixed]
+file = Assets/WarCore/Presentation/Camera/LayerCut.cs
+filter = FullyQualifiedName~Hc2a
+expect = WarCore.Tests.Hc2aSeeTests.S2_TheThresholdIsTheBodysEye
+expect = WarCore.Tests.Hc2aSeeTests.S2_ThePlateThresholdIsTheBodysEye
+note = the threshold is always the legacy height
+original:
+| internal static float SeeHeight(BodySizes sizes) => sizes == null ? LegacySeeHeight : sizes.StandingEye;
+replacement:
+| internal static float SeeHeight(BodySizes sizes) => LegacySeeHeight;
+
+[hc2a-null-onemetre]
+file = Assets/WarCore/Presentation/Camera/LayerCut.cs
+filter = FullyQualifiedName~Hc2a
+expect = WarCore.Tests.Hc2aSeeTests.S3_WithoutABodyTheThresholdIsTheLegacyHeight
+note = without a body the threshold is the old 1 m eye
+original:
+| internal static float SeeHeight(BodySizes sizes) => sizes == null ? LegacySeeHeight : sizes.StandingEye;
+replacement:
+| internal static float SeeHeight(BodySizes sizes) => sizes == null ? AimPick.BodyHeight : sizes.StandingEye;
+
+[hc2a-eye-current-stance]
+file = Assets/WarCore/Presentation/Camera/SeeZone.cs
+filter = FullyQualifiedName~Hc2a
+expect = WarCore.Tests.Hc2aSeeTests.S4_TheStandingEyeWhateverTheStance
+note = the threshold follows the unit's stance now
+original:
+| float seeHeight = LayerCut.SeeHeight(sizes);
+replacement:
+| float seeHeight = sizes == null ? LayerCut.LegacySeeHeight : sizes.Eye(me);
+
+[hc2a-wall-fixed]
+file = Assets/WarCore/Presentation/Camera/SeeZone.cs
+filter = FullyQualifiedName~Hc2a
+expect = WarCore.Tests.Hc2aSeeTests.S2_TheThresholdIsTheBodysEye
+expect = WarCore.Tests.Hc2aSeeTests.S4_TheStandingEyeWhateverTheStance
+note = the wall branch keeps the legacy height
+original:
+| wall.CenterY + wall.SizeY / 2 - me.Y > seeHeight
+replacement:
+| wall.CenterY + wall.SizeY / 2 - me.Y > LayerCut.LegacySeeHeight
+
+[hc2a-plate-fixed]
+file = Assets/WarCore/Presentation/Camera/SeeZone.cs
+filter = FullyQualifiedName~Hc2a
+expect = WarCore.Tests.Hc2aSeeTests.S2_ThePlateThresholdIsTheBodysEye
+note = the plate branch keeps the legacy height
+original:
+| && plateTops[k] - me.Y > seeHeight
+replacement:
+| && plateTops[k] - me.Y > LayerCut.LegacySeeHeight
+
+[hc2a-standing-eye-level]
+file = Assets/WarCore/Presentation/Bridge/Features/BodySizes.cs
+filter = FullyQualifiedName~Hc2a
+expect = WarCore.Tests.Hc2aSeeTests.S4_TheStandingEyeWhateverTheStance
+note = the standing eye reads the last stance level
+original:
+| public float StandingEye => eye[0];
+replacement:
+| public float StandingEye => eye[eye.Length - 1];
+
+[hc2a-headroom-other]
+file = Assets/WarCore/Content/WallSpan.cs
+filter = FullyQualifiedName~Hc2a|FullyQualifiedName~Ml10CutTests
+expect = WarCore.Tests.Hc2aSeeTests.S5_TheHeadroomIsTheWalkClearance
+expect = WarCore.Tests.Ml10CutTests.TheHeadroomEdges
+note = the clearance in metres is halved
+original:
+| public static readonly float ClearanceMetres = (float)ClearanceRaw / SimFix.Scale;
+replacement:
+| public static readonly float ClearanceMetres = (float)ClearanceRaw / SimFix.Scale / 2;
+
+[hc2a-headroom-not-read]
+file = Assets/WarCore/Presentation/Camera/LayerCut.cs
+filter = FullyQualifiedName~Hc2a|FullyQualifiedName~Ml10CutTests
+expect = WarCore.Tests.Hc2aSeeTests.S5_TheHeadroomIsTheWalkClearance
+expect = WarCore.Tests.Ml10CutTests.TheHeadroomEdges
+note = the cut's headroom is not the walk clearance
+original:
+| public static readonly float Headroom = WallSpan.ClearanceMetres;
+replacement:
+| public static readonly float Headroom = WallSpan.ClearanceMetres + 0.5f;

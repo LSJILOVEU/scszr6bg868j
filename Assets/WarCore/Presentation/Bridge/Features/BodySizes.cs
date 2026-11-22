@@ -48,6 +48,8 @@ namespace WarCore.Presentation
         public int Levels => top.Length;
         // The standing height (level 0): every drawn part is sized by it, whatever the unit's stance.
         public float StandingHeight => top[0];
+        // The standing eye height (level 0): the see-through ring's threshold, whatever the unit's stance.
+        public float StandingEye => eye[0];
         // The body's radius: the drawn body is 2 * Radius wide.
         public float Radius => RadiusRaw / 65536f;
 

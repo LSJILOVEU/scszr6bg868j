@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using WarCore.Content;
 
 namespace WarCore.Presentation
 {
@@ -33,18 +34,25 @@ namespace WarCore.Presentation
     // ML-10 (multi-level maps 2.6): the layer cut follows the player's unit.
     //   Indoors: some plate's rectangle covers the unit's (x, z) with its bottom there above the unit's feet y. The building is
     //   the plates whose rectangles overlap or share an edge with such a plate, transitively. Hidden: its plates whose lowest
-    //   bottom is above y + Headroom, and the walls whose bottom is at or above y + Headroom with a footprint touching one of
-    //   its rectangles. Outdoors nothing is hidden.
+    //   bottom is above y + Headroom (the walk clearance), and the walls whose bottom is at or above y + Headroom with a
+    //   footprint touching one of its rectangles. Outdoors nothing is hidden.
     //   Fading: a plate (other than the one the unit stands on) or wall that is not hidden and stands on the line from the
     //   camera to the unit's feet (y + FootLift) or head (y + BodySizes.TopOf: its stance's height, 1 m without sizes) is faded,
     //   indoors and outdoors.
+    //   The see-through ring's threshold (SeeZone) is the standing eye height: SeeHeight.
     public static class LayerCut
     {
-        public const float Headroom = 2.0f;  // K5 clear height
+        // The walk clearance, defined once in WallSpan (ClearanceRaw): plates and walls this far over the feet are another storey.
+        public static readonly float Headroom = WallSpan.ClearanceMetres;
         public const float FootLift = 0.1f;  // PLACEHOLDER: the low end of the unit seen through walls
         public const float FadeAlpha = 0.3f; // PLACEHOLDER: tune after play
         public const float SeeRadius = 2f;   // SEE-1 PLACEHOLDER: the radius the player scenes pass (Run's own default is 0 = off); 5 m faded walls 5 to 7 m early
-        public const float MinSeeHeight = 1.5f; // SEE-1 PLACEHOLDER: a wall or plate must top the feet by more than this to fade by the ring
+        // The see-through threshold of a pack without a body (the old eye height). With a body the threshold is its eye.
+        public const float LegacySeeHeight = 1.5f;
+
+        // See-through threshold = standing eye height: a wall or plate must top the feet by more than this to fade by the ring.
+        // It is the standing eye (level 0) whatever the unit's stance now; without sizes it is LegacySeeHeight.
+        internal static float SeeHeight(BodySizes sizes) => sizes == null ? LegacySeeHeight : sizes.StandingEye;
 
         // Nothing hidden or faded (no player, or a map without plates or walls).
         public static LayerCutResult None(ViewPlates plates, ViewMap map) =>

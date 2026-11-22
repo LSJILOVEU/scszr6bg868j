@@ -6,7 +6,7 @@
 # A new literal is read from the content pack or from the one named source; it is not added here as debt.
 # Debt notes name the family in the audit: H1 body radius, H2 headroom, H3 speed, H4 grenade, M1 eye, M2 play distances,
 # L3 fixed-point scale.
-debt-max	515
+debt-max	513
 Battle/Ai/AssaultRolesPlacement.cs	SimFix.Scale/1000	1	debt	
 Battle/Ai/CommanderQuota.cs	CoordinateLimitMetres=8192	1	debt	
 Battle/Ai/Cover.cs	SimFix.Ratio(3,2)	1	debt	
@@ -191,8 +191,7 @@ Presentation/Camera/IsoCamera.cs	5f	1	debt
 Presentation/Camera/IsoCamera.cs	80f	1	debt	
 Presentation/Camera/LayerCut.cs	0.1f	1	debt	
 Presentation/Camera/LayerCut.cs	0.3f	1	debt	
-Presentation/Camera/LayerCut.cs	1.5f	1	debt	M1 eye height copy
-Presentation/Camera/LayerCut.cs	2.0f	1	debt	H2 headroom copy
+Presentation/Camera/LayerCut.cs	1.5f	1	ui	see-through threshold of a pack without a body
 Presentation/Camera/LayerCut.cs	2f	1	debt	
 Presentation/Camera/ShotPlan.cs	AfterFireTicks=3*SimSession.TickRate	1	debt	
 Sim/HeightField.cs	HeightLimitRaw=1L<<29	1	debt	

@@ -13,6 +13,8 @@ namespace WarCore.Content
     public static class WallSpan
     {
         public const long ClearanceRaw = 2 * SimFix.Scale;
+        // ClearanceRaw in metres, for the picture's layer cut (which may not name the simulation).
+        public static readonly float ClearanceMetres = (float)ClearanceRaw / SimFix.Scale;
         public const long BelowRaw = SimFix.Scale / 4;
 
         public static bool BlocksWalk(long bottomRaw, long topRaw, long groundMinRaw, long groundMaxRaw) =>
