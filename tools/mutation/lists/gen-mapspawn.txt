@@ -26,6 +26,8 @@ filter = FullyQualifiedName~WarCore.Tests.GenMapSpawnTests
 expect = WarCore.Tests.GenMapSpawnTests.EnabledSpawnsUseContentInTheWorld
 note = The opt-in switch selects the opposite spawn path
 original:
-|                 units[i] = useUnitTypes
+|             useUnitTypes
+|                 ? UnitSpawn.OfType
 replacement:
-|                 units[i] = !useUnitTypes
+|             !useUnitTypes
+|                 ? UnitSpawn.OfType

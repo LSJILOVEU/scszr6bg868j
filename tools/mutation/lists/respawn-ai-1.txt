@@ -110,9 +110,9 @@ filter = FullyQualifiedName~WarCore.Tests.RespawnAi1
 expect = WarCore.Tests.RespawnAi1Tests.A11_TrueAndFalseDigests
 note = the content switch does not reach the pack
 original:
-|                     m.RespawnTicks, m.RespawnGuardTicks, ruleIds, m.ReinforceSkipContested);
+|                     m.RespawnTicks, m.RespawnGuardTicks, ruleIds, m.ReinforceSkipContested, m.ReentryTicks, m.ReserveCount, m.ReserveType);
 replacement:
-|                     m.RespawnTicks, m.RespawnGuardTicks, ruleIds, false);
+|                     m.RespawnTicks, m.RespawnGuardTicks, ruleIds, false, m.ReentryTicks, m.ReserveCount, m.ReserveType);
 
 [respawn-ai-1-12-content-inverted]
 file = Assets/WarCore/Content/Data/Sections/MatchSection.cs
@@ -202,9 +202,9 @@ expect = WarCore.Tests.RespawnAi1LockTests.RespawnAi1Lock_OldWorldIsUnchanged
 expect = WarCore.Tests.RespawnAi1Tests.A1_FalseIsLeftOut
 note = the version changes without a chooser
 original:
-|         public int StateVersion => (pack.TeamCount == 2 ? 1 : 2) + (chooser == null ? 0 : 2);
+|         public int StateVersion => (pack.TeamCount == 2 ? 1 : 2) + (chooser == null ? 0 : 2) + (ByDebt ? 4 : 0);
 replacement:
-|         public int StateVersion => (pack.TeamCount == 2 ? 1 : 2) + (chooser == null ? 1 : 2);
+|         public int StateVersion => (pack.TeamCount == 2 ? 1 : 2) + (chooser == null ? 1 : 2) + (ByDebt ? 4 : 0);
 
 [respawn-ai-1-21-version-bound-same]
 file = Assets/WarCore/Battle/ReinforceSystem.cs
@@ -212,9 +212,9 @@ filter = FullyQualifiedName~WarCore.Tests.RespawnAi1
 expect = WarCore.Tests.RespawnAi1Tests.A9_TheChooserKeyIsSavedAndChecked
 note = a bound chooser keeps the unbound version
 original:
-|         public int StateVersion => (pack.TeamCount == 2 ? 1 : 2) + (chooser == null ? 0 : 2);
+|         public int StateVersion => (pack.TeamCount == 2 ? 1 : 2) + (chooser == null ? 0 : 2) + (ByDebt ? 4 : 0);
 replacement:
-|         public int StateVersion => (pack.TeamCount == 2 ? 1 : 2);
+|         public int StateVersion => (pack.TeamCount == 2 ? 1 : 2) + (ByDebt ? 4 : 0);
 
 [respawn-ai-1-22-bind-after-step]
 file = Assets/WarCore/Battle/ReinforceSystem.cs
