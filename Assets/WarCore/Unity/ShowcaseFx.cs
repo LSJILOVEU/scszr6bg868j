@@ -16,7 +16,8 @@ namespace WarCore.Unity
         public const float BurstRadius = 5f;
         public static readonly float GrenadeSeconds = BlastLook.FlightSeconds(ShowcaseActions.FuseTicks);
         public static readonly float GrenadeReach = BlastLook.ReachMetres(ShowcaseActions.ReachMm);
-        private const int MaxChips = 220, MaxBursts = 24, MaxScorches = 16, MaxRings = 8, RingSegments = 64;
+        public const int MaxRings = 8;
+        private const int MaxChips = 220, MaxBursts = 24, MaxScorches = 16, RingSegments = 64;
         private const float Gravity = 14f;
 
         private struct Chip { public Transform Item; public Vector3 Speed; public float Left, Floor; }
@@ -30,6 +31,7 @@ namespace WarCore.Unity
         private readonly List<Burst> bursts = new List<Burst>();
         private readonly List<Transform> scorches = new List<Transform>();
         private readonly List<Ring> rings = new List<Ring>();
+        private static readonly Color DangerColour = new Color(1f, 0.3f, 0.15f);
         private readonly List<Vector3> burstsThisFrame = new List<Vector3>();
         private readonly Transform grenade;
         private Thrown thrown;
@@ -46,7 +48,8 @@ namespace WarCore.Unity
             smoke = ShowcaseScene.Flat(new Color(0.3f, 0.3f, 0.3f));
             scorch = ShowcaseScene.Flat(new Color(0.12f, 0.11f, 0.1f));
             shell = ShowcaseScene.Lit(new Color(0.2f, 0.3f, 0.2f));
-            danger = ShowcaseScene.Flat(new Color(1f, 0.3f, 0.15f));
+            // Sprites/Default blends by each line's own colour, so a danger ring fades out through its alpha.
+            danger = new Material(Shader.Find("Sprites/Default") ?? Shader.Find("Unlit/Color"));
             grenade = Make(PrimitiveType.Sphere, GrenadeName, shell);
             grenade.localScale = new Vector3(0.28f, 0.28f, 0.28f);
             grenade.gameObject.SetActive(false);
@@ -135,12 +138,8 @@ namespace WarCore.Unity
             DangerRing(at, look.RingRadius);
         }
 
-        // The radius a danger ring is drawn at (its first point's distance from its centre on the ground).
-        public static float RingRadiusOf(Transform ring)
-        {
-            Vector3 first = ring.GetComponent<LineRenderer>().GetPosition(0);
-            return new Vector2(first.x, first.z).magnitude;
-        }
+        // The radius a danger ring is drawn at (its first point's distance from its centre).
+        public static float RingRadiusOf(Transform ring) => ring.GetComponent<LineRenderer>().GetPosition(0).magnitude;
 
         private void Blow(Vector3 at, float flashSize, float smokeSize, float dustRadius, float scorchDiameter)
         {
@@ -182,6 +181,9 @@ namespace WarCore.Unity
                 line.loop = true;
                 line.positionCount = RingSegments;
                 line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                // The band faces along the ring's own z axis, which is turned to point down, so the ring lies flat on the ground.
+                line.alignment = LineAlignment.TransformZ;
+                made.transform.localRotation = Quaternion.FromToRotation(Vector3.forward, Vector3.down);
                 rings.Add(new Ring { Line = line });
                 slot = rings.Count - 1;
             }
@@ -190,13 +192,22 @@ namespace WarCore.Unity
             for (int i = 0; i < RingSegments; i++)
             {
                 float angle = i * 2f * Mathf.PI / RingSegments;
-                r.Line.SetPosition(i, new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius));
+                r.Line.SetPosition(i, new Vector3(Mathf.Cos(angle) * radius, Mathf.Sin(angle) * radius, 0f));
             }
             r.Line.transform.position = at + Vector3.up * BlastLook.RingLift;
             r.Line.widthMultiplier = BlastLook.RingWidth;
+            SetAlpha(r.Line, 1f);
             r.Line.gameObject.SetActive(true);
             r.Age = 0f;
             rings[slot] = r;
+        }
+
+        private static void SetAlpha(LineRenderer line, float alpha)
+        {
+            Color c = DangerColour;
+            c.a = alpha;
+            line.startColor = c;
+            line.endColor = c;
         }
 
         // Start the preview grenade from the thrower's hand toward a point on the ground (cut to GrenadeReach). False while
@@ -251,7 +262,7 @@ namespace WarCore.Unity
                 if (!r.Line.gameObject.activeSelf) continue;
                 r.Age += dt;
                 float left = BlastLook.RingAlpha(r.Age);
-                r.Line.widthMultiplier = BlastLook.RingWidth * left;
+                SetAlpha(r.Line, left);
                 if (left <= 0f) r.Line.gameObject.SetActive(false);
                 rings[i] = r;
             }
