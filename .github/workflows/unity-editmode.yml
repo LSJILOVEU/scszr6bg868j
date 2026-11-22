@@ -1,10 +1,11 @@
 name: unity-editmode
 
-# Trial: runs the full Unity EditMode suite in the Unity editor (GameCI image), the suite otherwise run by hand before
-# merge. Not yet a required check: it runs only on manual dispatch, or on a pull request into main that carries the
+# Trial: runs the full Unity EditMode suite in the Unity editor (GameCI editor image), the suite otherwise run by hand
+# before merge. Not yet a required check: it runs only on manual dispatch, or on a pull request into main that carries the
 # `unity-editmode` label (elsewhere the job is skipped). On a labelled pull request automerge sees it like any other
-# check. Needs repository secrets UNITY_LICENSE (text of the .ulf file), UNITY_EMAIL and UNITY_PASSWORD.
-# Only the result XML is uploaded, never the editor log.
+# check. Needs repository secrets UNITY_EMAIL and UNITY_PASSWORD (Personal named-user activation, see
+# tools/unity-ci/run-editmode.sh); UNITY_LICENSE (text of a .ulf file) is optional. Only the result XML is uploaded,
+# never the editor log.
 on:
   workflow_dispatch:
   pull_request:
@@ -32,12 +33,10 @@ jobs:
     steps:
       - name: Check secrets are set
         env:
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         run: |
           missing=""
-          [ -n "$UNITY_LICENSE" ] || missing="$missing UNITY_LICENSE"
           [ -n "$UNITY_EMAIL" ] || missing="$missing UNITY_EMAIL"
           [ -n "$UNITY_PASSWORD" ] || missing="$missing UNITY_PASSWORD"
           if [ -n "$missing" ]; then echo "::error::missing repository secrets:$missing"; exit 1; fi
@@ -61,17 +60,21 @@ jobs:
           restore-keys: |
             Library-${{ env.UNITY_IMAGE }}-
 
+      - name: Pull editor image
+        run: docker pull -q "$UNITY_IMAGE"
+
       - name: EditMode tests
-        id: tests
-        uses: game-ci/unity-test-runner@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-        with:
-          customImage: ${{ env.UNITY_IMAGE }}
-          testMode: editmode
-          artifactsPath: unity-results
+        run: |
+          code=0
+          docker run --rm -v "$PWD:/project" -w /project \
+            -e UNITY_LICENSE -e UNITY_EMAIL -e UNITY_PASSWORD \
+            "$UNITY_IMAGE" bash tools/unity-ci/run-editmode.sh unity-results || code=$?
+          sudo chown -R "$(id -u):$(id -g)" Library unity-results 2>/dev/null || true
+          exit $code
 
       - name: Summary
         if: always()
