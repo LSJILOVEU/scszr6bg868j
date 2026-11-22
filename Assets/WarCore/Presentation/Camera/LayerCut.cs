@@ -39,20 +39,24 @@ namespace WarCore.Presentation
     //   Fading: a plate (other than the one the unit stands on) or wall that is not hidden and stands on the line from the
     //   camera to the unit's feet (y + FootLift) or head (y + BodySizes.TopOf: its stance's height, 1 m without sizes) is faded,
     //   indoors and outdoors.
-    //   The see-through ring's threshold (SeeZone) is the standing eye height: SeeHeight.
+    //   The see-through ring's threshold (SeeZone) is the unit's body height at its stance: SeeHeight.
     public static class LayerCut
     {
         // The walk clearance, defined once in WallSpan (ClearanceRaw): plates and walls this far over the feet are another storey.
         public static readonly float Headroom = WallSpan.ClearanceMetres;
         public const float FootLift = 0.1f;  // PLACEHOLDER: the low end of the unit seen through walls
         public const float FadeAlpha = 0.3f; // PLACEHOLDER: tune after play
-        public const float SeeRadius = 2f;   // SEE-1 PLACEHOLDER: the radius the player scenes pass (Run's own default is 0 = off); 5 m faded walls 5 to 7 m early
-        // The see-through threshold of a pack without a body (the old eye height). With a body the threshold is its eye.
+        public const float SeeRadius = 2f;   // SEE-1: the ring's radius for a pack without a body (Run's own default is 0 = off); 5 m faded walls 5 to 7 m early
+        // The ring's radius the player scenes pass: 8/7 of the body's standing height (2 m for a 1.75 m body), so a bigger body
+        // sees round it further. Standing, so the ring does not jump with the stance. SeeRadius without sizes.
+        public static float SeeRadiusFor(BodySizes sizes) => sizes == null ? SeeRadius : sizes.StandingHeight * 8f / 7f;
+        // The see-through threshold of a pack without a body (the old value). With a body the threshold is the body's height.
         public const float LegacySeeHeight = 1.5f;
 
-        // See-through threshold = standing eye height: a wall or plate must top the feet by more than this to fade by the ring.
-        // It is the standing eye (level 0) whatever the unit's stance now; without sizes it is LegacySeeHeight.
-        internal static float SeeHeight(BodySizes sizes) => sizes == null ? LegacySeeHeight : sizes.StandingEye;
+        // See-through threshold = the unit's height now (BodySizes.Top at its stance, the same height the body is drawn and the
+        // head line is cut at): a wall or plate must top the feet by more than this to fade by the ring, so a wall that would
+        // not hide the unit stays. Without sizes it is LegacySeeHeight. Whether the unit sees a sample is judged from its eye.
+        internal static float SeeHeight(BodySizes sizes, ViewEntity me) => sizes == null ? LegacySeeHeight : sizes.Top(me);
 
         // Nothing hidden or faded (no player, or a map without plates or walls).
         public static LayerCutResult None(ViewPlates plates, ViewMap map) =>

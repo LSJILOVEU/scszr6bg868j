@@ -115,7 +115,7 @@ namespace WarCore.Unity
             ViewEntity? followed = key.HasValue && shown.TryGet(key.Value, out ViewEntity me) ? me : (ViewEntity?)null;
             if (followed.HasValue)
                 isoCamera.Follow(followed.Value.X, followed.Value.Z);
-            LayerCutResult cut = LayerCut.Run(session.Map.Plates, session.Map, followed, isoCamera.Forward, LayerCut.SeeRadius, BodySizes.Of(session));
+            LayerCutResult cut = LayerCut.Run(session.Map.Plates, session.Map, followed, isoCamera.Forward, LayerCut.SeeRadiusFor(BodySizes.Of(session)), BodySizes.Of(session));
             HashSet<ulong> covered = Silhouettes.Run(session.Map.Plates, session.Map, cut, followed, shown.Entities, isoCamera.Forward, BodySizes.Of(session));
             wallViews.Apply(cut);
             points.Apply(current);
