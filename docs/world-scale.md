@@ -96,3 +96,14 @@ Recorded only, nothing changed here. Each goes to SCALE-2 or the candidate pool.
 11. Sight is cut at 1.4 m and 1.6 m for a 1.5 m eye; a planned 1.2 m crossing limit would leave 1.2 to 1.4 m walls crossable but see-through and 1.4 to 1.6 m walls opaque but too high.
 12. Body height is capped at 2 m by content but at 32768 m by the `CombatBody` constructor; melee half height is 1 m in the shipped data while a 1.75 m body is centred at 0.875 m and an old body at the foot.
 13. Some older comments assume a body 0.5 m either side of its position; with 1.75 m bodies that is out of date.
+
+## Body probe
+
+`Tests/MapContent/Scale/BodyProbeTests.cs` scales the shipped `rwr-stance` body and stances to a 3 m giant and a 0.5 m
+tiny unit (every height times target / reference, rounded down) and runs the probes of `BodyProbes.cs`: each measures
+one thing that grows on the body (radius copies, collider and stance heights, eye, muzzle, drawn sizes, pick reach, see
+height, body-relative play distances) and expects the reference value scaled, or for the headroom checks the world's
+value unchanged. World sizes (doors, storeys, sills, walls, streets) are not scaled. A probe that crashes counts as a gap.
+What does not follow is listed in `tools/size-guard/body-gaps.tsv`, keyed by probe and body; `GapsMatchTheLedger`
+fails on a new gap and on a listed one that now follows. A change that fixes one deletes its row and lowers `gaps-max`
+in the same pull request; a probe that reads a constant gets its measuring point changed there too.

@@ -179,9 +179,9 @@ filter = FullyQualifiedName~Show1Tests
 expect = WarCore.Tests.Show1Tests.TheBulletsStageFliesProjectilesInsteadOfInstantHits
 note = the bullets stage plays the battle layer
 original:
-| () => Lanes(BulletsLayer).WcMapBytes, () => Battle(BulletsLayer), BattleScript),
+| () => Lanes(BulletsLayer).WcMapBytes, () => Battle(BulletsLayer), BattleScript, combatLayer: BulletsLayer),
 replacement:
-| () => Lanes(BattleLayer).WcMapBytes, () => Battle(BattleLayer), BattleScript),
+| () => Lanes(BattleLayer).WcMapBytes, () => Battle(BattleLayer), BattleScript, combatLayer: BulletsLayer),
 
 [show1-script-dash]
 file = Assets/WarCore/Presentation/Bridge/Showcase.cs
