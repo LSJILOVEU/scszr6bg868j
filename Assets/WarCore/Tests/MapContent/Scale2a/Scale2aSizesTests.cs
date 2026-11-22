@@ -292,7 +292,8 @@ namespace WarCore.Tests
 
         // S4: the see-through ring. Looking +z (pitch 45), the outer sample 5 m toward -z lies behind a 0.9 m wall (z 26..27);
         // from that sample alone the line back crosses a 3 m wall (z 24..25). The eye at 1.5 (standing) and 1.0 (no sizes)
-        // sees the sample over the low wall, so the 3 m wall fades; the crouched eye at 0.75 does not, so it stays.
+        // sees the sample over the low wall, so the 3 m wall fades; the crouched eye at 0.75 does not, so it stays. Over a 1.2 m
+        // low wall only the standing eye sees.
         [Test]
         public void S4_TheRingLooksFromTheStancesEye()
         {
@@ -305,6 +306,10 @@ namespace WarCore.Tests
             Assert.That(LayerCut.Run(map.Plates, map, Me(1), forward, 5f, sizes).Wall(1), Is.EqualTo(CutState.Shown), "crouched eye 0.75");
             Assert.That(LayerCut.Run(map.Plates, map, Me(0), forward, 5f).Wall(1), Is.EqualTo(CutState.Faded), "no sizes: eye 1.0");
             Assert.That(LayerCut.Run(map.Plates, map, Me(1), forward, 5f, null).Wall(1), Is.EqualTo(CutState.Faded), "no sizes: eye 1.0");
+            // A 1.2 m low wall instead: the standing eye (1.5) still sees over it, the old eye (1.0) does not.
+            ViewMap higher = Map((20, 26, 1, 1, 1.2), (20, 24, 1, 1, 3.0));
+            Assert.That(LayerCut.Run(higher.Plates, higher, Me(0), forward, 5f, sizes).Wall(1), Is.EqualTo(CutState.Faded), "standing eye 1.5 over 1.2");
+            Assert.That(LayerCut.Run(higher.Plates, higher, Me(0), forward, 5f).Wall(1), Is.EqualTo(CutState.Shown), "no sizes: eye 1.0 under 1.2");
         }
 
         // S4: with sizes passed as null the silhouettes, the cut and the ring are the recorded bits.
