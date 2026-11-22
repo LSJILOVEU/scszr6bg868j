@@ -6,23 +6,15 @@ using static WarCore.Tests.See1Field;
 
 namespace WarCore.Tests
 {
-    // SCALE-2a S3(e), S3(f), S4: the old path (no body sizes) is bit for bit what it was before SCALE-2a. Every digest below was
-    // recorded on the code before the change (public main 89dfb1a) and is an FNV-1a hash of the exact bits of every result
-    // (floats by SingleToInt32Bits), so the old path is compared with the old code, not with itself.
+    // SCALE-2a S3(e), S3(f), S4: the old path (no body sizes) does what it did before SCALE-2a. S3(e) compares every pick ray
+    // with a copy of the old cylinder test (public main 89dfb1a) run in the same process, so the answer does not depend on how a
+    // runtime rounds float sums (Unity's Mono keeps y + 1f in double precision, .NET rounds it to float). The other digests
+    // were recorded on 89dfb1a and hash only whole-number results (unit keys, cut states, millimetre inputs).
     public sealed class Scale2aGoldenTests
     {
-        // Heights where float y + 1f and double y + 1.0 differ, so a change of the order of the addition shows.
+        // Heights where float y + 1f and double y + 1.0 differ on a runtime that rounds float sums to float, so a change of the
+        // order of the addition shows there.
         private static readonly float[] Ys = { 0.1f, 1.1f, 0.37f, 5.3f };
-
-        // S3(e): [height index, group] with group 0 the side rays (leaving the cylinder at its top edge), 1 the cap rays (landing
-        // on the top near the far edge), 2 the straight down rays (at the top and at the rim).
-        private static readonly ulong[,] PickDigest =
-        {
-            { 13550308178592979205UL, 12897167355683376280UL, 16993100118699191507UL },
-            { 14282959161814475523UL, 3036073935472983806UL, 7993992914543038737UL },
-            { 15286087353135506899UL, 1750000245121862921UL, 2655799430188989038UL },
-            { 13277586483481029284UL, 15181393506858016523UL, 13708917454612860865UL },
-        };
 
         private const ulong TerrainInputDigest = 2454987396881980250UL, HouseInputDigest = 9975092720828191415UL;
         private const ulong SilhouetteDigest = 9504576269491795843UL, CutDigest = 11946379032752552359UL, SeeDigest = 10214496898857319079UL;
@@ -77,41 +69,82 @@ namespace WarCore.Tests
         internal static AimTarget OldPick(FrameView shown, float ox, float oy, float oz, float fx, float fy, float fz) =>
             AimPick.PickRay(ox, oy, oz, fx, fy, fz, 0f, null, shown, 1);
 
-        [Test]
-        public void TheHeightsMakeTheOrderOfTheAdditionShow()
+        // The old cylinder test of AimPick.BodyHit as it was on 89dfb1a (body 1 m, radius 0.5), with the top given as a function
+        // so the same rays can be run with the old float sum and with a double sum.
+        private static double OldBodyHit(double ox, double oy, double oz, double fx, double fy, double fz, ViewEntity e, Func<float, double> topOf)
         {
-            int differ = 0;
-            foreach (float y in Ys) if ((double)(y + 1f) != (double)y + 1.0) differ++;
-            Assert.That(differ, Is.GreaterThanOrEqualTo(1));
+            double r = 0.5, bottom = e.Y, top = topOf(e.Y);
+            double px = ox - e.X, pz = oz - e.Z;
+            double a = fx * fx + fz * fz, b = 2 * (px * fx + pz * fz), c = px * px + pz * pz - r * r;
+            if (a == 0)
+                return c <= 0 && oy >= top ? (top - oy) / fy : double.PositiveInfinity;
+            double disc = b * b - 4 * a * c;
+            if (disc < 0) return double.PositiveInfinity;
+            double root = Math.Sqrt(disc), t1 = (-b - root) / (2 * a), t2 = (-b + root) / (2 * a);
+            double y1 = oy + t1 * fy;
+            if (y1 >= bottom && y1 <= top) return t1 >= 0 ? t1 : double.PositiveInfinity;
+            if (y1 > top)
+            {
+                double cap = (top - oy) / fy;
+                if (cap <= t2 && cap >= 0) return cap;
+            }
+            return double.PositiveInfinity;
         }
 
-        [Test]
-        public void OldPickRaysMatchTheRecordedBits()
+        private const float OldBodyHeight = 1f;
+        private static double FloatTop(float y) => y + OldBodyHeight; // the old code: the sum in float, then widened
+        private static double DoubleTop(float y) => (double)y + OldBodyHeight;
+
+        // What the old pick gives for one ray: the enemy (key 2) when the old cylinder test meets it (every hit of these sweeps is
+        // far above the ground), else the ground point the same ray gives with no units shown.
+        private static AimTarget OldExpected(FrameView shown, float ox, float oy, float oz, float fx, float fy, float fz, Func<float, double> topOf)
         {
-            var got = new ulong[Ys.Length, 3];
+            Assert.That(shown.TryGet(2, out ViewEntity enemy), Is.True);
+            if (OldBodyHit(ox, oy, oz, fx, fy, fz, enemy, topOf) < double.PositiveInfinity)
+                return new AimTarget(AimKind.Unit, enemy.X, enemy.Y, enemy.Z, null, enemy.Key);
+            return AimPick.PickRay(ox, oy, oz, fx, fy, fz, 0f, null, null, 1);
+        }
+
+        private static bool Same(AimTarget a, AimTarget b) =>
+            a.Kind == b.Kind && a.X.Equals(b.X) && a.Y.Equals(b.Y) && a.Z.Equals(b.Z) && a.YMm == b.YMm && a.UnitKey == b.UnitKey && a.Layer == b.Layer;
+
+        // S3(e): every ray of every sweep picks what the old code picks on this runtime, and each sweep straddles the edge.
+        [Test]
+        public void OldPickRaysMatchTheOldCylinder()
+        {
             for (int h = 0; h < Ys.Length; h++)
                 for (int g = 0; g < 3; g++)
                 {
                     FrameView shown = Pair(Ys[h]);
-                    var digest = new Fnv();
-                    int units = 0;
+                    int units = 0, rays = 0, wrong = 0;
                     Sweep(Ys[h], g, (ox, oy, oz, fx, fy, fz) =>
                     {
                         AimTarget a = OldPick(shown, ox, oy, oz, fx, fy, fz);
                         if (a.Kind == AimKind.Unit) units++;
-                        digest.Add(a);
+                        if (!Same(a, OldExpected(shown, ox, oy, oz, fx, fy, fz, FloatTop))) wrong++;
+                        rays++;
                     });
-                    Assert.That(units, Is.GreaterThan(0).And.LessThan(digest.Count), "the sweep straddles the edge: " + h + "/" + g);
-                    got[h, g] = digest.Value;
+                    Assert.That(wrong, Is.EqualTo(0), "rays unlike the old code: " + h + "/" + g);
+                    Assert.That(units, Is.GreaterThan(0).And.LessThan(rays), "the sweep straddles the edge: " + h + "/" + g);
                 }
-            Assert.That(Text(got), Is.EqualTo(Text(PickDigest)));
         }
 
-        private static string Text(ulong[,] d)
+        // Where this runtime rounds the float sum (FloatTop differs from DoubleTop at a height), the side rays at that height
+        // tell the two sums apart, so a pick that adds in double fails the test above; where it does not, they agree.
+        [Test]
+        public void TheSideRaysTellTheOrderOfTheAdditionWhereItMatters()
         {
-            var parts = new List<string>();
-            for (int h = 0; h < d.GetLength(0); h++) parts.Add("{ " + d[h, 0] + "UL, " + d[h, 1] + "UL, " + d[h, 2] + "UL },");
-            return string.Join(" ", parts);
+            foreach (float y in Ys)
+            {
+                FrameView shown = Pair(y);
+                int differ = 0;
+                Sweep(y, 0, (ox, oy, oz, fx, fy, fz) =>
+                {
+                    if (!Same(OldExpected(shown, ox, oy, oz, fx, fy, fz, FloatTop), OldExpected(shown, ox, oy, oz, fx, fy, fz, DoubleTop))) differ++;
+                });
+                if (FloatTop(y) != DoubleTop(y)) Assert.That(differ, Is.GreaterThan(0), "height " + y);
+                else Assert.That(differ, Is.EqualTo(0), "height " + y);
+            }
         }
 
         private static ShowcaseStage Stage(string id)

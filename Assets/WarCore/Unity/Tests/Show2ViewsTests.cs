@@ -36,13 +36,28 @@ namespace WarCore.Unity.Tests
             using (ShowcaseScene scene = Hamlet())
             {
                 float[] scales = scene.Stage.StanceScales();
+                BodySizes sizes = scene.Sizes;
                 Run(scene, 200);
                 int crouching = 0;
                 foreach (ViewEntity e in scene.Session.Current.Entities)
                 {
                     if (!e.Alive) continue;
-                    float want = Mathf.Min(scales[e.Stance], e.Nerve == 1 ? ShowcaseUnits.DuckScale : 1f);
-                    Assert.That(scene.Root.transform.Find(ShowcaseUnits.Prefix + e.Key).localScale.y, Is.EqualTo(want).Within(1e-4f), "soldier " + e.Key);
+                    Transform soldier = scene.Root.transform.Find(ShowcaseUnits.Prefix + e.Key);
+                    if (sizes == null)
+                    {
+                        float want = Mathf.Min(scales[e.Stance], e.Nerve == 1 ? ShowcaseUnits.DuckScale : 1f);
+                        Assert.That(soldier.localScale.y, Is.EqualTo(want).Within(1e-4f), "soldier " + e.Key);
+                    }
+                    else
+                    {
+                        // SCALE-2a: with body sizes the parts are laid out at the stance's own top; the soldier is not squashed.
+                        Assert.That(soldier.localScale.y, Is.EqualTo(1f).Within(1e-4f), "soldier " + e.Key);
+                        Transform head = soldier.Find("Head");
+                        float headTop = head.localPosition.y + head.localScale.y / 2f;
+                        bool lying = DrawnParts.For(sizes.StandingHeight, sizes.Radius, sizes.Top(e), sizes.Muzzle(e)).Lying;
+                        if (lying) Assert.That(headTop, Is.LessThanOrEqualTo(sizes.Top(e) + 1e-4f), "soldier " + e.Key);
+                        else Assert.That(headTop, Is.EqualTo(sizes.Top(e)).Within(1e-4f), "soldier " + e.Key);
+                    }
                     if (e.Stance == 1) crouching++;
                 }
                 Assert.That(crouching, Is.GreaterThan(30), "team 1 was ordered to crouch at tick 180");

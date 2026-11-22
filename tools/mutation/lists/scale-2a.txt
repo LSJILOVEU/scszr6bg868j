@@ -118,7 +118,7 @@ replacement:
 [scale2a-old-top-is-tall]
 file = Assets/WarCore/Presentation/Bridge/Features/BodySizes.cs
 filter = FullyQualifiedName~Scale2a|FullyQualifiedName~Mt167AimPick|FullyQualifiedName~See1|FullyQualifiedName~Ml10|FullyQualifiedName~A4Pick
-expect = WarCore.Tests.Scale2aGoldenTests.OldPickRaysMatchTheRecordedBits
+expect = WarCore.Tests.Scale2aGoldenTests.OldPickRaysMatchTheOldCylinder
 expect = WarCore.Tests.Scale2aSizesTests.S3e_
 expect = WarCore.Tests.Mt167AimPickTests.RayAboveOneMetreBody_DoesNotSelectEnemy
 note = without sizes the body is 1.75 m
@@ -130,7 +130,7 @@ replacement:
 [scale2a-old-top-is-zero]
 file = Assets/WarCore/Presentation/Bridge/Features/BodySizes.cs
 filter = FullyQualifiedName~Scale2a|FullyQualifiedName~Mt167AimPick|FullyQualifiedName~See1|FullyQualifiedName~Ml10|FullyQualifiedName~A4Pick
-expect = WarCore.Tests.Scale2aGoldenTests.OldPickRaysMatchTheRecordedBits
+expect = WarCore.Tests.Scale2aGoldenTests.OldPickRaysMatchTheOldCylinder
 expect = WarCore.Tests.Scale2aGoldenTests.OldInputOfAStageWithoutABodyMatchesTheRecordedBits
 note = without sizes the body has no height
 original:
@@ -164,7 +164,7 @@ replacement:
 [scale2a-top-added-in-double]
 file = Assets/WarCore/Presentation/Camera/AimPick.cs
 filter = FullyQualifiedName~Scale2a|FullyQualifiedName~Mt167AimPick|FullyQualifiedName~See1|FullyQualifiedName~Ml10|FullyQualifiedName~A4Pick
-expect = WarCore.Tests.Scale2aGoldenTests.OldPickRaysMatchTheRecordedBits
+expect = WarCore.Tests.Scale2aGoldenTests.OldPickRaysMatchTheOldCylinder
 expect = WarCore.Tests.Scale2aSizesTests.S3e_
 note = the feet and the height are added in double
 original:
