@@ -84,10 +84,13 @@ namespace WarCore.Presentation
         internal PointEntryTable Entries { get; set; }
         internal Squads Squads { get; set; }
         // STANCE-1, written by the stance installer (a pack with stances only; null otherwise): the posture geometry the spatial
-        // index takes, the stance system and the action gate of the world.
+        // index takes, the stance system and the action gate of the world. The gate is made by the stance installer, or by the
+        // downed installer (DOWN-1) in a world that keeps casualties but has no stances; null when neither is on.
         internal PostureGeometry Postures { get; set; }
         internal StanceSystem Stances { get; set; }
         internal ActionGate Gate { get; set; }
+        // DOWN-1, written by the downed installer (a pack that keeps casualties only; default otherwise).
+        internal ComponentType<Casualty> Casualties { get; set; }
         // Written by the movement installer: the player's step, or null without player control.
         internal PlayerStep PlayerStep { get; set; }
 
@@ -109,6 +112,8 @@ namespace WarCore.Presentation
 
         // ML-3: the unit collider height follows the combat pack's body (its height), else the legacy 1 m.
         internal static SimFix UnitHeight(CombatPack pack) => pack?.Body?.Height ?? SimFix.FromInt(1);
+        // HC-1: the unit collider radius and walking clearance follow the pack's body (its radius), else the default body radius.
+        internal static SimFix UnitRadius(CombatPack pack) => pack?.Body?.Radius ?? BodyRadius.Default;
         // ML-3: the spatial index anchors the unit layer at the foot exactly when the combat pack has a body.
         internal static uint FootAnchoredLayers(CombatPack pack) => pack?.Body != null ? MoverLayer : 0u;
         internal static SimFix SpawnSpeed(in UnitSpawn spawn) => SimFix.Ratio(spawn.SpeedMmPerSec, 1000 * SimClock.TickRate);

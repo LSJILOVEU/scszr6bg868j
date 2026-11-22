@@ -60,8 +60,8 @@ namespace WarCore.Interim
                 for (int i = 0; i < memberCount; i++)
                     if (provisional[i].Unit.Equals(controlled))
                     {
-                        // A dashing unit takes its dash step below instead.
-                        if (DashesNow(i)) break;
+                        // A dashing unit takes its dash step below instead; a held unit is skipped there.
+                        if (DashesNow(i) || Held(controlled)) break;
                         controlledIndex = i;
                         StepControlled(context, i, displacement);
                         break;
@@ -70,6 +70,7 @@ namespace WarCore.Interim
             {
                 if (i == controlledIndex) continue;
                 if (StepDash(context, i)) continue;
+                if (Held(provisional[i].Unit)) continue;
                 if (terrain != null) { StepCrowdUnitTerrain(context, i); continue; }
                 EntityId unit = provisional[i].Unit;
                 MoveIntent intent = entities.Get(intents, unit);
@@ -213,11 +214,11 @@ namespace WarCore.Interim
         private bool TerrainAllows(SimContext context, int i, SimVec3 next)
         {
             // On a plate world the candidate was settled first: its cell is open on its layer, and the footprint uses that rule.
-            if (layered) { if (!grid.SegmentClear(provisional[i].Point, next, UnitFootprint, openCells)) return false; }
+            if (layered) { if (!grid.SegmentClear(provisional[i].Point, next, footprint, openCells)) return false; }
             else
             {
                 if (!grid.TryCell(next, out int cell) || !grid.IsPassable(cell % grid.Width, cell / grid.Width)) return false;
-                if (terrain != null && !grid.SegmentClear(provisional[i].Point, next, UnitFootprint)) return false;
+                if (terrain != null && !grid.SegmentClear(provisional[i].Point, next, footprint)) return false;
             }
             return wallMask == 0 || !context.SpatialQuery.Any(SpatialQueries.Capsule(
                 provisional[i].Point, next, SimFix.FromRaw(MaxRaw(0, provisional[i].Radius.Raw - 1)), wallMask));

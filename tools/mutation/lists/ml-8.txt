@@ -135,7 +135,7 @@ filter = FullyQualifiedName~Ml8
 expect = WarCore.Tests.Ml8EntryTests.FootprintsStandOnOpenCells
 note = the end footprint is not checked on the new layer alone
 original:
-|             if (!grid.SegmentClear(next, next, UnitFootprint, openCells)) return false;
+|             if (!grid.SegmentClear(next, next, footprint, openCells)) return false;
 replacement:
 
 [ml8-settle-start-only]
@@ -448,9 +448,9 @@ filter = FullyQualifiedName~Ml8
 expect = WarCore.Tests.Ml8DemoTests.AUnitClimbsToTheFirstFloorAndBack
 note = the path footprint uses the ground grid
 original:
-| return Settle(layer, point, ref next) && grid.SegmentClear(point, next, UnitFootprint, openCells);
+| return Settle(layer, point, ref next) && grid.SegmentClear(point, next, footprint, openCells);
 replacement:
-| return Settle(layer, point, ref next) && grid.SegmentClear(point, next, UnitFootprint);
+| return Settle(layer, point, ref next) && grid.SegmentClear(point, next, footprint);
 
 [ml8-crowd-no-settle]
 file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
@@ -479,7 +479,7 @@ expect = WarCore.Tests.Ml8DemoTests.AUnitClimbsToTheFirstFloorAndBack
 expect = WarCore.Tests.Ml8DemoTests.EveryUnitStandsOnItsFloor
 note = crowd terrain checks use the ground grid
 original:
-|             if (layered) { if (!grid.SegmentClear(provisional[i].Point, next, UnitFootprint, openCells)) return false; }
+|             if (layered) { if (!grid.SegmentClear(provisional[i].Point, next, footprint, openCells)) return false; }
 |             else
 replacement:
 |             if (false) { }
@@ -601,7 +601,7 @@ filter = FullyQualifiedName~Ml8
 expect = WarCore.Tests.Ml8DemoTests.SquadSlotsStandOnTheFloor
 note = a point over the edge is kept
 original:
-| return grid.SegmentClear(p, p, UnitFootprint, openCells) ? p : NodeCentre(own);
+| return grid.SegmentClear(p, p, footprint, openCells) ? p : NodeCentre(own);
 replacement:
 | return p;
 
@@ -611,7 +611,7 @@ filter = FullyQualifiedName~Ml8
 expect = WarCore.Tests.Ml8DemoTests.SquadSlotsStandOnTheFloor
 note = a standable point moves to its cell centre
 original:
-| return grid.SegmentClear(p, p, UnitFootprint, openCells) ? p : NodeCentre(own);
+| return grid.SegmentClear(p, p, footprint, openCells) ? p : NodeCentre(own);
 replacement:
 | return NodeCentre(own);
 

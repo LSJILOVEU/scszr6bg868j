@@ -15,7 +15,8 @@ namespace WarCore.Content
         public const long ClearanceRaw = 2 * SimFix.Scale;
         // ClearanceRaw in metres, for the picture's layer cut (which may not name the simulation).
         public static readonly float ClearanceMetres = (float)ClearanceRaw / SimFix.Scale;
-        public const long BelowRaw = SimFix.Scale / 4;
+        // The probe is the default body radius; a pack with a thinner body is still baked with it (conservative).
+        public const long BelowRaw = BodyRadius.DefaultRaw;
 
         public static bool BlocksWalk(long bottomRaw, long topRaw, long groundMinRaw, long groundMaxRaw) =>
             topRaw >= groundMinRaw - BelowRaw && bottomRaw < groundMaxRaw + ClearanceRaw;

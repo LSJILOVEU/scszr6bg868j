@@ -1,0 +1,700 @@
+# DOWN-1 (WP-46): downed and stunned units. Filter: the Down1 tests. Not listed (see the card's appendix D): the
+# effective-health-at-least-1 test of the casualty rule and bleed '>=' as '==' (equivalent), a refused command charged
+# to the ledger (cannot be built), the forced stance ordered after the stance system (equivalent), the crawl gear after
+# inertia (the speed line is built around the motion model as bound; D7 pins the order) and a blast not charged to the
+# ledger (blasts go through the one damage entry; dn-ledger-nocharge covers it).
+[dn-lethal-gt]
+file = Assets/WarCore/Combat/CombatSystem.Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1DamageTests.
+note = a hit exactly the effective health kills
+original:
+|             if (effective < 1 || damageRaw < effective) return damageRaw;
+replacement:
+|             if (effective < 1 || damageRaw <= effective) return damageRaw;
+
+[dn-rewrite-zero]
+file = Assets/WarCore/Combat/CombatSystem.Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1DamageTests.
+note = the lethal hit is rewritten to the whole health (death)
+original:
+|             return effective - 1;
+replacement:
+|             return effective;
+
+[dn-no-rewrite]
+file = Assets/WarCore/Combat/CombatSystem.Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1DamageTests.
+note = the lethal hit is not rewritten
+original:
+|             return effective - 1;
+replacement:
+|             return damageRaw;
+
+[dn-redown]
+file = Assets/WarCore/Combat/CombatSystem.Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1DamageTests.
+note = a downed unit is downed again (its clock restarts)
+original:
+|             if (!casualtyBound || pack.Downed == null || !Entities.TryGet(combatants, unit, out _) || IsDead(unit) || IsDowned(unit)) return false;
+replacement:
+|             if (!casualtyBound || pack.Downed == null || !Entities.TryGet(combatants, unit, out _) || IsDead(unit)) return false;
+
+[dn-grace-lt]
+file = Assets/WarCore/Combat/CombatSystem.Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1DamageTests.
+note = the grace ends a tick early
+original:
+|                 if (tick <= state.Start + rules.FinishAfterTicks) return 0;
+replacement:
+|                 if (tick < state.Start + rules.FinishAfterTicks) return 0;
+
+[dn-no-grace]
+file = Assets/WarCore/Combat/CombatSystem.Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1DamageTests.
+note = no grace
+original:
+|                 if (tick <= state.Start + rules.FinishAfterTicks) return 0;
+replacement:
+|
+
+[dn-finish-swap]
+file = Assets/WarCore/Combat/CombatSystem.Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1DamageTests.
+expect = WarCore.Tests.Down1.Down1ListTests.
+note = finish swapped
+original:
+|                 return rules.Finish ? damageRaw : 0;
+replacement:
+|                 return rules.Finish ? 0 : damageRaw;
+
+[dn-gear-lethal]
+file = Assets/WarCore/Combat/CombatSystem.Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1DamageTests.
+note = gear packs down on a lethal hit too
+original:
+|             if (rules.When != DownedWhen.Lethal) return damageRaw;
+replacement:
+|
+
+[dn-bleed-late]
+file = Assets/WarCore/Combat/CombatSystem.Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1DamageTests.
+expect = WarCore.Tests.Down1.Down1StunTests.
+note = the bleed-out (and the wake) a tick late
+original:
+|                 if (tick < state.Due) continue;
+replacement:
+|                 if (tick <= state.Due) continue;
+
+[dn-bleed-rule]
+file = Assets/WarCore/Combat/CombatSystem.Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1DamageTests.
+note = the bleed-out goes through the casualty rule and the ledger
+original:
+|                 c.Damage(sim.GameplayTarget(id), new GameplayApplyKey(id, (ulong)tick, 0, id, (ulong)tick, BleedActionOrdinal), 1, left);
+replacement:
+|                 SubmitDamage(c, id, new GameplayApplyKey(id, (ulong)tick, 0, id, (ulong)tick, BleedActionOrdinal), left, tick);
+
+[dn-dead-keeps]
+file = Assets/WarCore/Combat/CombatSystem.Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1DamageTests.
+note = a dead unit keeps its casualty component
+original:
+|                 if (IsDead(unit)) { Entities.Remove(casualties, unit); continue; }
+replacement:
+|                 if (IsDead(unit)) continue;
+
+[dn-stun-keeps]
+file = Assets/WarCore/Combat/CombatSystem.Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1StunTests.
+note = an ended stun is not removed
+original:
+|                 if (state.Kind == Casualty.Stunned) { Entities.Remove(casualties, unit); continue; }
+replacement:
+|                 if (state.Kind == Casualty.Stunned) continue;
+
+[dn-ledger-health]
+file = Assets/WarCore/Combat/CombatSystem.Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1DamageTests.
+note = the effective health ignores the ledger
+original:
+|             return Math.Max(0, health - Spent(unit.Id, sim.Clock.Tick));
+replacement:
+|             return health;
+
+[dn-ledger-stale]
+file = Assets/WarCore/Combat/CombatSystem.Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1DamageTests.
+note = the ledger is not cleared between steps
+original:
+|         private long Spent(int slot, long tick) => ledgerTicks[slot] == tick ? ledgerRaw[slot] : 0;
+replacement:
+|         private long Spent(int slot, long tick) => ledgerTicks[slot] >= 0 ? ledgerRaw[slot] : 0;
+
+[dn-ledger-nocharge]
+file = Assets/WarCore/Combat/CombatSystem.Blast.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1DamageTests.
+note = nothing goes into the ledger
+original:
+|             if (casualtyBound && failure == GameplayFailure.None) Charge(victim, damageRaw, tick);
+replacement:
+|
+
+[dn-load-void]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1StateTests.D10_Rewinding
+note = LoadState keeps the ledger
+original:
+|             cacheValid = false; ClearIntents(); VoidLedger(); lastStepTick = sim.Clock.Tick;
+replacement:
+|             cacheValid = false; ClearIntents(); lastStepTick = sim.Clock.Tick;
+
+[dn-death-wins]
+file = Assets/WarCore/Combat/CombatSystem.Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1DamageTests.
+note = a finished unit still reads downed
+original:
+|         public bool IsDowned(EntityId unit) => TryCasualty(unit, out Casualty state) && state.Kind == Casualty.Downed && !IsDead(unit);
+replacement:
+|         public bool IsDowned(EntityId unit) => TryCasualty(unit, out Casualty state) && state.Kind == Casualty.Downed;
+
+[pose-normal]
+file = Assets/WarCore/Combat/CombatSystem.Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1MoveTests.D6
+note = the downed stance is a normal change
+original:
+|                 if (view.Level != level || view.IsChanging) stances.ForceStance(unit, level);
+replacement:
+|                 if (view.Level != level || view.IsChanging) stances.TryStance(context, unit, level);
+
+[pose-changing]
+file = Assets/WarCore/Combat/CombatSystem.Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1MoveTests.D6
+note = a change under way is not dropped
+original:
+|                 if (view.Level != level || view.IsChanging) stances.ForceStance(unit, level);
+replacement:
+|                 if (view.Level != level) stances.ForceStance(unit, level);
+
+[limit-downed]
+file = Assets/WarCore/Combat/CombatSystem.Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1MoveTests.D7
+expect = WarCore.Tests.Down1.Down1Kb23Tests.
+note = a downed unit may fire and dash
+original:
+|             if (combat.IsDowned(unit)) return CombatSystem.AllActions & ~UnitAction.Move;
+replacement:
+|             if (combat.IsDowned(unit)) return CombatSystem.AllActions & ~(UnitAction.Move | UnitAction.Fire | UnitAction.Dash);
+
+[limit-stun]
+file = Assets/WarCore/Combat/CombatSystem.Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1StunTests.D8
+note = a stunned unit may move
+original:
+|             if (combat.IsStunned(unit)) return CombatSystem.AllActions;
+replacement:
+|             if (combat.IsStunned(unit)) return CombatSystem.AllActions & ~UnitAction.Move;
+
+[allows-unbound]
+file = Assets/WarCore/Combat/CombatSystem.Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1ContentTests.D1_AWorld
+note = Allows is false without a gate
+original:
+|         public bool Allows(EntityId unit, UnitAction action) => gate == null || gate.Allows(unit, action);
+replacement:
+|         public bool Allows(EntityId unit, UnitAction action) => gate != null && gate.Allows(unit, action);
+
+[allows-blind]
+file = Assets/WarCore/Combat/CombatSystem.Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1Kb23Tests.K1
+expect = WarCore.Tests.Down1.Down1StunTests.D8
+note = Allows does not ask the gate
+original:
+|         public bool Allows(EntityId unit, UnitAction action) => gate == null || gate.Allows(unit, action);
+replacement:
+|         public bool Allows(EntityId unit, UnitAction action) => true;
+
+[crawl-missing]
+file = Assets/WarCore/Presentation/Bridge/Features/DownedFeature.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1MoveTests.D7
+expect = WarCore.Tests.Down1.Down1StateTests.D11
+note = the crawl is not in the speed line
+original:
+|                 line.AddGear(new CrawlGear(combat));
+replacement:
+|
+
+[crawl-twice]
+file = Assets/WarCore/Presentation/Bridge/Features/DownedFeature.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1MoveTests.D7
+note = the crawl is a second division
+original:
+|                 line.AddGear(new CrawlGear(combat));
+replacement:
+|                 { var outer = new SpeedLine(a.Locomotion.Motion); outer.AddGear(new CrawlGear(combat)); a.Locomotion.BindMotion(outer); a.PlayerStep?.BindSpeed(outer); }
+
+[stun-earlier]
+file = Assets/WarCore/Combat/CombatSystem.Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1StunTests.D8
+note = stacking keeps the earlier wake
+original:
+|                 if (due > now.Due) Entities.Set(casualties, unit, new Casualty(Casualty.Stunned, now.Start, due));
+replacement:
+|                 if (due < now.Due) Entities.Set(casualties, unit, new Casualty(Casualty.Stunned, now.Start, due));
+
+[stun-overwrite]
+file = Assets/WarCore/Combat/CombatSystem.Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1StunTests.D8
+note = a new stun overwrites the wake
+original:
+|                 if (due > now.Due) Entities.Set(casualties, unit, new Casualty(Casualty.Stunned, now.Start, due));
+replacement:
+|                 Entities.Set(casualties, unit, new Casualty(Casualty.Stunned, now.Start, due));
+
+[stun-restart]
+file = Assets/WarCore/Combat/CombatSystem.Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1StunTests.D8
+note = stacking moves the start
+original:
+|                 if (due > now.Due) Entities.Set(casualties, unit, new Casualty(Casualty.Stunned, now.Start, due));
+replacement:
+|                 if (due > now.Due) Entities.Set(casualties, unit, new Casualty(Casualty.Stunned, tick, due));
+
+[stun-le]
+file = Assets/WarCore/Combat/CombatSystem.Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1StunTests.D8
+expect = WarCore.Tests.Down1.Down1StunMoveTests.D8
+note = one more stunned tick
+original:
+|             TryCasualty(unit, out Casualty state) && state.Kind == Casualty.Stunned && sim.Clock.Tick < state.Due && !IsDead(unit);
+replacement:
+|             TryCasualty(unit, out Casualty state) && state.Kind == Casualty.Stunned && sim.Clock.Tick <= state.Due && !IsDead(unit);
+
+[stun-next]
+file = Assets/WarCore/Combat/CombatSystem.Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1StunTests.D8
+expect = WarCore.Tests.Down1.Down1StunMoveTests.D8
+note = between steps reads the next tick
+original:
+|             TryCasualty(unit, out Casualty state) && state.Kind == Casualty.Stunned && sim.Clock.Tick < state.Due && !IsDead(unit);
+replacement:
+|             TryCasualty(unit, out Casualty state) && state.Kind == Casualty.Stunned && sim.Clock.Tick + 1 < state.Due && !IsDead(unit);
+
+[stun-downed]
+file = Assets/WarCore/Combat/CombatSystem.Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1StunTests.
+note = a downed unit takes a stun
+original:
+|             if (!casualtyBound || !Entities.TryGet(combatants, unit, out _) || IsDead(unit) || IsDowned(unit)) return false;
+replacement:
+|             if (!casualtyBound || !Entities.TryGet(combatants, unit, out _) || IsDead(unit)) return false;
+
+[blast-stun-any]
+file = Assets/WarCore/Combat/CombatSystem.Blast.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1StunTests.D8b
+note = a shielded unit is stunned too
+original:
+|                 if (applied > 0 && spec.StunTicks > 0) StunAt(entity, spec.StunTicks, tick);
+replacement:
+|                 if (spec.StunTicks > 0) StunAt(entity, spec.StunTicks, tick);
+
+[hold-plain]
+file = Assets/WarCore/Interim/InterimLocomotion.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1StunMoveTests.D8
+note = the plain mover does not hold
+original:
+|                 if (Held(unit)) continue;
+replacement:
+|
+
+[hold-member]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1StunMoveTests.D8
+note = the crowd members are not held
+original:
+|                 if (Held(provisional[i].Unit)) continue;
+replacement:
+|
+
+[hold-controlled]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1StunMoveTests.D8
+note = the player is not held
+original:
+|                         if (DashesNow(i) || Held(controlled)) break;
+replacement:
+|                         if (DashesNow(i)) break;
+
+[target-ai]
+file = Assets/WarCore/Combat/NearestVisibleEnemy.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1ListTests.D9_TheAi
+note = the AI picks casualties
+original:
+|                 if (!world.IsEnemy(shooter, candidate) || !world.Targetable(candidate)) continue;
+replacement:
+|                 if (!world.IsEnemy(shooter, candidate)) continue;
+
+[target-melee]
+file = Assets/WarCore/Combat/CombatSystem.Melee.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1ListTests.D9_TheMelee
+note = melee picks casualties
+original:
+|                 if (!IsEnemy(shooter, entity) || !Targetable(entity) || !Entities.TryGet(positions, entity, out Position other)) continue;
+replacement:
+|                 if (!IsEnemy(shooter, entity) || !Entities.TryGet(positions, entity, out Position other)) continue;
+
+[loop-dead]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1ListTests.D9c
+expect = WarCore.Tests.Down1.Down1CapacityTests.
+note = casualties fire (the old dead check)
+original:
+|                     if (CannotAct(shooter))
+replacement:
+|                     if (IsDead(shooter))
+
+[loop-melee]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1CapacityTests.D9b_KIsOne
+note = casualties run the melee step
+original:
+|                         if (pack.HasMelee) CancelMelee(shooter);
+replacement:
+|                         if (pack.HasMelee && !IsDead(shooter)) MeleeStep(c, shooter, in unit, in position, tick, false);
+
+[melee-keep]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1ListTests.D9_ACasualty
+expect = WarCore.Tests.Down1.Down1StunTests.D8_ASwing
+note = the swing of a casualty is not cancelled
+original:
+|                         if (pack.HasMelee) CancelMelee(shooter);
+replacement:
+|
+
+[submit-throws]
+file = Assets/WarCore/Combat/CombatSystem.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1ListTests.D9_ACasualty
+note = Submit throws for a casualty
+original:
+|             long tick = c.Clock.Tick;
+|             if (lastStepTick == tick || inStep)
+replacement:
+|             long tick = c.Clock.Tick;
+|             if (Entities.TryResolve(intent.Shooter, out EntityRef who) && CannotAct((EntityId)who)) throw new InvalidOperationException("casualty");
+|             if (lastStepTick == tick || inStep)
+
+[hold-throws]
+file = Assets/WarCore/Combat/CombatSystem.Block.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1ListTests.D9_ACasualtyDoesNotBlock
+note = Hold throws for a casualty
+original:
+|             if (IsDowned(unit) || IsStunned(unit)) { Release(unit); return; }
+replacement:
+|             if (IsDowned(unit) || IsStunned(unit)) throw new InvalidOperationException("casualty");
+
+[block-casualty]
+file = Assets/WarCore/Combat/CombatSystem.Block.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1ListTests.D9_ACasualtyDoesNotBlock
+note = a casualty blocks
+original:
+|                 || !Entities.TryGet(positions, victim, out Position at) || IsDowned(victim) || IsStunned(victim)) return false;
+replacement:
+|                 || !Entities.TryGet(positions, victim, out Position at)) return false;
+
+[player-fire]
+file = Assets/WarCore/Control/PlayerFire.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1StunMoveTests.D9_ADownedPlayerDoesNotFire
+note = a downed player fires
+original:
+|             if (combat.CannotAct(unit)) { combat.Release(unit); return; }
+replacement:
+|
+
+[player-fallback]
+file = Assets/WarCore/Control/PlayerFallback.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1StunMoveTests.D9_TheFallback
+note = the fallback takes a downed unit
+original:
+|                     || !combat.Entities.TryGet(positions, unit, out Position point) || combat.IsDead(unit) || combat.IsDowned(unit)) continue;
+replacement:
+|                     || !combat.Entities.TryGet(positions, unit, out Position point) || combat.IsDead(unit)) continue;
+
+[giveup-any]
+file = Assets/WarCore/Combat/CombatSystem.Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1DamageTests.
+note = GiveUp is true for a unit not downed
+original:
+|             if (!IsDowned(unit)) return false;
+replacement:
+|             if (!IsDowned(unit)) return true;
+
+[giveup-late]
+file = Assets/WarCore/Combat/CombatSystem.Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1DamageTests.
+note = an in-step give-up after the combat step is taken
+original:
+|             if (lastStepTick == c.Clock.Tick || inStep)
+|                 throw new InvalidOperationException("A give-up must precede this tick's combat step.");
+replacement:
+|             if (inStep)
+|                 throw new InvalidOperationException("A give-up must precede this tick's combat step.");
+
+[giveup-max]
+file = Assets/WarCore/Combat/CombatSystem.Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1DamageTests.
+note = a give-up takes the later tick
+original:
+|             if (now < state.Due) Entities.Set(casualties, unit, new Casualty(Casualty.Downed, state.Start, now));
+replacement:
+|             Entities.Set(casualties, unit, new Casualty(Casualty.Downed, state.Start, Math.Max(now, state.Due)));
+
+[write-between]
+file = Assets/WarCore/Combat/CombatSystem.Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1DamageTests.
+note = Down and Stun between steps do not throw
+original:
+|                 throw new InvalidOperationException("A casualty change requires its owning simulation context.");
+|             c.EmitStableBatch(Span<StableProducedEvent>.Empty);
+replacement:
+|                 throw new InvalidOperationException("A casualty change requires its owning simulation context.");
+
+[stun-zero]
+file = Assets/WarCore/Combat/CombatSystem.Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1StunTests.D8_ADownedOrDead
+note = a stun of 0 ticks is taken
+original:
+|             if (ticks <= 0) throw new ArgumentOutOfRangeException(nameof(ticks), "A stun lasts at least one tick.");
+replacement:
+|             if (ticks < 0) throw new ArgumentOutOfRangeException(nameof(ticks), "A stun lasts at least one tick.");
+
+[digest-stun0]
+file = Assets/WarCore/Combat/BlastSpec.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1ContentTests.D1_TheOlder
+note = stunTicks 0 is written into the digest
+original:
+|             if (StunTicks > 0) { hash.Add("stun"); hash.Add(StunTicks); }
+replacement:
+|             { hash.Add("stun"); hash.Add(StunTicks); }
+
+[digest-downed]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1ContentTests.D1_Downed
+note = downed is not in the digest
+original:
+|             if (downed != null) downed.WriteState(hash);
+replacement:
+|
+
+[selector-drops]
+file = Assets/WarCore/Combat/CombatPack.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1ContentTests.D1_WithSelector
+note = WithSelector drops downed
+original:
+|             stances.Length == 0 ? null : stances, VerticalSpread, Status, SpreadDragFloorPermille, SpreadDragCeilPermille, Downed);
+replacement:
+|             stances.Length == 0 ? null : stances, VerticalSpread, Status, SpreadDragFloorPermille, SpreadDragCeilPermille, null);
+
+[default-off]
+file = Assets/WarCore/Presentation/Bridge/Features/DownedFeature.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1ContentTests.D1_
+note = the feature runs in every combat world
+original:
+|         public override bool IsActive(WorldAssembly a) => a.Recipe.Combat != null && a.Recipe.Combat.UsesCasualties;
+replacement:
+|         public override bool IsActive(WorldAssembly a) => a.Recipe.Combat != null;
+
+[read-kind]
+file = Assets/WarCore/Combat/Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1StateTests.D10_Bad
+note = any kind loads
+original:
+|             SimStateReader.Require(kind == Casualty.Stunned || kind == Casualty.Downed, "Invalid casualty kind.");
+replacement:
+|
+
+[read-ticks]
+file = Assets/WarCore/Combat/Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1StateTests.D10_Bad
+note = a negative start loads
+original:
+|             SimStateReader.Require(start >= 0 && start <= due, "Invalid casualty ticks.");
+replacement:
+|             SimStateReader.Require(start <= due, "Invalid casualty ticks.");
+
+[read-order]
+file = Assets/WarCore/Combat/Casualty.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1StateTests.D10_Bad
+note = a due before the start loads
+original:
+|             SimStateReader.Require(start >= 0 && start <= due, "Invalid casualty ticks.");
+replacement:
+|             SimStateReader.Require(start >= 0, "Invalid casualty ticks.");
+
+[rd-when]
+file = Assets/WarCore/Content/Data/Sections/CombatDownedReader.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1ContentTests.D1_Other
+note = an unknown when is taken
+original:
+|             else throw r.Bad(r.FieldOf(WhenField), "unknown value '" + whenText + "', allowed: lethal, gear");
+replacement:
+|             else when = DownedWhen.Lethal;
+
+[rd-ticks-low]
+file = Assets/WarCore/Content/Data/Sections/CombatDownedReader.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1ContentTests.D1_OneStep
+note = ticks 0 passes the reader
+original:
+|             int ticks = r.Int(TicksField, 1, DownedRules.MaxTicks);
+replacement:
+|             int ticks = r.Int(TicksField, 0, DownedRules.MaxTicks);
+
+[rd-ticks-high]
+file = Assets/WarCore/Content/Data/Sections/CombatDownedReader.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1ContentTests.D1_OneStep
+note = ticks 108001 passes the reader
+original:
+|             int ticks = r.Int(TicksField, 1, DownedRules.MaxTicks);
+replacement:
+|             int ticks = r.Int(TicksField, 1, DownedRules.MaxTicks + 1);
+
+[rd-crawl-low]
+file = Assets/WarCore/Content/Data/Sections/CombatDownedReader.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1ContentTests.D1_OneStep
+note = crawl 0 passes the reader
+original:
+|             int crawl = r.Int(CrawlField, 1, DownedRules.MaxCrawlPermille);
+replacement:
+|             int crawl = r.Int(CrawlField, 0, DownedRules.MaxCrawlPermille);
+
+[rd-crawl-high]
+file = Assets/WarCore/Content/Data/Sections/CombatDownedReader.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1ContentTests.D1_OneStep
+note = crawl 1001 passes the reader
+original:
+|             int crawl = r.Int(CrawlField, 1, DownedRules.MaxCrawlPermille);
+replacement:
+|             int crawl = r.Int(CrawlField, 1, DownedRules.MaxCrawlPermille + 1);
+
+[rd-finish-high]
+file = Assets/WarCore/Content/Data/Sections/CombatDownedReader.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1ContentTests.D1_OneStep
+note = finishAfterTicks above ticks passes the reader
+original:
+|             int finishAfter = r.Has(FinishAfterField) ? r.Int(FinishAfterField, 0, ticks) : 0;
+replacement:
+|             int finishAfter = r.Has(FinishAfterField) ? r.Int(FinishAfterField, 0, ticks + 1) : 0;
+
+[rd-stun-high]
+file = Assets/WarCore/Content/Data/Sections/CombatDownedReader.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1ContentTests.D1_OneStep
+note = stunTicks 601 passes the reader
+original:
+|             int stun = r.Has(StunField) ? r.Int(StunField, 0, DownedRules.MaxStunTicks) : 0;
+replacement:
+|             int stun = r.Has(StunField) ? r.Int(StunField, 0, DownedRules.MaxStunTicks + 1) : 0;
+
+[rd-done]
+file = Assets/WarCore/Content/Data/Sections/CombatDownedReader.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1ContentTests.D1_Other
+note = an unknown field is taken
+original:
+|             r.Done();
+replacement:
+|
+
+[rd-blast-stun]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1ContentTests.D1_OneStep
+note = a blast stunTicks 601 passes the reader
+original:
+|                 int stun = r.Has("stunTicks") ? r.Int("stunTicks", 0, BlastSpec.MaxStunTicks) : 0;
+replacement:
+|                 int stun = r.Has("stunTicks") ? r.Int("stunTicks", 0, BlastSpec.MaxStunTicks + 1) : 0;
+
+
+[dn-snap-targetable]
+file = Assets/WarCore/Combat/CombatSystem.Vertical.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1SnapTests.
+note = the player's snap passes over a casualty the AI may not pick
+original:
+|                 if (!IsEnemy(shooter, unit) || !Entities.TryGet(positions, unit, out Position position)) continue;
+replacement:
+|                 if (!IsEnemy(shooter, unit) || !Targetable(unit) || !Entities.TryGet(positions, unit, out Position position)) continue;
+
+[dn-snap-downed]
+file = Assets/WarCore/Combat/CombatSystem.Vertical.cs
+filter = FullyQualifiedName~Down1
+expect = WarCore.Tests.Down1.Down1SnapTests.
+note = the player's snap passes over a downed enemy
+original:
+|                 if (!IsEnemy(shooter, unit) || !Entities.TryGet(positions, unit, out Position position)) continue;
+replacement:
+|                 if (!IsEnemy(shooter, unit) || IsDowned(unit) || !Entities.TryGet(positions, unit, out Position position)) continue;

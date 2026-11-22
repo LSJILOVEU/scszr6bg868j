@@ -311,9 +311,9 @@ filter = FullyQualifiedName~Stance1
 expect = WarCore.Tests.Stance.Stance1ContentTests.S1_Heights
 note = an eye at the top of the stance passes
 original:
-|                 Within(e, "eye", eye.Raw, UnitRadiusRaw, height.Raw - UnitRadiusRaw);
+|                 Within(e, "eye", eye.Raw, body.Value.Radius.Raw, height.Raw - body.Value.Radius.Raw);
 replacement:
-|                 Within(e, "eye", eye.Raw, UnitRadiusRaw, height.Raw);
+|                 Within(e, "eye", eye.Raw, body.Value.Radius.Raw, height.Raw);
 
 [cs-ticks]
 file = Assets/WarCore/Content/Data/Sections/CombatSection.cs

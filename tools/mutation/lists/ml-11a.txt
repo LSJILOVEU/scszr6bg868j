@@ -829,7 +829,7 @@ expect = WarCore.Tests.Ml11a
 expect = WarCore.Tests.Ml9bMatchTests.
 note = only the cell is checked, not the footprint
 original:
-| return grid.SegmentClear(at, at, UnitFootprint, openCells);
+| return grid.SegmentClear(at, at, footprint, openCells);
 replacement:
 | return at.X.Raw == at.X.Raw;
 

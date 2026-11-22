@@ -61,7 +61,7 @@ namespace WarCore.Interim
             {
                 int key = cz * grid.Width + cx;
                 openCells.Set(layer, key, layer, key);
-                return grid.SegmentClear(p, p, UnitFootprint, openCells) ? p : NodeCentre(own);
+                return grid.SegmentClear(p, p, footprint, openCells) ? p : NodeCentre(own);
             }
             for (int r = 1; r <= SnapCells; r++)
                 for (int z = cz - r; z <= cz + r; z++)
@@ -80,7 +80,7 @@ namespace WarCore.Interim
             if (!layered || layer < 1) throw new NotSupportedException("Standing on a layer needs a world with floor plates and a plate's layer.");
             if (!grid.TryCell(at, out int key) || !layers.TryNode(layer, key % grid.Width, key / grid.Width, out int own) || !layers.IsPassable(own)) return false;
             openCells.Set(layer, key, layer, key);
-            return grid.SegmentClear(at, at, UnitFootprint, openCells);
+            return grid.SegmentClear(at, at, footprint, openCells);
         }
 
         private void SetTargetLayer(EntityId unit, int layer) =>
@@ -165,7 +165,7 @@ namespace WarCore.Interim
             // (below) is only for the way there. Without this a step off a floor could end with the footprint over a floor
             // cell that the stair's own rule closes, and no later step could leave it.
             openCells.Set(entered, b, entered, b);
-            if (!grid.SegmentClear(next, next, UnitFootprint, openCells)) return false;
+            if (!grid.SegmentClear(next, next, footprint, openCells)) return false;
             openCells.Set(layer, a, entered, b);
             return true;
         }

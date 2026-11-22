@@ -58,6 +58,8 @@ namespace WarCore.Content
         private readonly object[] sections;
         // ML-3: the combat section's optional body; null keeps the legacy geometry.
         public CombatBody? Body { get; }
+        // HC-1: the body's radius, the one every unit of this pack is placed and walked with (the default without a body).
+        public SimFix UnitRadius => Body.HasValue ? Body.Value.Radius : BodyRadius.Default;
         // PROJ-1: projectile speed per weapon in mm/s (0 = instant); passed to the combat pack as is.
         private readonly int[] projectileSpeeds;
         // STANCE-1: the combat section's stances, or null; passed to the combat pack as is.
@@ -162,7 +164,7 @@ namespace WarCore.Content
                 effective, friendlyFireLocked, allyCheckMissRaw, allyHoldMilli, melee.Length == 0 ? null : melee, block.Length == 0 ? null : block, Body,
                 projectileSpeeds.Length == 0 ? null : projectileSpeeds, aim?.MoveSpread, aim != null && aim.ManualReload, SectionOrNull<BlastRules>(),
                 stances, SectionOrNull<VerticalSpread>(), SectionOrNull<CombatStatus>(), stats?.FloorOf(StatClamps.Spread) ?? 0,
-                stats?.CeilOf(StatClamps.Spread) ?? 0);
+                stats?.CeilOf(StatClamps.Spread) ?? 0, SectionOrNull<DownedRules>());
         }
 
         // Control points and spawn anchors are map data and stay with the caller.

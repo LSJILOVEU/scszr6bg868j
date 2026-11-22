@@ -6,27 +6,30 @@ namespace WarCore.Interim
     // a terrain world uses the exact clearance query of its navigation grid and the height field.
     public sealed class DeployGround
     {
-        private static SimFix Radius => SimFix.Ratio(1, 4);
+        private readonly SimFix radius;
         private readonly NavGrid grid;
         private readonly TerrainTables terrain;
         private readonly long flatRaw;
 
-        public DeployGround(NavGrid grid, TerrainTables terrain, long flatRaw)
+        // radius: the body radius every unit stands with (HC-1); the default body radius when none is given.
+        public DeployGround(NavGrid grid, TerrainTables terrain, long flatRaw, SimFix? radius = null)
         {
             this.grid = grid; this.terrain = terrain; this.flatRaw = flatRaw;
+            this.radius = radius ?? BodyRadius.Default;
+            if (this.radius.Raw <= 0 || this.radius.Raw > NavGrid.MaxClearRadiusRaw) throw new System.ArgumentOutOfRangeException(nameof(radius));
         }
 
         public ulong Digest => grid.Digest;
 
         public bool CanStand(SimVec3 at)
         {
-            if (terrain != null) return grid.SegmentClear(at, at, InterimLocomotion.UnitFootprint);
+            if (terrain != null) return grid.SegmentClear(at, at, radius);
             if (!grid.TryCell(at, out int cell) || !grid.IsPassable(cell % grid.Width, cell / grid.Width)) return false;
             // Check the full footprint against blocked cells, including the map boundary.
             for (int z = -1; z <= 1; z++)
                 for (int x = -1; x <= 1; x++)
                 {
-                    var corner = at + new SimVec3(Radius * SimFix.FromInt(x), default, Radius * SimFix.FromInt(z));
+                    var corner = at + new SimVec3(radius * SimFix.FromInt(x), default, radius * SimFix.FromInt(z));
                     if (!grid.TryCell(corner, out int c) || !grid.IsPassable(c % grid.Width, c / grid.Width)) return false;
                 }
             return true;

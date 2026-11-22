@@ -51,7 +51,7 @@ namespace WarCore.Presentation
             EntityStore entities = a.Sim.Entities;
             SimVec3 point = a.SpawnPoint(spawn);
             entities.Set(a.Positions, unit, new Position(point));
-            entities.Set(a.Colliders, unit, new Collider(SimFix.Ratio(1, 4), WorldAssembly.UnitHeight(a.Recipe.Combat)));
+            entities.Set(a.Colliders, unit, new Collider(WorldAssembly.UnitRadius(a.Recipe.Combat), WorldAssembly.UnitHeight(a.Recipe.Combat)));
             entities.Set(a.Intents, unit, new MoveIntent(point, WorldAssembly.SpawnSpeed(spawn), spawn.Squad, false));
             if (a.Path) entities.Set(a.Waypoints, unit, default);
         }
@@ -64,7 +64,7 @@ namespace WarCore.Presentation
             a.PlayerStep = controlled == null ? null : new PlayerStep(sim, controlled);
             var locomotion = new InterimLocomotion(sim.Entities, a.WallMask,
                 a.Path ? (a.Terrain != null ? a.Terrain.Nav : WcMapNavigation.Create(a.Map)) : null, a.Crowd,
-                a.PlayerStep, a.CrowdPass, a.Terrain);
+                a.PlayerStep, a.CrowdPass, a.Terrain, WorldAssembly.UnitRadius(a.Recipe.Combat));
             if (controlled != null) locomotion.Stop(controlled.Current);
             a.Locomotion = locomotion;
             sim.RegisterGameplay("interim.orders", new InterimOrders(sim.Entities, locomotion, a.Crowd ? WorldBuilder.CrowdSlotSpacing : default, controlled, a.Standing), SimSystemPhase.Requests);

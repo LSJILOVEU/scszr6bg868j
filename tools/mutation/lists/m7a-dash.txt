@@ -58,9 +58,9 @@ filter = FullyQualifiedName~WarCore.Tests.Dash
 expect = WarCore.Tests.Dash.DashStepTests.Player_InputWaitsDuringTheDash
 note = the player's input step replaces the dash step
 original:
-|                         if (DashesNow(i)) break;
+|                        if (DashesNow(i) || Held(controlled)) break;
 replacement:
-|                         if (false) break;
+|                        if (Held(controlled)) break;
 
 [m7a-07-no-rejoin]
 file = Assets/WarCore/Interim/InterimLocomotion.Dash.cs

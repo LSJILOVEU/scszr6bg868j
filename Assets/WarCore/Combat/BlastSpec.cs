@@ -15,13 +15,18 @@ namespace WarCore.Combat
         public readonly int InnerMm, OuterMm, Damage;
         public readonly bool Friendly, Walls;
         public readonly long InnerRaw, OuterRaw, DamageRaw;
+        // DOWN-1: ticks a unit this blast hurts without downing it stays stunned (0..600, 0 = none).
+        public readonly int StunTicks;
+        public const int MaxStunTicks = 600;
 
-        public BlastSpec(string id, int innerMm, int outerMm, int damage, bool friendly, bool walls)
+        public BlastSpec(string id, int innerMm, int outerMm, int damage, bool friendly, bool walls, int stunTicks = 0)
         {
             if (string.IsNullOrEmpty(id)) throw new ArgumentException("A blast needs an id.", nameof(id));
             if (outerMm < 1 || outerMm > MaxOuterMm) throw new ArgumentOutOfRangeException(nameof(outerMm));
             if (innerMm < 0 || innerMm >= outerMm) throw new ArgumentOutOfRangeException(nameof(innerMm));
             if (damage < 1 || damage > MaxDamage) throw new ArgumentOutOfRangeException(nameof(damage));
+            if (stunTicks < 0 || stunTicks > MaxStunTicks) throw new ArgumentOutOfRangeException(nameof(stunTicks));
+            StunTicks = stunTicks;
             Id = id; InnerMm = innerMm; OuterMm = outerMm; Damage = damage; Friendly = friendly; Walls = walls;
             InnerRaw = SimFix.Ratio(innerMm, 1000).Raw;
             OuterRaw = SimFix.Ratio(outerMm, 1000).Raw;
@@ -41,6 +46,8 @@ namespace WarCore.Combat
         internal void WriteState(StateHash hash)
         {
             hash.Add(InnerMm); hash.Add(OuterMm); hash.Add(Damage); hash.Add(Friendly); hash.Add(Walls);
+            // Only when set, so a blast that does not stun keeps the digest it had before DOWN-1.
+            if (StunTicks > 0) { hash.Add("stun"); hash.Add(StunTicks); }
         }
     }
 
@@ -54,6 +61,8 @@ namespace WarCore.Combat
         public ReadOnlySpan<BlastSpec> Kinds => kinds;
         public int PerTick { get; }
         public int Queue { get; }
+        // DOWN-1: some kind stuns (StunTicks > 0).
+        public bool Stuns { get; }
 
         public BlastRules(BlastSpec[] kinds, int perTick = DefaultPerTick, int queue = DefaultQueue)
         {
@@ -69,6 +78,7 @@ namespace WarCore.Combat
                     if (this.kinds[j].Id == this.kinds[i].Id) throw new ArgumentException("Blast id '" + this.kinds[i].Id + "' is repeated.", nameof(kinds));
             }
             PerTick = perTick; Queue = queue;
+            foreach (BlastSpec spec in this.kinds) Stuns |= spec.StunTicks > 0;
         }
 
         // The index of a kind by id, or -1.

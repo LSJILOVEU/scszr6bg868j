@@ -6,7 +6,7 @@
 # A new literal is read from the content pack or from the one named source; it is not added here as debt.
 # Debt notes name the family in the audit: H1 body radius, H2 headroom, H3 speed, H4 grenade, M1 eye, M2 play distances,
 # L3 fixed-point scale.
-debt-max	512
+debt-max	506
 Battle/Ai/AssaultRolesPlacement.cs	SimFix.Scale/1000	1	debt	
 Battle/Ai/CommanderQuota.cs	CoordinateLimitMetres=8192	1	debt	
 Battle/Ai/Cover.cs	SimFix.Ratio(3,2)	1	debt	
@@ -29,7 +29,6 @@ Combat/VerticalSpread.cs	SimFix.Scale/1000	1	math	millimetres to raw
 Content/Data/ContentWeaponEdit.cs	30000m	4	debt	
 Content/Data/Sections/AiSection.cs	DefaultSlotSpacingMm=1000	1	debt	M2 slot spacing not tied to body width
 Content/Data/Sections/CombatSection.cs	SimFix.Scale/2	1	debt	
-Content/Data/Sections/CombatSection.cs	SimFix.Scale/4	1	canon	body radius r (UnitRadiusRaw); HC-1 makes it the content default
 Content/M2DemoMap.cs	SimFix.FromInt(1)	1	debt	
 Content/M2DemoMap.cs	SimFix.FromInt(2)	1	debt	
 Content/M6DemoMap.cs	SimFix.FromInt(1)	1	debt	
@@ -39,7 +38,6 @@ Content/M7DemoMap.cs	SimFix.FromInt(2)	1	debt
 Content/MapTools/MapBuilding.cs	5*SimFix.Scale	1	debt	M2 least storey = headroom + plate, written again
 Content/MapTools/MapBuilding.cs	SimFix.Scale/2	1	debt	M2 thinnest plate written again
 Content/MapTools/MapGate.Hints.cs	HintMaxGapRaw=98304	1	debt	M2 not tied to storey height
-Content/MapTools/MapGate.cs	SimFix.Scale/4	1	debt	H1 body radius copy
 Content/MapTools/MapPrefabs.cs	2*SimFix.Scale	1	canon	default window top
 Content/MapTools/MapPrefabs.cs	DefaultSillRaw=58982	1	canon	default window sill
 Content/MapTools/MapPrefabs.cs	SimFix.Scale/2	1	debt	
@@ -60,16 +58,14 @@ Content/TerrainDemoMap.cs	SimFix.Scale/2	2	debt
 Content/TerrainDemoMap.cs	Width=48	1	debt	
 Content/TraversalRules.cs	100*SimFix.Scale	1	debt	
 Content/WallSpan.cs	2*SimFix.Scale	1	canon	headroom (ClearanceRaw); HC-2 moves it to the content pack
-Content/WallSpan.cs	SimFix.Scale/4	1	canon	wall probe below the walk band (BelowRaw)
 Content/WcMap.cs	SimFix.FromInt(1)	1	canon	map cell size (CellSize)
 Content/WcMapPlate.cs	SimFix.Scale/2	1	debt	
 Content/WcMapValidation.cs	16384*SimFix.Scale	1	debt	
 Content/WcMapValidation.cs	SimFix.Scale/2	2	debt	
 Interim/Dash.cs	10*SimFix.Scale	1	debt	
 Interim/Dash.cs	100*SimFix.Scale	1	debt	
-Interim/DeployGround.cs	SimFix.Ratio(1,4)	1	debt	H1 body radius copy
 Interim/InterimLocomotion.Terrain.cs	SimFix.Scale/2	1	debt	
-Interim/InterimLocomotion.Terrain.cs	SimFix.Scale/4	2	debt	H1 body radius copy (UnitFootprint) and the terrain step cap
+Interim/InterimLocomotion.Terrain.cs	SimFix.Scale/4	1	debt	per-step terrain limit (MaxTerrainStepRaw)
 Interim/InterimOrders.cs	SimFix.FromInt(1)	1	debt	
 Interim/InterimOrders.cs	SimFix.FromInt(3)	1	debt	
 Interim/UnitFacing.cs	SimFix.FromInt(1)	1	math	unit facing vector
@@ -94,11 +90,13 @@ Presentation/Bridge/Features/BlastDemo.cs	WallDepth=16	1	debt
 Presentation/Bridge/Features/BlastDemo.cs	WallHeight=3	1	debt	
 Presentation/Bridge/Features/BlastDemo.cs	Width=40	1	debt	
 Presentation/Bridge/Features/BodySizes.cs	65536f	4	debt	L3 fixed-point scale
-Presentation/Bridge/Features/BodySizes.cs	SimFix.Scale/4	1	debt	H1 body radius copy (SCALE-2a; HC-1 removes)
 Presentation/Bridge/Features/CrowdPassFeature.cs	EngagedTicks=60	1	debt	
+Presentation/Bridge/Features/DownDemo.cs	BlastXMm=10000	1	canon	blast point x; down-crawl replay layout, defined only here (DOWN-1)
+Presentation/Bridge/Features/DownDemo.cs	BlastZMm=8000	1	canon	row and blast point z, half the field depth; down-crawl replay layout, defined only here (DOWN-1)
+Presentation/Bridge/Features/DownDemo.cs	MoveMm=3000	1	canon	walk ordered after the blast; down-crawl replay layout, defined only here (DOWN-1)
+Presentation/Bridge/Features/DownDemo.cs	SpeedMmPerSec=3000	1	canon	unit speed (rwr-down has no unit speed); down-crawl replay layout, defined only here (DOWN-1)
+Presentation/Bridge/Features/DownDemo.cs	Width=30	1	canon	field width; down-crawl replay layout, defined only here (DOWN-1)
 Presentation/Bridge/Features/MatchFeature.cs	SimFix.FromInt(2)	1	debt	
-Presentation/Bridge/Features/MatchFeature.cs	SimFix.Ratio(1,4)	1	debt	H1 body radius copy
-Presentation/Bridge/Features/MovementFeature.cs	SimFix.Ratio(1,4)	1	debt	H1 body radius copy
 Presentation/Bridge/Features/NerveDemo.cs	Depth=40	1	debt	
 Presentation/Bridge/Features/NerveDemo.cs	SimFix.FromInt(6)	1	debt	
 Presentation/Bridge/Features/NerveDemo.cs	Speed=6000	1	debt	H3 speed in code
@@ -196,6 +194,8 @@ Presentation/Camera/LayerCut.cs	2f	1	ui	see-through ring radius of a pack withou
 Presentation/Camera/LayerCut.cs	7f	1	ui	ring radius per standing height, denominator (8/7: 2 m for a 1.75 m body)
 Presentation/Camera/LayerCut.cs	8f	1	ui	ring radius per standing height, numerator (8/7: 2 m for a 1.75 m body)
 Presentation/Camera/ShotPlan.cs	AfterFireTicks=3*SimSession.TickRate	1	debt	
+Sim/BodyRadius.cs	SimFix.Scale/20	1	canon	smallest body radius a pack may ask for (MinRaw)
+Sim/BodyRadius.cs	SimFix.Scale/4	1	canon	default body radius (DefaultRaw), the one definition
 Sim/HeightField.cs	HeightLimitRaw=1L<<29	1	debt	
 Sim/LayeredNav.cs	StepRaw=19660	1	canon	seam tolerance between layers
 Sim/NavGrid.cs	SimFix.Scale/2	2	math	cell centre
