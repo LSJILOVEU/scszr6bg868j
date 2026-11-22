@@ -16,7 +16,7 @@ namespace WarCore.Presentation
         internal static readonly IWorldFeature[] Components =
         {
             MovementFeature.Instance, TerrainFeature.Instance, PlateFeature.Instance, FacingFeature.Instance, MotionFeature.Instance,
-            StandingFeature.Instance, DashFeature.Instance, StanceFeature.Instance,
+            StandingFeature.Instance, DashFeature.Instance, StanceFeature.Instance, DownedFeature.Instance,
         };
         // After every RegisterComponents, extensions included: the combat component, as the builder always registered it last.
         internal static readonly IWorldStageFeature[] CompleteComponents = { CombatFeature.Instance };
@@ -27,12 +27,17 @@ namespace WarCore.Presentation
         // After every PlaceUnit, extensions included: combat binds the unit and writes its combatant state.
         internal static readonly IWorldStageFeature[] CompleteUnits = { CombatFeature.Instance };
         // The player control first (combat keeps it), then combat, then the crowd pass rule (it reads both).
-        // The stance system right after combat: it binds to the combat system.
-        internal static readonly IWorldStageFeature[] Connect = { PlayerFeature.Instance, CombatFeature.Instance, StanceFeature.Instance, CrowdPassFeature.Instance };
+        // The stance system right after combat: it binds to the combat system. The casualties right after the stances: they add
+        // to the action gate the stances made.
+        internal static readonly IWorldStageFeature[] Connect =
+            { PlayerFeature.Instance, CombatFeature.Instance, StanceFeature.Instance, DownedFeature.Instance, CrowdPassFeature.Instance };
         internal static readonly IWorldFeature[] Systems = { MovementFeature.Instance, FacingFeature.Instance, PlateFeature.Instance, DashFeature.Instance };
         // After the movement systems: the match needs the locomotion; the player systems need it and the mode.
-        // Stances last: the speed line wraps whatever motion model the systems (extensions included) bound.
-        internal static readonly IWorldStageFeature[] Rules = { MatchFeature.Instance, AiFireFeature.Instance, BlockAiFeature.Instance, PlayerFeature.Instance, StanceFeature.Instance };
+        // Stances after every feature that binds or configures the motion model: the speed line wraps it. Features after the
+        // stances only add gears to the speed line, building it the same way when no stance did; they never bind or configure the
+        // motion model under it.
+        internal static readonly IWorldStageFeature[] Rules =
+            { MatchFeature.Instance, AiFireFeature.Instance, BlockAiFeature.Instance, PlayerFeature.Instance, StanceFeature.Instance, DownedFeature.Instance };
 
         private static IEnumerable<IWorldFeature> Active(IWorldFeature[] table, WorldAssembly assembly)
         {

@@ -34,6 +34,9 @@ A setup whose combat pack has stances writes `p` on every frame: each unit's sta
 2 prone); the page draws a crouched unit as a smaller dot and a prone one as a flat oval.
 A frame that follows blasts has `x`: per blast its x, z and outer radius in decimetres and its team (BLAST-1); the page
 draws a ring of the outer radius for 1.5 s, fading. `blast-wall` is the BLAST-1 setup (run it with `EVERY=1`).
+`down-crawl` is the DOWN-1 setup (layer `rwr-down`, run it with `EVERY=1`): a blast on tick 30 downs one unit, which the
+pack forces prone, so it is drawn as a flat oval and crawls; a unit 4 m away is stunned for 60 ticks and stands still; the
+downed unit bleeds out on tick 1830. A stunned or downed unit has no mark of its own yet.
 Every frame carries `h`, the state hash after its tick (16 hex digits), so a picture of a frame can name the exact state.
 
 | Key | Meaning | Reads |

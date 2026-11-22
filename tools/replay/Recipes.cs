@@ -91,6 +91,8 @@ namespace WarCore.Replay
             ["blast-wall"] = new Entry("Blast next to a 3 m wall (rwr-blast)", () => BlastDemo.Recipe(), BlastDemo.MapBytes),
             // STANCE-1: a 1 m wall; squad 2 behind it crouches at tick 60 and stands up at tick 240 (StanceDemo).
             ["stance-wall"] = new Entry("1 m wall, team 2 crouches at 60 and stands at 240", StanceDemo.Recipe, StanceDemo.MapBytes),
+            // DOWN-1: a scripted rwr.frag of rwr-down on tick 30 downs A and stuns B 4 m away; all three are sent 3 m north (DownDemo).
+            ["down-crawl"] = new Entry("rwr-down: one man downed and crawling, one stunned, one untouched", DownDemo.Recipe, DownDemo.MapBytes),
         };
 
         private const string SquadAi = "\"squadMinSize\": 4, \"squadMaxSize\": 9, \"squadSkirmisherPermille\": 300, \"squadRecruitRadiusMm\": 30000, "
