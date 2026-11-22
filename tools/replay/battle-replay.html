@@ -5,16 +5,16 @@
 /* Layout: one column of stacked battle maps sharing a single transport bar, like two monitors on one tape deck. */
 :root {
   --bg: #eef0ec; --panel: #f8f9f6; --field: #e3e7df; --line: #c9cfc4; --fg: #1d2420; --muted: #5d675f;
-  --blue: #2463d6; --red: #d2481f; --neutral: #8b948c; --wall: #4b554d; --accent: #0f766e; --shot: #1d2420; --broken: #b7791f;
+  --blue: #2463d6; --red: #d2481f; --neutral: #8b948c; --wall: #4b554d; --accent: #0f766e; --shot: #1d2420; --broken: #b7791f; --rash: #c026d3; --steady: #059669;
   --font: "Inter", "PingFang SC", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #121614; --panel: #1a201d; --field: #222a26; --line: #37423c; --fg: #e6ebe7; --muted: #9aa69d;
-  --blue: #6ea2ff; --red: #ff8a5c; --neutral: #76817a; --wall: #aab5ad; --accent: #4fd1c5; --shot: #e6ebe7; --broken: #f6c453; color-scheme: dark } }
+  --blue: #6ea2ff; --red: #ff8a5c; --neutral: #76817a; --wall: #aab5ad; --accent: #4fd1c5; --shot: #e6ebe7; --broken: #f6c453; --rash: #e879f9; --steady: #34d399; color-scheme: dark } }
 :root[data-theme="dark"] {
   --bg: #121614; --panel: #1a201d; --field: #222a26; --line: #37423c; --fg: #e6ebe7; --muted: #9aa69d;
-  --blue: #6ea2ff; --red: #ff8a5c; --neutral: #76817a; --wall: #aab5ad; --accent: #4fd1c5; --shot: #e6ebe7; --broken: #f6c453; color-scheme: dark }
+  --blue: #6ea2ff; --red: #ff8a5c; --neutral: #76817a; --wall: #aab5ad; --accent: #4fd1c5; --shot: #e6ebe7; --broken: #f6c453; --rash: #e879f9; --steady: #34d399; color-scheme: dark }
 body { background: var(--bg); color: var(--fg); font-family: var(--font); line-height: 1.55;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 32px; }
 .wrap { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
@@ -42,6 +42,11 @@ canvas { width: 100%; aspect-ratio: 160 / 100; max-width: 100%; display: block; 
 #status { color: var(--muted); font-size: .9rem; }
 .metrics { font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; display: flex; flex-wrap: wrap; gap: 2px 18px; }
 .metrics b { font-weight: 600; color: var(--fg); }
+.clips { display: flex; flex-wrap: wrap; gap: 6px 8px; }
+.clips button { font: inherit; font-size: .85rem; color: var(--fg); background: transparent; border: 1px solid var(--line); border-radius: 4px; padding: 6px 10px; cursor: pointer; min-height: 36px; }
+.clips button[aria-pressed="true"] { border-color: var(--fg); font-weight: 600; }
+.clips button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.rash { color: var(--rash); } .steady { color: var(--steady); }
 </style>
 
 <div class="wrap">
@@ -71,6 +76,8 @@ canvas { width: 100%; aspect-ratio: 160 / 100; max-width: 100%; display: block; 
     <span>细线是开火</span>
     <span>细圈是被压住的兵，黄色粗圈是在后撤的兵（开了压力系统才有）</span>
     <span>方框是小队队长，细线把队员连到自己的队长（开了小队才有）</span>
+    <span><b class="rash">紫红</b>描边和连线是莽队，<b class="steady">青绿</b>是稳队，普通队不加；整队变淡、连线变虚线是正在回招的队（开了脾气和回招才有）</span>
+    <span>地图下面的按钮跳到自动挑出的片段，虚线大圈圈出那一队，播到片段结束自己停</span>
     <span>黄色实心圆是爆炸，圆的大小是最远伤害距离，1.5 秒内淡出（开了爆炸才有）</span>
   </div>
 
@@ -90,19 +97,22 @@ canvas { width: 100%; aspect-ratio: 160 / 100; max-width: 100%; display: block; 
   const query = new URLSearchParams(location.search).get("files");
   const files = query ? query.split(",").map(s => s.trim()).filter(Boolean) : ["replay-base.json", "replay-playtest.json"];
   const host = document.getElementById("battles");
-  const canvases = [], stats = [], metrics = [], titles = [];
+  const canvases = [], stats = [], metrics = [], titles = [], clipRows = [];
   for (let i = 0; i < files.length; i++) {
     const section = document.createElement("section"); section.className = "battle";
     const h2 = document.createElement("h2"); h2.textContent = files[i];
     const cv = document.createElement("canvas"); cv.width = 960; cv.height = 600; cv.setAttribute("aria-label", "战场俯视图");
     const st = document.createElement("div"); st.className = "stats";
     const me = document.createElement("div"); me.className = "metrics";
-    section.append(h2, cv, st, me); host.append(section);
-    titles.push(h2); canvases.push(cv); stats.push(st); metrics.push(me);
+    const cl = document.createElement("div"); cl.className = "clips"; cl.hidden = true; cl.setAttribute("role", "group"); cl.setAttribute("aria-label", "自动挑出的片段");
+    section.append(h2, cv, cl, st, me); host.append(section);
+    titles.push(h2); canvases.push(cv); stats.push(st); metrics.push(me); clipRows.push(cl);
   }
   const playButton = document.getElementById("play"), seek = document.getElementById("seek");
   const clock = document.getElementById("clock"), status = document.getElementById("status");
   let replays = [], time = 0, duration = 1, speed = 4, playing = false, last = 0;
+  // The clip being watched: which battle, the squad's leader by unit index, the second to stop at (Infinity once it has stopped).
+  let focus = null;
 
   function token(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
   function fmt(seconds) { const s = Math.floor(seconds); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); }
@@ -118,6 +128,9 @@ canvas { width: 100%; aspect-ratio: 160 / 100; max-width: 100%; display: block; 
       pair("20米内有敌", 12, "enemyWithin20") + pair("无敌发呆", 14, "idleNoEnemy") +
       (g.team1 && g.team1.squadShare && (g.team1.squadShare.mean !== null || g.team2.squadShare.mean !== null)
         ? pair("在队占比", 26, "squadShare") + pair("离队长（米，中位）", 28, "squadLeash") : "") +
+      (g.team1 && g.team1.rashShare && (g.team1.regroupShare.mean !== null || g.team2.regroupShare.mean !== null)
+        ? pair("莽队人数占比", 32, "rashShare") + pair("稳队人数占比", 34, "steadyShare") + pair("回招人数占比", 36, "regroupShare") +
+          pair("莽队近敌时在走", 38, "rashMoving") + pair("稳队近敌时在走", 40, "steadyMoving") : "") +
       '<span><b>分胜负 tick</b> ' + (g.decidedTick === null || g.decidedTick === undefined ? "未分" : g.decidedTick) + '</span>';
   }
 
@@ -185,24 +198,44 @@ canvas { width: 100%; aspect-ratio: 160 / 100; max-width: 100%; display: block; 
     ctx.globalAlpha = 1;
 
     const radius = Math.max(1.6 * ratio, 0.45 * scale);
+    // Tempers (frame.qm, three numbers per squad: its leader's unit index, temper 1 normal 2 rash 3 steady, regroup mark
+    // 0 none 1 regrouping 2 waiting). squads[team]: how many are normal, rash, steady and regrouping.
+    const temper = {}, rally = {}, squads = [null, [0, 0, 0, 0], [0, 0, 0, 0]];
+    const temperColors = [null, null, token("--rash"), token("--steady")];
+    if (a.qm) for (let s = 0; s + 2 < a.qm.length; s += 3) {
+      temper[a.qm[s]] = a.qm[s + 1]; rally[a.qm[s]] = a.qm[s + 2];
+      const mine = squads[r.teams[a.qm[s]]];
+      if (!mine) continue;
+      if (a.qm[s + 1] >= 1) mine[a.qm[s + 1] - 1]++;
+      if (a.qm[s + 2] === 1) mine[3]++;
+    }
+    const moodOf = u => a.q && a.q[u] >= 0 ? (temper[a.q[u]] || 0) : 0, backOf = u => !!a.q && a.q[u] >= 0 && rally[a.q[u]] === 1;
     // Squads (frame.q: each unit's leader by unit index, -1 = none): a thin line from a member to its leader, a square round a leader.
     if (a.q) {
-      ctx.lineWidth = 1 * ratio; ctx.globalAlpha = 0.45;
+      // A rash or steady squad's lines and square take the temper's colour; a regrouping squad is faint and dashed.
+      ctx.lineWidth = 1 * ratio;
       for (const unit of units) {
         const lead = a.q[unit[5]];
         if (unit[3] !== 1 || lead < 0 || lead === unit[5] || !where[lead]) continue;
-        ctx.strokeStyle = colors[unit[2]];
+        const mood = moodOf(unit[5]), back = backOf(unit[5]);
+        ctx.strokeStyle = temperColors[mood] || colors[unit[2]];
+        ctx.globalAlpha = back ? 0.35 : mood >= 2 ? 0.7 : 0.45; ctx.setLineDash(back ? [4 * ratio, 3 * ratio] : []);
         ctx.beginPath(); ctx.moveTo(X(unit[0]), Z(unit[1])); ctx.lineTo(X(where[lead][0]), Z(where[lead][1])); ctx.stroke();
       }
-      ctx.globalAlpha = 1; ctx.strokeStyle = token("--fg"); ctx.lineWidth = 1.5 * ratio;
+      ctx.setLineDash([]); ctx.lineWidth = 1.5 * ratio;
       for (const unit of units) {
         if (unit[3] !== 1 || a.q[unit[5]] !== unit[5]) continue;
+        ctx.strokeStyle = temperColors[moodOf(unit[5])] || token("--fg"); ctx.globalAlpha = backOf(unit[5]) ? 0.4 : 1;
         ctx.strokeRect(X(unit[0]) - radius * 1.7, Z(unit[1]) - radius * 1.7, radius * 3.4, radius * 3.4);
       }
+      ctx.globalAlpha = 1;
     }
     for (const unit of units) {
       ctx.fillStyle = colors[unit[2]];
       if (unit[3] === 2) { ctx.globalAlpha = 0.25; ctx.fillRect(X(unit[0]) - radius * 0.6, Z(unit[1]) - radius * 0.6, radius * 1.2, radius * 1.2); ctx.globalAlpha = 1; continue; }
+      // Every man of a rash or steady squad wears the temper's colour round his dot; a regrouping squad's men are faint.
+      const mood = moodOf(unit[5]);
+      ctx.globalAlpha = backOf(unit[5]) ? 0.4 : 1;
       // Stance (frame.p): standing a full dot, crouched a smaller dot, prone a flat oval.
       const stance = a.p ? a.p[unit[5]] : 0;
       ctx.beginPath();
@@ -210,10 +243,27 @@ canvas { width: 100%; aspect-ratio: 160 / 100; max-width: 100%; display: block; 
       else if (stance >= 2) ctx.ellipse(X(unit[0]), Z(unit[1]), radius * 1.3, radius * 0.45, 0, 0, Math.PI * 2);
       else ctx.arc(X(unit[0]), Z(unit[1]), radius, 0, Math.PI * 2);
       ctx.fill();
+      if (mood >= 2) {
+        ctx.strokeStyle = temperColors[mood]; ctx.lineWidth = 1 * ratio;
+        ctx.beginPath(); ctx.arc(X(unit[0]), Z(unit[1]), radius + 1.2 * ratio, 0, Math.PI * 2); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
       if (unit[4] === 0) continue;
       // Pinned: a thin ring. Broken: a thick ring in the warning colour.
       ctx.strokeStyle = unit[4] === 2 ? token("--broken") : token("--fg"); ctx.lineWidth = (unit[4] === 2 ? 2 : 1) * ratio;
-      ctx.beginPath(); ctx.arc(X(unit[0]), Z(unit[1]), radius + 2 * ratio, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(X(unit[0]), Z(unit[1]), radius + (mood >= 2 ? 3.4 : 2) * ratio, 0, Math.PI * 2); ctx.stroke();
+    }
+    // The clip being watched: a dashed circle round the squad (its leader and whoever follows him now).
+    if (focus && focus.index === index) {
+      let cx = 0, cz = 0, n = 0, reach = 0;
+      const mine = units.filter(unit => unit[3] === 1 && (unit[5] === focus.leader || (a.q && a.q[unit[5]] === focus.leader)));
+      for (const unit of mine) { cx += unit[0]; cz += unit[1]; n++; }
+      if (n > 0) {
+        cx /= n; cz /= n;
+        for (const unit of mine) reach = Math.max(reach, Math.hypot(unit[0] - cx, unit[1] - cz));
+        ctx.strokeStyle = token("--fg"); ctx.lineWidth = 2 * ratio; ctx.setLineDash([6 * ratio, 4 * ratio]);
+        ctx.beginPath(); ctx.arc(X(cx), Z(cz), (Math.max(reach, 2) + 4) * scale, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+      }
     }
 
     const owned = [0, 0, 0]; for (const o of a.o) owned[o] = (owned[o] || 0) + 1;
@@ -222,7 +272,9 @@ canvas { width: 100%; aspect-ratio: 160 / 100; max-width: 100%; display: block; 
       '<span class="t1"><b>一队</b> 场上 ' + a.a[0] + '　预备 ' + a.a[2] + '　据点 ' + owned[1] + '</span>' +
       '<span class="t2"><b>二队</b> 场上 ' + a.a[1] + '　预备 ' + a.a[3] + '　据点 ' + owned[2] + '</span>' +
       (ended ? '<span><b>' + (r.winner === 1 ? "一队" : "二队") + '获胜</b>，用时 ' + fmt(r.endTick / r.tickRate) + '</span>'
-             : position >= r.frames.length - 1 ? '<span>到 ' + fmt(r.frames[r.frames.length - 1].t / r.tickRate) + ' 仍未分胜负</span>' : '');
+             : position >= r.frames.length - 1 ? '<span>到 ' + fmt(r.frames[r.frames.length - 1].t / r.tickRate) + ' 仍未分胜负</span>' : '') +
+      (a.qm ? [1, 2].map(t => '<span class="t' + t + '"><b>' + (t === 1 ? "一队" : "二队") + '小队</b> 莽 ' + squads[t][1] + ' / 普通 ' + squads[t][0] +
+        ' / 稳 ' + squads[t][2] + ' / 回招 ' + squads[t][3] + '</span>').join("") : "");
     metrics[index].innerHTML = metricLine(r, a);
   }
   function render() {
@@ -235,6 +287,7 @@ canvas { width: 100%; aspect-ratio: 160 / 100; max-width: 100%; display: block; 
     if (!playing) return;
     time += Math.min((now - last) / 1000, 0.1) * speed; last = now;
     if (time >= duration) { time = duration; setPlaying(false); }
+    else if (focus && time >= focus.to) { time = focus.to; focus.to = Infinity; setPlaying(false); }
     render();
     if (playing) requestAnimationFrame(frame);
   }
@@ -249,12 +302,34 @@ canvas { width: 100%; aspect-ratio: 160 / 100; max-width: 100%; display: block; 
     if (!playing && time >= duration) time = 0;
     setPlaying(!playing);
   });
-  seek.addEventListener("input", function () { time = Number(seek.value) / 10; render(); });
+  seek.addEventListener("input", function () { time = Number(seek.value) / 10; if (focus) focus.to = Infinity; render(); });
+  function setSpeed(value) {
+    speed = value;
+    for (const other of document.querySelectorAll("[data-speed]")) other.setAttribute("aria-pressed", String(Number(other.dataset.speed) === value));
+  }
+  // One button per clip the exporter picked (replay.clips): jump to its start at 1x, circle the squad, stop at its end.
+  // Pressing the lit button again takes the circle away.
+  function clipButtons(index) {
+    const r = replays[index], row = clipRows[index], names = { rash: "看莽队", steady: "看稳队", regroup: "看回招" };
+    row.textContent = "";
+    for (const clip of r.clips || []) {
+      const button = document.createElement("button"); button.type = "button"; button.setAttribute("aria-pressed", "false");
+      const more = clip.k === "steady" ? (clip.note ? "，和莽队同一时段" : "，不同时段") : clip.k === "regroup" ? (clip.note ? "，补满后出发" : "，等过头放弃") : "";
+      button.textContent = names[clip.k] + "（" + (clip.team === 1 ? "蓝" : "红") + "，" + fmt(clip.from / r.tickRate) + "–" + fmt(clip.to / r.tickRate) + more + "）";
+      button.addEventListener("click", function () {
+        const lit = button.getAttribute("aria-pressed") === "true";
+        for (const other of document.querySelectorAll(".clips button")) other.setAttribute("aria-pressed", "false");
+        if (lit) { focus = null; render(); return; }
+        button.setAttribute("aria-pressed", "true");
+        focus = { index: index, leader: clip.leader, to: clip.to / r.tickRate };
+        time = clip.from / r.tickRate; setSpeed(1); setPlaying(true); render();
+      });
+      row.append(button);
+    }
+    row.hidden = !row.children.length;
+  }
   for (const button of document.querySelectorAll("[data-speed]")) {
-    button.addEventListener("click", function () {
-      speed = Number(button.dataset.speed);
-      for (const other of document.querySelectorAll("[data-speed]")) other.setAttribute("aria-pressed", String(other === button));
-    });
+    button.addEventListener("click", function () { setSpeed(Number(button.dataset.speed)); });
   }
   window.addEventListener("resize", function () { if (replays.length) render(); });
   if (window.matchMedia) window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { if (replays.length) render(); });
@@ -264,6 +339,7 @@ canvas { width: 100%; aspect-ratio: 160 / 100; max-width: 100%; display: block; 
       replays = loaded;
       for (let i = 0; i < replays.length; i++) {
         titles[i].innerHTML = esc(replays[i].label || replays[i].config) + ' <small>' + esc(replays[i].config) + '　哈希 ' + esc(replays[i].hash) + '</small>';
+        clipButtons(i);
       }
       duration = Math.max.apply(null, replays.map(r => r.frames[r.frames.length - 1].t / r.tickRate));
       seek.max = String(Math.round(duration * 10));

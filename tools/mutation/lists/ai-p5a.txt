@@ -48,8 +48,9 @@ filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndResto
 expect = WarCore.Tests.AiP5aTests.NobodyIsRecruitedBetweenFormTicks
 note = squads form on every tick
 original:
-| if (c.Clock.Tick % rules.FormTicks != 0) return;
+| bool forms = c.Clock.Tick % rules.FormTicks == 0;
 replacement:
+| bool forms = true;
 
 [ai-p5a-form-off-by-one]
 file = Assets/WarCore/Battle/Ai/Squads.cs
@@ -57,9 +58,9 @@ filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndResto
 expect = WarCore.Tests.AiP5aTests.TenMenMakeASquadOfFiveAndASquadOfTwo
 note = squads form one tick before the form tick
 original:
-| c.Clock.Tick % rules.FormTicks != 0
+| c.Clock.Tick % rules.FormTicks == 0
 replacement:
-| (c.Clock.Tick + 1) % rules.FormTicks != 0
+| (c.Clock.Tick + 1) % rules.FormTicks == 0
 
 [ai-p5a-gather-player]
 file = Assets/WarCore/Battle/Ai/Squads.cs
@@ -410,9 +411,9 @@ filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndResto
 expect = WarCore.Tests.AiP5aTests.State_TheSevenNumbersAndBothTablesInKeyOrder
 note = another state version in the hash
 original:
-| public int StateVersion => 1;
+| public int StateVersion => regrouping ? 2 : 1;
 replacement:
-| public int StateVersion => 2;
+| public int StateVersion => regrouping ? 2 : 2;
 
 [ai-p5a-save-rules-order]
 file = Assets/WarCore/Battle/Ai/Squads.cs
@@ -518,6 +519,7 @@ replacement:
 file = Assets/WarCore/Battle/Ai/Squads.cs
 filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
 expect = WarCore.Tests.AiP5aTests.State_LoadReplacesTheTables
+expect = WarCore.Tests.AiP5aTests.State_LoadRefusesTablesThatCannotBe
 note = the members table is not emptied before a load
 original:
 | sizes.Clear(); leaderOf.Clear();
@@ -1151,9 +1153,9 @@ filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndResto
 expect = WarCore.Tests.AiP5aTests.Content_SquadFieldsAreReadAllOrNone
 note = two of the seven numbers are swapped
 original:
-| new WarCore.Battle.SquadRules(min, max, skirmishers, radius, form, spreadMin, spreadMax);
+| new WarCore.Battle.SquadRules(min, max, skirmishers, radius, form, spreadMin, spreadMax, temper, regroup);
 replacement:
-| new WarCore.Battle.SquadRules(min, max, skirmishers, form, radius, spreadMin, spreadMax);
+| new WarCore.Battle.SquadRules(min, max, skirmishers, form, radius, spreadMin, spreadMax, temper, regroup);
 
 [ai-p5a-content-squads-dropped]
 file = Assets/WarCore/Content/Data/Sections/AiSection.cs
@@ -1171,9 +1173,9 @@ filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndResto
 expect = WarCore.Tests.AiP5aTests.World_EachOfTheSevenNumbersIsInThePolicy
 note = the dispatch is not wrapped
 original:
-| if (squads != null) { dispatch = squads.Wrap(dispatch); placement = squads.Wrap(placement); }
+| dispatch = squads.Wrap(dispatch); placement = squads.Wrap(placement);
 replacement:
-| if (squads != null) { placement = squads.Wrap(placement); }
+| placement = squads.Wrap(placement);
 
 [ai-p5a-wire-no-placement-wrap]
 file = Assets/WarCore/Content/Data/ContentPolicies.cs
@@ -1181,9 +1183,9 @@ filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndResto
 expect = WarCore.Tests.AiP5aTests.World_EachOfTheSevenNumbersIsInThePolicy
 note = the placement is not wrapped
 original:
-| if (squads != null) { dispatch = squads.Wrap(dispatch); placement = squads.Wrap(placement); }
+| dispatch = squads.Wrap(dispatch); placement = squads.Wrap(placement);
 replacement:
-| if (squads != null) { dispatch = squads.Wrap(dispatch); }
+| dispatch = squads.Wrap(dispatch);
 
 [ai-p5a-wire-plates]
 file = Assets/WarCore/Content/Data/ContentPolicies.cs
@@ -1250,12 +1252,12 @@ filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndResto
 expect = WarCore.Tests.AiP5aTests.TheViewShowsEachMansSquad
 note = a dead man keeps his band in the view
 original:
-| squads != null && alive ? BandKey(
+| bool banded = squads != null && alive;
 replacement:
-| squads != null ? BandKey(
+| bool banded = squads != null;
 
 [ai-p5a-view-band-id]
-file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+file = Assets/WarCore/Presentation/Bridge/SimSession.Squads.cs
 filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
 expect = WarCore.Tests.AiP5aTests.TheViewShowsEachMansSquad
 note = the band is the leader's id, not his spawn key
