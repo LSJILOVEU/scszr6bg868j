@@ -123,7 +123,7 @@ namespace WarCore.Interim
                     continue;
                 }
                 SimVec3 delta = intent.Target - position.Value;
-                SimFix speed = motion.StepSpeed(unit, intent.SpeedPerTick);
+                SimFix speed = FlatStep(unit, motion.StepSpeed(unit, intent.SpeedPerTick));
                 SimWide stepSquared = new SimVec3(speed, default, default).LengthSquared;
                 bool arrived = delta.LengthSquared <= stepSquared;
                 SimVec3 next = arrived ? intent.Target : position.Value + delta.Normalized * speed;

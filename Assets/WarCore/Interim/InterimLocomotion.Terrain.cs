@@ -62,10 +62,12 @@ namespace WarCore.Interim
         // Step length after the surface under the unit: floor(base x speedMilli / 1000), at least one raw so a unit
         // never freezes. The base is checked before the product.
         // On a plate world the surface is the unit's own layer's (the plate's own speed, not the blocked ground under it).
-        private SimFix StepOf(SimVec3 point, SimFix baseStep, int layer = 0)
+        // SLOPE-1: with the step line on (InterimLocomotion.StepLine.cs) an unblocked surface goes through it instead.
+        private SimFix StepOf(SimVec3 point, SimFix baseStep, int layer, EntityId unit, SimVec3 heading)
         {
             if (baseStep.Raw > MaxTerrainStepRaw) throw new InvalidOperationException("Terrain worlds cap a unit step at 0.25 m per tick.");
             long milli = layered ? PlateSpeedMilli(layer, point) : grid.TryCell(point, out int cell) ? terrain.SpeedMilliAt(cell) : 1000;
+            if (milli != 0 && StepLineOn) return StepLineOf(unit, point, baseStep, layer, heading, milli);
             long scaled = baseStep.Raw * milli / 1000;
             if (scaled < 1) scaled = 1;
             if (scaled > MaxEffectiveStepRaw) throw new InvalidOperationException("Terrain step exceeds 0.5 m.");
@@ -131,8 +133,8 @@ namespace WarCore.Interim
         {
             SimVec3 waypoint = entities.Get(waypoints, unit).Point;
             int layer = layered ? LayerOf(unit) : 0;
-            SimFix step = StepOf(point, motion.StepSpeed(unit, intent.SpeedPerTick), layer);
             SimVec3 delta = Planar(waypoint - point);
+            SimFix step = StepOf(point, motion.StepSpeed(unit, intent.SpeedPerTick), layer, unit, delta);
             SimWide stepSquared = new SimVec3(step, default, default).LengthSquared;
             bool arrived = delta.LengthSquared <= stepSquared;
             SimVec3 next = arrived ? waypoint : Advance(point, delta, step);
@@ -182,8 +184,8 @@ namespace WarCore.Interim
             if (!intent.Active) return;
             SimVec3 point = provisional[i].Point;
             SimVec3 waypoint = entities.Get(waypoints, unit).Point;
-            SimFix step = StepOf(point, motion.StepSpeed(unit, intent.SpeedPerTick), layered ? LayerOf(unit) : 0);
             SimVec3 delta = Planar(waypoint - point);
+            SimFix step = StepOf(point, motion.StepSpeed(unit, intent.SpeedPerTick), layered ? LayerOf(unit) : 0, unit, delta);
             SimWide stepSquared = new SimVec3(step, default, default).LengthSquared;
             SimVec3 next = delta.LengthSquared <= stepSquared ? waypoint : Advance(point, delta, step);
             bool moved = true;
@@ -323,11 +325,14 @@ namespace WarCore.Interim
         // the displacement scaled by the surface at that point, then whole step, X only, Z only. False when none can
         // be taken, or when the scaled step is nothing on both axes. On a plate world the taken candidate's layer is left in
         // candidateLayer for CommitLayer.
-        private bool ControlledTerrainCandidate(SimContext context, int i, SimVec3 displacement, out SimVec3 next)
+        // SLOPE-1: with the step line on, an unblocked surface scales the whole displacement through it instead (surfaceOnly:
+        // the dash's pieces, which take the surface alone).
+        private bool ControlledTerrainCandidate(SimContext context, int i, SimVec3 displacement, out SimVec3 next, bool surfaceOnly = false)
         {
             SimVec3 point = provisional[i].Point;
             long milli = layered ? PlateSpeedMilli(LayerOf(provisional[i].Unit), point) : grid.TryCell(point, out int cell) ? terrain.SpeedMilliAt(cell) : 1000;
             var d = new SimVec3(SimFix.FromRaw(displacement.X.Raw * milli / 1000), default, SimFix.FromRaw(displacement.Z.Raw * milli / 1000));
+            if (!surfaceOnly && milli != 0 && StepLineOn) d = ControlledStepLine(i, displacement, milli);
             next = point;
             if (d.X.Raw == 0 && d.Z.Raw == 0) return false;
             next = Grounded(point + d);

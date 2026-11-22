@@ -63,7 +63,7 @@ namespace WarCore.Interim
                         // A dashing unit takes its dash step below instead.
                         if (DashesNow(i)) break;
                         controlledIndex = i;
-                        StepControlled(context, i, displacement);
+                        StepControlled(context, i, FlatControlled(i, displacement));
                         break;
                     }
             for (int i = 0; i < memberCount; i++)
@@ -77,7 +77,7 @@ namespace WarCore.Interim
                 SimVec3 point = provisional[i].Point;
                 SimVec3 waypoint = entities.Get(waypoints, unit).Point;
                 SimVec3 delta = waypoint - point;
-                SimFix speed = motion.StepSpeed(unit, intent.SpeedPerTick);
+                SimFix speed = FlatStep(unit, motion.StepSpeed(unit, intent.SpeedPerTick));
                 SimWide stepSquared = new SimVec3(speed, default, default).LengthSquared;
                 SimVec3 next = delta.LengthSquared <= stepSquared ? waypoint : point + delta.Normalized * speed;
                 bool clear = UnitsAllow(i, next, out int blocker);

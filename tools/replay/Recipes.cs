@@ -91,6 +91,8 @@ namespace WarCore.Replay
             ["blast-wall"] = new Entry("Blast next to a 3 m wall (rwr-blast)", () => BlastDemo.Recipe(), BlastDemo.MapBytes),
             // STANCE-1: a 1 m wall; squad 2 behind it crouches at tick 60 and stands up at tick 240 (StanceDemo).
             ["stance-wall"] = new Entry("1 m wall, team 2 crouches at 60 and stands at 240", StanceDemo.Recipe, StanceDemo.MapBytes),
+            // SLOPE-1: three lanes (flat, about 400 permille up, about 600 permille down) under rwr-slope, one unit each (SlopeDemo).
+            ["slope-race"] = new Entry("Three lanes: flat, uphill, downhill (rwr-slope)", SlopeDemo.Recipe, SlopeDemo.MapBytes),
         };
 
         private const string SquadAi = "\"squadMinSize\": 4, \"squadMaxSize\": 9, \"squadSkirmisherPermille\": 300, \"squadRecruitRadiusMm\": 30000, "

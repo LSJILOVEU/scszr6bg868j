@@ -12,7 +12,7 @@ namespace WarCore.Presentation
     internal static class FeatureTable
     {
         internal static readonly IWorldFeature[] Validate = { MovementFeature.Instance, DashFeature.Instance };
-        internal static readonly IWorldFeature[] Prepare = { PlateFeature.Instance, TerrainFeature.Instance, MatchFeature.Instance };
+        internal static readonly IWorldFeature[] Prepare = { PlateFeature.Instance, TerrainFeature.Instance, SlopeFeature.Instance, MatchFeature.Instance };
         internal static readonly IWorldFeature[] Components =
         {
             MovementFeature.Instance, TerrainFeature.Instance, PlateFeature.Instance, FacingFeature.Instance, MotionFeature.Instance,
@@ -32,7 +32,7 @@ namespace WarCore.Presentation
         internal static readonly IWorldFeature[] Systems = { MovementFeature.Instance, FacingFeature.Instance, PlateFeature.Instance, DashFeature.Instance };
         // After the movement systems: the match needs the locomotion; the player systems need it and the mode.
         // Stances last: the speed line wraps whatever motion model the systems (extensions included) bound.
-        internal static readonly IWorldStageFeature[] Rules = { MatchFeature.Instance, AiFireFeature.Instance, BlockAiFeature.Instance, PlayerFeature.Instance, StanceFeature.Instance };
+        internal static readonly IWorldStageFeature[] Rules = { MatchFeature.Instance, AiFireFeature.Instance, BlockAiFeature.Instance, PlayerFeature.Instance, SlopeFeature.Instance, StanceFeature.Instance };
 
         private static IEnumerable<IWorldFeature> Active(IWorldFeature[] table, WorldAssembly assembly)
         {

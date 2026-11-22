@@ -34,6 +34,8 @@ A setup whose combat pack has stances writes `p` on every frame: each unit's sta
 2 prone); the page draws a crouched unit as a smaller dot and a prone one as a flat oval.
 A frame that follows blasts has `x`: per blast its x, z and outer radius in decimetres and its team (BLAST-1); the page
 draws a ring of the outer radius for 1.5 s, fading. `blast-wall` is the BLAST-1 setup (run it with `EVERY=1`).
+`slope-race` is the SLOPE-1 setup: three lanes (flat, uphill, downhill) under `rwr-slope`, one unit each; the units
+arrive flat first, downhill second, uphill last (run it with `TICKS=300 EVERY=1`).
 Every frame carries `h`, the state hash after its tick (16 hex digits), so a picture of a frame can name the exact state.
 
 | Key | Meaning | Reads |
