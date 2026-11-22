@@ -478,8 +478,8 @@ namespace WarCore.Presentation
             for (int i = 0; i < blastViews.Length; i++)
             {
                 BlastRecord record = blasts.Records[i];
-                blastViews[i] = new ViewBlast((float)record.Point.X.Raw / SimFix.Scale, (float)record.Point.Y.Raw / SimFix.Scale,
-                    (float)record.Point.Z.Raw / SimFix.Scale, (float)blasts.Rules.Kinds[record.Blast].OuterRaw / SimFix.Scale, record.Team);
+                blastViews[i] = new ViewBlast((float)record.Point.X.Raw / SimFix.Scale, (float)record.Point.Y.Raw / SimFix.Scale, (float)record.Point.Z.Raw / SimFix.Scale,
+                    (float)blasts.Rules.Kinds[record.Blast].InnerRaw / SimFix.Scale, (float)blasts.Rules.Kinds[record.Blast].OuterRaw / SimFix.Scale, record.Team);
             }
             var points = new ViewPoint[capture == null ? 0 : capture.Points.Length];
             for (int i = 0; i < points.Length; i++)
