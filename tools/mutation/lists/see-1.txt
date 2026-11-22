@@ -61,7 +61,7 @@ filter = FullyQualifiedName~See1
 expect = WarCore.Tests.See1ZoneTests.TheEyeNotTheFeetSeesTheSample
 note = the level line starts at the feet height
 original:
-| double eye = me.Y + AimPick.BodyHeight,
+| double eye = me.Y + BodySizes.EyeOf(sizes, me),
 replacement:
 | double eye = me.Y + LayerCut.FootLift,
 
@@ -231,7 +231,7 @@ filter = FullyQualifiedName~See1
 expect = WarCore.Tests.See1SilhouetteTests.OnlyCoveredLivingTeamMatesAreDrawn
 note = the line back starts at the feet
 original:
-| double oy = unit.Y + AimPick.BodyHeight;
+| double oy = unit.Y + BodySizes.TopOf(sizes, unit);
 replacement:
 | double oy = unit.Y + LayerCut.FootLift;
 

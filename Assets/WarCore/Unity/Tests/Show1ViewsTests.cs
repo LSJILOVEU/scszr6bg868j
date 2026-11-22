@@ -6,7 +6,7 @@ using WarCore.Presentation;
 namespace WarCore.Unity.Tests
 {
     // SHOW-1: the showcase scene as drawn. Every stage builds clean (TerrainHost.SelfCheck) with one soldier per unit and one
-    // flag per point; shots, bullets, the fallen, the ducking, the camera and the grenade preview are read off the objects.
+    // flag per point; shots, bullets, the fallen, the camera and the grenade preview are read off the objects.
     public sealed class Show1ViewsTests
     {
         private static ShowcaseStage Stage(string id)
@@ -124,26 +124,8 @@ namespace WarCore.Unity.Tests
             }
         }
 
-        [Test]
-        public void APinnedSoldierDucks()
-        {
-            using (ShowcaseScene scene = Scripted("battle"))
-            {
-                int ducking = 0;
-                for (int round = 0; round < 12 && ducking == 0; round++)
-                {
-                    Run(scene, 330 + 30 * round);
-                    foreach (ViewEntity e in scene.Session.Current.Entities)
-                    {
-                        if (!e.Alive) continue;
-                        float height = scene.Root.transform.Find(ShowcaseUnits.Prefix + e.Key).localScale.y;
-                        Assert.That(height, Is.EqualTo(e.Nerve == 1 ? ShowcaseUnits.DuckScale : 1f).Within(1e-4f), "soldier " + e.Key);
-                        if (e.Nerve == 1) ducking++;
-                    }
-                }
-                Assert.That(ducking, Is.GreaterThan(0), "somebody is pinned within twenty seconds");
-            }
-        }
+        // APinnedSoldierDucks is replaced by Scale2aViewsTests.S9_APinnedSoldierLeansAndKeepsHisHeight (SCALE-2a Q1): in a
+        // world with a body a pinned soldier leans instead of ducking.
 
         [Test]
         public void AHitSoldierFlashesAndTheFlashEnds()
