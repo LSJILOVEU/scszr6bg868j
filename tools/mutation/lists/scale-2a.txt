@@ -111,7 +111,7 @@ filter = FullyQualifiedName~Scale2a
 expect = WarCore.Tests.Scale2aSizesTests.S1_TheStancePacksSizesByLevel
 note = the radius is not the collider radius
 original:
-| internal const long RadiusRaw = SimFix.Scale / 4;
+| internal const long RadiusRaw = BodyRadius.DefaultRaw;
 replacement:
 | internal const long RadiusRaw = SimFix.Scale / 5;
 

@@ -366,9 +366,9 @@ filter = FullyQualifiedName~Ml3
 expect = WarCore.Tests.Ml3ConfigTests.BodyIsInTheDigestOnlyWhenPresent
 note = the muzzle is left out of the digest
 original:
-| hash.Add(Eye.Raw); hash.Add(Muzzle.Raw); }
+| hash.Add(Eye.Raw); hash.Add(Muzzle.Raw);
 replacement:
-| hash.Add(Eye.Raw); }
+| hash.Add(Eye.Raw);
 
 [ml3-36-index-no-lift]
 file = Assets/WarCore/Sim/GridSpatialIndex.cs
@@ -440,9 +440,9 @@ filter = FullyQualifiedName~Ml3
 expect = WarCore.Tests.Ml3ContentTests.HeightBounds
 note = D6-1: 2r refused
 original:
-| Within(r, "height", height.Raw, 2 * UnitRadiusRaw, WallSpan.ClearanceRaw);
+| Within(r, "height", height.Raw, 2 * radius.Raw, WallSpan.ClearanceRaw);
 replacement:
-| Within(r, "height", height.Raw, 2 * UnitRadiusRaw + 1, WallSpan.ClearanceRaw);
+| Within(r, "height", height.Raw, 2 * radius.Raw + 1, WallSpan.ClearanceRaw);
 
 [ml3-43-height-min-down]
 file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
@@ -450,9 +450,9 @@ filter = FullyQualifiedName~Ml3
 expect = WarCore.Tests.Ml3ContentTests.HeightBounds
 note = D6-1: 2r - 1 raw accepted
 original:
-| Within(r, "height", height.Raw, 2 * UnitRadiusRaw, WallSpan.ClearanceRaw);
+| Within(r, "height", height.Raw, 2 * radius.Raw, WallSpan.ClearanceRaw);
 replacement:
-| Within(r, "height", height.Raw, 2 * UnitRadiusRaw - 1, WallSpan.ClearanceRaw);
+| Within(r, "height", height.Raw, 2 * radius.Raw - 1, WallSpan.ClearanceRaw);
 
 [ml3-44-height-max-up]
 file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
@@ -460,9 +460,9 @@ filter = FullyQualifiedName~Ml3
 expect = WarCore.Tests.Ml3ContentTests.HeightBounds
 note = D6-1: headroom + 1 raw accepted
 original:
-| Within(r, "height", height.Raw, 2 * UnitRadiusRaw, WallSpan.ClearanceRaw);
+| Within(r, "height", height.Raw, 2 * radius.Raw, WallSpan.ClearanceRaw);
 replacement:
-| Within(r, "height", height.Raw, 2 * UnitRadiusRaw, WallSpan.ClearanceRaw + 1);
+| Within(r, "height", height.Raw, 2 * radius.Raw, WallSpan.ClearanceRaw + 1);
 
 [ml3-45-height-max-down]
 file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
@@ -470,9 +470,9 @@ filter = FullyQualifiedName~Ml3
 expect = WarCore.Tests.Ml3ContentTests.HeightBounds
 note = D6-1: the headroom refused
 original:
-| Within(r, "height", height.Raw, 2 * UnitRadiusRaw, WallSpan.ClearanceRaw);
+| Within(r, "height", height.Raw, 2 * radius.Raw, WallSpan.ClearanceRaw);
 replacement:
-| Within(r, "height", height.Raw, 2 * UnitRadiusRaw, WallSpan.ClearanceRaw - 1);
+| Within(r, "height", height.Raw, 2 * radius.Raw, WallSpan.ClearanceRaw - 1);
 
 [ml3-46-eye-min-up]
 file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
@@ -480,9 +480,9 @@ filter = FullyQualifiedName~Ml3
 expect = WarCore.Tests.Ml3ContentTests.EyeBounds
 note = D6-2: r refused
 original:
-| Within(r, "eye", eye.Raw, UnitRadiusRaw, height.Raw - UnitRadiusRaw);
+| Within(r, "eye", eye.Raw, radius.Raw, height.Raw - radius.Raw);
 replacement:
-| Within(r, "eye", eye.Raw, UnitRadiusRaw + 1, height.Raw - UnitRadiusRaw);
+| Within(r, "eye", eye.Raw, radius.Raw + 1, height.Raw - radius.Raw);
 
 [ml3-47-eye-min-down]
 file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
@@ -490,9 +490,9 @@ filter = FullyQualifiedName~Ml3
 expect = WarCore.Tests.Ml3ContentTests.EyeBounds
 note = D6-2: r - 1 raw accepted
 original:
-| Within(r, "eye", eye.Raw, UnitRadiusRaw, height.Raw - UnitRadiusRaw);
+| Within(r, "eye", eye.Raw, radius.Raw, height.Raw - radius.Raw);
 replacement:
-| Within(r, "eye", eye.Raw, UnitRadiusRaw - 1, height.Raw - UnitRadiusRaw);
+| Within(r, "eye", eye.Raw, radius.Raw - 1, height.Raw - radius.Raw);
 
 [ml3-48-eye-max-up]
 file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
@@ -500,9 +500,9 @@ filter = FullyQualifiedName~Ml3
 expect = WarCore.Tests.Ml3ContentTests.EyeBounds
 note = D6-2: H - r + 1 raw accepted
 original:
-| Within(r, "eye", eye.Raw, UnitRadiusRaw, height.Raw - UnitRadiusRaw);
+| Within(r, "eye", eye.Raw, radius.Raw, height.Raw - radius.Raw);
 replacement:
-| Within(r, "eye", eye.Raw, UnitRadiusRaw, height.Raw - UnitRadiusRaw + 1);
+| Within(r, "eye", eye.Raw, radius.Raw, height.Raw - radius.Raw + 1);
 
 [ml3-49-eye-max-down]
 file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
@@ -510,9 +510,9 @@ filter = FullyQualifiedName~Ml3
 expect = WarCore.Tests.Ml3ContentTests.EyeBounds
 note = D6-2: H - r refused
 original:
-| Within(r, "eye", eye.Raw, UnitRadiusRaw, height.Raw - UnitRadiusRaw);
+| Within(r, "eye", eye.Raw, radius.Raw, height.Raw - radius.Raw);
 replacement:
-| Within(r, "eye", eye.Raw, UnitRadiusRaw, height.Raw - UnitRadiusRaw - 1);
+| Within(r, "eye", eye.Raw, radius.Raw, height.Raw - radius.Raw - 1);
 
 [ml3-50-muzzle-min-up]
 file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
