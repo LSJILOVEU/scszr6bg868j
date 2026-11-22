@@ -8,7 +8,8 @@ namespace WarCore.Presentation
     // does not fly in the simulation (the drawn one flies for the length of the fuse). PLACEHOLDER numbers.
     public sealed class ShowcaseActions
     {
-        // 1.1 s, the drawn grenade's flight (ShowcaseFx.GrenadeSeconds); a new throw 3 s after the last; 28 m, the drawn reach.
+        // The fuse (also the drawn grenade's flight), the wait before a new throw, and the reach. The picture reads these
+        // (ShowcaseFx through BlastLook); nothing else repeats them.
         public const long FuseTicks = 33, CooldownTicks = 90, ReachMm = 28000;
 
         private readonly ShowcaseStage stage;

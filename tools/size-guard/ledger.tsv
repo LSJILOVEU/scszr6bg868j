@@ -6,7 +6,7 @@
 # A new literal is read from the content pack or from the one named source; it is not added here as debt.
 # Debt notes name the family in the audit: H1 body radius, H2 headroom, H3 speed, H4 grenade, M1 eye, M2 play distances,
 # L3 fixed-point scale.
-debt-max	513
+debt-max	509
 Battle/Ai/AssaultRolesPlacement.cs	SimFix.Scale/1000	1	debt	
 Battle/Ai/CommanderQuota.cs	CoordinateLimitMetres=8192	1	debt	
 Battle/Ai/Cover.cs	SimFix.Ratio(3,2)	1	debt	
@@ -69,6 +69,11 @@ Interim/InterimLocomotion.Terrain.cs	SimFix.Scale/4	1	debt	per-step terrain limi
 Interim/InterimOrders.cs	SimFix.FromInt(1)	1	debt	
 Interim/InterimOrders.cs	SimFix.FromInt(3)	1	debt	
 Interim/UnitFacing.cs	SimFix.FromInt(1)	1	math	unit facing vector
+Presentation/Bridge/BlastLook.cs	0.04f	1	ui	drawn blast: the outer ring sits this far above the ground
+Presentation/Bridge/BlastLook.cs	0.12f	1	ui	drawn blast: width of the outer ring line
+Presentation/Bridge/BlastLook.cs	0.55f	1	ui	drawn blast: flash size per metre of outer radius
+Presentation/Bridge/BlastLook.cs	0.75f	1	ui	drawn blast: smoke size per metre of outer radius
+Presentation/Bridge/BlastLook.cs	0.8f	1	ui	drawn blast: seconds the outer ring takes to fade
 Presentation/Bridge/Features/A3aDemo.cs	Depth=30	1	debt	
 Presentation/Bridge/Features/A3aDemo.cs	SimFix.FromInt(10)	1	debt	
 Presentation/Bridge/Features/A3aDemo.cs	SimFix.FromInt(20)	2	debt	
@@ -257,16 +262,14 @@ Unity/ShowcaseFx.cs	0.3f	3	debt
 Unity/ShowcaseFx.cs	0.45f	1	debt	
 Unity/ShowcaseFx.cs	0.65f	1	debt	
 Unity/ShowcaseFx.cs	0.6f	3	debt	
-Unity/ShowcaseFx.cs	0.7f	2	debt	
+Unity/ShowcaseFx.cs	0.7f	1	debt	
 Unity/ShowcaseFx.cs	0.85f	1	debt	
 Unity/ShowcaseFx.cs	0.9f	3	debt	
-Unity/ShowcaseFx.cs	1.1f	1	debt	H4 grenade flight copy
 Unity/ShowcaseFx.cs	1.3f	1	debt	
 Unity/ShowcaseFx.cs	1.8f	1	debt	
 Unity/ShowcaseFx.cs	14f	1	debt	
-Unity/ShowcaseFx.cs	2.2f	2	debt	
+Unity/ShowcaseFx.cs	2.2f	1	debt	
 Unity/ShowcaseFx.cs	2.5f	1	debt	
-Unity/ShowcaseFx.cs	28f	1	debt	H4 grenade reach copy
 Unity/ShowcaseFx.cs	3.2f	1	debt	
 Unity/ShowcaseFx.cs	3.5f	1	debt	
 Unity/ShowcaseFx.cs	300f	1	debt	

@@ -239,12 +239,15 @@ namespace WarCore.Unity
             foreach (Vector3 at in Shots.Landed)
                 if ((at - playerAt).sqrMagnitude < NearMetres * NearMetres) Jolt(0.07f);
             // SHOW-2: the blasts of this tick (a blast of a tick stepped over within one frame is not drawn).
-            foreach (ViewBlast blast in frame.Blasts)
-            {
-                var at = new Vector3(blast.X, blast.Y, blast.Z);
-                Fx.Explode(at);
-                Jolt((at - playerAt).sqrMagnitude < 4f * blast.Radius * blast.Radius ? 0.5f : 0.15f);
-            }
+            foreach (ViewBlast blast in frame.Blasts) DrawBlast(blast);
+        }
+
+        // HC-4: one real blast, drawn from its own radii, and the camera shake it gives the player.
+        public void DrawBlast(ViewBlast blast)
+        {
+            var at = new Vector3(blast.X, blast.Y, blast.Z);
+            Fx.Explode(at, BlastLook.Of(blast.Inner, blast.Radius));
+            Jolt((at - playerAt).sqrMagnitude < 4f * blast.Radius * blast.Radius ? 0.5f : 0.15f);
         }
 
         // Every frame. aim: the point the player aims at, or null (no mouse over the picture). dt: the real time since the

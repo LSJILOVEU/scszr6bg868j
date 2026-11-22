@@ -535,9 +535,9 @@ filter = FullyQualifiedName~Ml7b
 expect = WarCore.Tests.Ml7bMatchTests.AMapRecipeCarriesTheLayers
 note = the recipe drops the layer
 original:
-| pack.MeleeOfUnitType(s.Type), layer: s.Layer);
+| pack.MeleeOfUnitType(type), layer: layer);
 replacement:
-| pack.MeleeOfUnitType(s.Type));
+| pack.MeleeOfUnitType(type));
 
 [ml7b-edit-unit]
 file = Assets/WarCore/Content/MapTools/MapEditDraft.cs
