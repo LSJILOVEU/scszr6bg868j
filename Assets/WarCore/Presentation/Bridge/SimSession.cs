@@ -66,7 +66,7 @@ namespace WarCore.Presentation
     /// requeue it for the next tick, then reload later inputs and commands. Unconsumed
     /// scheduled inputs are not in PlayerLog; the caller must retain them separately.
     /// </summary>
-    public sealed class SimSession
+    public sealed partial class SimSession
     {
         public const int MaxTicksPerFrame = 5;
         public const int TickRate = SimClock.TickRate;
@@ -196,17 +196,6 @@ namespace WarCore.Presentation
         public int Winner => match?.Winner ?? 0;
         public long EndTick => match?.EndTick ?? 0;
         public int EndReason => (int)(match?.EndReason ?? MatchEndReason.None);
-        // RESPAWN-AI-2: true in a world with match.reentryTicks. There, per team (1..TeamCount of the match rules), how many
-        // reserves the team is owed (dead long enough, minus entered; may be negative) and how many entered, as of the last
-        // step. Not hashed; false and zeros in any other world.
-        public bool HasReentry => reinforce != null && reinforce.ByDebt;
-        public bool TryReentry(int team, out long owed, out long entered)
-        {
-            owed = 0; entered = 0;
-            if (!HasReentry || team < 1 || team > matchPack.TeamCount) return false;
-            owed = reinforce.Owed(team); entered = reinforce.Entered(team);
-            return true;
-        }
         public long Tick => sim.Clock.Tick;
         public ulong StateHash => sim.StateHashRetained();
         public FrameView Previous { get; private set; }

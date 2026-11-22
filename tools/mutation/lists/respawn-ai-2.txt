@@ -753,7 +753,7 @@ replacement:
 | units[n++] = Spawn(pack, false, ++last, type, team, team, 0, 0, true, 0);
 
 [respawn-ai-2-73-session-reports-without-switch]
-file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+file = Assets/WarCore/Presentation/Bridge/SimSession.Reentry.cs
 filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
 expect = WarCore.Tests.RespawnAi2Tests.TheSessionReportsTheCounts
 note = the session reports counts without the switch
@@ -763,7 +763,7 @@ replacement:
 | if (reinforce == null || team < 1 || team > matchPack.TeamCount) return false;
 
 [respawn-ai-2-74-session-team-above]
-file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+file = Assets/WarCore/Presentation/Bridge/SimSession.Reentry.cs
 filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
 expect = WarCore.Tests.RespawnAi2Tests.TheSessionReportsTheCounts
 note = the session reports a team above the count
@@ -773,7 +773,7 @@ replacement:
 | if (!HasReentry || team < 1 || team > matchPack.TeamCount + 1) return false;
 
 [respawn-ai-2-75-session-team-zero]
-file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+file = Assets/WarCore/Presentation/Bridge/SimSession.Reentry.cs
 filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
 expect = WarCore.Tests.RespawnAi2Tests.TheSessionReportsTheCounts
 note = the session reports team 0
@@ -783,7 +783,7 @@ replacement:
 | if (!HasReentry || team < 0 || team > matchPack.TeamCount) return false;
 
 [respawn-ai-2-76-session-counts-swapped]
-file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+file = Assets/WarCore/Presentation/Bridge/SimSession.Reentry.cs
 filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
 expect = WarCore.Tests.RespawnAi2Tests.TheSessionReportsTheCounts
 expect = WarCore.Tests.RespawnAi2Tests.A8_
@@ -794,7 +794,7 @@ replacement:
 | owed = reinforce.Entered(team); entered = reinforce.Owed(team);
 
 [respawn-ai-2-77-session-has-reentry-always]
-file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+file = Assets/WarCore/Presentation/Bridge/SimSession.Reentry.cs
 filter = FullyQualifiedName~WarCore.Tests.RespawnAi2&FullyQualifiedName!~RespawnAi2LanesTests
 expect = WarCore.Tests.RespawnAi2Tests.TheSessionReportsTheCounts
 note = HasReentry is true without the switch
