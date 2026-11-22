@@ -178,6 +178,26 @@ namespace WarCore.Replay
             return false;
         }
 
+        // How far a soldier sees in the shipped packs (match rule sight 35 m with the sight-limited selector): an enemy
+        // farther away, or behind a wall, is not seen, and a soldier who sees nobody is not asked how to engage.
+        public const double SightRange = 35.0;
+
+        // True when some enemy stands within range (horizontal, inclusive) of u with no wall between them (walls as in
+        // Blocked: in 2D, every wall hides).
+        public static bool AnySeenWithin((double x, double z) u, IReadOnlyList<(double x, double z)> enemies, double range,
+            IReadOnlyList<(double x, double z, double sx, double sz)> walls)
+        {
+            foreach (var e in enemies)
+            {
+                double dx = u.x - e.x, dz = u.z - e.z;
+                if (dx * dx + dz * dz > range * range) continue;
+                bool hidden = false;
+                foreach (var wall in walls) if (Blocked(e, u, wall)) { hidden = true; break; }
+                if (!hidden) return true;
+            }
+            return false;
+        }
+
         // (9, 10) A counted share of the team (pinned, broken). 0..1; NaN below MinUnits.
         public static double Share(int count, int units) => units < MinUnits ? double.NaN : (double)count / units;
 
@@ -292,6 +312,15 @@ namespace WarCore.Replay
             Array.Sort(sorted);
             return Quantile(sorted, quantile);
         }
+
+        // Tempers: a unit walked when it is further than this (metres, horizontal) from where it stood in the previous
+        // recorded frame; a guard nudged by the crowd has not walked.
+        public const double MovedDistance = 0.1;
+        public static bool Moved(double dx, double dz) => dx * dx + dz * dz > MovedDistance * MovedDistance;
+
+        // Tempers: a counted part of a whole (the men in rash squads of the men in squads; the walkers of the calm rash men
+        // with an enemy in sight). 0..1; NaN when the whole is empty.
+        public static double Part(int count, int whole) => whole == 0 ? double.NaN : (double)count / whole;
 
         // Running mean and peak of one per-frame series, skipping NaN frames.
         public sealed class Series

@@ -535,9 +535,9 @@ filter = FullyQualifiedName~Ml7b
 expect = WarCore.Tests.Ml7bMatchTests.AMapRecipeCarriesTheLayers
 note = the recipe drops the layer
 original:
-| pack.MeleeOfUnitType(s.Type), layer: s.Layer);
+| pack.MeleeOfUnitType(type), layer: layer);
 replacement:
-| pack.MeleeOfUnitType(s.Type));
+| pack.MeleeOfUnitType(type));
 
 [ml7b-edit-unit]
 file = Assets/WarCore/Content/MapTools/MapEditDraft.cs
@@ -555,9 +555,9 @@ filter = FullyQualifiedName~Ml7b
 expect = WarCore.Tests.Ml7bBakeGateTests.TheGateReadsThePlateLayer
 note = a plate base is checked on the ground
 original:
-| b.Plate.HasValue ? OnPlate(layered, map, b.Plate.Value, b.At, out _) : Standable(nav, b.At)
+| b.Plate.HasValue ? OnPlate(layered, map, b.Plate.Value, b.At, out _) : Standable(nav, b.At, footprint)
 replacement:
-| Standable(nav, b.At)
+| Standable(nav, b.At, footprint)
 
 [ml7b-gate-spawn-ground]
 file = Assets/WarCore/Content/MapTools/MapGate.cs
@@ -565,9 +565,9 @@ filter = FullyQualifiedName~Ml7b
 expect = WarCore.Tests.Ml7bBakeGateTests.TheGateReadsThePlateLayer
 note = a plate spawn is checked on the ground
 original:
-| point.SpawnPlate.HasValue ? OnPlate(layered, map, point.SpawnPlate.Value, point.Spawn.Value, out _) : Standable(nav, point.Spawn.Value)
+| point.SpawnPlate.HasValue ? OnPlate(layered, map, point.SpawnPlate.Value, point.Spawn.Value, out _) : Standable(nav, point.Spawn.Value, footprint)
 replacement:
-| Standable(nav, point.Spawn.Value)
+| Standable(nav, point.Spawn.Value, footprint)
 
 [ml7b-gate-unit-ground]
 file = Assets/WarCore/Content/MapTools/MapGate.cs
@@ -576,9 +576,9 @@ expect = WarCore.Tests.Ml7bBakeGateTests.TheGateReadsThePlateLayer
 expect = WarCore.Tests.Ml7bBakeGateTests.TheCellEdgeDecidesBakeAndGate
 note = a plate unit is checked on the ground
 original:
-| unit.Plate.HasValue ? OnPlate(layered, map, unit.Plate.Value, unit.At, out _) : Standable(nav, unit.At)
+| unit.Plate.HasValue ? OnPlate(layered, map, unit.Plate.Value, unit.At, out _) : Standable(nav, unit.At, footprint)
 replacement:
-| Standable(nav, unit.At)
+| Standable(nav, unit.At, footprint)
 
 [ml7b-gate-solid-only]
 file = Assets/WarCore/Content/MapTools/MapGate.cs

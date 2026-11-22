@@ -54,9 +54,9 @@ namespace WarCore.Unity
                 session.SetPlayerInput(item.AtTick, item.Input);
             mapRoot = MapView.Build(session.Map, NewMaterial(new Color(0.62f, 0.66f, 0.48f)), NewMaterial(new Color(0.45f, 0.42f, 0.4f)));
             var palette = new[] { new Color(0.2f, 0.5f, 1f), new Color(1f, 0.85f, 0.2f) };
-            views = new EntityViews(transform, new Vector3(0.5f, 1f, 0.5f), 0.5f, palette);
+            views = new EntityViews(transform, new Vector3(0.5f, 1f, 0.5f), 0.5f, palette, BodySizes.Of(session));
             points = new PointViews(transform, ViewGround.For(session.Map));
-            shots = new ShotLines(transform, palette, 1.5f, ViewGround.For(session.Map));
+            shots = new ShotLines(transform, palette, 1.5f, ViewGround.For(session.Map), BodySizes.Of(session), session.Map.FloorY);
             isoCamera = new IsoCamera(20f, session.Map.FloorY);
             Show(session.Previous, session.Current, 0);
 

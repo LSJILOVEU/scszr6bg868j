@@ -1,0 +1,192 @@
+# HC-4: a drawn blast follows the blast's radii (BlastLook, the frame's inner radius) and the drawn throw reads its numbers.
+# Filter: Hc4BlastLookTests. Unity/** has no assembly here: ShowcaseFx and ShowcaseScene are covered by Hc4BlastViewsTests in Unity.
+
+[hc4-inner-zero]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Hc4BlastLookTests
+expect = WarCore.Tests.Blast1.Hc4BlastLookTests.TheFrameCarriesBothRadiiFromThePack
+note = the frame carries no inner radius
+original:
+|                     (float)blasts.Rules.Kinds[record.Blast].InnerRaw / SimFix.Scale, (float)blasts.Rules.Kinds[record.Blast].OuterRaw / SimFix.Scale, record.Team);
+replacement:
+|                     0f, (float)blasts.Rules.Kinds[record.Blast].OuterRaw / SimFix.Scale, record.Team);
+
+[hc4-inner-from-outer]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Hc4BlastLookTests
+expect = WarCore.Tests.Blast1.Hc4BlastLookTests.TheFrameCarriesBothRadiiFromThePack
+note = the inner radius is the outer one
+original:
+|                     (float)blasts.Rules.Kinds[record.Blast].InnerRaw / SimFix.Scale, (float)blasts.Rules.Kinds[record.Blast].OuterRaw / SimFix.Scale, record.Team);
+replacement:
+|                     (float)blasts.Rules.Kinds[record.Blast].OuterRaw / SimFix.Scale, (float)blasts.Rules.Kinds[record.Blast].OuterRaw / SimFix.Scale, record.Team);
+
+[hc4-scorch-one-inner]
+file = Assets/WarCore/Presentation/Bridge/BlastLook.cs
+filter = FullyQualifiedName~Hc4BlastLookTests
+expect = WarCore.Tests.Blast1.Hc4BlastLookTests.TheDrawnSizesFollowTheRadii
+note = the scorch spans half the core
+original:
+|         public float ScorchDiameter => 2f * Inner;
+replacement:
+|         public float ScorchDiameter => Inner;
+
+[hc4-dust-outer]
+file = Assets/WarCore/Presentation/Bridge/BlastLook.cs
+filter = FullyQualifiedName~Hc4BlastLookTests
+expect = WarCore.Tests.Blast1.Hc4BlastLookTests.TheDrawnSizesFollowTheRadii
+note = the dust ring sits at the outer radius
+original:
+|         public float DustRadius => Inner;
+replacement:
+|         public float DustRadius => Outer;
+
+[hc4-ring-inner]
+file = Assets/WarCore/Presentation/Bridge/BlastLook.cs
+filter = FullyQualifiedName~Hc4BlastLookTests
+expect = WarCore.Tests.Blast1.Hc4BlastLookTests.TheDrawnSizesFollowTheRadii
+note = the ring marks the inner radius
+original:
+|         public float RingRadius => Outer;
+replacement:
+|         public float RingRadius => Inner;
+
+[hc4-ring-fixed]
+file = Assets/WarCore/Presentation/Bridge/BlastLook.cs
+filter = FullyQualifiedName~Hc4BlastLookTests
+expect = WarCore.Tests.Blast1.Hc4BlastLookTests.TheDrawnSizesFollowTheRadii
+note = the ring is always 6 m
+original:
+|         public float RingRadius => Outer;
+replacement:
+|         public float RingRadius => 6f;
+
+[hc4-flash-fixed]
+file = Assets/WarCore/Presentation/Bridge/BlastLook.cs
+filter = FullyQualifiedName~Hc4BlastLookTests
+expect = WarCore.Tests.Blast1.Hc4BlastLookTests.TheDrawnSizesFollowTheRadii
+note = the flash does not grow with the outer radius
+original:
+|         public float FlashSize => Outer * FlashPerOuter;
+replacement:
+|         public float FlashSize => 6f * FlashPerOuter;
+
+[hc4-smoke-fixed]
+file = Assets/WarCore/Presentation/Bridge/BlastLook.cs
+filter = FullyQualifiedName~Hc4BlastLookTests
+expect = WarCore.Tests.Blast1.Hc4BlastLookTests.TheDrawnSizesFollowTheRadii
+note = the smoke does not grow with the outer radius
+original:
+|         public float SmokeSize => Outer * SmokePerOuter;
+replacement:
+|         public float SmokeSize => 6f * SmokePerOuter;
+
+[hc4-check-inner-neg]
+file = Assets/WarCore/Presentation/Bridge/BlastLook.cs
+filter = FullyQualifiedName~Hc4BlastLookTests
+expect = WarCore.Tests.Blast1.Hc4BlastLookTests.TheRadiiAreChecked
+note = a negative inner radius passes
+original:
+|             if (!(inner >= 0f && outer > inner)) throw new ArgumentOutOfRangeException(nameof(inner), "A drawn blast needs 0 <= inner < outer.");
+replacement:
+|             if (!(outer > inner)) throw new ArgumentOutOfRangeException(nameof(inner), "A drawn blast needs 0 <= inner < outer.");
+
+[hc4-check-equal]
+file = Assets/WarCore/Presentation/Bridge/BlastLook.cs
+filter = FullyQualifiedName~Hc4BlastLookTests
+expect = WarCore.Tests.Blast1.Hc4BlastLookTests.TheRadiiAreChecked
+note = inner equal to outer passes
+original:
+|             if (!(inner >= 0f && outer > inner)) throw new ArgumentOutOfRangeException(nameof(inner), "A drawn blast needs 0 <= inner < outer.");
+replacement:
+|             if (!(inner >= 0f && outer >= inner)) throw new ArgumentOutOfRangeException(nameof(inner), "A drawn blast needs 0 <= inner < outer.");
+
+[hc4-check-zero]
+file = Assets/WarCore/Presentation/Bridge/BlastLook.cs
+filter = FullyQualifiedName~Hc4BlastLookTests
+expect = WarCore.Tests.Blast1.Hc4BlastLookTests.TheRadiiAreChecked
+note = a zero inner radius is refused
+original:
+|             if (!(inner >= 0f && outer > inner)) throw new ArgumentOutOfRangeException(nameof(inner), "A drawn blast needs 0 <= inner < outer.");
+replacement:
+|             if (!(inner > 0f && outer > inner)) throw new ArgumentOutOfRangeException(nameof(inner), "A drawn blast needs 0 <= inner < outer.");
+
+[hc4-check-nan]
+file = Assets/WarCore/Presentation/Bridge/BlastLook.cs
+filter = FullyQualifiedName~Hc4BlastLookTests
+expect = WarCore.Tests.Blast1.Hc4BlastLookTests.TheRadiiAreChecked
+note = NaN passes
+original:
+|             if (!(inner >= 0f && outer > inner)) throw new ArgumentOutOfRangeException(nameof(inner), "A drawn blast needs 0 <= inner < outer.");
+replacement:
+|             if (inner < 0f || outer <= inner) throw new ArgumentOutOfRangeException(nameof(inner), "A drawn blast needs 0 <= inner < outer.");
+
+[hc4-core-zero]
+file = Assets/WarCore/Presentation/Bridge/BlastLook.cs
+filter = FullyQualifiedName~Hc4BlastLookTests
+expect = WarCore.Tests.Blast1.Hc4BlastLookTests.TheRadiiAreChecked
+note = a blast without a core has one
+original:
+|         public bool HasCore => Inner > 0f;
+replacement:
+|         public bool HasCore => Inner >= 0f;
+
+[hc4-fade-never]
+file = Assets/WarCore/Presentation/Bridge/BlastLook.cs
+filter = FullyQualifiedName~Hc4BlastLookTests
+expect = WarCore.Tests.Blast1.Hc4BlastLookTests.TheRingFadesAndTheThrowIsReadFromItsNumbers
+note = the ring never fades
+original:
+|             float left = 1f - age / RingFadeSeconds;
+replacement:
+|             float left = 1f;
+
+[hc4-fade-instant]
+file = Assets/WarCore/Presentation/Bridge/BlastLook.cs
+filter = FullyQualifiedName~Hc4BlastLookTests
+expect = WarCore.Tests.Blast1.Hc4BlastLookTests.TheRingFadesAndTheThrowIsReadFromItsNumbers
+note = the ring is gone at once
+original:
+|             if (!(age > 0f)) return 1f;
+replacement:
+|             return 0f;
+
+[hc4-fade-tail]
+file = Assets/WarCore/Presentation/Bridge/BlastLook.cs
+filter = FullyQualifiedName~Hc4BlastLookTests
+expect = WarCore.Tests.Blast1.Hc4BlastLookTests.TheRingFadesAndTheThrowIsReadFromItsNumbers
+note = the fade runs below zero
+original:
+|             return left > 0f ? left : 0f;
+replacement:
+|             return left;
+
+[hc4-fade-half]
+file = Assets/WarCore/Presentation/Bridge/BlastLook.cs
+filter = FullyQualifiedName~Hc4BlastLookTests
+expect = WarCore.Tests.Blast1.Hc4BlastLookTests.TheRingFadesAndTheThrowIsReadFromItsNumbers
+note = the fade runs twice as fast
+original:
+|             float left = 1f - age / RingFadeSeconds;
+replacement:
+|             float left = 1f - 2f * age / RingFadeSeconds;
+
+[hc4-reach-literal]
+file = Assets/WarCore/Presentation/Bridge/BlastLook.cs
+filter = FullyQualifiedName~Hc4BlastLookTests
+expect = WarCore.Tests.Blast1.Hc4BlastLookTests.TheRingFadesAndTheThrowIsReadFromItsNumbers
+note = the reach is a fixed 28 m
+original:
+|         public static float ReachMetres(long reachMm) => reachMm / 1000f;
+replacement:
+|         public static float ReachMetres(long reachMm) => 28f;
+
+[hc4-flight-literal]
+file = Assets/WarCore/Presentation/Bridge/BlastLook.cs
+filter = FullyQualifiedName~Hc4BlastLookTests
+expect = WarCore.Tests.Blast1.Hc4BlastLookTests.TheRingFadesAndTheThrowIsReadFromItsNumbers
+note = the flight is a fixed 1.1 s
+original:
+|         public static float FlightSeconds(long fuseTicks) => fuseTicks / (float)SimSession.TickRate;
+replacement:
+|         public static float FlightSeconds(long fuseTicks) => 1.1f;

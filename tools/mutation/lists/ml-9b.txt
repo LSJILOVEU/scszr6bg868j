@@ -233,9 +233,9 @@ filter = FullyQualifiedName~Ml9b
 expect = WarCore.Tests.Ml9bMatchTests.AnEnemyUnderTheFloorDoesNotContest
 note = the bridge gives respawn no layers
 original:
-| capture, adapter, a.Controlled, layers);
+| capture, adapter, a.Controlled, layers, reentry ? reinforce : null);
 replacement:
-| capture, adapter, a.Controlled, null);
+| capture, adapter, a.Controlled, null, reentry ? reinforce : null);
 
 [ml9b-slots-unfiltered]
 file = Assets/WarCore/Battle/GuardSlots.cs
@@ -397,9 +397,9 @@ filter = FullyQualifiedName~Ml9b
 expect = WarCore.Tests.Ml9bDescBakeTests.TheGateNeedsAWalkableCentre
 note = a centre on a plate is checked on the ground
 original:
-| if (point.Plate.HasValue ? OnPlate(layered, map, point.Plate.Value, point.At, out _) : Standable(nav, point.At))
+| if (point.Plate.HasValue ? OnPlate(layered, map, point.Plate.Value, point.At, out _) : Standable(nav, point.At, footprint))
 replacement:
-| if (Standable(nav, point.At))
+| if (Standable(nav, point.At, footprint))
 
 [ml9b-world-centre-unchecked]
 file = Assets/WarCore/Presentation/Bridge/Features/PlateFeature.cs

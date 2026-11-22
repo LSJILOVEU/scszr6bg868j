@@ -12,29 +12,38 @@ namespace WarCore.Content
         internal CombatSection() : base(SectionKey) { }
         protected override string NestedObject => "body";
         // AIM-1: combat.moveSpread is an object too (bands and optional per-weapon tables), kept whole across layers.
-        internal const string MoveSpreadField = "moveSpread", ManualReloadField = "manualReload";
-        protected override bool IsNested(string field) => base.IsNested(field) || field == MoveSpreadField;
+        // VSPREAD-1: combat.verticalSpread is an object (with byStance inside), kept whole across layers; so is NERVE-1
+        // combat.status (CombatNerveReader). DOWN-1: combat.downed is one value as well (CombatDownedReader).
+        internal const string MoveSpreadField = "moveSpread", ManualReloadField = "manualReload", VerticalSpreadField = "verticalSpread",
+            StatusField = "status";
+        protected override bool IsNested(string field) =>
+            base.IsNested(field) || field == MoveSpreadField || field == VerticalSpreadField || field == StatusField
+            || field == CombatDownedReader.Field;
         // STANCE-1 combat.stances and BLAST-1 combat.blasts are arrays, each kept whole across layers.
         private static readonly string[] Arrays = { StancesField, BlastsField };
         protected override string[] NestedArrays => Arrays;
         internal const string BlastsField = "blasts";
         internal const string StancesField = "stances";
 
-        // The unit collider radius r (MovementFeature and the deployer place every unit with it).
-        internal const long UnitRadiusRaw = SimFix.Scale / 4;
+        // The default unit collider radius; the pack's body.radius replaces it (HC-1, BodyRadius is the one definition).
+        internal const long UnitRadiusRaw = BodyRadius.DefaultRaw;
+        internal const string RadiusField = "radius";
 
-        // ML-3 body { height, eye, muzzle } in metres, all three required (a child layer's body replaces the parent's whole).
+        // ML-3 body { height, eye, muzzle } in metres, all three required, and HC-1 radius, optional (BodyRadius.MinRaw to MaxRaw,
+        // default BodyRadius.DefaultRaw); a child layer's body replaces the parent's whole, radius included.
         // Gate D6: 2r <= height <= the 2 m headroom (a doorway fits the whole body); r <= eye <= height - r (the viewpoint
-        // inside the capsule's cylinder); 0 <= muzzle <= height. Every bound is inclusive.
+        // inside the capsule's cylinder); 0 <= muzzle <= height; r is the body's radius. Every bound is inclusive.
         private static CombatBody Body(string pack, ContentEntry entry)
         {
             var r = new EntryReader(pack, entry);
             SimFix height = r.Fix("height"), eye = r.Fix("eye"), muzzle = r.Fix("muzzle");
+            SimFix radius = r.Has(RadiusField) ? r.Fix(RadiusField) : BodyRadius.Default;
             r.Done();
-            Within(r, "height", height.Raw, 2 * UnitRadiusRaw, WallSpan.ClearanceRaw);
-            Within(r, "eye", eye.Raw, UnitRadiusRaw, height.Raw - UnitRadiusRaw);
+            if (r.Has(RadiusField)) Within(r, RadiusField, radius.Raw, BodyRadius.MinRaw, BodyRadius.MaxRaw);
+            Within(r, "height", height.Raw, 2 * radius.Raw, WallSpan.ClearanceRaw);
+            Within(r, "eye", eye.Raw, radius.Raw, height.Raw - radius.Raw);
             Within(r, "muzzle", muzzle.Raw, 0, height.Raw);
-            return new CombatBody(height, eye, muzzle);
+            return new CombatBody(height, eye, muzzle, radius);
         }
 
         // STANCE-1 combat.stances: 1..7 objects, highest first, each { id, height, eye, muzzle, speedPermille, spreadPermille, ticks,
@@ -70,13 +79,13 @@ namespace WarCore.Content
                 int ticks = e.Int("ticks", StanceDef.MinTicks, StanceDef.MaxTicks);
                 UnitAction deny = e.Has("deny") ? Deny(e) : StanceDef.DefaultDeny;
                 e.Done();
-                Within(e, "height", height.Raw, 2 * UnitRadiusRaw, WallSpan.ClearanceRaw);
+                Within(e, "height", height.Raw, 2 * body.Value.Radius.Raw, WallSpan.ClearanceRaw);
                 if (height.Raw >= above)
                     throw e.Bad(e.FieldOf("height"), "is " + Metres(height.Raw) + " m, must be lower than the stance above it (" + Metres(above) + " m)");
-                Within(e, "eye", eye.Raw, UnitRadiusRaw, height.Raw - UnitRadiusRaw);
+                Within(e, "eye", eye.Raw, body.Value.Radius.Raw, height.Raw - body.Value.Radius.Raw);
                 Within(e, "muzzle", muzzle.Raw, 0, height.Raw);
                 above = height.Raw;
-                result[i] = new StanceDef(id, new CombatBody(height, eye, muzzle), speed, spread, ticks, deny);
+                result[i] = new StanceDef(id, new CombatBody(height, eye, muzzle, body.Value.Radius), speed, spread, ticks, deny);
             }
             return result;
         }
@@ -104,7 +113,8 @@ namespace WarCore.Content
 
         // BLAST-1 "blasts": [ { id, innerMm, outerMm, damage, friendly, walls } ], 1 to 32 kinds with distinct ids (a child layer's
         // array replaces the parent's whole), plus "blastPerTick" (1..64, default 4) and "blastQueue" (1..4096, default 64), which
-        // are refused without "blasts". damage 1..32767 health units; outerMm 1..100000; innerMm 0..outerMm - 1.
+        // are refused without "blasts". damage 1..32767 health units; outerMm 1..100000; innerMm 0..outerMm - 1; DOWN-1 stunTicks
+        // 0..600, default 0 (a unit hurt but not downed is stunned that long).
         private static BlastRules Blasts(string pack, EntryReader cr)
         {
             ContentField field = cr.FieldOf(BlastsField);
@@ -129,8 +139,9 @@ namespace WarCore.Content
                 if (inner >= outer) throw r.Bad(r.FieldOf("innerMm"), "must be less than outerMm (" + outer + ")");
                 int damage = r.Int("damage", 1, BlastSpec.MaxDamage);
                 bool friendly = r.Bool("friendly"), walls = r.Bool("walls");
+                int stun = r.Has("stunTicks") ? r.Int("stunTicks", 0, BlastSpec.MaxStunTicks) : 0;
                 r.Done();
-                kinds[i] = new BlastSpec(entries[i].Id, inner, outer, damage, friendly, walls);
+                kinds[i] = new BlastSpec(entries[i].Id, inner, outer, damage, friendly, walls, stun);
             }
             int perTick = cr.Has("blastPerTick") ? cr.Int("blastPerTick", 1, BlastRules.MaxPerTick) : BlastRules.DefaultPerTick;
             int queue = cr.Has("blastQueue") ? cr.Int("blastQueue", 1, BlastRules.MaxQueue) : BlastRules.DefaultQueue;
@@ -175,23 +186,32 @@ namespace WarCore.Content
             if (moveField != null) moveField.Used = true;
             bool manualReload = cr.Has(ManualReloadField) && cr.Bool(ManualReloadField);
             BlastRules blasts = Blasts(b.Pack, cr);
+            ContentField status = cr.FieldOf(StatusField);
+            if (status != null) status.Used = true;
             ContentField stances = cr.FieldOf(StancesField);
             if (stances != null)
             {
                 stances.Used = true;
                 if (stances.Node.Kind != JsonKind.Array) throw cr.Bad(stances, "must be an array");
             }
+            ContentField vertical = cr.FieldOf(VerticalSpreadField);
+            if (vertical != null) vertical.Used = true;
+            ContentField downed = cr.FieldOf(CombatDownedReader.Field);
+            if (downed != null) downed.Used = true;
             cr.Done();
             MoveSpread moveSpread = moveField == null ? null : CombatAimReader.MoveSpread(b.Pack, moveField, b.WeaponIds);
             if (moveSpread != null || manualReload) b.Publish(new CombatAim(moveSpread, manualReload));
+            if (status != null) b.Publish(CombatNerveReader.Status(b.Pack, status));
             if (body != null) b.Body = Body(b.Pack, body);
             if (stances != null) b.Stances = Stances(b.Pack, combat, stances, b.Body);
+            if (vertical != null) b.Publish(CombatVSpreadReader.Read(b.Pack, vertical, b.Body.HasValue, b.Stances));
             // PROJ-1: a projectile starts at the muzzle, so a pack with a projectile weapon must have the body.
             for (int i = 0; i < b.ProjectileSpeeds.Length && body == null; i++)
                 if (b.ProjectileSpeeds[i] != 0)
                     throw new ContentException("content pack '" + b.Pack + "' weapon '" + b.WeaponIds[i] + "' field '" + WeaponsSection.ProjectileField
                         + "': a projectile weapon needs the combat section's body");
             if (blasts != null) b.Publish(blasts);
+            if (downed != null) b.Publish(CombatDownedReader.Read(b.Pack, downed, b.Stances));
             b.MaxHealthRaw = maxHealth.Raw; b.ResolverId = resolver; b.SelectorId = selector;
             b.FriendlyFire = friendlyFire; b.FriendlyFireLocked = friendlyFireLocked; b.AllyCheckMissRaw = (int)missRate.Raw; b.AllyHoldMilli = holdMilli;
         }
