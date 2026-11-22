@@ -150,6 +150,7 @@ namespace WarCore.Combat
                 for (int j = 0; j < i; j++)
                     if (stances[j].Id == stances[i].Id) throw new ArgumentException("Stance id '" + stances[i].Id + "' is repeated.", nameof(stances));
                 if (stances[i].Body.Height.Raw >= above) throw new ArgumentException("Stance '" + stances[i].Id + "' is not lower than the one above it.", nameof(stances));
+                if (stances[i].Body.Radius.Raw != body.Value.Radius.Raw) throw new ArgumentException("Stance '" + stances[i].Id + "' has another radius than the body.", nameof(stances));
                 above = stances[i].Body.Height.Raw;
             }
             return (StanceDef[])stances.Clone();

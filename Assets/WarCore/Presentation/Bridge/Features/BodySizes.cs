@@ -13,14 +13,16 @@ namespace WarCore.Presentation
     // A change of stance is read from ViewEntity.Stance: the old level until the change is due, the new one from then on.
     public sealed class BodySizes
     {
-        // The unit collider's radius (MovementFeature places Collider(SimFix.Ratio(1, 4), ...); CombatSection.UnitRadiusRaw).
-        internal const long RadiusRaw = SimFix.Scale / 4;
+        // The default unit collider radius; a pack's own comes from its body (HC-1, BodyRadius).
+        internal const long RadiusRaw = BodyRadius.DefaultRaw;
         private static readonly ConditionalWeakTable<CombatPack, BodySizes> Made = new ConditionalWeakTable<CombatPack, BodySizes>();
         private readonly float[] top, eye, muzzle;
+        private readonly float radius;
 
         private BodySizes(CombatPack pack)
         {
             CombatBody body = pack.Body.Value;
+            radius = body.Radius.Raw / 65536f;
             int levels = pack.Stances.Length + 1;
             top = new float[levels];
             eye = new float[levels];
@@ -49,7 +51,7 @@ namespace WarCore.Presentation
         // The standing height (level 0): every drawn part is sized by it, whatever the unit's stance.
         public float StandingHeight => top[0];
         // The body's radius: the drawn body is 2 * Radius wide.
-        public float Radius => RadiusRaw / 65536f;
+        public float Radius => radius;
 
         // The top of the head, the eye and the muzzle over the feet at the unit's stance level now.
         public float Top(ViewEntity e) => top[Level(e.Stance)];

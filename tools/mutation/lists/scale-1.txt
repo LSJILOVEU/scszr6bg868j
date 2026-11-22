@@ -19,7 +19,7 @@ filter = FullyQualifiedName~WarCore.Tests.WorldScaleTests
 expect = WarCore.Tests.WorldScaleTests.W03_
 note = wall probe radius 0.5 m differs from the soldier radius
 original:
-|         public const long BelowRaw = SimFix.Scale / 4;
+|         public const long BelowRaw = BodyRadius.DefaultRaw;
 replacement:
 |         public const long BelowRaw = SimFix.Scale / 2;
 
@@ -29,7 +29,7 @@ filter = FullyQualifiedName~WarCore.Tests.WorldScaleTests
 expect = WarCore.Tests.WorldScaleTests.W03_
 note = content soldier radius 0.5 m differs from the colliders
 original:
-|         internal const long UnitRadiusRaw = SimFix.Scale / 4;
+|         internal const long UnitRadiusRaw = BodyRadius.DefaultRaw;
 replacement:
 |         internal const long UnitRadiusRaw = SimFix.Scale / 2;
 
@@ -39,7 +39,7 @@ filter = FullyQualifiedName~WarCore.Tests.WorldScaleTests
 expect = WarCore.Tests.WorldScaleTests.W03_
 note = collider radius of a unit placed at the start is 0.5 m
 original:
-| new Collider(SimFix.Ratio(1, 4), WorldAssembly.UnitHeight(a.Recipe.Combat))
+| new Collider(WorldAssembly.UnitRadius(a.Recipe.Combat), WorldAssembly.UnitHeight(a.Recipe.Combat))
 replacement:
 | new Collider(SimFix.Ratio(1, 2), WorldAssembly.UnitHeight(a.Recipe.Combat))
 
@@ -49,9 +49,9 @@ filter = FullyQualifiedName~WarCore.Tests.WorldScaleTests
 expect = WarCore.Tests.WorldScaleTests.W03_
 note = collider radius of a deployed reinforcement is 0.5 m
 original:
-|         private static readonly SimFix Radius = SimFix.Ratio(1, 4);
+|         radius = WorldAssembly.UnitRadius(recipe.Combat);
 replacement:
-|         private static readonly SimFix Radius = SimFix.Ratio(1, 2);
+|         radius = SimFix.Ratio(1, 2);
 
 [scale-06-sill]
 file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
