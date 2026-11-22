@@ -24,7 +24,7 @@ namespace WarCore.Presentation
         public override bool IsActive(WorldAssembly a)
         {
             ContentPack pack = PackOf(a.Recipe);
-            return pack != null && (Slope(pack) != null || SpeedRow(pack) != null);
+            return pack != null && (Slope(pack) != null || HasSpeedRow(pack));
         }
 
         public override void Prepare(WorldAssembly a)
@@ -38,8 +38,8 @@ namespace WarCore.Presentation
         public override void RegisterRules(WorldAssembly a)
         {
             ContentPack pack = PackOf(a.Recipe);
-            StatClampRow speed = SpeedRow(pack);
-            a.Locomotion.SetStepLine(Slope(pack), speed == null ? 0 : speed.DragFloorPermille, speed == null ? 0 : speed.DragCeilPermille);
+            StatClamps stats = pack.SectionOrNull<StatClamps>();
+            a.Locomotion.SetStepLine(Slope(pack), stats?.FloorOf(StatClamps.Speed) ?? 0, stats?.CeilOf(StatClamps.Speed) ?? 0);
         }
 
         // The content key's digest: the prefix, then the slope table (-1 when absent; else its band counts and bands, up
@@ -57,14 +57,15 @@ namespace WarCore.Presentation
                 hash.Add(slope.DownCount);
                 for (int i = 0; i < slope.DownCount; i++) { hash.Add(slope.DownAbove(i)); hash.Add(slope.DownSpeed(i)); }
             }
-            StatClampRow speed = SpeedRow(pack);
-            hash.Add(speed == null ? 0 : speed.DragFloorPermille);
-            hash.Add(speed == null ? 0 : speed.DragCeilPermille);
+            StatClamps stats = pack.SectionOrNull<StatClamps>();
+            hash.Add(stats?.FloorOf(StatClamps.Speed) ?? 0);
+            hash.Add(stats?.CeilOf(StatClamps.Speed) ?? 0);
             return hash.Value;
         }
 
         private static SlopeTable Slope(ContentPack pack) => pack.SectionOrNull<MovementRules>()?.Slope;
 
-        private static StatClampRow SpeedRow(ContentPack pack) => pack.SectionOrNull<StatClamps>()?.Speed;
+        // Only the speed row turns the feature on: a layer with other stats rows (stats.spread) keeps the old step.
+        private static bool HasSpeedRow(ContentPack pack) => pack.SectionOrNull<StatClamps>()?.Has(StatClamps.Speed) ?? false;
     }
 }

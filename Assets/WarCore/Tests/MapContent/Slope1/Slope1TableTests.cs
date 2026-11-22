@@ -126,13 +126,13 @@ namespace WarCore.Tests
                 Refused("\"stats\": { }", "stats {} must not be empty");
                 Refused("\"movement\": { " + SlopeJson + ", \"wounded\": { \"speedPermille\": 700 } }", "movement", "wounded", "unknown field");
                 Refused("\"movement\": { \"reload\": { \"speedPermille\": 700 } }", "movement", "reload", "unknown field");
-                Refused("\"stats\": { \"reload\": { \"dragFloorPermille\": 400 } }", "stats", "reload", "unknown field");
-                Refused("\"stats\": { \"speed\": { } }", "stats.speed {} must not be empty");
-                Refused("\"stats\": { \"speed\": { \"dragFloorPermille\": 0 } }", "stats.speed", "dragFloorPermille");
-                Refused("\"stats\": { \"speed\": { \"dragFloorPermille\": 1001 } }", "stats.speed", "dragFloorPermille");
-                Refused("\"stats\": { \"speed\": { \"dragCeilPermille\": 999 } }", "stats.speed", "dragCeilPermille");
-                Refused("\"stats\": { \"speed\": { \"dragCeilPermille\": 4001 } }", "stats.speed", "dragCeilPermille");
-                Refused("\"stats\": { \"speed\": { \"dragFloorPermille\": 400, \"reload\": 1 } }", "stats.speed", "reload");
+                Refused("\"stats\": { \"reload\": { \"dragFloorPermille\": 400 } }", "stats", "reload", "unknown stat line");
+                Refused("\"stats\": { \"speed\": { } }", "stats 'speed'", "dragFloorPermille", "dragCeilPermille");
+                Refused("\"stats\": { \"speed\": { \"dragFloorPermille\": 0 } }", "'speed'", "dragFloorPermille");
+                Refused("\"stats\": { \"speed\": { \"dragFloorPermille\": 1001 } }", "'speed'", "dragFloorPermille");
+                Refused("\"stats\": { \"speed\": { \"dragCeilPermille\": 999 } }", "'speed'", "dragCeilPermille");
+                Refused("\"stats\": { \"speed\": { \"dragCeilPermille\": 4001 } }", "'speed'", "dragCeilPermille");
+                Refused("\"stats\": { \"speed\": { \"dragFloorPermille\": 400, \"reload\": 1 } }", "'speed'", "reload");
             });
         }
 
@@ -147,9 +147,11 @@ namespace WarCore.Tests
                 Assert.That(t.SpeedPermille(401, false), Is.EqualTo(800));
                 foreach (string stats in new[] { Stats(floor: 1), Stats(floor: 1000), Stats(ceil: 1000), Stats(ceil: 4000), Stats(1000, 1000) })
                     Layer("slope-ok", stats);
-                StatClampRow row = Layer("slope-ok", Stats(400, 1100)).SectionOrNull<StatClamps>().Speed;
-                Assert.That(row.DragFloorPermille, Is.EqualTo(400));
-                Assert.That(row.DragCeilPermille, Is.EqualTo(1100));
+                StatClamps row = Layer("slope-ok", Stats(400, 1100)).SectionOrNull<StatClamps>();
+                Assert.That(row.FloorOf(StatClamps.Speed), Is.EqualTo(400));
+                Assert.That(row.CeilOf(StatClamps.Speed), Is.EqualTo(1100));
+                // A spread row alone publishes no speed row.
+                Assert.That(Layer("slope-ok", "\"stats\": { \"spread\": { \"dragFloorPermille\": 900 } }").SectionOrNull<StatClamps>().Has(StatClamps.Speed), Is.False);
                 // Without the sections nothing is published.
                 Assert.That(Plain().SectionOrNull<MovementRules>(), Is.Null);
                 Assert.That(Plain().SectionOrNull<StatClamps>(), Is.Null);
@@ -172,9 +174,9 @@ namespace WarCore.Tests
                 SlopeTable t = child.SectionOrNull<MovementRules>().Slope;
                 Assert.That(t.HasUp, Is.False);
                 Assert.That(t.SpeedPermille(201, false), Is.EqualTo(600));
-                StatClampRow row = child.SectionOrNull<StatClamps>().Speed;
-                Assert.That(row.DragFloorPermille, Is.EqualTo(300));
-                Assert.That(row.DragCeilPermille, Is.EqualTo(0));
+                StatClamps row = child.SectionOrNull<StatClamps>();
+                Assert.That(row.FloorOf(StatClamps.Speed), Is.EqualTo(300));
+                Assert.That(row.CeilOf(StatClamps.Speed), Is.EqualTo(0));
             });
         }
 
@@ -188,7 +190,7 @@ namespace WarCore.Tests
                 SlopeTable t = pack.SectionOrNull<MovementRules>().Slope;
                 Assert.That(new[] { t.UpAbove(0), t.UpAbove(1), t.UpAbove(2), t.DownAbove(0) }, Is.EqualTo(new[] { 100, 300, 500, 400 }));
                 Assert.That(new[] { t.UpSpeed(0), t.UpSpeed(1), t.UpSpeed(2), t.DownSpeed(0) }, Is.EqualTo(new[] { 900, 700, 500, 800 }));
-                Assert.That(pack.SectionOrNull<StatClamps>().Speed.DragFloorPermille, Is.EqualTo(400));
+                Assert.That(pack.SectionOrNull<StatClamps>().FloorOf(StatClamps.Speed), Is.EqualTo(400));
                 Assert.That(WarCore.Content.Rwr.RwrPack.Load("rwr").SectionOrNull<MovementRules>(), Is.Null);
             });
         }

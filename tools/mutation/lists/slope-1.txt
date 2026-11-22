@@ -436,10 +436,9 @@ filter = FullyQualifiedName~Slope1
 expect = WarCore.Tests.Slope1TableTests.S18_Sections_Refused
 note = stats.speed {} is read
 original:
-|             if (row.Fields.Count == 0)
-|                 throw new ContentException("content pack '" + pack + "' layer '" + row.FirstLayer + "' " + row.Label + " {} must not be empty");
-|
+| if (!r.Has(FloorField) && !r.Has(CeilField))
 replacement:
+| if (false)
 
 [slope1-content-floor-range]
 file = Assets/WarCore/Content/Data/Sections/StatsSection.cs
@@ -447,9 +446,9 @@ filter = FullyQualifiedName~Slope1
 expect = WarCore.Tests.Slope1TableTests.S18_Sections_Refused
 note = a floor of 0 or 1001 is read
 original:
-| e.Int(FloorField, MinFloorPermille, MaxFloorPermille)
+| new StatRowDef(SpeedRow, 1, 1000, 1000, 4000)
 replacement:
-| e.Int(FloorField, 0, 4000)
+| new StatRowDef(SpeedRow, 0, 4000, 1000, 4000)
 
 [slope1-content-ceil-range]
 file = Assets/WarCore/Content/Data/Sections/StatsSection.cs
@@ -457,9 +456,9 @@ filter = FullyQualifiedName~Slope1
 expect = WarCore.Tests.Slope1TableTests.S18_Sections_Refused
 note = a ceiling of 999 or 4001 is read
 original:
-| e.Int(CeilField, MinCeilPermille, MaxCeilPermille)
+| new StatRowDef(SpeedRow, 1, 1000, 1000, 4000)
 replacement:
-| e.Int(CeilField, 0, 5000)
+| new StatRowDef(SpeedRow, 1, 1000, 0, 5000)
 
 [slope1-feature-always]
 file = Assets/WarCore/Presentation/Bridge/Features/SlopeFeature.cs
@@ -467,9 +466,19 @@ filter = FullyQualifiedName~Slope1
 expect = WarCore.Tests.Slope1WorldTests.S1_APackWithoutTheSectionsChangesNothing
 note = the feature turns on for a pack without the sections
 original:
-| return pack != null && (Slope(pack) != null || SpeedRow(pack) != null);
+| return pack != null && (Slope(pack) != null || HasSpeedRow(pack));
 replacement:
 | return pack != null;
+
+[slope1-feature-any-stats-row]
+file = Assets/WarCore/Presentation/Bridge/Features/SlopeFeature.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1WorldTests.S1_APackWithoutTheSectionsChangesNothing
+note = a pack with only the spread row turns the feature on
+original:
+| HasSpeedRow(ContentPack pack) => pack.SectionOrNull<StatClamps>()?.Has(StatClamps.Speed) ?? false;
+replacement:
+| HasSpeedRow(ContentPack pack) => pack.SectionOrNull<StatClamps>() != null;
 
 [slope1-feature-no-terrain-pack]
 file = Assets/WarCore/Presentation/Bridge/Features/SlopeFeature.cs
@@ -515,7 +524,7 @@ filter = FullyQualifiedName~Slope1
 expect = WarCore.Tests.Slope1WorldTests.S10_SavesAndDeterminism
 note = the digest leaves out the floor
 original:
-| hash.Add(speed == null ? 0 : speed.DragFloorPermille);
+| hash.Add(stats?.FloorOf(StatClamps.Speed) ?? 0);
 replacement:
 
 [slope1-digest-no-up-speed]
@@ -534,9 +543,9 @@ filter = FullyQualifiedName~Slope1
 expect = WarCore.Tests.Slope1MoveTests.S3_UphillAndDownhillDiffer
 note = the rules stage skips the slope feature
 original:
-| PlayerFeature.Instance, SlopeFeature.Instance, StanceFeature.Instance
+| PlayerFeature.Instance, SlopeFeature.Instance,
 replacement:
-| PlayerFeature.Instance, StanceFeature.Instance
+| PlayerFeature.Instance,
 
 [slope1-copy-drops-pack]
 file = Assets/WarCore/Presentation/Bridge/WorldRecipe.cs

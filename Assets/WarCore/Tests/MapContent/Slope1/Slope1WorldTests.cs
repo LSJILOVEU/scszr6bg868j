@@ -48,6 +48,11 @@ namespace WarCore.Tests
                 Assert.That(Content(plateWith).Digest, Is.EqualTo(Content(plateWithout).Digest), "plate manifest");
                 Assert.That(Hashes(plateWith, 300), Is.EqualTo(Hashes(plateWithout, 300)), "plates");
                 Assert.Throws<SimBoundaryException>(() => Content(with).Key(SlopeFeature.ContentKeyName));
+                // A stats row of another line (stats.spread) does not turn the step line on.
+                ContentPack spread = Layer("slope-test", "\"stats\": { \"spread\": { \"dragFloorPermille\": 900 } }");
+                SimSession spreadOnly = Ai(ramp, spread, Walkers, WalkerScript), plainAgain = Ai(ramp, Plain(), Walkers, WalkerScript);
+                Assert.Throws<SimBoundaryException>(() => Content(spreadOnly).Key(SlopeFeature.ContentKeyName));
+                Assert.That(Hashes(spreadOnly, 60), Is.EqualTo(Hashes(plainAgain, 60)), "stats.spread only");
             });
         }
 
