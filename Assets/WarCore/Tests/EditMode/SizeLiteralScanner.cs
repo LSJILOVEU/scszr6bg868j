@@ -13,28 +13,35 @@ namespace WarCore.Tests
     //
     // Scope: every .cs under Assets/WarCore except paths with a "Tests" or "Verification" directory. Comments, string and
     // char literals are blanked first. A line yields one token per match of:
-    //   R1 a real literal (1.5f, 0.25) or an integer with a real suffix (28f), on a line without "Color(" or "Color32(",
-    //      except the exemptions listed at Exempt;
+    //   R1 a real literal (1.5f, 0.25, .25f) or an integer with a real suffix (28f), on a line without a Color or Color32
+    //      call (SetColor( and other names ending in Color do not count), except the exemptions listed at Exempt;
     //   R2 SimFix.Ratio / FromInt / FromRaw whose arguments are all integer literals, except an all-zero call;
     //   R3 an integer literal times SimFix.Scale, or SimFix.Scale times or over an integer literal;
     //   R4 on a const or static readonly line, "Name = value" where Name ends in a unit word (Mm, Raw, Metres, Ticks, Radius,
     //      Height, Speed, ...), does not start with Max or Min, and value has no parenthesis, no R1 or R3 token and an
     //      integer literal other than 0 and 1.
+    // Digit separators count as digits and are dropped from the token: 28_000 is the token 28000.
     internal static class SizeLiteralScanner
     {
+        // One run of digits, with digit separators between digits (1_000_000).
+        private const string D = @"\d(?:_*\d)*";
+
         private static readonly Regex Real = new Regex(
-            @"(?<![\w.])((?:\d+\.\d+(?:[eE][-+]?\d+)?|\d+[eE][-+]?\d+)[fFdDmM]?|\d+[fFdDmM])(?![\w.])", RegexOptions.CultureInvariant);
+            @"(?<![\w.])((?:" + D + @"\." + D + "(?:[eE][-+]?" + D + @")?|\." + D + "(?:[eE][-+]?" + D + ")?|" + D + "[eE][-+]?" + D
+            + ")[fFdDmM]?|" + D + @"[fFdDmM])(?![\w.])", RegexOptions.CultureInvariant);
         private static readonly Regex Fix = new Regex(
-            @"SimFix\.(?:Ratio|FromInt|FromRaw)\(\s*(-?\d+)L?\s*(?:,\s*(-?\d+)L?\s*)?\)", RegexOptions.CultureInvariant);
+            @"SimFix\.(?:Ratio|FromInt|FromRaw)\(\s*(-?" + D + @")L?\s*(?:,\s*(-?" + D + @")L?\s*)?\)", RegexOptions.CultureInvariant);
         private static readonly Regex Scale = new Regex(
-            @"(?<![\w.])\d+L?\s*\*\s*SimFix\.Scale(?![\w])|SimFix\.Scale\s*[*/]\s*\d+L?(?![\w.])", RegexOptions.CultureInvariant);
+            @"(?<![\w.])" + D + @"L?\s*\*\s*SimFix\.Scale(?![\w])|SimFix\.Scale\s*[*/]\s*" + D + @"L?(?![\w.])", RegexOptions.CultureInvariant);
+        private static readonly Regex Colour = new Regex(@"\bColor(?:32)?\(", RegexOptions.CultureInvariant);
         private static readonly Regex Declares = new Regex(@"\bconst\b|\bstatic\s+readonly\b", RegexOptions.CultureInvariant);
         private static readonly Regex Assignment = new Regex(@"(\w+)\s*=\s*([^,;=]+)", RegexOptions.CultureInvariant);
         private static readonly Regex UnitName = new Regex(
             @"^(?!Max|Min)\w*(Mm|Raw|Metres|Metre|MmPerSec|Ticks|Seconds|Radius|Height|Reach|Width|Depth|Speed|Range|Distance)$",
             RegexOptions.CultureInvariant);
-        private static readonly Regex Integer = new Regex(@"(?<![\w.])(\d+)L?(?![\w.])", RegexOptions.CultureInvariant);
+        private static readonly Regex Integer = new Regex(@"(?<![\w.])(" + D + @")L?(?![\w.])", RegexOptions.CultureInvariant);
         private static readonly Regex Space = new Regex(@"\s+", RegexOptions.CultureInvariant);
+        private static readonly Regex Separator = new Regex(@"(?<=\d)_+(?=\d)", RegexOptions.CultureInvariant);
 
         internal readonly struct Hit
         {
@@ -61,9 +68,9 @@ namespace WarCore.Tests
             for (int i = 0; i < lines.Length; i++)
             {
                 string line = lines[i];
-                if (line.IndexOf("Color(", StringComparison.Ordinal) < 0 && line.IndexOf("Color32(", StringComparison.Ordinal) < 0)
+                if (!Colour.IsMatch(line))
                     foreach (Match m in Real.Matches(line))
-                        if (!Exempt(line, m)) hits.Add(new Hit(i + 1, m.Groups[1].Value, line.Trim()));
+                        if (!Exempt(line, m)) hits.Add(new Hit(i + 1, Digits(m.Groups[1].Value), line.Trim()));
                 foreach (Match m in Fix.Matches(line))
                     if (!AllZero(m)) hits.Add(new Hit(i + 1, Normal(m.Value), line.Trim()));
                 foreach (Match m in Scale.Matches(line)) hits.Add(new Hit(i + 1, Normal(m.Value), line.Trim()));
@@ -82,13 +89,13 @@ namespace WarCore.Tests
         private static bool AllZero(Match m) =>
             IsZero(m.Groups[1].Value) && (!m.Groups[2].Success || IsZero(m.Groups[2].Value));
 
-        private static bool IsZero(string digits) => digits.TrimStart('-').Trim('0').Length == 0;
+        private static bool IsZero(string digits) => Digits(digits).TrimStart('-').Trim('0').Length == 0;
 
         private static bool HasSizeInteger(string value)
         {
             foreach (Match m in Integer.Matches(value))
             {
-                string d = m.Groups[1].Value.TrimStart('0');
+                string d = Digits(m.Groups[1].Value).TrimStart('0');
                 if (d.Length > 1 || (d.Length == 1 && d != "1")) return true;
             }
             return false;
@@ -98,7 +105,7 @@ namespace WarCore.Tests
         // conversions); 2 and 0.5 right after '*' or '/' or right before '*' (halving and doubling).
         private static bool Exempt(string line, Match m)
         {
-            string literal = m.Groups[1].Value;
+            string literal = Digits(m.Groups[1].Value);
             if (literal.IndexOf('e') >= 0 || literal.IndexOf('E') >= 0) return true;
             double v = double.Parse(literal.TrimEnd('f', 'F', 'd', 'D', 'm', 'M'), NumberStyles.Float, CultureInfo.InvariantCulture);
             if (v == 0.0 || v == 1.0 || v == 1000.0 || v == 1000000.0) return true;
@@ -108,7 +115,10 @@ namespace WarCore.Tests
                 || after.StartsWith("*", StringComparison.Ordinal);
         }
 
-        private static string Normal(string text) => Space.Replace(text, "");
+        private static string Normal(string text) => Digits(Space.Replace(text, ""));
+
+        // Drops digit separators: 1_000_000 becomes 1000000.
+        private static string Digits(string text) => Separator.Replace(text, "");
 
         // Blanks block comments (keeping their line breaks), then on each line string and char literals and the line comment.
         internal static string Blank(string source)

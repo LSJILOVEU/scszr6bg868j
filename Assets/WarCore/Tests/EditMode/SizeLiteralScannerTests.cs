@@ -45,6 +45,18 @@ namespace WarCore.Tests
             Assert.That(Tokens("var c = new Color(0.2f, 0.3f, 0.4f);"), Is.Empty);
             Assert.That(Tokens("var c = new Color32(20, 30, 40, 255); float w = 0.5f;"), Is.Empty);
             Assert.That(Tokens("float w = 0.5f;"), Is.EqualTo(new[] { "0.5f" }));
+            Assert.That(Tokens("var c = UnityEngine.Color(0.2f, 0.3f, 0.4f);"), Is.Empty);
+            Assert.That(Tokens("DrawLine(a, b, 2.5f); SetColor(c); var t = TeamColor(3.5f);"), Is.EqualTo(new[] { "2.5f", "3.5f" }));
+        }
+
+        [Test]
+        public void R1_DigitSeparatorsAndLeadingDotsAreFound()
+        {
+            Assert.That(Tokens("float a = 1_500f; double b = 2_000.25; float c = .25f; float d = 1__5f;"),
+                Is.EqualTo(new[] { "1500f", "2000.25", ".25f", "15f" }));
+            Assert.That(() => Tokens("float m = mm / 1_000f;"), Throws.Nothing);
+            Assert.That(Tokens("float m = mm / 1_000f;"), Is.Empty);
+            Assert.That(Tokens("var r = arr[1..5]; int _2f = x;"), Is.Empty);
         }
 
         [Test]
@@ -59,6 +71,10 @@ namespace WarCore.Tests
             Assert.That(Tokens("var h = SimFix.FromInt(1);"), Is.EqualTo(new[] { "SimFix.FromInt(1)" }));
             Assert.That(Tokens("var r = SimFix.FromRaw(-16384);"), Is.EqualTo(new[] { "SimFix.FromRaw(-16384)" }));
         }
+
+        [Test]
+        public void R2_DigitSeparatorsAreFound() =>
+            Assert.That(Tokens("var c = SimFix.FromInt(1_000); var z = SimFix.FromInt(0_0);"), Is.EqualTo(new[] { "SimFix.FromInt(1000)" }));
 
         [Test]
         public void R2_ZeroOrComputedArgumentsAreNotSizes() =>
@@ -76,6 +92,17 @@ namespace WarCore.Tests
             Assert.That(Tokens("long r = SimFix.Scale / 4;"), Is.EqualTo(new[] { "SimFix.Scale/4" }));
             Assert.That(Tokens("long r = SimFix.Scale * 3L;"), Is.EqualTo(new[] { "SimFix.Scale*3L" }));
             Assert.That(Tokens("long r = x * SimFix.Scale + SimFix.Scale / w;"), Is.Empty);
+        }
+
+        [Test]
+        public void R3_DigitSeparatorsAreFound() =>
+            Assert.That(Tokens("long h = 2_000 * SimFix.Scale; long r = SimFix.Scale / 1_0;"), Is.EqualTo(new[] { "2000*SimFix.Scale", "SimFix.Scale/10" }));
+
+        [Test]
+        public void R4_DigitSeparatorsAreFound()
+        {
+            Assert.That(Tokens("public const long ReachMm = 28_000;"), Is.EqualTo(new[] { "ReachMm=28000" }));
+            Assert.That(Tokens("public const long OneTicks = 0_1;"), Is.Empty);
         }
 
         [Test]

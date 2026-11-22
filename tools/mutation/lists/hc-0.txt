@@ -441,3 +441,73 @@ original:
 |                 if (cells.Length < 4 || cells.Length > 5)
 replacement:
 |                 if (cells.Length < 4)
+
+[hc0-sep-digits]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.R1_DigitSeparatorsAndLeadingDotsAreFound
+note = digit separators end a literal
+original:
+|         private const string D = @"\d(?:_*\d)*";
+replacement:
+|         private const string D = @"\d+";
+
+[hc0-sep-token]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.R1_DigitSeparatorsAndLeadingDotsAreFound
+note = tokens keep their separators
+original:
+|         private static string Digits(string text) => Separator.Replace(text, "");
+replacement:
+|         private static string Digits(string text) => text;
+
+[hc0-leading-dot]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.R1_DigitSeparatorsAndLeadingDotsAreFound
+note = a real literal without a leading digit passes
+original:
+|             @"(?<![\w.])((?:" + D + @"\." + D + "(?:[eE][-+]?" + D + @")?|\." + D + "(?:[eE][-+]?" + D + ")?|" + D + "[eE][-+]?" + D
+replacement:
+|             @"(?<![\w.])((?:" + D + @"\." + D + "(?:[eE][-+]?" + D + @")?|" + D + "[eE][-+]?" + D
+
+[hc0-colour-call]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.R1_ColourLinesAreSkipped
+note = any name ending in Color hides the line
+original:
+|         private static readonly Regex Colour = new Regex(@"\bColor(?:32)?\(", RegexOptions.CultureInvariant);
+replacement:
+|         private static readonly Regex Colour = new Regex(@"Color(?:32)?\(", RegexOptions.CultureInvariant);
+
+[hc0-sep-zero]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.R2_DigitSeparatorsAreFound
+note = an all-zero call with separators is reported
+original:
+|         private static bool IsZero(string digits) => Digits(digits).TrimStart('-').Trim('0').Length == 0;
+replacement:
+|         private static bool IsZero(string digits) => digits.TrimStart('-').Trim('0').Length == 0;
+
+[hc0-sep-integer]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.R4_DigitSeparatorsAreFound
+note = a unit-named 0_1 counts as a size
+original:
+|                 string d = Digits(m.Groups[1].Value).TrimStart('0');
+replacement:
+|                 string d = m.Groups[1].Value.TrimStart('0');
+
+[hc0-sep-exempt]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralScanner.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.R1_DigitSeparatorsAndLeadingDotsAreFound
+note = an exempt value with separators fails to parse
+original:
+|             string literal = Digits(m.Groups[1].Value);
+replacement:
+|             string literal = m.Groups[1].Value;

@@ -19,6 +19,7 @@ Combat/CombatSystem.Sight.cs	16384L*SimFix.Scale	1	debt
 Combat/CombatSystem.Sight.cs	SimFix.Ratio(1,2)	1	debt	
 Combat/CombatSystem.cs	SimFix.Scale/2	1	debt	
 Combat/DefaultAutoFire.cs	SimFix.FromInt(1)	1	math	unit vector
+Combat/MeleeSpec.cs	SimFix.FromInt(1000000)	1	math	damage cap, not a size (MaxDamage)
 Combat/MeleeSpec.cs	SimFix.FromInt(16)	1	debt	
 Combat/MoveSpread.cs	FarRaw=1L<<24	1	debt	
 Combat/ProjectileSystem.cs	SimFix.Scale/30000	1	debt	
