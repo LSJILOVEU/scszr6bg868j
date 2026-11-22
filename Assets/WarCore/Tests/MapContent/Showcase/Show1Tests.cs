@@ -58,6 +58,7 @@ namespace WarCore.Tests
             seen.HeightField = s.Map.HasHeightField;
             seen.Surfaces = s.Map.SurfaceCount;
             foreach (var item in stage.Script()) s.SetPlayerInput(item.AtTick, item.Input);
+            foreach (BridgeCommand command in stage.Commands()) s.Enqueue(command);
             var flying = new List<ViewProjectile>();
             var landed = new List<ViewImpact>();
             for (int t = 1; t <= Ticks && !s.IsFinished; t++)
@@ -116,7 +117,7 @@ namespace WarCore.Tests
         }
 
         [Test]
-        public void TheStagesAreTheFiveNamedOnes()
+        public void TheStagesAreTheSixNamedOnes()
         {
             var ids = new List<string>();
             foreach (ShowcaseStage stage in Showcase.Stages)
@@ -126,7 +127,7 @@ namespace WarCore.Tests
                 Assert.That(stage.Shows.Count, Is.GreaterThanOrEqualTo(2), stage.Id + ": lines that say what is on");
                 Assert.That(stage.Zoom, Is.InRange(8f, 30f), stage.Id);
             }
-            Assert.That(ids, Is.EqualTo(new[] { "battle", "bullets", "house", "terrain", "melee" }));
+            Assert.That(ids, Is.EqualTo(new[] { "battle", "bullets", "house", "terrain", "melee", "hamlet" }));
         }
 
         [TestCase("battle", 100, 50, 7, 200)]
@@ -134,6 +135,7 @@ namespace WarCore.Tests
         [TestCase("house", 8, 12, 3, 16)]
         [TestCase("terrain", 10, 30, 2, 20)]
         [TestCase("melee", 60, 30, 3, 120)]
+        [TestCase("hamlet", 40, 20, 5, 80)]
         public void AStageStartsWithItsForcesAndThePlayerInTeamOne(string id, int alive, int reserve, int points, int entities)
         {
             Seen seen = Play(id);
@@ -149,6 +151,7 @@ namespace WarCore.Tests
         [TestCase("house")]
         [TestCase("terrain")]
         [TestCase("melee")]
+        [TestCase("hamlet")]
         public void AStagePlaysTheSameTwice(string id)
         {
             Seen first = Play(id), second = Play(id, cached: false);
@@ -302,12 +305,12 @@ namespace WarCore.Tests
         public void TheStatusTextOfTheFirstFrame()
         {
             Assert.That(Play("battle").Hud, Is.EqualTo(
-                "STAGE 1/5  Open battle    0:00\n" +
+                "STAGE 1/6  Open battle    0:00\n" +
                 "TEAM 1 (you)  alive 100  reserve 50      TEAM 2  alive 100  reserve 50\n" +
                 "POINTS  1:-  2:-  3:T1  4:-  5:T2  6:-  7:-\n" +
                 "YOU  #1  HP 100/100  AMMO 30  ready  DASH ready\n"));
             Assert.That(Play("melee").Hud, Is.EqualTo(
-                "STAGE 5/5  Ancient melee    0:00\n" +
+                "STAGE 5/6  Ancient melee    0:00\n" +
                 "TEAM 1 (you)  alive 60  reserve 30      TEAM 2  alive 60  reserve 30\n" +
                 "POINTS  1:-  2:-  3:-\n" +
                 "YOU  #1  HP 100/100\n"));
@@ -372,15 +375,18 @@ namespace WarCore.Tests
         [Test]
         public void TheHelpNamesEveryKeyAndTheMissingListSaysWhatIsNotBuilt()
         {
-            foreach (string word in new[] { "W A S D", "left mouse button", "Left Shift", "Space", "G (preview only", "Q E", "Tab", "Backspace", "P pause", "V squad lines", "M missing list" })
+            foreach (string word in new[] { "W A S D", "left mouse button", "Left Shift", "Space", "G (real in stage 6; preview only elsewhere", "C your team: stand, crouch, prone", "Q E", "Tab", "Backspace", "P pause", "V squad lines", "M missing list" })
                 Assert.That(ShowcaseHud.Keys, Does.Contain(word));
             Assert.That(ShowcaseHud.GrenadeStub, Does.StartWith("GRENADE PREVIEW: looks only."));
             Assert.That(ShowcaseHud.GrenadeStub, Does.Contain("hurts nobody"));
+            Assert.That(ShowcaseHud.GrenadeStub, Does.Contain("stage 6 has the real one"));
 
             string missing = ShowcaseHud.Missing();
-            Assert.That(missing, Does.StartWith("NOT BUILT YET\n- Grenades and explosions"));
+            Assert.That(missing, Does.StartWith("NOT BUILT YET\n- AI grenades; the player's grenade is real in stage 6 only"));
+            Assert.That(missing, Does.Not.Contain("nothing consumes it"), "SHOW-2: blasts are built, the throw is no longer unused in stage 6");
+            Assert.That(missing, Does.Not.Contain("Stances: crouch and prone"), "SHOW-2: stances are built");
             Assert.That(missing.Split('\n').Length, Is.EqualTo(Showcase.Missing.Count + 2), "a title, one line each, a final line end");
-            foreach (string gap in new[] { "Grenades", "crouch", "Climbing", "commander", "water", "Health bars" })
+            foreach (string gap in new[] { "AI grenades", "Your own crouch and prone", "Cover seeking on height-field maps", "Climbing", "commander", "water", "Health bars" })
                 Assert.That(missing, Does.Contain(gap));
 
             string shows = ShowcaseHud.Shows(Stage("bullets"));

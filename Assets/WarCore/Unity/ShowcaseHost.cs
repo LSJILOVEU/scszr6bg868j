@@ -8,7 +8,8 @@ namespace WarCore.Unity
 {
     // SHOW-1: the playable showcase. One stage at a time (Showcase.Stages), built at run time by ShowcaseScene in any scene:
     // the host makes a camera and a light when the scene has none. Keys and mouse drive the controlled soldier; Tab goes to
-    // the next stage, Backspace restarts it, P pauses, G throws the grenade preview (drawn only). The HUD lists what is on in
+    // the next stage, Backspace restarts it, P pauses, G throws a grenade (real where the stage has one, else the drawn-only
+    // preview), C orders the team's stance where the stage takes orders (SHOW-2). The HUD lists what is on in
     // the stage and what is not built yet, and shows a small map with every soldier, the player's squad and the points.
     // With a shot directory (the capture menu item) it plays every stage's script instead and writes pictures at ShotTicks.
     public sealed class ShowcaseHost : MonoBehaviour
@@ -22,6 +23,7 @@ namespace WarCore.Unity
 
         private readonly IsoCameraInput cameraInput = new IsoCameraInput();
         private ShowcaseScene scene;
+        private ShowcaseActions actions;
         private ShowcaseSound sound;
         private float stepWait, hurtBefore;
         private PlayerInputMapper mapper;
@@ -92,6 +94,7 @@ namespace WarCore.Unity
             index = (i % count + count) % count;
             if (scene != null) scene.Dispose();
             scene = null;
+            actions = null;
             problem = selfCheck = status = shows = "";
             paused = false;
             aimPoint = null;
@@ -101,6 +104,7 @@ namespace WarCore.Unity
             try
             {
                 scene = new ShowcaseScene(stage);
+                actions = new ShowcaseActions(stage, stage.StanceScales().Length);
                 selfCheck = scene.SelfCheck();
             }
             catch (Exception e)
@@ -140,11 +144,8 @@ namespace WarCore.Unity
                 if (Input.GetKeyDown(KeyCode.M)) missing = !missing;
                 if (Input.GetKeyDown(KeyCode.P)) paused = !paused;
                 if (Input.GetKeyDown(KeyCode.N)) sound.Muted = !sound.Muted;
-                if (Input.GetKeyDown(KeyCode.G))
-                {
-                    stubUntil = Time.unscaledTime + StubSeconds;
-                    if (scene != null && aimPoint.HasValue && !paused) scene.ThrowPreview(aimPoint.Value);
-                }
+                if (Input.GetKeyDown(KeyCode.G)) Throw();
+                if (Input.GetKeyDown(KeyCode.C) && scene != null && actions != null && !paused && problem == "") actions.NextStance(scene.Session);
                 if (scene != null && Input.GetKeyDown(KeyCode.V)) scene.SquadLines = !scene.SquadLines;
             }
             if (scene == null)
@@ -214,6 +215,25 @@ namespace WarCore.Unity
             }
         }
 
+        // G: a real grenade where the stage has one (nothing happens while it cools down or the player is down), else the
+        // drawn-only preview and its banner.
+        private void Throw()
+        {
+            if (scene == null || actions == null) return;
+            if (!actions.RealGrenades)
+            {
+                stubUntil = Time.unscaledTime + StubSeconds;
+                if (aimPoint.HasValue && !paused) scene.ThrowPreview(aimPoint.Value);
+                return;
+            }
+            if (!aimPoint.HasValue || paused || problem != "") return;
+            Vector3 aim = aimPoint.Value;
+            if (!actions.TryThrow(scene.Session, (long)Mathf.Round(aim.x * 1000f), (long)Mathf.Round(aim.z * 1000f), out long x, out long z)) return;
+            float lx = x / 1000f, lz = z / 1000f;
+            float ly = scene.Ground == null ? scene.Session.Map.FloorY : scene.Ground.HeightAt(lx, lz, scene.Session.Map.FloorY);
+            scene.ThrowReal(new Vector3(lx, ly, lz));
+        }
+
         // Draw the stage as it stands and rebuild the status text.
         private void Refresh(float alpha, float dt = 0f, Vector2 lead = default)
         {
@@ -228,7 +248,7 @@ namespace WarCore.Unity
             ulong? key = session.ControlledKey;
             UnitStatus? mine = key.HasValue && session.TryUnitStatus(key.Value, out UnitStatus found) ? found : (UnitStatus?)null;
             status = ShowcaseHud.Status(scene.Stage, index, Showcase.Stages.Count, session.Current, key, mine, scene.LostPlayer,
-                scene.PlayerAlive, scene.InFlight) + ShowcaseHud.Squad(session.Current, key)
+                scene.PlayerAlive, scene.InFlight) + (actions == null ? "" : actions.Line(session.Tick)) + ShowcaseHud.Squad(session.Current, key)
                 + ShowcaseHud.Score(scene.Shots.PlayerShots, scene.Shots.PlayerKills);
         }
 
@@ -372,6 +392,8 @@ namespace WarCore.Unity
                 {
                     foreach (var item in scene.Stage.Script())
                         scene.Session.SetPlayerInput(item.AtTick, item.Input);
+                    foreach (BridgeCommand command in scene.Stage.Commands())
+                        scene.Session.Enqueue(command);
                 });
                 for (long tick = 0; tick <= last && error == null; tick++)
                 {
