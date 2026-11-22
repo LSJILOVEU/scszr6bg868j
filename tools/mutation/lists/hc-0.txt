@@ -431,3 +431,13 @@ original:
 |                 if (cells.Length < 4 || cells.Length > 5)
 replacement:
 |                 if (cells.Length > 5)
+
+[hc0-cells-max]
+file = Assets/WarCore/Tests/EditMode/SizeLiteralGuardTests.cs
+filter = FullyQualifiedName~SizeLiteralScannerTests
+expect = WarCore.Tests.SizeLiteralScannerTests.ParseRefusesABadLedger
+note = a row with an extra cell passes
+original:
+|                 if (cells.Length < 4 || cells.Length > 5)
+replacement:
+|                 if (cells.Length < 4)
