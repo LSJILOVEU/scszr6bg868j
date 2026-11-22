@@ -137,7 +137,7 @@ namespace WarCore.Presentation
                 "Real terrain: a 160 m crop of the Emmental valley with a hamlet; 62 walls, 5 points, 40 + 20 reserves a side",
                 "AI: squads, spread attack, bounding, pressure (pinned / broken), bursts, memory, search, suppression",
                 "Player: rifle, dash, block, respawn; aim spreads while moving",
-                "G throws a real grenade: it bursts 1.1 s later and hurts everyone within 6 m, walls shield",
+                "G throws a real grenade: it bursts after a short fuse and hurts everyone inside the ring it draws, walls shield",
                 "Y orders your team's soldiers to stand, crouch or go prone (lower is slower, steadier and harder to see)",
                 "Known gap: the AI's cover rule refuses a height-field map, so nobody seeks cover here",
             }, () => Hamlet().WcMapBytes, HamletRecipe, HamletScript, HamletCommands, HamletBlast, HamletOrderSquad),
