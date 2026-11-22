@@ -24,21 +24,25 @@ namespace WarCore.Content
         internal const string BlastsField = "blasts";
         internal const string StancesField = "stances";
 
-        // The unit collider radius r (MovementFeature and the deployer place every unit with it).
-        internal const long UnitRadiusRaw = SimFix.Scale / 4;
+        // The default unit collider radius; the pack's body.radius replaces it (HC-1, BodyRadius is the one definition).
+        internal const long UnitRadiusRaw = BodyRadius.DefaultRaw;
+        internal const string RadiusField = "radius";
 
-        // ML-3 body { height, eye, muzzle } in metres, all three required (a child layer's body replaces the parent's whole).
+        // ML-3 body { height, eye, muzzle } in metres, all three required, and HC-1 radius, optional (BodyRadius.MinRaw to MaxRaw,
+        // default BodyRadius.DefaultRaw); a child layer's body replaces the parent's whole, radius included.
         // Gate D6: 2r <= height <= the 2 m headroom (a doorway fits the whole body); r <= eye <= height - r (the viewpoint
-        // inside the capsule's cylinder); 0 <= muzzle <= height. Every bound is inclusive.
+        // inside the capsule's cylinder); 0 <= muzzle <= height; r is the body's radius. Every bound is inclusive.
         private static CombatBody Body(string pack, ContentEntry entry)
         {
             var r = new EntryReader(pack, entry);
             SimFix height = r.Fix("height"), eye = r.Fix("eye"), muzzle = r.Fix("muzzle");
+            SimFix radius = r.Has(RadiusField) ? r.Fix(RadiusField) : BodyRadius.Default;
             r.Done();
-            Within(r, "height", height.Raw, 2 * UnitRadiusRaw, WallSpan.ClearanceRaw);
-            Within(r, "eye", eye.Raw, UnitRadiusRaw, height.Raw - UnitRadiusRaw);
+            if (r.Has(RadiusField)) Within(r, RadiusField, radius.Raw, BodyRadius.MinRaw, BodyRadius.MaxRaw);
+            Within(r, "height", height.Raw, 2 * radius.Raw, WallSpan.ClearanceRaw);
+            Within(r, "eye", eye.Raw, radius.Raw, height.Raw - radius.Raw);
             Within(r, "muzzle", muzzle.Raw, 0, height.Raw);
-            return new CombatBody(height, eye, muzzle);
+            return new CombatBody(height, eye, muzzle, radius);
         }
 
         // STANCE-1 combat.stances: 1..7 objects, highest first, each { id, height, eye, muzzle, speedPermille, spreadPermille, ticks,
@@ -74,13 +78,13 @@ namespace WarCore.Content
                 int ticks = e.Int("ticks", StanceDef.MinTicks, StanceDef.MaxTicks);
                 UnitAction deny = e.Has("deny") ? Deny(e) : StanceDef.DefaultDeny;
                 e.Done();
-                Within(e, "height", height.Raw, 2 * UnitRadiusRaw, WallSpan.ClearanceRaw);
+                Within(e, "height", height.Raw, 2 * body.Value.Radius.Raw, WallSpan.ClearanceRaw);
                 if (height.Raw >= above)
                     throw e.Bad(e.FieldOf("height"), "is " + Metres(height.Raw) + " m, must be lower than the stance above it (" + Metres(above) + " m)");
-                Within(e, "eye", eye.Raw, UnitRadiusRaw, height.Raw - UnitRadiusRaw);
+                Within(e, "eye", eye.Raw, body.Value.Radius.Raw, height.Raw - body.Value.Radius.Raw);
                 Within(e, "muzzle", muzzle.Raw, 0, height.Raw);
                 above = height.Raw;
-                result[i] = new StanceDef(id, new CombatBody(height, eye, muzzle), speed, spread, ticks, deny);
+                result[i] = new StanceDef(id, new CombatBody(height, eye, muzzle, body.Value.Radius), speed, spread, ticks, deny);
             }
             return result;
         }

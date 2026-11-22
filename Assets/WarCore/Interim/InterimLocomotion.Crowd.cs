@@ -213,11 +213,11 @@ namespace WarCore.Interim
         private bool TerrainAllows(SimContext context, int i, SimVec3 next)
         {
             // On a plate world the candidate was settled first: its cell is open on its layer, and the footprint uses that rule.
-            if (layered) { if (!grid.SegmentClear(provisional[i].Point, next, UnitFootprint, openCells)) return false; }
+            if (layered) { if (!grid.SegmentClear(provisional[i].Point, next, footprint, openCells)) return false; }
             else
             {
                 if (!grid.TryCell(next, out int cell) || !grid.IsPassable(cell % grid.Width, cell / grid.Width)) return false;
-                if (terrain != null && !grid.SegmentClear(provisional[i].Point, next, UnitFootprint)) return false;
+                if (terrain != null && !grid.SegmentClear(provisional[i].Point, next, footprint)) return false;
             }
             return wallMask == 0 || !context.SpatialQuery.Any(SpatialQueries.Capsule(
                 provisional[i].Point, next, SimFix.FromRaw(MaxRaw(0, provisional[i].Radius.Raw - 1)), wallMask));

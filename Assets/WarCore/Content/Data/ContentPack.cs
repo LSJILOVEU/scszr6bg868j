@@ -53,6 +53,8 @@ namespace WarCore.Content
         private readonly object[] sections;
         // ML-3: the combat section's optional body; null keeps the legacy geometry.
         public CombatBody? Body { get; }
+        // HC-1: the body's radius, the one every unit of this pack is placed and walked with (the default without a body).
+        public SimFix UnitRadius => Body.HasValue ? Body.Value.Radius : BodyRadius.Default;
         // PROJ-1: projectile speed per weapon in mm/s (0 = instant); passed to the combat pack as is.
         private readonly int[] projectileSpeeds;
         // STANCE-1: the combat section's stances, or null; passed to the combat pack as is.
