@@ -176,10 +176,10 @@ namespace WarCore.Tests
             Assert.That(CanStandOnFloor("0.15", 9100), Is.False, "0.1 m from the edge is too close for r = 0.15 as well");
         }
 
-        private static SimVec3 OnFloor(string radius)
+        private static SimVec3 OnFloor(string radius, MoverKind mover)
         {
             var units = new[] { new UnitSpawn(1, 0, 1, 11500, 7500, 3000, 1, layer: 2) };
-            var recipe = new WorldRecipe(41, MoverKind.InterimCrowd, units, new[] { BridgeCommand.MoveTo(1, 1, 9200, 7500, 2) })
+            var recipe = new WorldRecipe(41, mover, units, new[] { BridgeCommand.MoveTo(1, 1, 9200, 7500, 2) })
                 .WithCombat(Combat(radius)).WithPlatesPreview();
             SimSession s = SimSession.Create(recipe, PlateDemoMap.Bytes());
             for (int tick = 0; tick < 200; tick++) s.StepOnce();
@@ -187,10 +187,11 @@ namespace WarCore.Tests
             return M3TestWorld.Position(s);
         }
 
-        [Test]
-        public void S9_ThinBodyStandsNearTheEdgeOfAFloor()
+        [TestCase(MoverKind.InterimCrowd)]
+        [TestCase(MoverKind.InterimPath)]
+        public void S9_ThinBodyStandsNearTheEdgeOfAFloor(MoverKind mover)
         {
-            SimVec3 thin = OnFloor("0.15"), standard = OnFloor(null);
+            SimVec3 thin = OnFloor("0.15", mover), standard = OnFloor(null, mover);
             Assert.That(thin.X.Raw, Is.EqualTo(Wp23.Mm(9200).Raw));
             Assert.That(standard.X.Raw, Is.EqualTo(Wp23.Mm(9500).Raw));
             Assert.That(thin.Z.Raw, Is.EqualTo(standard.Z.Raw));
