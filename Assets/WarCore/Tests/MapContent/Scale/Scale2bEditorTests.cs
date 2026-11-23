@@ -25,10 +25,10 @@ namespace WarCore.Tests
         private static string Parent(params string[] kinds) => Layer("scale2b-trv", "rwr-stance", Traversal(kinds));
 
         private static void TrvAccepts(string parent, params (string Field, int Mm)[] changes) =>
-            Assert.That(Loads(Layer("scale2b-test", "scale2b-trv", Scale(changes)), parent).SectionOrNull<ScaleRules>(), Is.Not.Null);
+            Assert.That(Loads(Layer("scale2b-test", "scale2b-trv", ScaleJson(changes)), parent).SectionOrNull<ScaleRules>(), Is.Not.Null);
 
         private static void TrvRefusesOnly(string field, string parent, params (string Field, int Mm)[] changes) =>
-            Assert.That(Fields(Refused(Layer("scale2b-test", "scale2b-trv", Scale(changes)), parent)), Is.EqualTo(new[] { field }));
+            Assert.That(Fields(Refused(Layer("scale2b-test", "scale2b-trv", ScaleJson(changes)), parent)), Is.EqualTo(new[] { field }));
 
         // SC13: with an over kind, a lone low wall on flat ground must match one (FirstMatch with rise = fall = height and no
         // gap) and a lone high wall must match none; edge kinds alone do not count.
@@ -42,7 +42,7 @@ namespace WarCore.Tests
             string upTo175 = Parent(Kind("vault", "over", 0, 114688));
             TrvRefusesOnly("highWallMm", upTo175, ("highWallMm", 1750));
             TrvAccepts(upTo175, ("highWallMm", 1751));
-            Assert.That(Loads(Layer("scale2b-test", "scale2b-trv", Scale(("highWallMm", 1751))), upTo175).SectionOrNull<ScaleRules>().HighWallRaw,
+            Assert.That(Loads(Layer("scale2b-test", "scale2b-trv", ScaleJson(("highWallMm", 1751))), upTo175).SectionOrNull<ScaleRules>().HighWallRaw,
                 Is.EqualTo(114754));
 
             string shortFall = Parent(Kind("vault", "over", 0, 65536, 0, 39321));

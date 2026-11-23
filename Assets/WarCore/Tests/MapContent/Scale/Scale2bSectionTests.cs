@@ -87,7 +87,7 @@ namespace WarCore.Tests
         [Test]
         public void SC4_ChildLayerChangesOneField()
         {
-            string parent = Layer("scale2b-parent", "rwr-stance", Scale(("windowTopMm", 2100)));
+            string parent = Layer("scale2b-parent", "rwr-stance", ScaleJson(("windowTopMm", 2100)));
             ScaleRules s = Loads(Layer("scale2b-child", "scale2b-parent", "\"scale\": { \"storeyMm\": 3500 }"), parent).SectionOrNull<ScaleRules>();
             Assert.That(s.StoreyMm, Is.EqualTo(3500));
             Assert.That(s.StoreyRaw, Is.EqualTo(229376));
@@ -100,7 +100,7 @@ namespace WarCore.Tests
         [Test]
         public void SC5_ScaleNeedsABody()
         {
-            string message = Refused(Layer("scale2b-test", "rwr-m6", Scale()));
+            string message = Refused(Layer("scale2b-test", "rwr-m6", ScaleJson()));
             Assert.That(message, Does.Contain("scale needs the combat section's body"));
             Assert.That(message, Does.StartWith("content pack 'scale2b-test' layer 'scale2b-test' scale: "));
         }
@@ -117,12 +117,12 @@ namespace WarCore.Tests
             RefusesOnly("lowWallMm", "rwr-body", ("lowWallMm", 499));
 
             string muzzleAbove = Layer("scale2b-muzzle", "rwr-body", "\"combat\": { \"stances\": " + Stances(("1.0", "0.5", "0.75")) + " }");
-            Assert.That(Loads(Layer("scale2b-test", "scale2b-muzzle", Scale(("lowWallMm", 1000))), muzzleAbove).SectionOrNull<ScaleRules>(), Is.Not.Null);
-            Assert.That(Fields(Refused(Layer("scale2b-test", "scale2b-muzzle", Scale(("lowWallMm", 999))), muzzleAbove)), Is.EqualTo(new[] { "lowWallMm" }));
+            Assert.That(Loads(Layer("scale2b-test", "scale2b-muzzle", ScaleJson(("lowWallMm", 1000))), muzzleAbove).SectionOrNull<ScaleRules>(), Is.Not.Null);
+            Assert.That(Fields(Refused(Layer("scale2b-test", "scale2b-muzzle", ScaleJson(("lowWallMm", 999))), muzzleAbove)), Is.EqualTo(new[] { "lowWallMm" }));
 
             string laterHigher = Layer("scale2b-later", "rwr-body", "\"combat\": { \"stances\": " + Stances(("1.2", "0.5", "0.5"), ("1.0", "0.75", "0.75")) + " }");
-            Assert.That(Loads(Layer("scale2b-test", "scale2b-later", Scale(("lowWallMm", 1000))), laterHigher).SectionOrNull<ScaleRules>(), Is.Not.Null);
-            Assert.That(Fields(Refused(Layer("scale2b-test", "scale2b-later", Scale(("lowWallMm", 999))), laterHigher)), Is.EqualTo(new[] { "lowWallMm" }));
+            Assert.That(Loads(Layer("scale2b-test", "scale2b-later", ScaleJson(("lowWallMm", 1000))), laterHigher).SectionOrNull<ScaleRules>(), Is.Not.Null);
+            Assert.That(Fields(Refused(Layer("scale2b-test", "scale2b-later", ScaleJson(("lowWallMm", 999))), laterHigher)), Is.EqualTo(new[] { "lowWallMm" }));
         }
 
         // SC7: chest wall above the low wall and below min(E, M).
@@ -142,10 +142,10 @@ namespace WarCore.Tests
         {
             string body = Layer("scale2b-body", "rwr-body", Body("1.75", eye, muzzle));
             void Accepted(string field, int mm) =>
-                Assert.That(Loads(Layer("scale2b-test", "scale2b-body", Scale(("chestWallMm", 1399), (field, mm))), body).SectionOrNull<ScaleRules>(),
+                Assert.That(Loads(Layer("scale2b-test", "scale2b-body", ScaleJson(("chestWallMm", 1399), (field, mm))), body).SectionOrNull<ScaleRules>(),
                     Is.Not.Null, field + " " + mm);
             void RefusedOnly(string field, int mm) =>
-                Assert.That(Fields(Refused(Layer("scale2b-test", "scale2b-body", Scale(("chestWallMm", 1399), (field, mm))), body)),
+                Assert.That(Fields(Refused(Layer("scale2b-test", "scale2b-body", ScaleJson(("chestWallMm", 1399), (field, mm))), body)),
                     Is.EqualTo(new[] { field }), field + " " + mm);
             Accepted("lowWallMm", 1150); RefusedOnly("lowWallMm", 1151);
             Accepted("chestWallMm", 1399); RefusedOnly("chestWallMm", 1400);
@@ -162,9 +162,9 @@ namespace WarCore.Tests
             string thin = Layer("scale2b-thin", "rwr-body", "\"combat\": { \"body\": { \"height\": 1.75, \"eye\": 1.5, \"muzzle\": 1.5, \"radius\": 0.2 } }");
             Assert.That(Loads(thin).Body.Value.Radius.Raw, Is.EqualTo(13107));
             void Accepted(string field, int mm) =>
-                Assert.That(Loads(Layer("scale2b-test", "scale2b-thin", Scale((field, mm))), thin).SectionOrNull<ScaleRules>(), Is.Not.Null, field + " " + mm);
+                Assert.That(Loads(Layer("scale2b-test", "scale2b-thin", ScaleJson((field, mm))), thin).SectionOrNull<ScaleRules>(), Is.Not.Null, field + " " + mm);
             void RefusedOnly(string field, int mm) =>
-                Assert.That(Fields(Refused(Layer("scale2b-test", "scale2b-thin", Scale((field, mm))), thin)), Is.EqualTo(new[] { field }), field + " " + mm);
+                Assert.That(Fields(Refused(Layer("scale2b-test", "scale2b-thin", ScaleJson((field, mm))), thin)), Is.EqualTo(new[] { field }), field + " " + mm);
             Accepted("lowWallMm", 400); RefusedOnly("lowWallMm", 399);
             Accepted("lowWallMm", 1300); RefusedOnly("lowWallMm", 1301);
             Accepted("windowSillMm", 400); RefusedOnly("windowSillMm", 399);
@@ -205,7 +205,7 @@ namespace WarCore.Tests
             {
                 string body = Layer("scale2b-short", parent, Body("1.3", "1.05", "1.0"));
                 Assert.That(Loads(body).Body.Value.Eye.Raw, Is.EqualTo(Loads(body).Body.Value.Height.Raw - R), "the eye is at H - r");
-                string message = Refused(Layer("scale2b-test", "scale2b-short", Scale()), body);
+                string message = Refused(Layer("scale2b-test", "scale2b-short", ScaleJson()), body);
                 Assert.That(Fields(message), Is.EqualTo(new[] { "lowWallMm", "chestWallMm", "windowSillMm", "railingMm" }), parent);
                 messages.Add(message);
             }

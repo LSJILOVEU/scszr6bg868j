@@ -44,7 +44,7 @@ namespace WarCore.Tests
         }
 
         // The same with integer changes only.
-        internal static string Scale(params (string Field, int Mm)[] changes) =>
+        internal static string ScaleJson(params (string Field, int Mm)[] changes) =>
             ScaleText(changes.Select(c => (c.Field, c.Mm.ToString(System.Globalization.CultureInfo.InvariantCulture))).ToArray());
 
         // A layer text: id, parent, then the given top-level members.
@@ -98,7 +98,7 @@ namespace WarCore.Tests
 
         // The scale rules a layer with this section over the parent publishes.
         internal static ScaleRules Rules(string parent, params (string Field, int Mm)[] changes) =>
-            Loads(Layer("scale2b-test", parent, Scale(changes))).SectionOrNull<ScaleRules>();
+            Loads(Layer("scale2b-test", parent, ScaleJson(changes))).SectionOrNull<ScaleRules>();
 
         // The failing items of a refused layer (the message after "scale: ", split on "; ").
         internal static string[] Items(string message)
@@ -116,7 +116,7 @@ namespace WarCore.Tests
             Assert.That(Rules(parent, changes), Is.Not.Null);
 
         internal static void RefusesOnly(string field, string parent, params (string Field, int Mm)[] changes) =>
-            Assert.That(Fields(Refused(Layer("scale2b-test", parent, Scale(changes)))), Is.EqualTo(new[] { field }));
+            Assert.That(Fields(Refused(Layer("scale2b-test", parent, ScaleJson(changes)))), Is.EqualTo(new[] { field }));
 
         // A flat 30 x 20 description on the layer, ceiling 20 m (four storeys of 3 m fit).
         internal static MapDocument Tall(string pack) => MapDocument.New(new MapNewSettings
@@ -153,7 +153,7 @@ namespace WarCore.Tests
                 File.Copy(file, Path.Combine(dir, Path.GetFileName(file)));
             File.WriteAllText(Path.Combine(dir, Layer + ".json"), "{ \"id\": \"" + Layer + "\", \"extends\": \"rwr-scale\", "
                 + "\"scale\": { \"windowSillMm\": 1000 } }");
-            File.WriteAllText(Path.Combine(dir, OddLayer + ".json"), Scale2bFixtures.Layer(OddLayer, "rwr-stance", Scale2bFixtures.Scale(OddScale)));
+            File.WriteAllText(Path.Combine(dir, OddLayer + ".json"), Scale2bFixtures.Layer(OddLayer, "rwr-stance", Scale2bFixtures.ScaleJson(OddScale)));
             Ed0Dirs.UseList(dir);
         }
 
