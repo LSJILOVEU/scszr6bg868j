@@ -22,7 +22,7 @@ namespace WarCore.Tests
 
         // Layers each cartridge must have. A cartridge may hold more: every layer it lists must load (see AssertLayers).
         private static readonly string[] RwrLayers = { "rwr", "rwr-ai-playtest", "rwr-body", "rwr-field", "rwr-m6", "rwr-m7-playtest", "rwr-melee", "rwr-surfaces", "rwr-terrain-demo" };
-        private static readonly string[] AncientLayers = { "ancient", "ancient-field" };
+        private static readonly string[] AncientLayers = { "ancient", "ancient-field", "ancient-nerve" };
 
         [Test]
         public void TheShippedCartridges()

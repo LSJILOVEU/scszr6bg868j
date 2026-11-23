@@ -92,6 +92,10 @@ namespace WarCore.Replay
                 () => Lanes(Layer("replay-lanes-allon-roles-squads-temper", LanesBake().PackId, WithTempers(WithSquads(AllOn(RolesPart))))), () => LanesBake().WcMapBytes, P1RingMm),
             // ANC-2: ancient-field layer (spear), 60 against 60 on a flat 96 x 64 m field; the same layout as Tests/MapContent/Ancient.
             ["ancient-field"] = new Entry("Ancient field, 60 v 60 with spears", AncientField, AncientFieldMap),
+            // AI-M1: the ancient layer on the same field, shields in front and swords behind, as it was and with the
+            // ancient-nerve layer (pressure from melee, engage bound, melee units that ask it). A fifth argument reseeds both.
+            ["ancient-plain"] = new Entry("Ancient, 60 v 60, as it was", () => AncientSwords("ancient"), AncientFieldMap),
+            ["ancient-nerve"] = new Entry("Ancient, 60 v 60, with nerves (ancient-nerve)", () => AncientSwords("ancient-nerve"), AncientFieldMap),
             // AIM-1: rwr-aim without damage; team 1 (4) stands, team 2 (4) runs to and fro along x 30 m in front at 6 m/s (the top
             // move-spread band, 3000) or stands too ("-still"). The first 300 ticks are Tests/MapContent/Aim1 A9.
             ["aim-run"] = new Entry("rwr-aim, team 2 runs across 30 m in front", () => AimRun(true), AimRunMap),
@@ -239,10 +243,14 @@ namespace WarCore.Replay
             return WcMapWriter.Write(new WcMap("ancient-field", "none", min, max, WarCore.Sim.SimFix.FromInt(96), default, 96, 64,
                 new[] { new WcMapLayer("walls", 1) }, Array.Empty<WcMapWall>(), bits, points, new[] { "ancient.ground" }, new byte[96 * 64]));
         }
-        private static WorldRecipe AncientField()
+        private static WorldRecipe AncientField() => Ancient("ancient-field",
+            new[] { "ancient.guard", "ancient.guard", "ancient.spearman", "ancient.spearman", "ancient.swordsman", "ancient.swordsman" }, 41);
+        // The layout of Tests/MapContent/Ai/AiM1Field.
+        private static WorldRecipe AncientSwords(string layer) => Ancient(layer,
+            new[] { "ancient.guard", "ancient.guard", "ancient.swordsman", "ancient.swordsman", "ancient.swordsman", "ancient.swordsman" }, (ulong)(LanesSeed ?? 41));
+        private static WorldRecipe Ancient(string layer, string[] rank, ulong seed)
         {
-            ContentPack pack = ContentLoader.Load(new AncientSource(), "ancient-field");
-            string[] rank = { "ancient.guard", "ancient.guard", "ancient.spearman", "ancient.spearman", "ancient.swordsman", "ancient.swordsman" };
+            ContentPack pack = ContentLoader.Load(new AncientSource(), layer);
             var units = new UnitSpawn[120];
             for (int i = 0; i < 60; i++)
             {
@@ -251,7 +259,7 @@ namespace WarCore.Replay
             }
             var pts = new[] { 12, 32, 52 }.Select((z, n) => new ControlPointDef(n + 1, WarCore.Sim.SimVec3.Metres(48, 0, z), WarCore.Sim.SimFix.FromInt(4))).ToArray();
             var bases = new[] { new SpawnAnchor(1, WarCore.Sim.SimVec3.Metres(4, 0, 32)), new SpawnAnchor(2, WarCore.Sim.SimVec3.Metres(92, 0, 32)) };
-            return new WorldRecipe(41, MoverKind.InterimCrowd, units, Array.Empty<BridgeCommand>()).WithCombat(pack.BuildCombat())
+            return new WorldRecipe(seed, MoverKind.InterimCrowd, units, Array.Empty<BridgeCommand>()).WithCombat(pack.BuildCombat())
                 .WithMatch(pack.BuildMatch(pts, bases)).WithCrowdPass(CrowdPassKind.TeamIdle).WithTerrainRules(pack).WithFacing().WithBlockAi();
         }
     }

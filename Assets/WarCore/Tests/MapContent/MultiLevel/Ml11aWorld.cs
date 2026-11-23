@@ -117,6 +117,7 @@ namespace WarCore.Tests
             public ulong Fold(ulong digest) => digest;
             public AiEngage Decide(in AiUnit unit, SimVec3 enemy, AiField field) => AiEngage.Fallback;
             public AiEngage Unseen(in AiUnit unit, AiField field) => AiEngage.Fallback;
+            public AiEngage Melee(in AiUnit unit, SimVec3 enemy, AiField field) => AiEngage.Advance;
         }
     }
 }

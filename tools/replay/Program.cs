@@ -25,7 +25,7 @@ namespace WarCore.Replay
                 Console.Error.WriteLine("usage: WarCore.Replay <setup> <maxTicks> <every> <output.json> [lanesSeed] | --map <map.json> <maxTicks> <every> <output.json> | --list | --selftest");
                 return 2;
             }
-            // A fifth argument reseeds the three-lane setups (the other setups ignore it), to see one change over several matches.
+            // A fifth argument reseeds the three-lane and the ancient-plain / ancient-nerve setups (the other setups ignore it).
             if (args.Length == 5) Recipes.LanesSeed = int.Parse(args[4], CultureInfo.InvariantCulture);
             string output = Path.GetFullPath(args[3]);
             UseProjectRoot();
