@@ -135,6 +135,7 @@ F	map	Content/M2DemoMap.cs
 F	map	Content/M6DemoMap.cs
 F	map	Content/M7DemoMap.cs
 F	map	Content/MapCells.cs
+F	map	Content/ScaleRules.cs
 F	map	Content/ShowcaseField.cs
 F	map	Content/WallSpan.cs
 F	map	Content/MapTools/*.cs
