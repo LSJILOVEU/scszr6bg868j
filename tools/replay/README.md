@@ -46,6 +46,8 @@ to a file: every shot's lane, the height where its line crosses the target plane
 `down-crawl` is the DOWN-1 setup (layer `rwr-down`, run it with `EVERY=1`): a blast on tick 30 downs one unit, which the
 pack forces prone, so it is drawn as a flat oval and crawls; a unit 4 m away is stunned for 60 ticks and stands still; the
 downed unit bleeds out on tick 1830. A stunned or downed unit has no mark of its own yet.
+`slope-race` is the SLOPE-1 setup: three lanes (flat, uphill, downhill) under `rwr-slope`, one unit each; the units
+arrive flat first, downhill second, uphill last (run it with `TICKS=300 EVERY=1`).
 Every frame carries `h`, the state hash after its tick (16 hex digits), so a picture of a frame can name the exact state.
 `lanes-reentry` is the RESPAWN-AI-2 setup: the three-lane map with `match.reentryTicks` 90, so a reserve enters 3 s after each
 death instead of on the clock. Such a setup writes `r` on every frame: `[owed1, entered1, owed2, entered2]` (owed may be

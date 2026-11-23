@@ -59,6 +59,7 @@ relation from the code or the shipped data. "none" means no test holds the value
 | Plate slope in the gate | min(layer walkable slope, 5/3) | `MapGate.PlateSlopeNum`, `PlateSlopeDen` | W08 |
 | Layer walkable slope | per layer `slopeRule`; `rwr-terrain-demo` 3/4; layers without one use the height field's 2/1 | `SlopeRuleSection` | W08 |
 | Demo stairs | 3 m over 4 cells (3/4) | `PlateDemoMap`, `PlateAssaultMap` | W08 |
+| Slope speed (content `movement.slope`) | probe 0.5 m ahead along the heading, slope = rise * 1000 / 0.5 m, the last band strictly exceeded; `rwr-slope`: up > 100: 900, > 300: 700, > 500: 500; down > 400: 800; the dash takes no slope | `SlopeTable`, `InterimLocomotion.StepLine` | `Slope1TableTests`, `Slope1PlateTests` |
 
 ## Speed
 

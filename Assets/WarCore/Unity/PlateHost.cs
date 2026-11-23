@@ -9,7 +9,7 @@ namespace WarCore.Unity
 {
     // ML-10: the plate demo (PlateDemo: the demo house with a first floor and a stair) built at run time in an empty scene.
     // SEE-1: the same host also plays the street demo (StreetDemo, chosen with DemoKey = "street", pictures named SEE1-...); in both
-    // the layer cut runs with LayerCut.SeeRadius and the team mates the walls cover are drawn as silhouettes (Silhouettes).
+    // the layer cut runs with LayerCut.SeeRadiusFor (the body's ring) and the team mates the walls cover are drawn as silhouettes (Silhouettes).
     // Play: WASD moves the player, the mouse aims (AimPick on the ground and the plates the cut leaves, with the layer), the
     // left button fires; Q/E/R/F and the wheel turn, tilt and zoom; the camera follows the player and the layer cut follows
     // the player (LayerCut). Capture (the ML-10 menu sets the directory): the scripted walk (PlateDemo.Script), one picture
@@ -153,7 +153,7 @@ namespace WarCore.Unity
             ViewEntity? me = Player(shown);
             if (me.HasValue)
                 isoCamera.Follow(me.Value.X, me.Value.Z);
-            cut = LayerCut.Run(session.Map.Plates, session.Map, me, isoCamera.Forward, LayerCut.SeeRadius, BodySizes.Of(session));
+            cut = LayerCut.Run(session.Map.Plates, session.Map, me, isoCamera.Forward, LayerCut.SeeRadiusFor(BodySizes.Of(session)), BodySizes.Of(session));
             covered = Silhouettes.Run(session.Map.Plates, session.Map, cut, me, shown.Entities, isoCamera.Forward, BodySizes.Of(session));
             plateViews.Apply(cut);
             points.Apply(current);

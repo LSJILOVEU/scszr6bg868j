@@ -1,0 +1,8 @@
+{
+  "id": "rwr-slope",
+  "extends": "rwr-field",
+  "movement": { "slope": {
+    "up": [ { "abovePermille": 100, "speedPermille": 900 }, { "abovePermille": 300, "speedPermille": 700 }, { "abovePermille": 500, "speedPermille": 500 } ],
+    "down": [ { "abovePermille": 400, "speedPermille": 800 } ] } },
+  "stats": { "speed": { "dragFloorPermille": 400 } }
+}

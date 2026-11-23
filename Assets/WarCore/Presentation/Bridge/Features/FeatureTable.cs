@@ -12,7 +12,7 @@ namespace WarCore.Presentation
     internal static class FeatureTable
     {
         internal static readonly IWorldFeature[] Validate = { MovementFeature.Instance, DashFeature.Instance };
-        internal static readonly IWorldFeature[] Prepare = { PlateFeature.Instance, TerrainFeature.Instance, MatchFeature.Instance };
+        internal static readonly IWorldFeature[] Prepare = { PlateFeature.Instance, TerrainFeature.Instance, SlopeFeature.Instance, MatchFeature.Instance };
         internal static readonly IWorldFeature[] Components =
         {
             MovementFeature.Instance, TerrainFeature.Instance, PlateFeature.Instance, FacingFeature.Instance, MotionFeature.Instance,
@@ -37,8 +37,8 @@ namespace WarCore.Presentation
         // stances only add gears to the speed line, building it the same way when no stance did; they never bind or configure the
         // motion model under it.
         internal static readonly IWorldStageFeature[] Rules =
-            { MatchFeature.Instance, AiFireFeature.Instance, BlockAiFeature.Instance, PlayerFeature.Instance, StanceFeature.Instance, NerveFeature.Instance,
-              DownedFeature.Instance };
+            { MatchFeature.Instance, AiFireFeature.Instance, BlockAiFeature.Instance, PlayerFeature.Instance, SlopeFeature.Instance,
+              StanceFeature.Instance, NerveFeature.Instance, DownedFeature.Instance };
 
         private static IEnumerable<IWorldFeature> Active(IWorldFeature[] table, WorldAssembly assembly)
         {

@@ -110,6 +110,8 @@ namespace WarCore.Replay
             ["nerve-fire"] = new Entry("rwr-nerve, shooters calm / pinned / broken from tick 150", NerveDemo.Recipe, NerveDemo.MapBytes),
             // DOWN-1: a scripted rwr.frag of rwr-down on tick 30 downs A and stuns B 4 m away; all three are sent 3 m north (DownDemo).
             ["down-crawl"] = new Entry("rwr-down: one man downed and crawling, one stunned, one untouched", DownDemo.Recipe, DownDemo.MapBytes),
+            // SLOPE-1: three lanes (flat, about 400 permille up, about 600 permille down) under rwr-slope, one unit each (SlopeDemo).
+            ["slope-race"] = new Entry("Three lanes: flat, uphill, downhill (rwr-slope)", SlopeDemo.Recipe, SlopeDemo.MapBytes),
         };
 
         private const string SquadAi = "\"squadMinSize\": 4, \"squadMaxSize\": 9, \"squadSkirmisherPermille\": 300, \"squadRecruitRadiusMm\": 30000, "

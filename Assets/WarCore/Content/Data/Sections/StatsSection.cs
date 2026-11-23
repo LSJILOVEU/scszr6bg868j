@@ -10,13 +10,14 @@ namespace WarCore.Content
     internal sealed class StatsSection : IContentSection
     {
         internal const string SectionKey = "stats", FloorField = "dragFloorPermille", CeilField = "dragCeilPermille";
-        internal const string SpreadRow = "spread";
+        internal const string SpreadRow = "spread", SpeedRow = "speed";
 
         // One row per stat line, with its bounds. X1: every drag line takes a floor of 1..1000 and a ceiling of 1000..4000, so a
         // unit whose drags are all 1000 is never moved by the clamp.
         internal static readonly StatRowDef[] Rows =
         {
             new StatRowDef(SpreadRow, 1, 1000, 1000, 4000),
+            new StatRowDef(SpeedRow, 1, 1000, 1000, 4000),
         };
 
         public string Key => SectionKey;
@@ -99,5 +100,7 @@ namespace WarCore.Content
         public bool Has(string line) => rows.ContainsKey(line);
 
         public const string Spread = StatsSection.SpreadRow;
+        // SLOPE-1: the foot step's drags (surface, slope, registered drags).
+        public const string Speed = StatsSection.SpeedRow;
     }
 }

@@ -81,7 +81,7 @@ filter = FullyQualifiedName~See1
 expect = WarCore.Tests.See1ZoneTests.LowWallsDoNotFlicker
 note = low walls fade too
 original:
-| if (wallStates[w] == CutState.Shown && wall.CenterY + wall.SizeY / 2 - me.Y > LayerCut.MinSeeHeight
+| if (wallStates[w] == CutState.Shown && wall.CenterY + wall.SizeY / 2 - me.Y > seeHeight
 replacement:
 | if (wallStates[w] == CutState.Shown
 
@@ -91,9 +91,9 @@ filter = FullyQualifiedName~See1
 expect = WarCore.Tests.See1ZoneTests.LowWallsDoNotFlicker
 note = a wall exactly 1.5 m over the feet fades
 original:
-| wall.CenterY + wall.SizeY / 2 - me.Y > LayerCut.MinSeeHeight
+| wall.CenterY + wall.SizeY / 2 - me.Y > seeHeight
 replacement:
-| wall.CenterY + wall.SizeY / 2 - me.Y >= LayerCut.MinSeeHeight
+| wall.CenterY + wall.SizeY / 2 - me.Y >= seeHeight
 
 [see1-wall-height-from-the-ground]
 file = Assets/WarCore/Presentation/Camera/SeeZone.cs
@@ -101,9 +101,9 @@ filter = FullyQualifiedName~See1
 expect = WarCore.Tests.See1ZoneTests.TheHeightIsOverTheFeet
 note = the wall's top is not measured from the unit's feet
 original:
-| wall.CenterY + wall.SizeY / 2 - me.Y > LayerCut.MinSeeHeight
+| wall.CenterY + wall.SizeY / 2 - me.Y > seeHeight
 replacement:
-| wall.CenterY + wall.SizeY / 2 > LayerCut.MinSeeHeight
+| wall.CenterY + wall.SizeY / 2 > seeHeight
 
 [see1-min-height-lowered]
 file = Assets/WarCore/Presentation/Camera/LayerCut.cs
@@ -111,9 +111,9 @@ filter = FullyQualifiedName~See1
 expect = WarCore.Tests.See1ZoneTests.LowWallsDoNotFlicker
 note = 1.0 m instead of 1.5 m
 original:
-| public const float MinSeeHeight = 1.5f;
+| public const float LegacySeeHeight = 1.5f;
 replacement:
-| public const float MinSeeHeight = 1.0f;
+| public const float LegacySeeHeight = 1.0f;
 
 [see1-plate-height-rule-dropped]
 file = Assets/WarCore/Presentation/Camera/SeeZone.cs
@@ -121,7 +121,7 @@ filter = FullyQualifiedName~See1
 expect = WarCore.Tests.See1ZoneTests.LowPlatformsStayAndHighOnesFade
 note = low plates fade too
 original:
-| && plateTops[k] - me.Y > LayerCut.MinSeeHeight
+| && plateTops[k] - me.Y > seeHeight
 replacement:
 |
 

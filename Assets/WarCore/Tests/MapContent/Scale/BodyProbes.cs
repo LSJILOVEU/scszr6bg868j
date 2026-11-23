@@ -283,6 +283,13 @@ namespace WarCore.Tests.Scale
         // B11: the farthest an enemy may be from a straight-down mouse ray and still be snapped to, found by bisection, with the
         // AIM-2 reach a pack's "pick" section gives (here the least one, 2 x the body radius: 0.5 m for the reference body, the
         // old fixed reach). A pack without the section keeps the fixed AimPick.SnapRadius (see the report).
+        // B12: the see-through ring's threshold for a standing unit of the body (HC-2a: the body's height at its stance).
+        private static long[] SeeHeight(ProbeBody b)
+        {
+            BodySizes sizes = BodySizes.For(ProbeBodies.DirectPack(b));
+            return new[] { Raw(LayerCut.SeeHeight(sizes, new ViewEntity(1, 0, 0f, 0f, 0f, team: 1))) };
+        }
+
         private static long[] PickReach(ProbeBody b)
         {
             BodySizes sizes = BodySizes.For(ProbeBodies.DirectPack(b));
@@ -342,8 +349,8 @@ namespace WarCore.Tests.Scale
                 One, FloatTolerance, b => new[] { Raw(BodySizes.For(ProbeBodies.DirectPack(b)).Radius) }),
             new Probe("B11", "H1", "mouse snap reach", "behaviour AimPick.PickRay with a PickReach", "Presentation/Camera/PickReach.cs; cap Sim/BodyRadius.cs:13",
                 One, FloatTolerance, PickReach),
-            new Probe("B12", "M1", "see-through ring height (standing eye)", "constant LayerCut.MinSeeHeight", "Presentation/Camera/LayerCut.cs:47",
-                One, FloatTolerance, b => new[] { Raw(LayerCut.MinSeeHeight) }, b => new[] { b.Body.Eye.Raw }),
+            new Probe("B12", "M1", "see-through ring height (standing body height)", "API LayerCut.SeeHeight, standing", "Presentation/Camera/LayerCut.cs:59",
+                One, FloatTolerance, SeeHeight, b => new[] { b.Body.Height.Raw }),
             new Probe("B13", "H2", "layer cut headroom equals the world's headroom", "constant LayerCut.Headroom", "Presentation/Camera/LayerCut.cs:43",
                 One, FloatTolerance, b => new[] { Raw(LayerCut.Headroom) }, b => new[] { WallSpan.ClearanceRaw }),
             new Probe("B14", "M2", "AI guard slot spacing (pack default)", "constant AiRules.DefaultSlotSpacingMm", "Content/Data/Sections/AiSection.cs:36",

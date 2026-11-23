@@ -123,6 +123,9 @@ namespace WarCore.Presentation
         // The rules a map with terrain is derived under; null for flat maps. Not part of the recipe's seed or rule-set id.
         public ContentPack TerrainPack { get; private set; }
         public ContentPack AiPack { get; private set; }
+        // SLOPE-1: the content pack the world's features read (movement.slope, stats.speed). Null: they read TerrainPack.
+        // Not part of the recipe's seed or rule-set id; a feature that reads it adds its own content key.
+        public ContentPack Pack { get; private set; }
         // Opaque rule-set identity: hashed from tick 0 and checked on restore. Never derived from the rule contents.
         public string RuleSetId { get; private set; } = MatchMode.RwrRuleSetId;
         public ulong Seed { get; }
@@ -153,6 +156,7 @@ namespace WarCore.Presentation
             var copy = new WorldRecipe(Seed, Mover, units, script);
             copy.Combat = Combat; copy.Match = Match; copy.PlayerKey = PlayerKey; copy.RuleSetId = RuleSetId; copy.CrowdPass = CrowdPass; copy.TerrainPack = TerrainPack; copy.BlockAi = BlockAi; copy.options.AddRange(options);
             copy.AiPack = AiPack;
+            copy.Pack = Pack;
             return copy;
         }
 
@@ -188,6 +192,14 @@ namespace WarCore.Presentation
         {
             if (pack == null) throw new ArgumentNullException(nameof(pack));
             var copy = Copy(); copy.TerrainPack = pack;
+            return copy;
+        }
+
+        // The content pack the world's features read (KB5): MapRecipe.From always carries it.
+        public WorldRecipe WithPack(ContentPack pack)
+        {
+            if (pack == null) throw new ArgumentNullException(nameof(pack));
+            var copy = Copy(); copy.Pack = pack;
             return copy;
         }
 

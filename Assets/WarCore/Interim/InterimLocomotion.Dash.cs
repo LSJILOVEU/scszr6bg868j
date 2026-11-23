@@ -105,7 +105,7 @@ namespace WarCore.Interim
             for (int j = 1; j <= m; j++)
             {
                 var piece = new SimVec3(SimFix.FromRaw(DashPart(dx, j, m)), default, SimFix.FromRaw(DashPart(dz, j, m)));
-                if (!ControlledTerrainCandidate(context, i, piece, out SimVec3 next)) { moved = false; break; }
+                if (!ControlledTerrainCandidate(context, i, piece, out SimVec3 next, surfaceOnly: true)) { moved = false; break; }
                 if (layered) CommitLayer(unit);
                 provisional[i].Point = next;
             }

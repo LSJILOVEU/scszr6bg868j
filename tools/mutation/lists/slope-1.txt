@@ -1,0 +1,590 @@
+# SLOPE-1 slopes and the foot step: the slope table (bands, edges, probe run, checks, digest), the step line (on switch,
+# probe, one division, clamps, drags, one-raw minimum, caps, the receipt), the player and dash wiring, the flat drags, the
+# two content sections, the feature (switch, pack source, id check, content key and digest) and the recipes carrying the pack.
+# Not listed: sending every unblocked terrain step through the line with nothing configured gives the old surface product
+# (StatLine with [surface, 1000] rounds the same), an equivalent mutant; S1 pins the off state through the feature switch.
+# Writing the step back into MotionState and re-probing on a fallback have no single line to break; S22 and S27 pin them.
+
+[slope1-band-at-least]
+file = Assets/WarCore/Sim/SlopeTable.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1TableTests.S2_Bands_TakeTheLastExceeded
+note = a slope equal to a band edge takes the band
+original:
+| if (slopePermille > above[i]) factor = speed[i];
+replacement:
+| if (slopePermille >= above[i]) factor = speed[i];
+
+[slope1-band-first]
+file = Assets/WarCore/Sim/SlopeTable.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1TableTests.S2_Bands_TakeTheLastExceeded
+note = the first band exceeded is taken, not the last
+original:
+| if (slopePermille > above[i]) factor = speed[i];
+replacement:
+| if (slopePermille > above[i] && factor == 1000) factor = speed[i];
+
+[slope1-permille-signed]
+file = Assets/WarCore/Sim/SlopeTable.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1TableTests.S2_SlopePermille_Floors
+note = a falling rise is not made positive
+original:
+| long magnitude = rise < 0 ? -rise : rise;
+replacement:
+| long magnitude = rise;
+
+[slope1-probe-one-metre]
+file = Assets/WarCore/Sim/SlopeTable.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1TableTests.S2_SlopePermille_Floors
+expect = WarCore.Tests.Slope1MoveTests.S4_ContourFlatMudAndTheFoot
+note = the probe and the slope run are 1 m, not 0.5 m
+original:
+| public const long ProbeRaw = SimFix.Scale / 2;
+replacement:
+| public const long ProbeRaw = SimFix.Scale;
+
+[slope1-table-not-increasing]
+file = Assets/WarCore/Sim/SlopeTable.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1TableTests.S2_Constructor_RefusesBadTables
+note = the table accepts bands that do not increase
+original:
+| if (i > 0 && above[i] <= above[i - 1]) throw new ArgumentException("Bands must be strictly increasing.", name);
+replacement:
+
+[slope1-table-above-unbounded]
+file = Assets/WarCore/Sim/SlopeTable.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1TableTests.S2_Constructor_RefusesBadTables
+note = the table accepts a band above 2000
+original:
+| if (above[i] < 0 || above[i] > MaxAbovePermille) throw
+replacement:
+| if (above[i] < 0) throw
+
+[slope1-table-speed-unbounded]
+file = Assets/WarCore/Sim/SlopeTable.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1TableTests.S2_Constructor_RefusesBadTables
+note = the table accepts a speed above 1000
+original:
+| if (speed[i] < MinSpeedPermille || speed[i] > MaxSpeedPermille) throw
+replacement:
+| if (speed[i] < MinSpeedPermille) throw
+
+[slope1-table-digest-speed]
+file = Assets/WarCore/Sim/SlopeTable.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1TableTests.S2_Digest_FollowsEveryBand
+note = the table digest leaves out the speeds
+original:
+| for (int i = 0; i < above.Length; i++) { hash.Add(above[i]); hash.Add(speed[i]); }
+replacement:
+| for (int i = 0; i < above.Length; i++) { hash.Add(above[i]); }
+
+[slope1-up-down-swapped]
+file = Assets/WarCore/Interim/InterimLocomotion.StepLine.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1MoveTests.S3_UphillAndDownhillDiffer
+note = uphill reads the downhill table
+original:
+| return slopeTable.SpeedPermille(SlopeTable.SlopePermille(rise), rise > 0);
+replacement:
+| return slopeTable.SpeedPermille(SlopeTable.SlopePermille(rise), rise < 0);
+
+[slope1-probe-not-halved]
+file = Assets/WarCore/Interim/InterimLocomotion.StepLine.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1MoveTests.S4_ContourFlatMudAndTheFoot
+note = the probe offset is the unit heading itself (1 m)
+original:
+| SimFix px = SimFix.FromRaw(point.X.Raw + along.X.Raw * SlopeTable.ProbeRaw / SimFix.Scale);
+replacement:
+| SimFix px = SimFix.FromRaw(point.X.Raw + along.X.Raw);
+
+[slope1-probe-fixed-direction]
+file = Assets/WarCore/Interim/InterimLocomotion.StepLine.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1MoveTests.S4_ContourFlatMudAndTheFoot
+note = the probe always looks along +X, not along the step
+original:
+| SimVec3 along = new SimVec3(heading.X, default, heading.Z).Normalized;
+replacement:
+| SimVec3 along = new SimVec3(SimFix.FromInt(1), default, default);
+
+[slope1-two-divisions]
+file = Assets/WarCore/Interim/InterimLocomotion.StepLine.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1MoveTests.S5_DividesOnce
+note = the surface is divided out before the slope
+original:
+| long length = StatLine.Apply(baseStep.Raw, ReadOnlySpan<int>.Empty, new ReadOnlySpan<int>(stepFactors, 0, count),
+replacement:
+| long length = StatLine.Apply(StatLine.Apply(baseStep.Raw, ReadOnlySpan<int>.Empty, new ReadOnlySpan<int>(stepFactors, 0, 1), 0, 0), ReadOnlySpan<int>.Empty, new ReadOnlySpan<int>(stepFactors, 1, count - 1),
+
+[slope1-floor-dropped]
+file = Assets/WarCore/Interim/InterimLocomotion.StepLine.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1MoveTests.S6_TheFloorLiftsOnlyBelowIt
+note = the step line forgets its floor
+original:
+| stepFloorPermille = dragFloorPermille;
+replacement:
+| stepFloorPermille = 0;
+
+[slope1-ceil-dropped]
+file = Assets/WarCore/Interim/InterimLocomotion.StepLine.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1MoveTests.S24_StatsSpeedAloneClampsTheSurface
+note = the step line forgets its ceiling
+original:
+| stepCeilPermille = dragCeilPermille;
+replacement:
+| stepCeilPermille = 0;
+
+[slope1-on-ignores-stats]
+file = Assets/WarCore/Interim/InterimLocomotion.StepLine.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1MoveTests.S24_StatsSpeedAloneClampsTheSurface
+note = a stats.speed row alone does not turn the step line on
+original:
+| private bool StepLineOn => slopeTable != null || stepFloorPermille != 0 || stepCeilPermille != 0 || stepDragCount != 0;
+replacement:
+| private bool StepLineOn => slopeTable != null || stepDragCount != 0;
+
+[slope1-on-ignores-drags]
+file = Assets/WarCore/Interim/InterimLocomotion.StepLine.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1MoveTests.S25_TerrainWorldWithOnlyARegisteredDrag
+note = a registered drag alone does not turn the terrain step line on
+original:
+| private bool StepLineOn => slopeTable != null || stepFloorPermille != 0 || stepCeilPermille != 0 || stepDragCount != 0;
+replacement:
+| private bool StepLineOn => slopeTable != null || stepFloorPermille != 0 || stepCeilPermille != 0;
+
+[slope1-probe-miss-steep]
+file = Assets/WarCore/Interim/InterimLocomotion.StepLine.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1MoveTests.S9_NoHeightIsNoSlope
+note = a probe that reads no ground counts as a steep slope
+original:
+| || !GroundAt(layer, px, pz, out SimFix ahead)) return 1000;
+replacement:
+| || !GroundAt(layer, px, pz, out SimFix ahead)) return 500;
+
+[slope1-plate-reads-ground]
+file = Assets/WarCore/Interim/InterimLocomotion.StepLine.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1PlateTests.S12_TheStair
+note = a plate world probes the ground layer
+original:
+| if (layered) return Floor(layer, x, z, out y);
+replacement:
+| if (layered) return Floor(0, x, z, out y);
+
+[slope1-no-height-field]
+file = Assets/WarCore/Interim/InterimLocomotion.StepLine.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1MoveTests.S3_UphillAndDownhillDiffer
+note = a height-field world reads no slope
+original:
+| if (ground != null) return ground.TryHeightAt(x, z, out y);
+replacement:
+
+[slope1-max-drags-seven]
+file = Assets/WarCore/Interim/InterimLocomotion.StepLine.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1PlayerTests.S17_DragRangeAndCount
+note = seven drags are allowed, not five
+original:
+| public const int MaxStepDrags = StatLine.MaxFactors - 2;
+replacement:
+| public const int MaxStepDrags = StatLine.MaxFactors;
+
+[slope1-null-drag]
+file = Assets/WarCore/Interim/InterimLocomotion.StepLine.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1PlayerTests.S17_DragRangeAndCount
+note = a null drag is registered
+original:
+| if (drag == null) throw new ArgumentNullException(nameof(drag));
+replacement:
+
+[slope1-drag-over-1000]
+file = Assets/WarCore/Interim/InterimLocomotion.StepLine.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1PlayerTests.S17_DragRangeAndCount
+note = a drag above 1000 is taken
+original:
+| if (value < StatLine.MinPermille || value > 1000)
+replacement:
+| if (value < StatLine.MinPermille)
+
+[slope1-floor-range]
+file = Assets/WarCore/Interim/InterimLocomotion.StepLine.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1PlayerTests.S17_DragRangeAndCount
+note = the step line takes a floor above 1000
+original:
+| dragFloorPermille > MaxStepFloorPermille))
+replacement:
+| dragFloorPermille > StatLine.MaxPermille))
+
+[slope1-ceil-range]
+file = Assets/WarCore/Interim/InterimLocomotion.StepLine.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1PlayerTests.S17_DragRangeAndCount
+note = the step line takes a ceiling below 1000
+original:
+| (dragCeilPermille < MinStepCeilPermille ||
+replacement:
+| (dragCeilPermille < StatLine.MinPermille ||
+
+[slope1-receipt-no-heading]
+file = Assets/WarCore/Interim/InterimLocomotion.StepLine.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1PlateTests.S21_TheReceiptMatchesTheStep
+expect = WarCore.Tests.Slope1PlayerTests.S8_PlayerAndAiTakeTheSameBand
+note = the receipt probes without the heading
+original:
+| int count = StepFactors(unit, point, layer, heading, milli);
+replacement:
+| int count = StepFactors(unit, point, layer, default, milli);
+
+[slope1-receipt-blocked-throws]
+file = Assets/WarCore/Interim/InterimLocomotion.StepLine.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1MoveTests.S19_BlockedGroundKeepsTheOldBranch
+note = a blocked cell reaches the stat line in the receipt
+original:
+| if (milli == 0) return new StepReceipt(true, null);
+replacement:
+
+[slope1-no-one-raw]
+file = Assets/WarCore/Interim/InterimLocomotion.StepLine.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1MoveTests.S26_TheFootStepKeepsOneRaw
+note = the foot step can round to nothing
+original:
+| if (length < 1) length = 1;
+replacement:
+
+[slope1-step-cap-at]
+file = Assets/WarCore/Interim/InterimLocomotion.StepLine.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1MoveTests.S20_LargestStepIsHalfAMetre
+note = exactly 0.5 m is refused
+original:
+| if (length > MaxEffectiveStepRaw) throw
+replacement:
+| if (length >= MaxEffectiveStepRaw) throw
+
+[slope1-axis-cap-half-metre]
+file = Assets/WarCore/Interim/InterimLocomotion.StepLine.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1PlayerTests.S20_PlayerAxisOverAQuarterMetreThrowsOnTheStepLine
+note = the player axis check allows 0.5 m
+original:
+| if (ax > MaxTerrainStepRaw || az > MaxTerrainStepRaw)
+replacement:
+| if (ax > MaxEffectiveStepRaw || az > MaxEffectiveStepRaw)
+
+[slope1-flat-player-on-terrain]
+file = Assets/WarCore/Interim/InterimLocomotion.StepLine.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1PlayerTests.S16_TerrainDragIsTakenOnce
+note = the flat drags also scale a terrain player before its step line
+original:
+| if (terrain != null || stepDragCount == 0) return displacement;
+replacement:
+| if (stepDragCount == 0) return displacement;
+
+[slope1-blocked-into-line]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1MoveTests.S19_BlockedGroundKeepsTheOldBranch
+note = a blocked cell enters the step line
+original:
+| if (milli != 0 && StepLineOn) return StepLineOf(
+replacement:
+| if (StepLineOn) return StepLineOf(
+
+[slope1-player-not-wired]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1PlayerTests.S8_PlayerAndAiTakeTheSameBand
+note = the player skips the step line
+original:
+| if (!surfaceOnly && milli != 0 && StepLineOn) d = ControlledStepLine(i, displacement, milli);
+replacement:
+
+[slope1-player-surface-twice]
+file = Assets/WarCore/Interim/InterimLocomotion.Terrain.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1PlayerTests.S16_TerrainDragIsTakenOnce
+note = the player takes the surface twice
+original:
+| if (!surfaceOnly && milli != 0 && StepLineOn) d = ControlledStepLine(i, displacement, milli);
+replacement:
+| if (!surfaceOnly && milli != 0 && StepLineOn) d = ControlledStepLine(i, d, milli);
+
+[slope1-dash-takes-slope]
+file = Assets/WarCore/Interim/InterimLocomotion.Dash.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1PlateTests.S14_TheDashTakesNoSlope
+note = the dash pieces go through the step line
+original:
+| if (!ControlledTerrainCandidate(context, i, piece, out SimVec3 next, surfaceOnly: true))
+replacement:
+| if (!ControlledTerrainCandidate(context, i, piece, out SimVec3 next))
+
+[slope1-flat-drag-interim]
+file = Assets/WarCore/Interim/InterimLocomotion.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1PlayerTests.S15_FlatWorldDrags
+note = the flat interim mover skips the registered drags
+original:
+| SimFix speed = FlatStep(unit, motion.StepSpeed(unit, intent.SpeedPerTick));
+replacement:
+| SimFix speed = motion.StepSpeed(unit, intent.SpeedPerTick);
+
+[slope1-flat-drag-path]
+file = Assets/WarCore/Interim/InterimLocomotion.Path.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1PlayerTests.S15_FlatWorldDrags
+note = the flat path mover skips the registered drags
+original:
+| SimFix speed = FlatStep(unit, motion.StepSpeed(unit, intent.SpeedPerTick));
+replacement:
+| SimFix speed = motion.StepSpeed(unit, intent.SpeedPerTick);
+
+[slope1-flat-drag-crowd]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1PlayerTests.S15_FlatWorldDrags
+note = the flat crowd mover skips the registered drags
+original:
+| SimFix speed = FlatStep(unit, motion.StepSpeed(unit, intent.SpeedPerTick));
+replacement:
+| SimFix speed = motion.StepSpeed(unit, intent.SpeedPerTick);
+
+[slope1-flat-player]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1PlayerTests.S15_FlatWorldDrags
+note = the flat player skips the registered drags
+original:
+| StepControlled(context, i, FlatControlled(i, displacement));
+replacement:
+| StepControlled(context, i, displacement);
+
+[slope1-content-equal-band]
+file = Assets/WarCore/Content/Data/Sections/MovementSection.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1TableTests.S18_SlopeBands_Refused
+note = a band equal to the one before is read
+original:
+| if (i > 0 && above[i] <= above[i - 1])
+replacement:
+| if (i > 0 && above[i] < above[i - 1])
+
+[slope1-content-speed-range]
+file = Assets/WarCore/Content/Data/Sections/MovementSection.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1TableTests.S18_SlopeBands_Refused
+note = a band speed of 0 or 1001 is read
+original:
+| speed[i] = e.Int(SpeedField, SlopeTable.MinSpeedPermille, SlopeTable.MaxSpeedPermille);
+replacement:
+| speed[i] = e.Int(SpeedField, 0, 2000);
+
+[slope1-content-empty-movement]
+file = Assets/WarCore/Content/Data/Sections/MovementSection.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1TableTests.S18_Sections_Refused
+note = movement {} is read
+original:
+| if (node.Members.Count == 0) throw new ContentException("content layer '" + layer + "' movement {} must not be empty");
+replacement:
+
+[slope1-content-unknown-movement]
+file = Assets/WarCore/Content/Data/Sections/MovementSection.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1TableTests.S18_Sections_Refused
+note = an unknown movement field is read
+original:
+|             r.Done();
+|             b.Publish(new MovementRules(
+replacement:
+|             b.Publish(new MovementRules(
+
+[slope1-content-empty-stats]
+file = Assets/WarCore/Content/Data/Sections/StatsSection.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1TableTests.S18_Sections_Refused
+note = stats {} is read
+original:
+| if (node.Members.Count == 0) throw new ContentException("content layer '" + layer + "' stats {} must not be empty");
+replacement:
+
+[slope1-content-empty-row]
+file = Assets/WarCore/Content/Data/Sections/StatsSection.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1TableTests.S18_Sections_Refused
+note = stats.speed {} is read
+original:
+| if (!r.Has(FloorField) && !r.Has(CeilField))
+replacement:
+| if (false)
+
+[slope1-content-floor-range]
+file = Assets/WarCore/Content/Data/Sections/StatsSection.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1TableTests.S18_Sections_Refused
+note = a floor of 0 or 1001 is read
+original:
+| new StatRowDef(SpeedRow, 1, 1000, 1000, 4000)
+replacement:
+| new StatRowDef(SpeedRow, 0, 4000, 1000, 4000)
+
+[slope1-content-ceil-range]
+file = Assets/WarCore/Content/Data/Sections/StatsSection.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1TableTests.S18_Sections_Refused
+note = a ceiling of 999 or 4001 is read
+original:
+| new StatRowDef(SpeedRow, 1, 1000, 1000, 4000)
+replacement:
+| new StatRowDef(SpeedRow, 1, 1000, 0, 5000)
+
+[slope1-feature-always]
+file = Assets/WarCore/Presentation/Bridge/Features/SlopeFeature.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1WorldTests.S1_APackWithoutTheSectionsChangesNothing
+note = the feature turns on for a pack without the sections
+original:
+| return pack != null && (Slope(pack) != null || HasSpeedRow(pack));
+replacement:
+| return pack != null;
+
+[slope1-feature-any-stats-row]
+file = Assets/WarCore/Presentation/Bridge/Features/SlopeFeature.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1WorldTests.S1_APackWithoutTheSectionsChangesNothing
+note = a pack with only the spread row turns the feature on
+original:
+| HasSpeedRow(ContentPack pack) => pack.SectionOrNull<StatClamps>()?.Has(StatClamps.Speed) ?? false;
+replacement:
+| HasSpeedRow(ContentPack pack) => pack.SectionOrNull<StatClamps>() != null;
+
+[slope1-feature-no-terrain-pack]
+file = Assets/WarCore/Presentation/Bridge/Features/SlopeFeature.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1WorldTests.S29_WhereThePackComesFrom
+note = a recipe with only a terrain pack gets no slope
+original:
+| internal static ContentPack PackOf(WorldRecipe recipe) => recipe.Pack ?? recipe.TerrainPack;
+replacement:
+| internal static ContentPack PackOf(WorldRecipe recipe) => recipe.Pack;
+
+[slope1-feature-no-id-check]
+file = Assets/WarCore/Presentation/Bridge/Features/SlopeFeature.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1WorldTests.S29_WhereThePackComesFrom
+note = packs of different ids are not refused
+original:
+| if (pack != null && terrain != null && pack.Id != terrain.Id)
+replacement:
+| if (pack != null && terrain != null && pack.Id == null)
+
+[slope1-feature-no-key]
+file = Assets/WarCore/Presentation/Bridge/Features/SlopeFeature.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1WorldTests.S10_SavesAndDeterminism
+note = the world has no movement.step content key
+original:
+| a.ContentKeys.Add(new StableContentKey(ContentKeyName, Digest(PackOf(a.Recipe))));
+replacement:
+
+[slope1-digest-no-prefix]
+file = Assets/WarCore/Presentation/Bridge/Features/SlopeFeature.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1WorldTests.S10_TheDigestLayout
+note = the digest is not fed its prefix
+original:
+| hash.Add(DigestPrefix);
+replacement:
+
+[slope1-digest-no-floor]
+file = Assets/WarCore/Presentation/Bridge/Features/SlopeFeature.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1WorldTests.S10_SavesAndDeterminism
+note = the digest leaves out the floor
+original:
+| hash.Add(stats?.FloorOf(StatClamps.Speed) ?? 0);
+replacement:
+
+[slope1-digest-no-up-speed]
+file = Assets/WarCore/Presentation/Bridge/Features/SlopeFeature.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1WorldTests.S10_TheDigestLayout
+note = the digest leaves out the uphill speeds
+original:
+| for (int i = 0; i < slope.UpCount; i++) { hash.Add(slope.UpAbove(i)); hash.Add(slope.UpSpeed(i)); }
+replacement:
+| for (int i = 0; i < slope.UpCount; i++) { hash.Add(slope.UpAbove(i)); }
+
+[slope1-feature-not-registered]
+file = Assets/WarCore/Presentation/Bridge/Features/FeatureTable.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1MoveTests.S3_UphillAndDownhillDiffer
+note = the rules stage skips the slope feature
+original:
+| PlayerFeature.Instance, SlopeFeature.Instance,
+replacement:
+| PlayerFeature.Instance,
+
+[slope1-copy-drops-pack]
+file = Assets/WarCore/Presentation/Bridge/WorldRecipe.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1WorldTests.S28_RecipesCarryThePack
+note = a copied recipe loses its pack
+original:
+| copy.Pack = Pack;
+replacement:
+
+[slope1-map-recipe-no-pack]
+file = Assets/WarCore/Presentation/Bridge/MapRecipe.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1WorldTests.S28_RecipesCarryThePack
+note = a map recipe has no pack
+original:
+| recipe = recipe.WithPack(pack);
+replacement:
+
+[slope1-team-dash-drops-pack]
+file = Assets/WarCore/Presentation/Bridge/DemoRecipes.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1WorldTests.S28_RecipesCarryThePack
+note = the team dash recipe loses its pack
+original:
+|             if (source.AiPack != null) recipe = recipe.WithAiRules(source.AiPack);
+|             if (source.Pack != null) recipe = recipe.WithPack(source.Pack);
+replacement:
+|             if (source.AiPack != null) recipe = recipe.WithAiRules(source.AiPack);
+
+[slope1-block-drops-pack]
+file = Assets/WarCore/Presentation/Bridge/DemoRecipes.cs
+filter = FullyQualifiedName~Slope1
+expect = WarCore.Tests.Slope1WorldTests.S28_RecipesCarryThePack
+note = the block recipe loses its pack
+original:
+|             if (source.TerrainPack != null) recipe = recipe.WithTerrainRules(source.TerrainPack);
+|             if (source.Pack != null) recipe = recipe.WithPack(source.Pack);
+|             if (source.BlockAi)
+replacement:
+|             if (source.TerrainPack != null) recipe = recipe.WithTerrainRules(source.TerrainPack);
+|             if (source.BlockAi)
