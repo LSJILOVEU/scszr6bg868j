@@ -24,7 +24,7 @@ namespace WarCore.Content
         {
             new WeaponsSection(), new MeleeSection(), new BlockSection(), new UnitTypesSection(), new CombatSection(), new MatchSection(),
             new SurfacesSection(), new SlopeRuleSection(), new AiSection(), new RulesSection(),
-        }, new IContentSection[] { new TraversalSection(), new MovementSection(), new StatsSection(), new PickSection() });
+        }, new IContentSection[] { new TraversalSection(), new MovementSection(), new StatsSection(), new PickSection(), new ScaleSection() });
 
         private readonly IContentSection[] sections, all, buildOrder;
         private readonly string[] allowedKeys;

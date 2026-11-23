@@ -1,0 +1,9 @@
+{
+  "id": "rwr-scale",
+  "extends": "rwr-stance",
+  "scale": { "storeyMm": 3000, "plateMm": 500,
+    "lowWallMm": 1000, "chestWallMm": 1400, "highWallMm": 2500,
+    "windowSillMm": 900, "windowTopMm": 2000, "railingMm": 1000,
+    "stairRiseMm": 175, "stairRunMm": 280,
+    "laneMm": 3250, "sidewalkMm": 2000, "alleyMm": 3000 }
+}

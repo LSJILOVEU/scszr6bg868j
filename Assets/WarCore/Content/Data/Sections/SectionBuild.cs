@@ -49,6 +49,14 @@ namespace WarCore.Content
 
         internal void Publish(object value) => published.Add(value);
 
+        // A value an earlier section published, by its type, or null (SCALE-2b reads the traversal table this way).
+        internal T PublishedOrNull<T>() where T : class
+        {
+            foreach (object value in published)
+                if (value is T typed) return typed;
+            return null;
+        }
+
         internal ContentPack ToPack() => new ContentPack(Pack, WeaponIds, Weapons, UnitIds, UnitWeapons, MaxHealthRaw, ResolverId, SelectorId, Rules,
             FriendlyFire, FriendlyFireLocked, AllyCheckMissRaw, AllyHoldMilli, Block, UnitBlock, UnitArchetypes, UnitSpeeds,
             MeleeIds, Melee, UnitMelee, Terrain, published.ToArray(), RuleIds, Body, ProjectileSpeeds, Stances);

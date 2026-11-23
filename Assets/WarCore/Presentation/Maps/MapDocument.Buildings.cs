@@ -76,11 +76,16 @@ namespace WarCore.Presentation
             Edited(e => e.Batch(x => x.Stamp(MapPrefabs.DoorOn(x.Current, MapEntrySteps.FreeInstance(x.Current, "door"), new MapXZ(startX, startZ),
                 alongX, length, doorStart, doorWidth, floorTopRaw, topRaw, FirstLayer(x.Current), "wall"))));
 
-        // MapPrefabs.WindowOn (default sill and opening) as stamp "window-<n>". Needs the combat body of this description's
-        // layer: a layer without one throws InvalidOperationException.
+        // MapPrefabs.WindowOn (sill and opening top from the layer's scale, defaults without one) as stamp "window-<n>". Needs
+        // the combat body of this description's layer: a layer without one throws InvalidOperationException.
         public MapDocument WithWindowOn(int startX, int startZ, bool alongX, int length, int windowStart, int windowWidth, long floorTopRaw, long topRaw) =>
-            Edited(e => e.Batch(x => x.Stamp(MapPrefabs.WindowOn(x.Current, MapEntrySteps.FreeInstance(x.Current, "window"), new MapXZ(startX, startZ),
-                alongX, length, windowStart, windowWidth, floorTopRaw, topRaw, FirstLayer(x.Current), "wall", MapEntrySteps.BodyOf(x.Current.Pack)))));
+            Edited(e => e.Batch(x =>
+            {
+                var body = MapEntrySteps.BodyOf(x.Current.Pack);
+                var scale = MapEntrySteps.ScaleOf(x.Current.Pack);
+                x.Stamp(MapPrefabs.WindowOn(x.Current, MapEntrySteps.FreeInstance(x.Current, "window"), new MapXZ(startX, startZ),
+                    alongX, length, windowStart, windowWidth, floorTopRaw, topRaw, FirstLayer(x.Current), "wall", body, scale.WindowSillRaw, scale.WindowTopRaw));
+            }));
 
         private static void Run(MapEdit edit, string instance, MapBuilding b)
         {
