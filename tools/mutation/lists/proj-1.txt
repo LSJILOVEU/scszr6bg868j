@@ -19,9 +19,9 @@ expect = WarCore.Tests.Projectile.Proj1PackTests.StepAndFlights
 expect = WarCore.Tests.Projectile.Proj1FlightTests.LandsOnTheHandWorkedTick
 note = the tick length in thousandths off by one
 original:
-| private const long MilliPerSecond = 30000;
+| private const long MilliPerSecond = SimClock.MilliTicksPerSecond;
 replacement:
-| private const long MilliPerSecond = 30001;
+| private const long MilliPerSecond = SimClock.MilliTicksPerSecond + 1;
 
 [proj1-02-step-scale]
 file = Assets/WarCore/Combat/ProjectileSpec.cs

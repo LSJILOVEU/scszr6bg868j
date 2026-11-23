@@ -11,6 +11,7 @@ namespace WarCore.Content
         internal const int MaxFileBytes = 2 * 1024 * 1024;
         internal const int MaxWalls = 4096;
         internal const int MaxSide = HeightField.MaxSide; // alias: one source for the map side limit
+        internal const int MaxSideMm = MaxSide * 1000; // a cell is one metre (WcMap.CellSize)
         internal static void Require(bool condition, string code)
         {
             if (!condition) throw new InvalidDataException("WCMAP_" + code);
@@ -30,7 +31,7 @@ namespace WarCore.Content
         {
             if (map == null) throw new ArgumentNullException(nameof(map));
             TextBytes(map.MapId); TextBytes(map.ContentId);
-            const long limit = 16384 * SimFix.Scale;
+            const long limit = SimVec3.WorldLimitMetres * SimFix.Scale;
             foreach (long coordinate in new[] { map.Min.X.Raw, map.Min.Y.Raw, map.Min.Z.Raw,
                 map.Max.X.Raw, map.Max.Y.Raw, map.Max.Z.Raw })
                 Require(coordinate >= -limit && coordinate <= limit, "BOUNDS");
