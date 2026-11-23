@@ -276,9 +276,9 @@ filter = FullyQualifiedName~Ml8
 expect = WarCore.Tests.Ml8MoveTests.TheStairAndFloorGiveTheHeightAndTheStep
 note = the path step reads layer 0
 original:
-| SimFix step = StepOf(point, motion.StepSpeed(unit, intent.SpeedPerTick), layer);
+| SimFix step = StepOf(point, motion.StepSpeed(unit, intent.SpeedPerTick), layer, unit, delta);
 replacement:
-| SimFix step = StepOf(point, motion.StepSpeed(unit, intent.SpeedPerTick), 0);
+| SimFix step = StepOf(point, motion.StepSpeed(unit, intent.SpeedPerTick), 0, unit, delta);
 
 [ml8-search-from-target]
 file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs

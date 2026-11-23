@@ -115,6 +115,16 @@ Presentation/Bridge/Features/Scale2aDemo.cs	SimFix.FromInt(6)	2	debt
 Presentation/Bridge/Features/Scale2aDemo.cs	SimFix.Ratio(1,2)	1	debt	
 Presentation/Bridge/Features/Scale2aDemo.cs	SimFix.Ratio(13,2)	1	debt	
 Presentation/Bridge/Features/Scale2aDemo.cs	Speed=6000	1	debt	H3 speed in code
+Presentation/Bridge/Features/SlopeDemo.cs	Depth=15	1	canon	field depth (fits the replay view's 16:10 frame); slope-race replay layout, defined only here (SLOPE-1)
+Presentation/Bridge/Features/SlopeDemo.cs	FlatRaw=314573	1	canon	flat lane height (4.8 m); slope-race replay layout, defined only here (SLOPE-1)
+Presentation/Bridge/Features/SlopeDemo.cs	HighXMm=20500	1	canon	high end of the 18 m lanes; slope-race replay layout, defined only here (SLOPE-1)
+Presentation/Bridge/Features/SlopeDemo.cs	LaneZMm={1500	1	canon	lane centre lines; slope-race replay layout, defined only here (SLOPE-1)
+Presentation/Bridge/Features/SlopeDemo.cs	LowXMm=2500	1	canon	low end of the 18 m lanes; slope-race replay layout, defined only here (SLOPE-1)
+Presentation/Bridge/Features/SlopeDemo.cs	SimFix.FromInt(16)	1	canon	map height bound; slope-race replay layout, defined only here (SLOPE-1)
+Presentation/Bridge/Features/SlopeDemo.cs	Speed=3000	1	canon	unit speed (rwr-slope has no unit speed); slope-race replay layout, defined only here (SLOPE-1)
+Presentation/Bridge/Features/SlopeDemo.cs	SteepRisePerMetreRaw=39322	1	canon	downhill lane rise per metre (600 permille); slope-race replay layout, defined only here (SLOPE-1)
+Presentation/Bridge/Features/SlopeDemo.cs	UpRisePerMetreRaw=26214	1	canon	uphill lane rise per metre (400 permille); slope-race replay layout, defined only here (SLOPE-1)
+Presentation/Bridge/Features/SlopeDemo.cs	Width=24	1	canon	field width; slope-race replay layout, defined only here (SLOPE-1)
 Presentation/Bridge/Features/StanceDemo.cs	Depth=16	1	debt	
 Presentation/Bridge/Features/StanceDemo.cs	SimFix.FromInt(6)	1	debt	
 Presentation/Bridge/Features/StanceDemo.cs	Speed=6000	1	debt	H3 speed in code
@@ -197,6 +207,7 @@ Sim/PointEntryTable.cs	2*SimFix.Scale	1	debt	M2 capture entry distance in the ba
 Sim/PointEntryTable.cs	5*SimFix.Scale	1	debt	M2 capture entry distance in the base
 Sim/RetainedWorld.cs	DefaultRetentionTicks=32	1	debt	
 Sim/SimVec3.cs	WorldLimitMetres=16384	1	canon	the one definition of the world coordinate limit
+Sim/SlopeTable.cs	SimFix.Scale/2	1	canon	slope probe run, 0.5 m (ProbeRaw)
 Sim/SpatialQuery.cs	32768L*SimFix.Scale	1	canon	the one definition of the collider height limit
 Unity/Editor/L7Terrain.cs	30f	1	debt	
 Unity/Editor/L7Terrain.cs	50f	1	debt	

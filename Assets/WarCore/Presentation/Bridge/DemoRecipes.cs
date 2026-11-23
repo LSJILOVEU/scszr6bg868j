@@ -106,6 +106,7 @@ namespace WarCore.Presentation
             if (source.Match != null) recipe = recipe.WithMatch(source.Match);
             if (source.TerrainPack != null) recipe = recipe.WithTerrainRules(source.TerrainPack);
             if (source.AiPack != null) recipe = recipe.WithAiRules(source.AiPack);
+            if (source.Pack != null) recipe = recipe.WithPack(source.Pack);
             if (source.BlockAi) recipe = recipe.WithBlockAi();
             foreach (IWorldOption option in source.Options) recipe = recipe.With(option);
             return recipe;
@@ -151,6 +152,7 @@ namespace WarCore.Presentation
                 .WithCombat(pack).WithCrowdPass(source.CrowdPass).WithRuleSet(source.RuleSetId).WithPlayer(player);
             if (source.Match != null) recipe = recipe.WithMatch(source.Match);
             if (source.TerrainPack != null) recipe = recipe.WithTerrainRules(source.TerrainPack);
+            if (source.Pack != null) recipe = recipe.WithPack(source.Pack);
             if (source.BlockAi) recipe = recipe.WithBlockAi();
             foreach (IWorldOption option in source.Options) recipe = recipe.With(option);
             return recipe;

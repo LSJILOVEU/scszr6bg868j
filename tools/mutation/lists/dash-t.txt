@@ -116,9 +116,9 @@ filter = FullyQualifiedName~WarCore.Tests.Dash
 expect = WarCore.Tests.DashT.DashTTerrainTests.Blocked_StopsAtTheFirstPieceThatCannotMove
 note = a blocked tick gives back the pieces it took
 original:
-|                 if (!ControlledTerrainCandidate(context, i, piece, out SimVec3 next)) { moved = false; break; }
+|                 if (!ControlledTerrainCandidate(context, i, piece, out SimVec3 next, surfaceOnly: true)) { moved = false; break; }
 replacement:
-|                 if (!ControlledTerrainCandidate(context, i, piece, out SimVec3 next)) { moved = false; provisional[i].Point = start; break; }
+|                 if (!ControlledTerrainCandidate(context, i, piece, out SimVec3 next, surfaceOnly: true)) { moved = false; provisional[i].Point = start; break; }
 
 [dash-t-submit-start]
 file = Assets/WarCore/Interim/InterimLocomotion.Dash.cs

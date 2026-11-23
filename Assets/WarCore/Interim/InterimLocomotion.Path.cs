@@ -52,7 +52,7 @@ namespace WarCore.Interim
         {
             SimVec3 waypoint = entities.Get(waypoints, unit).Point;
             SimVec3 delta = waypoint - point;
-            SimFix speed = motion.StepSpeed(unit, intent.SpeedPerTick);
+            SimFix speed = FlatStep(unit, motion.StepSpeed(unit, intent.SpeedPerTick));
             SimWide stepSquared = new SimVec3(speed, default, default).LengthSquared;
             bool arrived = delta.LengthSquared <= stepSquared;
             SimVec3 next = arrived ? waypoint : point + delta.Normalized * speed;
