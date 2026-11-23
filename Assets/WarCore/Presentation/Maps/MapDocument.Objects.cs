@@ -37,7 +37,7 @@ namespace WarCore.Presentation
         public MapDocument WithDoorWall(int startX, int startZ, bool alongX, int length, int doorStart, int doorWidth, long topRaw) =>
             Batched(MapEntrySteps.DoorWall(startX, startZ, alongX, length, doorStart, doorWidth, topRaw));
 
-        // A wall with a window (MapPrefabs.Window, default sill and opening) as stamp "window-<n>". The window's gate needs
+        // A wall with a window (MapPrefabs.Window, the layer's scale, defaults without one) as stamp "window-<n>". The window's gate needs
         // the combat body of this description's layer: a layer without one throws InvalidOperationException.
         public MapDocument WithWindow(int startX, int startZ, bool alongX, int length, int windowStart, int windowWidth, long topRaw) =>
             Batched(MapEntrySteps.Window(startX, startZ, alongX, length, windowStart, windowWidth, topRaw));
