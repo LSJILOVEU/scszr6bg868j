@@ -5,4 +5,4 @@
 # pack-copies: fields that a content layer (a pack or a part) writes with the very value another layer of its
 # cartridge writes (--map lists them). The check fails when the count differs from the row, in either direction.
 
-pack-copies	9
+pack-copies	0

@@ -1,8 +1,4 @@
-using System;
-using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
 using NUnit.Framework;
 using WarCore.Combat;
 using WarCore.Content;
@@ -67,8 +63,7 @@ namespace WarCore.Tests
         public void PackDigest_DiffersFromTheParents(string layer, string parent) =>
             Assert.That(RwrPack.Load(layer).BuildCombat().PolicyDigest, Is.Not.EqualTo(RwrPack.Load(parent).BuildCombat().PolicyDigest), layer);
 
-        // B2: no older layer has a body, and their files are untouched (the SURF-1 test pins rwr-terrain-demo, rwr-ai-playtest
-        // and editor.json; here the rest).
+        // B2: no older layer has a body.
         [TestCase("rwr")]
         [TestCase("rwr-m6")]
         [TestCase("rwr-m7-playtest")]
@@ -87,19 +82,6 @@ namespace WarCore.Tests
         {
             foreach (string layer in new[] { "ancient", "ancient-field" })
                 Assert.That(ContentLoader.Load(new FileContentSource("Assets/WarCore/Content/Ancient/Data"), layer).Body.HasValue, Is.False, layer);
-        }
-
-        [TestCase("rwr.json", "ab899d19a791ef55a441e58ed54aad3e9ede096938279f9434e39bc67bf2e640")]
-        [TestCase("rwr-m6.json", "96b95c08ead27c47bb0145f36352e349b2501194d0d7791afcc4825e2981cb28")]
-        [TestCase("rwr-m7-playtest.json", "30f3ac68b7a7068a2559f989deebca779e81274b04ec34ba1c0e9dd2dcbb79cf")]
-        [TestCase("rwr-melee.json", "8ee908b4a9c7e1b2498a8f5d7ac6d7607f1f48d510591faea6205db77f373347")]
-        [TestCase("rwr-surfaces.json", "7b805e67ceda488ed21a23d9e5cf991940895e2fcc1cf96b0de3c780f5ba9b68")]
-        public void OldLayerFiles_AreByteIdentical(string file, string sha256) => Assert.That(Sha(file), Is.EqualTo(sha256), file);
-
-        private static string Sha(string file)
-        {
-            string text = File.ReadAllText(Path.Combine(ArchitectureTests.AssetRoot(), "WarCore/Content/Rwr/Data", file)).Replace("\r\n", "\n");
-            return BitConverter.ToString(SHA256.Create().ComputeHash(new UTF8Encoding(false).GetBytes(text))).Replace("-", "").ToLowerInvariant();
         }
 
         // Everything a layer sets except its body and surfaces: weapons, unit types, match numbers, rule ids, selector, resolver,

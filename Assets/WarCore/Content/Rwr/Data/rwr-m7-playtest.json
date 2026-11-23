@@ -1,6 +1,6 @@
 {
   "id": "rwr-m7-playtest",
-  "extends": "rwr-m6",
+  "extends": ["rwr-m6", "parts/soldier"],
   "weapons": [
     { "id": "rwr.weapon-1", "effectRaw": 16384, "spreadBase": 4000, "spreadGrowth": 1000, "spreadMax": 9000 },
     { "id": "rwr.weapon-2", "effectRaw": 18022, "spreadBase": 4000, "spreadGrowth": 1000, "spreadMax": 9000 }
@@ -10,15 +10,6 @@
     { "id": "rwr.soldier-2", "dashDistance": 4000, "dashTicks": 6, "dashCooldown": 90 }
   ],
   "ai": {
-    "failedSlotTicks": 90,
-    "targetMemoryTicks": 300,
-    "searchTicks": 90,
-    "reactionTicks": 15,
-    "senseTicks": 6,
-    "burstShots": 3,
-    "burstPauseTicks": 30,
-    "suppressTicks": 90,
-    "meleeChaseRange": 12,
     "holdSharePermille": 300
   }
 }
