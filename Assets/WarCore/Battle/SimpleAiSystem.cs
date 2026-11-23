@@ -16,6 +16,8 @@ namespace WarCore.Battle
         private readonly ComponentType<Combatant> combatants;
         private readonly ComponentType<MeleeState> meleeStates;
         private readonly SimFix meleeChaseRange;
+        private readonly bool meleeNerve;
+        private readonly SimWide meleeFightSquared;
         private readonly IControlTarget controlled;
         private readonly FailedSlotMemory memory;
         private readonly TargetMemory contacts;
@@ -56,7 +58,7 @@ namespace WarCore.Battle
             IControlTarget controlled = null, FailedSlotMemory memory = null, TargetMemory contacts = null,
             TargetSearch search = null, TargetSuppress suppress = null, int meleeChaseRange = 0,
             bool fairDecisions = false, ulong decisionSeed = 0, AiParts parts = null, Pressure pressure = null, ISlotFloor slotFloor = null,
-            IUnitLayers layers = null, IPointReach reach = null)
+            IUnitLayers layers = null, IPointReach reach = null, bool meleeNerve = false, int meleeNerveFightMm = 0)
         {
             if ((layers == null) != (reach == null) || (layers == null) != (slotFloor == null))
                 throw new ArgumentException("The plates' floor, the units' layers and the points' walking costs come together.", nameof(layers));
@@ -97,6 +99,15 @@ namespace WarCore.Battle
                 if (pressure == null || !pressure.Sources) throw new ArgumentException("Cover needs the pressure system with sources.", nameof(pressure));
                 cover = new Cover(combat, moves, parts.CoverRadiusRaw, parts.CoverStepRaw, parts.CoverDepthRaw); policyDigest = cover.Fold(policyDigest);
             }
+            // AI-M1: a melee unit that is pressed asks the engage part before it chases; one told to take cover still goes
+            // for an enemy within the fight range. Folded only when on.
+            this.meleeNerve = meleeNerve;
+            if (meleeNerve)
+            {
+                meleeFightSquared = new SimVec3(SimFix.Ratio(meleeNerveFightMm, 1000), default, default).LengthSquared;
+                var hash = new StateHash(); hash.Add("battle.ai.melee-nerve.v1"); hash.Add(policyDigest); hash.Add(meleeNerveFightMm);
+                policyDigest = hash.Value;
+            }
             // Last in the fold order: the AI that reads layers (slots on plates, orders with a layer, points by walking cost).
             if (layers != null)
             {
@@ -133,23 +144,36 @@ namespace WarCore.Battle
                 if (moving && layer == orderLayer && Arrived(here, target) && slots.TryFindAll(orderLayer, target, -1, out _))
                 { StopUnit(id, here, target); moving = false; }
                 if ((c.Clock.Tick + (long)((fairDecisions ? AiParts.Mix(id.Value ^ seedSalt) : id.Value) % (ulong)pack.ThinkInterval)) % pack.ThinkInterval != 0) continue;
+                var thinker = new AiUnit(id, unit.Team, here, pressure != null ? pressure.Level(id) : AiNerve.Calm, layer);
+                // AI-M1: the melee part sent the unit back; it goes straight to the refuge below and is not asked again.
+                bool routed = false;
                 if (meleeChaseRange.Raw > 0 && unit.Weapon < 0 && weapons.HasMelee
                     && combat.Entities.TryGet(meleeStates, entity, out MeleeState melee) && melee.Spec >= 0
                     && TryMeleeTarget(entity, here, out SimVec3 enemy, out int enemyLayer))
                 {
-                    // In reach by the combat's span (3D on a map with floor plates): under the enemy is not in reach.
-                    SimFix engage = weapons.Melee[melee.Spec].EngageRange;
-                    if (combat.SpanSquared(here, enemy) <= new SimVec3(engage, default, default).LengthSquared)
-                    { if (moving) StopUnit(id, here, target); }
-                    else if (!moving || orderLayer != enemyLayer || target.X.Raw != enemy.X.Raw || target.Z.Raw != enemy.Z.Raw)
-                    { OrderUnit(id, here, moving, target, enemy, enemyLayer, -2); }
-                    continue;
+                    // With the melee nerve on a unit that is not Calm asks the engage part first: chase as before (Advance),
+                    // stand (Hold), take cover or stand unless the enemy is close (Cover), or fall back without chasing (Fallback).
+                    AiEngage nerve = meleeNerve && thinker.Nerve != AiNerve.Calm ? this.engage.Melee(in thinker, enemy, field) : AiEngage.Advance;
+                    // An enemy within the fight range is fought, not hidden from.
+                    if (nerve == AiEngage.Cover && combat.SpanSquared(here, enemy) <= meleeFightSquared) nerve = AiEngage.Advance;
+                    if (nerve == AiEngage.Fallback) routed = true;
+                    else
+                    {
+                        if (nerve == AiEngage.Cover && TakesCover(entity, id, here, moving, target)) continue;
+                        if (nerve != AiEngage.Advance) { if (moving) StopUnit(id, here, target); continue; }
+                        // In reach by the combat's span (3D on a map with floor plates): under the enemy is not in reach.
+                        SimFix engage = weapons.Melee[melee.Spec].EngageRange;
+                        if (combat.SpanSquared(here, enemy) <= new SimVec3(engage, default, default).LengthSquared)
+                        { if (moving) StopUnit(id, here, target); }
+                        else if (!moving || orderLayer != enemyLayer || target.X.Raw != enemy.X.Raw || target.Z.Raw != enemy.Z.Raw)
+                        { OrderUnit(id, here, moving, target, enemy, enemyLayer, -2); }
+                        continue;
+                    }
                 }
-                var thinker = new AiUnit(id, unit.Team, here, pressure != null ? pressure.Level(id) : AiNerve.Calm, layer);
                 // An enemy in sight: the engage part says stand (Hold), go on to the point below (Advance), fall back or
                 // take cover. No enemy in sight: the part is asked only about a unit that is pressed. Cover is taken from
                 // where the fire that pressed the unit came from, seen or not; cover that cannot be taken is Hold.
-                bool advance = false, fallback = false, stand = false;
+                bool advance = false, fallback = routed, stand = false;
                 if (unit.Weapon >= 0 && combat.Pack.Selector.TrySelect(combat, entity, weapons.Weapons[unit.Weapon].FalloffEnd, out EntityId seen))
                 {
                     contacts?.Saw(id, seen, c.Clock.Tick);
@@ -158,7 +182,7 @@ namespace WarCore.Battle
                     if (answer == AiEngage.Hold || answer == AiEngage.Cover) { if (moving) StopUnit(id, here, target); continue; }
                     if (answer == AiEngage.Fallback) fallback = true; else advance = true;
                 }
-                else if (thinker.Nerve != AiNerve.Calm)
+                else if (!routed && thinker.Nerve != AiNerve.Calm)
                 {
                     AiEngage answer = engage.Unseen(in thinker, field);
                     if (answer == AiEngage.Cover && TakesCover(entity, id, here, moving, target)) continue;

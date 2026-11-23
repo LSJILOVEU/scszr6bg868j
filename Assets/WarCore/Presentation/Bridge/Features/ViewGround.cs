@@ -90,8 +90,8 @@ namespace WarCore.Presentation
         // Ground height in metres at (x, z) metres; fallback outside the height field.
         public float HeightAt(float x, float z, float fallback)
         {
-            long xRaw = (long)Math.Floor((double)x * 65536), zRaw = (long)Math.Floor((double)z * 65536);
-            return TryHeightRaw(xRaw, zRaw, out long yRaw) ? (float)yRaw / 65536f : fallback;
+            long xRaw = (long)Math.Floor((double)x * SimFix.Scale), zRaw = (long)Math.Floor((double)z * SimFix.Scale);
+            return TryHeightRaw(xRaw, zRaw, out long yRaw) ? (float)yRaw / SimFix.Scale : fallback;
         }
     }
 }

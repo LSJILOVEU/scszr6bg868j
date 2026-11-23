@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace WarCore.Presentation
 {
     // Render mesh of a .wcmap height field, engine-free. One vertex per height point, (W+1) x (D+1), index j*(W+1)+i like
-    // the Sim HeightField. Vertex (i, j) = (MinX + i, raw(i, j) / 65536f, MinZ + j): Y is converted from the int raw once,
+    // the Sim HeightField. Vertex (i, j) = (MinX + i, raw(i, j) / WcMap.RawPerMetre, MinZ + j): Y is converted from the int raw once,
     // so it is exact while |raw| < 2^24 (256 m); above that (Sim allows up to 2^29) a vertex rounds by at most 2^4 raw.
     // Two triangles per cell, cell key z*W + x, triangle A at 2*key and B at 2*key+1, cut along the HeightField diagonal
     // (x,z) -> (x+1,z+1): A = (v00, v11, v10) is the u >= v half, B = (v00, v01, v11) the u < v half. Seen from +Y with X
@@ -43,7 +43,7 @@ namespace WarCore.Presentation
                 {
                     int p = 3 * (j * row + i);
                     positions[p] = map.MinX + i;
-                    positions[p + 1] = (float)map.VertexRaw(i, j) / 65536f;
+                    positions[p + 1] = ViewMap.Metres(map.VertexRaw(i, j));
                     positions[p + 2] = map.MinZ + j;
                 }
             var triangles = new int[6 * width * depth];

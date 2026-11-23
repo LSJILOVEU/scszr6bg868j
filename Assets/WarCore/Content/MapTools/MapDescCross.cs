@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using WarCore.Sim;
 
 namespace WarCore.Content.MapTools
 {
@@ -6,7 +7,7 @@ namespace WarCore.Content.MapTools
     internal sealed partial class MapDescReader
     {
         private const string Base64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-        private const long WorldLimit = 16384;
+        private const long WorldLimit = SimVec3.WorldLimitMetres;
 
         private void Second(MapDesc d)
         {

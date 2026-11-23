@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
+using WarCore.Sim;
 
 namespace WarCore.Content
 {
@@ -19,6 +20,7 @@ namespace WarCore.Content
     public static class ContentWeaponEdit
     {
         public const long MaxMilli = 1_000_000_000_000L;
+        private const decimal MilliPerSecond = SimClock.MilliTicksPerSecond;
         // ContentLoader also constructs WeaponDef, which rejects times below one tick.
         public const long MinWeaponMilli = 1000;
 
@@ -67,16 +69,16 @@ namespace WarCore.Content
         public static decimal ShotsPerSecond(long fireIntervalMilli)
         {
             Validate("display", "", "fireIntervalMilli", fireIntervalMilli, 1, MaxMilli);
-            return 30000m / fireIntervalMilli;
+            return MilliPerSecond / fireIntervalMilli;
         }
 
         public static long IntervalFromShotsPerSecond(decimal shotsPerSecond)
         {
             if (shotsPerSecond <= 0) throw new ContentException("shotsPerSecond must be greater than 0");
             // Check before division, so even decimal's smallest positive value cannot overflow.
-            if (shotsPerSecond <= 30000m / MaxMilli) return MaxMilli;
-            if (shotsPerSecond >= 30000m) return 1;
-            return (long)Math.Round(30000m / shotsPerSecond, 0, MidpointRounding.AwayFromZero);
+            if (shotsPerSecond <= MilliPerSecond / MaxMilli) return MaxMilli;
+            if (shotsPerSecond >= MilliPerSecond) return 1;
+            return (long)Math.Round(MilliPerSecond / shotsPerSecond, 0, MidpointRounding.AwayFromZero);
         }
 
         private static void Validate(string layer, string id, string field, long? value, long min, long max)

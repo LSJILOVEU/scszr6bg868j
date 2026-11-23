@@ -144,6 +144,24 @@ namespace WarCore.Tests
             Assert.That(Order(alone, A).Layer == 0 && Slots(alone).TryFindAll(0, Order(alone, A).Target, -1, out _), Is.True, "on to the point");
         }
 
+        // 10c. Three enemies: a nearer one on the floor that cannot be walked to, and two on the ground. The soldier chases the
+        // nearer of the two it can walk to, whatever order the three are met in (the keys are dealt every way round).
+        [TestCase(10UL, 11UL, 12UL)]
+        [TestCase(10UL, 12UL, 11UL)]
+        [TestCase(11UL, 10UL, 12UL)]
+        [TestCase(11UL, 12UL, 10UL)]
+        [TestCase(12UL, 10UL, 11UL)]
+        [TestCase(12UL, 11UL, 10UL)]
+        public void AnEnemyOutOfReachDoesNotHideAFartherOne(ulong above, ulong middle, ulong far)
+        {
+            M6World w = Hunt(1.8, false, Blade(A, 36500, 30500), Still(above, 40500, 30500, 1), Still(middle, 30500, 30500), Still(far, 27500, 30500));
+            Assert.That(Span(w, A, above), Is.LessThan(Span(w, A, middle)));
+            Assert.That(Span(w, A, middle), Is.LessThan(Span(w, A, far)));
+            Assert.That(w.Combat.Visible(w.Unit(A), w.Unit(far)), Is.True);
+            w.Step();
+            Assert.That(GoesTo(w, A, At(w, middle), 0), Is.True);
+        }
+
         // 10. The soldier's own layer is read: on the floor without a stair it chases an enemy on the same floor.
         [Test]
         public void AChaseStartsFromTheSoldiersOwnFloor()

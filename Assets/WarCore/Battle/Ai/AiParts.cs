@@ -143,6 +143,10 @@ namespace WarCore.Battle
         // (suppression, search, then the point); Hold keeps suppression and skips the rest. Cover skips suppression
         // while the unit walks.
         AiEngage Unseen(in AiUnit unit, AiField field);
+        // AI-M1. A melee unit has an enemy to chase, at this point (for now the scheduler asks only about a unit that is
+        // not Calm, and only with the melee nerve on). Advance chases as before parts; Hold stands; Cover takes cover when
+        // it can and stands otherwise; Fallback falls back and does not chase this think.
+        AiEngage Melee(in AiUnit unit, SimVec3 enemy, AiField field);
     }
 
     // The parts one battle's AI runs with. Missing parts are the defaults, which leave the battle as it was before
