@@ -1,0 +1,8 @@
+# The counters that are held as one figure and not as a row for each item.
+#
+# counter <tab> what it stands at
+#
+# pack-copies: fields that a content pack writes with the very value another pack of its family writes (--map lists
+# them). The check fails when the count differs from the row, in either direction.
+
+pack-copies	94

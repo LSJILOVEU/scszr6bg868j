@@ -1,0 +1,50 @@
+# Game files that nothing a person can run reaches (README.md says how that is found), with their line counts.
+#
+# file <tab> lines
+#
+# A file here is waiting for one of two things: to be connected to a played stage, or to be deleted.
+# A new unused file fails the check, and so does a listed file that grew. When a file is connected, deleted or
+# shortened, change its row in the same commit.
+
+Battle/Ai/CommanderQuota.cs	179
+Content/MapTools/MapBrush.cs	413
+Content/MapTools/MapBuildSpec.cs	224
+Content/MapTools/MapBuilding.cs	90
+Content/MapTools/MapBuildings.cs	191
+Content/MapTools/MapDemTile.cs	129
+Content/MapTools/MapEditBatch.cs	109
+Content/MapTools/MapGenSpec.cs	393
+Content/MapTools/MapNew.cs	47
+Content/MapTools/MapNoise.cs	32
+Content/MapTools/MapTerrain.cs	346
+Content/MapTools/MapTerrainMath.cs	141
+Content/PlayerIdentityDef.cs	12
+Content/TerrainAnchors.cs	32
+Interim/InertiaMotion.cs	58
+Interim/MotionState.cs	25
+Presentation/Bridge/Features/InertiaOption.cs	75
+Presentation/Maps/MapBuildingInfo.cs	56
+Presentation/Maps/MapCatalog.cs	51
+Presentation/Maps/MapDemTiles.cs	14
+Presentation/Maps/MapDocument.Batch.cs	36
+Presentation/Maps/MapDocument.Brush.cs	51
+Presentation/Maps/MapDocument.Buildings.cs	115
+Presentation/Maps/MapDocument.Edit.cs	32
+Presentation/Maps/MapDocument.Entries.cs	129
+Presentation/Maps/MapDocument.Objects.cs	64
+Presentation/Maps/MapDocument.Terrain.cs	54
+Presentation/Maps/MapDocument.cs	55
+Presentation/Maps/MapEditList.cs	34
+Presentation/Maps/MapEditSession.cs	57
+Presentation/Maps/MapEntries.cs	185
+Presentation/Maps/MapEntryEditList.cs	59
+Presentation/Maps/MapEntrySteps.cs	212
+Presentation/Maps/MapFloorView.cs	103
+Presentation/Maps/MapGenSpecs.cs	22
+Presentation/Maps/MapNewSettings.cs	20
+Presentation/Maps/MapTerrainResult.cs	18
+Presentation/PresentationRandom.cs	9
+Sim/ExtensionContracts.cs	189
+Sim/ExtensionSerializers.cs	126
+Sim/StructureHealth.cs	103
+Skin/SkinAssembly.cs	5

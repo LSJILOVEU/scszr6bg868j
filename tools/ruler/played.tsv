@@ -1,0 +1,15 @@
+# The stages a person plays today (the six of the showcase and the multiplayer playtest), and the content each runs on.
+#
+# stage <tab> name <tab> content packs <tab> features its own code switches on (optional)
+#
+# Packs are separated by commas. "pack" takes every section of the pack; "pack:ai+surfaces" takes only those sections
+# (a stage assembled by hand reads one pack for combat and another for the AI). A later pack replaces a section whole.
+# The last column is a debt: a switch that sits in the stage's code, where no content pack can reach it.
+
+battle	Open battle	rwr-showcase	facing
+bullets	Flying bullets	rwr-showcase-bullets	facing
+house	House assault	rwr-showcase-house,rwr-ai-playtest:ai	respawn
+terrain	Hills and mud	rwr-m6,rwr-ai-playtest:ai+surfaces+slopeRule+movement+stats	respawn
+melee	Ancient melee	ancient-field	facing,block-ai
+hamlet	Valley hamlet	rwr-showcase-hamlet	facing
+mp	Multiplayer playtest	rwr-m7-playtest	respawn,block
