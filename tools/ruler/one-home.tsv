@@ -1,0 +1,62 @@
+# One question, one home: the answers that are written in more than one place.
+#
+# Q <tab> id <tab> the question <tab> its home (the one file that should answer it) <tab> the mark of a copy (a regular
+#   expression, matched against code without comments and strings) <tab> what to do instead of writing a copy
+# C <tab> id <tab> a file other than the home where the mark is found today <tab> how many times <tab> debt | other <tab> note
+# S <tab> a salt that more than one per-unit trait is drawn with <tab> how many traits
+#
+# debt: a copy that has to go. other: the same mark, a different question.
+# A unit's trait is drawn from its key mixed with a salt: two traits on one salt are one draw, not two.
+# The check fails when the code and these rows differ, in either direction: a new copy needs no row, it needs the
+# home; a copy that was removed takes its row with it.
+
+Q	nearest-enemy	Which enemy is the nearest one a unit can see	Combat/NearestVisibleEnemy.cs	CompareTo\(bestId\)\s*>=\s*0	Take an ITargetSelector; do not loop over the enemies again.
+C	nearest-enemy	Battle/ConcealedSight.cs	1	debt
+C	nearest-enemy	Battle/SimpleAiSystem.cs	1	debt
+C	nearest-enemy	Combat/CombatSystem.Melee.cs	1	debt
+C	nearest-enemy	Combat/CombatSystem.Sight.cs	1	other	the first body on a ray
+C	nearest-enemy	Combat/CombatSystem.Projectile.cs	1	other	the first body on a ray, a second time
+C	nearest-enemy	Combat/CombatSystem.Vertical.cs	1	other	the enemy nearest to the aimed point
+
+Q	team-count	How many teams there are, and which one is whose	Battle/MatchPack.cs	\b[Tt]eam\s*==\s*1\b|\bTeam\s*>\s*2\b|\bTeamCount\s*=>\s*2\b|\bMaxTeams\s*=\s*\d+	Loop over 1..TeamCount of the match rules; do not name team 1 or team 2.
+C	team-count	Battle/Ai/Pressure.cs	1	debt
+C	team-count	Battle/MatchMode.cs	1	debt
+C	team-count	Battle/MatchSystem.cs	1	debt
+C	team-count	Battle/SimpleAiSystem.cs	1	debt
+C	team-count	Presentation/Bridge/DemoRecipes.cs	5	debt
+C	team-count	Presentation/Bridge/Showcase.cs	5	debt
+C	team-count	Presentation/Bridge/SimSession.cs	3	debt
+C	team-count	Presentation/Maps/MapPalette.cs	1	debt
+C	team-count	Unity/P0Host.cs	1	debt
+
+Q	one-step	How a unit takes one step over the ground	Interim/InterimLocomotion.Terrain.cs	\bterrain\s*!=\s*null\s*\)\s*\{?\s*(?:\w+\s*=\s*!?\s*)?Step\w*Terrain\s*\(	Flat ground is terrain of height zero: one step function, no second branch.
+C	one-step	Interim/InterimLocomotion.Crowd.cs	2	debt
+C	one-step	Interim/InterimLocomotion.Dash.cs	1	debt
+C	one-step	Interim/InterimLocomotion.cs	1	debt
+
+Q	path	How a route over the map is found	Sim/LayeredPathfinder.cs	\bclass\s+\w*Pathfinder\b	One pathfinder; a flat map is one layer.
+C	path	Sim/GridPathfinder.cs	1	debt
+
+Q	refill	How a side gets units back: reinforcement, respawn, re-entry	Battle/ReinforceSystem.cs	\bclass\s+(?:Reinforce|Respawn)System\b	One system that puts a waiting unit back on the field.
+C	refill	Battle/RespawnSystem.cs	1	debt
+
+Q	start-match	How a content pack and a map become a match	Presentation/Bridge/MapRecipe.cs	\bnew\s+WorldRecipe\s*\(	Describe the stage as data and let the one route build it; do not assemble a recipe by hand.
+C	start-match	Presentation/Bridge/WorldRecipe.cs	1	other	the recipe copying itself
+C	start-match	Presentation/Bridge/DemoRecipes.cs	10	debt
+C	start-match	Presentation/Bridge/Showcase.cs	3	debt
+C	start-match	Presentation/Bridge/Features/A3aDemo.cs	1	debt
+C	start-match	Presentation/Bridge/Features/BlastDemo.cs	1	debt
+C	start-match	Presentation/Bridge/Features/DownDemo.cs	1	debt
+C	start-match	Presentation/Bridge/Features/NerveDemo.cs	1	debt
+C	start-match	Presentation/Bridge/Features/PlateDemo.cs	1	debt
+C	start-match	Presentation/Bridge/Features/Scale2aDemo.cs	2	debt
+C	start-match	Presentation/Bridge/Features/SlopeDemo.cs	1	debt
+C	start-match	Presentation/Bridge/Features/StanceDemo.cs	1	debt
+C	start-match	Presentation/Bridge/Features/StreetDemo.cs	1	debt
+C	start-match	Presentation/Bridge/Features/VspreadDemo.cs	1	debt
+C	start-match	Unity/SimHost.cs	1	debt
+
+S	0x1f83d9abfb41bd6b	2
+S	0x3c6ef372fe94f82b	2
+S	0x510e527fade682d1	2
+S	0x9b05688c2b3e6c1f	2

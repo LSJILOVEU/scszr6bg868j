@@ -1,0 +1,182 @@
+# The modules of the game code, and the one module every file under Assets/WarCore belongs to.
+#
+# M <tab> number <tab> key <tab> block <tab> name <tab> the question this module alone answers
+# F <tab> module key <tab> a file, or a pattern (* stays inside one folder, ** crosses folders), relative to Assets/WarCore
+#
+# One file, one module. A file's own row beats a pattern; between patterns the longer one wins.
+# A new file that no row names fails the check: give it a row here before it is merged.
+# Tests/, Verification/ and Unity/Tests/ only check the game and belong to no module.
+
+M	01	map	places	Map	What the ground, walls, floors and placed objects are, and how a map is read, written, built and edited
+M	02	body	people	Body	How big a unit is, which posture it holds and which way it faces
+M	03	move	people	Movement	How a unit gets from here to there: paths, steps, slopes, dashes, passing others
+M	04	mount	things	Mount	How one entity carries another
+M	05	sight	people	Sight	Who can see whom, and which enemy is the nearest visible one
+M	06	fight	things	Fighting	How weapons, melee, projectiles and blasts hit, and how accurate a shot is
+M	07	health	people	Health and state	How much life a unit has, what damage does to it, when it is down or dead, which actions its state allows
+M	08	ability	things	Abilities	Actions with a cost and a cooldown, and the lasting effects they leave
+M	09	brain	people	Brain	What a computer-run unit, its squad and its commander decide to do
+M	10	sides	people	Sides	Who is friend, enemy or neutral to whom
+M	11	match	places	Match rules	How a match runs: capture, reinforcements, respawn, who wins
+M	12	interact	things	Interaction and items	Using things in the world: triggers, doors, pickups, trade
+M	13	hand	people	Player's hand	How a player's input becomes a unit's action
+M	14	core	machine	Core	Deterministic numbers, entities, scheduling, space queries, saving and state hashes
+M	15	slot	machine	Cartridge slot	How a content pack and a map become a running match
+M	16	view	machine	Picture	Drawing what the rules computed, without deciding anything
+
+# Sim
+F	core	Sim/Sim*.cs
+F	core	Sim/Entity*.cs
+F	core	Sim/Extension*.cs
+F	core	Sim/Fixed*.cs
+F	core	Sim/Geometry*.cs
+F	core	Sim/GridQueryContext.cs
+F	core	Sim/GridSpatial*.cs
+F	core	Sim/Scheduler*.cs
+F	core	Sim/Spatial*.cs
+F	core	Sim/Stable*.cs
+F	core	Sim/BoundedLookup.cs
+F	core	Sim/CoreComponentSerializers.cs
+F	core	Sim/IdentityRetirement.cs
+F	core	Sim/QueueSnapshots.cs
+F	core	Sim/RayCellTraversal.cs
+F	core	Sim/RetainedWorld.cs
+F	core	Sim/SnapshotValues.cs
+F	core	Sim/SpawnCapture.cs
+F	core	Sim/StatLine.cs
+F	core	Sim/StateHash.cs
+F	core	Sim/TieredTimeline.cs
+F	core	Sim/TrigTables.cs
+F	map	Sim/HeightField.cs
+F	map	Sim/TerrainTables.cs
+F	map	Sim/PlateField*.cs
+F	map	Sim/Placed*.cs
+F	map	Sim/StructureHealth.cs
+F	map	Sim/EntryTable.cs
+F	map	Sim/PointEntryTable.cs
+F	map	Sim/LineStop.cs
+F	body	Sim/BodyRadius.cs
+F	body	Sim/Posture*.cs
+F	body	Sim/StablePosture.cs
+F	move	Sim/Movement.cs
+F	move	Sim/GridPathfinder.cs
+F	move	Sim/Layered*.cs
+F	move	Sim/Nav*.cs
+F	move	Sim/SlopeTable.cs
+F	mount	Sim/SpatialMotion.cs
+F	mount	Sim/StableMotion.cs
+F	mount	Sim/RequestDiagnostics.cs
+F	sides	Sim/FactionRelations.cs
+F	health	Sim/ActionGate.cs
+F	health	Sim/Gameplay*.cs
+F	ability	Sim/GameplayAbilit*.cs
+F	ability	Sim/GameplayStatus*.cs
+F	ability	Sim/GameplaySourceSnapshot.cs
+F	hand	Sim/GameplayInput*.cs
+F	hand	Sim/Input*.cs
+F	hand	Sim/StableInput.cs
+F	hand	Sim/ControlTarget.cs
+F	interact	Sim/Trigger*.cs
+
+# Combat
+F	fight	Combat/CombatSystem*.cs
+F	fight	Combat/Blast*.cs
+F	fight	Combat/Move*.cs
+F	fight	Combat/Projectile*.cs
+F	fight	Combat/BlockSpec.cs
+F	fight	Combat/CombatPack.cs
+F	fight	Combat/CombatStatus.cs
+F	fight	Combat/Combatant.cs
+F	fight	Combat/DamageResolver.cs
+F	fight	Combat/DefaultAutoFire.cs
+F	fight	Combat/FireIntent.cs
+F	fight	Combat/IAutoFire.cs
+F	fight	Combat/MeleeSpec.cs
+F	fight	Combat/VerticalSpread.cs
+F	fight	Combat/WeaponDef.cs
+F	health	Combat/Casualty.cs
+F	health	Combat/CombatSystem.Casualty.cs
+F	health	Combat/CombatSystem.Guard.cs
+F	health	Combat/DownedRules.cs
+F	sight	Combat/CombatSystem.Sight.cs
+F	sight	Combat/NearestVisibleEnemy.cs
+F	body	Combat/CombatBody.cs
+F	body	Combat/StanceDef.cs
+F	body	Combat/StanceSystem.cs
+
+# Battle
+F	brain	Battle/Ai/*.cs
+F	brain	Battle/BlockAiSystem.cs
+F	brain	Battle/GuardSlots.cs
+F	brain	Battle/SimpleAiSystem.cs
+F	match	Battle/Match*.cs
+F	match	Battle/CaptureSystem.cs
+F	match	Battle/EntryChooser.cs
+F	match	Battle/ReinforceSystem.cs
+F	match	Battle/RespawnSystem.cs
+F	sight	Battle/ConcealedSight.cs
+F	sight	Battle/SightLimited.cs
+F	move	Battle/BattleLayers.cs
+
+# Interim
+F	move	Interim/*.cs
+F	brain	Interim/SquadStanding.cs
+F	body	Interim/UnitFacing.cs
+F	match	Interim/DeployGround.cs
+
+# Control
+F	hand	Control/*.cs
+
+# Content
+F	map	Content/WcMap*.cs
+F	map	Content/Terrain*.cs
+F	map	Content/Plate*.cs
+F	map	Content/M2DemoMap.cs
+F	map	Content/M6DemoMap.cs
+F	map	Content/M7DemoMap.cs
+F	map	Content/MapCells.cs
+F	map	Content/ScaleRules.cs
+F	map	Content/ShowcaseField.cs
+F	map	Content/WallSpan.cs
+F	map	Content/MapTools/*.cs
+F	move	Content/LinkDerive.cs
+F	move	Content/TraversalRules.cs
+F	hand	Content/PlayerIdentityDef.cs
+F	slot	Content/Data/**
+F	slot	Content/Rwr/*.cs
+
+# Presentation
+F	view	Presentation/PresentationRandom.cs
+F	slot	Presentation/Bridge/Showcase*.cs
+F	slot	Presentation/Bridge/SimSession*.cs
+F	slot	Presentation/Bridge/ContentLayers.cs
+F	slot	Presentation/Bridge/DemoRecipes.cs
+F	slot	Presentation/Bridge/MapRecipe.cs
+F	slot	Presentation/Bridge/TerrainDemo.cs
+F	slot	Presentation/Bridge/TerrainPlayerDemo.cs
+F	slot	Presentation/Bridge/WorldBuilder.cs
+F	slot	Presentation/Bridge/WorldRecipe.cs
+F	view	Presentation/Bridge/View*.cs
+F	view	Presentation/Bridge/BlastLook.cs
+F	view	Presentation/Bridge/FrameView.cs
+F	view	Presentation/Bridge/PlateMesh.cs
+F	view	Presentation/Bridge/TerrainMesh.cs
+F	hand	Presentation/Bridge/BridgeCommand.cs
+F	hand	Presentation/Bridge/LivePlayerInput.cs
+F	hand	Presentation/Bridge/PlayerInput.cs
+F	slot	Presentation/Bridge/Features/*.cs
+F	view	Presentation/Bridge/Features/BodySizes.cs
+F	view	Presentation/Bridge/Features/ViewGround.cs
+F	view	Presentation/Bridge/Features/ViewPlates.cs
+F	view	Presentation/Bridge/Features/ViewProjectiles.cs
+F	view	Presentation/Camera/*.cs
+F	hand	Presentation/Camera/AimPick.cs
+F	hand	Presentation/Camera/PickReach.cs
+F	hand	Presentation/Camera/PlayerInputMapper.cs
+F	hand	Presentation/Camera/PlayerKeys.cs
+F	map	Presentation/Maps/*.cs
+
+# Unity and Skin
+F	view	Unity/**
+F	hand	Unity/PlayerKeyPoller.cs
+F	view	Skin/*.cs
