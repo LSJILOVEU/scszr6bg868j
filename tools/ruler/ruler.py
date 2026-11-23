@@ -422,36 +422,55 @@ def scan_one_home(sources, game):
 # Content packs: what is switched on in the stages people play, and fields written twice
 
 def load_packs():
+    """cartridge -> layer id -> the layer, for every Content/<cartridge>/Data. A layer is <id>.json: in the folder itself a
+    pack, which a stage can run on; in a folder under it a part, reached only through the layers that list it."""
     packs = {}
-    for folder, _, names in os.walk(os.path.join(SRC, "Content")):
-        if os.path.basename(folder) != "Data":
+    content = os.path.join(SRC, "Content")
+    for cartridge in sorted(os.listdir(content)):
+        top = os.path.join(content, cartridge, "Data")
+        if not os.path.isdir(top):
             continue
-        for name in sorted(names):
-            if not name.endswith(".json"):
-                continue
-            with open(os.path.join(folder, name), encoding="utf-8-sig") as handle:
-                data = json.load(handle)
-            if isinstance(data, dict) and isinstance(data.get("id"), str) and ("extends" in data or "combat" in data):
-                packs[data["id"]] = data
+        layers = packs[cartridge] = {}
+        for folder, folders, names in os.walk(top):
+            folders.sort()
+            for name in sorted(names):
+                if not name.endswith(".json"):
+                    continue
+                layer_id = os.path.relpath(os.path.join(folder, name), top).replace(os.sep, "/")[:-len(".json")]
+                if layer_id not in ("editor", "palette"):
+                    with open(os.path.join(folder, name), encoding="utf-8-sig") as handle:
+                        layers[layer_id] = json.load(handle)
     return packs
 
 
-def chain(packs, pack_id):
+def is_part(layer_id):
+    return "/" in layer_id
+
+
+def lineage(layers, layer_id):
+    """The layers a layer is merged from, itself last: each after the layers it extends, in the order it lists them, and once."""
     out = []
-    while pack_id is not None:
-        if pack_id not in packs or pack_id in out:
-            sys.exit("content pack '%s' is missing or extends itself" % pack_id)
-        out.append(pack_id)
-        pack_id = packs[pack_id].get("extends")
+
+    def visit(current, above):
+        if current not in layers or current in above:
+            sys.exit("content layer '%s' is missing or extends itself" % current)
+        if current in out:
+            return
+        parents = layers[current].get("extends", [])
+        for parent in [parents] if isinstance(parents, str) else parents:
+            visit(parent, above + [current])
+        out.append(current)
+
+    visit(layer_id, [])
     return out
 
 
-def merged(packs, pack_id):
-    """A pack with everything it extends, merged as the game's loader merges: a section that is a list goes entry by
+def merged(layers, layer_id):
+    """A layer with everything it extends, merged as the game's loader merges: a section that is a list goes entry by
     entry on "id", a section that is an object field by field; the value of a field is replaced whole."""
     result = {}
-    for layer in reversed(chain(packs, pack_id)):
-        for key, value in packs[layer].items():
+    for layer in lineage(layers, layer_id):
+        for key, value in layers[layer].items():
             if key in ("id", "extends"):
                 continue
             if isinstance(value, list):
@@ -488,15 +507,20 @@ def proof_holds(data, proof):
 
 def scan_features(packs, modules):
     stages, problems = [], []
+    home = {}
+    for cartridge, layers in packs.items():
+        for layer_id in layers:
+            if not is_part(layer_id):
+                home.setdefault(layer_id, []).append(cartridge)
     for number, cells in rows("played.tsv"):
         if len(cells) not in (3, 4):
             fail_table("played.tsv", number, "expected: stage, name, packs and, when its code switches features on, their ids")
         data = {}
         for item in cells[2].split(","):
             layer, _, only = item.partition(":")
-            if layer not in packs:
-                fail_table("played.tsv", number, "no content pack '%s'" % layer)
-            full = merged(packs, layer)
+            if len(home.get(layer, [])) != 1:
+                fail_table("played.tsv", number, "no content pack '%s', or more than one" % layer)
+            full = merged(packs[home[layer][0]], layer)
             data.update({key: full[key] for key in (only.split("+") if only else full) if key in full})
         stages.append({"id": cells[0], "name": cells[1], "packs": cells[2], "data": data,
                        "code": cells[3].split(",") if len(cells) == 4 else [], "line": number})
@@ -509,7 +533,8 @@ def scan_features(packs, modules):
         on = [stage["id"] for stage in stages if proof_holds(stage["data"], cells[2])]
         code = [stage["id"] for stage in stages if cells[0] in stage["code"] and stage["id"] not in on]
         features.append({"id": cells[0], "module": cells[1], "proof": cells[2], "name": cells[3], "on": on, "code": code,
-                         "packs": sorted(pack_id for pack_id in packs if proof_holds(merged(packs, pack_id), cells[2]))})
+                         "packs": sorted(layer for layer, where in home.items() for cartridge in where
+                                         if proof_holds(merged(packs[cartridge], layer), cells[2]))})
         if not on and not code and len(cells) == 4:
             problems.append("feature %s (%s) is on in no played stage: put %s in a pack a stage of tools/ruler/played.tsv runs on, "
                             "or it is not finished" % (cells[0], cells[3], cells[2].replace("[]", "")))
@@ -524,21 +549,21 @@ def scan_features(packs, modules):
 
 
 def pack_copies(packs):
-    """Fields a pack writes itself with the very value another pack of its family writes itself."""
+    """Fields a layer writes itself with the very value another layer of its cartridge writes itself."""
     seen = {}
-    for pack_id, data in packs.items():
-        family = chain(packs, pack_id)[-1]
-        for key, value in data.items():
-            if key in ("id", "extends"):
-                continue
-            if isinstance(value, list):
-                fields = [("%s[%s].%s" % (key, item.get("id"), name), leaf) for item in value for name, leaf in item.items() if name != "id"]
-            elif isinstance(value, dict):
-                fields = [(key + "." + name, leaf) for name, leaf in value.items()]
-            else:
-                fields = [(key, value)]
-            for path, leaf in fields:
-                seen.setdefault((family, path, json.dumps(leaf, sort_keys=True)), []).append(pack_id)
+    for cartridge, layers in packs.items():
+        for layer_id, data in layers.items():
+            for key, value in data.items():
+                if key in ("id", "extends"):
+                    continue
+                if isinstance(value, list):
+                    fields = [("%s[%s].%s" % (key, item.get("id"), name), leaf) for item in value for name, leaf in item.items() if name != "id"]
+                elif isinstance(value, dict):
+                    fields = [(key + "." + name, leaf) for name, leaf in value.items()]
+                else:
+                    fields = [(key, value)]
+                for path, leaf in fields:
+                    seen.setdefault((cartridge, path, json.dumps(leaf, sort_keys=True)), []).append(layer_id)
     return sorted((path, sorted(ids)) for (_, path, _), ids in seen.items() if len(ids) > 1)
 
 
@@ -609,6 +634,8 @@ def measure():
     stages, features, found = scan_features(packs, modules)
     problems += found
     copies = pack_copies(packs)
+    layer_ids = [layer_id for layers in packs.values() for layer_id in layers]
+    parts = sum(1 for layer_id in layer_ids if is_part(layer_id))
     copied = sum(len(ids) - 1 for _, ids in copies)
     limit = 0
     for number, cells in rows("limits.tsv"):
@@ -633,7 +660,7 @@ def measure():
         },
         "info": {"game-files": len(game), "game-lines": game_lines, "test-files": len(tests), "test-lines": test_lines,
                  "test-per-game-permille": test_lines * 1000 // max(game_lines, 1), "size-debt": size_debt(),
-                 "unused-files": len(unused), "packs": len(packs), "features": len(features),
+                 "unused-files": len(unused), "packs": len(layer_ids) - parts, "parts": parts, "features": len(features),
                  "questions-with-copies": sum(1 for question in one_home if question["copies"])},
         "modules": [{**modules[key], **per_module[key]} for key in modules],
         "unused": unused, "one_home": one_home, "shared_salts": salts, "stages": stages, "features": features,
@@ -647,7 +674,8 @@ def print_numbers(result):
     print("shared-salts  %5d  traits drawn with another trait's salt (one-home.tsv)" % numbers["shared-salts"])
     print("features-off  %5d  of %d finished features, on in no played stage (features.tsv)" % (numbers["features-off"], info["features"]))
     print("unused-lines  %5d  in %d files that nothing a person can run reaches (unused.tsv)" % (numbers["unused-lines"], info["unused-files"]))
-    print("pack-copies   %5d  fields written twice with one value in %d content packs (limits.tsv)" % (numbers["pack-copies"], info["packs"]))
+    print("pack-copies   %5d  fields written twice with one value in %d content packs and %d parts (limits.tsv)"
+          % (numbers["pack-copies"], info["packs"], info["parts"]))
     print("size-debt     %5s  size literals still to derive (tools/size-guard/ledger.tsv)" % info["size-debt"])
     print("tests         %d.%03d  test lines for every game line (%d game lines in %d files)"
           % (info["test-per-game-permille"] // 1000, info["test-per-game-permille"] % 1000, info["game-lines"], info["game-files"]))
@@ -712,11 +740,15 @@ def self_test():
     }
     edges = reference_graph({rel: Source(rel, text) for rel, text in files.items()})
     assert reachable(edges, ["e.cs"]) == {"e.cs", "a.cs", "b.cs"}, edges
-    packs = {"base": {"id": "base", "ai": {"a": 1}, "units": [{"id": "u", "speed": 5}]},
-             "top": {"id": "top", "extends": "base", "ai": {"b": 2}, "units": [{"id": "u", "dash": 3}]}}
-    top = merged(packs, "top")
-    assert top == {"ai": {"a": 1, "b": 2}, "units": [{"id": "u", "speed": 5, "dash": 3}]}, top
-    assert proof_holds(top, "units[].dash") and proof_holds(top, "ai.b=2") and not proof_holds(top, "ai.c"), top
+    layers = {"base": {"id": "base", "ai": {"a": 1}, "units": [{"id": "u", "speed": 5}]},
+              "left": {"id": "left", "extends": "base", "ai": {"b": 2}, "units": [{"id": "u", "dash": 3}]},
+              "parts/right": {"id": "parts/right", "ai": {"b": 2}, "units": [{"id": "v", "speed": 7}]},
+              "top": {"id": "top", "extends": ["left", "base", "parts/right"], "ai": {"c": 3}}}
+    assert lineage(layers, "top") == ["base", "left", "parts/right", "top"], lineage(layers, "top")
+    top = merged(layers, "top")
+    assert top == {"ai": {"a": 1, "b": 2, "c": 3}, "units": [{"id": "u", "speed": 5, "dash": 3}, {"id": "v", "speed": 7}]}, top
+    assert proof_holds(top, "units[].dash") and proof_holds(top, "ai.b=2") and not proof_holds(top, "ai.d"), top
+    assert pack_copies({"one": layers, "other": {"left": layers["left"]}}) == [("ai.b", ["left", "parts/right"])]
     # Sets are walked in hash order, which changes from run to run: none of it may reach the output.
     outputs = {subprocess.run([sys.executable, os.path.abspath(__file__), "--json", "-", "--map"], check=True, capture_output=True,
                               env={**os.environ, "PYTHONHASHSEED": seed}).stdout for seed in ("1", "2")}

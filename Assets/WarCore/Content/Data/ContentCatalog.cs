@@ -5,7 +5,9 @@ using System.IO;
 namespace WarCore.Content
 {
     // The content data directories a map tool can choose from. A cartridge is one data directory; a layer is one
-    // <layer id>.json in it (the "pack" of a map description names a layer, never a cartridge).
+    // <layer id>.json in it (the "pack" of a map description names a layer, never a cartridge). A file in a folder under
+    // it (parts/<name>.json, id "parts/<name>") is a part: not a layer of the catalog, only what the layers that list it
+    // in "extends" are made of.
     // Cartridge name: the parent folder's name when the directory itself is called "Data" (Content/Rwr/Data -> Rwr), else the
     // directory's own name. Cartridges and layers are kept in ordinal order, so nothing depends on the file system's order.
     // Reserved file names (not layers): editor.json (the cartridge's editor settings) and palette.json (its colours).

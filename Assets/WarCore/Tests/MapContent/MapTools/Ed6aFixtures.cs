@@ -152,8 +152,7 @@ namespace WarCore.Tests
         internal Ed6aBodyCartridge()
         {
             string dir = dirs.Dir("Body");
-            foreach (string file in Directory.GetFiles(FileContentSource.RwrDirectory, "*.json"))
-                File.Copy(file, Path.Combine(dir, Path.GetFileName(file)));
+            Ed0Dirs.CopyRwr(dir);
             File.WriteAllText(Path.Combine(dir, Layer + ".json"), "{ \"id\": \"" + Layer + "\", \"extends\": \"rwr\", "
                 + "\"combat\": { \"body\": { \"height\": 1.75, \"eye\": 1.5, \"muzzle\": 1.5 } } }");
             Ed0Dirs.UseList(dir);

@@ -1,0 +1,10 @@
+{
+  "id": "parts/block",
+  "extends": "rwr",
+  "block": [
+    { "id": "rwr.guard", "cosHalfAnglePermille": 500, "reductionPermille": 1000, "aiRaisePermille": 0 }
+  ],
+  "unitTypes": [
+    { "id": "rwr.soldier-1", "block": "rwr.guard" }
+  ]
+}

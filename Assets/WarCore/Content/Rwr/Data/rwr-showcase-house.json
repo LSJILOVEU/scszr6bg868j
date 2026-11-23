@@ -1,5 +1,4 @@
 {
   "id": "rwr-showcase-house",
-  "extends": "rwr-body",
-  "pick": { "radiusPermille": 3000, "heightPermille": 1150 }
+  "extends": [ "rwr-body", "parts/mouse-reach" ]
 }

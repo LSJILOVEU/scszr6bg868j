@@ -1,0 +1,4 @@
+{
+  "id": "parts/spread-attack",
+  "ai": { "attackSpreadPoints": 3 }
+}

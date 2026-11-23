@@ -1,0 +1,171 @@
+# Layers that extend several layers (Tests/MapContent/Content/ContentComposeTests.cs). Each entry drops one rule of
+# the loader or reads one value wrongly; the named test must fail on an assertion.
+
+[compose1-once]
+file = Assets/WarCore/Content/Data/ContentLoader.cs
+filter = FullyQualifiedName~ContentComposeTests
+expect = WarCore.Tests.ContentComposeTests.ALayerReachedTwiceIsMergedOnce
+note = a layer reached through a second parent is merged again
+original:
+| if (extended.ContainsKey(layerId)) return;
+replacement:
+| if (extended.ContainsKey(layerId) && chain.Count == 0) return;
+
+[compose1-below]
+file = Assets/WarCore/Content/Data/ContentLoader.cs
+filter = FullyQualifiedName~ContentComposeTests
+expect = WarCore.Tests.ContentComposeTests.ALayerOverridesEveryLayerBelowIt
+note = a layer only counts as extending the layers it lists, not the ones below them
+original:
+| above.UnionWith(extended[parent]);
+replacement:
+
+[compose1-order]
+file = Assets/WarCore/Content/Data/ContentLoader.cs
+filter = FullyQualifiedName~ContentComposeTests
+expect = WarCore.Tests.ContentComposeTests.NewEntriesStandInTheOrderOfTheList
+note = the layers of a list are merged last to first
+original:
+| parents.Add(item.Text);
+replacement:
+| parents.Insert(0, item.Text);
+
+[compose1-twice]
+file = Assets/WarCore/Content/Data/ContentLoader.cs
+filter = FullyQualifiedName~ContentComposeTests
+expect = WarCore.Tests.ContentComposeTests.ABadListIsRefused
+note = a layer listed twice is taken
+original:
+| if (parents.Contains(item.Text)) throw
+replacement:
+| if (parents.Contains(item.Text) && parents.Count > 9) throw
+
+[compose1-empty]
+file = Assets/WarCore/Content/Data/ContentLoader.cs
+filter = FullyQualifiedName~ContentComposeTests
+expect = WarCore.Tests.ContentComposeTests.ABadListIsRefused
+note = an empty list is taken as no parent
+original:
+| if (parents.Count == 0) throw
+replacement:
+| if (parents.Count < 0) throw
+
+[compose1-ids]
+file = Assets/WarCore/Content/Data/ContentLoader.cs
+filter = FullyQualifiedName~ContentComposeTests
+expect = WarCore.Tests.ContentComposeTests.ABadListIsRefused
+note = a number in the list is read as a layer id
+original:
+| if (item.Kind != JsonKind.String) throw
+replacement:
+| if (item.Kind == JsonKind.Object) throw
+
+[compose1-entry-fields]
+file = Assets/WarCore/Content/Data/ContentLoader.cs
+filter = FullyQualifiedName~ContentComposeTests
+expect = WarCore.Tests.ContentComposeTests.TwoLayersThatSetAFieldDifferentlyAreRefused
+note = what a layer writes into an entry of a list is not noted, so the later layer wins
+original:
+| if (field.Name != "id") writes.Add(
+replacement:
+| if (field.Name == "id") writes.Add(
+
+[compose1-object-fields]
+file = Assets/WarCore/Content/Data/ContentLoader.cs
+filter = FullyQualifiedName~ContentComposeTests
+expect = WarCore.Tests.ContentComposeTests.ALayerOverriddenInItsOwnLineIsNotCompared
+expect = WarCore.Tests.ContentComposeTests.OneMemberDiffers
+note = what a layer writes into an object section is not noted, so the later layer wins
+original:
+| foreach (JsonMember field in node.Members) writes.Add(new Write(section + "." + field.Name, field.Value, layer));
+replacement:
+| foreach (JsonMember field in node.Members) { }
+
+[compose1-same-value]
+file = Assets/WarCore/Content/Data/ContentLoader.cs
+filter = FullyQualifiedName~ContentComposeTests
+expect = WarCore.Tests.ContentComposeTests.TheSameValueTwiceIsNoDisagreement
+note = two layers that write one value are refused
+original:
+| if (Same(write.Node, final.Node) || list.Exists(
+replacement:
+| if (write == final || list.Exists(
+
+[compose1-overridden]
+file = Assets/WarCore/Content/Data/ContentLoader.cs
+filter = FullyQualifiedName~ContentComposeTests
+expect = WarCore.Tests.ContentComposeTests.ALayerOverriddenInItsOwnLineIsNotCompared
+note = only the last writer may override, so the order of the list decides whether the pack loads
+original:
+| list.Exists(other => extended[other.Layer].Contains(write.Layer))
+replacement:
+| extended[final.Layer].Contains(write.Layer)
+
+[compose1-kind]
+file = Assets/WarCore/Content/Data/ContentLoader.cs
+filter = FullyQualifiedName~ContentComposeTests
+expect = WarCore.Tests.ContentComposeTests.ANumberAndItsText
+note = a number and a string with the same text are one value
+original:
+| if (a.Kind != b.Kind) return false;
+replacement:
+| if (a.Kind != b.Kind && (a.Members != null || a.Items != null)) return false;
+
+[compose1-member-count]
+file = Assets/WarCore/Content/Data/ContentLoader.cs
+filter = FullyQualifiedName~ContentComposeTests
+expect = WarCore.Tests.ContentComposeTests.OneMemberMore
+note = an object equals one that has every member of it and more
+original:
+| if (a.Members.Count != b.Members.Count) return false;
+replacement:
+
+[compose1-member-value]
+file = Assets/WarCore/Content/Data/ContentLoader.cs
+filter = FullyQualifiedName~ContentComposeTests
+expect = WarCore.Tests.ContentComposeTests.OneMemberDiffers
+note = the members of an object are compared by name only
+original:
+| if (other == null || !Same(member.Value, other)) return false;
+replacement:
+| if (other == null) return false;
+
+[compose1-item-count]
+file = Assets/WarCore/Content/Data/ContentLoader.cs
+filter = FullyQualifiedName~ContentComposeTests
+expect = WarCore.Tests.ContentComposeTests.OneItemMore
+note = a list equals a longer one that starts with it
+original:
+| if (a.Items.Count != b.Items.Count) return false;
+replacement:
+
+[compose1-item-value]
+file = Assets/WarCore/Content/Data/ContentLoader.cs
+filter = FullyQualifiedName~ContentComposeTests
+expect = WarCore.Tests.ContentComposeTests.OneItemDiffers
+note = the items of a list are not compared
+original:
+| if (!Same(a.Items[i], b.Items[i])) return false;
+replacement:
+| if (a.Items[i] == null) return false;
+
+[compose1-flag]
+file = Assets/WarCore/Content/Data/ContentLoader.cs
+filter = FullyQualifiedName~ContentComposeTests
+expect = WarCore.Tests.ContentComposeTests.TrueAndFalse
+note = true equals false
+original:
+| return a.Flag == b.Flag;
+replacement:
+| return true;
+
+[compose1-text]
+file = Assets/WarCore/Content/Data/ContentLoader.cs
+filter = FullyQualifiedName~ContentComposeTests
+expect = WarCore.Tests.ContentComposeTests.TwoLayersThatSetAFieldDifferentlyAreRefused
+expect = WarCore.Tests.ContentComposeTests.ATrailingZero
+note = two numbers are one value whatever they say
+original:
+| return a.Text == b.Text;
+replacement:
+| return a.Text != null;

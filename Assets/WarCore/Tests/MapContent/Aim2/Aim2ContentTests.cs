@@ -110,8 +110,7 @@ namespace WarCore.Tests
                 using (var dirs = new Ed0Dirs())
                 {
                     string dir = dirs.Dir("Data");
-                    foreach (string file in Directory.GetFiles(FileContentSource.RwrDirectory, "*.json"))
-                        File.Copy(file, Path.Combine(dir, Path.GetFileName(file)));
+                    Ed0Dirs.CopyRwr(dir);
                     File.WriteAllText(Path.Combine(dir, id + ".json"), Layer(id, pick));
                     Ed0Dirs.UseList(dir);
                     ShowcaseStage stage = Showcase.HouseStage(id);

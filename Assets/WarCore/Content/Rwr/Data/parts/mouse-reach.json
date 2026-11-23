@@ -1,0 +1,4 @@
+{
+  "id": "parts/mouse-reach",
+  "pick": { "radiusPermille": 3000, "heightPermille": 1150 }
+}

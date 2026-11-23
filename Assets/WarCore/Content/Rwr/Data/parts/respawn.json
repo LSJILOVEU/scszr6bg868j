@@ -1,0 +1,4 @@
+{
+  "id": "parts/respawn",
+  "match": { "respawnTicks": 150, "respawnGuardTicks": 90 }
+}

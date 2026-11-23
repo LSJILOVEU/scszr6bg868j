@@ -1,0 +1,4 @@
+{
+  "id": "parts/body",
+  "combat": { "body": { "height": 1.75, "eye": 1.5, "muzzle": 1.5 } }
+}

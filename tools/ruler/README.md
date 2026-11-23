@@ -28,8 +28,9 @@ Every pull request runs `--self-test --check` (`.github/workflows/ruler.yml`).
    on, `played.tsv` the stages a person plays with the packs they run on. A feature that no stage has is marked `off`
    (`features-off`).
 4. **Nothing idle.** `unused.tsv` lists the files that nothing a person can run reaches (`unused-lines`).
-5. **One value, one pack.** A field that two packs of one family write with the same value is a copy; `limits.tsv` holds
-   their count (`pack-copies`).
+5. **One value, one place.** A cartridge is a folder `Content/<name>/Data`. A file in it is a pack, which a stage can run
+   on; a file in a folder under it is a part, which packs list in `extends`. A field that two of them write with the same
+   value is a copy; `limits.tsv` holds their count (`pack-copies`). A value that two packs need goes into a part.
 
 `--check` compares the code with the tables in both directions. Debt that no row names fails: a file without a module,
 a new copy, a new unused file, a feature that no stage has. Debt that a row names and the code no longer has fails as

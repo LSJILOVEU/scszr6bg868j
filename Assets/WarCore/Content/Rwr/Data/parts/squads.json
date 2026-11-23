@@ -1,0 +1,12 @@
+{
+  "id": "parts/squads",
+  "ai": {
+    "squadMinSize": 4,
+    "squadMaxSize": 9,
+    "squadSkirmisherPermille": 300,
+    "squadRecruitRadiusMm": 30000,
+    "squadFormTicks": 15,
+    "squadSpreadMinMm": 1500,
+    "squadSpreadMaxMm": 6000
+  }
+}

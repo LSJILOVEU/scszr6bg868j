@@ -2,7 +2,7 @@
 #
 # counter <tab> what it stands at
 #
-# pack-copies: fields that a content pack writes with the very value another pack of its family writes (--map lists
-# them). The check fails when the count differs from the row, in either direction.
+# pack-copies: fields that a content layer (a pack or a part) writes with the very value another layer of its
+# cartridge writes (--map lists them). The check fails when the count differs from the row, in either direction.
 
-pack-copies	94
+pack-copies	9
