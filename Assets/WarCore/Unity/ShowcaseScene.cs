@@ -294,7 +294,7 @@ namespace WarCore.Unity
                 Shake = new Vector2((Mathf.PerlinNoise(clock * 28f, 0.3f) * 2f - 1f) * reach, (Mathf.PerlinNoise(0.7f, clock * 28f) * 2f - 1f) * reach);
             }
             else Shake = Vector2.zero;
-            Cut = LayerCut.Run(Session.Map.Plates, Session.Map, me, Camera.Forward, LayerCut.SeeRadius, BodySizes.Of(Session));
+            Cut = LayerCut.Run(Session.Map.Plates, Session.Map, me, Camera.Forward, LayerCut.SeeRadiusFor(BodySizes.Of(Session)), BodySizes.Of(Session));
             covered = Silhouettes.Run(Session.Map.Plates, Session.Map, Cut, me, shown.Entities, Camera.Forward, BodySizes.Of(Session));
             Plates.Apply(Cut);
             Points.Apply(current);

@@ -1,0 +1,117 @@
+# HC-2a: the see-through ring's threshold is the unit's body height at its stance (LegacySeeHeight without a body), its radius
+# is 8/7 of the standing height (SeeRadius without a body), and the layer cut's headroom is WallSpan's walk clearance.
+# Filter: Hc2aSeeTests (and Ml10 for the headroom). The hosts that call SeeRadiusFor are Unity code (no assembly here).
+
+[hc2a-height-fixed]
+file = Assets/WarCore/Presentation/Camera/LayerCut.cs
+filter = FullyQualifiedName~Hc2a
+expect = WarCore.Tests.Hc2aSeeTests.S2_TheThresholdIsTheBodysHeight
+expect = WarCore.Tests.Hc2aSeeTests.S2_ThePlateThresholdIsTheBodysHeight
+note = the threshold is always the legacy height
+original:
+| internal static float SeeHeight(BodySizes sizes, ViewEntity me) => sizes == null ? LegacySeeHeight : sizes.Top(me);
+replacement:
+| internal static float SeeHeight(BodySizes sizes, ViewEntity me) => LegacySeeHeight;
+
+[hc2a-threshold-eye]
+file = Assets/WarCore/Presentation/Camera/LayerCut.cs
+filter = FullyQualifiedName~Hc2a
+expect = WarCore.Tests.Hc2aSeeTests.S2_TheThresholdIsTheBodysHeight
+note = the threshold is the eye, not the body's height
+original:
+| internal static float SeeHeight(BodySizes sizes, ViewEntity me) => sizes == null ? LegacySeeHeight : sizes.Top(me);
+replacement:
+| internal static float SeeHeight(BodySizes sizes, ViewEntity me) => sizes == null ? LegacySeeHeight : sizes.Eye(me);
+
+[hc2a-null-onemetre]
+file = Assets/WarCore/Presentation/Camera/LayerCut.cs
+filter = FullyQualifiedName~Hc2a
+expect = WarCore.Tests.Hc2aSeeTests.S3_WithoutABodyTheThresholdIsTheLegacyHeight
+note = without a body the threshold is the old 1 m head
+original:
+| internal static float SeeHeight(BodySizes sizes, ViewEntity me) => sizes == null ? LegacySeeHeight : sizes.Top(me);
+replacement:
+| internal static float SeeHeight(BodySizes sizes, ViewEntity me) => BodySizes.TopOf(sizes, me);
+
+[hc2a-height-standing]
+file = Assets/WarCore/Presentation/Camera/LayerCut.cs
+filter = FullyQualifiedName~Hc2a
+expect = WarCore.Tests.Hc2aSeeTests.S4_TheHeightFollowsTheStance
+note = the threshold ignores the stance
+original:
+| internal static float SeeHeight(BodySizes sizes, ViewEntity me) => sizes == null ? LegacySeeHeight : sizes.Top(me);
+replacement:
+| internal static float SeeHeight(BodySizes sizes, ViewEntity me) => sizes == null ? LegacySeeHeight : sizes.StandingHeight;
+
+[hc2a-wall-fixed]
+file = Assets/WarCore/Presentation/Camera/SeeZone.cs
+filter = FullyQualifiedName~Hc2a
+expect = WarCore.Tests.Hc2aSeeTests.S2_TheThresholdIsTheBodysHeight
+note = the wall branch keeps the legacy height
+original:
+| wall.CenterY + wall.SizeY / 2 - me.Y > seeHeight
+replacement:
+| wall.CenterY + wall.SizeY / 2 - me.Y > LayerCut.LegacySeeHeight
+
+[hc2a-plate-fixed]
+file = Assets/WarCore/Presentation/Camera/SeeZone.cs
+filter = FullyQualifiedName~Hc2a
+expect = WarCore.Tests.Hc2aSeeTests.S2_ThePlateThresholdIsTheBodysHeight
+note = the plate branch keeps the legacy height
+original:
+| && plateTops[k] - me.Y > seeHeight
+replacement:
+| && plateTops[k] - me.Y > LayerCut.LegacySeeHeight
+
+[hc2a-ring-fixed]
+file = Assets/WarCore/Presentation/Camera/LayerCut.cs
+filter = FullyQualifiedName~Hc2a
+expect = WarCore.Tests.Hc2aSeeTests.S6_TheRingFollowsTheStandingHeight
+note = the ring's radius is always 2 m
+original:
+| public static float SeeRadiusFor(BodySizes sizes) => sizes == null ? SeeRadius : sizes.StandingHeight * 8f / 7f;
+replacement:
+| public static float SeeRadiusFor(BodySizes sizes) => SeeRadius;
+
+[hc2a-ring-ratio]
+file = Assets/WarCore/Presentation/Camera/LayerCut.cs
+filter = FullyQualifiedName~Hc2a
+expect = WarCore.Tests.Hc2aSeeTests.S6_ShippedBodiesKeepTheTwoMetreRing
+expect = WarCore.Tests.Hc2aSeeTests.S6_TheRingFollowsTheStandingHeight
+note = the ring is the standing height itself
+original:
+| public static float SeeRadiusFor(BodySizes sizes) => sizes == null ? SeeRadius : sizes.StandingHeight * 8f / 7f;
+replacement:
+| public static float SeeRadiusFor(BodySizes sizes) => sizes == null ? SeeRadius : sizes.StandingHeight;
+
+[hc2a-ring-null]
+file = Assets/WarCore/Presentation/Camera/LayerCut.cs
+filter = FullyQualifiedName~Hc2a
+expect = WarCore.Tests.Hc2aSeeTests.S6_TheRingFollowsTheStandingHeight
+note = without a body the ring is off
+original:
+| public static float SeeRadiusFor(BodySizes sizes) => sizes == null ? SeeRadius : sizes.StandingHeight * 8f / 7f;
+replacement:
+| public static float SeeRadiusFor(BodySizes sizes) => sizes == null ? 0f : sizes.StandingHeight * 8f / 7f;
+
+[hc2a-headroom-other]
+file = Assets/WarCore/Content/WallSpan.cs
+filter = FullyQualifiedName~Hc2a|FullyQualifiedName~Ml10CutTests
+expect = WarCore.Tests.Hc2aSeeTests.S5_TheHeadroomIsTheWalkClearance
+expect = WarCore.Tests.Ml10CutTests.TheHeadroomEdges
+note = the clearance in metres is halved
+original:
+| public static readonly float ClearanceMetres = (float)ClearanceRaw / SimFix.Scale;
+replacement:
+| public static readonly float ClearanceMetres = (float)ClearanceRaw / SimFix.Scale / 2;
+
+[hc2a-headroom-not-read]
+file = Assets/WarCore/Presentation/Camera/LayerCut.cs
+filter = FullyQualifiedName~Hc2a|FullyQualifiedName~Ml10CutTests
+expect = WarCore.Tests.Hc2aSeeTests.S5_TheHeadroomIsTheWalkClearance
+expect = WarCore.Tests.Ml10CutTests.TheHeadroomEdges
+note = the cut's headroom is not the walk clearance
+original:
+| public static readonly float Headroom = WallSpan.ClearanceMetres;
+replacement:
+| public static readonly float Headroom = WallSpan.ClearanceMetres + 0.5f;

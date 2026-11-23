@@ -6,7 +6,7 @@ namespace WarCore.Presentation
     // half the radius and at the whole radius, at the unit's feet height. A sample counts when the unit can see it: the level
     // line from its eye (y + BodySizes.EyeOf: the body's eye, or 1 m without sizes) to the sample crosses no wall. From each counted sample the line back to the camera
     // (the same line as the cut's feet line, from y + FootLift) fades the walls and plates it crosses that are still Shown,
-    // other than the plate under the unit, and only those whose top is more than MinSeeHeight over the feet, so sandbags and
+    // other than the plate under the unit, and only those whose top is more than LayerCut.SeeHeight (the unit's height) over the feet, so sandbags and
     // low walls stay. Hidden stays hidden. Slopes are not followed: the samples take the unit's own height.
     internal static class SeeZone
     {
@@ -19,6 +19,7 @@ namespace WarCore.Presentation
             var plateTops = new double[plateCount];
             for (int k = 0; k < plateCount; k++) plateTops[k] = HighestTop(plates[k]);
             double eye = me.Y + BodySizes.EyeOf(sizes, me), start = me.Y + LayerCut.FootLift;
+            float seeHeight = LayerCut.SeeHeight(sizes, me);
             double length = (highest + 1 - start) / -forward.Y;
             if (length <= 0) return;
             double dx = -forward.X * length, dy = -forward.Y * length, dz = -forward.Z * length;
@@ -30,13 +31,13 @@ namespace WarCore.Presentation
                     double reach = radius * ring / 2, sx = me.X + ux * reach, sz = me.Z + uz * reach;
                     if (!Seen(map, me.X, eye, me.Z, sx - me.X, sz - me.Z)) continue;
                     for (int k = 0; k < plateCount; k++)
-                        if (plateStates[k] == CutState.Shown && k + 1 != me.Layer && plateTops[k] - me.Y > LayerCut.MinSeeHeight
+                        if (plateStates[k] == CutState.Shown && k + 1 != me.Layer && plateTops[k] - me.Y > seeHeight
                             && PlateRay.Crosses(plates[k], sx, start, sz, dx, dy, dz))
                             plateStates[k] = CutState.Faded;
                     for (int w = 0; w < wallCount; w++)
                     {
                         ViewWall wall = map.Walls[w];
-                        if (wallStates[w] == CutState.Shown && wall.CenterY + wall.SizeY / 2 - me.Y > LayerCut.MinSeeHeight
+                        if (wallStates[w] == CutState.Shown && wall.CenterY + wall.SizeY / 2 - me.Y > seeHeight
                             && PlateRay.CrossesBox(wall.CenterX, wall.CenterY, wall.CenterZ, wall.SizeX, wall.SizeY, wall.SizeZ,
                                 sx, start, sz, dx, dy, dz))
                             wallStates[w] = CutState.Faded;
