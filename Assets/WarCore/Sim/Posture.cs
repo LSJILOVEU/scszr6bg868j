@@ -13,7 +13,7 @@ namespace WarCore.Sim
         // Height is absolute metres, not a multiplier of the baseline collider.
         public PostureDef(int id, SimFix height, SimFix detectionDistanceFactor, SimFix hitModifier, SimFix speedFactor)
         {
-            if (id <= 0 || height.Raw < 0 || height.Raw > 32768 * SimFix.Scale
+            if (id <= 0 || height.Raw < 0 || height.Raw > Collider.HeightLimit
                 || detectionDistanceFactor.Raw < 0 || speedFactor.Raw < 0)
                 throw new ArgumentOutOfRangeException(nameof(id), "Invalid posture definition.");
             Id = id;

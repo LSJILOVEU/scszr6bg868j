@@ -1063,9 +1063,9 @@ filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndResto
 expect = WarCore.Tests.AiP5aTests.Content_EachSquadFieldHasItsBounds
 note = squadRecruitRadiusMm 512001 is read
 original:
-| MaxSquadRadiusMm = 512000
+| MaxSquadRadiusMm = WcMapValidation.MaxSideMm,
 replacement:
-| MaxSquadRadiusMm = 512001
+| MaxSquadRadiusMm = WcMapValidation.MaxSideMm + 1,
 
 [ai-p5a-content-form-low]
 file = Assets/WarCore/Content/Data/Sections/AiSection.cs

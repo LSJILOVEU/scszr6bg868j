@@ -1048,9 +1048,9 @@ filter = FullyQualifiedName~AiP5bTests&FullyQualifiedName!~Battle_RepeatAndResto
 expect = WarCore.Tests.AiP5bTests.Content_EachTemperFieldHasItsBounds
 note = squadRashMinRangeMm may be one more
 original:
-| MaxSquadRashRangeMm = 512000
+| MaxSquadRashRangeMm = WcMapValidation.MaxSideMm,
 replacement:
-| MaxSquadRashRangeMm = 512001
+| MaxSquadRashRangeMm = WcMapValidation.MaxSideMm + 1,
 
 [ai-p5b-content-below-least]
 file = Assets/WarCore/Content/Data/Sections/AiSection.cs

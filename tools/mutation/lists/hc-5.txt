@@ -1,0 +1,198 @@
+# HC-5: copies of the world limit, the collider and terrain height limits, one second in thousandths of a tick, one
+# metre in raw units and the map side now name their definition. Each entry moves one copy off its value; the
+# hc5-revert-* entries put a literal back, which Hc5CopiesTests refuses.
+# Not listed (equivalent): the sight cache range bound in Combat/CombatSystem.Sight.cs. A smaller bound only sends
+# more calls down the slow path, which answers the same; a larger one is above any range a pack can hold.
+
+[hc5-world-mapval]
+file = Assets/WarCore/Content/WcMapValidation.cs
+filter = FullyQualifiedName~Hc5BoundaryTests
+expect = WarCore.Tests.Hc5BoundaryTests.MapCorners_AcceptTheWorldLimit_AndRefuseOneMore
+note = a map edge exactly on the world limit is refused
+original:
+| const long limit = SimVec3.WorldLimitMetres * SimFix.Scale;
+replacement:
+| const long limit = (SimVec3.WorldLimitMetres - 1) * SimFix.Scale;
+
+[hc5-world-mapdesc]
+file = Assets/WarCore/Content/MapTools/MapDescCross.cs
+filter = FullyQualifiedName~Hc5BoundaryTests
+expect = WarCore.Tests.Hc5BoundaryTests.MapDescOrigin_AcceptsTheWorldLimit_AndRefusesOneMore
+note = an origin plus size exactly on the world limit is refused
+original:
+| private const long WorldLimit = SimVec3.WorldLimitMetres;
+replacement:
+| private const long WorldLimit = SimVec3.WorldLimitMetres - 1;
+
+[hc5-collider-capsule]
+file = Assets/WarCore/Sim/SpatialQuery.cs
+filter = FullyQualifiedName~Hc5BoundaryTests
+expect = WarCore.Tests.Hc5BoundaryTests.ColliderHeight_AcceptsTheLimit_AndRefusesOneRawMore
+note = a capsule exactly at the height limit is refused
+original:
+| if (height.Raw < radius.Raw * 2 || height.Raw > HeightLimit ||
+replacement:
+| if (height.Raw < radius.Raw * 2 || height.Raw > HeightLimit - 1 ||
+
+[hc5-collider-box]
+file = Assets/WarCore/Sim/SpatialQuery.cs
+filter = FullyQualifiedName~Hc5BoundaryTests
+expect = WarCore.Tests.Hc5BoundaryTests.ColliderHeight_AcceptsTheLimit_AndRefusesOneRawMore
+note = a box exactly at the height limit is refused
+original:
+| if (height.Raw < 0 || height.Raw > HeightLimit)
+replacement:
+| if (height.Raw < 0 || height.Raw > HeightLimit - 1)
+
+[hc5-collider-withheight]
+file = Assets/WarCore/Sim/SpatialQuery.cs
+filter = FullyQualifiedName~Hc5BoundaryTests
+expect = WarCore.Tests.Hc5BoundaryTests.ColliderHeight_AcceptsTheLimit_AndRefusesOneRawMore
+note = WithHeight exactly at the height limit is refused
+original:
+| if (height.Raw < minimum || height.Raw > HeightLimit)
+replacement:
+| if (height.Raw < minimum || height.Raw > HeightLimit - 1)
+
+[hc5-posture]
+file = Assets/WarCore/Sim/Posture.cs
+filter = FullyQualifiedName~Hc5BoundaryTests
+expect = WarCore.Tests.Hc5BoundaryTests.PostureHeight_AcceptsTheColliderLimit_AndRefusesOneRawMore
+note = a posture exactly at the collider height limit is refused
+original:
+| height.Raw > Collider.HeightLimit
+replacement:
+| height.Raw > Collider.HeightLimit - 1
+
+[hc5-mapdesc-height]
+file = Assets/WarCore/Content/MapTools/MapDescReader.cs
+filter = FullyQualifiedName~Ed2BrushTests|FullyQualifiedName~Hc5CopiesTests
+expect = WarCore.Tests.Ed2BrushTests.ArgumentsOutOfRangeAreRefused
+expect = WarCore.Tests.Hc5CopiesTests.DerivedNamesFollowTheirDefinitions
+note = the largest legal terrain height 2^29 - 1 is refused
+original:
+| internal const int HeightLimit = (int)(HeightField.HeightLimitRaw - 1);
+replacement:
+| internal const int HeightLimit = (int)(HeightField.HeightLimitRaw - 2);
+
+[hc5-milli]
+file = Assets/WarCore/Sim/Sim.cs
+filter = FullyQualifiedName~Proj1PackTests|FullyQualifiedName~Hc5CopiesTests
+expect = WarCore.Tests.Projectile.Proj1PackTests.StepAndFlights
+expect = WarCore.Tests.Hc5CopiesTests.DerivedNamesFollowTheirDefinitions
+note = one second off by a thousandth of a tick per tick
+original:
+| public const long MilliTicksPerSecond = 1000L * TickRate;
+replacement:
+| public const long MilliTicksPerSecond = 1001L * TickRate;
+
+[hc5-weapondef]
+file = Assets/WarCore/Combat/WeaponDef.cs
+filter = FullyQualifiedName~Wp17CombatTests|FullyQualifiedName~Stance1SpreadTests
+expect = Wp17CombatTests
+expect = Stance1SpreadTests
+note = spread recovers over a second one thousandth of a tick too long
+original:
+| Math.Max(0, timeMilli - lastMilli) / SimClock.MilliTicksPerSecond;
+replacement:
+| Math.Max(0, timeMilli - lastMilli) / (SimClock.MilliTicksPerSecond + 1);
+
+[hc5-weaponedit]
+file = Assets/WarCore/Content/Data/ContentWeaponEdit.cs
+filter = FullyQualifiedName~ContentWeaponEditTests
+expect = ContentWeaponEditTests
+note = shots per second use a second one thousandth of a tick too long
+original:
+| private const decimal MilliPerSecond = SimClock.MilliTicksPerSecond;
+replacement:
+| private const decimal MilliPerSecond = SimClock.MilliTicksPerSecond + 1;
+
+[hc5-viewmap]
+file = Assets/WarCore/Content/WcMap.cs
+filter = FullyQualifiedName~Mt163ViewMap|FullyQualifiedName~Hc5CopiesTests
+expect = Mt163ViewMapTests
+note = the view reads two raw metres per metre
+original:
+| public const long RawPerMetre = SimFix.Scale;
+replacement:
+| public const long RawPerMetre = 2 * SimFix.Scale;
+
+[hc5-terrainmesh]
+file = Assets/WarCore/Presentation/Bridge/TerrainMesh.cs
+filter = FullyQualifiedName~TerrainMeshTests
+expect = TerrainMeshTests
+note = mesh heights halved
+original:
+| positions[p + 1] = ViewMap.Metres(map.VertexRaw(i, j));
+replacement:
+| positions[p + 1] = ViewMap.Metres(map.VertexRaw(i, j)) / 2;
+
+[hc5-viewground]
+file = Assets/WarCore/Presentation/Bridge/Features/ViewGround.cs
+filter = FullyQualifiedName~ViewGroundTests
+expect = ViewGroundTests
+note = ground height in metres halved
+original:
+| (float)yRaw / SimFix.Scale
+replacement:
+| (float)yRaw / (2 * SimFix.Scale)
+
+[hc5-ai-mm]
+file = Assets/WarCore/Content/WcMapValidation.cs
+filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndRestore
+expect = WarCore.Tests.AiP5aTests.Content_EachSquadFieldHasItsBounds
+note = squadRecruitRadiusMm 512001 is read
+original:
+| internal const int MaxSideMm = MaxSide * 1000;
+replacement:
+| internal const int MaxSideMm = MaxSide * 1000 + 1;
+
+[hc5-ai-chase]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~A1ContentTests
+expect = WarCore.Tests.A1ContentTests.A1_ContentRejectsInvalidRange
+note = meleeChaseRange 513 is read
+original:
+| internal const int MaxMeleeChaseRange = WcMapValidation.MaxSide;
+replacement:
+| internal const int MaxMeleeChaseRange = WcMapValidation.MaxSide + 1;
+
+[hc5-maxstep]
+file = Assets/WarCore/Combat/ProjectileSystem.cs
+filter = FullyQualifiedName~Hc5BoundaryTests
+expect = WarCore.Tests.Hc5BoundaryTests.SavedProjectileStep_AcceptsTheBound_AndRefusesOneRawMore
+note = a saved step exactly at the bound is refused
+original:
+| MaxStepRaw = 2L * ProjectileSpec.MaxSpeed * SimFix.Scale / SimClock.MilliTicksPerSecond;
+replacement:
+| MaxStepRaw = 2L * ProjectileSpec.MaxSpeed * SimFix.Scale / SimClock.MilliTicksPerSecond - 1;
+
+[hc5-revert-world]
+file = Assets/WarCore/Content/WcMapValidation.cs
+filter = FullyQualifiedName~Hc5CopiesTests
+expect = WarCore.Tests.Hc5CopiesTests.CopiesNameTheirDefinition
+note = the world limit copied back as a literal
+original:
+| const long limit = SimVec3.WorldLimitMetres * SimFix.Scale;
+replacement:
+| const long limit = 16384 * SimFix.Scale;
+
+[hc5-revert-milli]
+file = Assets/WarCore/Combat/ProjectileSpec.cs
+filter = FullyQualifiedName~Hc5CopiesTests
+expect = WarCore.Tests.Hc5CopiesTests.CopiesNameTheirDefinition
+note = one second copied back as a literal
+original:
+| private const long MilliPerSecond = SimClock.MilliTicksPerSecond;
+replacement:
+| private const long MilliPerSecond = 30000;
+
+[hc5-revert-ground]
+file = Assets/WarCore/Presentation/Bridge/Features/ViewGround.cs
+filter = FullyQualifiedName~Hc5CopiesTests
+expect = WarCore.Tests.Hc5CopiesTests.CopiesNameTheirDefinition
+note = one metre copied back as a literal
+original:
+| (float)yRaw / SimFix.Scale
+replacement:
+| (float)yRaw / 65536f

@@ -53,6 +53,8 @@ namespace WarCore.Sim
     public sealed class SimClock : IStateHash
     {
         public const int TickRate = 30;
+        // Thousandths of a tick in one second.
+        public const long MilliTicksPerSecond = 1000L * TickRate;
         public long Tick
         {
             get;

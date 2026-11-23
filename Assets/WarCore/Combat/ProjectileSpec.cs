@@ -8,9 +8,9 @@ namespace WarCore.Combat
     // last one cut at the weapon's FalloffEnd.
     public readonly struct ProjectileSpec
     {
-        // Millimetres per second: 1 m/s to 1000 m/s. A tick is 1/30 s, so one second is 30000 thousandths of a tick.
+        // Millimetres per second: 1 m/s to 1000 m/s. One second is SimClock.MilliTicksPerSecond thousandths of a tick.
         public const int MinSpeed = 1000, MaxSpeed = 1_000_000, MaxFlights = 900;
-        private const long MilliPerSecond = 30000;
+        private const long MilliPerSecond = SimClock.MilliTicksPerSecond;
 
         public readonly int Speed;
         public readonly long StepRaw;
@@ -30,7 +30,7 @@ namespace WarCore.Combat
             Speed = speed; StepRaw = step; Flights = (int)flights;
         }
 
-        // Raw units moved per tick: speed * Scale / 30000, truncated (1000 mm/s gives 2184 raw, 1 000 000 mm/s 2 184 533 raw).
+        // Raw units moved per tick: speed * Scale / MilliPerSecond, truncated (1000 mm/s gives 2184 raw, 1 000 000 mm/s 2 184 533 raw).
         public static long StepOf(int speed) => speed * (long)SimFix.Scale / MilliPerSecond;
 
         // Ticks to cover range at step raw per tick, rounded up.
