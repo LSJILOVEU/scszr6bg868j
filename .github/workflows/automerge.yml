@@ -10,7 +10,7 @@ name: automerge
 # Decision logic: tools/automerge/decide.py (offline tests: tools/automerge/test_decide.py).
 on:
   workflow_run:
-    workflows: [headless-tests, pii-guard, privacy-gate, unity-compat]
+    workflows: [headless-tests, pii-guard, privacy-gate, unity-compat, ruler]
     types: [completed]
   pull_request_target:
     types: [labeled]

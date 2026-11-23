@@ -4,7 +4,7 @@
   python3 tools/ruler/ruler.py              the counters
   python3 tools/ruler/ruler.py --map        every module with its files and the modules it names; what is behind the counters
   python3 tools/ruler/ruler.py --check      exit 1 when the code and the tables beside this file disagree
-  python3 tools/ruler/ruler.py --self-test  the scanner on a few lines it must not misread
+  python3 tools/ruler/ruler.py --self-test  the scanner on a few lines it must not misread; the same output twice
   python3 tools/ruler/ruler.py --json F     everything as JSON (F = - for stdout)
 
 Standard library only. The tables: modules.tsv, one-home.tsv, features.tsv, played.tsv, unused.tsv, limits.tsv.
@@ -13,6 +13,7 @@ import argparse
 import json
 import os
 import re
+import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -598,6 +599,9 @@ def measure():
             other = owner.get(target)
             if other and other != owner[rel]:
                 entry["names"][other] = entry["names"].get(other, 0) + 1
+    for entry in per_module.values():
+        # Most named first, then by key: the edges are sets, and their order must not reach the output.
+        entry["names"] = dict(sorted(entry["names"].items(), key=lambda item: (-item[1], item[0])))
 
     one_home, salts, found = scan_one_home(sources, game)
     problems += found
@@ -653,9 +657,8 @@ def print_map(result):
     for module in result["modules"]:
         print("%s %s (%s, %s): %s" % (module["number"], module["key"], module["name"], module["block"], module["answers"]))
         print("    %d files, %d lines, %d lines unused" % (len(module["files"]), module["lines"], module["unused_lines"]))
-        names = sorted(module["names"].items(), key=lambda item: -item[1])
-        if names:
-            print("    names: " + ", ".join("%s %d" % item for item in names))
+        if module["names"]:
+            print("    names: " + ", ".join("%s %d" % item for item in module["names"].items()))
         for entry in module["files"]:
             print("    %5d  %s%s" % (entry["lines"], entry["path"], "" if entry["used"] else "  (unused)"))
         print()
@@ -676,7 +679,7 @@ def print_map(result):
 
 
 def self_test():
-    """The scanner on a few lines it must not misread."""
+    """The scanner on a few lines it must not misread; then the whole measurement under two hash seeds."""
     code = strip_code('a = "x // y { "; /* b { */ c = @"q "" { "; d = \'{\'; // e {\nf = 1;')
     assert "{" not in code and "f = 1" in code and "y" not in code and "b" not in code, code
     types, shared, spaces = declarations(strip_code("""
@@ -714,6 +717,10 @@ def self_test():
     top = merged(packs, "top")
     assert top == {"ai": {"a": 1, "b": 2}, "units": [{"id": "u", "speed": 5, "dash": 3}]}, top
     assert proof_holds(top, "units[].dash") and proof_holds(top, "ai.b=2") and not proof_holds(top, "ai.c"), top
+    # Sets are walked in hash order, which changes from run to run: none of it may reach the output.
+    outputs = {subprocess.run([sys.executable, os.path.abspath(__file__), "--json", "-", "--map"], check=True, capture_output=True,
+                              env={**os.environ, "PYTHONHASHSEED": seed}).stdout for seed in ("1", "2")}
+    assert len(outputs) == 1, "the output changes with PYTHONHASHSEED"
     print("ruler: self-test ok")
 
 
