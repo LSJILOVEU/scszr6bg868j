@@ -27,9 +27,9 @@ filter = FullyQualifiedName~Mt012CombatSystemBlock
 expect = WarCore.Tests.Mt012CombatSystemBlockTests.ATargetExactlyOnTheSwingRadiusIsThreatened
 note = The swing radius includes a target whose center lies exactly on its boundary.
 original:
-|                 if (Horizontal(state.Origin - here.Value).LengthSquared > Reach(pack.Melee[state.Spec].Radius)) continue;
+| if (SpanSquared(here.Value, state.Origin) > Reach(
 replacement:
-|                 if (Horizontal(state.Origin - here.Value).LengthSquared >= Reach(pack.Melee[state.Spec].Radius)) continue;
+| if (SpanSquared(here.Value, state.Origin) >= Reach(
 
 [mt-012-04]
 file = Assets/WarCore/Combat/CombatSystem.Block.cs

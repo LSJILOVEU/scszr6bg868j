@@ -159,6 +159,10 @@ replacement:
   newline, so a one-line block matches inside a line. `original` must not be empty; `replacement` may be empty
   (deletes the text).
 - Blank lines and lines starting with `#` between entries are ignored.
+- `tools/headless/MutationListTests.cs` reads every `lists/*.txt` the same way and fails when an entry's file is
+  missing or its original does not occur exactly once, so a change that moves the code must re-point the entries
+  in the same pull request. A list that must hold entries that do not apply (a tool self-test) goes in a
+  subdirectory of `lists/`, which that test does not read.
 
 ## hygiene.py
 

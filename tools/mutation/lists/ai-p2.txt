@@ -17,10 +17,10 @@ filter = FullyQualifiedName~AssaultRolesTests
 expect = WarCore.Tests.AssaultRolesTests.Roles_FarFlankerPassesItsWaypoint
 note = the waypoint order is overwritten by a slot order in the same think
 original:
-|                     { OrderUnit(id, here, moving, target, via, -1); }
+|                     { OrderUnit(id, here, moving, target, via, 0, -1); }
 |                     continue;
 replacement:
-|                     { OrderUnit(id, here, moving, target, via, -1); }
+|                     { OrderUnit(id, here, moving, target, via, 0, -1); }
 
 [ai-p2-03-progress-reversed]
 file = Assets/WarCore/Battle/SimpleAiSystem.cs

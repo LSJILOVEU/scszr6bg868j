@@ -371,9 +371,9 @@ filter = FullyQualifiedName~Ml9
 expect = WarCore.Tests.Ml9MeleeDistanceTests.RecordedDistancesAre3D
 note = the miss's distance is horizontal
 original:
-| origin, end, Span(origin, end), 0, unit.Team, outcome);
+| origin, end, Span(origin, end), 0, unit.Team, outcome, muzzleRaw);
 replacement:
-| origin, end, Horizontal(end - origin).Length, 0, unit.Team, outcome);
+| origin, end, Horizontal(end - origin).Length, 0, unit.Team, outcome, muzzleRaw);
 
 [ml9-bridge-no-plates]
 file = Assets/WarCore/Presentation/Bridge/Features/CombatFeature.cs

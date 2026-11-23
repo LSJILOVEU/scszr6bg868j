@@ -45,9 +45,9 @@ expect = GenHit_MeleeOnlyPackWithoutResolverRuns300TicksDeterministically
 expect = GenHit_AbsentResolverHasDistinctDigestFromExplicitRwr
 note = Mapping the generic no-resolver path to the RWR resolver must fail.
 original:
-|         public static IHitResolver Resolver(string id) => id == null ? null : new RwrHitResolver();
+| Resolver(string id) => id == null ? null : id == Damage
 replacement:
-|         public static IHitResolver Resolver(string id) => new RwrHitResolver();
+| Resolver(string id) => id == Damage
 
 [gen-hit-collapse-policy-digest]
 file = Assets/WarCore/Combat/CombatPack.cs

@@ -383,9 +383,9 @@ filter = FullyQualifiedName~WarCore.Tests.Blast1|FullyQualifiedName~Proj1Capacit
 expect = WarCore.Tests.Blast1.Blast1QueueTests.LimitsGrowByB
 note = B is not added to the events
 original:
-| checked(unitCount * (MaxHitsPerAction + 2) + projectiles + blastCommands)
+| checked(unitCount * (MaxHitsPerAction + 2) + projectiles + blastCommands + changes)
 replacement:
-| checked(unitCount * (MaxHitsPerAction + 2) + projectiles)
+| checked(unitCount * (MaxHitsPerAction + 2) + projectiles + changes)
 
 [blast1-38-staging]
 file = Assets/WarCore/Combat/CombatPack.cs

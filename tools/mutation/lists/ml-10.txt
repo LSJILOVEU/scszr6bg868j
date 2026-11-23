@@ -20,9 +20,9 @@ filter = FullyQualifiedName~Ml10
 expect = WarCore.Tests.Ml10ViewTests.TheViewCarriesEachUnitsLayer
 note = every unit is shown on the ground
 original:
-| layers == null ? 0 : layers.LayerOf(unit)));
+| layers == null ? 0 : layers.LayerOf(unit),
 replacement:
-| 0));
+| 0,
 
 [ml10-interpolate-drops-layer]
 file = Assets/WarCore/Presentation/Bridge/FrameView.cs
@@ -30,9 +30,9 @@ filter = FullyQualifiedName~Ml10
 expect = WarCore.Tests.Ml10ViewTests.TheViewCarriesEachUnitsLayer
 note = interpolation loses the layer
 original:
-| next.Team, next.Alive, layer: next.Layer);
+| next.Alive, layer: next.Layer, band: next.Band,
 replacement:
-| next.Team, next.Alive);
+| next.Alive, band: next.Band,
 
 [ml10-cut-no-building]
 file = Assets/WarCore/Presentation/Camera/LayerCut.cs

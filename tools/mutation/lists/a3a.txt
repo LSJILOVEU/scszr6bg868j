@@ -46,9 +46,9 @@ filter = FullyQualifiedName~WarCore.Tests.A3a
 expect = WarCore.Tests.A3aFailedRouteTests.FailedWalk_DoesNotBlameASlot
 note = the walk to P leaves the failed-slot record's O on the old slot
 original:
-|                         { OrderUnit(id, here, moving, target, lastKnown); memory?.Ordered(id, -1); }
+| if (memorySlot == -2) memory?.Forget(id); else memory?.Ordered(id, memorySlot);
 replacement:
-|                         { OrderUnit(id, here, moving, target, lastKnown); }
+| if (memorySlot == -2) memory?.Forget(id); else if (memorySlot != -1) memory?.Ordered(id, memorySlot);
 
 [a3a-06-never-arrives]
 file = Assets/WarCore/Battle/Ai/TargetSearch.cs
@@ -76,9 +76,9 @@ filter = FullyQualifiedName~WarCore.Tests.A3a
 expect = WarCore.Tests.A3aSearchTests.Unarmed_DoesNotSearch
 note = the search ignores the weapon condition
 original:
-|                 if (search != null && unit.Weapon >= 0)
+| search != null && unit.Weapon >= 0)
 replacement:
-|                 if (search != null)
+| search != null)
 
 [a3a-09-load-drops-arrival]
 file = Assets/WarCore/Battle/Ai/TargetSearch.cs

@@ -28,9 +28,9 @@ filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Near_EnemyShotWithinTheRadiu
 expect = WarCore.Tests.AiS3Tests.Near_EnemyShotWithinTheRadiusOnceATick
 note = every near shot of a tick adds a shock
 original:
-|                         shock = rules.NearShock; break;
+| shock = rules.NearShock; from = combat.GroundOfFireOrigin(in fire); sourced = true; break;
 replacement:
-|                         shock += rules.NearShock;
+| shock += rules.NearShock; from = combat.GroundOfFireOrigin(in fire); sourced = true;
 
 [ai-s3-04-near-own-team]
 file = Assets/WarCore/Battle/Ai/Pressure.cs
@@ -58,9 +58,9 @@ filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Death_TeammateWithinTheRadiu
 expect = WarCore.Tests.AiS3Tests.Death_TeammateWithinTheRadiusOncePerFallen
 note = a unit named by two records falls twice
 original:
-|                 if (!counted) fallen[fallenCount++] = new Fallen { Key = fire.Target.Value, Team = victim.Team, At = at.Value };
+| if (!counted) fallen[fallenCount++]
 replacement:
-|                 if (!counted || true) fallen[fallenCount++] = new Fallen { Key = fire.Target.Value, Team = victim.Team, At = at.Value };
+| if (!counted || true) fallen[fallenCount++]
 
 [ai-s3-07-death-self]
 file = Assets/WarCore/Battle/Ai/Pressure.cs
@@ -248,9 +248,9 @@ filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.State_LoadRejectsWhatStepCan
 expect = WarCore.Tests.AiS3Tests.State_LoadRejectsWhatStepCannotLeave
 note = the broken flag is left out of the state hash
 original:
-|             foreach (KeyValuePair<ulong, Entry> pair in entries) { hash.Add(pair.Key); hash.Add(pair.Value.Value); hash.Add(pair.Value.Broken); }
+| hash.Add(pair.Key); hash.Add(pair.Value.Value); hash.Add(pair.Value.Broken);
 replacement:
-|             foreach (KeyValuePair<ulong, Entry> pair in entries) { hash.Add(pair.Key); hash.Add(pair.Value.Value); hash.Add(false); }
+| hash.Add(pair.Key); hash.Add(pair.Value.Value); hash.Add(false);
 
 [ai-s3-26-bound-broken-seen]
 file = Assets/WarCore/Battle/Ai/BoundEngage.cs
@@ -268,9 +268,9 @@ filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Pinned_InSightDoesNotAdvance
 expect = WarCore.Tests.AiS3Tests.Pinned_InSightDoesNotAdvance
 note = a pinned unit in sight is treated as calm
 original:
-|             if (unit.Nerve == AiNerve.Pinned) return AiEngage.Hold;
+| if (unit.Nerve == AiNerve.Pinned) return AiEngage.Cover;
 replacement:
-|             if (unit.Nerve == (AiNerve)7) return AiEngage.Hold;
+| if (unit.Nerve == (AiNerve)7) return AiEngage.Cover;
 
 [ai-s3-28-bound-pinned-unseen]
 file = Assets/WarCore/Battle/Ai/BoundEngage.cs
@@ -278,9 +278,9 @@ filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Pinned_StandsWhileItLasts
 expect = WarCore.Tests.AiS3Tests.Pinned_StandsWhileItLasts
 note = a pinned unit that sees nobody walks on
 original:
-|             unit.Nerve == AiNerve.Broken ? AiEngage.Fallback : unit.Nerve == AiNerve.Pinned ? AiEngage.Hold : AiEngage.Advance;
+| unit.Nerve == AiNerve.Pinned ? AiEngage.Cover : AiEngage.Advance;
 replacement:
-|             unit.Nerve == AiNerve.Broken ? AiEngage.Fallback : unit.Nerve == AiNerve.Pinned ? AiEngage.Advance : AiEngage.Advance;
+| unit.Nerve == AiNerve.Pinned ? AiEngage.Advance : AiEngage.Advance;
 
 [ai-s3-29-hold-reads-nerve]
 file = Assets/WarCore/Battle/Ai/HoldEngage.cs
@@ -298,9 +298,9 @@ filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Broken_FallsBackToTheNearest
 expect = WarCore.Tests.AiS3Tests.Broken_FallsBackToTheNearestOwnPointAndReturns
 note = the scheduler never tells the part the nerve
 original:
-|                 var thinker = new AiUnit(id, unit.Team, here, pressure != null ? pressure.Level(id) : AiNerve.Calm);
+| new AiUnit(id, unit.Team, here, pressure != null ? pressure.Level(id) : AiNerve.Calm, layer)
 replacement:
-|                 var thinker = new AiUnit(id, unit.Team, here, AiNerve.Calm);
+| new AiUnit(id, unit.Team, here, AiNerve.Calm, layer)
 
 [ai-s3-31-fallback-seen-advances]
 file = Assets/WarCore/Battle/SimpleAiSystem.cs
@@ -358,9 +358,9 @@ filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Broken_FallsBackToTheNearest
 expect = WarCore.Tests.AiS3Tests.Broken_FallsBackToTheNearestOwnPointAndReturns
 note = the refuge is a point the team does not own
 original:
-|                 if (field.Owner(i) != team) continue;
+| if (field.Owner(i) != team || !field.TrySpan(here, layer, i, out SimWide distance)) continue;
 replacement:
-|                 if (field.Owner(i) == team) continue;
+| if (field.Owner(i) == team || !field.TrySpan(here, layer, i, out SimWide distance)) continue;
 
 [ai-s3-37-refuge-no-base]
 file = Assets/WarCore/Battle/SimpleAiSystem.cs
@@ -368,9 +368,11 @@ filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.Broken_WithoutAPointGoesToTh
 expect = WarCore.Tests.AiS3Tests.Broken_WithoutAPointGoesToTheBaseOrStands
 note = without a point the unit stands although it has a base
 original:
-|                     else if (!moving || target.X.Raw != home.X.Raw || target.Z.Raw != home.Z.Raw) OrderUnit(id, here, moving, target, home, -1);
+|                     else if (!moving || orderLayer != homeLayer || target.X.Raw != home.X.Raw || target.Z.Raw != home.Z.Raw)
+|                         OrderUnit(id, here, moving, target, home, homeLayer, -1);
 replacement:
-|                     else if (!moving || target.X.Raw != home.X.Raw || target.Z.Raw != home.Z.Raw) { if (moving) StopUnit(id, here, target); }
+|                     else if (!moving || orderLayer != homeLayer || target.X.Raw != home.X.Raw || target.Z.Raw != home.Z.Raw)
+|                     { if (moving) StopUnit(id, here, target); }
 
 [ai-s3-38-content-one-missing]
 file = Assets/WarCore/Content/Data/Sections/AiSection.cs
@@ -418,6 +420,6 @@ filter = FullyQualifiedName~WarCore.Tests.AiS3Tests.View_CarriesTheNerve
 expect = WarCore.Tests.AiS3Tests.View_CarriesTheNerve
 note = the view always reads calm
 original:
-|                     team, alive, pressure != null && alive ? (int)pressure.Level(sim.Entities.StableOf(unit)) : 0));
+| team, alive, pressure != null && alive ? (int)pressure.Level(sim.Entities.StableOf(unit)) : 0,
 replacement:
-|                     team, alive, 0));
+| team, alive, 0,

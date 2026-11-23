@@ -108,9 +108,9 @@ filter = FullyQualifiedName~WarCore.Tests.Nt1
 expect = WarCore.Tests.Nt1ReinforceTests.Nt1Reinforce_VersionAndBytes_TwoTeamsKeepVersionOne
 note = more teams keep version 1
 original:
-|         public int StateVersion => pack.TeamCount == 2 ? 1 : 2;
+| public int StateVersion => (pack.TeamCount == 2 ? 1 : 2) + (chooser == null ? 0 : 2) + (ByDebt ? 4 : 0);
 replacement:
-|         public int StateVersion => 1;
+| public int StateVersion => 1 + (chooser == null ? 0 : 2) + (ByDebt ? 4 : 0);
 
 [nt1-reinforce-version-two]
 file = Assets/WarCore/Battle/ReinforceSystem.cs
@@ -119,9 +119,9 @@ expect = WarCore.Tests.Nt1ReinforceTests.Nt1Reinforce_VersionAndBytes_TwoTeamsKe
 expect = WarCore.Tests.Nt1TwoTeamLockTests.Nt1TwoTeams_PlaytestKeepsHashesAndSnapshotBytes
 note = two teams move to version 2
 original:
-|         public int StateVersion => pack.TeamCount == 2 ? 1 : 2;
+| public int StateVersion => (pack.TeamCount == 2 ? 1 : 2) + (chooser == null ? 0 : 2) + (ByDebt ? 4 : 0);
 replacement:
-|         public int StateVersion => 2;
+| public int StateVersion => 2 + (chooser == null ? 0 : 2) + (ByDebt ? 4 : 0);
 
 [nt1-reinforce-init-two]
 file = Assets/WarCore/Battle/ReinforceSystem.cs
@@ -200,9 +200,9 @@ filter = FullyQualifiedName~WarCore.Tests.Nt1
 expect = WarCore.Tests.Nt1CaptureTests.Nt1Capture_SecondPoint_SecondTeamCapturesIt
 note = counts are written with a stride of 2
 original:
-| counts[teams * i + value.Team - 1]++;
+| counts[teams * i + team - 1]++;
 replacement:
-| counts[2 * i + value.Team - 1]++;
+| counts[2 * i + team - 1]++;
 
 [nt1-capture-read-stride]
 file = Assets/WarCore/Battle/CaptureSystem.cs
@@ -398,32 +398,33 @@ replacement:
 |         int TeamCount => 3;
 
 [nt1-respawn-old-enemy]
-file = Assets/WarCore/Battle/RespawnSystem.cs
+file = Assets/WarCore/Battle/CaptureSystem.cs
 filter = FullyQualifiedName~WarCore.Tests.Nt1
 expect = WarCore.Tests.Nt1RespawnTests.Nt1Respawn_ThirdTeamUnitInThePoint_FallsBackToTheBase
 note = only the two-team enemy contests
 original:
-| unit.Team != team && unit.Team >= 1 && unit.Team <= pack.TeamCount
+| if (Stands(unit, out int other, out SimVec3 at) && other != team && Inside(unit, at, point)) return true;
 replacement:
-| unit.Team == 3 - team
+| if (Stands(unit, out int other, out SimVec3 at) && other == 3 - team && Inside(unit, at, point)) return true;
 
 [nt1-respawn-range-gone]
-file = Assets/WarCore/Battle/RespawnSystem.cs
+file = Assets/WarCore/Battle/CaptureSystem.cs
 filter = FullyQualifiedName~WarCore.Tests.Nt1
 expect = WarCore.Tests.Nt1RespawnTests.Nt1Respawn_TeamZeroUnitInThePoint_UsesThePoint
 expect = WarCore.Tests.Nt1RespawnTests.Nt1Respawn_TeamNineUnitInThePoint_UsesThePoint
 note = units of no team contest
 original:
-| unit.Team != team && unit.Team >= 1 && unit.Team <= pack.TeamCount
+| if (Stands(unit, out int other, out SimVec3 at) && other != team && Inside(unit, at, point)) return true;
 replacement:
-| unit.Team != team
+| if (combat.Entities.TryGet(combatants, unit, out Combatant any) && any.Team != team && combat.Entities.TryGet(positions, unit, out Position anyAt)
+|                     && !combat.IsDead(unit) && Inside(unit, anyAt.Value, point)) return true;
 
 [nt1-respawn-upper-two]
-file = Assets/WarCore/Battle/RespawnSystem.cs
+file = Assets/WarCore/Battle/CaptureSystem.cs
 filter = FullyQualifiedName~WarCore.Tests.Nt1
 expect = WarCore.Tests.Nt1RespawnTests.Nt1Respawn_ThirdTeamUnitInThePoint_FallsBackToTheBase
 note = team 3 is outside the contest range
 original:
-| unit.Team != team && unit.Team >= 1 && unit.Team <= pack.TeamCount
+| if (Stands(unit, out int other, out SimVec3 at) && other != team && Inside(unit, at, point)) return true;
 replacement:
-| unit.Team != team && unit.Team >= 1 && unit.Team <= 2
+| if (Stands(unit, out int other, out SimVec3 at) && other != team && other <= 2 && Inside(unit, at, point)) return true;

@@ -455,9 +455,9 @@ filter = FullyQualifiedName~WarCore.Tests.Aim1
 expect = WarCore.Tests.Aim1.Aim1ContentTests
 note = WithSelector drops moveSpread
 original:
-| projectileSpeeds.Length == 0 ? null : projectileSpeeds, MoveSpread, ManualReload);
+| projectileSpeeds, MoveSpread, ManualReload, Blasts,
 replacement:
-| projectileSpeeds.Length == 0 ? null : projectileSpeeds, null, ManualReload);
+| projectileSpeeds, null, ManualReload, Blasts,
 
 [pk-slots]
 file = Assets/WarCore/Combat/CombatPack.cs
@@ -486,9 +486,9 @@ filter = FullyQualifiedName~WarCore.Tests.Aim1
 expect = WarCore.Tests.Aim1.Aim1ContentTests
 note = moveSpread may not hold an object
 original:
-| protected override bool IsNested(string field) => base.IsNested(field) || field == MoveSpreadField || field == VerticalSpreadField;
+| base.IsNested(field) || field == MoveSpreadField || field == VerticalSpreadField
 replacement:
-| protected override bool IsNested(string field) => base.IsNested(field) || field == VerticalSpreadField;
+| base.IsNested(field) || field == VerticalSpreadField
 
 [ct-order]
 file = Assets/WarCore/Content/Data/Sections/CombatAim.cs
@@ -526,9 +526,9 @@ filter = FullyQualifiedName~WarCore.Tests.Aim1
 expect = WarCore.Tests.Aim1.Aim1ContentTests
 note = the pack drops the aim section
 original:
-| projectileSpeeds.Length == 0 ? null : projectileSpeeds, aim?.MoveSpread, aim != null && aim.ManualReload);
+| projectileSpeeds, aim?.MoveSpread, aim != null && aim.ManualReload, SectionOrNull<BlastRules>(),
 replacement:
-| projectileSpeeds.Length == 0 ? null : projectileSpeeds);
+| projectileSpeeds, null, false, SectionOrNull<BlastRules>(),
 
 [ss-into-switch]
 file = Assets/WarCore/Presentation/Bridge/SimSession.cs

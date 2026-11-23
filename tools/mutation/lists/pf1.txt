@@ -6,9 +6,9 @@ filter = FullyQualifiedName~PF1PlaytestTests
 expect = WarCore.Tests.PF1PlaytestTests.PF1Recipe_AiPackCarriesTheTenLayerValues
 note = the playtest recipe is the respawn demo with no AI pack
 original:
-| public static WorldRecipe MpPlaytest() => MpRespawnDemo().WithAiRules(WarCore.Content.Rwr.RwrPack.Load(PlaytestLayer));
+| return WithPlayerTeamDash(MpRespawnDemo(layer).WithAiRules(layer), layer);
 replacement:
-| public static WorldRecipe MpPlaytest() => MpRespawnDemo();
+| return WithPlayerTeamDash(MpRespawnDemo(layer), layer);
 
 [pf1-02-wrong-base]
 file = Assets/WarCore/Presentation/Bridge/DemoRecipes.cs
@@ -16,9 +16,9 @@ filter = FullyQualifiedName~PF1PlaytestTests
 expect = WarCore.Tests.PF1PlaytestTests.PF1Recipe_RestIsTheRespawnDemo
 note = the playtest recipe loses the respawn delay and guard
 original:
-| public static WorldRecipe MpPlaytest() => MpRespawnDemo().WithAiRules(
+| return WithPlayerTeamDash(MpRespawnDemo(layer).WithAiRules(layer), layer);
 replacement:
-| public static WorldRecipe MpPlaytest() => MpBlockDemo().WithAiRules(
+| return WithPlayerTeamDash(MpBlockDemo(layer).WithAiRules(layer), layer);
 
 [pf1-03-old-layer]
 file = Assets/WarCore/Presentation/Bridge/DemoRecipes.cs

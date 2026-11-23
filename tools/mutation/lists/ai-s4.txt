@@ -10,9 +10,9 @@ filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Source_IsWhereTheShotThatPin
 expect = WarCore.Tests.AiS4Tests.Source_IsWhereTheShotThatPinnedCameFrom
 note = the source is where the shot ended, not where it was fired from
 original:
-|                         shock = rules.NearShock; from = fire.Origin; sourced = true; break;
+| from = combat.GroundOfFireOrigin(in fire); sourced = true; break;
 replacement:
-|                         shock = rules.NearShock; from = fire.End; sourced = true; break;
+| from = fire.End; sourced = true; break;
 
 [ai-s4-02-source-fall-wins]
 file = Assets/WarCore/Battle/Ai/Pressure.cs
@@ -30,7 +30,7 @@ filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Source_ANearShotComesBeforeA
 expect = WarCore.Tests.AiS4Tests.Source_ANearShotComesBeforeAFall
 note = a fall is remembered from where the teammate fell, not from where it was shot
 original:
-| At = at.Value, From = fire.Origin };
+| At = at.Value, From = combat.GroundOfFireOrigin(in fire) };
 replacement:
 | At = at.Value, From = at.Value };
 
@@ -60,9 +60,9 @@ filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.State_TheSourceIsSavedOnlyWi
 expect = WarCore.Tests.AiS4Tests.State_TheSourceIsSavedOnlyWithSources
 note = the state with sources claims version 1
 original:
-|         public int StateVersion => sources ? 2 : 1;
+| public int StateVersion => (sources ? 2 : 1) + (rules.FallOnKill ? 2 : 0);
 replacement:
-|         public int StateVersion => 1;
+| public int StateVersion => 1 + (rules.FallOnKill ? 2 : 0);
 
 [ai-s4-07-source-read-without]
 file = Assets/WarCore/Battle/Ai/Pressure.cs
@@ -364,9 +364,9 @@ filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Ports_FriendOnWalkIsATeammat
 expect = WarCore.Tests.AiS4Tests.Ports_FriendOnWalkIsATeammateTheBodyWouldTouch
 note = only the end of the walk is tested
 original:
-| SpatialQueries.Capsule(from, to, Entities.Get(colliders, unit).Radius, unitLayerMask)
+| SpatialQueries.Capsule(Center(from), Center(to),
 replacement:
-| SpatialQueries.Capsule(to, to, Entities.Get(colliders, unit).Radius, unitLayerMask)
+| SpatialQueries.Capsule(Center(to), Center(to),
 
 [ai-s4-37-content-cover-without-pressure]
 file = Assets/WarCore/Content/Data/Sections/AiSection.cs
@@ -435,9 +435,9 @@ filter = FullyQualifiedName~WarCore.Tests.AiS4Tests.Content_ATerrainBattleRefuse
 expect = WarCore.Tests.AiS4Tests.Content_ATerrainBattleRefusesCover
 note = a terrain battle is built as a flat one
 original:
-| recipe.Match.ThinkInterval, terrain == null), pressure)
+| recipe.Match.ThinkInterval, terrain == null, layers != null
 replacement:
-| recipe.Match.ThinkInterval, true), pressure)
+| recipe.Match.ThinkInterval, true, layers != null
 
 [ai-s4-44-battle-sources-always]
 file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs

@@ -11,9 +11,9 @@ expect = WarCore.Tests.A4IntentTests.A4Intent_T4_OverATeammateOnLowGround_Hits
 expect = WarCore.Tests.A4IntentTests.A4Intent_F3_TooHigh_PassesOver
 note = the aimed intent flies along the horizontal line again
 original:
-|                         direction = intents[shooter.Id].Point - origin;
+| direction = AimedEnd(shooter, intents[shooter.Id].Point) - origin;
 replacement:
-|                         direction = Horizontal(intents[shooter.Id].Point - origin);
+| direction = Horizontal(AimedEnd(shooter, intents[shooter.Id].Point) - origin);
 
 [a4-02-zero-rule-3d]
 file = Assets/WarCore/Combat/CombatSystem.cs
@@ -22,9 +22,11 @@ expect = WarCore.Tests.A4IntentTests.A4Intent_F4_StraightAbove_DoesNotFire
 expect = WarCore.Tests.Wp13AimedTests.PLACEHOLDER_ZeroHorizontalDirectionIsNone_EvenWithDifferentHeight
 note = the zero rule looks at the 3D length
 original:
-|                         if (Horizontal(direction).LengthSquared.Sign == 0) continue;
+| if (Horizontal(direction).LengthSquared.Sign == 0
+|                             && !(Overhead(position.Value
 replacement:
-|                         if (direction.LengthSquared.Sign == 0) continue;
+| if (direction.LengthSquared.Sign == 0
+|                             && !(Overhead(position.Value
 
 [a4-03-player-fire-shooter-height]
 file = Assets/WarCore/Control/PlayerFire.cs
@@ -44,9 +46,9 @@ expect = WarCore.Tests.A4PlayerTests.A4Player_Height200_HitsAlongTheRisingLine
 expect = WarCore.Tests.A4PlayerTests.A4Player_Height3000_PassesOver
 note = an input with a height still gets the ground height
 original:
-|                         ? TargetAt(nextPlayerInput.AimXMm, nextPlayerInput.AimYMm.Value, nextPlayerInput.AimZMm)
+|                     ? TargetAt(nextPlayerInput.AimXMm, nextPlayerInput.AimYMm.Value, nextPlayerInput.AimZMm)
 replacement:
-|                         ? Target(nextPlayerInput.AimXMm, nextPlayerInput.AimZMm, groundRaw)
+|                     ? Target(nextPlayerInput.AimXMm, nextPlayerInput.AimZMm, groundRaw)
 
 [a4-05-live-click-drops-height]
 file = Assets/WarCore/Presentation/Bridge/LivePlayerInput.cs
@@ -54,9 +56,11 @@ filter = FullyQualifiedName~WarCore.Tests.A4|FullyQualifiedName~WarCore.Tests.Wp
 expect = WarCore.Tests.A4InputTests.A4Input_LiveClickCopiesTheHeight
 note = the synthesized click does not copy the height
 original:
-|                     input.AimXMm, input.AimZMm, true, input.Block, input.Throw, input.SkillSlot, input.AimYMm));
+| input.Throw, input.SkillSlot, input.AimYMm,
+|
 replacement:
-|                     input.AimXMm, input.AimZMm, true, input.Block, input.Throw, input.SkillSlot));
+| input.Throw, input.SkillSlot,
+|
 
 [a4-06-equals-ignores-height]
 file = Assets/WarCore/Presentation/Bridge/PlayerInput.cs
@@ -64,9 +68,9 @@ filter = FullyQualifiedName~WarCore.Tests.A4|FullyQualifiedName~WarCore.Tests.Wp
 expect = WarCore.Tests.A4InputTests.A4Input_HeightIsOptionalAndPartOfEquality
 note = equality does not compare the height
 original:
-|             && Block == other.Block && Throw == other.Throw && SkillSlot == other.SkillSlot && AimYMm == other.AimYMm;
+| && SkillSlot == other.SkillSlot && AimYMm == other.AimYMm
 replacement:
-|             && Block == other.Block && Throw == other.Throw && SkillSlot == other.SkillSlot;
+| && SkillSlot == other.SkillSlot
 
 [a4-07-no-height-bound]
 file = Assets/WarCore/Presentation/Bridge/PlayerInput.cs
@@ -136,9 +140,11 @@ filter = FullyQualifiedName~WarCore.Tests.A4|FullyQualifiedName~WarCore.Tests.Wp
 expect = WarCore.Tests.A4AllyTests.A4Ally_FarTeammateUnderTheRisingLine_DoesNotBlock
 note = the public AllyBlocks keeps the horizontal line
 original:
-|             SimVec3 direction = point - origin;
+|             SimVec3 direction = AimedEnd(shooter, point) - origin;
+|             bool line
 replacement:
-|             SimVec3 direction = Horizontal(point - origin);
+|             SimVec3 direction = Horizontal(AimedEnd(shooter, point) - origin);
+|             bool line
 
 [a4-16-target-height-scale]
 file = Assets/WarCore/Presentation/Bridge/SimSession.cs

@@ -6,9 +6,9 @@ filter = FullyQualifiedName~WarCore.Tests.P3
 expect = WarCore.Tests.P3TimingTests.Burst3Pause20_Rhythm
 note = the pause lasts one tick longer (70 is still gated)
 original:
-|                 if (tick - lastShots[slot] < burstPauseTicks)
+| if (tick - lastShots[slot] < PauseOf(shooters[slot]))
 replacement:
-|                 if (tick - lastShots[slot] <= burstPauseTicks)
+| if (tick - lastShots[slot] <= PauseOf(shooters[slot]))
 
 [p3-02-pause-short-by-one]
 file = Assets/WarCore/Battle/Ai/ReactionFire.cs
@@ -16,9 +16,9 @@ filter = FullyQualifiedName~WarCore.Tests.P3
 expect = WarCore.Tests.P3TimingTests.Burst3Pause20_Rhythm
 note = the pause ends one tick early (69 fires)
 original:
-|                 if (tick - lastShots[slot] < burstPauseTicks)
+| if (tick - lastShots[slot] < PauseOf(shooters[slot]))
 replacement:
-|                 if (tick - lastShots[slot] < burstPauseTicks - 1)
+| if (tick - lastShots[slot] < PauseOf(shooters[slot]) - 1)
 
 [p3-03-reload-keeps-count]
 file = Assets/WarCore/Battle/Ai/ReactionFire.cs
@@ -50,9 +50,9 @@ expect = WarCore.Tests.P3ContentTests.ValuesAndDefaults
 expect = WarCore.Tests.P3BaselineTests.Nothing_FastRifle_Unchanged
 note = the content default of burstShots becomes 1
 original:
-|             int failed = 0, memory = 0, search = 0, reaction = 0, sense = 1, burst = 0, pause = 0;
+| sense = 1, burst = 0, pause = 0,
 replacement:
-|             int failed = 0, memory = 0, search = 0, reaction = 0, sense = 1, burst = 1, pause = 0;
+| sense = 1, burst = 1, pause = 0,
 
 [p3-06-registration-ignores-burst]
 file = Assets/WarCore/Presentation/Bridge/Features/AiFireFeature.cs
@@ -70,9 +70,9 @@ filter = FullyQualifiedName~WarCore.Tests.P3
 expect = WarCore.Tests.P3StateTests.Versions_AndTheManifestCheck
 note = a burst does not raise the state version to 3
 original:
-|         public int StateVersion => burstShots > 0 ? 3 : senseTicks > 1 ? 2 : 1;
+| traitSpread > 0 ? 4 : burstShots > 0 ? 3 : senseTicks
 replacement:
-|         public int StateVersion => senseTicks > 1 ? 2 : 1;
+| traitSpread > 0 ? 4 : senseTicks
 
 [p3-08-save-skips-bursts]
 file = Assets/WarCore/Battle/Ai/ReactionFire.cs
@@ -81,7 +81,8 @@ expect = WarCore.Tests.P3AllyTests.HeldShot_CountsNoRound_AndThePayload
 expect = WarCore.Tests.P3StateTests.Restore_MidPause
 note = SaveState writes no burst block and LoadState reads none (B, Q and the records are lost)
 original:
-|             if (burstShots > 0) SaveBursts(writer);
+|             SaveBursts(writer);
+|             if (StateVersion >= 4) writer.Int32(traitSpread);
 |         }
 |
 |         private void SaveBursts(SimStateWriter writer)
@@ -117,8 +118,10 @@ original:
 |             }
 |             if (StateVersion < 2) return;
 |             SimStateReader.Require(reader.Int32() == senseTicks, "AI sense interval differs.");
-|             if (burstShots > 0) LoadBursts(reader);
+|             if (StateVersion < 3) return;
+|             LoadBursts(reader);
 replacement:
+|             if (StateVersion >= 4) writer.Int32(traitSpread);
 |         }
 |
 |         private void SaveBursts(SimStateWriter writer)
@@ -154,6 +157,8 @@ replacement:
 |             }
 |             if (StateVersion < 2) return;
 |             SimStateReader.Require(reader.Int32() == senseTicks, "AI sense interval differs.");
+|             if (StateVersion < 3) return;
+|
 
 [p3-09-load-ignores-burst]
 file = Assets/WarCore/Battle/Ai/ReactionFire.cs
@@ -181,7 +186,8 @@ filter = FullyQualifiedName~WarCore.Tests.P3
 expect = WarCore.Tests.P3AllyTests.HeldShot_CountsNoRound_AndThePayload
 note = WriteState leaves the burst block out of the hash
 original:
-|             if (burstShots > 0) HashBursts(hash);
+|             HashBursts(hash);
+|
 replacement:
 
 
@@ -192,9 +198,9 @@ expect = WarCore.Tests.P3AllyTests.HeldShot_CountsNoRound_AndThePayload
 expect = WarCore.Tests.P3AllyTests.PauseDrawsNoNumber_HeldShotAtTheExpiryCountsNothing
 note = a held shot counts as a round
 original:
-|             if (action == AutoFireAction.Fire && burstShots > 0)
+| if (action == AutoFireAction.Fire && burst > 0)
 replacement:
-|             if (action != AutoFireAction.Pass && burstShots > 0)
+| if (action != AutoFireAction.Pass && burst > 0)
 
 [p3-13-new-entry-keeps-burst]
 file = Assets/WarCore/Battle/Ai/ReactionFire.cs
@@ -243,9 +249,9 @@ filter = FullyQualifiedName~WarCore.Tests.P3
 expect = WarCore.Tests.P3AllyTests.PauseDrawsNoNumber_HeldShotAtTheExpiryCountsNothing
 note = the aim (and its ally roll) happens before the pause gate and its result is thrown away
 original:
-|             if (burstShots > 0 && shots[slot] == burstShots)
+|             if (burst > 0 && shots[slot] == burst)
 |             {
-|                 if (tick - lastShots[slot] < burstPauseTicks)
+|                 if (tick - lastShots[slot] < PauseOf(shooters[slot]))
 |                 {
 |                     direction = default;
 |                     return AutoFireAction.Pass;
@@ -253,29 +259,17 @@ original:
 |                 shots[slot] = 0;   // the pause is over: the next burst starts with this aim
 |             }
 |             AutoFireAction action = builtIn.AimAt(combat, shooter, in position, (EntityId)target, out direction);
-|             if (action == AutoFireAction.Fire && burstShots > 0)
-|             {
-|                 lastShots[slot] = tick;
-|                 shots[slot] = unit.Ammo == 1 ? 0 : shots[slot] + 1;
-|             }
-|             return action;
 replacement:
 |             AutoFireAction action = builtIn.AimAt(combat, shooter, in position, (EntityId)target, out direction);
-|             if (burstShots > 0 && shots[slot] == burstShots)
+|             if (burst > 0 && shots[slot] == burst)
 |             {
-|                 if (tick - lastShots[slot] < burstPauseTicks)
+|                 if (tick - lastShots[slot] < PauseOf(shooters[slot]))
 |                 {
 |                     direction = default;
 |                     return AutoFireAction.Pass;
 |                 }
 |                 shots[slot] = 0;   // the pause is over: the next burst starts with this aim
 |             }
-|             if (action == AutoFireAction.Fire && burstShots > 0)
-|             {
-|                 lastShots[slot] = tick;
-|                 shots[slot] = unit.Ammo == 1 ? 0 : shots[slot] + 1;
-|             }
-|             return action;
 
 [p3-18-v3-ignores-interval]
 file = Assets/WarCore/Battle/Ai/ReactionFire.cs
@@ -303,7 +297,8 @@ filter = FullyQualifiedName~WarCore.Tests.P3
 expect = WarCore.Tests.P3StateTests.Load_CountOutOfRange_IsRefused
 note = LoadState accepts any count
 original:
-|                 SimStateReader.Require(fired >= 0 && fired <= burstShots, "AI burst shot count is out of range.");
+|                 SimStateReader.Require(fired >= 0 && fired <= BurstOf(shooters[slot]), "AI burst shot count is out of range.");
+|
 replacement:
 
 

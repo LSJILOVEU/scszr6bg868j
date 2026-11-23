@@ -497,11 +497,20 @@ expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V3_TheSectionSitsBeforeTheB
 note = the section after the blasts
 original:
 |             if (verticalSpread != null) verticalSpread.WriteState(hash);
+|             status?.WriteState(hash);
+|             if (spreadDragFloorPermille != 0 || spreadDragCeilPermille != 0)
+|             { hash.Add("combat.pack.spreadclamp.v1"); hash.Add(spreadDragFloorPermille); hash.Add(spreadDragCeilPermille); }
 |             // KB4: later optional sections go before this one, every one only when present. The whole order (X2): melee, block,
 |             // body, projectile, stances, move spread, manual reload, vertical spread (VSPREAD-1), status (NERVE-1), spread cap
 |             // (NERVE-1, stats.spread), blasts, throwables, armour, downed (DOWN-1), rescue.
 |             if (blasts != null) blasts.WriteState(hash);
 replacement:
+|             status?.WriteState(hash);
+|             if (spreadDragFloorPermille != 0 || spreadDragCeilPermille != 0)
+|             { hash.Add("combat.pack.spreadclamp.v1"); hash.Add(spreadDragFloorPermille); hash.Add(spreadDragCeilPermille); }
+|             // KB4: later optional sections go before this one, every one only when present. The whole order (X2): melee, block,
+|             // body, projectile, stances, move spread, manual reload, vertical spread (VSPREAD-1), status (NERVE-1), spread cap
+|             // (NERVE-1, stats.spread), blasts, throwables, armour, downed (DOWN-1), rescue.
 |             if (blasts != null) blasts.WriteState(hash);
 |             if (verticalSpread != null) verticalSpread.WriteState(hash);
 
@@ -511,9 +520,9 @@ filter = FullyQualifiedName~VSpread1
 expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V3_WithSelectorKeepsTheSection
 note = WithSelector drops the section
 original:
-| stances.Length == 0 ? null : stances, VerticalSpread);
+| stances.Length == 0 ? null : stances, VerticalSpread, Status,
 replacement:
-| stances.Length == 0 ? null : stances, null);
+| stances.Length == 0 ? null : stances, null, Status,
 
 [rd-body]
 file = Assets/WarCore/Content/Data/Sections/CombatVSpread.cs
@@ -642,9 +651,9 @@ filter = FullyQualifiedName~VSpread1
 expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V2_TheShippedLayerReads
 note = verticalSpread is not an object field
 original:
-| || field == MoveSpreadField || field == VerticalSpreadField;
+| field == MoveSpreadField || field == VerticalSpreadField || field == StatusField;
 replacement:
-| || field == MoveSpreadField;
+| field == MoveSpreadField || field == StatusField;
 
 [cp-pass]
 file = Assets/WarCore/Content/Data/ContentPack.cs
@@ -652,6 +661,6 @@ filter = FullyQualifiedName~VSpread1
 expect = WarCore.Tests.VSpread1.VSpread1ContentTests.V2_TheShippedLayerReads
 note = the content pack does not pass the section
 original:
-| stances, SectionOrNull<VerticalSpread>());
+| stances, SectionOrNull<VerticalSpread>(), SectionOrNull<CombatStatus>(),
 replacement:
-| stances, null);
+| stances, null, SectionOrNull<CombatStatus>(),

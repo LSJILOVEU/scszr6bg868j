@@ -113,9 +113,11 @@ filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
 expect = WarCore.Tests.Ml1WallSpanTests.RaisedBottomIsMeasuredFromTheFloor
 note = the baked bottom is not made relative to the floor
 original:
-| w.BaseRaw.Value - d.FloorRaw : 0;
+|                 long halfX = w.Size.X * s / 2, halfZ = w.Size.Z * s / 2;
+|                 long bottom = w.BaseRaw.HasValue ? w.BaseRaw.Value - d.FloorRaw : 0;
 replacement:
-| w.BaseRaw.Value : 0;
+|                 long halfX = w.Size.X * s / 2, halfZ = w.Size.Z * s / 2;
+|                 long bottom = w.BaseRaw.HasValue ? w.BaseRaw.Value : 0;
 
 [ml1-12-flat-ground-zero]
 file = Assets/WarCore/Content/MapTools/MapBake.cs
@@ -196,12 +198,9 @@ filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
 expect = WarCore.Tests.Ml1ValidationTests.HeightTableIsCheckedFirstOnlyWithARaisedWall
 note = with a raised wall the height table is read before it is checked
 original:
-|             if (raised != null)
-|             {
-|                 ValidateHeightField(map);
+| if (raised != null || plates != null) ValidateHeightField(map);
 replacement:
-|             if (raised != null)
-|             {
+| if (plates != null) ValidateHeightField(map);
 
 [ml1-20-heights-always-first]
 file = Assets/WarCore/Content/WcMapValidation.cs
@@ -209,13 +208,9 @@ filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
 expect = WarCore.Tests.Ml1ValidationTests.HeightTableIsCheckedFirstOnlyWithARaisedWall
 note = the height table is checked first also without raised walls (old order changes)
 original:
-|             if (raised != null)
-|             {
-|                 ValidateHeightField(map);
+| if (raised != null || plates != null) ValidateHeightField(map);
 replacement:
-|             ValidateHeightField(map);
-|             if (raised != null)
-|             {
+| ValidateHeightField(map);
 
 [ml1-21-buried-inclusive]
 file = Assets/WarCore/Content/WcMapValidation.cs
@@ -345,9 +340,9 @@ filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
 expect = WarCore.Tests.Ml1DescTests.RaisedWallWritesVersionTwoAndRoundTrips
 note = a raised wall does not raise the version
 original:
-| if (wall.BaseRaw.HasValue) Version = WallBaseVersion;
+| if (wall.BaseRaw.HasValue) return true;
 replacement:
-| if (false) Version = WallBaseVersion;
+| if (false) return true;
 
 [ml1-34-writer-drops-base]
 file = Assets/WarCore/Content/MapTools/MapDescJson.cs
@@ -386,9 +381,11 @@ filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
 expect = WarCore.Tests.Ml1PrefabTests.OddLintelMovesUpAndOddFrameIsRefused
 note = an odd lintel moves its underside down (into the walk band)
 original:
-| if (((topRaw - bottom) & 1) != 0) bottom++;
+|             long bottom = ground + WallSpan.ClearanceRaw;
+|             if (((topRaw - bottom) & 1) != 0) bottom++;
 replacement:
-| if (((topRaw - bottom) & 1) != 0) bottom--;
+|             long bottom = ground + WallSpan.ClearanceRaw;
+|             if (((topRaw - bottom) & 1) != 0) bottom--;
 
 [ml1-38-lintel-low]
 file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
@@ -417,9 +414,13 @@ filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
 expect = WarCore.Tests.Ml1PrefabTests.TopTooLowForALintel
 note = a lintel of height 0 is allowed
 original:
-| if (topRaw < bottom + 2)
+|             long bottom = ground + WallSpan.ClearanceRaw;
+|             if (((topRaw - bottom) & 1) != 0) bottom++;
+|             if (topRaw < bottom + 2)
 replacement:
-| if (topRaw < bottom)
+|             long bottom = ground + WallSpan.ClearanceRaw;
+|             if (((topRaw - bottom) & 1) != 0) bottom++;
+|             if (topRaw < bottom)
 
 [ml1-41-frame-no-clearance]
 file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
@@ -437,9 +438,15 @@ filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
 expect = WarCore.Tests.Ml1PrefabTests.OddLintelMovesUpAndOddFrameIsRefused
 note = an odd frame height is accepted
 original:
-| if (frame <= 0 || (frame & 1) != 0)
+|             if (topRaw < bottom + 2) throw new ArgumentException("the wall top is too low for a lintel above the doorway", nameof(topRaw));
+|
+|             long frame = topRaw - map.FloorRaw;
+|             if (frame <= 0 || (frame & 1) != 0)
 replacement:
-| if (frame <= 0)
+|             if (topRaw < bottom + 2) throw new ArgumentException("the wall top is too low for a lintel above the doorway", nameof(topRaw));
+|
+|             long frame = topRaw - map.FloorRaw;
+|             if (frame <= 0)
 
 [ml1-43-empty-right-frame]
 file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
@@ -447,9 +454,19 @@ filter = FullyQualifiedName~Ml1|FullyQualifiedName~Mt150WcMapValidationTests
 expect = WarCore.Tests.Ml1PrefabTests.DoorAndFramesAreAtLeastOneCell
 note = a right frame of 0 cells is accepted
 original:
-| if ((long)doorStart + doorWidth > (long)length - 1)
+|             long topRaw, string layer, string kind)
+|         {
+|             if (map == null) throw new ArgumentNullException(nameof(map));
+|             if (doorWidth < 1) throw new ArgumentException("the doorway is narrower than one cell", nameof(doorWidth));
+|             if (doorStart < 1) throw new ArgumentException("the left frame is narrower than one cell", nameof(doorStart));
+|             if ((long)doorStart + doorWidth > (long)length - 1)
 replacement:
-| if ((long)doorStart + doorWidth > (long)length)
+|             long topRaw, string layer, string kind)
+|         {
+|             if (map == null) throw new ArgumentNullException(nameof(map));
+|             if (doorWidth < 1) throw new ArgumentException("the doorway is narrower than one cell", nameof(doorWidth));
+|             if (doorStart < 1) throw new ArgumentException("the left frame is narrower than one cell", nameof(doorStart));
+|             if ((long)doorStart + doorWidth > (long)length)
 
 [ml1-44-bake-top-is-height]
 file = Assets/WarCore/Content/MapTools/MapBake.cs

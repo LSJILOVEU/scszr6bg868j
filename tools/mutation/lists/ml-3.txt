@@ -179,7 +179,7 @@ expect = WarCore.Tests.Ml3ShotTests.OneMetreWallIsSeenOverAndShotOver
 expect = WarCore.Tests.Ml3ShotTests.TwoMetreWallHidesAndStops
 note = P4: aimed shots start at the foot
 original:
-| SimVec3 origin = Lift(position.Value, muzzleRaw), direction;
+| SimVec3 origin = Lift(position.Value, MuzzleOf(shooter)), direction;
 replacement:
 | SimVec3 origin = position.Value, direction;
 
@@ -200,7 +200,7 @@ filter = FullyQualifiedName~Ml3
 expect = WarCore.Tests.Ml3ShotTests.FlatShotFliesAtEyeHeightAndHits
 note = P6: automatic shots start at the foot
 original:
-| SimVec3 origin = combat.MuzzleOver(position.Value);
+| SimVec3 origin = combat.MuzzleOver(position.Value, shooter);
 replacement:
 | SimVec3 origin = position.Value;
 
@@ -220,9 +220,9 @@ filter = FullyQualifiedName~Ml3
 expect = WarCore.Tests.Ml3ShotTests.ExplicitTargetShotRecordsMuzzleToTargetEye
 note = P8: the explicit target shot origin is lifted twice
 original:
-| Lift(origin, targetOriginRaw), Eye(
+| tick, Lift(origin, from), Eye(targetPosition.Value, target),
 replacement:
-| Lift(Lift(origin, targetOriginRaw), muzzleRaw), Eye(
+| tick, Lift(Lift(origin, from), from), Eye(targetPosition.Value, target),
 
 [ml3-22-target-shot-end-foot]
 file = Assets/WarCore/Combat/CombatSystem.Resolve.cs
@@ -230,9 +230,11 @@ filter = FullyQualifiedName~Ml3
 expect = WarCore.Tests.Ml3ShotTests.ExplicitTargetShotRecordsMuzzleToTargetEye
 note = the explicit target shot ends at the target foot
 original:
-| Eye(targetPosition.Value, target)
+| Lift(origin, from), Eye(targetPosition.Value, target),
+|
 replacement:
-| targetPosition.Value
+| Lift(origin, from), targetPosition.Value,
+|
 
 [ml3-23-candidates-at-foot]
 file = Assets/WarCore/Combat/CombatSystem.Sight.cs
@@ -280,9 +282,9 @@ filter = FullyQualifiedName~Ml3
 expect = WarCore.Tests.Ml3BodyTests.PressureSourceIsTheShootersGround
 note = P15: the pressure source stays at the muzzle
 original:
-| bodied ? Lift(fire.Origin, -muzzleRaw) : fire.Origin
+| => bodied ? Lift(fire.Origin, -(stances != null ? fire.MuzzleRaw : muzzleRaw)) : fire.Origin;
 replacement:
-| fire.Origin
+| => fire.Origin;
 
 [ml3-28-pressure-lowered-by-eye]
 file = Assets/WarCore/Combat/CombatSystem.Sight.cs
@@ -290,9 +292,9 @@ filter = FullyQualifiedName~Ml3
 expect = WarCore.Tests.Ml3BodyTests.PressureSourceIsTheShootersGround
 note = P15: the pressure source is lowered by the eye
 original:
-| Lift(fire.Origin, -muzzleRaw)
+| => bodied ? Lift(fire.Origin, -(stances != null ? fire.MuzzleRaw : muzzleRaw)) : fire.Origin;
 replacement:
-| Lift(fire.Origin, -eyeRaw)
+| => bodied ? Lift(fire.Origin, -eyeRaw) : fire.Origin;
 
 [ml3-29-no-body-anchor-check]
 file = Assets/WarCore/Combat/CombatSystem.cs
@@ -344,9 +346,9 @@ expect = WarCore.Tests.Ml3ConfigTests.WithSelectorKeepsTheBody
 expect = WarCore.Tests.Ml3ConfigTests.TerrainCoverMapKeepsTheBody
 note = D2a-1: WithSelector drops the body
 original:
-| block.Length == 0 ? null : block, Body);
+| block.Length == 0 ? null : block, Body,
 replacement:
-| block.Length == 0 ? null : block);
+| block.Length == 0 ? null : block, null,
 
 [ml3-34-digest-tag-always]
 file = Assets/WarCore/Combat/CombatPack.cs
@@ -560,9 +562,11 @@ filter = FullyQualifiedName~Ml3
 expect = WarCore.Tests.Ml3WindowTests.SillAtLeastTwiceTheRadius
 note = D6a: a sill of exactly 2r refused
 original:
-| if (sill < 2 * r)
+|             long sill = sillTop - board, opening = openingTop - board;
+|             if (sill < 2 * r)
 replacement:
-| if (sill <= 2 * r)
+|             long sill = sillTop - board, opening = openingTop - board;
+|             if (sill <= 2 * r)
 
 [ml3-55-sill-min-down]
 file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
@@ -570,9 +574,11 @@ filter = FullyQualifiedName~Ml3
 expect = WarCore.Tests.Ml3WindowTests.SillAtLeastTwiceTheRadius
 note = D6a: a sill 2 raw under 2r accepted
 original:
-| if (sill < 2 * r)
+|             long sill = sillTop - board, opening = openingTop - board;
+|             if (sill < 2 * r)
 replacement:
-| if (sill < 2 * r - 2)
+|             long sill = sillTop - board, opening = openingTop - board;
+|             if (sill < 2 * r - 2)
 
 [ml3-56-sill-max-inclusive]
 file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
@@ -580,9 +586,13 @@ filter = FullyQualifiedName~Ml3
 expect = WarCore.Tests.Ml3WindowTests.SillAndOpeningAgainstEyeAndMuzzle
 note = D6a: a sill of exactly min(E, M) - r refused
 original:
-| if (sill > Math.Min(eye, muzzle) - r)
+|             long sill = sillTop - board, opening = openingTop - board;
+|             if (sill < 2 * r) throw new ArgumentException("the sill is lower than 2 x the unit radius; use a door", nameof(sillRaw));
+|             if (sill > Math.Min(eye, muzzle) - r)
 replacement:
-| if (sill >= Math.Min(eye, muzzle) - r)
+|             long sill = sillTop - board, opening = openingTop - board;
+|             if (sill < 2 * r) throw new ArgumentException("the sill is lower than 2 x the unit radius; use a door", nameof(sillRaw));
+|             if (sill >= Math.Min(eye, muzzle) - r)
 
 [ml3-57-sill-max-up]
 file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
@@ -590,9 +600,13 @@ filter = FullyQualifiedName~Ml3
 expect = WarCore.Tests.Ml3WindowTests.SillAndOpeningAgainstEyeAndMuzzle
 note = D6a: a sill 2 raw over min(E, M) - r accepted
 original:
-| if (sill > Math.Min(eye, muzzle) - r)
+|             long sill = sillTop - board, opening = openingTop - board;
+|             if (sill < 2 * r) throw new ArgumentException("the sill is lower than 2 x the unit radius; use a door", nameof(sillRaw));
+|             if (sill > Math.Min(eye, muzzle) - r)
 replacement:
-| if (sill > Math.Min(eye, muzzle) - r + 2)
+|             long sill = sillTop - board, opening = openingTop - board;
+|             if (sill < 2 * r) throw new ArgumentException("the sill is lower than 2 x the unit radius; use a door", nameof(sillRaw));
+|             if (sill > Math.Min(eye, muzzle) - r + 2)
 
 [ml3-58-sill-min-to-max]
 file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
@@ -600,9 +614,13 @@ filter = FullyQualifiedName~Ml3
 expect = WarCore.Tests.Ml3WindowTests.SillAndOpeningAgainstEyeAndMuzzle
 note = D6a: the sill limit uses max(E, M)
 original:
-| if (sill > Math.Min(eye, muzzle) - r)
+|             long sill = sillTop - board, opening = openingTop - board;
+|             if (sill < 2 * r) throw new ArgumentException("the sill is lower than 2 x the unit radius; use a door", nameof(sillRaw));
+|             if (sill > Math.Min(eye, muzzle) - r)
 replacement:
-| if (sill > Math.Max(eye, muzzle) - r)
+|             long sill = sillTop - board, opening = openingTop - board;
+|             if (sill < 2 * r) throw new ArgumentException("the sill is lower than 2 x the unit radius; use a door", nameof(sillRaw));
+|             if (sill > Math.Max(eye, muzzle) - r)
 
 [ml3-59-opening-inclusive]
 file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
@@ -610,9 +628,15 @@ filter = FullyQualifiedName~Ml3
 expect = WarCore.Tests.Ml3WindowTests.SillAndOpeningAgainstEyeAndMuzzle
 note = D6a: an opening top of exactly max(E, M) + r refused
 original:
-| if (opening < Math.Max(eye, muzzle) + r)
+|             long sill = sillTop - board, opening = openingTop - board;
+|             if (sill < 2 * r) throw new ArgumentException("the sill is lower than 2 x the unit radius; use a door", nameof(sillRaw));
+|             if (sill > Math.Min(eye, muzzle) - r) throw new ArgumentException("the sill is higher than min(eye, muzzle) - unit radius", nameof(sillRaw));
+|             if (opening < Math.Max(eye, muzzle) + r)
 replacement:
-| if (opening <= Math.Max(eye, muzzle) + r)
+|             long sill = sillTop - board, opening = openingTop - board;
+|             if (sill < 2 * r) throw new ArgumentException("the sill is lower than 2 x the unit radius; use a door", nameof(sillRaw));
+|             if (sill > Math.Min(eye, muzzle) - r) throw new ArgumentException("the sill is higher than min(eye, muzzle) - unit radius", nameof(sillRaw));
+|             if (opening <= Math.Max(eye, muzzle) + r)
 
 [ml3-60-opening-down]
 file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
@@ -620,9 +644,15 @@ filter = FullyQualifiedName~Ml3
 expect = WarCore.Tests.Ml3WindowTests.SillAndOpeningAgainstEyeAndMuzzle
 note = D6a: an opening top 2 raw under max(E, M) + r accepted
 original:
-| if (opening < Math.Max(eye, muzzle) + r)
+|             long sill = sillTop - board, opening = openingTop - board;
+|             if (sill < 2 * r) throw new ArgumentException("the sill is lower than 2 x the unit radius; use a door", nameof(sillRaw));
+|             if (sill > Math.Min(eye, muzzle) - r) throw new ArgumentException("the sill is higher than min(eye, muzzle) - unit radius", nameof(sillRaw));
+|             if (opening < Math.Max(eye, muzzle) + r)
 replacement:
-| if (opening < Math.Max(eye, muzzle) + r - 2)
+|             long sill = sillTop - board, opening = openingTop - board;
+|             if (sill < 2 * r) throw new ArgumentException("the sill is lower than 2 x the unit radius; use a door", nameof(sillRaw));
+|             if (sill > Math.Min(eye, muzzle) - r) throw new ArgumentException("the sill is higher than min(eye, muzzle) - unit radius", nameof(sillRaw));
+|             if (opening < Math.Max(eye, muzzle) + r - 2)
 
 [ml3-61-opening-max-to-min]
 file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
@@ -630,9 +660,15 @@ filter = FullyQualifiedName~Ml3
 expect = WarCore.Tests.Ml3WindowTests.SillAndOpeningAgainstEyeAndMuzzle
 note = D6a: the opening limit uses min(E, M)
 original:
-| if (opening < Math.Max(eye, muzzle) + r)
+|             long sill = sillTop - board, opening = openingTop - board;
+|             if (sill < 2 * r) throw new ArgumentException("the sill is lower than 2 x the unit radius; use a door", nameof(sillRaw));
+|             if (sill > Math.Min(eye, muzzle) - r) throw new ArgumentException("the sill is higher than min(eye, muzzle) - unit radius", nameof(sillRaw));
+|             if (opening < Math.Max(eye, muzzle) + r)
 replacement:
-| if (opening < Math.Min(eye, muzzle) + r)
+|             long sill = sillTop - board, opening = openingTop - board;
+|             if (sill < 2 * r) throw new ArgumentException("the sill is lower than 2 x the unit radius; use a door", nameof(sillRaw));
+|             if (sill > Math.Min(eye, muzzle) - r) throw new ArgumentException("the sill is higher than min(eye, muzzle) - unit radius", nameof(sillRaw));
+|             if (opening < Math.Min(eye, muzzle) + r)
 
 [ml3-62-sill-parity-down]
 file = Assets/WarCore/Content/MapTools/MapPrefabs.cs
@@ -650,9 +686,11 @@ filter = FullyQualifiedName~Ml3
 expect = WarCore.Tests.Ml3WindowTests.SillAndOpeningAgainstEyeAndMuzzle
 note = an odd opening top moves down instead of up
 original:
-| if (((topRaw - openingTop) & 1) != 0) openingTop++;
+|             long openingTop = board + openingRaw;
+|             if (((topRaw - openingTop) & 1) != 0) openingTop++;
 replacement:
-| if (((topRaw - openingTop) & 1) != 0) openingTop--;
+|             long openingTop = board + openingRaw;
+|             if (((topRaw - openingTop) & 1) != 0) openingTop--;
 
 [ml3-64-terrain-sill-from-floor]
 file = Assets/WarCore/Content/MapTools/MapPrefabs.cs

@@ -83,9 +83,9 @@ filter = FullyQualifiedName~WarCore.Tests.L9|FullyQualifiedName~WarCore.Tests.L6
 expect = WarCore.Tests.L9SightTests.L9Sight_RidgeHidesBothSidesFlatTwinDoesNot
 note = Visible does not look at the ground
 original:
-|             return ground == null || !ground.TryFirstBelow(from, to, out _);
+| return !LineStop.TryFirst(ground, plates, from, to, out _);
 replacement:
-|             return true;
+| return true;
 
 [l9-08-trace-ignores-ground]
 file = Assets/WarCore/Combat/CombatSystem.Sight.cs
@@ -93,9 +93,13 @@ filter = FullyQualifiedName~WarCore.Tests.L9|FullyQualifiedName~WarCore.Tests.L6
 expect = WarCore.Tests.L9SightTests.L9Sight_RidgeStopsTheShotAndFlatTwinHits
 note = Trace does not look at the ground
 original:
-|             if (ground != null)
+|             if (ground != null || plates != null)
+|             {
+|                 SimVec3 lift = new SimVec3(default, SimFix.FromRaw(groundLiftRaw), default);
 replacement:
-|             if (ground != null && origin.X.Raw == long.MinValue)
+|             if ((ground != null || plates != null) && origin.X.Raw == long.MinValue)
+|             {
+|                 SimVec3 lift = new SimVec3(default, SimFix.FromRaw(groundLiftRaw), default);
 
 [l9-09-spread-drops-y]
 file = Assets/WarCore/Combat/CombatSystem.Resolve.cs
@@ -114,9 +118,9 @@ expect = WarCore.Tests.L9HeightFireTests.L9HeightFire_AHigherTargetIsHit
 expect = WarCore.Tests.L9HeightFireTests.L9HeightFire_ALowerTargetIsHit
 note = automatic fire aims horizontally again
 original:
-|             direction = combat.Point(target) - origin;
+| direction = combat.ShotEnd(shooter, target) - origin;
 replacement:
-|             direction = CombatSystem.Horizontal(combat.Point(target) - origin);
+| direction = CombatSystem.Horizontal(combat.ShotEnd(shooter, target) - origin);
 
 [l9-11-no-ground-wired]
 file = Assets/WarCore/Presentation/Bridge/Features/CombatFeature.cs
@@ -125,9 +129,9 @@ expect = WarCore.Tests.L9SightTests.L9Sight_RidgeHidesBothSidesFlatTwinDoesNot
 expect = WarCore.Tests.L9SightTests.L9Sight_RidgeStopsTheShotAndFlatTwinHits
 note = the world does not pass the height field to combat
 original:
-| recipe.Units.Length, a.Controlled, a.Terrain?.Ground);
+| a.Controlled, a.Terrain?.Ground,
 replacement:
-| recipe.Units.Length, a.Controlled, null);
+| a.Controlled, null,
 
 [l9-12-no-lift]
 file = Assets/WarCore/Combat/CombatSystem.Sight.cs
@@ -136,9 +140,9 @@ expect = WarCore.Tests.L9SightTests.L9Sight_RidgeStopsTheShotAndFlatTwinHits
 expect = WarCore.Tests.L9HeightFireTests.L9HeightFire_AHigherTargetIsHit
 note = the shot line is tested at foot height
 original:
-|                 SimVec3 lift = new SimVec3(default, SimFix.Ratio(1, 2), default);
+| SimVec3 lift = new SimVec3(default, SimFix.FromRaw(groundLiftRaw), default);
 replacement:
-|                 SimVec3 lift = default;
+| SimVec3 lift = default;
 
 [l9-13-ground-to-range]
 file = Assets/WarCore/Combat/CombatSystem.Sight.cs
@@ -147,9 +151,9 @@ expect = WarCore.Tests.L9SightTests.L9Sight_APersonBeforeTheRidgeIsHit
 expect = WarCore.Tests.L9SightTests.L9Sight_AWallBeforeTheRidgeStopsTheShot
 note = the ground test runs to the full range instead of the hit
 original:
-|                 if (ground.TryFirstBelow(origin + lift, end + lift, out SimVec3 at))
+| if (LineStop.TryFirst(ground, plates, origin + lift, end + lift, out SimVec3 at))
 replacement:
-|                 if (ground.TryFirstBelow(origin + lift, origin + direction.Normalized * range + lift, out SimVec3 at))
+| if (LineStop.TryFirst(ground, plates, origin + lift, origin + direction.Normalized * range + lift, out SimVec3 at))
 
 [l9-14-half-open]
 file = Assets/WarCore/Sim/HeightField.cs

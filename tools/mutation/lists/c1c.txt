@@ -151,9 +151,9 @@ filter = FullyQualifiedName~WarCore.Tests.C1c
 expect = WarCore.Tests.C1cContentTests.C1cContent_RangeEndsLoad
 note = BuildMatch passes 0
 original:
-|                     m.RespawnTicks, m.RespawnGuardTicks);
+| m.RespawnTicks, m.RespawnGuardTicks, ruleIds,
 replacement:
-|                     m.RespawnTicks, 0);
+| m.RespawnTicks, 0, ruleIds,
 
 [c1c-13-not-bound]
 file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs

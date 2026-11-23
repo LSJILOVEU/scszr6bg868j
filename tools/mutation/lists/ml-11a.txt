@@ -807,9 +807,9 @@ expect = WarCore.Tests.Ml11a
 expect = WarCore.Tests.Ml9bMatchTests.
 note = the parts are not told about the plates
 original:
-| , layers != null), pressure, layers, layers,
+| terrain == null, layers != null, squads)
 replacement:
-| , false), pressure, layers, layers,
+| terrain == null, false, squads)
 
 [ml11a-iv-layer-zero]
 file = Assets/WarCore/Interim/InterimLocomotion.Vertical.cs

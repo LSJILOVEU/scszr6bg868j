@@ -27,6 +27,6 @@ filter = FullyQualifiedName~Mt011CombatPack
 expect = WarCore.Tests.Mt011CombatPackTests.WithSelector_PreservesDistinctFriendlyFireFlags
 note = Swaps the friendly fire flag and its lock when replacing the selector.
 original:
-|             FriendlyFire, FriendlyFireLocked, AllyCheckMissRaw, AllyHoldMilli, melee.Length == 0 ? null : melee, block.Length == 0 ? null : block);
+| FriendlyFire, FriendlyFireLocked, AllyCheckMissRaw,
 replacement:
-|             FriendlyFireLocked, FriendlyFire, AllyCheckMissRaw, AllyHoldMilli, melee.Length == 0 ? null : melee, block.Length == 0 ? null : block);
+| FriendlyFireLocked, FriendlyFire, AllyCheckMissRaw,

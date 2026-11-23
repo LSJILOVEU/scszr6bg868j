@@ -42,14 +42,14 @@ replacement:
 |             Require(map.Layers.Count > 0 && map.Layers.Count < 32, "LAYERS");
 
 [mt-150-05]
-file = Assets/WarCore/Content/WcMapValidation.cs
+file = Assets/WarCore/Content/WallSpan.cs
 filter = FullyQualifiedName~Mt150WcMapValidation
 expect = WarCore.Tests.Mt150WcMapValidationTests.FarEdgeTerrainVertex_RejectsInsufficientWallClearance
 note = Ignores far-edge terrain vertices and accepts insufficient wall clearance.
 original:
-|                 for (int iz = z0; iz <= z1; iz++)
+| for (int iz = z0; iz <= z1; iz++)
 replacement:
-|                 for (int iz = z0; iz < z1; iz++)
+| for (int iz = z0; iz < z1; iz++)
 
 [mt-150-06]
 file = Assets/WarCore/Content/WcMapValidation.cs
@@ -57,6 +57,6 @@ filter = FullyQualifiedName~Mt150WcMapValidation
 expect = WarCore.Tests.Mt150WcMapValidationTests.ExactWallClearance_RoundTrips
 note = Rejects a wall standing exactly one metre above the highest terrain vertex.
 original:
-|                 Require(map.FlatHeight.Raw + wall.Height.Raw >= highest + WallClearanceRaw, "WALL_TERRAIN");
+| else Require(wall.Height.Raw >= highest + WallClearanceRaw, "WALL_TERRAIN");
 replacement:
-|                 Require(map.FlatHeight.Raw + wall.Height.Raw > highest + WallClearanceRaw, "WALL_TERRAIN");
+| else Require(wall.Height.Raw > highest + WallClearanceRaw, "WALL_TERRAIN");

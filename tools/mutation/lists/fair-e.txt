@@ -16,11 +16,11 @@ filter = FullyQualifiedName~FairE_OnFixedOutcomesAndRepeat&Name~41UL
 expect = WarCore.Tests.FairEOnTests
 note = movement decisions immediately issue orders and occupy slots during collection
 original:
-|         private void OrderUnit(StableId id, SimVec3 here, bool moving, SimVec3 oldTarget, SimVec3 destination, int memorySlot)
+| int to, int memorySlot)
 |         {
 |             if (fairDecisions)
 replacement:
-|         private void OrderUnit(StableId id, SimVec3 here, bool moving, SimVec3 oldTarget, SimVec3 destination, int memorySlot)
+| int to, int memorySlot)
 |         {
 |             if (false)
 
@@ -50,9 +50,10 @@ filter = FullyQualifiedName~FairEStateTests
 expect = WarCore.Tests.FairEStateTests.FairE_VersionPolicySaveAndHash
 note = the saved and hashed policy omits the option and decision seed
 original:
+| hash.Add(decisionSeed);
 |                 policyDigest = hash.Value;
 replacement:
-|                 policyDigest = pack.PolicyDigest;
+| hash.Add(decisionSeed);
 
 [fair-e-06-old-hash]
 file = Assets/WarCore/Battle/SimpleAiSystem.cs
@@ -64,25 +65,15 @@ original:
 replacement:
 |         { hash.Add(StateTypeId); hash.Add(StateVersion); hash.Add(pack.PolicyDigest); hash.Add(weapons.PolicyDigest); }
 
-[fair-e-07-unseeded-phase]
-file = Assets/WarCore/Battle/SimpleAiSystem.cs
-filter = FullyQualifiedName~FairE_OnFixedOutcomesAndRepeat&Name~41UL
-expect = WarCore.Tests.FairEOnTests
-note = thinking phases use the original stable-key modulo
-original:
-|                 if ((c.Clock.Tick + (long)((fairDecisions ? Mix(id.Value ^ seedSalt) : id.Value) % (ulong)pack.ThinkInterval)) % pack.ThinkInterval != 0) continue;
-replacement:
-|                 if ((c.Clock.Tick + (long)(id.Value % (ulong)pack.ThinkInterval)) % pack.ThinkInterval != 0) continue;
-
 [fair-e-08-content-drops-option]
 file = Assets/WarCore/Content/Data/Sections/AiSection.cs
 filter = FullyQualifiedName~FairEStateTests
 expect = WarCore.Tests.FairEStateTests.FairE_ContentDefaultAndValues
 note = the parsed option is discarded
 original:
-|             b.Publish(new AiRules(failed, memory, search, reaction, sense, burst, pause, suppress, chase, fair));
+| suppress, chase, fair, follows,
 replacement:
-|             b.Publish(new AiRules(failed, memory, search, reaction, sense, burst, pause, suppress, chase, false));
+| suppress, chase, false, follows,
 
 [fair-e-09-original-loop]
 file = Assets/WarCore/Battle/SimpleAiSystem.cs
@@ -100,9 +91,9 @@ filter = FullyQualifiedName~FairE_MeleeChaseUsesArbitration
 expect = WarCore.Tests.FairEOnTests.FairE_MeleeChaseUsesArbitration
 note = melee chase orders bypass fair decision collection and arbitration
 original:
-|                     { OrderUnit(id, here, moving, target, enemy, -2); }
+| { OrderUnit(id, here, moving, target, enemy, enemyLayer, -2); }
 replacement:
-|                     { moves.Order(id, enemy); memory?.Forget(id); }
+| { moves.Order(id, enemy, enemyLayer); memory?.Forget(id); }
 
 [fair-e-11-omitted-retained-reservation]
 file = Assets/WarCore/Battle/SimpleAiSystem.cs
@@ -110,9 +101,9 @@ filter = FullyQualifiedName~FairECritic_ChaseReservationRemainsExclusiveOnNextTi
 expect = WarCore.Tests.FairECriticArbitrationTests.FairECritic_ChaseReservationRemainsExclusiveOnNextTick
 note = retained movement reservations do not participate in arbitration
 original:
-|                 { intents[current] = new Intent { Id = id, Kind = 3, Slot = retained, Standing = slots.Nearest(here) }; }
+| Kind = 3, Slot = retained,
 replacement:
-|                 { intents[current] = new Intent { Id = id, Kind = 0, Slot = retained, Standing = slots.Nearest(here) }; }
+| Kind = 0, Slot = retained,
 
 [fair-e-12-omitted-commanded-reservation]
 file = Assets/WarCore/Battle/SimpleAiSystem.cs

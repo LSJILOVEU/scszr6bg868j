@@ -65,8 +65,9 @@ filter = FullyQualifiedName~Ml7b
 expect = WarCore.Tests.Ml7bDescTests.EachKeyAloneNeedsVersionTwo
 note = a spawn plate alone keeps version 1
 original:
-|                     if (point.SpawnPlate.HasValue) return true;
+| if (point.SpawnPlate.HasValue || point.Plate.HasValue) return true;
 replacement:
+| if (point.Plate.HasValue) return true;
 
 [ml7b-needs-base]
 file = Assets/WarCore/Content/MapTools/MapDesc.cs
@@ -93,9 +94,9 @@ filter = FullyQualifiedName~Ml7b
 expect = WarCore.Tests.Ml7bDescTests.EachKeyAloneNeedsVersionTwo
 note = the bare tree ignores "spawnPlate"
 original:
-| if (HasKey(root.Find("points"), "spawnPlate") || HasKey(root.Find("bases"), "plate") || HasKey(root.Find("units"), "plate")) return true;
+| if (HasKey(root.Find("points"), "spawnPlate") || HasKey(root.Find("points"), "plate") || HasKey(root.Find("bases"), "plate") || HasKey(root.Find("units"), "plate")) return true;
 replacement:
-| if (HasKey(root.Find("bases"), "plate") || HasKey(root.Find("units"), "plate")) return true;
+| if (HasKey(root.Find("points"), "plate") || HasKey(root.Find("bases"), "plate") || HasKey(root.Find("units"), "plate")) return true;
 
 [ml7b-uses-base]
 file = Assets/WarCore/Content/MapTools/MapDescReader.cs
@@ -103,9 +104,9 @@ filter = FullyQualifiedName~Ml7b
 expect = WarCore.Tests.Ml7bDescTests.EachKeyAloneNeedsVersionTwo
 note = the bare tree ignores a base "plate"
 original:
-| if (HasKey(root.Find("points"), "spawnPlate") || HasKey(root.Find("bases"), "plate") || HasKey(root.Find("units"), "plate")) return true;
+| if (HasKey(root.Find("points"), "spawnPlate") || HasKey(root.Find("points"), "plate") || HasKey(root.Find("bases"), "plate") || HasKey(root.Find("units"), "plate")) return true;
 replacement:
-| if (HasKey(root.Find("points"), "spawnPlate") || HasKey(root.Find("units"), "plate")) return true;
+| if (HasKey(root.Find("points"), "spawnPlate") || HasKey(root.Find("points"), "plate") || HasKey(root.Find("units"), "plate")) return true;
 
 [ml7b-uses-unit]
 file = Assets/WarCore/Content/MapTools/MapDescReader.cs
@@ -113,9 +114,9 @@ filter = FullyQualifiedName~Ml7b
 expect = WarCore.Tests.Ml7bDescTests.EachKeyAloneNeedsVersionTwo
 note = the bare tree ignores a unit "plate"
 original:
-| if (HasKey(root.Find("points"), "spawnPlate") || HasKey(root.Find("bases"), "plate") || HasKey(root.Find("units"), "plate")) return true;
+| if (HasKey(root.Find("points"), "spawnPlate") || HasKey(root.Find("points"), "plate") || HasKey(root.Find("bases"), "plate") || HasKey(root.Find("units"), "plate")) return true;
 replacement:
-| if (HasKey(root.Find("points"), "spawnPlate") || HasKey(root.Find("bases"), "plate")) return true;
+| if (HasKey(root.Find("points"), "spawnPlate") || HasKey(root.Find("points"), "plate") || HasKey(root.Find("bases"), "plate")) return true;
 
 [ml7b-keys-base-v1]
 file = Assets/WarCore/Content/MapTools/MapDescReader.cs
@@ -238,9 +239,9 @@ expect = WarCore.Tests.Ml7bBakeGateTests.PlateIdsBecomeLayersAndAnchorsStandOnTh
 expect = WarCore.Tests.Ml7bMatchTests.AMapRecipeCarriesTheLayers
 note = the point keeps spawn layer 0
 original:
-| Name("spawn", (ulong)p.Id)) : default, spawnLayer);
+| Name("spawn", (ulong)p.Id)) : default, spawnLayer, layer);
 replacement:
-| Name("spawn", (ulong)p.Id)) : default, 0);
+| Name("spawn", (ulong)p.Id)) : default, 0, layer);
 
 [ml7b-base-layer]
 file = Assets/WarCore/Content/MapTools/MapBake.cs
@@ -348,9 +349,11 @@ filter = FullyQualifiedName~Ml7b
 expect = WarCore.Tests.Ml7bMatchTests.AnchorLayersAreChecked
 note = anchor layer 4097 is accepted
 original:
-| if (layer < 0 || layer > MatchPack.MaxLayer) throw new ArgumentOutOfRangeException(nameof(layer));
+|             if (team < 1 || team > MatchPack.MaxTeams) throw new ArgumentOutOfRangeException(nameof(team));
+|             if (layer < 0 || layer > MatchPack.MaxLayer) throw new ArgumentOutOfRangeException(nameof(layer));
 replacement:
-| if (layer < 0 || layer > MatchPack.MaxLayer + 1) throw new ArgumentOutOfRangeException(nameof(layer));
+|             if (team < 1 || team > MatchPack.MaxTeams) throw new ArgumentOutOfRangeException(nameof(team));
+|             if (layer < 0 || layer > MatchPack.MaxLayer + 1) throw new ArgumentOutOfRangeException(nameof(layer));
 
 [ml7b-spawn-layer-needs-spawn]
 file = Assets/WarCore/Battle/MatchPack.cs
@@ -453,9 +456,9 @@ filter = FullyQualifiedName~Ml7b
 expect = WarCore.Tests.Ml7bMatchTests.APlateMatchResumesToTheSameHashes
 note = base layers are not recorded
 original:
-| { layers[count] = anchor.Layer; anchors[count++] = anchor.Point; }
+| new EntryOption(true, -1, anchor.Point, anchor.Layer);
 replacement:
-| { anchors[count++] = anchor.Point; }
+| new EntryOption(true, -1, anchor.Point, 0);
 
 [ml7b-reinforce-spawn-layer]
 file = Assets/WarCore/Battle/ReinforceSystem.cs
@@ -463,9 +466,9 @@ filter = FullyQualifiedName~Ml7b
 expect = WarCore.Tests.Ml7bMatchTests.ReinforcementsLandOnThePlate
 note = spawn layers are not recorded
 original:
-| { layers[count] = pack.Points[i].SpawnLayer; anchors[count++] = pack.Points[i].Spawn; }
+| new EntryOption(false, i, pack.Points[i].Spawn, pack.Points[i].SpawnLayer);
 replacement:
-| { anchors[count++] = pack.Points[i].Spawn; }
+| new EntryOption(false, i, pack.Points[i].Spawn, 0);
 
 [ml7b-reinforce-pick]
 file = Assets/WarCore/Battle/ReinforceSystem.cs
@@ -474,9 +477,9 @@ expect = WarCore.Tests.Ml7bMatchTests.ReinforcementsLandOnThePlate
 expect = WarCore.Tests.Ml7bMatchTests.APlateMatchResumesToTheSameHashes
 note = the first anchor's layer is used
 original:
-| deployer.TryDeploy(reserve, point, layers[pick])
+| deployer.TryDeploy(reserve, point, entry.Layer)
 replacement:
-| deployer.TryDeploy(reserve, point, layers[0])
+| deployer.TryDeploy(reserve, point, options[0].Layer)
 
 [ml7b-build-no-plates]
 file = Assets/WarCore/Presentation/Bridge/Features/PlateFeature.cs
@@ -617,9 +620,9 @@ filter = FullyQualifiedName~Ml7b
 expect = WarCore.Tests.Ml7bBakeGateTests.AFloorBaseReachesThePointsDownTheStair
 note = a plate base is routed on the ground grid
 original:
-| if (!b.Plate.HasValue) found =
+| if (!b.Plate.HasValue && !point.Plate.HasValue) found =
 replacement:
-| if (true) found =
+| if (!point.Plate.HasValue) found =
 
 [ml7b-gate-reach-goal]
 file = Assets/WarCore/Content/MapTools/MapGate.cs
@@ -627,9 +630,9 @@ filter = FullyQualifiedName~Ml7b
 expect = WarCore.Tests.Ml7bBakeGateTests.AFloorBaseReachesThePointsDownTheStair
 note = the goal is the floor node, not the ground
 original:
-| layered.TryNode(0, px, pz, out int goal)
+| layered.TryNode(0, cx, cz, out node)
 replacement:
-| layered.TryNode(2, px, pz, out int goal)
+| layered.TryNode(2, cx, cz, out node)
 
 [ml7b-gate-refs-bases]
 file = Assets/WarCore/Content/MapTools/MapGate.cs

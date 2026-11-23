@@ -14,9 +14,9 @@ filter = FullyQualifiedName~WarCore.Tests.Rai01
 expect = WarCore.Tests.Rai01TimingTests.HeldShotDoesNotCount
 note = HoldFire counts as a fired round.
 original:
-|             if (action == AutoFireAction.Fire && burstShots > 0)
+| if (action == AutoFireAction.Fire && burst > 0)
 replacement:
-|             if (action != AutoFireAction.Pass && burstShots > 0)
+| if (action != AutoFireAction.Pass && burst > 0)
 
 [rai-01-pause-early]
 file = Assets/WarCore/Battle/Ai/BurstCadence.cs
