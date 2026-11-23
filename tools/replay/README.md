@@ -14,7 +14,7 @@ cd tools/replay/out && python3 -m http.server   # then open /battle-replay.html 
 
 Direct use: `WarCore.Replay <setup> <maxTicks> <every> <out.json> [lanesSeed]`, `--list` (setups), `--selftest`
 (metric checks and a byte-identical repeat export). `lanesSeed` replaces the seed of the three-lane map's battle
-(41 when left out), to compare several matches of one setup. The binary finds the Unity project root itself; any working directory works.
+(41 when left out), to compare several matches of one setup; it reseeds `ancient-plain` and `ancient-nerve` too. The binary finds the Unity project root itself; any working directory works.
 `WarCore.Replay --map <map.json> <maxTicks> <every> <out.json>` runs a map description file as it stands: its own seed and the content layer it names (found in the cartridges). A description the bake refuses stops with its problem code. The replay of `lanes-playtest.map.json` has the same end hash as the `lanes` setup.
 Setups live in `Recipes.cs`, one line each. The page reads `replay-base.json` and `replay-playtest.json` from its own
 folder, or the files named in `?files=a.json,b.json`.

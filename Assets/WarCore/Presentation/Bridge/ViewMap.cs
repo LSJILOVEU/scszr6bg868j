@@ -122,6 +122,6 @@ namespace WarCore.Presentation
             return surfaceCells[z * Width + x];
         }
 
-        private static float Metres(long raw) => (float)raw / 65536f;
+        internal static float Metres(long raw) => (float)raw / WcMap.RawPerMetre;
     }
 }

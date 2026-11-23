@@ -146,7 +146,7 @@ namespace WarCore.Sim
         public Collider(SimFix radius, SimFix height, uint layer, ShapeKind shapeKind = ShapeKind.VerticalCapsule, bool isStatic = false)
         {
             SpatialRequest.ValidateDistance(radius);
-            if (height.Raw < radius.Raw * 2 || height.Raw > 32768 * SimFix.Scale || shapeKind != ShapeKind.VerticalCapsule)
+            if (height.Raw < radius.Raw * 2 || height.Raw > HeightLimit || shapeKind != ShapeKind.VerticalCapsule)
                 throw new ArgumentOutOfRangeException(nameof(height));
             this.radius = radius;
             this.height = height;
@@ -161,7 +161,7 @@ namespace WarCore.Sim
         {
             if (halfX.Raw < 0 || halfX.Raw > BoxHalfExtentLimit || halfZ.Raw < 0 || halfZ.Raw > BoxHalfExtentLimit)
                 throw new ArgumentOutOfRangeException(nameof(halfX), "Box half extents must be in [0, 8192] metres.");
-            if (height.Raw < 0 || height.Raw > 32768 * SimFix.Scale)
+            if (height.Raw < 0 || height.Raw > HeightLimit)
                 throw new ArgumentOutOfRangeException(nameof(height));
             radius = halfX;
             this.height = height;
@@ -196,7 +196,7 @@ namespace WarCore.Sim
         public Collider WithHeight(SimFix height)
         {
             long minimum = shapeKind == ShapeKind.VerticalCapsule ? radius.Raw * 2 : 0;
-            if (height.Raw < minimum || height.Raw > 32768 * SimFix.Scale)
+            if (height.Raw < minimum || height.Raw > HeightLimit)
                 throw new ArgumentOutOfRangeException(nameof(height));
             return new Collider(in this, Layer, isStatic, height);
         }

@@ -130,6 +130,9 @@ namespace WarCore.Battle
             }
 
             public AiEngage Unseen(in AiUnit unit, AiField field) => inner.Unseen(in unit, field);
+
+            // AI-M1: the squad has no say in a pressed melee unit's question; the inner part answers.
+            public AiEngage Melee(in AiUnit unit, SimVec3 enemy, AiField field) => inner.Melee(in unit, enemy, field);
         }
 
         // Always a waypoint part, so the scheduler asks it; an inner part without waypoints answers no.

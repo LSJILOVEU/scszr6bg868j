@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using WarCore.Sim;
 
 namespace WarCore.Content.MapTools
 {
@@ -56,7 +57,8 @@ namespace WarCore.Content.MapTools
         internal const string Format = "MAPDESC_FORMAT", Key = "MAPDESC_KEY", SizeCode = "MAPDESC_SIZE", Grid = "MAPDESC_GRID",
             IdCode = "MAPDESC_ID", Team = "MAPDESC_TEAM", WallCode = "MAPDESC_WALL", PointCode = "MAPDESC_POINT", OwnerCode = "MAPDESC_OWNER",
             PlateCode = "MAPDESC_PLATE";
-        internal const int HeightLimit = (1 << 29) - 1;
+        // Closed bound: HeightField.HeightLimitRaw is a strict upper bound, so the largest accepted height is one less.
+        internal const int HeightLimit = (int)(HeightField.HeightLimitRaw - 1);
         internal static readonly string[] Kinds = { "wall", "point", "base", "unit" };
         internal static readonly string[] Kinds2 = { "wall", "point", "base", "unit", "plate", "cutout" };
         private static readonly string[] TopKeys = { "format", "version", "id", "content", "pack", "size", "origin", "floorRaw",

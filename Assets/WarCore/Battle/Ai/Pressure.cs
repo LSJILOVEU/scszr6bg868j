@@ -11,12 +11,16 @@ namespace WarCore.Battle
     // FallOnKill says what counts as a teammate brought down. False (the default): any enemy fire record with damage. That
     // is right for a resolver that either kills or does nothing (RWR's). True: only a unit whose damage this tick (fire
     // records plus landed melee strikes) reaches its health, for content whose hits wound before they kill.
+    // Strikes (AI-M1) makes melee press as well: a unit brought down by landed strikes is a teammate brought down
+    // (whatever FallOnKill says, only when the tick's damage reaches its health: a strike wounds before it kills), and an
+    // enemy strike that lands on or is blocked by a unit within the near radius is a near shot. False (the default): the
+    // strike records are read only by FallOnKill, as before.
     public readonly struct PressureRules
     {
         public readonly int DeathRadiusMm, DeathShock, NearRadiusMm, NearShock, DecayPermille, BrokenAt, RecoverAt, PinnedAt, SpreadPermille, BreakSharePermille;
-        public readonly bool FallOnKill;
+        public readonly bool FallOnKill, Strikes;
         public PressureRules(int deathRadiusMm, int deathShock, int nearRadiusMm, int nearShock, int decayPermille,
-            int brokenAt, int recoverAt, int pinnedAt, int spreadPermille, int breakSharePermille, bool fallOnKill = false)
+            int brokenAt, int recoverAt, int pinnedAt, int spreadPermille, int breakSharePermille, bool fallOnKill = false, bool strikes = false)
         {
             if (deathRadiusMm < 0) throw new ArgumentOutOfRangeException(nameof(deathRadiusMm));
             if (deathShock < 0 || deathShock > Pressure.Max) throw new ArgumentOutOfRangeException(nameof(deathShock));
@@ -30,7 +34,7 @@ namespace WarCore.Battle
             if (breakSharePermille < 0 || breakSharePermille > 1000) throw new ArgumentOutOfRangeException(nameof(breakSharePermille));
             DeathRadiusMm = deathRadiusMm; DeathShock = deathShock; NearRadiusMm = nearRadiusMm; NearShock = nearShock;
             DecayPermille = decayPermille; BrokenAt = brokenAt; RecoverAt = recoverAt; PinnedAt = pinnedAt; SpreadPermille = spreadPermille;
-            BreakSharePermille = breakSharePermille; FallOnKill = fallOnKill;
+            BreakSharePermille = breakSharePermille; FallOnKill = fallOnKill; Strikes = strikes;
         }
     }
 
@@ -95,8 +99,9 @@ namespace WarCore.Battle
 
         public int Order => 32;
         public string StateTypeId => "battle.ai-pressure";
-        // FallOnKill adds 2 (the version is hashed, so the hash tells the rules apart; the saved rules carry a flag).
-        public int StateVersion => (sources ? 2 : 1) + (rules.FallOnKill ? 2 : 0);
+        // FallOnKill adds 2 and Strikes adds 4 (the version is hashed, so the hash tells the rules apart; the saved rules
+        // carry a flag for each).
+        public int StateVersion => (sources ? 2 : 1) + (rules.FallOnKill ? 2 : 0) + (rules.Strikes ? 4 : 0);
         internal int Count => entries.Count;
         internal bool Sources => sources;
 
@@ -121,8 +126,12 @@ namespace WarCore.Battle
 
         public void Step(SimContext c) => Advance(combat.Fires);
 
-        // One tick of pressure from these fire records. Step calls it with the records combat made this tick.
-        public void Advance(ReadOnlySpan<FireRecord> fires)
+        // One tick of pressure from these fire records and the strike records combat made this tick. Step calls it with
+        // the fire records combat made this tick.
+        public void Advance(ReadOnlySpan<FireRecord> fires) => Advance(fires, combat.Strikes);
+
+        // One tick of pressure from these fire and strike records.
+        public void Advance(ReadOnlySpan<FireRecord> fires, ReadOnlySpan<StrikeRecord> strikes)
         {
             EntityStore store = combat.Entities;
             // 1. Decay. A unit that is gone or dead loses its entry.
@@ -145,11 +154,25 @@ namespace WarCore.Battle
                     || !store.TryGet(combatants, (EntityId)target, out Combatant victim) || !store.TryGet(positions, (EntityId)target, out Position at)) continue;
                 bool counted = false;
                 for (int i = 0; i < fallenCount; i++) if (fallen[i].Key == fire.Target.Value) { counted = true; break; }
-                if (!counted && rules.FallOnKill && !Kills(fire.Target, fires, combat.Strikes, combat.HealthRaw(fire.Target))) continue;
+                if (!counted && rules.FallOnKill && !Kills(fire.Target, fires, strikes, combat.HealthRaw(fire.Target))) continue;
                 // From is a point on the ground (it goes to WallWithin later): the record's origin turned back to the shooter's ground (ML-3).
                 if (!counted) fallen[fallenCount++] = new Fallen { Key = fire.Target.Value, Team = victim.Team, At = at.Value, From = combat.GroundOfFireOrigin(in fire) };
             }
-            if (fires.Length > 0)
+            // Melee (rules.Strikes): a unit that landed strikes bring down this tick, after the units the fire brought down.
+            bool melee = rules.Strikes && strikes.Length > 0;
+            if (melee)
+            {
+                foreach (ref readonly StrikeRecord strike in strikes)
+                {
+                    if (strike.Kind != StrikeKind.Landed || strike.DamageRaw <= 0 || !store.TryResolve(strike.Target, out EntityRef target)
+                        || !store.TryGet(combatants, (EntityId)target, out Combatant victim) || !store.TryGet(positions, (EntityId)target, out Position at)) continue;
+                    bool counted = false;
+                    for (int i = 0; i < fallenCount; i++) if (fallen[i].Key == strike.Target.Value) { counted = true; break; }
+                    if (counted || !Kills(strike.Target, fires, strikes, combat.HealthRaw(strike.Target))) continue;
+                    fallen[fallenCount++] = new Fallen { Key = strike.Target.Value, Team = victim.Team, At = at.Value, From = strike.Origin };
+                }
+            }
+            if (fires.Length > 0 || melee)
             {
                 foreach (EntityId entity in stage.Capture())
                 {
@@ -164,6 +187,9 @@ namespace WarCore.Battle
                         if (fire.ShooterTeam == unit.Team || CombatSystem.Horizontal(fire.End - here).LengthSquared > nearSquared) continue;
                         shock = rules.NearShock; from = combat.GroundOfFireOrigin(in fire); sourced = true; break;
                     }
+                    // A tick with a near shot does not look at the strikes: the near shock rises once a tick.
+                    if (melee && shock == 0 && NearStrike(strikes, unit.Team, here, out SimVec3 struck))
+                    { shock = rules.NearShock; from = struck; sourced = true; }
                     for (int i = 0; i < fallenCount; i++)
                     {
                         if (fallen[i].Team != unit.Team || fallen[i].Key == key
@@ -194,6 +220,25 @@ namespace WarCore.Battle
             foreach (ulong key in drop) entries.Remove(key);
         }
 
+        // The first enemy strike of these that landed on, or was blocked by, a unit standing within the near radius of here
+        // (the unit itself counts); from is where the striker stood when the swing started. A swing in the air and a swing
+        // that only started press nobody, and neither does a strike whose striker is gone.
+        private bool NearStrike(ReadOnlySpan<StrikeRecord> strikes, int team, SimVec3 here, out SimVec3 from)
+        {
+            EntityStore store = combat.Entities;
+            foreach (ref readonly StrikeRecord strike in strikes)
+            {
+                if (strike.Kind != StrikeKind.Landed && strike.Kind != StrikeKind.Blocked) continue;
+                if (!store.TryResolve(strike.Striker, out EntityRef striker) || !store.TryGet(combatants, (EntityId)striker, out Combatant by) || by.Team == team) continue;
+                if (!store.TryResolve(strike.Target, out EntityRef target) || !store.TryGet(positions, (EntityId)target, out Position at)
+                    || CombatSystem.Horizontal(at.Value - here).LengthSquared > nearSquared) continue;
+                from = strike.Origin;
+                return true;
+            }
+            from = default;
+            return false;
+        }
+
         // Whether this tick's damage to the unit (fire records with damage plus landed melee strikes) reaches healthRaw, its
         // health before the tick's damage lands.
         public static bool Kills(StableId unit, ReadOnlySpan<FireRecord> fires, ReadOnlySpan<StrikeRecord> strikes, long healthRaw)
@@ -210,6 +255,7 @@ namespace WarCore.Battle
             writer.Int32(rules.DecayPermille); writer.Int32(rules.BrokenAt); writer.Int32(rules.RecoverAt); writer.Int32(rules.PinnedAt);
             writer.Int32(rules.SpreadPermille); writer.Int32(rules.BreakSharePermille);
             if (rules.FallOnKill) writer.Bool(true);
+            if (rules.Strikes) writer.Bool(true);
         }
 
         public void SaveState(SimStateWriter writer)
@@ -231,6 +277,7 @@ namespace WarCore.Battle
             same &= reader.Int32() == rules.RecoverAt; same &= reader.Int32() == rules.PinnedAt;
             same &= reader.Int32() == rules.SpreadPermille; same &= reader.Int32() == rules.BreakSharePermille;
             if (rules.FallOnKill) same &= reader.Bool();
+            if (rules.Strikes) same &= reader.Bool();
             SimStateReader.Require(same, "AI pressure rules differ.");
             int count = reader.Count(combat.Entities.Capacity);
             entries.Clear();

@@ -65,6 +65,11 @@ namespace WarCore.Content
         // looks for a spot behind a wall, the spacing of the spots it tries, and how close in front of the spot the wall
         // must stand. 0 = no cover.
         public int CoverRadiusMm { get; internal set; }
+        // AI-M1 (meleeNerve): a melee unit that is pressed asks the engage part before it chases. meleeNerveFightMm (only
+        // with meleeNerve on): a unit the part tells to take cover still goes for an enemy within this distance. 0, the
+        // default, leaves only an enemy on the unit's own spot within it.
+        public bool MeleeNerve { get; internal set; }
+        public int MeleeNerveFightMm { get; internal set; }
         public int CoverStepMm { get; internal set; }
         public int CoverDepthMm { get; internal set; }
         // The squad system's numbers (the seven squad* fields, all or none); null leaves squads out of the battle.
@@ -111,15 +116,15 @@ namespace WarCore.Content
         internal const int MaxBurstPauseTicks = 1000000;
         internal const int MaxTraitSpreadPermille = 500;
         internal const int MaxSuppressTicks = 1000000;
-        internal const int MaxMeleeChaseRange = 512; // PLACEHOLDER: maximum map side length in metres.
+        internal const int MaxMeleeChaseRange = WcMapValidation.MaxSide; // the map side limit (WcMapValidation.MaxSide), metres.
         internal const int MaxHoldSharePermille = 1000;
         internal const int MaxAttackSpreadPoints = 8;
         internal const int MinSlotSpacingMm = 500, MaxSlotSpacingMm = 5000;
         internal const int MaxScatterMm = 50000;
         internal const int MaxSlotRingMm = 50000;
         internal const int MaxBoundTicks = 100000;
-        internal const int MaxBoundMinRangeMm = 512000; // PLACEHOLDER: maximum map side length.
-        internal const int MaxPressureRadiusMm = 512000; // PLACEHOLDER: maximum map side length.
+        internal const int MaxBoundMinRangeMm = WcMapValidation.MaxSideMm; // the map side limit (WcMapValidation.MaxSide).
+        internal const int MaxPressureRadiusMm = WcMapValidation.MaxSideMm; // the map side limit (WcMapValidation.MaxSide).
         internal const int MinCoverRadiusMm = 1000, MaxCoverRadiusMm = 30000, MinCoverStepMm = 250, MaxCoverStepMm = 5000, MinCoverDepthMm = 250, MaxCoverDepthMm = 10000; // PLACEHOLDER bounds.
         // What counts as a teammate brought down (pressureFall, optional, only with the ten fields): "hit" (the default) any
         // enemy shot with damage, right for rules where a hit either kills or does nothing; "kill" only a unit whose damage
@@ -156,12 +161,12 @@ namespace WarCore.Content
         // The squad fields: written all seven or none. PLACEHOLDER bounds.
         internal static readonly string[] SquadFields =
             { "squadMinSize", "squadMaxSize", "squadSkirmisherPermille", "squadRecruitRadiusMm", "squadFormTicks", "squadSpreadMinMm", "squadSpreadMaxMm" };
-        internal const int MaxSquadSize = 64, MaxSquadRadiusMm = 512000, MaxSquadFormTicks = 100000, MaxSquadSpreadMm = 50000;
+        internal const int MaxSquadSize = 64, MaxSquadRadiusMm = WcMapValidation.MaxSideMm, MaxSquadFormTicks = 100000, MaxSquadSpreadMm = 50000;
         // Squad tempers (all four or none) and regrouping (all three or none); both need the seven squad fields.
         // PLACEHOLDER bounds.
         internal static readonly string[] TemperFields = { "squadRashPermille", "squadSteadyPermille", "squadShakenPermille", "squadRashMinRangeMm" };
         internal static readonly string[] RegroupFields = { "squadRegroupBelowPermille", "squadRegroupUntilPermille", "squadRegroupMaxTicks" };
-        internal const int MaxSquadRashRangeMm = 512000, MaxSquadRegroupTicks = 100000;
+        internal const int MaxSquadRashRangeMm = WcMapValidation.MaxSideMm, MaxSquadRegroupTicks = 100000;
         // The first field of the group that the entry has written, in the group's order; null when it has written none.
         private static string FirstWritten(EntryReader r, string[] fields)
         {
@@ -171,7 +176,7 @@ namespace WarCore.Content
         internal static readonly string[] AssaultFields =
             { "frontPermille", "flankPermille", "rearPermille", "frontArcMm", "flankSideMm", "rearOutMm", "flankMinMm", "anchorMm", "arriveMm" };
         private static readonly int[] AssaultMin = { 0, 0, 0, 0, 1000, 1000, 0, 1000, 250 };
-        private static readonly int[] AssaultMax = { 1000, 1000, 1000, 50000, 100000, 100000, 512000, 50000, 20000 };
+        private static readonly int[] AssaultMax = { 1000, 1000, 1000, 50000, 100000, 100000, WcMapValidation.MaxSideMm, 50000, 20000 };
         private static string Selected(PartKind kind, string dispatch, string placement, string engage) =>
             kind == PartKind.Dispatch ? dispatch : kind == PartKind.Placement ? placement : engage;
         // Index in Owners of the first parameter written for a part that is not selected; -1 when there is none.
@@ -187,6 +192,7 @@ namespace WarCore.Content
         {
             ContentEntry entry = b.Single(Key);
             int failed = 0, memory = 0, search = 0, reaction = 0, sense = 1, burst = 0, pause = 0, suppress = 0, chase = 0, hold = 0, spread = 1;
+            bool meleeNerve = false; int meleeFight = 0;
             int spacing = AiRules.DefaultSlotSpacingMm, scatter = 0, ring = 0;
             System.Func<string, ContentException> ringError = null;
             bool follows = false;
@@ -281,10 +287,25 @@ namespace WarCore.Content
                     if (recoverAt >= brokenAt) throw r.Bad(r.FieldOf("pressureRecoverAt"), "must be below pressureBrokenAt (" + brokenAt + ")");
                     string fall = r.StrOrNull("pressureFall", out ContentField fallField) ?? FallOnHit;
                     if (fall != FallOnHit && fall != FallOnKill) throw r.Bad(fallField, "unknown value '" + fall + "', allowed: " + FallOnHit + ", " + FallOnKill);
+                    // AI-M1 (pressureStrikes, optional): melee presses too. False is the same as not written.
+                    bool strikes = r.Has("pressureStrikes") && r.Bool("pressureStrikes");
                     pressure = new WarCore.Battle.PressureRules(deathRadius, deathShock, nearRadius, nearShock, decay, brokenAt, recoverAt, pinnedAt, courage, breakShare,
-                        fall == FallOnKill);
+                        fall == FallOnKill, strikes);
                 }
                 else if (r.Has("pressureFall")) throw r.Bad(r.FieldOf("pressureFall"), "needs the pressure fields (pressureDeathRadiusMm ...)");
+                else if (r.Has("pressureStrikes")) throw r.Bad(r.FieldOf("pressureStrikes"), "needs the pressure fields (pressureDeathRadiusMm ...)");
+                // AI-M1 (meleeNerve, optional): only a pressed unit is asked, and only one that chases. False is the same as not written.
+                if (r.Has("meleeNerve"))
+                {
+                    meleeNerve = r.Bool("meleeNerve");
+                    if (!pressed) throw r.Bad(r.FieldOf("meleeNerve"), "needs the pressure fields (pressureDeathRadiusMm ...)");
+                    if (chase <= 0) throw r.Bad(r.FieldOf("meleeNerve"), "needs meleeChaseRange");
+                }
+                if (r.Has("meleeNerveFightMm"))
+                {
+                    meleeFight = r.Int("meleeNerveFightMm", 0, MaxPressureRadiusMm);
+                    if (!meleeNerve) throw r.Bad(r.FieldOf("meleeNerveFightMm"), "needs meleeNerve");
+                }
                 // Any of the three written makes all three required. Only a pressed unit takes cover, so the pressure fields must be there.
                 if (r.Has("coverRadiusMm") || r.Has("coverStepMm") || r.Has("coverDepthMm"))
                 {
@@ -333,7 +354,7 @@ namespace WarCore.Content
                 r.Done();
             }
             b.Publish(new AiRules(failed, memory, search, reaction, sense, burst, pause, suppress, chase, fair, follows, hold, spread, dispatch, placement, spacing, scatter, ring,
-                engage, boundMove, boundFire, boundShare, boundMinRange, assault, traits) { SlotRingError = ringError, FieldError = fieldError, Pressure = pressure, CoverRadiusMm = coverRadius, CoverStepMm = coverStep, CoverDepthMm = coverDepth, Squads = squads });
+                engage, boundMove, boundFire, boundShare, boundMinRange, assault, traits) { SlotRingError = ringError, FieldError = fieldError, Pressure = pressure, MeleeNerve = meleeNerve, MeleeNerveFightMm = meleeFight, CoverRadiusMm = coverRadius, CoverStepMm = coverStep, CoverDepthMm = coverDepth, Squads = squads });
         }
     }
 }

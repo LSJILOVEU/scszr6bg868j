@@ -37,6 +37,8 @@ namespace WarCore.Content
     // Immutable input/output model. Reader and writer both enforce the M2 profile.
     public sealed class WcMap
     {
+        // Fixed-point raw units in one metre (SimFix.Scale), for readers that do not name the Sim types.
+        public const long RawPerMetre = SimFix.Scale;
         public string MapId { get; }
         public string ContentId { get; }
         public SimVec3 Min { get; }

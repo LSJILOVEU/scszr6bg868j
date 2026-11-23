@@ -9,5 +9,6 @@ namespace WarCore.Battle
         public ulong Fold(ulong digest) => digest;
         public AiEngage Decide(in AiUnit unit, SimVec3 enemy, AiField field) => AiEngage.Hold;
         public AiEngage Unseen(in AiUnit unit, AiField field) => AiEngage.Advance;
+        public AiEngage Melee(in AiUnit unit, SimVec3 enemy, AiField field) => AiEngage.Advance;
     }
 }

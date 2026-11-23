@@ -101,7 +101,7 @@ namespace WarCore.Presentation
             // TRV-7a: the entry table is built from the same cost tables once the walls are in the spatial index (WorldBuilder).
             a.Reach = PointReach.Of(a, recipe.Match);
             sim.RegisterGameplay("battle.ai", new SimpleAiSystem(combat, recipe.Combat, recipe.Match, capture, adapter, a.Controlled, memory, contacts, search, suppress, meleeChaseRange, fair, recipe.Seed, ContentPolicies.Parts(ai, recipe.Match.Points, recipe.Match.ThinkInterval, terrain == null, layers != null, squads), pressure, layers, layers,
-                a.Reach), SimSystemPhase.Requests);
+                a.Reach, ai != null && ai.MeleeNerve, ai != null ? ai.MeleeNerveFightMm : 0), SimSystemPhase.Requests);
             sim.RegisterGameplay("battle.capture", capture, SimSystemPhase.Queries);
             sim.RegisterGameplay("battle.match", match, SimSystemPhase.Queries);
             a.Capture = capture; a.Reinforce = reinforce; a.Match = match; a.Pressure = pressure; a.Squads = squads;
