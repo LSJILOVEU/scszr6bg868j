@@ -1,0 +1,4 @@
+{
+  "id": "parts/squad-regroup",
+  "ai": { "squadRegroupBelowPermille": 500, "squadRegroupUntilPermille": 750, "squadRegroupMaxTicks": 1200 }
+}

@@ -89,7 +89,8 @@ namespace WarCore.Unity.Tests
         {
             using (ShowcaseScene scene = Scripted("bullets"))
             {
-                Run(scene, 122);
+                // RC1-K5a: the script's first two bullets stop on a team mate who walks through; by tick 150 its later ones fly on.
+                Run(scene, 150);
                 Assert.That(scene.InFlight, Is.GreaterThan(0));
                 Assert.That(scene.Shots.ShownBullets, Is.GreaterThan(0));
                 Assert.That(scene.Shots.PlayerShots, Is.GreaterThan(0));

@@ -1,6 +1,6 @@
 {
   "id": "rwr-showcase-bullets",
-  "extends": "rwr-showcase",
+  "extends": [ "parts/rifle-squad", "parts/cover", "parts/assault-roles" ],
   "weapons": [
     { "id": "rwr.weapon-1", "projectileSpeed": 150000 },
     { "id": "rwr.weapon-2", "projectileSpeed": 150000 }

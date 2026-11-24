@@ -8,10 +8,12 @@ namespace WarCore.Tests
 {
     // NT-1 A2: recorded on the base code (main 60b3c8f) without any NT-1 production change. A two-team world keeps every tick hash, its snapshot bytes
     // and the reinforcement state version 1.
+    // RC1-K5a: the playtest values were recorded again when the playtest layer's rifle spread changed (content only, no
+    // code); the capture world, which reads no playtest layer, keeps the first values.
     public sealed class Nt1TwoTeamLockTests
     {
-        private const ulong PlaytestT150 = 0xF882F2A24BD3ED07UL, PlaytestT300 = 0x2B11591F27F85F3FUL, PlaytestT600 = 0x7A754643103000DCUL;
-        private const string PlaytestSnapshotT300 = "2baea9747092b02fe5929d007e5598e20e4f29abac5b4431e023fdd221d16d6c";
+        private const ulong PlaytestT150 = 0x28846E32B977973BUL, PlaytestT300 = 0x204EF35714B2BBC2UL, PlaytestT600 = 0xCA4DCC0BF38B587DUL;
+        private const string PlaytestSnapshotT300 = "755cf29fafb860ea94d712c68204c3357da34462c54bbd488d7ce0bbefe8c830";
         private const ulong CaptureT150 = 0xBDAEFF0FA8F64974UL, CaptureT300 = 0x91AC4582DEF52DD1UL, CaptureT600 = 0xE770C2B73EB0A92DUL;
         private const string CaptureSnapshotT300 = "2bee54d4111a8c1ddb0554913243dbda0d95ab4acfe116f1063a896f67fc9dde";
 

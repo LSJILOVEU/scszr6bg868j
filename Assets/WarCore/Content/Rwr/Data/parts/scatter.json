@@ -1,9 +1,5 @@
 {
   "id": "parts/scatter",
-  "ai": {
-    "slotSpacingMm": 2000,
-    "slotRingMm": 6000,
-    "placement": "scatter",
-    "scatterMm": 6000
-  }
+  "extends": "parts/slots",
+  "ai": { "placement": "scatter", "scatterMm": 6000 }
 }

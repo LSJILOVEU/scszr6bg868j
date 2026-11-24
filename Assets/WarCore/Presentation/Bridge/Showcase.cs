@@ -120,31 +120,39 @@ namespace WarCore.Presentation
             {
                 "Three-lane map, 7 capture points, 100 + 50 reserves a side",
                 "AI: squads, spread attack, bounding, pressure (pinned / broken), cover, bursts, memory",
+                "Squads differ in temper (rash, normal or steady) and fall back to regroup when under half strength",
+                "A reserve steps in 3 s after each loss, but not at a point the enemy contests",
                 "Player: rifle, dash, block, respawn into a reserve",
                 "Rifles hit on the tick they fire (tracer lines)",
+                "A tap is accurate, a held trigger spreads; pinned and broken soldiers shoot wider (you too)",
             }, () => Lanes(BattleLayer).WcMapBytes, () => Battle(BattleLayer), BattleScript, combatLayer: BattleLayer),
             new ShowcaseStage("bullets", "Flying bullets", 22f, BulletsLayer, new[]
             {
                 "The open battle with rifles that fire projectiles (150 m/s)",
                 "A bullet flies tick by tick and stops on the first body, wall or ground",
+                "Attackers split into a front group, flankers and a rear group (stage 1 scatters them round the point)",
                 "Known gap: the pressure system does not react to projectiles, so nobody gets pinned here",
             }, () => Lanes(BulletsLayer).WcMapBytes, () => Battle(BulletsLayer), BattleScript, combatLayer: BulletsLayer),
             HouseStage(HouseLayer),
             new ShowcaseStage("terrain", "Hills and mud", 16f, TerrainLayer, new[]
             {
                 "Height-field terrain: ridge, cliff band, plateau; road is fast, mud is slow",
+                "Uphill is slower the steeper it is (down to half speed); a steep way down is a little slower too",
                 "10 a side on the field and 30 in reserve; AI with memory, search and bursts",
             }, TerrainDemo.MapBytes, TerrainRecipe, () => TerrainPlayerDemo.Script(), combatLayer: WarCore.Content.Rwr.RwrPack.M6Layer),
             new ShowcaseStage("melee", "Ancient melee", 16f, AncientLayer, new[]
             {
                 "Second cartridge: swords, spears and shields, 60 a side and 30 in reserve, no guns",
                 "Player: a guard (sword and shield); AI raises its shield against swings",
+                "Nerve: blows and deaths nearby pin or break a soldier; pinned he holds, broken he falls back",
             }, () => ShowcaseField.MapBytes("ancient.ground"), AncientRecipe, AncientScript, combatLayer: AncientLayer),
             new ShowcaseStage("hamlet", "Swiss valley hamlet", 18f, HamletLayer, new[]
             {
                 "Real terrain: a 160 m crop of the Emmental valley with a hamlet; 62 walls, 5 points, 40 + 20 reserves a side",
                 "AI: squads, spread attack, bounding, pressure (pinned / broken), bursts, memory, search, suppression",
+                "Squads differ in temper and regroup; a reserve steps in 3 s after each loss; AI choices favour neither side",
                 "Player: rifle, dash, block, respawn; aim spreads while moving",
+                "Shots also go high or low (less from a crouch or prone); uphill is slower; pinned and broken soldiers shoot wider",
                 "G throws a real grenade: it bursts after a short fuse and hurts everyone inside the ring it draws, walls shield",
                 "Y orders your team's soldiers to stand, crouch or go prone (lower is slower, steadier and harder to see)",
                 "Known gap: the AI's cover rule refuses a height-field map, so nobody seeks cover here",
@@ -158,7 +166,7 @@ namespace WarCore.Presentation
             "Your own crouch and prone (stances work in stage 6, but only as orders to your team); AI that picks its own stance",
             "Cover seeking on height-field maps (the AI's cover rule refuses them)",
             "Climbing over walls and through windows",
-            "AI reserves with a ticket count; an AI commander that splits forces",
+            "An AI commander that splits forces",
             "Vehicles, water, day and night",
             "Melee swings and hits have no view data (only the deaths show)",
             "Health bars, sound, real art",

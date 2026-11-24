@@ -1,0 +1,9 @@
+{
+  "id": "parts/assault-roles",
+  "extends": "parts/slots",
+  "ai": {
+    "placement": "assault-roles",
+    "frontPermille": 425, "flankPermille": 375, "rearPermille": 200,
+    "frontArcMm": 14000, "flankSideMm": 35000, "rearOutMm": 12000, "flankMinMm": 60000, "anchorMm": 6000, "arriveMm": 3000
+  }
+}

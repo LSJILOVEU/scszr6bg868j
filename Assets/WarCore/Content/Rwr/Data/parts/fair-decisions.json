@@ -1,0 +1,4 @@
+{
+  "id": "parts/fair-decisions",
+  "ai": { "fairDecisions": true }
+}
