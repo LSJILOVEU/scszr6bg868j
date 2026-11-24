@@ -1,0 +1,8 @@
+{
+  "id": "parts/unit-speed",
+  "extends": "rwr",
+  "unitTypes": [
+    { "id": "rwr.soldier-1", "speed": 6000 },
+    { "id": "rwr.soldier-2", "speed": 6000 }
+  ]
+}

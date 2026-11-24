@@ -1,70 +1,7 @@
 {
   "id": "rwr-showcase-hamlet",
-  "extends": "rwr-field",
-  "weapons": [
-    { "id": "rwr.weapon-1", "effectRaw": 16384, "spreadBase": 4000, "spreadGrowth": 1000, "spreadMax": 9000 },
-    { "id": "rwr.weapon-2", "effectRaw": 18022, "spreadBase": 4000, "spreadGrowth": 1000, "spreadMax": 9000 }
-  ],
-  "block": [
-    { "id": "rwr.guard", "cosHalfAnglePermille": 500, "reductionPermille": 1000, "aiRaisePermille": 0 }
-  ],
-  "unitTypes": [
-    { "id": "rwr.soldier-1", "speed": 6000, "block": "rwr.guard", "dashDistance": 4000, "dashTicks": 6, "dashCooldown": 90 },
-    { "id": "rwr.soldier-2", "speed": 6000, "dashDistance": 4000, "dashTicks": 6, "dashCooldown": 90 }
-  ],
-  "combat": {
-    "selector": "sight-limited",
-    "body": { "height": 1.75, "eye": 1.5, "muzzle": 1.5 },
-    "stances": [
-      { "id": "crouch", "height": 1.0, "eye": 0.75, "muzzle": 0.75, "speedPermille": 500, "spreadPermille": 700, "ticks": 6 },
-      { "id": "prone", "height": 0.5, "eye": 0.25, "muzzle": 0.25, "speedPermille": 250, "spreadPermille": 400, "ticks": 15,
-        "deny": ["dash", "traverse"] }
-    ],
-    "blasts": [ { "id": "rwr.frag", "innerMm": 2000, "outerMm": 6000, "damage": 100, "friendly": true, "walls": true } ],
-    "blastPerTick": 4,
-    "blastQueue": 64,
-    "moveSpread": { "bands": [ { "aboveMmPerSec": 500, "permille": 1500 }, { "aboveMmPerSec": 4000, "permille": 3000 } ] }
-  },
-  "match": { "respawnTicks": 150, "respawnGuardTicks": 90 },
-  "ai": {
-    "failedSlotTicks": 90,
-    "targetMemoryTicks": 300,
-    "searchTicks": 90,
-    "reactionTicks": 15,
-    "senseTicks": 6,
-    "burstShots": 3,
-    "burstPauseTicks": 30,
-    "suppressTicks": 90,
-    "meleeChaseRange": 12,
-    "holdSharePermille": 300,
-    "attackSpreadPoints": 3,
-    "traitSpreadPermille": 300,
-    "slotSpacingMm": 2000,
-    "slotRingMm": 6000,
-    "placement": "scatter",
-    "scatterMm": 6000,
-    "engage": "bound",
-    "boundMoveTicks": 60,
-    "boundFireTicks": 90,
-    "boundSharePermille": 700,
-    "boundMinRangeMm": 12000,
-    "pressureDeathRadiusMm": 3000,
-    "pressureDeathShock": 2000,
-    "pressureNearRadiusMm": 3000,
-    "pressureNearShock": 1000,
-    "pressureDecayPermille": 12,
-    "pressureBrokenAt": 7000,
-    "pressureRecoverAt": 1000,
-    "pressurePinnedAt": 2000,
-    "pressureSpreadPermille": 500,
-    "pressureBreakSharePermille": 300,
-    "squadMinSize": 4,
-    "squadMaxSize": 9,
-    "squadSkirmisherPermille": 300,
-    "squadRecruitRadiusMm": 30000,
-    "squadFormTicks": 15,
-    "squadSpreadMinMm": 1500,
-    "squadSpreadMaxMm": 6000
-  },
-  "pick": { "radiusPermille": 3000, "heightPermille": 1150 }
+  "extends": [
+    "rwr-stance", "rwr-m7-playtest", "parts/unit-speed", "parts/block", "parts/grenade", "parts/move-spread", "parts/respawn",
+    "parts/spread-attack", "parts/traits", "parts/scatter", "parts/bounding", "parts/pressure", "parts/squads", "parts/mouse-reach"
+  ]
 }

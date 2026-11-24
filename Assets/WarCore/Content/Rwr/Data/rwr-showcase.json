@@ -1,47 +1,8 @@
 {
   "id": "rwr-showcase",
-  "extends": "rwr-m7-playtest",
-  "block": [
-    { "id": "rwr.guard", "cosHalfAnglePermille": 500, "reductionPermille": 1000, "aiRaisePermille": 0 }
+  "extends": [
+    "rwr-m7-playtest", "parts/unit-speed", "parts/block", "parts/body", "parts/respawn", "parts/spread-attack", "parts/traits",
+    "parts/scatter", "parts/bounding", "parts/pressure", "parts/squads", "parts/mouse-reach"
   ],
-  "unitTypes": [
-    { "id": "rwr.soldier-1", "speed": 6000, "block": "rwr.guard" },
-    { "id": "rwr.soldier-2", "speed": 6000 }
-  ],
-  "combat": { "body": { "height": 1.75, "eye": 1.5, "muzzle": 1.5 } },
-  "match": { "respawnTicks": 150, "respawnGuardTicks": 90 },
-  "ai": {
-    "attackSpreadPoints": 3,
-    "traitSpreadPermille": 300,
-    "slotSpacingMm": 2000,
-    "slotRingMm": 6000,
-    "placement": "scatter",
-    "scatterMm": 6000,
-    "engage": "bound",
-    "boundMoveTicks": 60,
-    "boundFireTicks": 90,
-    "boundSharePermille": 700,
-    "boundMinRangeMm": 12000,
-    "pressureDeathRadiusMm": 3000,
-    "pressureDeathShock": 2000,
-    "pressureNearRadiusMm": 3000,
-    "pressureNearShock": 1000,
-    "pressureDecayPermille": 12,
-    "pressureBrokenAt": 7000,
-    "pressureRecoverAt": 1000,
-    "pressurePinnedAt": 2000,
-    "pressureSpreadPermille": 500,
-    "pressureBreakSharePermille": 300,
-    "coverRadiusMm": 9000,
-    "coverStepMm": 1000,
-    "coverDepthMm": 2000,
-    "squadMinSize": 4,
-    "squadMaxSize": 9,
-    "squadSkirmisherPermille": 300,
-    "squadRecruitRadiusMm": 30000,
-    "squadFormTicks": 15,
-    "squadSpreadMinMm": 1500,
-    "squadSpreadMaxMm": 6000
-  },
-  "pick": { "radiusPermille": 3000, "heightPermille": 1150 }
+  "ai": { "coverRadiusMm": 9000, "coverStepMm": 1000, "coverDepthMm": 2000 }
 }

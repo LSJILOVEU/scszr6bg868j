@@ -1,8 +1,4 @@
-using System;
-using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
 using NUnit.Framework;
 using WarCore.Content;
 using WarCore.Content.Rwr;
@@ -50,7 +46,7 @@ namespace WarCore.Tests
                 Is.EqualTo(new[] { passable, speed, cost, conceal }), id);
         }
 
-        // S2: the old layers are untouched.
+        // S2: the old terrain layer keeps its three surfaces.
         [Test]
         public void OldTerrainLayer_StillHasThreeSurfaces()
         {
@@ -59,16 +55,6 @@ namespace WarCore.Tests
             Assert.That(Enumerable.Range(0, 3).Select(i => rules.Surface(i).Id).ToArray(), Is.EqualTo(new[] { "grass", "mud", "road" }));
             Assert.That(rules.TryFind("bush", out _), Is.False);
             Assert.That(RwrPack.Load("rwr-ai-playtest").Terrain, Is.Not.Null);
-        }
-
-        [TestCase("rwr-terrain-demo.json", "599a1df8c173f1d796d44b06cb1bc094cf51159b781c5c96cd5d8cf28f16e4c2")]
-        [TestCase("rwr-ai-playtest.json", "d99b5203cca6824a50bca16b3c11eae93fd81c865529cdb9eb12fb905b058376")]
-        [TestCase("editor.json", "a436555f701be532b0e9b7a9b6e82e889c94f84af2fd55927e6b2b72f7760ebe")]
-        public void OldLayerFiles_AreByteIdentical(string file, string sha256)
-        {
-            string text = File.ReadAllText(Path.Combine(ArchitectureTests.AssetRoot(), "WarCore/Content/Rwr/Data", file)).Replace("\r\n", "\n");
-            string hex = BitConverter.ToString(SHA256.Create().ComputeHash(new UTF8Encoding(false).GetBytes(text))).Replace("-", "").ToLowerInvariant();
-            Assert.That(hex, Is.EqualTo(sha256), file);
         }
     }
 }

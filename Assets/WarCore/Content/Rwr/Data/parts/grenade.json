@@ -1,0 +1,8 @@
+{
+  "id": "parts/grenade",
+  "combat": {
+    "blasts": [ { "id": "rwr.frag", "innerMm": 2000, "outerMm": 6000, "damage": 100, "friendly": true, "walls": true } ],
+    "blastPerTick": 4,
+    "blastQueue": 64
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "id": "parts/bounding",
+  "ai": {
+    "engage": "bound",
+    "boundMoveTicks": 60,
+    "boundFireTicks": 90,
+    "boundSharePermille": 700,
+    "boundMinRangeMm": 12000
+  }
+}

@@ -149,8 +149,7 @@ namespace WarCore.Tests
         internal Scale2bSillCartridge()
         {
             string dir = dirs.Dir("Sill");
-            foreach (string file in Directory.GetFiles(FileContentSource.RwrDirectory, "*.json"))
-                File.Copy(file, Path.Combine(dir, Path.GetFileName(file)));
+            Ed0Dirs.CopyRwr(dir);
             File.WriteAllText(Path.Combine(dir, Layer + ".json"), "{ \"id\": \"" + Layer + "\", \"extends\": \"rwr-scale\", "
                 + "\"scale\": { \"windowSillMm\": 1000 } }");
             File.WriteAllText(Path.Combine(dir, OddLayer + ".json"), Scale2bFixtures.Layer(OddLayer, "rwr-stance", Scale2bFixtures.ScaleJson(OddScale)));

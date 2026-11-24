@@ -57,6 +57,18 @@ namespace WarCore.Tests
                 "{ \"id\": \"" + id + "\", " + Weapons + ", \"unitTypes\": [ " + units + " ], " + Combat + extra + " }");
         }
 
+        // The shipped rwr cartridge copied into dir: every layer, and the parts in the folders under it.
+        internal static void CopyRwr(string dir)
+        {
+            string from = FileContentSource.RwrDirectory;
+            foreach (string file in Directory.GetFiles(from, "*.json", SearchOption.AllDirectories))
+            {
+                string to = Path.Combine(dir, file.Substring(from.Length + 1));
+                Directory.CreateDirectory(Path.GetDirectoryName(to));
+                File.Copy(file, to);
+            }
+        }
+
         internal static void Editor(string dir, string text) => File.WriteAllText(Path.Combine(dir, ContentCatalog.EditorFile + ".json"), text);
 
         internal static void UseList(params string[] dirs) =>

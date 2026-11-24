@@ -21,7 +21,7 @@ relation from the code or the shipped data. "none" means no test holds the value
 | Quantity | Value | Where | Test |
 |---|---|---|---|
 | Soldier radius r | 0.25 m | `CombatSection.UnitRadiusRaw`; literals in `MovementFeature`, `MatchFeature`; `WallSpan.BelowRaw`; `NavGrid.MaxClearRadiusRaw`; `InterimLocomotion.UnitFootprint` | W03 |
-| Shipped body (`rwr-body`, `rwr-field`) | height 1.75, eye 1.5, muzzle 1.5 | `Content/Rwr/Data` | W04, `Body1GeometryTests` |
+| Shipped body (`parts/body`, which `rwr-body` and `rwr-field` list) | height 1.75, eye 1.5, muzzle 1.5 | `Content/Rwr/Data/parts` | W04, `Body1GeometryTests` |
 | Body rule | 2r <= height <= headroom; r <= eye <= height - r; 0 <= muzzle <= height | `CombatSection` | W04 |
 | No body (older layers) | collider 1 m, eye 0.5 m, shot from the foot | `WorldAssembly.UnitHeight`, `CombatSystem` | `Body1GeometryTests.OldLayers_AOneMetreWallStillHidesTheTarget` |
 | Drawn body | with a body: the simulated top per stance level (1.75 / 1.0 / 0.5 m shipped), radius r; without a body: 1 m (`AimPick.BodyHeight`) | `Presentation/Bridge/Features/BodySizes.cs`, `Presentation/Camera/DrawnParts.cs` | `Scale2aSizesTests`, `Scale2aViewsTests` |
