@@ -1,0 +1,28 @@
+name: ruler
+
+# The module map and the debt counters (tools/ruler). Fails when the game code and the ruler's tables disagree, in
+# either direction: a file without a module, a copy, an unused file or a switched-off feature that no row names, or a
+# row for debt the code no longer has. The self-test runs first.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ruler-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ruler:
+    name: ruler
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the map and the counters
+        run: python3 tools/ruler/ruler.py --self-test --check

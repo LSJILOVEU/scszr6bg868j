@@ -10,9 +10,11 @@
 python3 tools/ruler/ruler.py              # the counters
 python3 tools/ruler/ruler.py --map        # every module with its files; what is behind each counter
 python3 tools/ruler/ruler.py --check      # exit 1 when the code and the tables disagree
-python3 tools/ruler/ruler.py --self-test  # the scanner on a few lines it must not misread
+python3 tools/ruler/ruler.py --self-test  # the scanner on a few lines it must not misread; the same output twice
 python3 tools/ruler/ruler.py --json F     # everything as JSON (F = - for stdout)
 ```
+
+Every pull request runs `--self-test --check` (`.github/workflows/ruler.yml`).
 
 ## The rules it holds
 
