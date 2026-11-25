@@ -94,6 +94,7 @@ namespace WarCore.Presentation
         internal PointReach Reach { get; set; }
         internal PointEntryTable Entries { get; set; }
         internal Squads Squads { get; set; }
+        internal LedSquad Led { get; set; }
         // STANCE-1, written by the stance installer (a pack with stances only; null otherwise): the posture geometry the spatial
         // index takes, the stance system and the action gate of the world. The gate is made by the stance installer, or by the
         // downed installer (DOWN-1) in a world that keeps casualties but has no stances; null when neither is on.

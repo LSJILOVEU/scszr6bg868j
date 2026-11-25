@@ -2,6 +2,6 @@
   "id": "rwr-showcase-hamlet",
   "extends": [
     "rwr-stance", "parts/rifle-squad", "parts/grenade", "parts/move-spread", "parts/scatter", "parts/vertical-spread",
-    "parts/slope-speed", "parts/fair-decisions"
+    "parts/slope-speed", "parts/fair-decisions", "parts/led-squad"
   ]
 }

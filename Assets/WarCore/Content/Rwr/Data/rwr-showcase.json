@@ -1,4 +1,4 @@
 {
   "id": "rwr-showcase",
-  "extends": [ "parts/rifle-squad", "parts/cover", "parts/scatter" ]
+  "extends": [ "parts/rifle-squad", "parts/cover", "parts/scatter", "parts/led-squad" ]
 }

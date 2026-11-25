@@ -76,6 +76,9 @@ namespace WarCore.Content
         public WarCore.Battle.SquadRules? Squads { get; internal set; }
         // RC1-K3 (standingOrders): the units carry the standing-order component, so a squad holds or follows on command.
         public bool StandingOrders { get; internal set; }
+        // RC2-1 (ledSize and ledRecruitRadiusMm, both or none): the controlled unit may lead a squad of that many soldiers,
+        // who join from within that distance; null leaves the led squad out of the battle.
+        public WarCore.Battle.LedRules? Led { get; internal set; }
         // Builds the load error for a written field (pack, layer, entry, field); null when the section is not written.
         internal System.Func<string, string, ContentException> FieldError { get; set; }
         internal AiRules(int failedSlotTicks, int targetMemoryTicks = 0, int searchTicks = 0, int reactionTicks = 0, int senseTicks = 1,
@@ -169,6 +172,8 @@ namespace WarCore.Content
         internal static readonly string[] TemperFields = { "squadRashPermille", "squadSteadyPermille", "squadShakenPermille", "squadRashMinRangeMm" };
         internal static readonly string[] RegroupFields = { "squadRegroupBelowPermille", "squadRegroupUntilPermille", "squadRegroupMaxTicks" };
         internal const int MaxSquadRashRangeMm = WcMapValidation.MaxSideMm, MaxSquadRegroupTicks = 100000;
+        // RC2-1: the led squad's fields, written both or none.
+        internal static readonly string[] LedFields = { "ledSize", "ledRecruitRadiusMm" };
         // The first field of the group that the entry has written, in the group's order; null when it has written none.
         private static string FirstWritten(EntryReader r, string[] fields)
         {
@@ -207,6 +212,7 @@ namespace WarCore.Content
             WarCore.Battle.PressureRules? pressure = null;
             int coverRadius = 0, coverStep = 0, coverDepth = 0;
             WarCore.Battle.SquadRules? squads = null;
+            WarCore.Battle.LedRules? led = null;
             if (entry != null)
             {
                 var r = new EntryReader(b.Pack, entry);
@@ -354,11 +360,14 @@ namespace WarCore.Content
                     string alone = FirstWritten(r, TemperFields) ?? FirstWritten(r, RegroupFields);
                     if (alone != null) throw r.Bad(r.FieldOf(alone), "needs the squad fields (squadMinSize ...)");
                 }
+                // Either of the two written makes both required: a missing one throws "is missing field".
+                if (FirstWritten(r, LedFields) != null)
+                    led = new WarCore.Battle.LedRules(r.Int("ledSize", 1, WarCore.Battle.LedRules.MaxSize), r.Int("ledRecruitRadiusMm", 1, MaxSquadRadiusMm));
                 fieldError = (field, why) => r.Bad(r.FieldOf(field), why);
                 r.Done();
             }
             b.Publish(new AiRules(failed, memory, search, reaction, sense, burst, pause, suppress, chase, fair, follows, hold, spread, dispatch, placement, spacing, scatter, ring,
-                engage, boundMove, boundFire, boundShare, boundMinRange, assault, traits) { StandingOrders = standing, SlotRingError = ringError, FieldError = fieldError, Pressure = pressure, MeleeNerve = meleeNerve, MeleeNerveFightMm = meleeFight, CoverRadiusMm = coverRadius, CoverStepMm = coverStep, CoverDepthMm = coverDepth, Squads = squads });
+                engage, boundMove, boundFire, boundShare, boundMinRange, assault, traits) { StandingOrders = standing, Led = led, SlotRingError = ringError, FieldError = fieldError, Pressure = pressure, MeleeNerve = meleeNerve, MeleeNerveFightMm = meleeFight, CoverRadiusMm = coverRadius, CoverStepMm = coverStep, CoverDepthMm = coverDepth, Squads = squads });
         }
     }
 }

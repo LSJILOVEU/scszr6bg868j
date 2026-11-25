@@ -6,6 +6,7 @@ namespace WarCore.Presentation
     // simulation changes): G throws a grenade, a blast of the stage's kind that bursts FuseTicks later where the player aimed,
     // cut to Reach from the player; Y steps the stance order of the stage's squad: stand, crouch, prone, stand... The grenade
     // does not fly in the simulation (the drawn one flies for the length of the fuse). PLACEHOLDER numbers.
+    // RC2-1: and the three orders of the squad the player leads (T, C, X), in a stage whose pack has its rules.
     public sealed class ShowcaseActions
     {
         // The fuse (also the drawn grenade's flight), the wait before a new throw, and the reach. The picture reads these
@@ -66,6 +67,33 @@ namespace WarCore.Presentation
             int next = (Stance + 1) % levels;
             session.Enqueue(BridgeCommand.Stance(session.Tick + 1, stage.OrderSquad, next));
             Stance = next;
+            return true;
+        }
+
+        // RC2-1: the orders of the squad the player leads, in a world whose pack has the led squad's rules (session.LedOrders).
+        // Each is queued for the next tick that is free. False, with nothing queued, where the world has no led squad, the
+        // player has no living unit, or the order has nothing to do.
+        // T: the soldiers near the player follow it; given again while they follow, they hold where they stand.
+        public bool FollowOrHold(SimSession session) => Led(session, false, session != null && session.LedOrder == 1
+            ? (Func<long, BridgeCommand>)(tick => BridgeCommand.Hold(tick, BridgeCommand.Led))
+            : tick => BridgeCommand.Follow(tick, BridgeCommand.Led, 0));
+
+        // C: the squad goes to the point and holds there. A point the session refuses (beyond the world's bounds, not on the
+        // plate of its layer) queues nothing; a point nobody can stand on is queued and the simulation leaves the squad as it is.
+        public bool GoTo(SimSession session, long xMm, long zMm, int layer = 0)
+            => Led(session, false, tick => BridgeCommand.MoveTo(tick, BridgeCommand.Led, xMm, zMm, layer));
+
+        // X: the squad breaks up and the AI takes its soldiers back.
+        public bool Dismiss(SimSession session) => Led(session, true, BridgeCommand.Dismiss);
+
+        private static bool Led(SimSession session, bool needsSquad, Func<long, BridgeCommand> order)
+        {
+            if (session == null) throw new ArgumentNullException(nameof(session));
+            ulong? key = session.ControlledKey;
+            if (!session.LedOrders || needsSquad && session.LedOrder == 0) return false;
+            if (!key.HasValue || !session.Current.TryGet(key.Value, out ViewEntity me) || !me.Alive) return false;
+            try { session.Enqueue(order(session.FreeTick(session.Tick + 1))); }
+            catch (ArgumentException) { return false; }
             return true;
         }
 

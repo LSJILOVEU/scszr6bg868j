@@ -70,6 +70,8 @@ namespace WarCore.Presentation
         {
             if (layer < 0 || layer > UnitSpawn.MaxLayer) throw new ArgumentOutOfRangeException(nameof(layer), "A layer is 0 to 4096.");
             Layer = layer;
+            // RC2-1: a negative squad number is no unit's; BridgeCommand.Led (-1) addresses the squad the controlled unit leads.
+            if (squad < 0) throw new ArgumentOutOfRangeException(nameof(squad), "A squad number is 0 or more.");
             if (melee < -1) throw new ArgumentOutOfRangeException(nameof(melee));
             if (block < -1) throw new ArgumentOutOfRangeException(nameof(block));
             Block = block;

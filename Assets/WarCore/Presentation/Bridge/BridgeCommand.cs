@@ -2,10 +2,14 @@ using System;
 
 namespace WarCore.Presentation
 {
-    public enum BridgeCommandKind { MoveTo, Hold, Follow, Reload, Blast, Stance }
+    public enum BridgeCommandKind { MoveTo, Hold, Follow, Reload, Blast, Stance, Dismiss }
 
     public readonly struct BridgeCommand
     {
+        // RC2-1: the squad number of "the squad the controlled unit leads". Squad numbers go to the simulation as they are,
+        // and this one is the simulation's own (SquadCommand.Led); no unit carries it.
+        public const int Led = -1;
+
         public long AtTick { get; }
         public int Squad { get; }
         public long XMm { get; }
@@ -52,6 +56,11 @@ namespace WarCore.Presentation
 
         public static BridgeCommand Follow(long atTick, int squad, ulong targetKey)
             => new BridgeCommand(atTick, squad, 0, 0, BridgeCommandKind.Follow, targetKey);
+
+        // RC2-1: the squad the controlled unit leads breaks up. The other led orders are MoveTo, Hold and Follow with Led as
+        // the squad (Follow then needs no target unit: the squad follows its leader).
+        public static BridgeCommand Dismiss(long atTick)
+            => new BridgeCommand(atTick, Led, 0, 0, BridgeCommandKind.Dismiss);
 
         public static BridgeCommand Reload(long atTick, int squad)
             => new BridgeCommand(atTick, squad, 0, 0, BridgeCommandKind.Reload);
