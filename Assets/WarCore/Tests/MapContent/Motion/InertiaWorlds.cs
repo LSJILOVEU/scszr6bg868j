@@ -49,7 +49,7 @@ namespace WarCore.Tests.Motion
             var units = new[] { new UnitSpawn(1, 0, 1, 20500, 12500, Speed), new UnitSpawn(2, 0, 2, 3500, 3500, Speed) };
             var recipe = Open(new WorldRecipe(41, mover, units, new[] { BridgeCommand.MoveTo(1, 1, 30500, 12500) }), accel, decel);
             WcMap map = hill ? Wp23.Make(40, 24, 0, 6 * S, null, 4 * S, (i, j) => i * (int)(S / 16)) : Wp23.Make(40, 24, 0, 6 * S, null, 4 * S);
-            if (hill) recipe = recipe.WithTerrainRules(Wp23.Pack());
+            if (hill) recipe = recipe.WithPack(Wp23.Pack());
             return Build(recipe, WcMapWriter.Write(map));
         }
 

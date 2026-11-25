@@ -101,7 +101,7 @@ namespace WarCore.Tests
         internal static WorldRecipe Recipe() =>
             new WorldRecipe(41, MoverKind.InterimCrowd, Units(), Array.Empty<BridgeCommand>())
                 .WithMatch(Match()).WithCombat(Combat()).WithCrowdPass(CrowdPassKind.TeamIdle)
-                .WithRuleSet(MatchMode.TestNeverEndsId).WithTerrainRules(Pack());
+                .WithRuleSet(MatchMode.TestNeverEndsId).WithPack(Pack());
 
         internal static M6World World(bool reverse = false) => new M6World(Recipe(), MapBytes(), reverse);
 

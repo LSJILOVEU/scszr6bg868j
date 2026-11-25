@@ -64,7 +64,7 @@ namespace WarCore.Tests
                 surfaces: new MapSurfaces(new[] { "dirt", "grass" }, rows));
             var units = RespawnWorld.Units(Ml9bMatchTests.L(30, 41500, 32500, plates ? 1 : 0));
             WorldRecipe recipe = RespawnWorld.Recipe(units, RespawnWorld.Pack(RespawnWorld.Points(), RespawnWorld.Bases(), 0), false)
-                .WithTerrainRules(A2.Pack(grass: ", \"concealMilli\": 500"));
+                .WithPack(A2.Pack(grass: ", \"concealMilli\": 500"));
             var w = new M6World(plates ? recipe.WithPlatesPreview() : recipe, Ml7Worlds.Bytes(desc));
             Assert.That(w.Combat.Pack.Selector, Is.InstanceOf<ConcealedSight>());
             IUnitLayers layers = Ml7Worlds.Field<IUnitLayers>(w.Combat.Pack.Selector, "layers");

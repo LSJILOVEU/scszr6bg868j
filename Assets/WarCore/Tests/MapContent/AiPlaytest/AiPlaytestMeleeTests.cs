@@ -11,9 +11,8 @@ namespace WarCore.Tests
         public void PlaytestRangeMakesAMeleeUnitChase()
         {
             var units = new[] { A1.Unit(1, 1, 10, 10), A1.Unit(2, 2, 20, 10, melee: -1, speed: 1) };
-            var recipe = A1.Recipe(null, units, endless: true);
-            var off = new M6World(recipe, A1.Map());
-            var on = new M6World(recipe.WithTerrainRules(RwrPack.Load("rwr-ai-playtest")), A1.Map());
+            var off = new M6World(A1.Recipe(A1.Pack(null), units, endless: true), A1.Map());
+            var on = new M6World(A1.Recipe(RwrPack.Load("rwr-ai-playtest"), units, endless: true), A1.Map());
             long first = (A1.Think - (long)(on.Sim.Entities.StableOf(on.Unit(1)).Value % A1.Think)) % A1.Think;
             if (first == 0) first = A1.Think;
             while (on.Sim.Clock.Tick < first - 1) { off.Step(); on.Step(); }

@@ -38,7 +38,7 @@ namespace WarCore.Tests
             BridgeCommand.Hold(5, 3), BridgeCommand.Follow(8, 2, 1),
         };
 
-        // The terrain pack is written out here, not taken from a shared fixture: a layer on the shipped pack with three surfaces
+        // The pack with terrain rules is written out here, not taken from a shared fixture: a layer on the shipped pack with three surfaces
         // and a slope rule.
         internal const string TerrainPackJson = "{ \"id\": \"rwr-terrain-demo\", \"extends\": \"rwr\", "
             + "\"surfaces\": [ { \"id\": \"grass\" }, { \"id\": \"mud\", \"speedMilli\": 500, \"cost\": 3 }, { \"id\": \"road\", \"speedMilli\": 1250 } ], "
@@ -102,7 +102,7 @@ namespace WarCore.Tests
                             new UnitSpawn(3, 0, 2, 44500, 16500, 4000),
                         },
                         new[] { BridgeCommand.MoveTo(1, 1, 22500, 16500), BridgeCommand.MoveTo(1, 2, 20500, 16500) })
-                        .WithTerrainRules(TerrainPack()), WcMapWriter.Write(TerrainDemoMap.Build()));
+                        .WithPack(TerrainPack()), WcMapWriter.Write(TerrainDemoMap.Build()));
                 case "FacingMotionStanding": return (FmsRecipe(), FmsMap());
                 case "BlockAi": return (BlockAiRecipe(), PlainMap());
                 default: throw new ArgumentException("Unknown world " + name, nameof(name));

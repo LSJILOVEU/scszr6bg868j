@@ -54,8 +54,8 @@ namespace WarCore.Tests
         {
             MatchPack pack = M6World.Pack(points, ticks: capture, interval: 1000000, think: think, bases: bases ?? Bases(new SpawnAnchor(1, P(5, 30))));
             WorldRecipe recipe = M6World.Endless(Recipe(units, pack, false)).WithPlatesPreview();
-            if (ai != null) recipe = recipe.WithAiRules(ai);
-            if (terrain != null) recipe = recipe.WithTerrainRules(terrain);
+            if (ai != null) recipe = recipe.WithPack(ai);
+            if (terrain != null) recipe = recipe.WithPack(terrain);
             return new M6World(recipe, map ?? House(stair));
         }
 

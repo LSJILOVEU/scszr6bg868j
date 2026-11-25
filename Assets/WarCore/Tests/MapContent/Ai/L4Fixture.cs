@@ -60,7 +60,7 @@ namespace WarCore.Tests
         {
             WorldRecipe r = new WorldRecipe(41, MoverKind.InterimCrowd, new[] { Soldier(start) }, Array.Empty<BridgeCommand>())
                 .WithMatch(Match(point, think, captureTicks)).WithCombat(RwrPack.CreateM6()).WithCrowdPass(CrowdPassKind.TeamIdle)
-                .WithRuleSet(MatchMode.TestNeverEndsId).WithTerrainRules(Pack(ai));
+                .WithRuleSet(MatchMode.TestNeverEndsId).WithPack(Pack(ai));
             if (standing) r = r.WithStandingOrders();
             return r;
         }

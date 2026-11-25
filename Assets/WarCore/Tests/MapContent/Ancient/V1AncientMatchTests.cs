@@ -31,7 +31,7 @@ namespace WarCore.Tests
             var anchors = new[] { new SpawnAnchor(1, SimVec3.Metres(2, 0, 8)), new SpawnAnchor(2, SimVec3.Metres(30, 0, 8)) };
             var recipe = new WorldRecipe(41, MoverKind.InterimCrowd, units, Array.Empty<BridgeCommand>())
                 .WithCombat(pack.BuildCombat()).WithMatch(pack.BuildMatch(points, anchors))
-                .WithCrowdPass(CrowdPassKind.TeamIdle).WithTerrainRules(pack).WithFacing().WithBlockAi();
+                .WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(pack).WithFacing().WithBlockAi();
             byte[] map = WcMapWriter.Write(Wp23.Make(32, 16, 0, 4 * SimFix.Scale, Array.Empty<(int, int, int, int)>(),
                 2 * SimFix.Scale, (x, z) => 0, new[] { "ancient.ground" }, (x, z) => 0));
             return new M6World(recipe, map);

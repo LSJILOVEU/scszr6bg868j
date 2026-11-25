@@ -25,8 +25,7 @@ namespace WarCore.Tests
             MapBakeResult result = Bake(text);
             ContentPack pack = RwrPack.Load(TerrainPack);
             WorldRecipe recipe = MapRecipe.From(result, pack);
-            if (heights || surfaces) Assert.That(recipe.TerrainPack, Is.SameAs(pack));
-            else Assert.That(recipe.TerrainPack, Is.Null);
+            Assert.That(recipe.Pack, Is.SameAs(pack));
             Assert.That(recipe.Match, Is.Not.Null);
 
             SimSession session = null;

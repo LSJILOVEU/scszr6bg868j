@@ -43,7 +43,7 @@ namespace WarCore.Unity.Tests
             return scene;
         }
 
-        private static SimSession Demo() => SimSession.Create(ContentLayers.Terrain("rwr-terrain-demo"), TerrainBake.DemoMapBytes());
+        private static SimSession Demo() => SimSession.Create(ContentLayers.Terrain(TerrainHost.DefaultLayer), TerrainBake.DemoMapBytes());
 
         private static int Bits(float f) => BitConverter.SingleToInt32Bits(f);
 

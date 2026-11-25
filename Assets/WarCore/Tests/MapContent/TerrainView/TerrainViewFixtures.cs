@@ -66,7 +66,7 @@ namespace WarCore.Tests.TerrainView
         internal static SimSession Session(WcMap map, ContentPack pack)
         {
             var recipe = new WorldRecipe(Seed, MoverKind.InterimPath, new[] { new UnitSpawn(1, 0, 1, 500, 500, 3000) },
-                Array.Empty<BridgeCommand>()).WithTerrainRules(pack);
+                Array.Empty<BridgeCommand>()).WithPack(pack);
             return SimSession.Create(recipe, Bytes(map));
         }
 

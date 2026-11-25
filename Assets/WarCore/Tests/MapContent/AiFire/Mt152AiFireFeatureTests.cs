@@ -15,7 +15,7 @@ namespace WarCore.Tests
             WcMap map = A2.Map(A2.DWalls);
             var assembly = new WorldAssembly(recipe, WcMapWriter.Write(map), false)
             {
-                Terrain = TerrainDerivation.Derive(map, recipe.TerrainPack)
+                Terrain = TerrainDerivation.Derive(map, recipe.Pack)
             };
 
             Assert.That(AiFireFeature.Instance.IsActive(assembly), Is.True);

@@ -65,7 +65,7 @@ namespace WarCore.Tests
         internal static SimSession Session(WcMap map, MoverKind mover, UnitSpawn[] units, BridgeCommand[] script = null, ContentPack pack = null)
         {
             var recipe = new WorldRecipe(41, mover, units, script ?? Array.Empty<BridgeCommand>());
-            if (pack != null) recipe = recipe.WithTerrainRules(pack);
+            if (pack != null) recipe = recipe.WithPack(pack);
             return SimSession.Create(recipe, WcMapWriter.Write(map));
         }
 

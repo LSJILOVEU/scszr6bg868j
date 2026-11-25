@@ -64,7 +64,7 @@ namespace WarCore.Tests
                 : new[] { new SpawnAnchor(2, SimVec3.Metres(150, 0, 20)) };
             WorldRecipe recipe = M6World.RecipeOf(spawns.ToArray(), M6World.Pack(points.ToArray(), ticks: 1000000, think: Think, bases: bases), M6World.Guns(new ZeroResolver()))
                 .WithRuleSet(MatchMode.TestNeverEndsId);
-            if (ai != null) recipe = recipe.WithAiRules(Pack(ai));
+            if (ai != null) recipe = recipe.WithPack(Pack(ai));
             return new M6World(recipe, Flat());
         }
         // Rules under which only an injected fall presses anybody: real shots add nothing, one fall beside a unit takes it to
@@ -73,7 +73,7 @@ namespace WarCore.Tests
             Json(new[] { radius, Pressure.Max, 3000, 0, decay, 7000, 1000, 2000, 0, breakShare }, engage);
 
         private static M6World Battle(ulong seed, bool? fair, string ai) =>
-            new M6World(FairEFixture.Recipe("control", seed, fair).WithAiRules(Pack(ai)), FairEFixture.Map("control"));
+            new M6World(FairEFixture.Recipe("control", seed).WithPack(Pack(FairEFixture.Ai(ai, fair))), FairEFixture.Map("control"));
 
         private static StableId Id(M6World w, ulong key) => w.Sim.Entities.StableOf(w.Unit(key));
         private static SimVec3 At(M6World w, ulong key) => w.Read<Position>(key).Value;

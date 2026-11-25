@@ -1,14 +1,14 @@
-# PF1: the MP playtest recipe carries the AI rules of content layer rwr-m7-playtest.
+# PF1: the MP playtest recipe reads content layer rwr-m7-playtest (its AI rules).
 
-[pf1-01-no-ai-rules]
+[pf1-01-no-pack]
 file = Assets/WarCore/Presentation/Bridge/DemoRecipes.cs
 filter = FullyQualifiedName~PF1PlaytestTests
-expect = WarCore.Tests.PF1PlaytestTests.PF1Recipe_AiPackCarriesTheTenLayerValues
-note = the playtest recipe is the respawn demo with no AI pack
+expect = WarCore.Tests.PF1PlaytestTests.PF1Recipe_ThePackCarriesTheTenLayerValues
+note = the playtest recipe is the respawn demo with no pack
 original:
-| public static WorldRecipe MpPlaytest() => MpRespawnDemo().WithAiRules(WarCore.Content.Rwr.RwrPack.Load(PlaytestLayer));
+| return WithPlayerTeamDash(MpRespawnDemo(layer).WithPack(layer), layer);
 replacement:
-| public static WorldRecipe MpPlaytest() => MpRespawnDemo();
+| return WithPlayerTeamDash(MpRespawnDemo(layer), layer);
 
 [pf1-02-wrong-base]
 file = Assets/WarCore/Presentation/Bridge/DemoRecipes.cs
@@ -16,16 +16,15 @@ filter = FullyQualifiedName~PF1PlaytestTests
 expect = WarCore.Tests.PF1PlaytestTests.PF1Recipe_RestIsTheRespawnDemo
 note = the playtest recipe loses the respawn delay and guard
 original:
-| public static WorldRecipe MpPlaytest() => MpRespawnDemo().WithAiRules(
+| return WithPlayerTeamDash(MpRespawnDemo(layer).WithPack(layer), layer);
 replacement:
-| public static WorldRecipe MpPlaytest() => MpBlockDemo().WithAiRules(
+| return WithPlayerTeamDash(MpBlockDemo(layer).WithPack(layer), layer);
 
 [pf1-03-old-layer]
 file = Assets/WarCore/Presentation/Bridge/DemoRecipes.cs
-filter = FullyQualifiedName~PF1PlaytestTests
-expect = WarCore.Tests.PF1PlaytestTests.PF1Recipe_AiPackCarriesTheTenLayerValues
-expect = WarCore.Tests.PF1PlaytestTests.PF1Split_EachTeamTargetsAtLeastTwoPoints
-note = the playtest takes the AI layer without the split
+filter = FullyQualifiedName~WarCore.Tests.OnePackTests
+expect = WarCore.Tests.OnePackTests.ThePlayedTableNamesTheLayerOfEveryStage
+note = the playtest names the AI layer without the split; its recipe throws there (no dash), the played table holds the name
 original:
 | public const string PlaytestLayer = "rwr-m7-playtest";
 replacement:

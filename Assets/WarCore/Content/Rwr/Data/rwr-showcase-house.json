@@ -1,4 +1,4 @@
 {
   "id": "rwr-showcase-house",
-  "extends": [ "rwr-body", "parts/mouse-reach" ]
+  "extends": [ "rwr-body", "parts/mouse-reach", "parts/soldier" ]
 }

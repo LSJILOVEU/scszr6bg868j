@@ -173,7 +173,7 @@ namespace WarCore.Tests
         private static readonly (int, int, int, int)[] Yards = { (64, 46, 1, 8), (96, 46, 1, 8), (66, 38, 1, 6), (94, 56, 1, 6), (40, 46, 1, 8), (120, 46, 1, 8) };
         // 150 against 150 with rifles on a 160 m x 100 m field with six walls; the reserves come in as men fall.
         private static M6World Battle(string ai, bool? fair, ulong seed = 41) =>
-            new M6World(FairEFixture.Recipe("control", seed, fair).WithAiRules(Pack(ai)), WcMapWriter.Write(M3TestWorld.Boxes(160, 100, Yards)));
+            new M6World(FairEFixture.Recipe("control", seed).WithPack(Pack(FairEFixture.Ai(ai, fair))), WcMapWriter.Write(M3TestWorld.Boxes(160, 100, Yards)));
         // Where every unit stands: the part of the battle a world without tempers and regrouping has too.
         private static ulong Places(M6World w)
         {

@@ -6,9 +6,9 @@ filter = FullyQualifiedName~FairEStateTests
 expect = WarCore.Tests.FairEStateTests.FairE_VersionPolicySaveAndHash
 note = an explicitly disabled option enables fair decisions
 original:
-|             bool fair = recipe.TerrainPack != null && recipe.TerrainPack.Section<AiRules>().FairDecisions;
+|             bool fair = ai != null && ai.FairDecisions;
 replacement:
-|             bool fair = recipe.TerrainPack != null && !recipe.TerrainPack.Section<AiRules>().FairDecisions;
+|             bool fair = ai != null && !ai.FairDecisions;
 
 [fair-e-02-immediate-claims]
 file = Assets/WarCore/Battle/SimpleAiSystem.cs

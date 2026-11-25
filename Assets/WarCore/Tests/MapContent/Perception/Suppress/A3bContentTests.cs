@@ -59,14 +59,14 @@ namespace WarCore.Tests
             Assert.That(w.System<TargetSuppress>().StateVersion, Is.EqualTo(1));
         }
 
-        // 9(f): a flat world has neither the memory (13) nor the suppression (18).
+        // 9(f): a flat world reads its pack like any map: it has the memory (13) and the suppression (18), once each.
         [Test]
-        public void Assembly_FlatWorld_NeitherMemoryNorSuppression()
+        public void Assembly_FlatWorld_HasMemoryAndSuppression()
         {
             M6World w = L4.A(10, "{ \"targetMemoryTicks\": 300, \"suppressTicks\": 100 }", terrain: false);
-            Assert.That(L4.Systems(w), Does.Not.Contain("battle.ai-contacts"));
-            Assert.That(L4.Systems(w), Does.Not.Contain("battle.ai-suppress"));
-            Assert.That(w.System<TargetSuppress>(), Is.Null);
+            Assert.That(L4.Systems(w).Split(';'), Has.Exactly(1).EqualTo("battle.ai-contacts|0|13"));
+            Assert.That(L4.Systems(w).Split(';'), Has.Exactly(1).EqualTo("battle.ai-suppress|0|18"));
+            Assert.That(w.System<TargetSuppress>(), Is.Not.Null);
         }
 
         // 9(g): the constructor checks ticks first, then the three references in order.

@@ -24,14 +24,16 @@ namespace WarCore.Tests
             return units;
         }
 
-        internal static WorldRecipe Recipe(string ai, UnitSpawn[] units = null, bool endless = false)
+        internal static WorldRecipe Recipe(string ai, UnitSpawn[] units = null, bool endless = false) => Recipe(Pack(ai), units, endless);
+
+        internal static WorldRecipe Recipe(ContentPack pack, UnitSpawn[] units = null, bool endless = false)
         {
             var match = new MatchPack(new[] { new ControlPointDef(1, SimVec3.Metres(40, 0, 20), SimFix.FromInt(8)) },
                 new[] { new SpawnAnchor(1, SimVec3.Metres(4, 0, 20)), new SpawnAnchor(2, SimVec3.Metres(76, 0, 20)) },
                 2, 1, false, 100000, InterruptMode.Reset, 1, 90, Think, MaxTicks, SimFix.FromInt(80), 4, 4, SimFix.Ratio(3, 2));
             var combat = MeleeWorld.Pack(new[] { MeleeWorld.Spec(maxTargets: 1) }, new[] { A2.Rifle(0) });
             var recipe = new WorldRecipe(41, MoverKind.InterimCrowd, units ?? Armies(), Array.Empty<BridgeCommand>())
-                .WithMatch(match).WithCombat(combat).WithCrowdPass(CrowdPassKind.TeamIdle).WithTerrainRules(Pack(ai));
+                .WithMatch(match).WithCombat(combat).WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(pack);
             return endless ? recipe.WithRuleSet(MatchMode.TestNeverEndsId) : recipe;
         }
 

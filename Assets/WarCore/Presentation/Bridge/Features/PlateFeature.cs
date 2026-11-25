@@ -40,7 +40,7 @@ namespace WarCore.Presentation
         {
             if (!a.Path)
                 throw new NotSupportedException("Plate maps need a path or crowd mover.");
-            ContentPack pack = a.Recipe.TerrainPack;
+            ContentPack pack = a.Recipe.Pack;
             LayeredNav nav = pack != null ? WcMapLayeredNav.Build(a.Map, pack) : WcMapLayeredNav.Build(a.Map, null, a.Map.ContentId);
             a.Plates = new PlateWorld(a.Map, nav);
             if (a.Recipe.Match != null) CheckAnchors(a.Recipe.Match, a.Map, a.Plates.LayerCount);

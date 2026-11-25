@@ -40,7 +40,7 @@ namespace WarCore.Tests
         internal static WorldRecipe Recipe(UnitSpawn[] units, ContentPack pack) =>
             new WorldRecipe(41, MoverKind.InterimCrowd, units, Array.Empty<BridgeCommand>())
                 .WithMatch(Match()).WithCombat(A2.Combat(0)).WithCrowdPass(CrowdPassKind.TeamIdle)
-                .WithRuleSet(MatchMode.TestNeverEndsId).WithTerrainRules(pack).WithStandingOrders();
+                .WithRuleSet(MatchMode.TestNeverEndsId).WithPack(pack).WithStandingOrders();
         internal static WcMap Map((int, int, int, int)[] walls = null) => A2.Map(walls ?? A2.DWalls, Grass);
         internal static M6World World(SimVec3 bStart, string ai, (int, int, int, int)[] walls = null, bool reverse = false, int conceal = 100, long bSpeed = 3000) =>
             new M6World(Recipe(new[] { Observer(), Target(bStart, bSpeed) }, Load(PackJson(ai, conceal))), WcMapWriter.Write(Map(walls)), reverse);

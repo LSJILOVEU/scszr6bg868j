@@ -126,17 +126,16 @@ namespace WarCore.Tests
             Assert.That(one.Hash, Is.EqualTo(zero.Hash));
         }
 
-        // 1(d): a flat map (no surface table, no height field) with a content layer that sets senseTicks 10: not a terrain
-        // world, so nothing is registered and the system table is the one of 1(c).
+        // 1(d): a flat map (no surface table, no height field) with a content layer that sets senseTicks 10: the world reads
+        // its pack like any map, so the system is registered and the system table is the terrain world's.
         [Test]
-        public void FlatMapWithSenseInterval_DoesNotRegister()
+        public void FlatMapWithSenseInterval_Registers()
         {
             byte[] map = WcMapWriter.Write(Wp23.Make(A2.Width, A2.Depth, 0, 4 * A2.S, A2.DWalls, 2 * A2.S));
             M6World flat = null;
             Assert.DoesNotThrow(() => flat = new M6World(P2.Recipe(P2.Cast(), P2.Ai(0, 10)), map));
-            Assert.That(P2.Systems(flat), Is.EqualTo(P1BaselineTests.Systems));
-            Assert.That(P2.Systems(flat), Does.Not.Contain("battle.ai-fire"));
-            Assert.That(flat.System<ReactionFire>(), Is.Null);
+            Assert.That(P2.Systems(flat), Is.EqualTo(Systems));
+            Assert.That(flat.System<ReactionFire>(), Is.Not.Null);
         }
     }
 }

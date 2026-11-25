@@ -137,7 +137,7 @@ namespace WarCore.Tests
         private static WorldRecipe Movers(MapBakeResult bake, UnitSpawn[] units, BridgeCommand? order)
         {
             var recipe = new WorldRecipe(41, MoverKind.InterimCrowd, units, order.HasValue ? new[] { order.Value } : Array.Empty<BridgeCommand>());
-            return WcMapReader.Read(bake.WcMapBytes).HasTerrain ? recipe.WithTerrainRules(RwrPack.Load(bake.PackId)) : recipe;
+            return WcMapReader.Read(bake.WcMapBytes).HasTerrain ? recipe.WithPack(RwrPack.Load(bake.PackId)) : recipe;
         }
 
         // Sight across the doorway is clear (both ends at the aim height, 0.5 m, under the lintel at 2 m); across a frame it

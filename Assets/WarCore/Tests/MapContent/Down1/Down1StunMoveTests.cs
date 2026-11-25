@@ -80,7 +80,7 @@ namespace WarCore.Tests.Down1
         public void D8_TerrainOrdersSurviveAStun()
         {
             var recipe = new WorldRecipe(41, MoverKind.InterimCrowd, new[] { DashTWorlds.Plain(1, 2500, 1500) }, new[] { BridgeCommand.MoveTo(1, 1, 20500, 1500) })
-                .WithTerrainRules(DashTWorlds.Pack()).WithCombat(Down1Session.NoStancePack());
+                .WithPack(DashTWorlds.Pack()).WithCombat(Down1Session.NoStancePack());
             var w = new Down1Session(SimSession.Create(recipe, WarCore.Content.WcMapWriter.Write(DashTWorlds.Map())));
             w.StunAt(5, 1, 60);
             w.StepTo(5);

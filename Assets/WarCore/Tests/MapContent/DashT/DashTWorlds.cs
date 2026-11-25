@@ -34,7 +34,7 @@ namespace WarCore.Tests.DashT
             Wp23.Make(width, depth, 0, 6 * S, walls, 4 * S, height ?? ((i, j) => 0), Names, surface ?? ((x, z) => Grass));
 
         internal static SimSession World(WcMap map, UnitSpawn[] units, BridgeCommand[] script = null) =>
-            SimSession.Create(new WorldRecipe(41, MoverKind.InterimCrowd, units, script ?? Array.Empty<BridgeCommand>()).WithTerrainRules(Pack()),
+            SimSession.Create(new WorldRecipe(41, MoverKind.InterimCrowd, units, script ?? Array.Empty<BridgeCommand>()).WithPack(Pack()),
                 WcMapWriter.Write(map));
 
         // The ML-8 demo house (PlateDemoMap) with these units and no AI.

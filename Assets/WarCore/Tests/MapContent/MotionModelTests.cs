@@ -21,7 +21,7 @@ namespace WarCore.Tests
             var recipe = new WorldRecipe(41, mover, Units, script);
             if (motion) recipe = recipe.WithMotion();
             WcMap map = hill ? Wp23.Make(40, 24, 0, 6 * S, null, 4 * S, (i, j) => i * (int)(S / 16)) : Wp23.Make(40, 24, 0, 6 * S, null, 4 * S);
-            if (hill) recipe = recipe.WithTerrainRules(Wp23.Pack());
+            if (hill) recipe = recipe.WithPack(Wp23.Pack());
             return SimSession.Create(recipe, WcMapWriter.Write(map));
         }
 

@@ -40,7 +40,7 @@ namespace WarCore.Tests
         {
             var one = new[] { Unit(1, 1, 3500, 7500) };
             SimSession crowd = null;
-            Assert.DoesNotThrow(() => crowd = Walk(Demo, one), "a plate map without a terrain pack builds (the default rules)");
+            Assert.DoesNotThrow(() => crowd = Walk(Demo, one), "a plate map without a pack builds (the default rules)");
             Assert.That(M3TestWorld.Locomotion(crowd).StateVersion, Is.EqualTo(4 + 100 + 200), "crowd, terrain branch, plates");
             Assert.That(M3TestWorld.Locomotion(Walk(Demo, one, mover: MoverKind.InterimPath)).StateVersion, Is.EqualTo(3 + 100 + 200));
             Assert.That(M3TestWorld.Locomotion(World(NoPlates, new[] { Unit(1, 1, 500, 500) }, preview: false)).StateVersion, Is.EqualTo(4), "flat, no plates");
@@ -83,7 +83,7 @@ namespace WarCore.Tests
             const long lift = M / 4;
             byte[] map = Raised(lift, field);
             WorldRecipe recipe = Recipe(new[] { Unit(1, 1, 12500, 7500, 2) }, new[] { BridgeCommand.MoveTo(1, 1, 3500, 7500) });
-            if (field) recipe = recipe.WithTerrainRules(Wp23.Pack());
+            if (field) recipe = recipe.WithPack(Wp23.Pack());
             SimSession s = SimSession.Create(recipe, map);
             Assert.That(M3TestWorld.Position(s).Y.Raw, Is.EqualTo(3 * M + lift));
             bool down = false;
@@ -207,7 +207,7 @@ namespace WarCore.Tests
             MatchPack pack = RespawnWorld.Pack(points, new[] { new SpawnAnchor(1, SimVec3.Metres(2, 0, 8)), new SpawnAnchor(2, SimVec3.Metres(22, 0, 8)) }, 300);
             WorldRecipe recipe = RespawnWorld.Recipe(units, pack).WithPlatesPreview();
             SimSession s = null;
-            Assert.DoesNotThrow(() => s = SimSession.Create(recipe, Demo), "a match and combat on a plate map without a terrain pack");
+            Assert.DoesNotThrow(() => s = SimSession.Create(recipe, Demo), "a match and combat on a plate map without a pack");
             return s;
         }
 
@@ -222,7 +222,7 @@ namespace WarCore.Tests
             var units = new[] { Unit(1, 1, 500, 500), Unit(2, 2, 11500, 5500), Unit(3, 3, 3500, 1500), Unit(4, 4, 8500, 2500) };
             var script = new[] { BridgeCommand.MoveTo(1, 1, 11500, 2500), BridgeCommand.MoveTo(2, 2, 500, 1500), BridgeCommand.MoveTo(3, 3, 9500, 4500),
                 BridgeCommand.MoveTo(40, 4, 6500, 1500), BridgeCommand.MoveTo(60, 1, 7500, 5500) };
-            SimSession Make(bool plates) => SimSession.Create(Recipe(units, script, preview: plates).WithTerrainRules(Wp23.Pack()), Bytes(With(plates)));
+            SimSession Make(bool plates) => SimSession.Create(Recipe(units, script, preview: plates).WithPack(Wp23.Pack()), Bytes(With(plates)));
             SimSession a = Make(true), b = Make(false);
             for (int tick = 1; tick <= 300; tick++)
             {

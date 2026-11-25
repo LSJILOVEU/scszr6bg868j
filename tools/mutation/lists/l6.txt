@@ -60,9 +60,9 @@ expect = WarCore.Tests.L6DemoRecipeTests.L6Demo_LayoutIsTheFixture
 expect = WarCore.Tests.L6DemoRecipeTests.L6Demo_ThePublicSessionPlaysTheMatchToAResult
 note = the production match uses the rule set that never ends
 original:
-|                 .WithCrowdPass(CrowdPassKind.TeamIdle).WithTerrainRules(terrain);
+|                 .WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(content);
 replacement:
-|                 .WithCrowdPass(CrowdPassKind.TeamIdle).WithTerrainRules(terrain).WithRuleSet("test.never-ends");
+|                 .WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(content).WithRuleSet("test.never-ends");
 
 [l6-07-not-reversed]
 file = Assets/WarCore/Tests/MapContent/Terrain/L6DeterminismTests.cs
@@ -77,7 +77,7 @@ replacement:
 [l6-08-shipped-combat]
 file = Assets/WarCore/Presentation/Bridge/DemoRecipes.cs
 filter = FullyQualifiedName~WarCore.Tests.L6
-expect = WarCore.Tests.L6DemoRecipeTests.L6Demo_CombatAndMatchFromContent_TerrainFromTerrain
+expect = WarCore.Tests.L6DemoRecipeTests.L6Demo_CombatMatchAndRulesFromTheOnePack
 note = the production match ignores the given content pack for combat
 original:
 |                 .WithCombat(content.BuildCombat()).WithMatch(TerrainDemoMap.BuildMatch(content))

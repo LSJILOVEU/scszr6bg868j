@@ -43,7 +43,7 @@ namespace WarCore.Tests
             };
             return new WorldRecipe(41, MoverKind.InterimCrowd, units, Array.Empty<BridgeCommand>())
                 .WithMatch(match).WithCombat(L5.Combat()).WithCrowdPass(CrowdPassKind.TeamIdle)
-                .WithRuleSet(MatchMode.TestNeverEndsId).WithTerrainRules(Pack());
+                .WithRuleSet(MatchMode.TestNeverEndsId).WithPack(Pack());
         }
 
         private static M6World World() => new M6World(Recipe(), WcMapWriter.Write(Map()));

@@ -14,12 +14,13 @@ namespace WarCore.Tests
     {
         internal const int Ticks = 3000;
 
+        // The hills stage's layer: the combat and match of rwr-m6 with the terrain and AI rules of rwr-ai-playtest.
         // PLACEHOLDER: all nine AI values in rwr-ai-playtest await PF1 calibration from recordings.
-        internal static ContentPack Pack() => RwrPack.Load("rwr-ai-playtest");
+        internal static ContentPack Pack() => RwrPack.Load(Showcase.TerrainLayer);
 
         internal static WorldRecipe Recipe(bool endless = false)
         {
-            WorldRecipe recipe = DemoRecipes.TerrainMatch(RwrPack.Load(RwrPack.M6Layer), Pack());
+            WorldRecipe recipe = DemoRecipes.TerrainMatch(Pack());
             return endless ? recipe.WithRuleSet(MatchMode.TestNeverEndsId) : recipe;
         }
 
@@ -38,7 +39,7 @@ namespace WarCore.Tests
         public void AllNineValuesReachTheInstalledSystems()
         {
             M6World w = AiPlaytest.World();
-            AiRules rules = w.Recipe.TerrainPack.Section<AiRules>();
+            AiRules rules = w.Recipe.Pack.Section<AiRules>();
             Assert.That((rules.FailedSlotTicks, rules.TargetMemoryTicks, rules.SearchTicks, rules.ReactionTicks,
                 rules.SenseTicks, rules.BurstShots, rules.BurstPauseTicks, rules.SuppressTicks, rules.MeleeChaseRange),
                 Is.EqualTo((90, 300, 90, 15, 6, 3, 30, 90, 12)));

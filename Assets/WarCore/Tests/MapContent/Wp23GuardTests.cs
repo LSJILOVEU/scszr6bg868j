@@ -36,12 +36,12 @@ namespace WarCore.Tests
                 }
                 if (mover == MoverKind.Interim)
                 {
-                    Assert.That(Assert.Throws<NotSupportedException>(() => WorldBuilder.Create(recipe.WithTerrainRules(Wp23.Pack()), bytes)).Message,
+                    Assert.That(Assert.Throws<NotSupportedException>(() => WorldBuilder.Create(recipe.WithPack(Wp23.Pack()), bytes)).Message,
                         Does.Contain("path or crowd"));
                     continue;
                 }
                 Assert.Throws<ArgumentException>(() => WorldBuilder.Create(recipe, bytes), profile + " " + mover + " without a pack");
-                Assert.DoesNotThrow(() => WorldBuilder.Create(recipe.WithTerrainRules(Wp23.Pack()), bytes), profile + " " + mover);
+                Assert.DoesNotThrow(() => WorldBuilder.Create(recipe.WithPack(Wp23.Pack()), bytes), profile + " " + mover);
             }
         }
 
@@ -53,9 +53,9 @@ namespace WarCore.Tests
             var units = new[] { M6World.U(1, 1, 3, 4, weapon: -1, speed: 4000), M6World.U(2, 2, 12, 4, weapon: -1, speed: 4000) };
             WorldRecipe battle = M6World.RecipeOf(units);
             Assert.Throws<ArgumentException>(() => WorldBuilder.Create(battle, bytes), "combat + match still needs the pack");
-            Assert.DoesNotThrow(() => WorldBuilder.Create(battle.WithTerrainRules(Wp23.Pack()), bytes));
+            Assert.DoesNotThrow(() => WorldBuilder.Create(battle.WithPack(Wp23.Pack()), bytes));
             SimSession player = null;
-            Assert.DoesNotThrow(() => player = WorldBuilder.Create(battle.WithPlayer(1).WithTerrainRules(Wp23.Pack()), bytes));
+            Assert.DoesNotThrow(() => player = WorldBuilder.Create(battle.WithPlayer(1).WithPack(Wp23.Pack()), bytes));
             Assert.That(player.ControlledKey, Is.EqualTo(1UL));
             // Interim / Path with a player stay the older ArgumentException (checked before the map is read).
             var path = new WorldRecipe(41, MoverKind.InterimPath, Units, Array.Empty<BridgeCommand>());
@@ -71,10 +71,10 @@ namespace WarCore.Tests
             Assert.That(Wp23.Step(8000), Is.GreaterThan(WarCore.Interim.InterimLocomotion.MaxTerrainStepRaw));
             foreach (MoverKind mover in new[] { MoverKind.InterimPath, MoverKind.InterimCrowd })
             {
-                var fast = new WorldRecipe(41, mover, new[] { Wp23.Unit(1, 1, 2500, 4500, 8000) }, new[] { BridgeCommand.MoveTo(1, 1, 5500, 4500) }).WithTerrainRules(Wp23.Pack());
+                var fast = new WorldRecipe(41, mover, new[] { Wp23.Unit(1, 1, 2500, 4500, 8000) }, new[] { BridgeCommand.MoveTo(1, 1, 5500, 4500) }).WithPack(Wp23.Pack());
                 SimSession s = WorldBuilder.Create(fast, bytes);
                 Assert.Throws<InvalidOperationException>(() => { for (int i = 0; i < 3; i++) s.StepOnce(); }, mover.ToString());
-                var ok = new WorldRecipe(41, mover, new[] { Wp23.Unit(1, 1, 2500, 4500, 7000) }, new[] { BridgeCommand.MoveTo(1, 1, 5500, 4500) }).WithTerrainRules(Wp23.Pack());
+                var ok = new WorldRecipe(41, mover, new[] { Wp23.Unit(1, 1, 2500, 4500, 7000) }, new[] { BridgeCommand.MoveTo(1, 1, 5500, 4500) }).WithPack(Wp23.Pack());
                 SimSession t = WorldBuilder.Create(ok, bytes);
                 Assert.DoesNotThrow(() => { for (int i = 0; i < 30; i++) t.StepOnce(); });
             }
@@ -85,9 +85,9 @@ namespace WarCore.Tests
         {
             byte[] flat = WcMapWriter.Write(Profile("flat"));
             var plain = new WorldRecipe(41, MoverKind.InterimCrowd, Units, Array.Empty<BridgeCommand>());
-            Assert.That(WorldBuilder.Create(plain.WithTerrainRules(Wp23.Pack()), flat).StateHash, Is.EqualTo(WorldBuilder.Create(plain, flat).StateHash),
+            Assert.That(WorldBuilder.Create(plain.WithPack(Wp23.Pack()), flat).StateHash, Is.EqualTo(WorldBuilder.Create(plain, flat).StateHash),
                 "a flat map is not derived, so the pack does not touch it");
-            SimSession surface = WorldBuilder.Create(plain.WithTerrainRules(Wp23.Pack()), WcMapWriter.Write(Profile("surface")));
+            SimSession surface = WorldBuilder.Create(plain.WithPack(Wp23.Pack()), WcMapWriter.Write(Profile("surface")));
             Assert.That(Wp23.At(surface).Y.Raw, Is.EqualTo(0));
         }
     }

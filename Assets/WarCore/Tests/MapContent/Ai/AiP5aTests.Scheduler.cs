@@ -156,7 +156,7 @@ namespace WarCore.Tests
                 + "\"pressureBrokenAt\": 7000, \"pressureRecoverAt\": 1000, \"pressurePinnedAt\": 2000, \"pressureSpreadPermille\": 500, \"pressureBreakSharePermille\": 300, "
                 + "\"coverRadiusMm\": 9000, \"coverStepMm\": 1000, \"coverDepthMm\": 2000, \"traitSpreadPermille\": 300";
             ContentPack layer = Pack(Json(With(Max, 9, SpreadMin, 1500, SpreadMax, 6000), all), DemoRecipes.PlaytestLayer);
-            WorldRecipe recipe = DemoRecipes.MpRespawnDemo(layer).WithAiRules(layer);
+            WorldRecipe recipe = DemoRecipes.MpRespawnDemo(layer).WithPack(layer);
             Assert.That(recipe.PlayerKey, Is.Not.Null, "the world has a player");
             var w = new M6World(recipe, DemoRecipes.M7MapBytes());
             var orders = new Dictionary<int, string>();

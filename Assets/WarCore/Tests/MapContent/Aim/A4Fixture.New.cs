@@ -15,7 +15,7 @@ namespace WarCore.Tests
         internal static readonly string[] Names = { "dirt", "grass" };
         private static readonly (int, int, int, int)[] NoWalls = Array.Empty<(int, int, int, int)>();
 
-        // Same content literal as L9 (no "extends"); used only through WithTerrainRules.
+        // Same content literal as L9 (no "extends"); the world reads its surfaces, slope rule and AI rules.
         internal const string PackJson = "{ \"id\": \"l9-test\", "
             + "\"combat\": { \"maxHealth\": 100, \"resolver\": \"rwr.hit\", \"selector\": \"nearest-visible\", \"friendlyFire\": false, \"friendlyFireLocked\": false, \"allyCheckMissRate\": 0.25, \"allyHoldMilli\": 30000 }, "
             + "\"surfaces\": [ { \"id\": \"dirt\", \"passable\": true, \"speedMilli\": 1000, \"cost\": 1, \"concealMilli\": 1000 }, { \"id\": \"grass\", \"passable\": true, \"speedMilli\": 800, \"cost\": 1, \"concealMilli\": 1000 } ], "
@@ -45,7 +45,7 @@ namespace WarCore.Tests
         {
             var aim = new Aim(1, suppress);
             var r = new WorldRecipe(41, MoverKind.InterimCrowd, units, Array.Empty<BridgeCommand>()).WithCombat(Combat(spread))
-                .WithCrowdPass(CrowdPassKind.TeamIdle).WithTerrainRules(TerrainPack()).With(aim);
+                .WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(TerrainPack()).With(aim);
             return (new M6World(r, map), aim);
         }
 

@@ -102,15 +102,15 @@ replacement:
 |                 direction = default;
 |                 return AutoFireAction.HoldFire;
 
-[p1-08-flat-registers]
+[p1-08-flat-does-not-register]
 file = Assets/WarCore/Presentation/Bridge/Features/AiFireFeature.cs
 filter = FullyQualifiedName~WarCore.Tests.P1
-expect = WarCore.Tests.P1BaselineTests.FlatMapWithPack_DoesNotRegister
-note = a flat map with a content pack registers too
+expect = WarCore.Tests.P1BaselineTests.FlatMapWithPack_Registers
+note = a flat map with a content pack does not register
 original:
-| a.Terrain != null && a.Recipe.TerrainPack != null
+|             if (ai == null) return false;
 replacement:
-| a.Recipe.TerrainPack != null
+|             if (a.Terrain == null || ai == null) return false;
 
 [p1-09-zero-registers]
 file = Assets/WarCore/Presentation/Bridge/Features/AiFireFeature.cs

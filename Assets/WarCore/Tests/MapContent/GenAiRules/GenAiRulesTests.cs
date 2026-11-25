@@ -9,6 +9,7 @@ using WarCore.Sim;
 
 namespace WarCore.Tests
 {
+    // GEN-AI-RULES, RC1-K2: a world reads the AI rules of its one pack, on a flat map as on a terrain map.
     public sealed class GenAiRulesTests
     {
         private const string Chase = "{ \"meleeChaseRange\": 15 }";
@@ -28,20 +29,20 @@ namespace WarCore.Tests
             Array.Empty<BridgeCommand>())
             .WithCombat(MeleeWorld.Pack(new[] { MeleeWorld.Spec() }))
             .WithMatch(M6World.Pack(points: new[] { new ControlPointDef(1, Start, SimFix.Ratio(1, 2), initialOwner: 1) }, think: 1))
-            .WithTerrainRules(pack).WithStandingOrders().WithRuleSet(MatchMode.TestNeverEndsId);
+            .WithPack(pack).WithStandingOrders().WithRuleSet(MatchMode.TestNeverEndsId);
 
         private static byte[] Map(bool terrain = false) => WcMapWriter.Write(Wp23.Make(80, 40, 0, 4 * SimFix.Scale,
             Array.Empty<(int, int, int, int)>(), 2 * SimFix.Scale, terrain ? (Func<int, int, int>)((x, z) => 0) : null));
 
         private static void Step(M6World w) => w.Sim.Step(w.Sim.Clock.Tick == 0 ? P1.Command(SquadCommandKind.Hold, 2) : default);
 
+        // A flat world whose pack names a chase range chases at its first think tick; under a pack without an AI section the
+        // same unit stays.
         [Test]
-        public void FlatOptIn_ChasesAtFirstThinkTick()
+        public void AFlatWorldChasesAtItsFirstThinkTick()
         {
-            ContentPack pack = Pack(Chase);
-            WorldRecipe recipe = Recipe(pack);
-            var on = new M6World(recipe.WithAiRules(pack).WithRuleSet(MatchMode.TestNeverEndsId), Map());
-            var off = new M6World(recipe.WithRuleSet(MatchMode.TestNeverEndsId), Map());
+            var on = new M6World(Recipe(Pack(Chase)), Map());
+            var off = new M6World(Recipe(Pack(null)), Map());
             Assert.That(on.Sim.Clock.Tick, Is.EqualTo(0));
             Assert.That(on.Read<MoveIntent>(1).Active, Is.False);
             Assert.That(on.Read<Position>(1).Value, Is.EqualTo(Start));
@@ -52,33 +53,14 @@ namespace WarCore.Tests
             Assert.That(on.Read<Position>(1).Value, Is.EqualTo(Start + new SimVec3(SimFix.FromRaw(6553), default, default)));
             Assert.That(off.Read<MoveIntent>(1).Active, Is.False);
             Assert.That(off.Read<Position>(1).Value, Is.EqualTo(Start));
-            Assert.That(recipe.AiPack, Is.Null);
         }
 
-        [Test]
-        public void FlatWithoutOptIn_IgnoresContentAi()
+        // Every AI rule of the pack reaches its system, on a flat map and on a terrain map.
+        [TestCase(false)]
+        [TestCase(true)]
+        public void EveryContentRuleIsAssembled(bool terrain)
         {
-            var content = new M6World(Recipe(Pack(All)), Map());
-            var omitted = new M6World(Recipe(Pack(null)), Map());
-            Assert.That(content.System<FailedSlotMemory>(), Is.Null);
-            Assert.That(content.System<TargetMemory>(), Is.Null);
-            Assert.That(content.System<TargetSearch>(), Is.Null);
-            Assert.That(content.System<TargetSuppress>(), Is.Null);
-            Assert.That(content.System<ReactionFire>(), Is.Null);
-            for (int tick = 0; tick <= 30; tick++)
-            {
-                if (tick > 0) { Step(content); Step(omitted); }
-                Assert.That(content.Hash, Is.EqualTo(omitted.Hash), "tick " + tick);
-                Assert.That(content.Sim.SaveRetainedSnapshot(), Is.EqualTo(omitted.Sim.SaveRetainedSnapshot()), "tick " + tick);
-                Assert.That(content.Read<Position>(1).Value, Is.EqualTo(Start), "tick " + tick);
-                Assert.That(content.Read<MoveIntent>(1).Active, Is.False, "tick " + tick);
-            }
-        }
-
-        [Test]
-        public void FlatOptIn_AssemblesAllContentRules()
-        {
-            var w = new M6World(Recipe(Pack(null)).WithAiRules(Pack(All)), Map());
+            var w = new M6World(Recipe(Pack(All)), Map(terrain));
             IMoveOrders moves = L4.Moves(w);
             var contacts = new TargetMemory(w.Combat, 9);
             Assert.That(State(w.System<FailedSlotMemory>()), Is.EqualTo(State(new FailedSlotMemory(w.Sim.Entities, moves, 7, (unit, squad) => false))));
@@ -95,33 +77,25 @@ namespace WarCore.Tests
             return hash.Value;
         }
 
-        [TestCase(null)]
-        [TestCase("{ }")]
-        public void FlatOptIn_DefaultRulesKeepBytes(string ai)
+        // An AI section that names nothing is no AI section: the same bytes at every tick, and none of the systems.
+        [TestCase(false)]
+        [TestCase(true)]
+        public void AnEmptyAiSectionKeepsBytes(bool terrain)
         {
-            WorldRecipe recipe = Recipe(Pack(null));
-            var off = new M6World(recipe, Map());
-            var on = new M6World(recipe.WithAiRules(Pack(ai)), Map());
+            var off = new M6World(Recipe(Pack(null)), Map(terrain));
+            var on = new M6World(Recipe(Pack("{ }")), Map(terrain));
+            Assert.That(on.System<FailedSlotMemory>(), Is.Null);
+            Assert.That(on.System<TargetMemory>(), Is.Null);
+            Assert.That(on.System<TargetSearch>(), Is.Null);
+            Assert.That(on.System<TargetSuppress>(), Is.Null);
+            Assert.That(on.System<ReactionFire>(), Is.Null);
             for (int tick = 0; tick <= 30; tick++)
             {
                 if (tick > 0) { Step(off); Step(on); }
                 Assert.That(on.Hash, Is.EqualTo(off.Hash), "tick " + tick);
                 Assert.That(on.Sim.SaveRetainedSnapshot(), Is.EqualTo(off.Sim.SaveRetainedSnapshot()), "tick " + tick);
-            }
-        }
-
-        [TestCase(false)]
-        [TestCase(true)]
-        public void TerrainKeepsItsRuleSource(bool enabled)
-        {
-            WorldRecipe recipe = Recipe(Pack(enabled ? All : null));
-            var original = new M6World(recipe, Map(true));
-            var competing = new M6World(recipe.WithAiRules(Pack(enabled ? null : All)), Map(true));
-            for (int tick = 0; tick <= 30; tick++)
-            {
-                if (tick > 0) { Step(original); Step(competing); }
-                Assert.That(competing.Hash, Is.EqualTo(original.Hash), "tick " + tick);
-                Assert.That(competing.Sim.SaveRetainedSnapshot(), Is.EqualTo(original.Sim.SaveRetainedSnapshot()), "tick " + tick);
+                Assert.That(on.Read<Position>(1).Value, Is.EqualTo(Start), "tick " + tick);
+                Assert.That(on.Read<MoveIntent>(1).Active, Is.False, "tick " + tick);
             }
         }
     }

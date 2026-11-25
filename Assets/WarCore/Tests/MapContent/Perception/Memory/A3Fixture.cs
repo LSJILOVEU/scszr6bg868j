@@ -44,7 +44,7 @@ namespace WarCore.Tests
         internal static WorldRecipe Recipe(UnitSpawn[] units, ContentPack pack) =>
             new WorldRecipe(41, MoverKind.InterimCrowd, units, Array.Empty<BridgeCommand>())
                 .WithMatch(Match()).WithCombat(A2.Combat(0)).WithCrowdPass(CrowdPassKind.TeamIdle)
-                .WithRuleSet(MatchMode.TestNeverEndsId).WithTerrainRules(pack).WithStandingOrders();
+                .WithRuleSet(MatchMode.TestNeverEndsId).WithPack(pack).WithStandingOrders();
         internal static M6World World(UnitSpawn[] units, int? memory, bool reverse = false) =>
             new M6World(Recipe(units, Pack(Grass500, memory)), WcMapWriter.Write(A2.Map(A2.DWalls)), reverse);
 

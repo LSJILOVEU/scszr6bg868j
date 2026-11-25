@@ -58,27 +58,29 @@ namespace WarCore.Tests
             Assert.That(zero.Hash, Is.EqualTo(End600));
         }
 
-        // 1(c): a flat map (no surface table, no height field) with a content layer that sets a positive reaction time: not
-        // a terrain world, so nothing is registered and the run equals the same map with the field written as 0.
+        // 1(c): a flat map (no surface table, no height field) with a content layer that sets a positive reaction time: the
+        // world reads its pack like any map, so the system is registered and the first shot comes that many ticks later
+        // than on the same map with the field written as 0.
         [Test]
-        public void FlatMapWithPack_DoesNotRegister()
+        public void FlatMapWithPack_Registers()
         {
             byte[] map = WcMapWriter.Write(Wp23.Make(A2.Width, A2.Depth, 0, 4 * A2.S, A2.DWalls, 2 * A2.S));
             M6World on = null, zero = null;
             Assert.DoesNotThrow(() => on = new M6World(P1.Recipe(Units(), P1.Ai(15)), map));
             Assert.DoesNotThrow(() => zero = new M6World(P1.Recipe(Units(), P1.Ai(0)), map));
-            Assert.That(P1.Systems(on), Is.EqualTo(P1.Systems(zero)));
-            Assert.That(P1.Systems(on), Does.Not.Contain("battle.ai-fire"));
-            Assert.That(on.System<ReactionFire>(), Is.Null);
-            int fires = 0;
+            Assert.That(P1.Systems(zero), Is.EqualTo(Systems));
+            Assert.That(P1.Systems(on), Is.EqualTo(Systems.Replace("battle.ai|0|12;", "battle.ai|0|12;battle.ai-fire|0|14;")));
+            Assert.That(on.System<ReactionFire>(), Is.Not.Null);
+            long first = 0, zeroFirst = 0;
             for (long tick = 1; tick <= 600; tick++)
             {
                 on.Sim.Step(P1.Drive(on, tick, Script));
                 zero.Sim.Step(P1.Drive(zero, tick, Script));
-                fires += on.Combat.Fires.Length;
+                if (first == 0 && on.Combat.Fires.Length > 0) first = tick;
+                if (zeroFirst == 0 && zero.Combat.Fires.Length > 0) zeroFirst = tick;
             }
-            Assert.That(fires, Is.GreaterThan(0), "the run reaches the automatic fire branch");
-            Assert.That(on.Hash, Is.EqualTo(zero.Hash));
+            Assert.That(zeroFirst, Is.GreaterThan(0), "the run reaches the automatic fire branch");
+            Assert.That(first, Is.EqualTo(zeroFirst + 15));
         }
 
         // 1(c): the auto-fire lock worlds (AutoFireFixtures.cs: the flat M6 demo and the open-ground pair) register nothing.

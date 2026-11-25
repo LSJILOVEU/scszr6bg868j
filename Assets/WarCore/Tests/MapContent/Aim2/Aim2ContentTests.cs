@@ -138,13 +138,13 @@ namespace WarCore.Tests
             throw new ArgumentException(id);
         }
 
-        // S7b: the listed house stage fights with a body and reads the shipped pick from its combat layer; the legacy house has
-        // no body; the stages whose combat pack has no pick (terrain, melee) get no reach.
+        // S7b: the listed house stage fights with a body and reads the shipped pick from its layer; the legacy house has no
+        // body; the stages whose layer has no pick (terrain, melee) get no reach.
         [Test]
-        public void S7b_TheShowcaseStagesReadTheirReachFromTheCombatLayer()
+        public void S7b_TheShowcaseStagesReadTheirReachFromTheirLayer()
         {
             ShowcaseStage house = Stage("house");
-            Assert.That(house.CombatLayer, Is.EqualTo(Showcase.HouseLayer));
+            Assert.That(house.Layer, Is.EqualTo(Showcase.HouseLayer));
             Assert.That(BodySizes.Of(house.Start()), Is.Not.Null);
             Assert.That(BodySizes.Of(Showcase.LegacyHouse.Start()), Is.Null);
             Assert.That(Showcase.LegacyHouse.Reach(), Is.Null);

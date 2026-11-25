@@ -174,7 +174,7 @@ namespace WarCore.Tests
             var bases = new[] { new SpawnAnchor(1, SimVec3.Metres(6, 0, 20)), new SpawnAnchor(2, SimVec3.Metres(150, 0, 20)) };
             string ai = Json(new[] { 100000, 2000, 3000, 0, 12, 7000, 1000, 2000, 0, 300 }, BoundAi + (killRule ? ", " + KillField : ""));
             WorldRecipe recipe = M6World.RecipeOf(spawns.ToArray(), M6World.Pack(points, ticks: 1000000, think: Think, bases: bases), M6World.Guns(new WoundResolver()))
-                .WithRuleSet(MatchMode.TestNeverEndsId).WithAiRules(Pack(ai));
+                .WithRuleSet(MatchMode.TestNeverEndsId).WithPack(Pack(ai));
             return new M6World(recipe, Flat());
         }
 
