@@ -62,5 +62,7 @@ The size literals have their own ledger (`tools/size-guard/ledger.tsv`); the rul
 - New file: add it to `modules.tsv` under the module whose question it answers. If it answers a new question, that is a
   new module: decide that first.
 - New feature: add a row to `features.tsv` and switch it on in a played stage in the same change.
+- New stage: a map file (`Assets/WarCore/Maps`) and the content pack it is played under, a row in `played.tsv`. The
+  stage names the two; no code builds its world (the test `StageFileTests` holds every stage of the showcase to that).
 - A second answer to a listed question: do not add a row; use the home.
 - A copy removed, a feature switched on, unused code deleted or connected: lower or delete the row in the same change.

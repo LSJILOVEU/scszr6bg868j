@@ -1,7 +1,7 @@
 # RC1-K3: the pack of a world turns its switches on. Facing, standing orders and inertia each have a field the loader
 # publishes and the recipe answers for; the block AI is on when the units face a direction and a shield of the combat pack
 # gives the AI a chance; the world assembly adds the inertia of the pack as the extension a recipe built by hand adds. The
-# code of a played stage switches nothing on.
+# code of a played stage switches nothing on (the stages share one route since RC1-K4; rc1-k4.txt holds it to that).
 # Not listed: the lines of the content layers (parts/facing, parts/respawn and the layers that list them). This tool mutates
 # code only; Show1Tests.AStageSwitchesNothingOnItself holds each of those lines.
 
@@ -221,58 +221,3 @@ original:
 |             if (!InertiaRates.IsRate(value))
 replacement:
 |             if (value < 0)
-
-[rc1-k3-battle-switches-facing-in-code]
-file = Assets/WarCore/Presentation/Bridge/Showcase.cs
-filter = FullyQualifiedName~WarCore.Tests.Show1Tests.AStageSwitchesNothingOnItself
-expect = WarCore.Tests.Show1Tests.AStageSwitchesNothingOnItself("battle"
-note = the code of the battle stage turns facing on again
-original:
-|             WorldRecipe recipe = MapRecipe.From(Lanes(layer), ContentCatalog.Find().Load(layer), useUnitTypes: true);
-replacement:
-|             WorldRecipe recipe = MapRecipe.From(Lanes(layer), ContentCatalog.Find().Load(layer), useUnitTypes: true).WithFacing();
-
-[rc1-k3-hamlet-switches-facing-in-code]
-file = Assets/WarCore/Presentation/Bridge/Showcase.Hamlet.cs
-filter = FullyQualifiedName~WarCore.Tests.Show1Tests.AStageSwitchesNothingOnItself
-expect = WarCore.Tests.Show1Tests.AStageSwitchesNothingOnItself("hamlet"
-note = the code of the hamlet stage turns facing on again
-original:
-|             WorldRecipe recipe = MapRecipe.From(Hamlet(), ContentCatalog.Find().Load(HamletLayer), useUnitTypes: true);
-replacement:
-|             WorldRecipe recipe = MapRecipe.From(Hamlet(), ContentCatalog.Find().Load(HamletLayer), useUnitTypes: true).WithFacing();
-
-[rc1-k3-melee-asks-for-block-ai-in-code]
-file = Assets/WarCore/Presentation/Bridge/Showcase.cs
-filter = FullyQualifiedName~WarCore.Tests.Show1Tests.AStageSwitchesNothingOnItself
-expect = WarCore.Tests.Show1Tests.AStageSwitchesNothingOnItself("melee"
-note = the code of the melee stage asks for the block AI again
-original:
-|                 .WithMatch(ShowcaseField.BuildMatch(pack)).WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(pack)
-replacement:
-|                 .WithMatch(ShowcaseField.BuildMatch(pack)).WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(pack).WithBlockAi()
-
-[rc1-k3-house-respawn-in-code]
-file = Assets/WarCore/Presentation/Bridge/Showcase.cs
-filter = FullyQualifiedName~WarCore.Tests.Show1Tests.AStageSwitchesNothingOnItself|FullyQualifiedName~WarCore.Tests.Show1Tests.TheHouseHasFloorsAndThePlayerComesBackFromTheReserve
-expect = WarCore.Tests.Show1Tests.AStageSwitchesNothingOnItself("house"
-expect = WarCore.Tests.Show1Tests.TheHouseHasFloorsAndThePlayerComesBackFromTheReserve
-note = the code of the house stage sets a respawn delay of its own, far longer than the layer's
-original:
-|                 .WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(pack);
-|             return recipe.WithPlayer(FirstDeployed(recipe.Units));
-replacement:
-|                 .WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(pack);
-|             return DemoRecipes.WithRespawn(recipe.WithPlayer(FirstDeployed(recipe.Units)), 15000);
-
-[rc1-k3-terrain-respawn-in-code]
-file = Assets/WarCore/Presentation/Bridge/Showcase.cs
-filter = FullyQualifiedName~WarCore.Tests.Show1Tests.AStageSwitchesNothingOnItself
-expect = WarCore.Tests.Show1Tests.AStageSwitchesNothingOnItself("terrain"
-note = the code of the terrain stage sets a respawn delay of its own
-original:
-|                 .WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(content);
-|             return recipe.WithPlayer(FirstDeployed(recipe.Units));
-replacement:
-|                 .WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(content);
-|             return DemoRecipes.WithRespawn(recipe.WithPlayer(FirstDeployed(recipe.Units)), 300);

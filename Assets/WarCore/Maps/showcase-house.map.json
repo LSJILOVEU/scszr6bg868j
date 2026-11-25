@@ -1,0 +1,550 @@
+{
+  "format": "warcore.map",
+  "version": 2,
+  "id": "showcase-house",
+  "content": "none",
+  "pack": "rwr-showcase-house",
+  "size": [40, 20],
+  "origin": [0, 0],
+  "floorRaw": 0,
+  "ceilingRaw": 524288,
+  "layers": [
+    {
+      "name": "walls",
+      "bit": 1
+    }
+  ],
+  "plates": [
+    {
+      "id": 1,
+      "cell": [17, 11],
+      "size": [4, 2],
+      "slope": {
+        "axis": "x",
+        "fromRaw": 0,
+        "toRaw": 196608
+      },
+      "thickRaw": 32768
+    },
+    {
+      "id": 2,
+      "cell": [15, 6],
+      "size": [10, 8],
+      "yRaw": 196608,
+      "thickRaw": 32768
+    }
+  ],
+  "cutouts": [
+    {
+      "id": 1,
+      "plate": 2,
+      "cell": [17, 11],
+      "size": [4, 2]
+    }
+  ],
+  "walls": [
+    {
+      "id": 1,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [14, 5],
+      "size": [12, 1],
+      "heightRaw": 196608
+    },
+    {
+      "id": 2,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [14, 14],
+      "size": [12, 1],
+      "heightRaw": 196608
+    },
+    {
+      "id": 3,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [14, 6],
+      "size": [1, 5],
+      "heightRaw": 196608
+    },
+    {
+      "id": 4,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [14, 13],
+      "size": [1, 1],
+      "heightRaw": 196608
+    },
+    {
+      "id": 5,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [25, 8],
+      "size": [1, 6],
+      "heightRaw": 196608
+    },
+    {
+      "id": 6,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [14, 5],
+      "size": [4, 1],
+      "heightRaw": 196608,
+      "baseRaw": 196608
+    },
+    {
+      "id": 7,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [19, 5],
+      "size": [2, 1],
+      "heightRaw": 196608,
+      "baseRaw": 196608
+    },
+    {
+      "id": 8,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [22, 5],
+      "size": [4, 1],
+      "heightRaw": 196608,
+      "baseRaw": 196608
+    },
+    {
+      "id": 9,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [14, 14],
+      "size": [4, 1],
+      "heightRaw": 196608,
+      "baseRaw": 196608
+    },
+    {
+      "id": 10,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [19, 14],
+      "size": [2, 1],
+      "heightRaw": 196608,
+      "baseRaw": 196608
+    },
+    {
+      "id": 11,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [22, 14],
+      "size": [4, 1],
+      "heightRaw": 196608,
+      "baseRaw": 196608
+    },
+    {
+      "id": 12,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [14, 6],
+      "size": [1, 8],
+      "heightRaw": 196608,
+      "baseRaw": 196608
+    },
+    {
+      "id": 13,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [25, 6],
+      "size": [1, 8],
+      "heightRaw": 196608,
+      "baseRaw": 196608
+    },
+    {
+      "id": 14,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [19, 0],
+      "size": [2, 5],
+      "heightRaw": 196608
+    },
+    {
+      "id": 15,
+      "kind": "wall",
+      "layer": "walls",
+      "cell": [19, 15],
+      "size": [2, 5],
+      "heightRaw": 196608
+    }
+  ],
+  "points": [
+    {
+      "id": 1,
+      "at": [8000, 10000],
+      "radiusMm": 3000,
+      "initialOwner": 1,
+      "spawn": [8000, 10000]
+    },
+    {
+      "id": 2,
+      "at": [20000, 8500],
+      "radiusMm": 2500,
+      "initialOwner": 2,
+      "plate": 2
+    },
+    {
+      "id": 3,
+      "at": [32000, 10000],
+      "radiusMm": 3000,
+      "initialOwner": 2,
+      "spawn": [32000, 10000]
+    }
+  ],
+  "bases": [
+    {
+      "id": 1,
+      "team": 1,
+      "at": [2000, 10000]
+    },
+    {
+      "id": 2,
+      "team": 2,
+      "at": [38000, 10000]
+    }
+  ],
+  "units": [
+    {
+      "key": 1,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [3500, 7000],
+      "reserve": false
+    },
+    {
+      "key": 2,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [5000, 7000],
+      "reserve": false
+    },
+    {
+      "key": 3,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [3500, 8500],
+      "reserve": false
+    },
+    {
+      "key": 4,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [5000, 8500],
+      "reserve": false
+    },
+    {
+      "key": 5,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [3500, 10000],
+      "reserve": false
+    },
+    {
+      "key": 6,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [5000, 10000],
+      "reserve": false
+    },
+    {
+      "key": 7,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [3500, 11500],
+      "reserve": false
+    },
+    {
+      "key": 8,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [5000, 11500],
+      "reserve": false
+    },
+    {
+      "key": 9,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [35000, 7000],
+      "reserve": false
+    },
+    {
+      "key": 10,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [36500, 7000],
+      "reserve": false
+    },
+    {
+      "key": 11,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [35000, 8500],
+      "reserve": false
+    },
+    {
+      "key": 12,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [36500, 8500],
+      "reserve": false
+    },
+    {
+      "key": 13,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [35000, 10000],
+      "reserve": false
+    },
+    {
+      "key": 14,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 3,
+      "at": [22500, 7500],
+      "reserve": false,
+      "plate": 2
+    },
+    {
+      "key": 15,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 3,
+      "at": [23500, 9500],
+      "reserve": false,
+      "plate": 2
+    },
+    {
+      "key": 16,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 3,
+      "at": [19500, 8500],
+      "reserve": false,
+      "plate": 2
+    },
+    {
+      "key": 17,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [3500, 7000],
+      "reserve": true
+    },
+    {
+      "key": 18,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [35000, 7000],
+      "reserve": true
+    },
+    {
+      "key": 19,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [3500, 7000],
+      "reserve": true
+    },
+    {
+      "key": 20,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [35000, 7000],
+      "reserve": true
+    },
+    {
+      "key": 21,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [3500, 7000],
+      "reserve": true
+    },
+    {
+      "key": 22,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [35000, 7000],
+      "reserve": true
+    },
+    {
+      "key": 23,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [3500, 7000],
+      "reserve": true
+    },
+    {
+      "key": 24,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [35000, 7000],
+      "reserve": true
+    },
+    {
+      "key": 25,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [3500, 7000],
+      "reserve": true
+    },
+    {
+      "key": 26,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [35000, 7000],
+      "reserve": true
+    },
+    {
+      "key": 27,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [3500, 7000],
+      "reserve": true
+    },
+    {
+      "key": 28,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [35000, 7000],
+      "reserve": true
+    },
+    {
+      "key": 29,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [3500, 7000],
+      "reserve": true
+    },
+    {
+      "key": 30,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [35000, 7000],
+      "reserve": true
+    },
+    {
+      "key": 31,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [3500, 7000],
+      "reserve": true
+    },
+    {
+      "key": 32,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [35000, 7000],
+      "reserve": true
+    },
+    {
+      "key": 33,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [3500, 7000],
+      "reserve": true
+    },
+    {
+      "key": 34,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [35000, 7000],
+      "reserve": true
+    },
+    {
+      "key": 35,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [3500, 7000],
+      "reserve": true
+    },
+    {
+      "key": 36,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [35000, 7000],
+      "reserve": true
+    },
+    {
+      "key": 37,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [3500, 7000],
+      "reserve": true
+    },
+    {
+      "key": 38,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [35000, 7000],
+      "reserve": true
+    },
+    {
+      "key": 39,
+      "type": "rwr.soldier-1",
+      "team": 1,
+      "squad": 1,
+      "at": [3500, 7000],
+      "reserve": true
+    },
+    {
+      "key": 40,
+      "type": "rwr.soldier-2",
+      "team": 2,
+      "squad": 2,
+      "at": [35000, 7000],
+      "reserve": true
+    }
+  ],
+  "run": {
+    "seed": 41,
+    "crowdPass": "teamIdle"
+  },
+  "owners": ["hand"],
+  "stamps": [],
+  "removed": [],
+  "next": {
+    "wall": 16,
+    "point": 4,
+    "base": 3,
+    "unit": 41,
+    "plate": 3,
+    "cutout": 2
+  }
+}

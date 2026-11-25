@@ -20,7 +20,11 @@ namespace WarCore.Tests
         }
 
         private static string Layer(string id, string pick, string extends = "rwr-body") =>
-            "{ \"id\": \"" + id + "\", \"extends\": \"" + extends + "\"" + (pick == null ? "" : ", \"pick\": " + pick) + " }";
+            "{ \"id\": \"" + id + "\", \"extends\": " + (extends.StartsWith("[") ? extends : "\"" + extends + "\"")
+            + (pick == null ? "" : ", \"pick\": " + pick) + " }";
+
+        // A stage makes its soldiers as its layer's unit types say (RC1-K4), so a layer a stage runs on names their speed.
+        private const string StageLayers = "[ \"rwr-body\", \"parts/unit-speed\" ]";
 
         private static string Pick(string radius, string height) => "{ \"radiusPermille\": " + radius + ", \"heightPermille\": " + height + " }";
 
@@ -111,7 +115,7 @@ namespace WarCore.Tests
                 {
                     string dir = dirs.Dir("Data");
                     Ed0Dirs.CopyRwr(dir);
-                    File.WriteAllText(Path.Combine(dir, id + ".json"), Layer(id, pick));
+                    File.WriteAllText(Path.Combine(dir, id + ".json"), Layer(id, pick, StageLayers));
                     Ed0Dirs.UseList(dir);
                     ShowcaseStage stage = Showcase.HouseStage(id);
                     Assert.That(stage.Reach() != null, Is.EqualTo(pick != null), "the cartridge is the one in use");

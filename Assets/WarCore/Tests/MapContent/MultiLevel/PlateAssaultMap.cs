@@ -2,9 +2,11 @@ using System.Collections.Generic;
 using WarCore.Content.MapTools;
 using WarCore.Sim;
 
-namespace WarCore.Content
+namespace WarCore.Tests
 {
-    // ML-11a demo: a two-storey house between two teams; the point upstairs can be walked to by the stair only.
+    // ML-11a fixture: a two-storey house between two teams; the point upstairs can be walked to by the stair only. The tests
+    // of floors, stairs and the AI on them are built on it. The house stage of the showcase is a map file of its own
+    // (Assets/WarCore/Maps/showcase-house.map.json), free to change without these tests.
     // 40 x 20 m flat ground at 0, 1 m cells.
     //   House: walls round cells x 14..25, z 5..14, 6 m tall, with a 2-cell doorway in the west wall (z 11..12, before the
     //     stair's foot) and in the east wall (z 6..7); no line from one team's start runs through both. Above 3 m the north and south walls have two 1-cell openings each
@@ -16,7 +18,7 @@ namespace WarCore.Content
     //     the stair. Its bottom, 2.5 m, leaves the ground under it walkable.
     //   Points: 1 on the ground west of the house (team 1), 2 on the first floor (team 2), 3 on the ground east (team 2).
     //   Units: eight soldiers of team 1 in the west; of team 2 five in the east and three on the first floor.
-    public static class PlateAssaultMap
+    internal static class PlateAssaultMap
     {
         private const long M = SimFix.Scale;
         public const int UpstairsPoint = 1;   // index in the match's points

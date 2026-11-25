@@ -112,5 +112,28 @@ namespace WarCore.Tests
             Assert.That(e.ParamName, Is.EqualTo("pack"));
             Assert.DoesNotThrow(() => MapRecipe.From(melee, RwrPack.Load("rwr-melee")));
         }
+
+        // RC1-K4: a map played under another layer than the one it names, its description untouched. The bake for that layer
+        // has the description's own hash, map and setup; only the pack id is the layer's, and the recipe takes that layer.
+        [Test]
+        public void BakingForAnotherLayerKeepsTheDescriptionAndNamesTheLayer()
+        {
+            byte[] bytes = File.ReadAllBytes(M6Path);
+            MapBakeResult own = MapBake.Run(bytes), melee = MapBake.Run(bytes, "rwr-melee");
+            Assert.That(own.PackId, Is.EqualTo(RwrPack.M6Layer));
+            Assert.That(melee.PackId, Is.EqualTo("rwr-melee"));
+            Assert.That(melee.DescHash, Is.EqualTo(own.DescHash));
+            Assert.That(melee.WcMapBytes, Is.EqualTo(own.WcMapBytes));
+            Assert.That(melee.Setup.Soldiers.Count, Is.EqualTo(own.Setup.Soldiers.Count));
+            Assert.That(melee.Setup.ControlPoints.Length, Is.EqualTo(own.Setup.ControlPoints.Length));
+            Assert.That(melee.Setup.Seed, Is.EqualTo(own.Setup.Seed));
+            WorldRecipe recipe = null;
+            Assert.DoesNotThrow(() => recipe = MapRecipe.From(melee, RwrPack.Load("rwr-melee")));
+            Assert.That(recipe.Pack?.Id, Is.EqualTo("rwr-melee"));
+            ArgumentException e = Assert.Throws<ArgumentException>(() => MapRecipe.From(melee, RwrPack.Load(RwrPack.M6Layer)));
+            Assert.That(ExceptionText.Body(e), Is.EqualTo(MismatchMessage), "the bake is for the layer asked for, not for the one the description names");
+            Assert.That(() => MapBake.Run(bytes, null), Throws.ArgumentException);
+            Assert.That(() => MapBake.Run(bytes, ""), Throws.ArgumentException);
+        }
     }
 }

@@ -1,7 +1,9 @@
-# SHOW-1: the showcase stages (Showcase, ShowcaseField), the projectile view data (SimSession.ProjectilesForView behind
+# SHOW-1: the showcase stages (Showcase), the projectile view data (SimSession.ProjectilesForView behind
 # ViewProjectiles.Read) and the HUD text (ShowcaseHud).
 # Filter: Show1Tests. Not listed: the null guards of ViewProjectiles.Read and the recipe switches whose removal makes a stage
-# throw on start (a crash is not an assertion); the content layers (JSON has no assembly); Unity code (no Unity here).
+# throw on start (a crash is not an assertion); the content layers and, since RC1-K4, the soldiers, reserves and points of
+# the stages, which are lines of map files (JSON has no assembly; AStageStartsWithItsForcesAndThePlayerInTeamOne holds
+# them); Unity code (no Unity here).
 
 [show1-fresh-is-launch-tick]
 file = Assets/WarCore/Presentation/Bridge/Features/ViewProjectiles.cs
@@ -73,66 +75,6 @@ original:
 replacement:
 | impact.DamageRaw >= 0));
 
-[show1-house-reserves]
-file = Assets/WarCore/Presentation/Bridge/Showcase.cs
-filter = FullyQualifiedName~Show1Tests
-expect = WarCore.Tests.Show1Tests.AStageStartsWithItsForcesAndThePlayerInTeamOne
-note = one reserve fewer a side in the house
-original:
-| private const int HouseReserves = 12;
-replacement:
-| private const int HouseReserves = 11;
-
-[show1-terrain-reserves]
-file = Assets/WarCore/Presentation/Bridge/Showcase.cs
-filter = FullyQualifiedName~Show1Tests
-expect = WarCore.Tests.Show1Tests.AStageStartsWithItsForcesAndThePlayerInTeamOne
-note = one reserve fewer a side on the terrain
-original:
-| private const int TerrainReserves = 30;
-replacement:
-| private const int TerrainReserves = 29;
-
-[show1-terrain-deployed]
-file = Assets/WarCore/Presentation/Bridge/Showcase.cs
-filter = FullyQualifiedName~Show1Tests
-expect = WarCore.Tests.Show1Tests.AStageStartsWithItsForcesAndThePlayerInTeamOne
-note = the tenth soldier of a side starts in reserve
-original:
-| rank >= 10);
-replacement:
-| rank >= 9);
-
-[show1-ancient-reserves]
-file = Assets/WarCore/Presentation/Bridge/Showcase.cs
-filter = FullyQualifiedName~Show1Tests
-expect = WarCore.Tests.Show1Tests.AStageStartsWithItsForcesAndThePlayerInTeamOne
-note = one reserve fewer a side in the melee
-original:
-| private const int AncientReserves = 30;
-replacement:
-| private const int AncientReserves = 29;
-
-[show1-ancient-deployed]
-file = Assets/WarCore/Presentation/Bridge/Showcase.cs
-filter = FullyQualifiedName~Show1Tests
-expect = WarCore.Tests.Show1Tests.AStageStartsWithItsForcesAndThePlayerInTeamOne
-note = the sixtieth soldier of a side starts in reserve
-original:
-| bool reserve = i >= 60;
-replacement:
-| bool reserve = i >= 59;
-
-[show1-ancient-player]
-file = Assets/WarCore/Presentation/Bridge/Showcase.cs
-filter = FullyQualifiedName~Show1Tests
-expect = WarCore.Tests.Show1Tests.AStageStartsWithItsForcesAndThePlayerInTeamOne
-note = the melee player is the second unit
-original:
-|                 .WithPlayer(1);
-replacement:
-|                 .WithPlayer(2);
-
 [show1-first-deployed-team]
 file = Assets/WarCore/Presentation/Bridge/Showcase.cs
 filter = FullyQualifiedName~Show1Tests
@@ -159,9 +101,9 @@ filter = FullyQualifiedName~Show1Tests
 expect = WarCore.Tests.Show1Tests.TheBulletsStageFliesProjectilesInsteadOfInstantHits
 note = the bullets stage plays the battle layer
 original:
-| () => Lanes(BulletsLayer).WcMapBytes, () => Battle(BulletsLayer), BattleScript),
+|             new ShowcaseStage("bullets", "Flying bullets", 22f, BulletsLayer, LanesMap, new[]
 replacement:
-| () => Lanes(BattleLayer).WcMapBytes, () => Battle(BattleLayer), BattleScript),
+|             new ShowcaseStage("bullets", "Flying bullets", 22f, BattleLayer, LanesMap, new[]
 
 [show1-script-dash]
 file = Assets/WarCore/Presentation/Bridge/Showcase.cs
@@ -362,23 +304,3 @@ original:
 | if (e.Alive && e.Band == me.Band) alive++;
 replacement:
 | if (e.Alive) alive++;
-
-[show1-field-points]
-file = Assets/WarCore/Content/ShowcaseField.cs
-filter = FullyQualifiedName~Show1Tests
-expect = WarCore.Tests.Show1Tests.AStageStartsWithItsForcesAndThePlayerInTeamOne
-note = the field has two points
-original:
-| var points = new ControlPointDef[3];
-replacement:
-| var points = new ControlPointDef[2];
-
-[show1-field-surface-required]
-file = Assets/WarCore/Content/ShowcaseField.cs
-filter = FullyQualifiedName~Show1Tests
-expect = WarCore.Tests.Show1Tests.TheFieldNeedsASurfaceAndAPack
-note = an empty surface id is accepted
-original:
-| if (string.IsNullOrEmpty(surface)) throw
-replacement:
-| if (surface == null) throw

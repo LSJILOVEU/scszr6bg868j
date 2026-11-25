@@ -4,7 +4,8 @@
 # Listed elsewhere: the AI rules read from the pack on flat and terrain maps (gen-airules.txt, p1.txt), the fair decisions
 # switch (fair-e.txt), the recipes that rebuild a recipe and keep its pack (m7b.txt, slope-1.txt), the slope feature's key
 # (slope-1.txt), the terrain and match features without a pack (ml-8.txt), ContentLayers.Terrain (l8b.txt), the playtest
-# recipe (pf1.txt) and the layer of the bullets stage (show-1.txt).
+# recipe (pf1.txt), the layer of the bullets stage (show-1.txt) and the one route that makes a stage's world from its
+# layer (rc1-k4.txt).
 
 [rc1-k2-second-pack-accepted]
 file = Assets/WarCore/Presentation/Bridge/WorldRecipe.cs
@@ -104,33 +105,3 @@ original:
 |                 .WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(content);
 replacement:
 |                 .WithCrowdPass(CrowdPassKind.TeamIdle);
-
-[rc1-k2-stage-world-reads-another-layer]
-file = Assets/WarCore/Presentation/Bridge/Showcase.cs
-filter = FullyQualifiedName~WarCore.Tests.Show1Tests.AStageReadsOneLayer
-expect = WarCore.Tests.Show1Tests.AStageReadsOneLayer("terrain")
-note = the terrain stage's world reads another layer than the stage names
-original:
-|             ContentPack content = ContentCatalog.Find().Load(TerrainLayer);
-replacement:
-|             ContentPack content = ContentCatalog.Find().Load(DemoRecipes.TerrainMatchLayer);
-
-[rc1-k2-house-reads-another-layer]
-file = Assets/WarCore/Presentation/Bridge/Showcase.cs
-filter = FullyQualifiedName~WarCore.Tests.Show1Tests.AStageReadsOneLayer
-expect = WarCore.Tests.Show1Tests.AStageReadsOneLayer("house")
-note = the house stage's world reads the old house layer whatever its map names
-original:
-|             ContentPack pack = ContentCatalog.Find().Load(baked.PackId);
-replacement:
-|             ContentPack pack = ContentCatalog.Find().Load(LegacyHouseLayer);
-
-[rc1-k2-stage-combat-from-another-pack]
-file = Assets/WarCore/Presentation/Bridge/Showcase.cs
-filter = FullyQualifiedName~WarCore.Tests.Show1Tests.AStageReadsOneLayer
-expect = WarCore.Tests.Show1Tests.AStageReadsOneLayer("terrain")
-note = the terrain stage fights with the weapons of a pack its world does not read
-original:
-|                 .WithCombat(content.BuildCombat()).WithMatch(TerrainDemoMap.BuildMatch(content))
-replacement:
-|                 .WithCombat(ContentCatalog.Find().Load(BattleLayer).BuildCombat()).WithMatch(TerrainDemoMap.BuildMatch(content))
