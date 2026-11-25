@@ -19,9 +19,6 @@ Content/MapTools/MapTerrain.cs	346
 Content/MapTools/MapTerrainMath.cs	141
 Content/PlayerIdentityDef.cs	12
 Content/TerrainAnchors.cs	32
-Interim/InertiaMotion.cs	58
-Interim/MotionState.cs	25
-Presentation/Bridge/Features/InertiaOption.cs	75
 Presentation/Maps/MapBuildingInfo.cs	56
 Presentation/Maps/MapCatalog.cs	51
 Presentation/Maps/MapDemTiles.cs	14

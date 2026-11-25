@@ -26,7 +26,8 @@ Every pull request runs `--self-test --check` (`.github/workflows/ruler.yml`).
    one per-unit trait is drawn with (`shared-salts`).
 3. **Finished means switched on.** `features.tsv` lists the finished features with the content field that switches each
    on, `played.tsv` the stages a person plays with the one pack each runs on. A feature that no stage has is marked `off`
-   (`features-off`).
+   (`features-off`). A switch that a stage's own code turns on, where no pack can reach it, is written in the last column
+   of `played.tsv`; the stages of the showcase have none.
 4. **Nothing idle.** `unused.tsv` lists the files that nothing a person can run reaches (`unused-lines`).
 5. **One value, one place.** A cartridge is a folder `Content/<name>/Data`. A file in it is a pack, which a stage can run
    on; a file in a folder under it is a part, which packs list in `extends`. A field that two of them write with the same
@@ -51,7 +52,8 @@ only tests reach is unused.
   switches on. The count is of whole files.
 - A file whose type has a name that is an ordinary word elsewhere counts as used.
 - `features.tsv` and `played.tsv` are kept by hand. A feature missing from the first is not counted. The pack of a
-  stage in the second is not derived here; the test `OnePackTests` compares it with the layer the stage's code names.
+  stage in the second is not derived here; the test `OnePackTests` compares it with the layer the stage's code names,
+  and the test `Show1Tests` holds the stages of the showcase to an empty last column.
 
 The size literals have their own ledger (`tools/size-guard/ledger.tsv`); the ruler only prints its figure.
 

@@ -105,7 +105,7 @@ namespace WarCore.Presentation
                 .WithCombat(source.Combat).WithCrowdPass(source.CrowdPass).WithRuleSet(source.RuleSetId).WithPlayer(player);
             if (source.Match != null) recipe = recipe.WithMatch(source.Match);
             if (source.Pack != null) recipe = recipe.WithPack(source.Pack);
-            if (source.BlockAi) recipe = recipe.WithBlockAi();
+            if (source.BlockAiAsked) recipe = recipe.WithBlockAi();
             foreach (IWorldOption option in source.Options) recipe = recipe.With(option);
             return recipe;
         }
@@ -150,7 +150,7 @@ namespace WarCore.Presentation
                 .WithCombat(pack).WithCrowdPass(source.CrowdPass).WithRuleSet(source.RuleSetId).WithPlayer(player);
             if (source.Match != null) recipe = recipe.WithMatch(source.Match);
             if (source.Pack != null) recipe = recipe.WithPack(source.Pack);
-            if (source.BlockAi) recipe = recipe.WithBlockAi();
+            if (source.BlockAiAsked) recipe = recipe.WithBlockAi();
             foreach (IWorldOption option in source.Options) recipe = recipe.With(option);
             return recipe;
         }

@@ -3,12 +3,13 @@
 # stage <tab> name <tab> content pack <tab> features its own code switches on (optional)
 #
 # A stage runs on one pack: the layer its world reads (the test OnePackTests holds this column to the stages' code).
-# The last column is a debt: a switch that sits in the stage's code, where no content pack can reach it.
+# The last column is a debt: a switch that sits in the stage's code, where no content pack can reach it. The six stages
+# of the showcase have none (the test Show1Tests holds them to that); the playtest keeps two until it is a map file.
 
-battle	Open battle	rwr-showcase	facing
-bullets	Flying bullets	rwr-showcase-bullets	facing
-house	House assault	rwr-showcase-house	respawn
-terrain	Hills and mud	rwr-showcase-terrain	respawn
-melee	Ancient melee	ancient-field	facing,block-ai
-hamlet	Valley hamlet	rwr-showcase-hamlet	facing
+battle	Open battle	rwr-showcase
+bullets	Flying bullets	rwr-showcase-bullets
+house	House assault	rwr-showcase-house
+terrain	Hills and mud	rwr-showcase-terrain
+melee	Ancient melee	ancient-field
+hamlet	Valley hamlet	rwr-showcase-hamlet
 mp	Multiplayer playtest	rwr-m7-playtest	respawn,block

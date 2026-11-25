@@ -194,11 +194,12 @@ namespace WarCore.Presentation
             return MapBake.Run(System.Text.Encoding.UTF8.GetBytes(text.Replace(LanesPack, "\"pack\": \"" + layer + "\"")));
         }
 
-        // The three-lane battle under one layer: its unit types (weapon, speed, dash, block), match rules (respawn included)
-        // and AI rules. Only team 1's unit type carries a block, and there is no block AI, so only the player raises one.
+        // The three-lane battle under one layer: its unit types (weapon, speed, dash, block), match rules (respawn included),
+        // AI rules and facing. Only team 1's unit type carries a block, and its spec gives the AI no chance to raise it, so
+        // only the player raises one.
         private static WorldRecipe Battle(string layer)
         {
-            WorldRecipe recipe = MapRecipe.From(Lanes(layer), ContentCatalog.Find().Load(layer), useUnitTypes: true).WithFacing();
+            WorldRecipe recipe = MapRecipe.From(Lanes(layer), ContentCatalog.Find().Load(layer), useUnitTypes: true);
             return recipe.WithPlayer(FirstDeployed(recipe.Units));
         }
 
@@ -234,11 +235,10 @@ namespace WarCore.Presentation
             return MapBake.Run(System.Text.Encoding.UTF8.GetBytes(text.Replace(HousePack, "\"pack\": \"" + layer + "\"")));
         }
 
-        // The assault demo house under one layer (weapons, match rules and the soldier's AI rules: the setup of the ML-11b-1
-        // battle tests) with HouseReserves more soldiers a side waiting in reserve, team 1's first soldier as the player and
-        // respawn on. The description's own units keep their keys; the reserves take the keys after them and wait where
-        // their team's first soldier starts.
-        private const int HouseReserves = 12, RespawnTicks = 150, RespawnGuardTicks = 90;
+        // The assault demo house under one layer (weapons, match rules with respawn and the soldier's AI rules) with
+        // HouseReserves more soldiers a side waiting in reserve and team 1's first soldier as the player. The description's
+        // own units keep their keys; the reserves take the keys after them and wait where their team's first soldier starts.
+        private const int HouseReserves = 12;
 
         private static WorldRecipe HouseRecipe(string layer)
         {
@@ -271,8 +271,7 @@ namespace WarCore.Presentation
             WorldRecipe recipe = new WorldRecipe(setup.Seed, MoverKind.InterimCrowd, units.ToArray(), Array.Empty<BridgeCommand>())
                 .WithCombat(pack.BuildCombat()).WithMatch(pack.BuildMatch(setup.ControlPoints, bases)).WithPlatesPreview()
                 .WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(pack);
-            recipe = recipe.WithPlayer(FirstDeployed(recipe.Units));
-            return DemoRecipes.WithRespawnGuard(DemoRecipes.WithRespawn(recipe, RespawnTicks), RespawnGuardTicks);
+            return recipe.WithPlayer(FirstDeployed(recipe.Units));
         }
 
         // East to the west doorway, in, and fire along the ground floor.
@@ -286,8 +285,8 @@ namespace WarCore.Presentation
         };
 
         // The demo terrain match (the layout of DemoRecipes.TerrainMatch: ten a side round the team anchor on the road) with
-        // TerrainReserves more a side in reserve, all under one layer (the M6 weapons and match rules with the terrain rules,
-        // the soldier's AI rules and the slope speeds), the player in team 1's first unit and respawn on.
+        // TerrainReserves more a side in reserve, all under one layer (the M6 weapons and match rules with respawn, the terrain
+        // rules, the soldier's AI rules and the slope speeds) and the player in team 1's first unit.
         private const int TerrainReserves = 30;
 
         private static WorldRecipe TerrainRecipe()
@@ -305,13 +304,13 @@ namespace WarCore.Presentation
             WorldRecipe recipe = new WorldRecipe(41, MoverKind.InterimCrowd, units, Array.Empty<BridgeCommand>())
                 .WithCombat(content.BuildCombat()).WithMatch(TerrainDemoMap.BuildMatch(content))
                 .WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(content);
-            recipe = recipe.WithPlayer(FirstDeployed(recipe.Units));
-            return DemoRecipes.WithRespawnGuard(DemoRecipes.WithRespawn(recipe, RespawnTicks), RespawnGuardTicks);
+            return recipe.WithPlayer(FirstDeployed(recipe.Units));
         }
 
         // 60 against 60 in six ranks (guards in front, then spears, then swords) with AncientReserves more a side in reserve
-        // on the showcase field (three points down the middle), facing and block AI on. The player is team 1's first guard; the cartridge has no
-        // respawn, so a dead player's control passes to a living team mate.
+        // on the showcase field (three points down the middle). The layer gives the facing, and the shield's chance in it the
+        // block AI. The player is team 1's first guard; the cartridge has no respawn, so a dead player's control passes to a
+        // living team mate.
         private const int AncientReserves = 30;
 
         private static WorldRecipe AncientRecipe()
@@ -328,7 +327,7 @@ namespace WarCore.Presentation
                 units[i + perTeam] = UnitSpawn.OfType((ulong)(i + perTeam) + 1, pack, rank[column], 2, 2, 66000 + 1500 * column, 22000 + 2000 * row, reserve);
             }
             return new WorldRecipe(41, MoverKind.InterimCrowd, units, Array.Empty<BridgeCommand>()).WithCombat(pack.BuildCombat())
-                .WithMatch(ShowcaseField.BuildMatch(pack)).WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(pack).WithFacing().WithBlockAi()
+                .WithMatch(ShowcaseField.BuildMatch(pack)).WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(pack)
                 .WithPlayer(1);
         }
 
