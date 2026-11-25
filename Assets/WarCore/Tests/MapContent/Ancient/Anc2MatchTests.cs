@@ -8,9 +8,10 @@ namespace WarCore.Tests
     public sealed class Anc2MatchTests
     {
         // Baseline recorded by this package (PLACEHOLDER fixture: formation, seed 41, spear numbers in ancient-field.json).
-        private const int Winner = 2, EndTick = 458, DeadTeam1 = 60, DeadTeam2 = 51;
-        private const int SwordHits = 241, SpearHits = 100, SwordBlocked = 68, SpearBlocked = 40;
-        private const ulong EndHash = 0x72A6C627BB3E21C1;
+        // RC1-K5a: recorded again when ancient-field took in ancient-nerve (the melee nerve is on in the field).
+        private const int Winner = 1, EndTick = 758, DeadTeam1 = 53, DeadTeam2 = 60;
+        private const int SwordHits = 242, SpearHits = 106, SwordBlocked = 51, SpearBlocked = 30;
+        private const ulong EndHash = 0x5B2694CB95835903;
 
         internal sealed class Result
         {

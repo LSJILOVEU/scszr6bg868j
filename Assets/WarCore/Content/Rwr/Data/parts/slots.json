@@ -1,0 +1,4 @@
+{
+  "id": "parts/slots",
+  "ai": { "slotSpacingMm": 2000, "slotRingMm": 6000 }
+}

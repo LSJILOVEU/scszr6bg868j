@@ -1,7 +1,4 @@
 {
   "id": "rwr-vspread",
-  "extends": "rwr-stance",
-  "combat": {
-    "verticalSpread": { "permille": 1000, "byStance": { "crouch": 800, "prone": 600 }, "aim": "center", "snapMm": 600 }
-  }
+  "extends": [ "rwr-stance", "parts/vertical-spread" ]
 }

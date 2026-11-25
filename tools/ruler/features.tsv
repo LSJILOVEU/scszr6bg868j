@@ -9,30 +9,30 @@
 # row, without the mark, in the change that adds it, and the mark goes in the change that switches a feature on.
 
 squads	brain	ai.squadMaxSize	Squads that form and move together
-squad-temper	brain	ai.squadRashPermille	Squads differ in temper: rash, steady, shaken	off
-squad-regroup	brain	ai.squadRegroupBelowPermille	A squad that has lost too many falls back to regroup	off
+squad-temper	brain	ai.squadRashPermille	Squads differ in temper: rash, steady, shaken
+squad-regroup	brain	ai.squadRegroupBelowPermille	A squad that has lost too many falls back to regroup
 spread-attack	brain	ai.attackSpreadPoints	A side attacks several points at once
 hold-share	brain	ai.holdSharePermille	Part of a side stays to hold its front point
 scatter	brain	ai.placement=scatter	Units spread around a point instead of filling a grid
-assault-roles	brain	ai.placement=assault-roles	Front, flank and rear roles around a point	off
+assault-roles	brain	ai.placement=assault-roles	Front, flank and rear roles around a point
 bounding	brain	ai.engage=bound	Bounding advance: some move while the others fire
 pressure	brain	ai.pressurePinnedAt	Units under fire get pinned or break
 cover	brain	ai.coverRadiusMm	Pinned units move to cover
-melee-nerve	brain	ai.meleeNerve	Melee units lose their nerve	off
+melee-nerve	brain	ai.meleeNerve	Melee units lose their nerve
 traits	brain	ai.traitSpreadPermille	Units differ in reaction and burst habits
 memory	brain	ai.targetMemoryTicks	A unit remembers where it last saw its target
 search	brain	ai.searchTicks	A unit goes to look where its target was last seen
 suppress	brain	ai.suppressTicks	A unit keeps firing at where its target was last seen
 reaction	brain	ai.reactionTicks	A delay before the first shot at a new target
 bursts	brain	ai.burstShots	Fire in bursts
-fair-decisions	brain	ai.fairDecisions	The order of decisions does not favour the units that spawned first	off
+fair-decisions	brain	ai.fairDecisions	The order of decisions does not favour the units that spawned first
 block-ai	brain	-	Computer units raise their shields
 standing-orders	brain	-	A squad holds or follows on command	off
 projectiles	fight	weapons[].projectileSpeed	Bullets that fly tick by tick
 grenade	fight	combat.blasts	Blasts: grenades
 move-spread	fight	combat.moveSpread	Aim widens while moving
-vertical-spread	fight	combat.verticalSpread	Shots spread up and down as well	off
-state-spread	fight	combat.status	Pinned, broken or wounded units shoot wider	off
+vertical-spread	fight	combat.verticalSpread	Shots spread up and down as well
+state-spread	fight	combat.status	Pinned, broken or wounded units shoot wider
 manual-reload	fight	combat.manualReload	Reloading by hand	off
 melee	fight	melee	Melee weapons
 block	fight	block	Blocking with a shield
@@ -43,11 +43,11 @@ facing	body	-	A unit faces the way it aims or walks
 mouse-reach	hand	pick.heightPermille	The mouse aims by the body's reach
 downed	health	combat.downed	Downed and stunned before death	off
 dash	move	unitTypes[].dashDistance	Dash
-slope-speed	move	movement.slope	Slopes change the step	off
+slope-speed	move	movement.slope	Slopes change the step
 surface-speed	move	surfaces[].speedMilli	Road is fast, mud is slow
 inertia	move	-	Units take time to speed up and to stop	off
 sight-limit	sight	combat.selector=sight-limited	A unit sees only as far as its sight
 concealment	sight	surfaces[].concealMilli	Ground cover hides units
 respawn	match	match.respawnTicks	The player respawns into a reserve
-reserves	match	match.reentryTicks	A fallen unit is replaced from a counted reserve	off
-reinforce-skip	match	match.reinforceSkipContested	Reinforcements stay away from a contested point	off
+reserves	match	match.reentryTicks	A fallen unit is replaced from a counted reserve
+reinforce-skip	match	match.reinforceSkipContested	Reinforcements stay away from a contested point

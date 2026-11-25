@@ -21,7 +21,10 @@ namespace WarCore.Tests
             public int Surfaces;
             public float X0;
             public long FirstBand = -1, FirstPinned = -1, FirstBroken = -1, FirstFly = -1, Fires;
-            public readonly List<ViewProjectile> FirstFlight = new List<ViewProjectile>(), SecondFlight = new List<ViewProjectile>();
+            public readonly List<ViewProjectile> FirstFlight = new List<ViewProjectile>();
+            // The first bullet of the run that was still in the air one tick after it was fired: as fired, and one tick on.
+            public ViewProjectile Launched, Flown;
+            public long FlownTick = -1;
             public float ShooterX, ShooterZ;
             public int Struck, Missed, Damaged, DamagedNotStruck, FreshMoved, MaxInFlight;
             public readonly Dictionary<long, (float X, bool Blocking, long DashLeft, bool Alive)> At = new Dictionary<long, (float, bool, long, bool)>();
@@ -60,6 +63,7 @@ namespace WarCore.Tests
             foreach (var item in stage.Script()) s.SetPlayerInput(item.AtTick, item.Input);
             foreach (BridgeCommand command in stage.Commands()) s.Enqueue(command);
             var flying = new List<ViewProjectile>();
+            var fresh = new List<ViewProjectile>();
             var landed = new List<ViewImpact>();
             for (int t = 1; t <= Ticks && !s.IsFinished; t++)
             {
@@ -87,8 +91,19 @@ namespace WarCore.Tests
                         seen.ShooterZ = shooter.Z;
                     }
                 }
-                else if (t == seen.FirstFly + 1)
-                    seen.SecondFlight.AddRange(flying);
+                // A bullet one tick on is told by where it was a tick earlier: the point a bullet was fired from last tick.
+                foreach (ViewProjectile p in flying)
+                {
+                    if (p.Fresh || seen.FlownTick >= 0) continue;
+                    foreach (ViewProjectile q in fresh)
+                        if (seen.FlownTick < 0 && p.Team == q.Team && p.FromX == q.X && p.FromY == q.Y && p.FromZ == q.Z)
+                        {
+                            seen.Launched = q; seen.Flown = p; seen.FlownTick = t;
+                        }
+                }
+                fresh.Clear();
+                foreach (ViewProjectile p in flying)
+                    if (p.Fresh) fresh.Add(p);
                 foreach (ViewImpact i in landed)
                 {
                     if (i.Struck) seen.Struck++; else seen.Missed++;
@@ -148,6 +163,7 @@ namespace WarCore.Tests
         }
 
         [TestCase("battle")]
+        [TestCase("bullets")]
         [TestCase("house")]
         [TestCase("terrain")]
         [TestCase("melee")]
@@ -158,6 +174,31 @@ namespace WarCore.Tests
             Assert.That(second.Hash150, Is.EqualTo(first.Hash150));
             Assert.That(second.Hash600, Is.EqualTo(first.Hash600));
             Assert.That(first.Hash600, Is.Not.EqualTo(first.Hash150));
+        }
+
+        // RC1-K5a: a stage's world saved at tick 300 and loaded into a world that has already played to tick 450 plays on as
+        // the world that was never saved does (compared every 50 ticks to tick 600). The stages switch on features together
+        // that no other save test combines.
+        [TestCase("battle")]
+        [TestCase("bullets")]
+        [TestCase("house")]
+        [TestCase("terrain")]
+        [TestCase("melee")]
+        [TestCase("hamlet")]
+        public void AStageSavedAtTick300PlaysOnTheSame(string id)
+        {
+            ShowcaseStage stage = Stage(id);
+            M6World whole = new M6World(stage.Recipe(), stage.MapBytes()), early = new M6World(stage.Recipe(), stage.MapBytes()),
+                resumed = new M6World(stage.Recipe(), stage.MapBytes());
+            whole.Step(300); early.Step(300); resumed.Step(450);
+            Assert.That(resumed.Hash, Is.Not.EqualTo(whole.Hash), "the stage moves on between tick 300 and tick 450");
+            resumed.Sim.RestoreRetainedSnapshot(early.Sim.SaveRetainedSnapshot());
+            Assert.That(resumed.Hash, Is.EqualTo(whole.Hash), "the loaded world is the saved one");
+            for (int t = 301; t <= 600; t++)
+            {
+                whole.Step(); resumed.Step();
+                if (t % 50 == 0) Assert.That(resumed.Hash, Is.EqualTo(whole.Hash), id + " tick " + t);
+            }
         }
 
         [Test]
@@ -213,14 +254,15 @@ namespace WarCore.Tests
             Assert.That(first.FromY, Is.EqualTo(1.5f).Within(0.01f), "the layer's muzzle height");
             Assert.That(seen.FreshMoved, Is.EqualTo(0), "a fresh projectile is drawn where it starts");
 
-            ViewProjectile flown = default;
-            int old = 0;
-            foreach (ViewProjectile p in seen.SecondFlight)
-                if (!p.Fresh) { flown = p; old++; }
-            Assert.That(old, Is.EqualTo(1), "the first bullet, one tick on");
+            // RC1-K5a: the script's first bullet can stop on a team mate within its first tick, so the flight is read off the
+            // first bullet of the run that was still in the air one tick after it was fired.
+            Assert.That(seen.FlownTick, Is.GreaterThan(seen.FirstFly), "a bullet is seen one tick after it was fired, where it was fired from");
+            ViewProjectile launched = seen.Launched, flown = seen.Flown;
+            Assert.That(launched.Fresh, Is.True);
+            Assert.That(flown.Fresh, Is.False);
             double step = Math.Sqrt(Sq(flown.X - flown.FromX) + Sq(flown.Y - flown.FromY) + Sq(flown.Z - flown.FromZ));
             Assert.That(step, Is.EqualTo(5.0).Within(0.01), "150 m/s at 30 ticks a second");
-            double flownFromMuzzle = Math.Sqrt(Sq(flown.X - first.X) + Sq(flown.Y - first.Y) + Sq(flown.Z - first.Z));
+            double flownFromMuzzle = Math.Sqrt(Sq(flown.X - launched.X) + Sq(flown.Y - launched.Y) + Sq(flown.Z - launched.Z));
             Assert.That(flownFromMuzzle, Is.EqualTo(5.0).Within(0.01), "its first tick of flight starts at the muzzle");
         }
 

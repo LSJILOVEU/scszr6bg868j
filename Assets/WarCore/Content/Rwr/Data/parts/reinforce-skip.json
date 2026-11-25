@@ -1,0 +1,4 @@
+{
+  "id": "parts/reinforce-skip",
+  "match": { "reinforceSkipContested": true }
+}

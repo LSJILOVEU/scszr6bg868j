@@ -1,0 +1,4 @@
+{
+  "id": "parts/cover",
+  "ai": { "coverRadiusMm": 9000, "coverStepMm": 1000, "coverDepthMm": 2000 }
+}

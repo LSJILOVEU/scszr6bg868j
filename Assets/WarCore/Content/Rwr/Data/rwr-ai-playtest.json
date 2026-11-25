@@ -1,4 +1,4 @@
 {
   "id": "rwr-ai-playtest",
-  "extends": ["rwr-terrain-demo", "parts/soldier"]
+  "extends": [ "rwr-terrain-demo", "parts/soldier", "parts/slope-speed" ]
 }

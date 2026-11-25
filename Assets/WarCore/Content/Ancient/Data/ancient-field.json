@@ -1,6 +1,6 @@
 {
   "id": "ancient-field",
-  "extends": "ancient",
+  "extends": "ancient-nerve",
   "melee": [
     { "id": "ancient.spear", "windupTicks": 8, "activeTicks": 2, "recoveryTicks": 10, "radius": 3, "cosHalfAnglePermille": 500,
       "halfHeight": 1, "damage": 40, "maxTargets": 1, "engageRange": 2.7, "lineHalfWidth": 0.3 }

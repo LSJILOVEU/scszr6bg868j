@@ -1,0 +1,4 @@
+{
+  "id": "parts/squad-temper",
+  "ai": { "squadRashPermille": 300, "squadSteadyPermille": 250, "squadShakenPermille": 600, "squadRashMinRangeMm": 8000 }
+}

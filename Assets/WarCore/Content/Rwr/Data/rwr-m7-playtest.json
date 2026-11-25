@@ -2,8 +2,8 @@
   "id": "rwr-m7-playtest",
   "extends": ["rwr-m6", "parts/soldier"],
   "weapons": [
-    { "id": "rwr.weapon-1", "effectRaw": 16384, "spreadBase": 4000, "spreadGrowth": 1000, "spreadMax": 9000 },
-    { "id": "rwr.weapon-2", "effectRaw": 18022, "spreadBase": 4000, "spreadGrowth": 1000, "spreadMax": 9000 }
+    { "id": "rwr.weapon-1", "effectRaw": 16384, "spreadBase": 1200, "spreadGrowth": 900, "spreadRecoverPerSec": 3000, "spreadMax": 9000 },
+    { "id": "rwr.weapon-2", "effectRaw": 18022, "spreadBase": 1200, "spreadGrowth": 900, "spreadRecoverPerSec": 3000, "spreadMax": 9000 }
   ],
   "unitTypes": [
     { "id": "rwr.soldier-1", "dashDistance": 4000, "dashTicks": 6, "dashCooldown": 90 },

@@ -1,7 +1,7 @@
 {
   "id": "rwr-showcase-hamlet",
   "extends": [
-    "rwr-stance", "rwr-m7-playtest", "parts/unit-speed", "parts/block", "parts/grenade", "parts/move-spread", "parts/respawn",
-    "parts/spread-attack", "parts/traits", "parts/scatter", "parts/bounding", "parts/pressure", "parts/squads", "parts/mouse-reach"
+    "rwr-stance", "parts/rifle-squad", "parts/grenade", "parts/move-spread", "parts/scatter", "parts/vertical-spread",
+    "parts/slope-speed", "parts/fair-decisions"
   ]
 }

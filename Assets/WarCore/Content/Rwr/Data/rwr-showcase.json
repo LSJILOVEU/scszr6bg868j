@@ -1,8 +1,4 @@
 {
   "id": "rwr-showcase",
-  "extends": [
-    "rwr-m7-playtest", "parts/unit-speed", "parts/block", "parts/body", "parts/respawn", "parts/spread-attack", "parts/traits",
-    "parts/scatter", "parts/bounding", "parts/pressure", "parts/squads", "parts/mouse-reach"
-  ],
-  "ai": { "coverRadiusMm": 9000, "coverStepMm": 1000, "coverDepthMm": 2000 }
+  "extends": [ "parts/rifle-squad", "parts/cover", "parts/scatter" ]
 }

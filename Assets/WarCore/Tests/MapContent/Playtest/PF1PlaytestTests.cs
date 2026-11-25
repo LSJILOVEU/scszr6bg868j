@@ -77,7 +77,8 @@ namespace WarCore.Tests
             Assert.That(play.TerrainPack, Is.Null);
         }
 
-        // AI-N1: PLACEHOLDER values, 4x spread and half the lethal chance on the two rifles; every other weapon field and weapon 3 stay as in rwr.
+        // AI-N1, RC1-K5a: PLACEHOLDER values on the two rifles: half the lethal chance, and a spread that starts near rwr's, grows
+        // faster and further while the trigger is held and comes back sooner. Every other weapon field and weapon 3 stay as in rwr.
         [Test]
         public void PF1Recipe_RiflesCarryTheAiN1Values()
         {
@@ -89,8 +90,10 @@ namespace WarCore.Tests
                 if (i >= 2) { Assert.That(play[i].Equals(demo[i]), Is.True, "weapon " + i); continue; }
                 Assert.That(play[i].EffectRaw, Is.EqualTo(effect[i]), "weapon " + i);
                 Assert.That(demo[i].EffectRaw, Is.EqualTo(i == 0 ? 32768 : 36045), "weapon " + i);
-                Assert.That((play[i].Spread.BaseMilli, play[i].Spread.GrowthMilli, play[i].Spread.MaxMilli), Is.EqualTo((4000, 1000, 9000)));
-                Assert.That(play[i].Spread.RecoverPerSecMilli, Is.EqualTo(demo[i].Spread.RecoverPerSecMilli));
+                Assert.That((play[i].Spread.BaseMilli, play[i].Spread.GrowthMilli, play[i].Spread.RecoverPerSecMilli, play[i].Spread.MaxMilli),
+                    Is.EqualTo((1200, 900, 3000, 9000)));
+                Assert.That((demo[i].Spread.BaseMilli, demo[i].Spread.GrowthMilli, demo[i].Spread.RecoverPerSecMilli, demo[i].Spread.MaxMilli),
+                    Is.EqualTo((1000, 340, 1400, 3000)));
                 Assert.That((play[i].FireIntervalMilli, play[i].Magazine, play[i].ReloadMilli, play[i].FalloffStart, play[i].FalloffEnd),
                     Is.EqualTo((demo[i].FireIntervalMilli, demo[i].Magazine, demo[i].ReloadMilli, demo[i].FalloffStart, demo[i].FalloffEnd)));
             }

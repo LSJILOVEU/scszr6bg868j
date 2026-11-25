@@ -1,0 +1,11 @@
+{
+  "id": "parts/state-spread",
+  "combat": {
+    "status": {
+      "pinned": { "spreadPermille": 1400 },
+      "broken": { "spreadPermille": 1800 },
+      "wounded": { "belowPermille": 500, "spreadPermille": 1250 }
+    }
+  },
+  "stats": { "spread": { "dragCeilPermille": 3000 } }
+}
