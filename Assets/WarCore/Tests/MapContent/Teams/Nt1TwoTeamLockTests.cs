@@ -22,7 +22,7 @@ namespace WarCore.Tests
         {
             // The playtest recipe without M7b's dash (the dash adds state, so the recorded values predate it).
             WarCore.Content.ContentPack layer = WarCore.Content.Rwr.RwrPack.Load(DemoRecipes.PlaytestLayer);
-            var w = new M6World(DemoRecipes.MpRespawnDemo(layer).WithAiRules(layer), DemoRecipes.M7MapBytes());
+            var w = new M6World(DemoRecipes.MpRespawnDemo(layer).WithPack(layer), DemoRecipes.M7MapBytes());
             Check(w, "playtest", PlaytestT150, PlaytestT300, PlaytestT600, PlaytestSnapshotT300);
         }
 

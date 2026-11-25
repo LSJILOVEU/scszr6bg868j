@@ -26,9 +26,7 @@ namespace WarCore.Presentation
             WorldRecipe recipe = a.Recipe;
             CombatSystem combat = a.Combat;
             TerrainTables terrain = a.Terrain;
-            // A map with plates only may run on the terrain branch without a terrain pack; its AI rules then come from the AI pack.
-            bool terrainRules = terrain != null && recipe.TerrainPack != null;
-            AiRules ai = (terrainRules ? recipe.TerrainPack : recipe.AiPack)?.Section<AiRules>();
+            AiRules ai = recipe.Pack?.Section<AiRules>();
             // ML-9b: on a map with plates the match systems read layers (null without plates: the old rules).
             PlateLayers layers = PlateLayers.Of(a);
             var capture = new CaptureSystem(combat, recipe.Match, layers);
@@ -95,9 +93,8 @@ namespace WarCore.Presentation
                 squads = new Squads(combat, adapter, a.Controlled, ai.Squads.Value);
                 sim.RegisterGameplay("battle.ai-squads", squads, SimSystemPhase.Requests);
             }
-            int meleeChaseRange = terrainRules ? recipe.TerrainPack.Section<AiRules>().MeleeChaseRange : 0;
-            if (!terrainRules && ai != null) meleeChaseRange = ai.MeleeChaseRange;
-            bool fair = recipe.TerrainPack != null && recipe.TerrainPack.Section<AiRules>().FairDecisions;
+            int meleeChaseRange = ai != null ? ai.MeleeChaseRange : 0;
+            bool fair = ai != null && ai.FairDecisions;
             // TRV-7a: the entry table is built from the same cost tables once the walls are in the spatial index (WorldBuilder).
             a.Reach = PointReach.Of(a, recipe.Match);
             sim.RegisterGameplay("battle.ai", new SimpleAiSystem(combat, recipe.Combat, recipe.Match, capture, adapter, a.Controlled, memory, contacts, search, suppress, meleeChaseRange, fair, recipe.Seed, ContentPolicies.Parts(ai, recipe.Match.Points, recipe.Match.ThinkInterval, terrain == null, layers != null, squads), pressure, layers, layers,

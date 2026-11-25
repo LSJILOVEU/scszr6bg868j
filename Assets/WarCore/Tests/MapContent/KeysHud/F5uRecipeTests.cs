@@ -59,7 +59,7 @@ namespace WarCore.Tests
             Assert.That(b.PlayerKey, Is.EqualTo(a.PlayerKey));
             Assert.That(b.CrowdPass, Is.EqualTo(a.CrowdPass));
             Assert.That(b.RuleSetId, Is.EqualTo(a.RuleSetId));
-            Assert.That(b.TerrainPack, Is.SameAs(a.TerrainPack));
+            Assert.That(b.Pack, Is.SameAs(a.Pack));
             Assert.That(b.Script.ToArray(), Is.EqualTo(a.Script.ToArray()));
             Assert.That(b.Facing, Is.EqualTo(a.Facing));
             Assert.That(b.BlockAi, Is.EqualTo(a.BlockAi));
@@ -105,9 +105,9 @@ namespace WarCore.Tests
             };
             WorldRecipe source = new WorldRecipe(7, MoverKind.InterimCrowd, units, System.Array.Empty<BridgeCommand>())
                 .WithCombat(custom).WithCrowdPass(CrowdPassKind.TeamIdle).WithPlayer(2)
-                .WithRuleSet("test.f5u-copy").WithTerrainRules(RwrPack.Load(RwrPack.M6Layer)).WithBlockAi().WithFacing().WithStandingOrders();
+                .WithRuleSet("test.f5u-copy").WithPack(RwrPack.Load(RwrPack.M6Layer)).WithBlockAi().WithFacing().WithStandingOrders();
             // Every recipe-level field is off its default, so dropping any of them in the copy is seen.
-            Assert.That((source.RuleSetId, source.TerrainPack != null, source.BlockAi, source.Facing, source.Motion, source.Standing),
+            Assert.That((source.RuleSetId, source.Pack != null, source.BlockAi, source.Facing, source.Motion, source.Standing),
                 Is.EqualTo(("test.f5u-copy", true, true, true, false, true)));
             WorldRecipe changed = DemoRecipes.WithPlayerBlock(source, new BlockSpec(500, 1000));
             SameUnitsButPlayerBlock(source, changed, 1);

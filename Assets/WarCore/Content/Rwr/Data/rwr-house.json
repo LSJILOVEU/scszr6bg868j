@@ -1,0 +1,4 @@
+{
+  "id": "rwr-house",
+  "extends": [ "rwr-m6", "parts/soldier" ]
+}

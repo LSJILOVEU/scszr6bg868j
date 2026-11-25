@@ -13,8 +13,8 @@ using static WarCore.Tests.Slope1;
 
 namespace WarCore.Tests
 {
-    // SLOPE-1: off by default (S1), saves and determinism (S10), the slope-race replay (S11), recipes carrying the pack (S28)
-    // and where the pack comes from (S29).
+    // SLOPE-1: off by default (S1), saves and determinism (S10), the slope-race replay (S11) and recipes carrying the pack
+    // (S28).
     public sealed class Slope1WorldTests
     {
         private static readonly UnitSpawn[] Walkers = { Unit(1, 1500, 1500), Unit(2, 16500, 4500) };
@@ -29,8 +29,9 @@ namespace WarCore.Tests
 
         private static StableContentManifest Content(SimSession s) => M3TestWorld.Sim(s).StableContent;
 
-        // S1: a terrain world and a plate world, each with WithPack(a pack without the new sections) and without: the same
-        // hashes tick by tick for 300 ticks, the same content manifest, the same locomotion state version.
+        // S1: a pack without the new sections leaves the step line off: a terrain world under it has no movement.step key, and
+        // a plate world under one that has no terrain rules either is the world without a pack: the same content manifest,
+        // the same locomotion state version and the same hashes tick by tick for 300 ticks.
         [Test]
         public void S1_APackWithoutTheSectionsChangesNothing()
         {
@@ -38,16 +39,15 @@ namespace WarCore.Tests
             {
                 WcMap ramp = RampX(20, 6, Rise600, "mud");
                 SimSession with = Ai(ramp, Plain(), Walkers, WalkerScript);
-                SimSession without = Ai(ramp, Plain(), Walkers, WalkerScript, withPack: false);
-                Assert.That(Content(with).Digest, Is.EqualTo(Content(without).Digest), "terrain manifest");
-                Assert.That(Loco(with).StateVersion, Is.EqualTo(Loco(without).StateVersion));
-                Assert.That(Hashes(with, 300), Is.EqualTo(Hashes(without, 300)), "terrain");
+                Assert.Throws<SimBoundaryException>(() => Content(with).Key(SlopeFeature.ContentKeyName));
 
-                SimSession plateWith = SimSession.Create(Ml7Worlds.Recipe(Ml8DemoTests.Squad, Ml8DemoTests.Script).WithPack(Plain()), Ml8Worlds.Demo);
+                ContentPack bare = Layer("slope-test", null, "rwr-m6");
+                Assert.That(bare.Terrain, Is.Null, "the plate world's pack has no terrain rules");
+                SimSession plateWith = SimSession.Create(Ml7Worlds.Recipe(Ml8DemoTests.Squad, Ml8DemoTests.Script).WithPack(bare), Ml8Worlds.Demo);
                 SimSession plateWithout = SimSession.Create(Ml7Worlds.Recipe(Ml8DemoTests.Squad, Ml8DemoTests.Script), Ml8Worlds.Demo);
                 Assert.That(Content(plateWith).Digest, Is.EqualTo(Content(plateWithout).Digest), "plate manifest");
+                Assert.That(Loco(plateWith).StateVersion, Is.EqualTo(Loco(plateWithout).StateVersion));
                 Assert.That(Hashes(plateWith, 300), Is.EqualTo(Hashes(plateWithout, 300)), "plates");
-                Assert.Throws<SimBoundaryException>(() => Content(with).Key(SlopeFeature.ContentKeyName));
                 // A stats row of another line (stats.spread) does not turn the step line on.
                 ContentPack spread = Layer("slope-test", "\"stats\": { \"spread\": { \"dragFloorPermille\": 900 } }");
                 SimSession spreadOnly = Ai(ramp, spread, Walkers, WalkerScript), plainAgain = Ai(ramp, Plain(), Walkers, WalkerScript);
@@ -168,29 +168,6 @@ namespace WarCore.Tests
                     SimSession s = SimSession.Create(r, WcMapWriter.Write(map));
                     Assert.That(Content(s).Key(SlopeFeature.ContentKeyName), Is.EqualTo(SlopeFeature.Digest(slope)));
                 }
-            });
-        }
-
-        // S29: with the feature on, a pack and a terrain pack of different ids refuse the world; with it off the same pair
-        // builds; a recipe that only calls WithTerrainRules(sloped pack) still takes the slope (4369 up a 600 permille ramp).
-        [Test]
-        public void S29_WhereThePackComesFrom()
-        {
-            Assert.DoesNotThrow(() =>
-            {
-                WcMap ramp = RampX(20, 3, Rise600);
-                byte[] bytes = WcMapWriter.Write(ramp);
-                WorldRecipe Pair(ContentPack terrain, ContentPack pack) =>
-                    new WorldRecipe(41, MoverKind.InterimCrowd, new[] { Unit(1, 1500, 1500) }, new[] { BridgeCommand.MoveTo(1, 1, 16500, 1500) })
-                        .WithTerrainRules(terrain).WithPack(pack);
-                Assert.Throws<ArgumentException>(() => SimSession.Create(Pair(Sloped("slope-a"), Sloped("slope-b")), bytes));
-                Assert.Throws<ArgumentException>(() => SimSession.Create(Pair(Plain("slope-a"), Sloped("slope-b")), bytes));
-                Assert.DoesNotThrow(() =>
-                {
-                    SimSession.Create(Pair(Plain("slope-a"), Plain("slope-b")), bytes);
-                    SimSession terrainOnly = Ai(ramp, Sloped(), new[] { Unit(1, 1500, 1500) }, new[] { BridgeCommand.MoveTo(1, 1, 16500, 1500) }, withPack: false);
-                    Assert.That(FirstMove(terrainOnly).X.Raw, Is.EqualTo(4369));
-                });
             });
         }
     }

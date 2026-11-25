@@ -13,18 +13,17 @@ using static WarCore.Tests.Ml11b1World;
 namespace WarCore.Tests
 {
     // ML-11b-1 acceptance 12 and 13: whole games. The search and the chase on the house are the same for the same seed and
-    // resume from a snapshot; the assault demo map (PlateAssaultMap) is played under the playtest AI rules as they are.
+    // resume from a snapshot; the assault demo map (PlateAssaultMap) is played under the soldier's AI rules as they are.
     public sealed class Ml11b1BattleTests
     {
         private const string Search = "{ \"targetMemoryTicks\": 300, \"searchTicks\": 40 }";
         private const string Chase = "{ \"meleeChaseRange\": 12 }";
 
-        internal static readonly MapBakeResult Baked = MapBake.Run(PlateAssaultMap.DescBytes());
+        // The legacy house stage's map: the assault demo map naming layer rwr-house, the m6 layer's units and match with the
+        // soldier's AI rules. The world reads that one layer.
+        internal static readonly MapBakeResult Baked = Showcase.House(Showcase.LegacyHouseLayer);
 
-        // The m6 layer's units and match with the playtest pack's AI section: the map has no terrain pack, so the AI rules come
-        // from the AI pack.
-        internal static WorldRecipe Playtest() =>
-            MapRecipe.From(Baked, RwrPack.Load("rwr-m6")).WithPlatesPreview().WithAiRules(RwrPack.Load("rwr-ai-playtest"));
+        internal static WorldRecipe Playtest() => MapRecipe.From(Baked, RwrPack.Load(Baked.PackId)).WithPlatesPreview();
 
         internal static M6World Assault() => new M6World(Playtest(), Baked.WcMapBytes);
 
@@ -89,8 +88,9 @@ namespace WarCore.Tests
         public void ThePlaytestRulesBuildOnTheAssaultMap()
         {
             WorldRecipe recipe = Playtest();
-            Assert.That(recipe.TerrainPack, Is.Null, "the AI rules are read from the AI pack");
-            AiRules ai = recipe.AiPack.Section<AiRules>();
+            Assert.That(recipe.Pack?.Id, Is.EqualTo(Showcase.LegacyHouseLayer), "the AI rules are read from the world's one pack");
+            Assert.That(recipe.Pack.Terrain, Is.Null, "which has no terrain rules: the plates stand under the default rules");
+            AiRules ai = recipe.Pack.Section<AiRules>();
             Assert.That((ai.FailedSlotTicks, ai.TargetMemoryTicks, ai.SearchTicks, ai.SuppressTicks, ai.MeleeChaseRange, ai.ReactionTicks, ai.SenseTicks,
                 ai.BurstShots, ai.BurstPauseTicks), Is.EqualTo((90, 300, 90, 90, 12, 15, 6, 3, 30)));
             M6World w = Assault();

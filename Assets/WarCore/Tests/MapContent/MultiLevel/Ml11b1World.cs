@@ -45,7 +45,7 @@ namespace WarCore.Tests
             MatchPack pack = M6World.Pack(points ?? new[] { PointDown(1, 60500, 20500) }, ticks: 100000, interval: 1000000, think: 1,
                 bases: Bases(new SpawnAnchor(1, P(5, 30))));
             WorldRecipe recipe = M6World.Endless(Recipe(units, pack, false)).WithCombat(combat);
-            recipe = fair ? recipe.WithTerrainRules(Rules(ai)) : recipe.WithAiRules(Rules(ai));
+            recipe = fair ? recipe.WithPack(Rules(ai)) : recipe.WithPack(Rules(ai));
             if (plates) recipe = recipe.WithPlatesPreview();
             var w = new M6World(recipe, map ?? (plates ? House(stair) : Ml9bMatchTests.Arena(false)));
             Install(w, "dispatch", new Sent());

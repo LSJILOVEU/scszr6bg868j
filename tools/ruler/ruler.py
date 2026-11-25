@@ -514,15 +514,10 @@ def scan_features(packs, modules):
                 home.setdefault(layer_id, []).append(cartridge)
     for number, cells in rows("played.tsv"):
         if len(cells) not in (3, 4):
-            fail_table("played.tsv", number, "expected: stage, name, packs and, when its code switches features on, their ids")
-        data = {}
-        for item in cells[2].split(","):
-            layer, _, only = item.partition(":")
-            if len(home.get(layer, [])) != 1:
-                fail_table("played.tsv", number, "no content pack '%s', or more than one" % layer)
-            full = merged(packs[home[layer][0]], layer)
-            data.update({key: full[key] for key in (only.split("+") if only else full) if key in full})
-        stages.append({"id": cells[0], "name": cells[1], "packs": cells[2], "data": data,
+            fail_table("played.tsv", number, "expected: stage, name, pack and, when its code switches features on, their ids")
+        if len(home.get(cells[2], [])) != 1:
+            fail_table("played.tsv", number, "a stage runs on one content pack; '%s' is none, or is in more than one cartridge" % cells[2])
+        stages.append({"id": cells[0], "name": cells[1], "pack": cells[2], "data": merged(packs[home[cells[2]][0]], cells[2]),
                        "code": cells[3].split(",") if len(cells) == 4 else [], "line": number})
     features = []
     for number, cells in rows("features.tsv"):
@@ -545,7 +540,7 @@ def scan_features(packs, modules):
         for feature in stage["code"]:
             if feature not in known:
                 fail_table("played.tsv", stage["line"], "unknown feature '%s'" % feature)
-    return [{"id": s["id"], "name": s["name"], "packs": s["packs"], "code": s["code"]} for s in stages], features, problems
+    return [{"id": s["id"], "name": s["name"], "pack": s["pack"], "code": s["code"]} for s in stages], features, problems
 
 
 def pack_copies(packs):

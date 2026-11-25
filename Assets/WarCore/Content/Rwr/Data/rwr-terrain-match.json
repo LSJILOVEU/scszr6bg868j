@@ -1,0 +1,4 @@
+{
+  "id": "rwr-terrain-match",
+  "extends": [ "rwr-m6", "rwr-terrain-demo" ]
+}

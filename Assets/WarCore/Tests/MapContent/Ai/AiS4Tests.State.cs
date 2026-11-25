@@ -97,7 +97,7 @@ namespace WarCore.Tests
             Assert.That(ContentPolicies.Parts(null, default, 1, false).CoverRadiusRaw, Is.EqualTo(0));
         }
 
-        // A battle on a terrain map (the L4 fixture: its rules come from the terrain pack) builds with the pressure fields
+        // A battle on a terrain map (the L4 fixture: its rules come from its pack) builds with the pressure fields
         // and fails to build with the cover fields.
         [Test]
         public void Content_ATerrainBattleRefusesCover()
@@ -197,7 +197,7 @@ namespace WarCore.Tests
         private const string BattleS3 = "{ " + BoundAi + ", " + Real + " }";
         private const string BattleS4 = "{ " + BoundAi + ", " + Real + ", \"coverRadiusMm\": 9000, \"coverStepMm\": 1000, \"coverDepthMm\": 2000 }";
         private static M6World Battle(ulong seed, bool? fair, string ai) =>
-            new M6World(FairEFixture.Recipe("control", seed, fair).WithAiRules(Pack(ai)), WcMapWriter.Write(M3TestWorld.Boxes(160, 100, Yards)));
+            new M6World(FairEFixture.Recipe("control", seed).WithPack(Pack(FairEFixture.Ai(ai, fair))), WcMapWriter.Write(M3TestWorld.Boxes(160, 100, Yards)));
 
         // Living pinned units that stand with a wall within 2 m toward where their fire came from, and those walking there.
         private static (int standing, int walking) InCover(M6World w)

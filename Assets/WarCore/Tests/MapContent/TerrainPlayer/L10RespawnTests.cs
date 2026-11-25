@@ -19,7 +19,7 @@ namespace WarCore.Tests
                 U(24, 21500, 14500, team: 2, weapon: 0), U(25, 21500, 16500, team: 2, weapon: 0)
             };
             MatchPack match = QuietMatch(new[] { new SpawnAnchor(1, SimVec3.Metres(14, 0, 8)), new SpawnAnchor(2, SimVec3.Metres(44, 0, 16)) }, 300);
-            WorldRecipe recipe = M6World.RecipeOf(units, match, L6.Pack().BuildCombat()).WithTerrainRules(L6.Pack()).WithPlayer(1);
+            WorldRecipe recipe = M6World.RecipeOf(units, match, L6.Pack().BuildCombat()).WithPack(L6.Pack()).WithPlayer(1);
             return new M6World(recipe, L6.MapBytes());
         }
 

@@ -46,7 +46,7 @@ namespace WarCore.Presentation
             ContentPack pack = ContentLoader.Load(new LayerSource(FileContentSource.Rwr()), LayerId);
             return new WorldRecipe(41, MoverKind.InterimCrowd, units, commands)
                 .WithMatch(match).WithCombat(combat).WithCrowdPass(CrowdPassKind.TeamIdle)
-                .WithRuleSet(MatchMode.TestNeverEndsId).WithTerrainRules(pack).WithStandingOrders();
+                .WithRuleSet(MatchMode.TestNeverEndsId).WithPack(pack).WithStandingOrders();
         }
 
         // Cell (x, z) has its centre at (x + 0.5, z + 0.5) m.

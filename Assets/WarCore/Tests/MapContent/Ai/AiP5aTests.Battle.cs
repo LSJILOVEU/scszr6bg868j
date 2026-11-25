@@ -33,7 +33,7 @@ namespace WarCore.Tests
         }
         // 150 against 150 with rifles on a 160 m x 100 m field with six walls; the reserves come in as men fall.
         private static M6World Battle(string ai, bool? fair, ulong seed = 41) =>
-            new M6World(FairEFixture.Recipe("control", seed, fair).WithAiRules(Pack(ai)), WcMapWriter.Write(M3TestWorld.Boxes(160, 100, Yards)));
+            new M6World(FairEFixture.Recipe("control", seed).WithPack(Pack(FairEFixture.Ai(ai, fair))), WcMapWriter.Write(M3TestWorld.Boxes(160, 100, Yards)));
 
         // 6. Squads with the nearest dispatch (hold share and attack spread on) and each placement, under hold and under
         // bound with pressure and cover, with and without fair decisions: the same battle twice gives the same hash on

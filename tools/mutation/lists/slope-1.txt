@@ -1,6 +1,6 @@
 # SLOPE-1 slopes and the foot step: the slope table (bands, edges, probe run, checks, digest), the step line (on switch,
 # probe, one division, clamps, drags, one-raw minimum, caps, the receipt), the player and dash wiring, the flat drags, the
-# two content sections, the feature (switch, pack source, id check, content key and digest) and the recipes carrying the pack.
+# two content sections, the feature (switch, content key and digest) and the recipes carrying the pack.
 # Not listed: sending every unblocked terrain step through the line with nothing configured gives the old surface product
 # (StatLine with [surface, 1000] rounds the same), an equivalent mutant; S1 pins the off state through the feature switch.
 # Writing the step back into MotionState and re-probing on a fallback have no single line to break; S22 and S27 pin them.
@@ -480,33 +480,13 @@ original:
 replacement:
 | HasSpeedRow(ContentPack pack) => pack.SectionOrNull<StatClamps>() != null;
 
-[slope1-feature-no-terrain-pack]
-file = Assets/WarCore/Presentation/Bridge/Features/SlopeFeature.cs
-filter = FullyQualifiedName~Slope1
-expect = WarCore.Tests.Slope1WorldTests.S29_WhereThePackComesFrom
-note = a recipe with only a terrain pack gets no slope
-original:
-| internal static ContentPack PackOf(WorldRecipe recipe) => recipe.Pack ?? recipe.TerrainPack;
-replacement:
-| internal static ContentPack PackOf(WorldRecipe recipe) => recipe.Pack;
-
-[slope1-feature-no-id-check]
-file = Assets/WarCore/Presentation/Bridge/Features/SlopeFeature.cs
-filter = FullyQualifiedName~Slope1
-expect = WarCore.Tests.Slope1WorldTests.S29_WhereThePackComesFrom
-note = packs of different ids are not refused
-original:
-| if (pack != null && terrain != null && pack.Id != terrain.Id)
-replacement:
-| if (pack != null && terrain != null && pack.Id == null)
-
 [slope1-feature-no-key]
 file = Assets/WarCore/Presentation/Bridge/Features/SlopeFeature.cs
 filter = FullyQualifiedName~Slope1
 expect = WarCore.Tests.Slope1WorldTests.S10_SavesAndDeterminism
 note = the world has no movement.step content key
 original:
-| a.ContentKeys.Add(new StableContentKey(ContentKeyName, Digest(PackOf(a.Recipe))));
+| a.ContentKeys.Add(new StableContentKey(ContentKeyName, Digest(a.Recipe.Pack)));
 replacement:
 
 [slope1-digest-no-prefix]
@@ -562,8 +542,9 @@ filter = FullyQualifiedName~Slope1
 expect = WarCore.Tests.Slope1WorldTests.S28_RecipesCarryThePack
 note = a map recipe has no pack
 original:
-| recipe = recipe.WithPack(pack);
+| .WithCombat(pack.BuildCombat()).WithPack(pack);
 replacement:
+| .WithCombat(pack.BuildCombat());
 
 [slope1-team-dash-drops-pack]
 file = Assets/WarCore/Presentation/Bridge/DemoRecipes.cs
@@ -571,10 +552,12 @@ filter = FullyQualifiedName~Slope1
 expect = WarCore.Tests.Slope1WorldTests.S28_RecipesCarryThePack
 note = the team dash recipe loses its pack
 original:
-|             if (source.AiPack != null) recipe = recipe.WithAiRules(source.AiPack);
+|                 .WithCombat(source.Combat).WithCrowdPass(source.CrowdPass).WithRuleSet(source.RuleSetId).WithPlayer(player);
+|             if (source.Match != null) recipe = recipe.WithMatch(source.Match);
 |             if (source.Pack != null) recipe = recipe.WithPack(source.Pack);
 replacement:
-|             if (source.AiPack != null) recipe = recipe.WithAiRules(source.AiPack);
+|                 .WithCombat(source.Combat).WithCrowdPass(source.CrowdPass).WithRuleSet(source.RuleSetId).WithPlayer(player);
+|             if (source.Match != null) recipe = recipe.WithMatch(source.Match);
 
 [slope1-block-drops-pack]
 file = Assets/WarCore/Presentation/Bridge/DemoRecipes.cs
@@ -582,9 +565,9 @@ filter = FullyQualifiedName~Slope1
 expect = WarCore.Tests.Slope1WorldTests.S28_RecipesCarryThePack
 note = the block recipe loses its pack
 original:
-|             if (source.TerrainPack != null) recipe = recipe.WithTerrainRules(source.TerrainPack);
+|                 .WithCombat(pack).WithCrowdPass(source.CrowdPass).WithRuleSet(source.RuleSetId).WithPlayer(player);
+|             if (source.Match != null) recipe = recipe.WithMatch(source.Match);
 |             if (source.Pack != null) recipe = recipe.WithPack(source.Pack);
-|             if (source.BlockAi)
 replacement:
-|             if (source.TerrainPack != null) recipe = recipe.WithTerrainRules(source.TerrainPack);
-|             if (source.BlockAi)
+|                 .WithCombat(pack).WithCrowdPass(source.CrowdPass).WithRuleSet(source.RuleSetId).WithPlayer(player);
+|             if (source.Match != null) recipe = recipe.WithMatch(source.Match);

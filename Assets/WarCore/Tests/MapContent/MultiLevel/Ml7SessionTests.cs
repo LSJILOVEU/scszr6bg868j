@@ -245,7 +245,7 @@ namespace WarCore.Tests
         {
             MapDesc d = Ml4Maps.Make(0, 12, 6, Ml4Maps.Ground(12, 6, 0), new[] { Ml4Maps.Flat(1, 2, 1, 3, 2, M) });
             byte[] map = Bytes(d);
-            WorldRecipe Terrain(UnitSpawn spawn) => Recipe(new[] { Unit(1, 1, 10500, 4500), spawn }).WithTerrainRules(Wp23.Pack());
+            WorldRecipe Terrain(UnitSpawn spawn) => Recipe(new[] { Unit(1, 1, 10500, 4500), spawn }).WithPack(Wp23.Pack());
             SimSession s = null;
             Assert.DoesNotThrow(() => s = SimSession.Create(Terrain(Unit(2, 2, 3500, 1500, 1)), map));
             Assert.That((M3TestWorld.Position(s, 2).Y.Raw, Vertical(s, 2).Layer), Is.EqualTo((M, (ushort)1)));

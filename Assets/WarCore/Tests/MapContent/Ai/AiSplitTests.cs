@@ -28,7 +28,7 @@ namespace WarCore.Tests
             var units = new UnitSpawn[Units];
             for (int i = 0; i < Units; i++) units[i] = M6World.U((ulong)i + 1, 1, 21 + i % 20 * 2, 30 + i / 20 * 2);
             WorldRecipe recipe = M6World.RecipeOf(units, M6World.Pack(points, think: 1)).WithRuleSet(MatchMode.TestNeverEndsId);
-            if (permille >= 0) recipe = recipe.WithAiRules(Pack("{ \"holdSharePermille\": " + permille + " }"));
+            if (permille >= 0) recipe = recipe.WithPack(Pack("{ \"holdSharePermille\": " + permille + " }"));
             return new M6World(recipe, WcMapWriter.Write(Wp23.Make(80, 40, 0, 4 * SimFix.Scale,
                 Array.Empty<(int, int, int, int)>(), 2 * SimFix.Scale, null)));
         }
@@ -103,7 +103,7 @@ namespace WarCore.Tests
         }
 
         private static M6World Battle(ulong seed, bool? fair, int permille) =>
-            new M6World(FairEFixture.Recipe("control", seed, fair).WithAiRules(Pack("{ \"holdSharePermille\": " + permille + " }")), FairEFixture.Map("control"));
+            new M6World(FairEFixture.Recipe("control", seed).WithPack(Pack(FairEFixture.Ai("{ \"holdSharePermille\": " + permille + " }", fair))), FairEFixture.Map("control"));
 
         [TestCase(null)]
         [TestCase(false)]
@@ -132,7 +132,7 @@ namespace WarCore.Tests
         [Test]
         public void Split_ChangesTheBattle()
         {
-            M6World on = Battle(41, null, 500), off = new M6World(FairEFixture.Recipe("control", 41, null), FairEFixture.Map("control"));
+            M6World on = Battle(41, null, 500), off = new M6World(FairEFixture.Recipe("control", 41), FairEFixture.Map("control"));
             on.Step(600); off.Step(600);
             bool differs = false;
             for (ulong key = 1; key <= 300 && !differs; key++)
@@ -169,8 +169,8 @@ namespace WarCore.Tests
         [TestCase("{ \"holdSharePermille\": 0 }")]
         public void Split_DefaultLeavesDigest(string ai)
         {
-            WorldRecipe recipe = FairEFixture.Recipe("control", 41, null);
-            M6World with = new M6World(ai == null ? recipe : recipe.WithAiRules(Pack(ai)), FairEFixture.Map("control"));
+            WorldRecipe recipe = FairEFixture.Recipe("control", 41);
+            M6World with = new M6World(ai == null ? recipe : recipe.WithPack(Pack(ai)), FairEFixture.Map("control"));
             M6World plain = new M6World(recipe, FairEFixture.Map("control"));
             Assert.That(with.Hash, Is.EqualTo(plain.Hash));
             with.Step(300); plain.Step(300);

@@ -58,7 +58,7 @@ namespace WarCore.Tests
             WorldRecipe full = MapRecipe.From(baked, RwrPack.Load("rwr-m6"));
             UnitSpawn[] squad = full.Units.ToArray().Where(u => u.Team == team && !u.Reserve).ToArray();
             WorldRecipe recipe = M6World.Endless(new WorldRecipe(full.Seed, MoverKind.InterimCrowd, squad, Array.Empty<BridgeCommand>())
-                .WithCombat(full.Combat).WithMatch(full.Match).WithCrowdPass(CrowdPassKind.TeamIdle).WithTerrainRules(full.TerrainPack).WithPlatesPreview());
+                .WithCombat(full.Combat).WithMatch(full.Match).WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(full.Pack).WithPlatesPreview());
             var w = new M6World(recipe, baked.WcMapBytes);
             var up = new HashSet<ulong>();
             var still = new Dictionary<ulong, (SimVec3 At, int Since)>();

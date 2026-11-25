@@ -81,7 +81,7 @@ namespace WarCore.Presentation
             for (int i = 0; i < bySurface.Length; i++)
             {
                 // TerrainDerivation already refused a map naming a surface the rules lack.
-                a.Recipe.TerrainPack.Terrain.TryFind(terrain.SurfaceName(i), out SurfaceDef def);
+                a.Recipe.Pack.Terrain.TryFind(terrain.SurfaceName(i), out SurfaceDef def);
                 bySurface[i] = (short)def.ConcealMilli;
             }
             var cells = new short[terrain.Nav.Count];

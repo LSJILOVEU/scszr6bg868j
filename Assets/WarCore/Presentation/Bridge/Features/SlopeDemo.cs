@@ -33,8 +33,7 @@ namespace WarCore.Presentation
                 units[i] = new UnitSpawn((ulong)i + 1, 0, i + 1, StartXMm(i), LaneZMm[i], Speed, 1, weapon);
                 script[i] = BridgeCommand.MoveTo(OrderTick(i), i + 1, GoalXMm(i), LaneZMm[i]);
             }
-            return new WorldRecipe(41, MoverKind.InterimCrowd, units, script).WithCombat(pack.BuildCombat())
-                .WithTerrainRules(pack).WithPack(pack);
+            return new WorldRecipe(41, MoverKind.InterimCrowd, units, script).WithCombat(pack.BuildCombat()).WithPack(pack);
         }
 
         // Ground height at grid point (i, j): rows 0..3 lane 1, 6..9 lane 2, 12..15 lane 3, the rows between blend linearly

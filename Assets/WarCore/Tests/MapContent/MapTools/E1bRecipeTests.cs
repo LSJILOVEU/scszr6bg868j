@@ -88,7 +88,7 @@ namespace WarCore.Tests
             Assert.That(recipe.Combat, Is.Not.Null);
             if (withPoint) Assert.That(recipe.Match, Is.Not.Null);
             else Assert.That(recipe.Match, Is.Null);
-            Assert.That(recipe.TerrainPack, Is.Null);
+            Assert.That(recipe.Pack?.Id, Is.EqualTo("rwr-melee"));
             Assert.That(recipe.PlayerKey, Is.Null);
             Assert.That(recipe.Script.Length, Is.EqualTo(0));
             Assert.That(recipe.Facing || recipe.Motion || recipe.Standing || recipe.BlockAi, Is.False);

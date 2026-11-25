@@ -31,7 +31,7 @@ namespace WarCore.Tests
         private static M6World World(long? slope)
         {
             WorldRecipe recipe = M6World.Endless(M6World.RecipeOf(Team, M6World.Pack(new[] { new ControlPointDef(7, Hill, SimFix.FromInt(6)) }, think: 10)));
-            if (slope != null) recipe = recipe.WithTerrainRules(Wp23.Pack());
+            if (slope != null) recipe = recipe.WithPack(Wp23.Pack());
             return new M6World(recipe, WcMapWriter.Write(Map(slope)));
         }
 

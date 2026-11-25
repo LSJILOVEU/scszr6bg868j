@@ -30,24 +30,21 @@ namespace WarCore.Tests
         internal readonly MapDesc Desc;
         internal readonly byte[] DescBytes;
         internal readonly MapBakeResult Baked;
-        // Extra reference: level 0 run under terrain rules as well (not part of the acceptance).
-        internal readonly bool WithRules;
 
-        private MapE0Level(int level, bool withRules)
+        private MapE0Level(int level)
         {
-            Level = level; WithRules = withRules;
+            Level = level;
             Desc = BuildDesc(level, out Rise);
             DescBytes = MapDescJson.Write(Desc);
             Baked = MapBake.Run(DescBytes);
         }
 
-        private static readonly Dictionary<string, MapE0Level> Cache = new Dictionary<string, MapE0Level>();
-        internal static MapE0Level Of(int level, bool withRules = false)
+        private static readonly Dictionary<int, MapE0Level> Cache = new Dictionary<int, MapE0Level>();
+        internal static MapE0Level Of(int level)
         {
-            string key = level + (withRules ? "r" : "");
             lock (Cache)
             {
-                if (!Cache.TryGetValue(key, out MapE0Level made)) Cache[key] = made = new MapE0Level(level, withRules);
+                if (!Cache.TryGetValue(level, out MapE0Level made)) Cache[level] = made = new MapE0Level(level);
                 return made;
             }
         }
@@ -94,22 +91,17 @@ namespace WarCore.Tests
         }
 
         // The recipe the runtime builds from a map file, with the plate switch the tests use.
-        internal WorldRecipe Recipe()
-        {
-            WorldRecipe recipe = MapRecipe.From(Baked, Pack).WithPlatesPreview();
-            return WithRules && recipe.TerrainPack == null ? recipe.WithTerrainRules(Pack) : recipe;
-        }
+        internal WorldRecipe Recipe() => MapRecipe.From(Baked, Pack).WithPlatesPreview();
 
         internal M6World Battle() => new M6World(Recipe(), Baked.WcMapBytes);
 
-        // Team 1 alone on a match that never ends. Rebuilt from the full recipe; a terrain recipe keeps its terrain rules.
+        // Team 1 alone on a match that never ends. Rebuilt from the full recipe, with its pack.
         internal M6World Squad(out UnitSpawn[] squad)
         {
             WorldRecipe full = Recipe();
             squad = full.Units.ToArray().Where(u => u.Team == 1).ToArray();
             WorldRecipe recipe = new WorldRecipe(full.Seed, MoverKind.InterimCrowd, squad, Array.Empty<BridgeCommand>())
-                .WithCombat(full.Combat).WithMatch(full.Match).WithCrowdPass(CrowdPassKind.TeamIdle).WithPlatesPreview();
-            if (full.TerrainPack != null) recipe = recipe.WithTerrainRules(full.TerrainPack);
+                .WithCombat(full.Combat).WithMatch(full.Match).WithCrowdPass(CrowdPassKind.TeamIdle).WithPlatesPreview().WithPack(full.Pack);
             return new M6World(M6World.Endless(recipe), Baked.WcMapBytes);
         }
 

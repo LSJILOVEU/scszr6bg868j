@@ -59,7 +59,7 @@ namespace WarCore.Tests
             units.AddRange(more);
             WorldRecipe recipe = new WorldRecipe(41, MoverKind.InterimCrowd, units.ToArray(), Array.Empty<BridgeCommand>())
                 .WithMatch(A3.Match()).WithCombat(combat ?? A2.Combat(0)).WithCrowdPass(CrowdPassKind.TeamIdle)
-                .WithRuleSet(MatchMode.TestNeverEndsId).WithTerrainRules(A3.Load(A3.PackJson(A3.Grass500, ai))).WithStandingOrders();
+                .WithRuleSet(MatchMode.TestNeverEndsId).WithPack(A3.Load(A3.PackJson(A3.Grass500, ai))).WithStandingOrders();
             return new M6World(recipe, WcMapWriter.Write(Map(height)), reverse);
         }
 

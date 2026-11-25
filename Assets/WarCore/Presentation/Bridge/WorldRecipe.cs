@@ -120,11 +120,8 @@ namespace WarCore.Presentation
         }
         // Adds the block AI (units raise a block against incoming swings, by their block spec's chance). Needs block specs and facing.
         public bool BlockAi { get; private set; }
-        // The rules a map with terrain is derived under; null for flat maps. Not part of the recipe's seed or rule-set id.
-        public ContentPack TerrainPack { get; private set; }
-        public ContentPack AiPack { get; private set; }
-        // SLOPE-1: the content pack the world's features read (movement.slope, stats.speed). Null: they read TerrainPack.
-        // Not part of the recipe's seed or rule-set id; a feature that reads it adds its own content key.
+        // The one content pack this world reads: AI rules, terrain rules, slopes, plates and stat limits. Null: a world built
+        // by hand without content. Not part of the recipe's seed or rule-set id; a feature that reads it adds its own content key.
         public ContentPack Pack { get; private set; }
         // Opaque rule-set identity: hashed from tick 0 and checked on restore. Never derived from the rule contents.
         public string RuleSetId { get; private set; } = MatchMode.RwrRuleSetId;
@@ -154,8 +151,7 @@ namespace WarCore.Presentation
         private WorldRecipe Copy()
         {
             var copy = new WorldRecipe(Seed, Mover, units, script);
-            copy.Combat = Combat; copy.Match = Match; copy.PlayerKey = PlayerKey; copy.RuleSetId = RuleSetId; copy.CrowdPass = CrowdPass; copy.TerrainPack = TerrainPack; copy.BlockAi = BlockAi; copy.options.AddRange(options);
-            copy.AiPack = AiPack;
+            copy.Combat = Combat; copy.Match = Match; copy.PlayerKey = PlayerKey; copy.RuleSetId = RuleSetId; copy.CrowdPass = CrowdPass; copy.BlockAi = BlockAi; copy.options.AddRange(options);
             copy.Pack = Pack;
             return copy;
         }
@@ -187,26 +183,13 @@ namespace WarCore.Presentation
             return copy;
         }
 
-        // A map with a height field or surface table needs the pack whose terrain rules it is run under.
-        public WorldRecipe WithTerrainRules(ContentPack pack)
-        {
-            if (pack == null) throw new ArgumentNullException(nameof(pack));
-            var copy = Copy(); copy.TerrainPack = pack;
-            return copy;
-        }
-
-        // The content pack the world's features read (KB5): MapRecipe.From always carries it.
+        // The content pack the world reads, given once: a world never reads two packs, so a recipe that has one refuses another.
         public WorldRecipe WithPack(ContentPack pack)
         {
             if (pack == null) throw new ArgumentNullException(nameof(pack));
+            if (Pack != null && !ReferenceEquals(Pack, pack))
+                throw new ArgumentException("The recipe already reads content pack '" + Pack.Id + "'. A world reads one pack: build the recipe with the pack it should read.", nameof(pack));
             var copy = Copy(); copy.Pack = pack;
-            return copy;
-        }
-
-        // Flat maps opt in; terrain maps keep using their terrain pack's AI rules.
-        public WorldRecipe WithAiRules(ContentPack pack)
-        {
-            var copy = Copy(); copy.AiPack = pack;
             return copy;
         }
 

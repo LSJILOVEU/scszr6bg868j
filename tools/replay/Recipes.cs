@@ -27,11 +27,11 @@ namespace WarCore.Replay
         {
             ["base"] = new Entry("M7, default AI", () => DemoRecipes.M7(), DemoRecipes.M7MapBytes),
             ["playtest"] = new Entry("M7, rwr-m7-playtest AI rules",
-                () => DemoRecipes.M7().WithAiRules(RwrPack.Load(DemoRecipes.PlaytestLayer)), DemoRecipes.M7MapBytes),
+                () => DemoRecipes.M7().WithPack(RwrPack.Load(DemoRecipes.PlaytestLayer)), DemoRecipes.M7MapBytes),
             // AI-N1: the same AI rules with the playtest layer's weapons too (the combat pack the MP playtest recipe now runs).
             // "playtest" keeps the M6 weapons so that the -p1, -s1 setups and their reference values stay comparable.
             ["playtest-n1"] = new Entry("M7, rwr-m7-playtest weapons and AI rules",
-                () => DemoRecipes.M7(RwrPack.Load(DemoRecipes.PlaytestLayer)).WithAiRules(RwrPack.Load(DemoRecipes.PlaytestLayer)), DemoRecipes.M7MapBytes),
+                () => DemoRecipes.M7(RwrPack.Load(DemoRecipes.PlaytestLayer)).WithPack(RwrPack.Load(DemoRecipes.PlaytestLayer)), DemoRecipes.M7MapBytes),
             // The recipe the MP playtest scene runs, with the player unit left idle (no input).
             ["mp-playtest"] = new Entry("MP playtest recipe, idle player", () => DemoRecipes.MpPlaytest(), DemoRecipes.M7MapBytes),
             // MAP-P1 three-lane map, seed and AI rules as baked (default AI).
@@ -45,29 +45,29 @@ namespace WarCore.Replay
             ["lanes-p1w"] = new Entry("Three-lane map, 2 m slots + 6 m ring + scatter 12 m",
                 () => Lanes(Layer("replay-lanes-p1w", "rwr-m6", P1Ai(12000))), () => LanesBake().WcMapBytes, P1RingMm),
             ["playtest-p1"] = new Entry("M7, rwr-m7-playtest AI rules + 2 m slots + 6 m ring + scatter 6 m",
-                () => DemoRecipes.M7().WithAiRules(Layer("replay-playtest-p1", DemoRecipes.PlaytestLayer, P1Ai(6000))), DemoRecipes.M7MapBytes, P1RingMm),
+                () => DemoRecipes.M7().WithPack(Layer("replay-playtest-p1", DemoRecipes.PlaytestLayer, P1Ai(6000))), DemoRecipes.M7MapBytes, P1RingMm),
             ["playtest-p1w"] = new Entry("M7, rwr-m7-playtest AI rules + 2 m slots + 6 m ring + scatter 12 m",
-                () => DemoRecipes.M7().WithAiRules(Layer("replay-playtest-p1w", DemoRecipes.PlaytestLayer, P1Ai(12000))), DemoRecipes.M7MapBytes, P1RingMm),
+                () => DemoRecipes.M7().WithPack(Layer("replay-playtest-p1w", DemoRecipes.PlaytestLayer, P1Ai(12000))), DemoRecipes.M7MapBytes, P1RingMm),
             // AI-P2 (PLACEHOLDER values of the task): 2 m slots, 6 m ring and the assault-roles placement. The anchor sits on the
             // capture circle (6 m): at 10 m every role's slots lay in the ring outside the circle and no point was ever taken.
             ["lanes-p2"] = new Entry("Three-lane map, 2 m slots + 6 m ring + assault-roles",
                 () => Lanes(Layer("replay-lanes-p2", "rwr-m6", P2Ai)), () => LanesBake().WcMapBytes, P1RingMm),
             // AI-S1 (values fixed by the task, PLACEHOLDER): the engage part "bound" on top of the setup's own AI rules.
             ["playtest-s1"] = new Entry("M7, rwr-m7-playtest AI rules + engage bound",
-                () => DemoRecipes.M7().WithAiRules(Layer("replay-playtest-s1", DemoRecipes.PlaytestLayer, S1Ai)), DemoRecipes.M7MapBytes),
+                () => DemoRecipes.M7().WithPack(Layer("replay-playtest-s1", DemoRecipes.PlaytestLayer, S1Ai)), DemoRecipes.M7MapBytes),
             ["lanes-s1"] = new Entry("Three-lane map, default AI + engage bound",
                 () => Lanes(Layer("replay-lanes-s1", LanesBake().PackId, S1Ai)), () => LanesBake().WcMapBytes),
             // AI-S2 (value fixed by the task, PLACEHOLDER): each shooter's own reaction, burst and pause, spread 300 permille.
             ["playtest-s2"] = new Entry("M7, rwr-m7-playtest AI rules + trait spread 300",
-                () => DemoRecipes.M7().WithAiRules(Layer("replay-playtest-s2", DemoRecipes.PlaytestLayer, "{ \"traitSpreadPermille\": 300 }")), DemoRecipes.M7MapBytes),
+                () => DemoRecipes.M7().WithPack(Layer("replay-playtest-s2", DemoRecipes.PlaytestLayer, "{ \"traitSpreadPermille\": 300 }")), DemoRecipes.M7MapBytes),
             // AI-S3 (values fixed by the task, PLACEHOLDER): the pressure system on top of the S1 setups.
             ["playtest-s3"] = new Entry("M7, rwr-m7-playtest AI rules + engage bound + pressure",
-                () => DemoRecipes.M7().WithAiRules(Layer("replay-playtest-s3", DemoRecipes.PlaytestLayer, S3Ai)), DemoRecipes.M7MapBytes),
+                () => DemoRecipes.M7().WithPack(Layer("replay-playtest-s3", DemoRecipes.PlaytestLayer, S3Ai)), DemoRecipes.M7MapBytes),
             ["lanes-s3"] = new Entry("Three-lane map, default AI + engage bound + pressure",
                 () => Lanes(Layer("replay-lanes-s3", LanesBake().PackId, S3Ai)), () => LanesBake().WcMapBytes),
             // AI-S4 (PLACEHOLDER values): cover on top of the S3 setups.
             ["playtest-s4"] = new Entry("M7, rwr-m7-playtest AI rules + engage bound + pressure + cover",
-                () => DemoRecipes.M7().WithAiRules(Layer("replay-playtest-s4", DemoRecipes.PlaytestLayer, S4Ai)), DemoRecipes.M7MapBytes),
+                () => DemoRecipes.M7().WithPack(Layer("replay-playtest-s4", DemoRecipes.PlaytestLayer, S4Ai)), DemoRecipes.M7MapBytes),
             ["lanes-s4"] = new Entry("Three-lane map, default AI + engage bound + pressure + cover",
                 () => Lanes(Layer("replay-lanes-s4", LanesBake().PackId, S4Ai)), () => LanesBake().WcMapBytes),
             // Everything finished in AI so far switched on at once (playtest fields, hold share and attack spread, slots + ring,
@@ -142,42 +142,26 @@ namespace WarCore.Replay
         // The three-lane setups run with the map's own seed (41) unless the command line names another.
         public static int? LanesSeed;
         private const string BakedSeed = "\"seed\": 41";
-        private static MapBakeResult LanesBake()
-        {
-            if (LanesSeed == null) return MapBake.Run(File.ReadAllBytes(LanesPath));
-            string text = File.ReadAllText(LanesPath);
-            if (text.IndexOf(BakedSeed, StringComparison.Ordinal) < 0) throw new InvalidOperationException("The three-lane map no longer says " + BakedSeed + ".");
-            return MapBake.Run(System.Text.Encoding.UTF8.GetBytes(text.Replace(BakedSeed, "\"seed\": " + LanesSeed.Value)));
-        }
-        // The three-lane map with its pack line swapped in memory (the file is not touched); the seed follows LanesSeed as for "lanes".
         private const string BakedPack = "\"pack\": \"rwr-m6\"";
-        private static MapBakeResult LanesBodyBake()
+        // The three-lane map; with a pack named, its pack line is swapped in memory (the file is not touched). The seed follows LanesSeed.
+        private static MapBakeResult LanesBake(string pack = null)
         {
+            if (pack == null && LanesSeed == null) return MapBake.Run(File.ReadAllBytes(LanesPath));
             string text = File.ReadAllText(LanesPath);
-            if (text.IndexOf(BakedPack, StringComparison.Ordinal) < 0) throw new InvalidOperationException("The three-lane map no longer says " + BakedPack + ".");
-            text = text.Replace(BakedPack, "\"pack\": \"rwr-body\"");
-            if (LanesSeed != null)
-            {
-                if (text.IndexOf(BakedSeed, StringComparison.Ordinal) < 0) throw new InvalidOperationException("The three-lane map no longer says " + BakedSeed + ".");
-                text = text.Replace(BakedSeed, "\"seed\": " + LanesSeed.Value);
-            }
+            if (pack != null) text = Swap(text, BakedPack, "\"pack\": \"" + pack + "\"");
+            if (LanesSeed != null) text = Swap(text, BakedSeed, "\"seed\": " + LanesSeed.Value);
             return MapBake.Run(System.Text.Encoding.UTF8.GetBytes(text));
         }
-        // The three-lane map with its pack line swapped for a layer that exists only here: rwr-m6 with match.reentryTicks.
+        private static string Swap(string text, string old, string with)
+        {
+            if (text.IndexOf(old, StringComparison.Ordinal) < 0) throw new InvalidOperationException("The three-lane map no longer says " + old + ".");
+            return text.Replace(old, with);
+        }
+        private static MapBakeResult LanesBodyBake() => LanesBake("rwr-body");
+        // A layer that exists only here: rwr-m6 with match.reentryTicks.
         private const string ReentryPack = "replay-lanes-reentry";
         public const int ReentryTicks = 90;
-        private static MapBakeResult LanesReentryBake()
-        {
-            string text = File.ReadAllText(LanesPath);
-            if (text.IndexOf(BakedPack, StringComparison.Ordinal) < 0) throw new InvalidOperationException("The three-lane map no longer says " + BakedPack + ".");
-            text = text.Replace(BakedPack, "\"pack\": \"" + ReentryPack + "\"");
-            if (LanesSeed != null)
-            {
-                if (text.IndexOf(BakedSeed, StringComparison.Ordinal) < 0) throw new InvalidOperationException("The three-lane map no longer says " + BakedSeed + ".");
-                text = text.Replace(BakedSeed, "\"seed\": " + LanesSeed.Value);
-            }
-            return MapBake.Run(System.Text.Encoding.UTF8.GetBytes(text));
-        }
+        private static MapBakeResult LanesReentryBake() => LanesBake(ReentryPack);
         private static WorldRecipe LanesReentry() => MapRecipe.From(LanesReentryBake(), ContentLoader.Load(new OneLayer(ReentryPack,
             "{ \"id\": \"" + ReentryPack + "\", \"extends\": \"rwr-m6\", \"match\": { \"reentryTicks\": " + ReentryTicks + " } }"), ReentryPack));
         private static WorldRecipe LanesBody()
@@ -185,11 +169,11 @@ namespace WarCore.Replay
             MapBakeResult bake = LanesBodyBake();
             return MapRecipe.From(bake, RwrPack.Load(bake.PackId));
         }
-        private static WorldRecipe Lanes(ContentPack ai)
+        // The three-lane map under the map's own pack (null), or under a layer that extends it: the world reads that layer.
+        private static WorldRecipe Lanes(ContentPack layer)
         {
-            MapBakeResult bake = LanesBake();
-            WorldRecipe recipe = MapRecipe.From(bake, RwrPack.Load(bake.PackId));
-            return ai == null ? recipe : recipe.WithAiRules(ai);
+            MapBakeResult bake = LanesBake(layer?.Id);
+            return MapRecipe.From(bake, layer ?? RwrPack.Load(bake.PackId));
         }
 
         // A content layer that exists only in the replay tool: extends a shipped layer and sets its ai section.
@@ -262,7 +246,7 @@ namespace WarCore.Replay
             var pts = new[] { 12, 32, 52 }.Select((z, n) => new ControlPointDef(n + 1, WarCore.Sim.SimVec3.Metres(48, 0, z), WarCore.Sim.SimFix.FromInt(4))).ToArray();
             var bases = new[] { new SpawnAnchor(1, WarCore.Sim.SimVec3.Metres(4, 0, 32)), new SpawnAnchor(2, WarCore.Sim.SimVec3.Metres(92, 0, 32)) };
             return new WorldRecipe(seed, MoverKind.InterimCrowd, units, Array.Empty<BridgeCommand>()).WithCombat(pack.BuildCombat())
-                .WithMatch(pack.BuildMatch(pts, bases)).WithCrowdPass(CrowdPassKind.TeamIdle).WithTerrainRules(pack).WithFacing().WithBlockAi();
+                .WithMatch(pack.BuildMatch(pts, bases)).WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(pack).WithFacing().WithBlockAi();
         }
     }
 }

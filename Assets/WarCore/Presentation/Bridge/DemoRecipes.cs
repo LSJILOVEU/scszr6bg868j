@@ -77,8 +77,8 @@ namespace WarCore.Presentation
         public static WorldRecipe MpRespawnDemo(ContentPack content) =>
             WithRespawnGuard(WithRespawn(MpBlockDemo(content), 300), 90); // PLACEHOLDER: 10 s and 3 s at 30 Hz.
 
-        // PF1: the playtest recipe, the MP respawn demo built from content layer rwr-m7-playtest (weapons, match rules) with that
-        // layer's AI rules. WithAiRules comes last: WithPlayerBlock rebuilds the recipe without the AI pack.
+        // PF1: the playtest recipe, the MP respawn demo built from content layer rwr-m7-playtest (weapons, match rules), which
+        // is also the pack the world reads (AI rules).
         public const string PlaytestLayer = "rwr-m7-playtest";
         // M7b: every unit of the player's team (reserves too: respawn switches control to a reserve) also carries the dash of its
         // team's unit type in that layer, given last: WithPlayerBlock rebuilds UnitSpawn without it. Nothing but the player's input
@@ -86,7 +86,7 @@ namespace WarCore.Presentation
         public static WorldRecipe MpPlaytest()
         {
             ContentPack layer = WarCore.Content.Rwr.RwrPack.Load(PlaytestLayer);
-            return WithPlayerTeamDash(MpRespawnDemo(layer).WithAiRules(layer), layer);
+            return WithPlayerTeamDash(MpRespawnDemo(layer).WithPack(layer), layer);
         }
 
         // The recipe with every unit of the player's team given the dash of that team's soldier type in content. Every other field is copied.
@@ -104,8 +104,6 @@ namespace WarCore.Presentation
             WorldRecipe recipe = new WorldRecipe(source.Seed, source.Mover, units, source.Script.ToArray())
                 .WithCombat(source.Combat).WithCrowdPass(source.CrowdPass).WithRuleSet(source.RuleSetId).WithPlayer(player);
             if (source.Match != null) recipe = recipe.WithMatch(source.Match);
-            if (source.TerrainPack != null) recipe = recipe.WithTerrainRules(source.TerrainPack);
-            if (source.AiPack != null) recipe = recipe.WithAiRules(source.AiPack);
             if (source.Pack != null) recipe = recipe.WithPack(source.Pack);
             if (source.BlockAi) recipe = recipe.WithBlockAi();
             foreach (IWorldOption option in source.Options) recipe = recipe.With(option);
@@ -151,7 +149,6 @@ namespace WarCore.Presentation
             WorldRecipe recipe = new WorldRecipe(source.Seed, source.Mover, units, source.Script.ToArray())
                 .WithCombat(pack).WithCrowdPass(source.CrowdPass).WithRuleSet(source.RuleSetId).WithPlayer(player);
             if (source.Match != null) recipe = recipe.WithMatch(source.Match);
-            if (source.TerrainPack != null) recipe = recipe.WithTerrainRules(source.TerrainPack);
             if (source.Pack != null) recipe = recipe.WithPack(source.Pack);
             if (source.BlockAi) recipe = recipe.WithBlockAi();
             foreach (IWorldOption option in source.Options) recipe = recipe.With(option);
@@ -177,12 +174,14 @@ namespace WarCore.Presentation
         }
 
         // L6: the WP-22 demo terrain (TerrainDemo.MapBytes) as a full match. 20 per team: 10 deployed in the M6 formation around
-        // the team anchor on the road, 10 reserves. Weapons and rules from the RWR M6 layer; surfaces, slope and ai rules from the
-        // terrain demo layer. PLACEHOLDER: unit counts and speed (M5 speed, as M6/M7).
-        public static WorldRecipe TerrainMatch() =>
-            TerrainMatch(WarCore.Content.Rwr.RwrPack.Load(WarCore.Content.Rwr.RwrPack.M6Layer), WarCore.Content.Rwr.RwrPack.Load(TerrainDemoMap.PackId));
+        // the team anchor on the road, 10 reserves. One pack feeds the weapons, the match rules and the terrain rules: by
+        // default the layer rwr-terrain-match (the M6 layer with the terrain demo layer's surfaces and slope rule).
+        // PLACEHOLDER: unit counts and speed (M5 speed, as M6/M7).
+        public const string TerrainMatchLayer = "rwr-terrain-match";
 
-        public static WorldRecipe TerrainMatch(ContentPack content, ContentPack terrain)
+        public static WorldRecipe TerrainMatch() => TerrainMatch(WarCore.Content.Rwr.RwrPack.Load(TerrainMatchLayer));
+
+        public static WorldRecipe TerrainMatch(ContentPack content)
         {
             int[] weapons = TeamWeapons(content);
             var units = new UnitSpawn[40];
@@ -195,7 +194,7 @@ namespace WarCore.Presentation
             }
             return new WorldRecipe(41, MoverKind.InterimCrowd, units, System.Array.Empty<BridgeCommand>())
                 .WithCombat(content.BuildCombat()).WithMatch(TerrainDemoMap.BuildMatch(content))
-                .WithCrowdPass(CrowdPassKind.TeamIdle).WithTerrainRules(terrain);
+                .WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(content);
         }
 
         public static WorldRecipe M5()

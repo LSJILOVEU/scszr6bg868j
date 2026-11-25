@@ -35,12 +35,12 @@ namespace WarCore.Tests
             var spawns = new UnitSpawn[units];
             for (int i = 0; i < units; i++) spawns[i] = M6World.U((ulong)i + 1, 1, 21 + i % 20 * 2, 30 + i / 20 * 2, speed: speed);
             WorldRecipe recipe = M6World.RecipeOf(spawns, M6World.Pack(points, ticks: captureTicks, think: 1)).WithRuleSet(MatchMode.TestNeverEndsId);
-            if (ai != null) recipe = recipe.WithAiRules(Pack(ai));
+            if (ai != null) recipe = recipe.WithPack(Pack(ai));
             return new M6World(recipe, WcMapWriter.Write(Wp23.Make(160, 60, 0, 4 * SimFix.Scale, Array.Empty<(int, int, int, int)>(), 2 * SimFix.Scale, null)));
         }
 
         private static M6World Battle(ulong seed, bool? fair, string ai) =>
-            new M6World(FairEFixture.Recipe("control", seed, fair).WithAiRules(Pack(ai)), FairEFixture.Map("control"));
+            new M6World(FairEFixture.Recipe("control", seed).WithPack(Pack(FairEFixture.Ai(ai, fair))), FairEFixture.Map("control"));
 
         private const BindingFlags Private = BindingFlags.NonPublic | BindingFlags.Instance;
         private static AiField Field(M6World w) => (AiField)typeof(SimpleAiSystem).GetField("field", Private).GetValue(w.System<SimpleAiSystem>());
@@ -212,7 +212,7 @@ namespace WarCore.Tests
             // Without a ring nothing is checked: the same points under the default ring are fine.
             Assert.That(ContentPolicies.Parts(Pack("{ \"slotSpacingMm\": 2000 }").Section<AiRules>(), close).SlotRingRaw, Is.EqualTo(0L));
             // Through the recipe: building the battle fails the same way.
-            WorldRecipe recipe = M6World.RecipeOf(new[] { M6World.U(1, 1, 30, 30) }, M6World.Pack(close, think: 1)).WithAiRules(Pack(P1));
+            WorldRecipe recipe = M6World.RecipeOf(new[] { M6World.U(1, 1, 30, 30) }, M6World.Pack(close, think: 1)).WithPack(Pack(P1));
             // Features are invoked by reflection, so the content error arrives as the inner exception.
             Exception thrown = Assert.Catch(() => new M6World(recipe, WcMapWriter.Write(Wp23.Make(160, 60, 0, 4 * SimFix.Scale, Array.Empty<(int, int, int, int)>(), 2 * SimFix.Scale, null))));
             while (thrown is TargetInvocationException && thrown.InnerException != null) thrown = thrown.InnerException;
@@ -363,8 +363,8 @@ namespace WarCore.Tests
         [TestCase("{ \"slotSpacingMm\": 1000, \"slotRingMm\": 0, \"placement\": \"nearest-slot\" }")]
         public void Battle_DefaultsWrittenOutLeaveTheBattle(string ai)
         {
-            WorldRecipe recipe = FairEFixture.Recipe("control", 41, null);
-            M6World written = new M6World(recipe.WithAiRules(Pack(ai)), FairEFixture.Map("control"));
+            WorldRecipe recipe = FairEFixture.Recipe("control", 41);
+            M6World written = new M6World(recipe.WithPack(Pack(ai)), FairEFixture.Map("control"));
             M6World plain = new M6World(recipe, FairEFixture.Map("control"));
             Assert.That(Digest(written.System<SimpleAiSystem>()), Is.EqualTo(Digest(plain.System<SimpleAiSystem>())));
             for (int tick = 0; tick < 300; tick++)
@@ -380,7 +380,7 @@ namespace WarCore.Tests
         [TestCase("{ \"slotRingMm\": 6000 }")]
         public void Battle_EachOptionChangesTheBattle(string ai)
         {
-            M6World on = Battle(41, null, ai), off = new M6World(FairEFixture.Recipe("control", 41, null), FairEFixture.Map("control"));
+            M6World on = Battle(41, null, ai), off = new M6World(FairEFixture.Recipe("control", 41), FairEFixture.Map("control"));
             on.Step(600); off.Step(600);
             bool differs = false;
             for (ulong key = 1; key <= 300 && !differs; key++)

@@ -18,7 +18,7 @@ namespace WarCore.Tests
             WcMapWriter.Write(Wp23.Make(80, 40, 0, 6 * S, boxes ?? new[] { (40, 10, 2, 8) }, 4 * S, (i, j) => (int)(i * (S / 16))));
 
         private static M6World World(UnitSpawn[] units, MatchPack match = null, bool reverse = false, byte[] map = null) =>
-            new M6World(M6World.Endless(M6World.RecipeOf(units, match)).WithTerrainRules(Wp23.Pack()), map ?? Slope(), reverse);
+            new M6World(M6World.Endless(M6World.RecipeOf(units, match)).WithPack(Wp23.Pack()), map ?? Slope(), reverse);
 
         [Test]
         public void Reinforcement_LandsOnTheHeightField()

@@ -138,9 +138,9 @@ filter = FullyQualifiedName~PointCheck|FullyQualifiedName~L8bBase|FullyQualified
 expect = WarCore.Tests.PointCheckTests.PointCheck_ContentLayersTerrainIsTheDemoMatch
 note = ContentLayers.Terrain ignores its parameter
 original:
-| ContentLoader.Load(FileContentSource.Rwr(), terrainLayerId));
+| DemoRecipes.TerrainMatch(ContentLoader.Load(FileContentSource.Rwr(), layerId));
 replacement:
-| ContentLoader.Load(FileContentSource.Rwr(), "rwr-terrain-demo"));
+| DemoRecipes.TerrainMatch(ContentLoader.Load(FileContentSource.Rwr(), DemoRecipes.TerrainMatchLayer));
 
 [l8b-12-clean-ignores-heights]
 file = Assets/WarCore/Presentation/Bridge/Features/PointCheck.cs

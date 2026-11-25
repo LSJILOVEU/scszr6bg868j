@@ -19,7 +19,7 @@ namespace WarCore.Tests
         private static SimSession Plates(byte[] map, UnitSpawn unit, BridgeCommand order, ContentPack pack, bool terrain = false)
         {
             WorldRecipe recipe = Ml7Worlds.Recipe(new[] { unit }, new[] { order }).WithPack(pack);
-            return SimSession.Create(terrain ? recipe.WithTerrainRules(pack) : recipe, map);
+            return SimSession.Create(terrain ? recipe.WithPack(pack) : recipe, map);
         }
 
         // S12 (and S9 on plates): the demo stair (layer 1, x 10..14 m, z 9..10 m) rises 0.75 m a metre: the probe 0.5 m ahead
@@ -152,7 +152,7 @@ namespace WarCore.Tests
             {
                 WcMap ramp = RampX(20, 3, Rise600, "mud");
                 SimSession World(ContentPack pack) => SimSession.Create(new WorldRecipe(41, MoverKind.InterimCrowd, new[] { Unit(1, 1500, 1500) },
-                        new[] { BridgeCommand.MoveTo(1, 1, 16500, 1500) }).WithTerrainRules(pack).WithPack(pack).WithMotion().With(new InertiaOption(9000, 0)),
+                        new[] { BridgeCommand.MoveTo(1, 1, 16500, 1500) }).WithPack(pack).WithMotion().With(new InertiaOption(9000, 0)),
                     WcMapWriter.Write(ramp));
                 SimSession sloped = World(Sloped()), plain = World(Plain());
                 int moving = 0;

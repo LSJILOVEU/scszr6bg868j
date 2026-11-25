@@ -28,14 +28,6 @@ namespace WarCore.Tests
             ("\"captureTicks\": 300", "\"captureTicks\": 301"),
             ("\"thinkInterval\": 30,", "\"thinkInterval\": 31,")));
 
-        // The weapon interval differs too: the combat digest covers only weapons, the combat section and the sight.
-        private static ContentPack TerrainB() => L6.Load("l6-terrain", Edit(L6.PackJson,
-            ("\"id\": \"l6-test\"", "\"id\": \"l6-terrain\""),
-            ("\"fireIntervalMilli\": 3390", "\"fireIntervalMilli\": 3392"),
-            ("\"captureTicks\": 300", "\"captureTicks\": 302"),
-            ("\"speedMilli\": 500,", "\"speedMilli\": 501,"),
-            ("\"failedSlotTicks\": 0", "\"failedSlotTicks\": 7")));
-
         [Test]
         public void L6Demo_LayoutIsTheFixture()
         {
@@ -60,24 +52,25 @@ namespace WarCore.Tests
             Assert.That(demo.Match.Bases.Length, Is.EqualTo(fixture.Match.Bases.Length));
             for (int i = 0; i < fixture.Match.Bases.Length; i++)
                 Assert.That((demo.Match.Bases[i].Team, demo.Match.Bases[i].Point), Is.EqualTo((fixture.Match.Bases[i].Team, fixture.Match.Bases[i].Point)), "base " + i);
-            Assert.That(demo.TerrainPack.Id, Is.EqualTo(TerrainDemoMap.PackId));
+            Assert.That(demo.Pack?.Id, Is.EqualTo(DemoRecipes.TerrainMatchLayer));
         }
 
+        // The one pack given feeds the weapons, the combat and match rules and is the pack the world reads.
         [Test]
-        public void L6Demo_CombatAndMatchFromContent_TerrainFromTerrain()
+        public void L6Demo_CombatMatchAndRulesFromTheOnePack()
         {
-            ContentPack a = ContentA(), b = TerrainB(), shipped = RwrPack.Load(RwrPack.M6Layer);
-            ulong ca = a.BuildCombat().PolicyDigest, cb = b.BuildCombat().PolicyDigest, cs = shipped.BuildCombat().PolicyDigest;
-            ulong ma = TerrainDemoMap.BuildMatch(a).PolicyDigest, mb = TerrainDemoMap.BuildMatch(b).PolicyDigest, ms = TerrainDemoMap.BuildMatch(shipped).PolicyDigest;
-            Assert.That(new[] { ca, cb, cs }, Is.Unique, "the three combat digests must differ");
-            Assert.That(new[] { ma, mb, ms }, Is.Unique, "the three match digests must differ");
+            ContentPack a = ContentA(), shipped = RwrPack.Load(DemoRecipes.TerrainMatchLayer);
+            ulong ca = a.BuildCombat().PolicyDigest, cs = shipped.BuildCombat().PolicyDigest;
+            ulong ma = TerrainDemoMap.BuildMatch(a).PolicyDigest, ms = TerrainDemoMap.BuildMatch(shipped).PolicyDigest;
+            Assert.That(ca, Is.Not.EqualTo(cs), "the two combat digests must differ");
+            Assert.That(ma, Is.Not.EqualTo(ms), "the two match digests must differ");
 
-            WorldRecipe r = DemoRecipes.TerrainMatch(a, b);
+            WorldRecipe r = DemoRecipes.TerrainMatch(a);
             foreach (UnitSpawn u in r.Units)
                 Assert.That(u.Weapon, Is.EqualTo(u.Team == 1 ? 1 : 0), "unit " + u.Key + " takes its weapon from the content pack");
             Assert.That(r.Combat.PolicyDigest, Is.EqualTo(ca));
             Assert.That(r.Match.PolicyDigest, Is.EqualTo(ma));
-            Assert.That(r.TerrainPack, Is.SameAs(b));
+            Assert.That(r.Pack, Is.SameAs(a));
         }
 
         [Test]

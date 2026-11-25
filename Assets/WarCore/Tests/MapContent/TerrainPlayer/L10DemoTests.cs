@@ -41,7 +41,7 @@ namespace WarCore.Tests
             WorldRecipe recipe = TerrainPlayerDemo.Recipe();
             Assert.That(recipe.Match.RespawnTicks, Is.EqualTo(300));
             Assert.That(recipe.PlayerKey, Is.EqualTo((ulong?)1));
-            Assert.That(recipe.TerrainPack, Is.Not.Null);
+            Assert.That(recipe.Pack, Is.Not.Null);
             var script = TerrainPlayerDemo.Script();
             var expected = L10FlatLockTests.DemoScript;
             Assert.That(script.Length, Is.EqualTo(6));

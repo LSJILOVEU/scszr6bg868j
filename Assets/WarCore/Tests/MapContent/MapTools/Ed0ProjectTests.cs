@@ -102,9 +102,9 @@ namespace WarCore.Tests
             catch (Exception e) { return e.GetType().Name + ": " + e.Message; }
         }
 
-        // A small flat map on the ancient cartridge (not in Maps/): it starts, and its first 600 ticks repeat. The flat map
-        // does not apply the pack's AI section (design K-E3), so the match is not expected to end here. AncientHash600 is a
-        // behaviour baseline, not a determinism lock: a package that makes this map use the pack's AI may record it again.
+        // A small flat map on the ancient cartridge (not in Maps/): it starts and plays the same twice. A flat map reads the
+        // pack's AI section like any other (RC1-K2), so the two lines close and the match ends. The end tick, the winner and
+        // the end hash are a behaviour baseline, not a determinism lock.
         internal static byte[] AncientMap()
         {
             var units = new StringBuilder();
@@ -126,24 +126,31 @@ namespace WarCore.Tests
             return MapDocument.Open(Encoding.UTF8.GetBytes(text)).Save();
         }
 
-        private const ulong AncientHash600 = 0x8B96639EF5D95C32UL;
+        private const long AncientEndTick = 175;
+        private const int AncientWinner = 1;
+        private const ulong AncientEndHash = 0x0856A99AF34D56D5UL;
 
         [Test]
         public void AnAncientMapStartsAndRepeats()
         {
             byte[] bytes = AncientMap();
-            ulong first = Run600(bytes), second = Run600(bytes);
-            Assert.That(second, Is.EqualTo(first));
-            Assert.That(first, Is.EqualTo(AncientHash600), first.ToString("X16"));
+            SimSession first = RunToEnd(bytes), second = RunToEnd(bytes);
+            string seen = first.Tick + " " + first.Winner + " " + first.StateHash.ToString("X16");
+            Assert.That(second.Tick, Is.EqualTo(first.Tick));
+            Assert.That(second.StateHash, Is.EqualTo(first.StateHash));
+            Assert.That(first.Tick, Is.EqualTo(AncientEndTick), seen);
+            Assert.That(first.Winner, Is.EqualTo(AncientWinner), seen);
+            Assert.That(first.StateHash, Is.EqualTo(AncientEndHash), seen);
         }
 
-        private static ulong Run600(byte[] bytes)
+        // Stepped until the match ends, 600 ticks at most.
+        private static SimSession RunToEnd(byte[] bytes)
         {
             SimSession s = null;
             Assert.DoesNotThrow(() => s = MapDocument.Open(bytes).Start());
-            for (int i = 0; i < 600; i++) s.StepOnce();
-            Assert.That(s.Tick, Is.EqualTo(600));
-            return s.StateHash;
+            while (!s.IsFinished && s.Tick < 600) s.StepOnce();
+            Assert.That(s.IsFinished, Is.True, "the match ends within 600 ticks");
+            return s;
         }
 
         // Acceptance 7: the map facade (and the Unity map folders, once they exist) never names the RWR content.

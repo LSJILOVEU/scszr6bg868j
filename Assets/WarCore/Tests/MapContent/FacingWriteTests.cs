@@ -20,7 +20,7 @@ namespace WarCore.Tests
             var units = new[] { Wp23.Unit(1, 1, 20500, 12500, 4000) };
             var recipe = new WorldRecipe(41, mover, units, new[] { BridgeCommand.MoveTo(1, 1, toXMm, toZMm) });
             if (facing) recipe = recipe.WithFacing();
-            if (map != null && map.HasTerrain) recipe = recipe.WithTerrainRules(Wp23.Pack());
+            if (map != null && map.HasTerrain) recipe = recipe.WithPack(Wp23.Pack());
             return SimSession.Create(recipe, WcMapWriter.Write(map ?? Wp23.Make(40, 24, 0, 6 * S, null, 4 * S)));
         }
 

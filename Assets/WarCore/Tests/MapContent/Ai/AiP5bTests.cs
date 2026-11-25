@@ -73,7 +73,7 @@ namespace WarCore.Tests
             var bases = new[] { new SpawnAnchor(1, SimVec3.Metres(4, 0, 4)), new SpawnAnchor(2, SimVec3.Metres(156, 0, 56)) };
             WorldRecipe recipe = M6World.RecipeOf(units, M6World.Pack(points ?? FarPoint, ticks: 1000000, think: think, bases: bases), M6World.Guns(new ZeroResolver()))
                 .WithRuleSet(MatchMode.TestNeverEndsId).WithStandingOrders();
-            if (ai != null) recipe = recipe.WithAiRules(Pack(ai));
+            if (ai != null) recipe = recipe.WithPack(Pack(ai));
             var world = new M6World(recipe, Flat());
             setup?.Invoke(world);
             return world;

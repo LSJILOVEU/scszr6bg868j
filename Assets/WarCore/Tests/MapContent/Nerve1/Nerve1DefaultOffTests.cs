@@ -28,7 +28,7 @@ namespace WarCore.Tests.Nerve1
         }, FileContentSource.Rwr()), "s3-test");
 
         internal static M6World Battle() =>
-            new M6World(FairEFixture.Recipe("control", 41, true).WithAiRules(Pack(S3)), FairEFixture.Map("control"));
+            new M6World(FairEFixture.Recipe("control", 41).WithPack(Pack(FairEFixture.Ai(S3, true))), FairEFixture.Map("control"));
 
         // How many numbers a stream drew since the world began: SplitMix64 adds one constant per number, and an int below
         // 65536 is one number (the rejection threshold of a power of two is 0).

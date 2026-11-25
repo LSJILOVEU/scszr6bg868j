@@ -53,14 +53,10 @@ namespace WarCore.Tests
         internal static UnitSpawn Unit(ulong key, long xMm, long zMm, long speed = 4000, int squad = 0) =>
             new UnitSpawn(key, 0, squad == 0 ? (int)key : squad, xMm, zMm, speed);
 
-        // An AI world: crowd or path mover, the pack as terrain rules and (withPack) as the recipe's pack.
+        // An AI world: crowd or path mover, reading the pack.
         internal static SimSession Ai(WcMap map, ContentPack pack, UnitSpawn[] units, BridgeCommand[] script = null,
-            MoverKind mover = MoverKind.InterimCrowd, bool withPack = true)
-        {
-            var recipe = new WorldRecipe(41, mover, units, script ?? Array.Empty<BridgeCommand>()).WithTerrainRules(pack);
-            if (withPack) recipe = recipe.WithPack(pack);
-            return SimSession.Create(recipe, WcMapWriter.Write(map));
-        }
+            MoverKind mover = MoverKind.InterimCrowd) =>
+            SimSession.Create(new WorldRecipe(41, mover, units, script ?? Array.Empty<BridgeCommand>()).WithPack(pack), WcMapWriter.Write(map));
 
         // A player world: key 1 is the player (team 1), key 99 a still enemy in the far corner so the quiet match is not over
         // (crowd mover, the pack's own combat, nobody armed).
@@ -73,7 +69,7 @@ namespace WarCore.Tests
                 new UnitSpawn(99, 0, 2, map.Width * 1000L - 500, map.Depth * 1000L - 500, speed, 2) };
             if (extra != null) units.AddRange(extra);
             return new WorldRecipe(41, MoverKind.InterimCrowd, units.ToArray(), Array.Empty<BridgeCommand>())
-                .WithCombat(pack.BuildCombat()).WithMatch(L10Fixture.QuietMatch()).WithTerrainRules(pack).WithPack(pack).WithPlayer(1);
+                .WithCombat(pack.BuildCombat()).WithMatch(L10Fixture.QuietMatch()).WithPack(pack).WithPlayer(1);
         }
 
         internal static SimVec3 At(SimSession s, ulong key = 1) => M3TestWorld.Position(s, key);

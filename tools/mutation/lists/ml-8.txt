@@ -639,11 +639,11 @@ replacement:
 file = Assets/WarCore/Presentation/Bridge/Features/TerrainFeature.cs
 filter = FullyQualifiedName~Ml8
 expect = WarCore.Tests.Ml8MoveTests.OnlyPlateWorldsChangeTheVersion
-note = a plate map needs a terrain pack
+note = a plate map needs a pack
 original:
-| if (a.Recipe.TerrainPack == null && a.Map.HasTerrain)
+| if (a.Recipe.Pack == null && a.Map.HasTerrain)
 replacement:
-| if (a.Recipe.TerrainPack == null)
+| if (a.Recipe.Pack == null)
 
 [ml8-plate-flat-default]
 file = Assets/WarCore/Presentation/Bridge/Features/PlateFeature.cs
@@ -655,12 +655,12 @@ original:
 replacement:
 | a.Plates.Tops(), default, a.Sim.FootAnchoredLayers);
 
-[ml8-match-pack-terrain]
+[ml8-match-pack-required]
 file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
 filter = FullyQualifiedName~Ml8
 expect = WarCore.Tests.Ml8MoveTests.ThePlayerClimbsAndStaysOnTheFloor
-note = the match reads the terrain pack whenever there are terrain tables
+note = the match reads the pack of a recipe that has none
 original:
-| bool terrainRules = terrain != null && recipe.TerrainPack != null;
+| AiRules ai = recipe.Pack?.Section<AiRules>();
 replacement:
-| bool terrainRules = terrain != null;
+| AiRules ai = recipe.Pack.Section<AiRules>();

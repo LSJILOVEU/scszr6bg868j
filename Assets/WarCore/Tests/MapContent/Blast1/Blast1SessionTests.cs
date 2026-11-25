@@ -108,7 +108,7 @@ namespace WarCore.Tests.Blast1
             WcMap map = Wp23.Make(20, 10, 0, 8 * M, null, 2 * M, (i, j) => (int)(i * M / 4), new[] { "grass" }, (x, z) => 0);
             var units = new[] { new UnitSpawn(1, 0, 1, 15500, 5500, 4000, 1) };
             var recipe = new WorldRecipe(41, MoverKind.InterimCrowd, units, new[] { BridgeCommand.Blast(3, xMm, 5000, BlastDemo.Blast) })
-                .WithTerrainRules(pack).WithCombat(pack.BuildCombat());
+                .WithPack(pack).WithCombat(pack.BuildCombat());
             SimSession s = SimSession.Create(recipe, WcMapWriter.Write(map));
             s.StepOnce(); s.StepOnce(); s.StepOnce();
             ViewBlast blast = s.Current.Blasts.ToArray().Single();

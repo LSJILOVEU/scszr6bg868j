@@ -28,7 +28,7 @@ namespace WarCore.Tests
             ControlPointDef[] points = { plates ? PointUp(1, 41500, 32500) : PointDown(1, 41500, 32500) };
             if (plates) return World(units, points, ai: Rules("{ " + ai + " }"));
             MatchPack pack = M6World.Pack(points, interval: 1000000, think: 10, bases: Bases(new SpawnAnchor(1, P(5, 30))));
-            return new M6World(M6World.Endless(Recipe(units, pack, false)).WithAiRules(Rules("{ " + ai + " }")), Ml9bMatchTests.Arena(false));
+            return new M6World(M6World.Endless(Recipe(units, pack, false)).WithPack(Rules("{ " + ai + " }")), Ml9bMatchTests.Arena(false));
         }
 
         [TestCase(Pressure, "pressureNearRadiusMm")]

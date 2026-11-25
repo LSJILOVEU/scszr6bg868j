@@ -19,7 +19,7 @@ namespace WarCore.Unity
         public const string ShotDirKey = "WarCore.L8b.ShotDir";
         public const string PrefixKey = "WarCore.L8b.Prefix";
         public const string TerrainDemoName = "terrain", A3aDemoName = "a3a";
-        public const string DefaultLayer = "rwr-terrain-demo", DefaultPrefix = "L8b";
+        public const string DefaultLayer = DemoRecipes.TerrainMatchLayer, DefaultPrefix = "L8b";
         public const string HoldLine = "HOLD 3 s (end frame)";
         private const long MatchLimit = 9000, A3aLastTick = 900;
         private const int HoldFrames = 90;
