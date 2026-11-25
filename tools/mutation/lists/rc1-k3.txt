@@ -1,0 +1,278 @@
+# RC1-K3: the pack of a world turns its switches on. Facing, standing orders and inertia each have a field the loader
+# publishes and the recipe answers for; the block AI is on when the units face a direction and a shield of the combat pack
+# gives the AI a chance; the world assembly adds the inertia of the pack as the extension a recipe built by hand adds. The
+# code of a played stage switches nothing on.
+# Not listed: the lines of the content layers (parts/facing, parts/respawn and the layers that list them). This tool mutates
+# code only; Show1Tests.AStageSwitchesNothingOnItself holds each of those lines.
+
+[rc1-k3-facing-pack-ignored]
+file = Assets/WarCore/Presentation/Bridge/WorldRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.PackSwitchTests
+expect = WarCore.Tests.PackSwitchTests.FacingFromThePackIsTheRecipeSwitch
+note = the recipe answers for its own switch only; a pack that says facing gets none
+original:
+|         public bool Facing => HasOption(WorldOptions.Facing.OptionId) || Pack?.SectionOrNull<BodyFacing>() != null;
+replacement:
+|         public bool Facing => HasOption(WorldOptions.Facing.OptionId);
+
+[rc1-k3-facing-switch-ignored]
+file = Assets/WarCore/Presentation/Bridge/WorldRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.PackSwitchTests
+expect = WarCore.Tests.PackSwitchTests.FacingFromThePackIsTheRecipeSwitch
+note = only the pack counts; a recipe built by hand cannot turn facing on
+original:
+|         public bool Facing => HasOption(WorldOptions.Facing.OptionId) || Pack?.SectionOrNull<BodyFacing>() != null;
+replacement:
+|         public bool Facing => Pack?.SectionOrNull<BodyFacing>() != null;
+
+[rc1-k3-motion-pack-ignored]
+file = Assets/WarCore/Presentation/Bridge/WorldRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.PackSwitchTests
+expect = WarCore.Tests.PackSwitchTests.InertiaFromThePackIsTheRecipeOption
+note = a pack with inertia does not open the motion limits
+original:
+|         public bool Motion => HasOption(WorldOptions.Motion.OptionId) || PackInertia != null;
+replacement:
+|         public bool Motion => HasOption(WorldOptions.Motion.OptionId);
+
+[rc1-k3-standing-pack-ignored]
+file = Assets/WarCore/Presentation/Bridge/WorldRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.PackSwitchTests
+expect = WarCore.Tests.PackSwitchTests.StandingOrdersFromThePackAreTheRecipeSwitch
+note = a pack that says standing orders gets none
+original:
+|         public bool Standing => HasOption(WorldOptions.Standing.OptionId) || Pack?.SectionOrNull<AiRules>()?.StandingOrders == true;
+replacement:
+|         public bool Standing => HasOption(WorldOptions.Standing.OptionId);
+
+[rc1-k3-standing-on-under-every-pack]
+file = Assets/WarCore/Presentation/Bridge/WorldRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.PackSwitchTests
+expect = WarCore.Tests.PackSwitchTests.StandingOrdersFromThePackAreTheRecipeSwitch
+note = every pack with AI rules turns standing orders on, whatever its field says
+original:
+|         public bool Standing => HasOption(WorldOptions.Standing.OptionId) || Pack?.SectionOrNull<AiRules>()?.StandingOrders == true;
+replacement:
+|         public bool Standing => HasOption(WorldOptions.Standing.OptionId) || Pack?.SectionOrNull<AiRules>()?.StandingOrders != null;
+
+[rc1-k3-block-ai-only-when-asked]
+file = Assets/WarCore/Presentation/Bridge/WorldRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.PackSwitchTests
+expect = WarCore.Tests.PackSwitchTests.AShieldWithAChanceAndFacingIsTheBlockAi
+note = a shield with a chance and facing are not enough: the block AI still needs the recipe's ask
+original:
+|         public bool BlockAi => BlockAiAsked || (Facing && AiRaisesABlock());
+replacement:
+|         public bool BlockAi => BlockAiAsked;
+
+[rc1-k3-block-ai-without-facing]
+file = Assets/WarCore/Presentation/Bridge/WorldRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.PackSwitchTests
+expect = WarCore.Tests.PackSwitchTests.AShieldWithAChanceAndFacingIsTheBlockAi
+note = a shield with a chance turns the block AI on in a world whose units face nowhere
+original:
+|         public bool BlockAi => BlockAiAsked || (Facing && AiRaisesABlock());
+replacement:
+|         public bool BlockAi => BlockAiAsked || AiRaisesABlock();
+
+[rc1-k3-block-ai-chance-of-zero]
+file = Assets/WarCore/Presentation/Bridge/WorldRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.PackSwitchTests
+expect = WarCore.Tests.PackSwitchTests.AShieldWithAChanceAndFacingIsTheBlockAi
+note = a shield whose chance is zero turns the block AI on
+original:
+|                 if (spec.AiRaisePermille > 0) return true;
+replacement:
+|                 if (spec.AiRaisePermille >= 0) return true;
+
+[rc1-k3-block-ai-ask-lost-in-copy]
+file = Assets/WarCore/Presentation/Bridge/WorldRecipe.cs
+filter = FullyQualifiedName~WarCore.Tests.PackSwitchTests
+expect = WarCore.Tests.PackSwitchTests.AShieldWithAChanceAndFacingIsTheBlockAi
+note = a later option drops the ask of a recipe built by hand
+original:
+| copy.CrowdPass = CrowdPass; copy.BlockAiAsked = BlockAiAsked; copy.options.AddRange(options);
+replacement:
+| copy.CrowdPass = CrowdPass; copy.options.AddRange(options);
+
+[rc1-k3-demo-copy-drops-the-ask]
+file = Assets/WarCore/Presentation/Bridge/DemoRecipes.cs
+filter = FullyQualifiedName~WarCore.Tests.F5uRecipeTests
+expect = WarCore.Tests.F5uRecipeTests.F5uWithPlayerBlock_CopiesEveryPackFieldOfANonDefaultPack
+note = the recipe rebuilt with the player's block loses the ask; a shield with a chance hides it from the answer
+original:
+|                 .WithCombat(pack).WithCrowdPass(source.CrowdPass).WithRuleSet(source.RuleSetId).WithPlayer(player);
+|             if (source.Match != null) recipe = recipe.WithMatch(source.Match);
+|             if (source.Pack != null) recipe = recipe.WithPack(source.Pack);
+|             if (source.BlockAiAsked) recipe = recipe.WithBlockAi();
+replacement:
+|                 .WithCombat(pack).WithCrowdPass(source.CrowdPass).WithRuleSet(source.RuleSetId).WithPlayer(player);
+|             if (source.Match != null) recipe = recipe.WithMatch(source.Match);
+|             if (source.Pack != null) recipe = recipe.WithPack(source.Pack);
+
+[rc1-k3-pack-inertia-not-added]
+file = Assets/WarCore/Presentation/Bridge/Features/WorldAssembly.cs
+filter = FullyQualifiedName~WarCore.Tests.PackSwitchTests
+expect = WarCore.Tests.PackSwitchTests.InertiaFromThePackIsTheRecipeOption
+note = the inertia of the pack is read and never installed
+original:
+|                 Extensions.Add(fromPack);
+replacement:
+|                 ;
+
+[rc1-k3-pack-inertia-rates-swapped]
+file = Assets/WarCore/Presentation/Bridge/Features/WorldAssembly.cs
+filter = FullyQualifiedName~WarCore.Tests.PackSwitchTests
+expect = WarCore.Tests.PackSwitchTests.InertiaFromThePackIsTheRecipeOption
+note = the pack's braking rate is used to speed up and its acceleration to brake
+original:
+|                 var fromPack = new InertiaOption(inertia.AccelMmPerS2, inertia.DecelMmPerS2);
+replacement:
+|                 var fromPack = new InertiaOption(inertia.DecelMmPerS2, inertia.AccelMmPerS2);
+
+[rc1-k3-inertia-from-both-accepted]
+file = Assets/WarCore/Presentation/Bridge/Features/WorldAssembly.cs
+filter = FullyQualifiedName~WarCore.Tests.PackSwitchTests
+expect = WarCore.Tests.PackSwitchTests.InertiaFromThePackIsTheRecipeOption
+note = a recipe that adds the inertia option under a pack with inertia is not refused
+original:
+|                     if (feature.OptionId == fromPack.OptionId)
+replacement:
+|                     if (feature.OptionId == null)
+
+[rc1-k3-facing-published-when-off]
+file = Assets/WarCore/Content/Data/Sections/CombatSection.cs
+filter = FullyQualifiedName~WarCore.Tests.PackSwitchTests
+expect = WarCore.Tests.PackSwitchTests.TheLoaderPublishesTheThreeFields
+note = the loader publishes facing for the packs that do not say it
+original:
+|             if (facing) b.Publish(new BodyFacing());
+replacement:
+|             if (!facing) b.Publish(new BodyFacing());
+
+[rc1-k3-standing-read-inverted]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~WarCore.Tests.PackSwitchTests
+expect = WarCore.Tests.PackSwitchTests.TheLoaderPublishesTheThreeFields
+note = standingOrders true is read as false
+original:
+|                 if (r.Has("standingOrders")) standing = r.Bool("standingOrders");
+replacement:
+|                 if (r.Has("standingOrders")) standing = !r.Bool("standingOrders");
+
+[rc1-k3-standing-not-published]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~WarCore.Tests.PackSwitchTests
+expect = WarCore.Tests.PackSwitchTests.TheLoaderPublishesTheThreeFields
+note = standingOrders is read and thrown away
+original:
+| { StandingOrders = standing, SlotRingError = ringError,
+replacement:
+| { SlotRingError = ringError,
+
+[rc1-k3-inertia-both-zero-accepted]
+file = Assets/WarCore/Content/Data/Sections/MovementSection.cs
+filter = FullyQualifiedName~WarCore.Tests.PackSwitchTests
+expect = WarCore.Tests.PackSwitchTests.TheLoaderRefusesAFieldItCannotRead("\"movement\": { \"inertia\": { \"accelMmPerS2\": 0, \"decelMmPerS2\": 0 } }"
+note = a pack may carry inertia with both rates at zero, which is no inertia
+original:
+|             if (accel == 0 && decel == 0)
+replacement:
+|             if (accel == 0 && decel < 0)
+
+[rc1-k3-inertia-lower-limit]
+file = Assets/WarCore/Content/Data/Sections/MovementSection.cs
+filter = FullyQualifiedName~WarCore.Tests.PackSwitchTests|FullyQualifiedName~WarCore.Tests.Motion.InertiaOffLockTests.ARateOutsideTheRange_IsRefused
+expect = WarCore.Tests.PackSwitchTests.TheLoaderRefusesAFieldItCannotRead("\"movement\": { \"inertia\": { \"accelMmPerS2\": 99, \"decelMmPerS2\": 0 } }"
+expect = WarCore.Tests.Motion.InertiaOffLockTests.ARateOutsideTheRange_IsRefused(99,"accelMmPerS2")
+note = the lowest rate is 99: the loader and the option both take it
+original:
+|         public const long MinMmPerS2 = 100, MaxMmPerS2 = 1000000;
+replacement:
+|         public const long MinMmPerS2 = 99, MaxMmPerS2 = 1000000;
+
+[rc1-k3-inertia-upper-limit]
+file = Assets/WarCore/Content/Data/Sections/MovementSection.cs
+filter = FullyQualifiedName~WarCore.Tests.PackSwitchTests|FullyQualifiedName~WarCore.Tests.Motion.InertiaOffLockTests.ARateOutsideTheRange_IsRefused
+expect = WarCore.Tests.PackSwitchTests.TheLoaderRefusesAFieldItCannotRead("\"movement\": { \"inertia\": { \"accelMmPerS2\": 1000001, \"decelMmPerS2\": 0 } }"
+expect = WarCore.Tests.Motion.InertiaOffLockTests.ARateOutsideTheRange_IsRefused(1000001,"accelMmPerS2")
+note = the highest rate is 1000001: the loader and the option both take it
+original:
+|         public const long MinMmPerS2 = 100, MaxMmPerS2 = 1000000;
+replacement:
+|         public const long MinMmPerS2 = 100, MaxMmPerS2 = 1000001;
+
+[rc1-k3-inertia-gap-accepted]
+file = Assets/WarCore/Content/Data/Sections/MovementSection.cs
+filter = FullyQualifiedName~WarCore.Tests.PackSwitchTests
+expect = WarCore.Tests.PackSwitchTests.TheLoaderRefusesAFieldItCannotRead("\"movement\": { \"inertia\": { \"accelMmPerS2\": 0, \"decelMmPerS2\": 1 } }"
+note = the loader takes a rate between zero and the lowest allowed
+original:
+|             if (!InertiaRates.IsRate(rate))
+replacement:
+|             if (rate < 0)
+
+[rc1-k3-option-limits-not-shared]
+file = Assets/WarCore/Presentation/Bridge/Features/InertiaOption.cs
+filter = FullyQualifiedName~WarCore.Tests.Motion.InertiaOffLockTests.ARateOutsideTheRange_IsRefused
+expect = WarCore.Tests.Motion.InertiaOffLockTests.ARateOutsideTheRange_IsRefused(99,"decelMmPerS2")
+note = the option checks no limit of its own
+original:
+|             if (!InertiaRates.IsRate(value))
+replacement:
+|             if (value < 0)
+
+[rc1-k3-battle-switches-facing-in-code]
+file = Assets/WarCore/Presentation/Bridge/Showcase.cs
+filter = FullyQualifiedName~WarCore.Tests.Show1Tests.AStageSwitchesNothingOnItself
+expect = WarCore.Tests.Show1Tests.AStageSwitchesNothingOnItself("battle"
+note = the code of the battle stage turns facing on again
+original:
+|             WorldRecipe recipe = MapRecipe.From(Lanes(layer), ContentCatalog.Find().Load(layer), useUnitTypes: true);
+replacement:
+|             WorldRecipe recipe = MapRecipe.From(Lanes(layer), ContentCatalog.Find().Load(layer), useUnitTypes: true).WithFacing();
+
+[rc1-k3-hamlet-switches-facing-in-code]
+file = Assets/WarCore/Presentation/Bridge/Showcase.Hamlet.cs
+filter = FullyQualifiedName~WarCore.Tests.Show1Tests.AStageSwitchesNothingOnItself
+expect = WarCore.Tests.Show1Tests.AStageSwitchesNothingOnItself("hamlet"
+note = the code of the hamlet stage turns facing on again
+original:
+|             WorldRecipe recipe = MapRecipe.From(Hamlet(), ContentCatalog.Find().Load(HamletLayer), useUnitTypes: true);
+replacement:
+|             WorldRecipe recipe = MapRecipe.From(Hamlet(), ContentCatalog.Find().Load(HamletLayer), useUnitTypes: true).WithFacing();
+
+[rc1-k3-melee-asks-for-block-ai-in-code]
+file = Assets/WarCore/Presentation/Bridge/Showcase.cs
+filter = FullyQualifiedName~WarCore.Tests.Show1Tests.AStageSwitchesNothingOnItself
+expect = WarCore.Tests.Show1Tests.AStageSwitchesNothingOnItself("melee"
+note = the code of the melee stage asks for the block AI again
+original:
+|                 .WithMatch(ShowcaseField.BuildMatch(pack)).WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(pack)
+replacement:
+|                 .WithMatch(ShowcaseField.BuildMatch(pack)).WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(pack).WithBlockAi()
+
+[rc1-k3-house-respawn-in-code]
+file = Assets/WarCore/Presentation/Bridge/Showcase.cs
+filter = FullyQualifiedName~WarCore.Tests.Show1Tests.AStageSwitchesNothingOnItself|FullyQualifiedName~WarCore.Tests.Show1Tests.TheHouseHasFloorsAndThePlayerComesBackFromTheReserve
+expect = WarCore.Tests.Show1Tests.AStageSwitchesNothingOnItself("house"
+expect = WarCore.Tests.Show1Tests.TheHouseHasFloorsAndThePlayerComesBackFromTheReserve
+note = the code of the house stage sets a respawn delay of its own, far longer than the layer's
+original:
+|                 .WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(pack);
+|             return recipe.WithPlayer(FirstDeployed(recipe.Units));
+replacement:
+|                 .WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(pack);
+|             return DemoRecipes.WithRespawn(recipe.WithPlayer(FirstDeployed(recipe.Units)), 15000);
+
+[rc1-k3-terrain-respawn-in-code]
+file = Assets/WarCore/Presentation/Bridge/Showcase.cs
+filter = FullyQualifiedName~WarCore.Tests.Show1Tests.AStageSwitchesNothingOnItself
+expect = WarCore.Tests.Show1Tests.AStageSwitchesNothingOnItself("terrain"
+note = the code of the terrain stage sets a respawn delay of its own
+original:
+|                 .WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(content);
+|             return recipe.WithPlayer(FirstDeployed(recipe.Units));
+replacement:
+|                 .WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(content);
+|             return DemoRecipes.WithRespawn(recipe.WithPlayer(FirstDeployed(recipe.Units)), 300);

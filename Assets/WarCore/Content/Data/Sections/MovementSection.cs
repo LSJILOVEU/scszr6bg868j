@@ -3,22 +3,36 @@ using WarCore.Sim;
 
 namespace WarCore.Content
 {
-    // SLOPE-1: what the optional "movement" section publishes. Only "slope" for now; without the section nothing is
-    // published and ContentPack.SectionOrNull<MovementRules>() is null.
+    // SLOPE-1: what the optional "movement" section publishes: the slope speeds and (RC1-K3) the inertia, each null when the
+    // section does not name it. Without the section nothing is published and ContentPack.SectionOrNull<MovementRules>() is null.
     public sealed class MovementRules
     {
         public SlopeTable Slope { get; }
-        internal MovementRules(SlopeTable slope) { Slope = slope; }
+        public InertiaRates Inertia { get; }
+        internal MovementRules(SlopeTable slope, InertiaRates inertia) { Slope = slope; Inertia = inertia; }
     }
 
-    // "movement": { "slope": { "up": [ { "abovePermille", "speedPermille" }, ... ], "down": [ ... ] } }. Every field is an
-    // object kept whole across layers (a child layer's "slope" replaces the parent's). "slope" is the only field read; any other
-    // name is refused as unknown. "up" or "down" (or both), each 1..8 bands, abovePermille 0..2000 strictly increasing,
-    // speedPermille 1..1000. An empty "movement" object is refused.
+    // RC1-K3: how fast a computer-driven unit speeds up and slows down, in mm/s^2. A rate is 0 (that half stays off) or
+    // MinMmPerS2 to MaxMmPerS2; a pack never carries both at 0, so a pack that has the rates has inertia.
+    public sealed class InertiaRates
+    {
+        public const long MinMmPerS2 = 100, MaxMmPerS2 = 1000000;
+        public long AccelMmPerS2 { get; }
+        public long DecelMmPerS2 { get; }
+        internal InertiaRates(long accelMmPerS2, long decelMmPerS2) { AccelMmPerS2 = accelMmPerS2; DecelMmPerS2 = decelMmPerS2; }
+        public static bool IsRate(long mmPerS2) => mmPerS2 == 0 || (mmPerS2 >= MinMmPerS2 && mmPerS2 <= MaxMmPerS2);
+    }
+
+    // "movement": { "slope": { "up": [ { "abovePermille", "speedPermille" }, ... ], "down": [ ... ] },
+    //               "inertia": { "accelMmPerS2", "decelMmPerS2" } }. Every field is an object kept whole across layers (a child
+    // layer's "slope" replaces the parent's). Any other name is refused as unknown. "up" or "down" (or both), each 1..8 bands,
+    // abovePermille 0..2000 strictly increasing, speedPermille 1..1000. "inertia" names both rates (see InertiaRates), not both
+    // 0. An empty "movement" object is refused.
     internal sealed class MovementSection : IContentSection
     {
         internal const string SectionKey = "movement", SlopeField = "slope", UpField = "up", DownField = "down";
         internal const string AboveField = "abovePermille", SpeedField = "speedPermille";
+        internal const string InertiaField = "inertia", AccelField = "accelMmPerS2", DecelField = "decelMmPerS2";
 
         public string Key => SectionKey;
         public int BuildStage => 0;
@@ -34,10 +48,34 @@ namespace WarCore.Content
             ContentEntry movement = b.Single(Key);
             if (movement == null) return;
             var r = new EntryReader(b.Pack, movement);
-            ContentField slopeField = r.FieldOf(SlopeField);
+            ContentField slopeField = r.FieldOf(SlopeField), inertiaField = r.FieldOf(InertiaField);
             if (slopeField != null) slopeField.Used = true;
+            if (inertiaField != null) inertiaField.Used = true;
             r.Done();
-            b.Publish(new MovementRules(slopeField == null ? null : Slope(b.Pack, slopeField)));
+            b.Publish(new MovementRules(slopeField == null ? null : Slope(b.Pack, slopeField),
+                inertiaField == null ? null : Inertia(b.Pack, inertiaField)));
+        }
+
+        private static InertiaRates Inertia(string pack, ContentField field)
+        {
+            string where = SectionKey + "." + InertiaField;
+            if (field.Node.Kind != JsonKind.Object) throw Bad(pack, field.Layer, SectionKey, InertiaField, "must be an object");
+            var entry = new ContentEntry(where, null, field.Layer);
+            foreach (JsonMember member in field.Node.Members) entry.Fields.Add(new ContentField(member.Name, member.Value, field.Layer));
+            var e = new EntryReader(pack, entry);
+            long accel = Rate(e, AccelField), decel = Rate(e, DecelField);
+            e.Done();
+            if (accel == 0 && decel == 0)
+                throw Bad(pack, field.Layer, where, null, "'" + AccelField + "' and '" + DecelField + "' are both 0; leave '" + InertiaField + "' out for no inertia");
+            return new InertiaRates(accel, decel);
+        }
+
+        private static long Rate(EntryReader e, string name)
+        {
+            long rate = e.Long(name, 0, InertiaRates.MaxMmPerS2);
+            if (!InertiaRates.IsRate(rate))
+                throw e.Bad(e.FieldOf(name), "is " + rate + ", allowed 0 or " + InertiaRates.MinMmPerS2 + " to " + InertiaRates.MaxMmPerS2);
+            return rate;
         }
 
         private static SlopeTable Slope(string pack, ContentField field)

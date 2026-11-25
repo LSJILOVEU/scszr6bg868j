@@ -63,6 +63,7 @@ namespace WarCore.Tests
             Assert.That(b.Script.ToArray(), Is.EqualTo(a.Script.ToArray()));
             Assert.That(b.Facing, Is.EqualTo(a.Facing));
             Assert.That(b.BlockAi, Is.EqualTo(a.BlockAi));
+            Assert.That(b.BlockAiAsked, Is.EqualTo(a.BlockAiAsked), "RC1-K3: the ask itself, which a shield with a chance would hide");
             Assert.That(b.Motion, Is.EqualTo(a.Motion));
             Assert.That(b.Standing, Is.EqualTo(a.Standing));
         }

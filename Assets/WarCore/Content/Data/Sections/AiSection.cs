@@ -74,6 +74,8 @@ namespace WarCore.Content
         public int CoverDepthMm { get; internal set; }
         // The squad system's numbers (the seven squad* fields, all or none); null leaves squads out of the battle.
         public WarCore.Battle.SquadRules? Squads { get; internal set; }
+        // RC1-K3 (standingOrders): the units carry the standing-order component, so a squad holds or follows on command.
+        public bool StandingOrders { get; internal set; }
         // Builds the load error for a written field (pack, layer, entry, field); null when the section is not written.
         internal System.Func<string, string, ContentException> FieldError { get; set; }
         internal AiRules(int failedSlotTicks, int targetMemoryTicks = 0, int searchTicks = 0, int reactionTicks = 0, int senseTicks = 1,
@@ -197,7 +199,7 @@ namespace WarCore.Content
             System.Func<string, ContentException> ringError = null;
             bool follows = false;
             int traits = 0;
-            bool fair = false;
+            bool fair = false, standing = false;
             string dispatch = ContentPolicies.NearestDispatch, placement = ContentPolicies.NearestSlot, engage = ContentPolicies.HoldEngage;
             int boundMove = 0, boundFire = 0, boundShare = 0, boundMinRange = 0;
             System.Func<string, string, ContentException> fieldError = null;
@@ -221,6 +223,8 @@ namespace WarCore.Content
                 if (r.Has("suppressTicks")) suppress = r.Int("suppressTicks", 0, MaxSuppressTicks);
                 if (r.Has("meleeChaseRange")) chase = r.Int("meleeChaseRange", 0, MaxMeleeChaseRange);
                 if (r.Has("fairDecisions")) fair = r.Bool("fairDecisions");
+                // A switch of the world, valid under every part. False is the same as not written.
+                if (r.Has("standingOrders")) standing = r.Bool("standingOrders");
                 if (r.Has("holdSharePermille")) hold = r.Int("holdSharePermille", 0, MaxHoldSharePermille);
                 if (r.Has("attackSpreadPoints")) spread = r.Int("attackSpreadPoints", 1, MaxAttackSpreadPoints);
                 if (r.Has("dispatch"))
@@ -354,7 +358,7 @@ namespace WarCore.Content
                 r.Done();
             }
             b.Publish(new AiRules(failed, memory, search, reaction, sense, burst, pause, suppress, chase, fair, follows, hold, spread, dispatch, placement, spacing, scatter, ring,
-                engage, boundMove, boundFire, boundShare, boundMinRange, assault, traits) { SlotRingError = ringError, FieldError = fieldError, Pressure = pressure, MeleeNerve = meleeNerve, MeleeNerveFightMm = meleeFight, CoverRadiusMm = coverRadius, CoverStepMm = coverStep, CoverDepthMm = coverDepth, Squads = squads });
+                engage, boundMove, boundFire, boundShare, boundMinRange, assault, traits) { StandingOrders = standing, SlotRingError = ringError, FieldError = fieldError, Pressure = pressure, MeleeNerve = meleeNerve, MeleeNerveFightMm = meleeFight, CoverRadiusMm = coverRadius, CoverStepMm = coverStep, CoverDepthMm = coverDepth, Squads = squads });
         }
     }
 }

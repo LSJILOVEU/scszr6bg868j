@@ -6,8 +6,9 @@ using Simulation = WarCore.Sim.Sim;
 
 namespace WarCore.Presentation
 {
-    // The block AI: units that hold a block when a swing comes at them. On when the recipe asks for it; needs combat with
-    // block specs and the facing component, and is registered after the match systems.
+    // The block AI: units that hold a block when a swing comes at them. On by the recipe's BlockAi: facing and a shield with
+    // a chance for the AI, or the ask of a recipe built by hand. Needs combat with block specs and the facing component, and
+    // is registered after the match systems.
     internal sealed class BlockAiFeature : WorldStageFeature
     {
         internal static readonly BlockAiFeature Instance = new BlockAiFeature();
