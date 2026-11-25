@@ -38,6 +38,7 @@ namespace WarCore.Presentation
         internal MatchSystem Match;
         internal Pressure Pressure;
         internal Squads Squads;
+        internal LedSquad Led;
         internal long MaxHealthRaw;
         internal IControlTarget Controlled;
         internal CombatPack CombatPack;
@@ -75,6 +76,7 @@ namespace WarCore.Presentation
         private readonly CombatSystem combat;
         private readonly Pressure pressure;
         private readonly Squads squads;
+        private readonly LedSquad led;
         // Stable identity -> spawn key, built on first use: the view names a squad by its leader's spawn key.
         private System.Collections.Generic.Dictionary<ulong, ulong> spawnKeys;
         private readonly CombatPack combatPack; internal CombatPack CombatPackForView => combatPack; // SCALE-2a, read by BodySizes.Of only
@@ -141,7 +143,7 @@ namespace WarCore.Presentation
             controlled = parts.Controlled;
             maxHealthRaw = parts.MaxHealthRaw;
             combat = parts.Combat;
-            matchPack = parts.MatchPack; capture = parts.Capture; reinforce = parts.Reinforce; match = parts.Match; pressure = parts.Pressure; squads = parts.Squads;
+            matchPack = parts.MatchPack; capture = parts.Capture; reinforce = parts.Reinforce; match = parts.Match; pressure = parts.Pressure; squads = parts.Squads; led = parts.Led;
             groundRaw = parts.GroundRaw;
             plates = parts.Plates;
             layers = parts.Layers;
@@ -305,7 +307,7 @@ namespace WarCore.Presentation
                 Target(command.XMm, command.ZMm, groundRaw);
                 CheckLayer(command.XMm, command.ZMm, command.Layer, "Command target", nameof(command));
             }
-            else if (command.Kind == BridgeCommandKind.Follow && !HasUnit(command.TargetKey))
+            else if (command.Kind == BridgeCommandKind.Follow && command.Squad != BridgeCommand.Led && !HasUnit(command.TargetKey))
                 throw new ArgumentException("Follow target is not a unit of this session.", nameof(command));
             else if (command.Kind == BridgeCommandKind.Stance && command.Level >= (Stances?.Levels ?? 1)) throw new ArgumentOutOfRangeException(nameof(command), "This world has stance levels 0 to " + ((Stances?.Levels ?? 1) - 1) + ".");
             else if (command.Kind == BridgeCommandKind.Blast)
@@ -382,9 +384,10 @@ namespace WarCore.Presentation
                         ? new SquadCommand(SquadCommandKind.MoveTo, command.Squad, Target(command.XMm, command.ZMm, groundRaw), default)
                         : new SquadCommand(SquadCommandKind.MoveTo, command.Squad, PlateTarget(command.XMm, command.ZMm, command.Layer), default, command.Layer),
                     BridgeCommandKind.Hold => new SquadCommand(SquadCommandKind.Hold, command.Squad, default, default),
+                    BridgeCommandKind.Dismiss => new SquadCommand(SquadCommandKind.Dismiss, command.Squad, default, default),
                     _ => new SquadCommand(SquadCommandKind.Follow, command.Squad, default, default)
                 };
-                if (command.Kind == BridgeCommandKind.Follow) followTarget = UnitLink(command.TargetKey);
+                if (command.Kind == BridgeCommandKind.Follow && command.Squad != BridgeCommand.Led) followTarget = UnitLink(command.TargetKey);
             }
             var input = new InputFrame(default, default, squad: squad);
             PlayerInput nextPlayerInput = heldPlayerInput;
@@ -460,6 +463,8 @@ namespace WarCore.Presentation
                 }
                 if (alive) { if (team == 1) aliveOne++; else if (team == 2) aliveTwo++; }
                 SimVec3 point = position.Value;
+                // RC2-1: the leader and the members of the led squad show as one band, the leader's (they are in no AI squad).
+                ulong ledBy = led != null && alive ? led.LeaderOf(sim.Entities.StableOf(unit)) : 0;
                 bool banded = squads != null && alive;
                 StableId stable = banded ? sim.Entities.StableOf(unit) : default;
                 views.Add(new ViewEntity(spawns[i].Key, spawns[i].Archetype,
@@ -467,7 +472,7 @@ namespace WarCore.Presentation
                     (float)point.Z.Raw / SimFix.Scale, spawns[i].Squad,
                     team, alive, pressure != null && alive ? (int)pressure.Level(sim.Entities.StableOf(unit)) : 0,
                     layers == null ? 0 : layers.LayerOf(unit),
-                    banded ? BandKey(squads.SquadOf(stable)) : 0, Stances == null ? 0 : Stances.StanceOf(unit).Level,
+                    ledBy != 0 ? BandKey(ledBy) : banded ? BandKey(squads.SquadOf(stable)) : 0, Stances == null ? 0 : Stances.StanceOf(unit).Level,
                     banded ? (int)squads.MoodOf(stable) : 0, banded ? (int)squads.RegroupOf(stable) : 0));
             }
             var fires = new ViewFire[combat == null ? 0 : combat.Fires.Length];

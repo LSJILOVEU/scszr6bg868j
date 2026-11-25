@@ -1,0 +1,2060 @@
+# RC2-1: the player leads a squad. The led squad (Battle/Ai/LedSquad.cs) with its rules and formation, the crowd rule that
+# lets the leader through its own members (InterimLocomotion.Crowd.cs, ICrowdPass, CrowdPassFeature), how the battle makes
+# it (MatchFeature: only with both rules and a player; the adapter's IsCommanded and TryStandAt), the bridge (BridgeCommand,
+# SimSession: the commands, the band, FreeTick), the keys and the HUD (ShowcaseActions, ShowcaseHud, Showcase.LedSize), the
+# two content fields (AiSection) and the input (SquadCommand.Dismiss, Led), UnitSpawn's squad number and the default
+# IMoveOrders.TryStandAt.
+# Filters: the Rc21 test classes (Rc21LedRules, Rc21LedSquad, Rc21LedState, Rc21LedKeys, three tests of Rc21LedGuards);
+# the crowd entries add the older crowd tests (Wp21, Mt026, Mt153).
+# Not listed: the recruit salt and Order => 1 (any value works the same); Upkeep's "not alive" skip (Drop has just removed
+# such members on the same tick); Formation's check that the lattice is complete rings (always true up to six rings); the
+# missing-key branch and the catch of ShowcaseActions.Led (a world with a led squad always has a player; without the catch
+# a refused point only throws); the checks in Step that the player entity exists (a removed player cannot be made in a
+# test); the floor switch of TryFloor in the adapter's TryStandAt (no point found that can be stood on without a walkable
+# plate); Unity code (no Unity here).
+
+# ---- LedRules
+
+[rc2-1-rules-size-low]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.ASquadIsMadeOfWholeParts
+note = a squad of no soldiers is taken
+original:
+| if (size < 1 || size > MaxSize) throw
+replacement:
+| if (size < 0 || size > MaxSize) throw
+
+[rc2-1-rules-size-high]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.ASquadIsMadeOfWholeParts
+note = one soldier more than the formation holds is taken
+original:
+| if (size < 1 || size > MaxSize) throw
+replacement:
+| if (size < 1 || size > MaxSize + 1) throw
+
+[rc2-1-rules-radius-low]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.ASquadIsMadeOfWholeParts
+note = a recruit radius of zero is taken
+original:
+| if (recruitRadiusMm < 1)
+replacement:
+| if (recruitRadiusMm < 0)
+
+[rc2-1-rules-max-size]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.ASquadIsMadeOfWholeParts
+note = the largest squad is one soldier larger
+original:
+| public const int MaxSize = 30;
+replacement:
+| public const int MaxSize = 31;
+
+# ---- Formation
+
+[rc2-1-formation-size-low]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.AFormationIsComplete
+expect = WarCore.Tests.Rc21LedSquadTests.AFormationIsCompleteRingsWithAtLeastFourPlacesAMember
+note = a formation for no members is made
+original:
+| if (size < 1 || size > LedRules.MaxSize)
+replacement:
+| if (size < 0 || size > LedRules.MaxSize)
+
+[rc2-1-formation-size-high]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.AFormationIsComplete
+expect = WarCore.Tests.Rc21LedSquadTests.AFormationIsCompleteRingsWithAtLeastFourPlacesAMember
+note = a formation for one member more than the largest squad is made
+original:
+| if (size < 1 || size > LedRules.MaxSize)
+replacement:
+| if (size < 1 || size > LedRules.MaxSize + 1)
+
+[rc2-1-formation-ring-boundary]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.AFormationIsComplete
+expect = WarCore.Tests.Rc21LedSquadTests.AFormationIsCompleteRingsWithAtLeastFourPlacesAMember
+note = rings that hold exactly four places a member get one more ring
+original:
+| while (3 * rings * (rings + 1) < PlacesPerMember * size) rings++;
+replacement:
+| while (3 * rings * (rings + 1) <= PlacesPerMember * size) rings++;
+
+[rc2-1-formation-three-places]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.AFormationIsComplete
+expect = WarCore.Tests.Rc21LedSquadTests.AFormationIsCompleteRingsWithAtLeastFourPlacesAMember
+note = three places a member
+original:
+| internal const int PlacesPerMember = 4;
+replacement:
+| internal const int PlacesPerMember = 3;
+
+[rc2-1-formation-five-places]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.AFormationIsComplete
+expect = WarCore.Tests.Rc21LedSquadTests.AFormationIsCompleteRingsWithAtLeastFourPlacesAMember
+note = five places a member
+original:
+| internal const int PlacesPerMember = 4;
+replacement:
+| internal const int PlacesPerMember = 5;
+
+[rc2-1-formation-keeps-origin]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.AFormationIsComplete
+expect = WarCore.Tests.Rc21LedSquadTests.AFormationIsCompleteRingsWithAtLeastFourPlacesAMember
+note = the anchor itself is the first place and the last place of the outer ring is lost
+original:
+| Array.Copy(lattice, 1, result, 0, result.Length);
+replacement:
+| Array.Copy(lattice, 0, result, 0, result.Length);
+
+# ---- the public reads
+
+[rc2-1-leader-of-not-leader]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheBridgeCarries
+expect = WarCore.Tests.Rc21LedSquadTests.TheBridgeCarriesTheFourLedOrdersAndShowsTheSquadAsTheLeadersBand
+note = the leader is not in its own band
+original:
+| => unit.Value == leader || IsMember(unit) ? leader : 0;
+replacement:
+| => IsMember(unit) ? leader : 0;
+
+[rc2-1-leader-of-not-members]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheBridgeCarries
+expect = WarCore.Tests.Rc21LedSquadTests.TheBridgeCarriesTheFourLedOrdersAndShowsTheSquadAsTheLeadersBand
+note = the members are not in the leader's band
+original:
+| => unit.Value == leader || IsMember(unit) ? leader : 0;
+replacement:
+| => unit.Value == leader ? leader : 0;
+
+[rc2-1-spot-of-outsider]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests|FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedStateTests.ALoadedStateReplacesTheSquadAndIsSavedAndHashedAsItWasWritten
+expect = WarCore.Tests.Rc21LedRulesTests.WhenAMemberFallsAndNobodyCanReplaceItTheOthersKeepTheirSpotsAndPlaces
+note = a unit outside the squad has spot 0
+original:
+| return i < 0 ? -1 : spots[i];
+replacement:
+| return i < 0 ? 0 : spots[i];
+
+[rc2-1-try-place-after-load]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.ALoadedStateReplacesTheSquadAndIsSavedAndHashedAsItWasWritten
+note = a loaded squad tells the places of the squad it replaced
+original:
+| if (i < 0 || !placed[i] || restored)
+replacement:
+| if (i < 0 || !placed[i])
+
+[rc2-1-try-place-without-place]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.AMemberForWhomNoPlaceIsLeftIsStopped
+note = a member without a place tells a place
+original:
+| if (i < 0 || !placed[i] || restored)
+replacement:
+| if (i < 0 || restored)
+
+# ---- Step
+
+[rc2-1-step-team-zero-leads]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.APlayerOfNoTeamLeadsNobody
+note = a player of no team leads
+original:
+| me.Team >= 1
+replacement:
+| me.Team >= 0
+
+[rc2-1-step-dead-player-leads]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheSquadBreaksUp
+expect = WarCore.Tests.Rc21LedSquadTests.TheSquadBreaksUpWhenItsLeaderFalls
+note = a fallen player still leads
+original:
+| && store.TryGet(positions, player, out here) && !combat.IsDead(player);
+replacement:
+| && store.TryGet(positions, player, out here);
+
+[rc2-1-step-no-disband-on-leader-change]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheSquadBreaksUp
+expect = WarCore.Tests.Rc21LedSquadTests.TheSquadBreaksUpWhenItsLeaderFalls
+note = the squad stays when its leader no longer plays
+original:
+| if (leader != 0 && leader != key) Disband();
+replacement:
+| if (leader != 0 && leader != key) { }
+
+[rc2-1-step-any-squad-number]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.ACommandToAnotherSquadCallsNobody
+note = a command to any squad number orders the led squad
+original:
+|  && c.Input.Squad.Value.Squad == SquadCommand.Led)
+replacement:
+| )
+
+[rc2-1-step-runs-without-leader]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.ACommandToAnotherSquadCallsNobody
+expect = WarCore.Tests.Rc21LedRulesTests.TheTeamMatesWithinTheRadiusJoinNearestFirst
+note = the squad recruits and walks while nobody leads it
+original:
+| if (leader != 0)
+replacement:
+| if (true)
+
+[rc2-1-step-trail-on-hold]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.TheAnchorFollowsOnceTheLeaderIsMoreThanHalfASpacingAway
+note = the anchor trails the leader in Hold instead of Follow
+original:
+| if (mode == LedMode.Follow) Trail(
+replacement:
+| if (mode == LedMode.Hold) Trail(
+
+[rc2-1-step-dirty-keeps-refusals]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedGuardsTests.AWalkOrder|FullyQualifiedName~Rc21LedGuardsTests.AMemberIsToldOnce
+expect = WarCore.Tests.Rc21LedGuardsTests.AWalkOrderThatWasRefusedIsNotGivenAgainUntilThePlacesChange
+note = new places do not forget the refused walk orders
+original:
+| if (dirty) Place(true);
+replacement:
+| if (dirty) Place(false);
+
+[rc2-1-step-restored-forgets-refusals]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedGuardsTests.AWalkOrder|FullyQualifiedName~Rc21LedGuardsTests.AMemberIsToldOnce
+expect = WarCore.Tests.Rc21LedGuardsTests.AWalkOrderThatWasRefusedIsNotGivenAgainUntilThePlacesChange
+note = a loaded squad forgets its refused walk orders
+original:
+| else if (restored) Place(false);
+replacement:
+| else if (restored) Place(true);
+
+[rc2-1-step-restored-no-places]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.ASquadOnItsWay
+expect = WarCore.Tests.Rc21LedSquadTests.ASquadOnItsWaySavedAndLoadedPlaysOnTheSame
+note = a loaded squad does not work its places out
+original:
+| if (dirty) Place(true); else if (restored) Place(false);
+replacement:
+| if (dirty) Place(true);
+
+[rc2-1-step-dirty-stays]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedGuardsTests.AWalkOrder|FullyQualifiedName~Rc21LedGuardsTests.AMemberIsToldOnce
+expect = WarCore.Tests.Rc21LedGuardsTests.AWalkOrderThatWasRefusedIsNotGivenAgainUntilThePlacesChange
+note = the places are worked out on every tick once they changed
+original:
+| dirty = false; restored = false;
+replacement:
+| restored = false;
+
+[rc2-1-step-restored-stays]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.ASquadOnItsWay
+expect = WarCore.Tests.Rc21LedSquadTests.ASquadOnItsWaySavedAndLoadedPlaysOnTheSame
+note = a loaded squad stays loaded and never tells a place
+original:
+| dirty = false; restored = false;
+replacement:
+| dirty = false;
+
+[rc2-1-layer-of-ground]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheSquadFollowsItsLeaderUpTheStair
+expect = WarCore.Tests.Rc21LedSquadTests.TheSquadFollowsItsLeaderUpTheStair
+note = every unit is taken to be on the ground
+original:
+| private int LayerOf(EntityId unit) => layers == null ? 0 : layers.LayerOf(unit);
+replacement:
+| private int LayerOf(EntityId unit) => 0;
+
+# ---- Command and Lead
+
+[rc2-1-command-dismiss-ignored]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.TheTeamMatesWithinTheRadiusJoinNearestFirst
+note = Dismiss does nothing
+original:
+| case SquadCommandKind.Dismiss: Disband(); return;
+replacement:
+| case SquadCommandKind.Dismiss: return;
+
+[rc2-1-command-follow-holds]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.TheAnchorFollowsOnceTheLeaderIsMoreThanHalfASpacingAway
+note = Follow makes the squad hold
+original:
+| case SquadCommandKind.Follow: Lead(key, LedMode.Follow, here, layer); return;
+replacement:
+| case SquadCommandKind.Follow: Lead(key, LedMode.Hold, here, layer); return;
+
+[rc2-1-command-hold-follows]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.AMateTheLeaderComesNearLaterJoinsAHoldingSquadAndGetsAPlace
+note = Hold makes the squad follow
+original:
+| case SquadCommandKind.Hold: Lead(key, LedMode.Hold, here, layer); return;
+replacement:
+| case SquadCommandKind.Hold: Lead(key, LedMode.Follow, here, layer); return;
+
+[rc2-1-command-moveto-anywhere]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedKeysTests
+expect = WarCore.Tests.Rc21LedKeysTests.APointTheSessionRefusesQueuesNothingAndAPointNobodyCanStandOnMakesNoSquad
+note = a point nobody can stand on is taken
+original:
+| if (moves.TryStandAt(command.TargetPoint, command.TargetLayer, out SimVec3 grounded))
+replacement:
+| if (moves.TryStandAt(command.TargetPoint, command.TargetLayer, out SimVec3 grounded) || true)
+
+[rc2-1-command-moveto-not-grounded]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.MoveToSends|FullyQualifiedName~Rc21LedSquadTests.TheSquadClimbs
+expect = WarCore.Tests.Rc21LedSquadTests.MoveToSendsTheSquadToThePointAndAPointNobodyCanStandOnChangesNothing
+expect = WarCore.Tests.Rc21LedSquadTests.TheSquadClimbsToTheFloorItIsSentTo
+note = the anchor is the commanded point, not the ground under it
+original:
+| Lead(key, LedMode.Hold, grounded, command.TargetLayer);
+replacement:
+| Lead(key, LedMode.Hold, command.TargetPoint, command.TargetLayer);
+
+[rc2-1-command-moveto-ground-layer]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheSquadClimbs|FullyQualifiedName~Rc21LedSquadTests.UpstairsAUnitStands
+expect = WarCore.Tests.Rc21LedSquadTests.TheSquadClimbsToTheFloorItIsSentTo
+expect = WarCore.Tests.Rc21LedSquadTests.UpstairsAUnitStandsOnTheFloorButNotAtItsEdge
+note = the point is grounded on the ground floor whatever layer is commanded
+original:
+| moves.TryStandAt(command.TargetPoint, command.TargetLayer, out
+replacement:
+| moves.TryStandAt(command.TargetPoint, 0, out
+
+[rc2-1-command-moveto-anchor-layer]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheSquadClimbs
+expect = WarCore.Tests.Rc21LedSquadTests.TheSquadClimbsToTheFloorItIsSentTo
+note = the anchor of a MoveTo is kept on the ground floor
+original:
+| Lead(key, LedMode.Hold, grounded, command.TargetLayer);
+replacement:
+| Lead(key, LedMode.Hold, grounded, 0);
+
+[rc2-1-command-moveto-follows]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.APlaceInAWallOrBehindItIsLeftOutAndItsMemberTakesTheNextFreeOne
+note = after a MoveTo the squad follows its leader
+original:
+| Lead(key, LedMode.Hold, grounded, command.TargetLayer);
+replacement:
+| Lead(key, LedMode.Follow, grounded, command.TargetLayer);
+
+[rc2-1-lead-not-dirty]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.APlaceInAWallOrBehindItIsLeftOutAndItsMemberTakesTheNextFreeOne
+note = a new anchor from a command does not move the places
+original:
+| leader = key; mode = next; anchor = at; anchorLayer = layer; dirty = true;
+replacement:
+| leader = key; mode = next; anchor = at; anchorLayer = layer;
+
+# ---- Disband, Alive, Drop
+
+[rc2-1-disband-no-stop]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedGuardsTests.AWalkOrder|FullyQualifiedName~Rc21LedGuardsTests.AMemberIsToldOnce
+expect = WarCore.Tests.Rc21LedGuardsTests.AMemberIsToldOnceWhereToGo
+note = a dismissed member keeps walking
+original:
+| for (int i = 0; i < count; i++) moves.Stop(new StableId(members[i]));
+replacement:
+|
+
+[rc2-1-disband-keeps-leader]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.TheTeamMatesWithinTheRadiusJoinNearestFirst
+note = a broken-up squad keeps its leader
+original:
+| leader = 0; mode = LedMode.None;
+replacement:
+| mode = LedMode.None;
+
+[rc2-1-disband-keeps-mode]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheSquadBreaksUp
+expect = WarCore.Tests.Rc21LedSquadTests.TheSquadBreaksUpWhenItsLeaderFalls
+note = a broken-up squad keeps its mode
+original:
+| leader = 0; mode = LedMode.None;
+replacement:
+| leader = 0;
+
+[rc2-1-disband-keeps-anchor]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.DismissBreaks
+expect = WarCore.Tests.Rc21LedSquadTests.DismissBreaksTheSquadUpAndTheAiTakesItsSoldiersBack
+note = a broken-up squad keeps its anchor
+original:
+| mode = LedMode.None; anchor = default;
+replacement:
+| mode = LedMode.None;
+
+[rc2-1-disband-keeps-layer]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheSquadClimbs
+expect = WarCore.Tests.Rc21LedSquadTests.TheSquadClimbsToTheFloorItIsSentTo
+note = a broken-up squad keeps its anchor's layer
+original:
+| anchor = default; anchorLayer = 0; count = 0;
+replacement:
+| anchor = default; count = 0;
+
+[rc2-1-disband-keeps-members]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.TheTeamMatesWithinTheRadiusJoinNearestFirst
+note = a broken-up squad keeps its members
+original:
+| anchorLayer = 0; count = 0;
+replacement:
+| anchorLayer = 0;
+
+[rc2-1-alive-counts-the-fallen]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.WhenAMemberFallsAndNobodyCanReplaceItTheOthersKeepTheirSpotsAndPlaces
+note = a fallen member stays in the squad
+original:
+| if (combat.IsDead(entity) || !store.TryGet(positions, entity, out Position position)) return false;
+replacement:
+| if (!store.TryGet(positions, entity, out Position position)) return false;
+
+[rc2-1-drop-not-dirty]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.WhenAMemberFallsAndNobodyCanReplaceItTheOthersKeepTheirSpotsAndPlaces
+note = the places are not worked out again when a member goes
+original:
+| if (!Alive(members[i], out _, out _)) { dirty = true; continue; }
+replacement:
+| if (!Alive(members[i], out _, out _)) { continue; }
+
+[rc2-1-drop-spots-stay-behind]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.WhenAMemberFallsAndNobodyCanReplaceItTheOthersKeepTheirSpotsAndPlaces
+note = the spots do not move up with the members when one goes
+original:
+| members[kept] = members[i]; spots[kept] = spots[i]; kept++;
+replacement:
+| members[kept] = members[i]; kept++;
+
+# ---- Recruit
+
+[rc2-1-recruit-one-short]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.TheTeamMatesWithinTheRadiusJoinNearestFirst
+note = the squad recruits one soldier fewer than its size
+original:
+| while (count < rules.Size)
+replacement:
+| while (count < rules.Size - 1)
+
+[rc2-1-recruit-the-leader]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.TheTeamMatesWithinTheRadiusJoinNearestFirst
+note = the leader joins its own squad
+original:
+| if (entity.Equals(player) || !store.TryGet(combatants, entity, out Combatant unit)
+replacement:
+| if (!store.TryGet(combatants, entity, out Combatant unit)
+
+[rc2-1-recruit-other-team]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.TheTeamMatesWithinTheRadiusJoinNearestFirst
+note = the other team joins instead of the leader's
+original:
+| unit.Team != team
+replacement:
+| unit.Team == team
+
+[rc2-1-recruit-the-fallen]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.AFallenMateAndOneSomebodyElseCommandsAreNotCalled
+note = a fallen mate joins
+original:
+| || !store.TryGet(positions, entity, out Position position) || combat.IsDead(entity)) continue;
+replacement:
+| || !store.TryGet(positions, entity, out Position position)) continue;
+
+[rc2-1-recruit-members-again]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.AFallenMateAndOneSomebodyElseCommandsAreNotCalled
+note = the squad does not keep its own members from joining again
+original:
+| if (IndexOf(id.Value) >= 0 || moves.IsCommanded(id)) continue;
+replacement:
+| if (moves.IsCommanded(id)) continue;
+
+[rc2-1-recruit-the-commanded]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.AFallenMateAndOneSomebodyElseCommandsAreNotCalled
+note = a unit somebody else commands joins
+original:
+| if (IndexOf(id.Value) >= 0 || moves.IsCommanded(id)) continue;
+replacement:
+| if (IndexOf(id.Value) >= 0) continue;
+
+[rc2-1-recruit-radius-open]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.TheTeamMatesWithinTheRadiusJoinNearestFirst
+note = a mate exactly on the radius does not join
+original:
+| if (distance > recruitSquared) continue;
+replacement:
+| if (distance >= recruitSquared) continue;
+
+[rc2-1-recruit-no-radius]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.TheTeamMatesWithinTheRadiusJoinNearestFirst
+note = mates beyond the radius join
+original:
+| if (distance > recruitSquared) continue;
+replacement:
+|
+
+[rc2-1-recruit-farthest-first]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.TheTeamMatesWithinTheRadiusJoinNearestFirst
+note = the farthest mate joins first
+original:
+| if (any && (distance > bestDistance ||
+replacement:
+| if (any && (distance < bestDistance ||
+
+[rc2-1-recruit-tie-high-mix]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.OfTwoEquallyNearMatesTheSameOneJoinsWhateverTheOrderOfTheUnitList
+expect = WarCore.Tests.Rc21LedRulesTests.OfThreeEquallyNearMatesTheMixDecidesNotTheOrderTheyAreMet
+note = of equally near mates the one with the highest mix joins
+original:
+| distance == bestDistance && mix > bestMix
+replacement:
+| distance == bestDistance && mix < bestMix
+
+[rc2-1-recruit-tie-first-found]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.OfTwoEquallyNearMatesTheSameOneJoinsWhateverTheOrderOfTheUnitList
+expect = WarCore.Tests.Rc21LedRulesTests.OfThreeEquallyNearMatesTheMixDecidesNotTheOrderTheyAreMet
+note = of equally near mates the one met first joins
+original:
+| distance == bestDistance && mix > bestMix
+replacement:
+| distance == bestDistance
+
+[rc2-1-recruit-tie-last-found]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.OfTwoEquallyNearMatesTheSameOneJoinsWhateverTheOrderOfTheUnitList
+expect = WarCore.Tests.Rc21LedRulesTests.OfThreeEquallyNearMatesTheMixDecidesNotTheOrderTheyAreMet
+note = of equally near mates the one met last joins
+original:
+| distance > bestDistance || distance == bestDistance && mix > bestMix
+replacement:
+| distance > bestDistance
+
+[rc2-1-recruit-nobody-joins-anyway]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.TheTeamMatesWithinTheRadiusJoinNearestFirst
+note = with no mate left to call, a unit of key 0 joins
+original:
+| if (!any) return;
+replacement:
+|
+
+# ---- Join
+
+[rc2-1-join-tie-higher-spot]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.AMemberTakesTheFreeSpotNearestToItAndTheLowerOfTwoEquallyNear
+note = of two equally near spots the higher is taken
+original:
+| if (spot < 0 || distance < nearest)
+replacement:
+| if (spot < 0 || distance <= nearest)
+
+[rc2-1-join-first-spot-boundary]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.AMemberTakesTheFreeSpotNearestToItAndTheLowerOfTwoEquallyNear
+expect = WarCore.Tests.Rc21LedRulesTests.APlaceInAWallOrBehindItIsLeftOutAndItsMemberTakesTheNextFreeOne
+note = spot 0 is given up for the next free spot whatever their distances
+original:
+| if (spot < 0 || distance < nearest)
+replacement:
+| if (spot <= 0 || distance < nearest)
+
+[rc2-1-join-every-spot-free]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.TheTeamMatesWithinTheRadiusJoinNearestFirst
+note = a spot another member has counts as free
+original:
+| free = spots[i] != s;
+replacement:
+| free = true;
+
+[rc2-1-join-unsorted]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.TheTeamMatesWithinTheRadiusJoinNearestFirst
+note = a newcomer is inserted against the key order
+original:
+| while (index > 0 && members[index - 1] > key)
+replacement:
+| while (index > 0 && members[index - 1] < key)
+
+[rc2-1-join-not-dirty]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.AMateTheLeaderComesNearLaterJoinsAHoldingSquadAndGetsAPlace
+note = a newcomer does not make the places be worked out again
+original:
+| members[index] = key; spots[index] = spot; count++; dirty = true;
+replacement:
+| members[index] = key; spots[index] = spot; count++;
+
+[rc2-1-join-spots-stay-behind]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.TheTeamMatesWithinTheRadiusJoinNearestFirst
+note = the spots do not move along when a newcomer is inserted before other members
+original:
+| members[index] = members[index - 1]; spots[index] = spots[index - 1]; index--;
+replacement:
+| members[index] = members[index - 1]; index--;
+
+# ---- Trail
+
+[rc2-1-trail-ignores-layer]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheSquadFollowsItsLeaderUpTheStair
+expect = WarCore.Tests.Rc21LedSquadTests.TheSquadFollowsItsLeaderUpTheStair(True)
+note = a change of floor alone does not move the anchor
+original:
+| if (layer == anchorLayer && CombatSystem.Horizontal(here - anchor)
+replacement:
+| if (CombatSystem.Horizontal(here - anchor)
+
+[rc2-1-trail-boundary]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.TheAnchorFollowsOnceTheLeaderIsMoreThanHalfASpacingAway
+note = the anchor moves when the leader is exactly half a spacing away
+original:
+| .LengthSquared <= shiftSquared) return;
+replacement:
+| .LengthSquared < shiftSquared) return;
+
+[rc2-1-trail-whole-spacing]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.TheAnchorFollowsOnceTheLeaderIsMoreThanHalfASpacingAway
+note = the anchor waits for a whole spacing
+original:
+| SimFix.FromRaw(spacingRaw / 2)
+replacement:
+| SimFix.FromRaw(spacingRaw)
+
+[rc2-1-trail-quarter-spacing]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.TheAnchorFollowsOnceTheLeaderIsMoreThanHalfASpacingAway
+note = the anchor moves after a quarter spacing
+original:
+| SimFix.FromRaw(spacingRaw / 2)
+replacement:
+| SimFix.FromRaw(spacingRaw / 4)
+
+[rc2-1-trail-not-dirty]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheSquadKeepsUp
+expect = WarCore.Tests.Rc21LedSquadTests.TheSquadKeepsUpWithItsLeaderAndStandsWithinThreeSecondsOfItsStop
+note = the places stay where they were when the anchor follows the leader
+original:
+| anchor = here; anchorLayer = layer; dirty = true;
+replacement:
+| anchor = here; anchorLayer = layer;
+
+[rc2-1-trail-keeps-layer]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheSquadFollowsItsLeaderUpTheStair
+expect = WarCore.Tests.Rc21LedSquadTests.TheSquadFollowsItsLeaderUpTheStair
+note = the anchor follows the leader but keeps its old floor
+original:
+| anchor = here; anchorLayer = layer;
+replacement:
+| anchor = here;
+
+# ---- Place and Usable
+
+[rc2-1-place-own-not-taken]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.APlaceInAWallOrBehindItIsLeftOutAndItsMemberTakesTheNextFreeOne
+note = a member on its own place does not keep the others off it
+original:
+| if (placed[i]) taken[spots[i]] = true;
+replacement:
+|
+
+[rc2-1-place-spare-not-taken]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.APlaceInAWallOrBehindItIsLeftOutAndItsMemberTakesTheNextFreeOne
+note = a spare place given to one member stays free for the next
+original:
+| placed[i] = true; taken[o] = true;
+replacement:
+| placed[i] = true;
+
+[rc2-1-place-no-break]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.APlaceInAWallOrBehindItIsLeftOutAndItsMemberTakesTheNextFreeOne
+note = a member without its own place takes every free place, ending on the last
+original:
+| break;
+replacement:
+|
+
+[rc2-1-place-spare-ignores-taken]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.APlaceInAWallOrBehindItIsLeftOutAndItsMemberTakesTheNextFreeOne
+note = a spare place may be one another member has
+original:
+| if (taken[o] || !Usable(o, out places[i])) continue;
+replacement:
+| if (!Usable(o, out places[i])) continue;
+
+[rc2-1-place-keeps-refusals]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedGuardsTests.AWalkOrder|FullyQualifiedName~Rc21LedGuardsTests.AMemberIsToldOnce
+expect = WarCore.Tests.Rc21LedGuardsTests.AWalkOrderThatWasRefusedIsNotGivenAgainUntilThePlacesChange
+note = new places keep the old refused marks
+original:
+| if (forget) refused[i] = false;
+replacement:
+|
+
+[rc2-1-place-taken-not-cleared]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.APlaceInAWallOrBehindItIsLeftOutAndItsMemberTakesTheNextFreeOne
+note = the places taken before stay taken when the places are worked out again
+original:
+| for (int o = 0; o < taken.Length; o++) taken[o] = false;
+replacement:
+|
+
+[rc2-1-usable-unseen]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.APlaceInAWallOrBehindItIsLeftOutAndItsMemberTakesTheNextFreeOne
+note = a place behind a wall can be used
+original:
+|  && combat.Sees(anchor, grounded);
+replacement:
+| ;
+
+[rc2-1-usable-ground-floor]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.SentOneFloorUp
+expect = WarCore.Tests.Rc21LedSquadTests.SentOneFloorUpFromWhereItWalksOrStandsTheSquadClimbs
+note = the places are looked for on the ground floor whatever the anchor's floor
+original:
+| moves.TryStandAt(anchor + offsets[offset], anchorLayer, out grounded)
+replacement:
+| moves.TryStandAt(anchor + offsets[offset], 0, out grounded)
+
+# ---- Upkeep
+
+[rc2-1-upkeep-no-place-walks-on]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.AMemberForWhomNoPlaceIsLeftIsStopped
+note = a member without a place is not stopped
+original:
+| if (!placed[i]) { if (walking) moves.Stop(id); continue; }
+replacement:
+| if (!placed[i]) { continue; }
+
+[rc2-1-upkeep-arrived-walks-on]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.AMemberStopsAsSoonAsItHasArrived
+note = a member that has arrived is not stopped
+original:
+| SimpleAiSystem.Arrived(at, places[i])) { if (walking) moves.Stop(id); continue; }
+replacement:
+| SimpleAiSystem.Arrived(at, places[i])) { continue; }
+
+[rc2-1-upkeep-arrived-any-floor]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.SentOneFloorUp
+expect = WarCore.Tests.Rc21LedSquadTests.SentOneFloorUpFromWhereItWalksOrStandsTheSquadClimbs
+note = a member under or over its place counts as arrived
+original:
+| if (LayerOf(entity) == anchorLayer && SimpleAiSystem.Arrived(
+replacement:
+| if (SimpleAiSystem.Arrived(
+
+[rc2-1-upkeep-refused-asked-again]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedGuardsTests.AWalkOrder|FullyQualifiedName~Rc21LedGuardsTests.AMemberIsToldOnce
+expect = WarCore.Tests.Rc21LedGuardsTests.AWalkOrderThatWasRefusedIsNotGivenAgainUntilThePlacesChange
+note = a refused walk order is given again on every tick
+original:
+| if (refused[i]) continue;
+replacement:
+|
+
+[rc2-1-upkeep-reorders-every-tick]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedGuardsTests.AWalkOrder|FullyQualifiedName~Rc21LedGuardsTests.AMemberIsToldOnce
+expect = WarCore.Tests.Rc21LedGuardsTests.AMemberIsToldOnceWhereToGo
+note = a member on its way is told again on every tick
+original:
+| if (walking && targetLayer == anchorLayer && target.X.Raw == places[i].X.Raw && target.Z.Raw == places[i].Z.Raw) continue;
+replacement:
+|
+
+[rc2-1-upkeep-same-order-any-floor]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.SentOneFloorUp
+expect = WarCore.Tests.Rc21LedSquadTests.SentOneFloorUpFromWhereItWalksOrStandsTheSquadClimbs
+note = a member walking to the point under its new place is not told the new floor
+original:
+| if (walking && targetLayer == anchorLayer && target.X.Raw
+replacement:
+| if (walking && target.X.Raw
+
+[rc2-1-upkeep-same-order-any-x]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedGuardsTests.AWalkOrder|FullyQualifiedName~Rc21LedGuardsTests.AMemberIsToldOnce
+expect = WarCore.Tests.Rc21LedGuardsTests.AMemberIsToldOnceWhereToGo
+note = a new place due east or west is not told
+original:
+|  && target.X.Raw == places[i].X.Raw && target.Z.Raw
+replacement:
+|  && target.Z.Raw
+
+[rc2-1-upkeep-same-order-any-z]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedGuardsTests.AWalkOrder|FullyQualifiedName~Rc21LedGuardsTests.AMemberIsToldOnce
+expect = WarCore.Tests.Rc21LedGuardsTests.AMemberIsToldOnceWhereToGo
+note = a new place due north or south is not told
+original:
+|  && target.Z.Raw == places[i].Z.Raw) continue;
+replacement:
+| ) continue;
+
+[rc2-1-upkeep-order-ground-floor]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.SentOneFloorUp
+expect = WarCore.Tests.Rc21LedSquadTests.SentOneFloorUpFromWhereItWalksOrStandsTheSquadClimbs
+note = members are walked to the ground floor whatever the anchor's floor
+original:
+| moves.Order(id, places[i], anchorLayer);
+replacement:
+| moves.Order(id, places[i], 0);
+
+[rc2-1-upkeep-refusal-not-kept]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedGuardsTests.AWalkOrder|FullyQualifiedName~Rc21LedGuardsTests.AMemberIsToldOnce
+expect = WarCore.Tests.Rc21LedGuardsTests.AWalkOrderThatWasRefusedIsNotGivenAgainUntilThePlacesChange
+note = a refused walk order is not marked
+original:
+| if (!moves.TryGetOrder(id, out _, out _)) refused[i] = true;
+replacement:
+|
+
+# ---- SaveState, LoadState, WriteState
+
+[rc2-1-save-no-layer]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.ASquadIsSavedAndHashedFieldForField
+note = the anchor's layer is not saved
+original:
+| writer.Int64(anchor.Z.Raw); writer.Int32(anchorLayer);
+replacement:
+| writer.Int64(anchor.Z.Raw);
+
+[rc2-1-save-refused-false]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.ALoadedStateReplacesTheSquadAndIsSavedAndHashedAsItWasWritten
+note = every member is saved as not refused
+original:
+| writer.Bool(refused[i]);
+replacement:
+| writer.Bool(false);
+
+[rc2-1-save-spot-zero]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.ASquadIsSavedAndHashedFieldForField
+expect = WarCore.Tests.Rc21LedStateTests.ALoadedStateReplacesTheSquadAndIsSavedAndHashedAsItWasWritten
+note = every member is saved on spot 0
+original:
+| writer.Int32(spots[i]);
+replacement:
+| writer.Int32(0);
+
+[rc2-1-save-y-as-x]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.ALoadedStateReplacesTheSquadAndIsSavedAndHashedAsItWasWritten
+note = the anchor's height is saved as its x
+original:
+| writer.Int64(anchor.Y.Raw);
+replacement:
+| writer.Int64(anchor.X.Raw);
+
+[rc2-1-load-size-unchecked]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.AStateThatCannotBeIsRefused
+note = a state saved under another size is taken
+original:
+| bool same = reader.Int32() == rules.Size;
+replacement:
+| reader.Int32(); bool same = true;
+
+[rc2-1-load-radius-unchecked]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.AStateThatCannotBeIsRefused
+note = a state saved under another radius is taken
+original:
+| same &= reader.Int32() == rules.RecruitRadiusMm;
+replacement:
+| reader.Int32();
+
+[rc2-1-load-spacing-unchecked]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.AStateThatCannotBeIsRefused
+note = a state saved under another spacing is taken
+original:
+| same &= reader.Int64() == spacingRaw;
+replacement:
+| reader.Int64();
+
+[rc2-1-load-mode-low]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.AStateThatCannotBeIsRefused
+note = a mode below the first is taken
+original:
+| kind >= (int)LedMode.None
+replacement:
+| kind >= (int)LedMode.None - 1
+
+[rc2-1-load-mode-high]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.AStateThatCannotBeIsRefused
+note = a mode beyond the last is taken
+original:
+| kind <= (int)LedMode.Hold
+replacement:
+| kind <= (int)LedMode.Hold + 1
+
+[rc2-1-load-leader-mode-unchecked]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.AStateThatCannotBeIsRefused
+note = a leader without a mode and a mode without a leader are taken
+original:
+| SimStateReader.Require(leader == 0 == (mode == LedMode.None),
+replacement:
+| SimStateReader.Require(true,
+
+[rc2-1-load-layer-below-ground]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.AStateThatCannotBeIsRefused
+note = a negative anchor layer is taken
+original:
+| SimStateReader.Require(anchorLayer >= 0 && (
+replacement:
+| SimStateReader.Require((
+
+[rc2-1-load-free-layer]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.AStateThatCannotBeIsRefused
+note = an anchor layer without a leader is taken
+original:
+| leader != 0 || anchorLayer == 0 && anchor.X.Raw == 0
+replacement:
+| leader != 0 || anchor.X.Raw == 0
+
+[rc2-1-load-free-x]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.AStateThatCannotBeIsRefused
+note = an anchor x without a leader is taken
+original:
+| anchor.X.Raw == 0 && anchor.Y.Raw == 0
+replacement:
+| anchor.Y.Raw == 0
+
+[rc2-1-load-free-y]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.AStateThatCannotBeIsRefused
+note = an anchor height without a leader is taken
+original:
+| anchor.Y.Raw == 0 && anchor.Z.Raw == 0
+replacement:
+| anchor.Z.Raw == 0
+
+[rc2-1-load-free-z]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.AStateThatCannotBeIsRefused
+note = an anchor z without a leader is taken
+original:
+|  && anchor.Z.Raw == 0)
+replacement:
+| )
+
+[rc2-1-load-count-one-more]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.AStateThatCannotBeIsRefused
+note = one member more than the size passes the count check
+original:
+| count = reader.Count(rules.Size);
+replacement:
+| count = reader.Count(rules.Size + 1);
+
+[rc2-1-load-members-without-leader]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.AStateThatCannotBeIsRefused
+note = members without a leader are taken
+original:
+| SimStateReader.Require(leader != 0 || count == 0,
+replacement:
+| SimStateReader.Require(true,
+
+[rc2-1-load-member-not-increasing]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.AStateThatCannotBeIsRefused
+note = a member twice and a member of key 0 are taken
+original:
+| member > previous && member != leader
+replacement:
+| member >= previous && member != leader
+
+[rc2-1-load-leader-as-member]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.AStateThatCannotBeIsRefused
+note = the leader is taken as a member
+original:
+| member > previous && member != leader
+replacement:
+| member > previous
+
+[rc2-1-load-previous-not-kept]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.AStateThatCannotBeIsRefused
+note = members out of order are taken
+original:
+| previous = member;
+replacement:
+|
+
+[rc2-1-load-spot-low]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.AStateThatCannotBeIsRefused
+note = a spot below the first is taken
+original:
+| spot >= 0 && spot < rules.Size
+replacement:
+| spot >= -1 && spot < rules.Size
+
+[rc2-1-load-spot-high]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.AStateThatCannotBeIsRefused
+note = a spot beyond the last is taken
+original:
+| spot >= 0 && spot < rules.Size
+replacement:
+| spot >= 0 && spot <= rules.Size
+
+[rc2-1-load-shared-spot]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.AStateThatCannotBeIsRefused
+note = two members on one spot are taken
+original:
+| for (int j = 0; j < i; j++) SimStateReader.Require(spots[j] != spot, "Two led squad members share a spot.");
+replacement:
+|
+
+[rc2-1-load-not-restored]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.ALoadedStateReplacesTheSquadAndIsSavedAndHashedAsItWasWritten
+note = a loaded squad is not marked as loaded
+original:
+| restored = true;
+replacement:
+| restored = false;
+
+[rc2-1-load-refused-dropped]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.ALoadedStateReplacesTheSquadAndIsSavedAndHashedAsItWasWritten
+note = the refused marks are read but not kept
+original:
+| refused[i] = reader.Bool();
+replacement:
+| reader.Bool();
+
+[rc2-1-hash-no-type]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.ASquadIsSavedAndHashedFieldForField
+note = the hash leaves out the state type
+original:
+| hash.Add(StateTypeId); hash.Add(StateVersion);
+replacement:
+| hash.Add(StateVersion);
+
+[rc2-1-hash-no-version]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.ASquadIsSavedAndHashedFieldForField
+note = the hash leaves out the state version
+original:
+| hash.Add(StateTypeId); hash.Add(StateVersion);
+replacement:
+| hash.Add(StateTypeId);
+
+[rc2-1-hash-no-size]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.ASquadIsSavedAndHashedFieldForField
+note = the hash leaves out the size
+original:
+| hash.Add(rules.Size);
+replacement:
+|
+
+[rc2-1-hash-no-y]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.ASquadIsSavedAndHashedFieldForField
+note = the hash leaves out the anchor's height
+original:
+| hash.Add(anchor.Y.Raw);
+replacement:
+|
+
+[rc2-1-hash-no-refused]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.ALoadedStateReplacesTheSquadAndIsSavedAndHashedAsItWasWritten
+note = the hash leaves out the refused marks
+original:
+| hash.Add(refused[i]);
+replacement:
+|
+
+[rc2-1-hash-no-layer]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.ASquadIsSavedAndHashedFieldForField
+note = the hash leaves out the anchor's layer
+original:
+| hash.Add(anchorLayer);
+replacement:
+|
+
+[rc2-1-state-type-id]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.ASquadIsSavedAndHashedFieldForField
+note = another state type id
+original:
+| public string StateTypeId => "battle.led-squad";
+replacement:
+| public string StateTypeId => "battle.led-squad2";
+
+[rc2-1-state-version]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedStateTests
+expect = WarCore.Tests.Rc21LedStateTests.ASquadIsSavedAndHashedFieldForField
+note = another state version
+original:
+| public int StateVersion => 1;
+replacement:
+| public int StateVersion => 2;
+
+# ---- crowd
+
+[rc2-1-crowd-swapped-questions]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~Wp21PassTests|FullyQualifiedName~Mt026|FullyQualifiedName~Rc21LedRulesTests.TheLeaderWalksThroughAMemberThatWalks
+expect = WarCore.Tests.Wp21PassTests.ASameTeamMoverPassesAnIdleFriendAndTheFriendDoesNotMove
+expect = WarCore.Tests.Wp21PassTests.AnEnemyBlocksAndAnActiveFriendDoesNotPassAnotherActiveOne
+note = the idle question is asked about a walking unit and the walking question about an idle one
+original:
+| provisional[j].Active ? pass.MayPassMoving
+replacement:
+| !provisional[j].Active ? pass.MayPassMoving
+
+[rc2-1-crowd-old-rule]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~Wp21PassTests|FullyQualifiedName~Mt026|FullyQualifiedName~Rc21LedRulesTests.TheLeaderWalksThroughAMemberThatWalks
+expect = WarCore.Tests.Rc21LedRulesTests.TheLeaderWalksThroughAMemberThatWalks
+note = a walking unit is never passed (the rule before RC2-1)
+original:
+|                 if (pass != null && (provisional[j].Active ? pass.MayPassMoving(provisional[i].Unit, provisional[j].Unit)
+|                     : pass.MayPass(provisional[i].Unit, provisional[j].Unit))) continue;
+replacement:
+|                 if (pass != null && !provisional[j].Active && pass.MayPass(provisional[i].Unit, provisional[j].Unit)) continue;
+
+[rc2-1-crowd-default-passes]
+file = Assets/WarCore/Interim/ICrowdPass.cs
+filter = FullyQualifiedName~Wp21CostTests.CountingTheRuleCalls|FullyQualifiedName~Wp21PassTests|FullyQualifiedName~Mt026|FullyQualifiedName~Mt153
+expect = WarCore.Tests.Wp21CostTests.CountingTheRuleCallsChangesNothingAndIsReported
+expect = WarCore.Tests.Wp21PassTests.
+expect = WarCore.Tests.Mt026InterimLocomotionCrowdTests.
+note = a rule that says nothing about walking units lets the mover through them (a rule that wraps another and forwards only MayPass)
+original:
+| bool MayPassMoving(EntityId mover, EntityId other) => false;
+replacement:
+| bool MayPassMoving(EntityId mover, EntityId other) => true;
+
+[rc2-1-pass-digests-swapped]
+file = Assets/WarCore/Presentation/Bridge/Features/CrowdPassFeature.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheLeaderPasses|FullyQualifiedName~Rc21LedSquadTests.TheLeaderWalksStraight|FullyQualifiedName~Wp21PassTests
+expect = WarCore.Tests.Rc21LedSquadTests.TheLeaderPassesTheMembersOfItsSquadAndNothingElseChanges
+note = the two digests are swapped
+original:
+| public ulong Digest => Led != null ? LeaderDigest : RuleDigest;
+replacement:
+| public ulong Digest => Led != null ? RuleDigest : LeaderDigest;
+
+[rc2-1-pass-digest-value]
+file = Assets/WarCore/Presentation/Bridge/Features/CrowdPassFeature.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheLeaderPasses|FullyQualifiedName~Rc21LedSquadTests.TheLeaderWalksStraight|FullyQualifiedName~Wp21PassTests
+expect = WarCore.Tests.Rc21LedSquadTests.TheLeaderPassesTheMembersOfItsSquadAndNothingElseChanges
+note = another digest for the rule with a led squad
+original:
+| internal const ulong LeaderDigest = 0x5445414D49444C32UL;
+replacement:
+| internal const ulong LeaderDigest = 0x5445414D49444C33UL;
+
+[rc2-1-pass-leader-blocked-by-idle]
+file = Assets/WarCore/Presentation/Bridge/Features/CrowdPassFeature.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheLeaderPasses|FullyQualifiedName~Rc21LedSquadTests.TheLeaderWalksStraight|FullyQualifiedName~Wp21PassTests
+expect = WarCore.Tests.Rc21LedSquadTests.TheLeaderPassesTheMembersOfItsSquadAndNothingElseChanges
+expect = WarCore.Tests.Rc21LedSquadTests.TheLeaderWalksStraightThroughAMemberThatHolds
+note = the leader does not pass a standing member
+original:
+| return LeaderPasses(mover, idle);
+replacement:
+| return false;
+
+[rc2-1-pass-leader-blocked-by-walking]
+file = Assets/WarCore/Presentation/Bridge/Features/CrowdPassFeature.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheLeaderPasses|FullyQualifiedName~Rc21LedSquadTests.TheLeaderWalksStraight|FullyQualifiedName~Wp21PassTests
+expect = WarCore.Tests.Rc21LedSquadTests.TheLeaderPassesTheMembersOfItsSquadAndNothingElseChanges
+note = the leader does not pass a walking member
+original:
+| public bool MayPassMoving(EntityId mover, EntityId other) => LeaderPasses(mover, other);
+replacement:
+| public bool MayPassMoving(EntityId mover, EntityId other) => false;
+
+[rc2-1-pass-no-squad-check]
+file = Assets/WarCore/Presentation/Bridge/Features/CrowdPassFeature.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheLeaderPasses|FullyQualifiedName~Rc21LedSquadTests.TheLeaderWalksStraight|FullyQualifiedName~Wp21PassTests
+expect = WarCore.Tests.Rc21LedSquadTests.TheLeaderPassesTheMembersOfItsSquadAndNothingElseChanges
+note = the rule asks a squad that a battle without one does not have
+original:
+| Led != null && entities.StableOf(mover).Value == Led.Leader
+replacement:
+| entities.StableOf(mover).Value == Led.Leader
+
+[rc2-1-pass-not-the-leader]
+file = Assets/WarCore/Presentation/Bridge/Features/CrowdPassFeature.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheLeaderPasses|FullyQualifiedName~Rc21LedSquadTests.TheLeaderWalksStraight|FullyQualifiedName~Wp21PassTests
+expect = WarCore.Tests.Rc21LedSquadTests.TheLeaderPassesTheMembersOfItsSquadAndNothingElseChanges
+note = every unit but the leader passes the members
+original:
+| entities.StableOf(mover).Value == Led.Leader
+replacement:
+| entities.StableOf(mover).Value != Led.Leader
+
+[rc2-1-pass-not-only-members]
+file = Assets/WarCore/Presentation/Bridge/Features/CrowdPassFeature.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheLeaderPasses|FullyQualifiedName~Rc21LedSquadTests.TheLeaderWalksStraight|FullyQualifiedName~Wp21PassTests
+expect = WarCore.Tests.Rc21LedSquadTests.TheLeaderPassesTheMembersOfItsSquadAndNothingElseChanges
+note = the leader passes every unit
+original:
+|  && Led.IsMember(entities.StableOf(other));
+replacement:
+| ;
+
+# ---- MatchFeature
+
+[rc2-1-match-no-player-needed]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.AWorldHasALedSquadOnlyWithBothTheRulesAndAPlayer
+note = a world without a player makes a led squad
+original:
+| if (ai?.Led != null && a.Controlled != null)
+replacement:
+| if (ai?.Led != null)
+
+[rc2-1-match-no-rules-needed]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.AWorldHasALedSquadOnlyWithBothTheRulesAndAPlayer
+note = a pack whose AI section has no led rules makes a led squad
+original:
+| if (ai?.Led != null && a.Controlled != null)
+replacement:
+| if (ai != null && a.Controlled != null)
+
+[rc2-1-match-adapter-unaware]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.TheTeamMatesWithinTheRadiusJoinNearestFirst
+note = the adapter is not given the squad, so a member does not count as commanded
+original:
+| adapter.Led = led;
+replacement:
+|
+
+[rc2-1-match-pass-unaware]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheLeaderPasses|FullyQualifiedName~Rc21LedSquadTests.TheLeaderWalksStraight
+expect = WarCore.Tests.Rc21LedSquadTests.TheLeaderPassesTheMembersOfItsSquadAndNothingElseChanges
+note = the crowd rule is not given the squad
+original:
+| if (a.CrowdPass is TeamIdleCrowdPass pass) pass.Led = led;
+replacement:
+|
+
+[rc2-1-match-session-unaware]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheBridgeCarries|FullyQualifiedName~Rc21LedKeysTests
+expect = WarCore.Tests.Rc21LedSquadTests.TheBridgeCarriesTheFourLedOrdersAndShowsTheSquadAsTheLeadersBand
+expect = WarCore.Tests.Rc21LedKeysTests.TheThreeKeysOrderTheSquadAndTheStatusLineTellsWhatItDoes
+note = the session is not given the squad
+original:
+| a.Squads = squads; a.Led = led;
+replacement:
+| a.Squads = squads;
+
+[rc2-1-match-spacing-scale]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.AMemberTakesTheFreeSpotNearestToItAndTheLowerOfTwoEquallyNear
+note = the formation spacing is half the pack's
+original:
+| SimFix.Ratio(ai.SlotSpacingMm, 1000).Raw, layers);
+replacement:
+| SimFix.Ratio(ai.SlotSpacingMm, 2000).Raw, layers);
+
+[rc2-1-match-no-layers]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheSquadClimbs
+expect = WarCore.Tests.Rc21LedSquadTests.TheSquadClimbsToTheFloorItIsSentTo
+note = the squad is not told the floors
+original:
+| SimFix.Ratio(ai.SlotSpacingMm, 1000).Raw, layers);
+replacement:
+| SimFix.Ratio(ai.SlotSpacingMm, 1000).Raw, null);
+
+[rc2-1-match-commanded-without-members]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.TheTeamMatesWithinTheRadiusJoinNearestFirst
+note = a member does not count as commanded
+original:
+| Led != null && Led.IsMember(unit) || standing.HasValue
+replacement:
+| standing.HasValue
+
+[rc2-1-match-stand-ground-blocked]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.WhereAUnitWouldStand
+expect = WarCore.Tests.Rc21LedRulesTests.APlaceInAWallOrBehindItIsLeftOutAndItsMemberTakesTheNextFreeOne
+note = on the ground floor a unit stands wherever there is ground, walls included
+original:
+| return ground.TryGround(at, out grounded) && ground.CanStand(grounded);
+replacement:
+| return ground.TryGround(at, out grounded);
+
+[rc2-1-match-stand-ground-not-grounded]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.WhereAUnitWouldStand
+note = on the ground floor the point is not put on the ground
+original:
+| return ground.TryGround(at, out grounded) && ground.CanStand(grounded);
+replacement:
+| return ground.CanStand(grounded);
+
+[rc2-1-match-stand-no-plates]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.WhereAUnitWouldStand
+note = a world without floor plates is asked for a floor
+original:
+| if (plates == null || !locomotion.CanStandOn(
+replacement:
+| if (!locomotion.CanStandOn(
+
+[rc2-1-match-stand-footprint]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.UpstairsAUnitStands
+expect = WarCore.Tests.Rc21LedSquadTests.UpstairsAUnitStandsOnTheFloorButNotAtItsEdge
+note = upstairs a unit stands where its body does not fit
+original:
+| plates == null || !locomotion.CanStandOn(layer, at) || !plates.TryFloor
+replacement:
+| plates == null || !plates.TryFloor
+
+[rc2-1-match-stand-floor-height]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.UpstairsAUnitStands|FullyQualifiedName~Rc21LedSquadTests.TheSquadClimbs
+expect = WarCore.Tests.Rc21LedSquadTests.UpstairsAUnitStandsOnTheFloorButNotAtItsEdge
+expect = WarCore.Tests.Rc21LedSquadTests.TheSquadClimbsToTheFloorItIsSentTo
+note = upstairs the point keeps its own height instead of the floor's
+original:
+| grounded = new SimVec3(at.X, y, at.Z);
+replacement:
+|
+
+# ---- session and keys
+
+[rc2-1-session-led-follow-needs-unit]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Rc21LedKeysTests
+expect = WarCore.Tests.Rc21LedKeysTests.TheThreeKeysOrderTheSquadAndTheStatusLineTellsWhatItDoes
+note = a led Follow is refused because it names no unit
+original:
+| command.Kind == BridgeCommandKind.Follow && command.Squad != BridgeCommand.Led && !HasUnit
+replacement:
+| command.Kind == BridgeCommandKind.Follow && !HasUnit
+
+[rc2-1-session-dismiss-unmapped]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Rc21LedKeysTests
+expect = WarCore.Tests.Rc21LedKeysTests.TheThreeKeysOrderTheSquadAndTheStatusLineTellsWhatItDoes
+note = Dismiss reaches the simulation as Follow
+original:
+| BridgeCommandKind.Dismiss => new SquadCommand(SquadCommandKind.Dismiss, command.Squad, default, default),
+replacement:
+|
+
+[rc2-1-session-led-follow-target]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheBridgeCarries
+expect = WarCore.Tests.Rc21LedSquadTests.TheBridgeCarriesTheFourLedOrdersAndShowsTheSquadAsTheLeadersBand
+note = a led Follow looks for a unit to follow
+original:
+| command.Squad != BridgeCommand.Led) followTarget
+replacement:
+| true) followTarget
+
+[rc2-1-session-band-of-the-fallen]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Rc21LedKeysTests
+expect = WarCore.Tests.Rc21LedKeysTests.APlayerWhoIsDownGivesNoOrders
+note = a fallen leader still shows its band
+original:
+| ulong ledBy = led != null && alive ?
+replacement:
+| ulong ledBy = led != null ?
+
+[rc2-1-session-band-without-squad]
+file = Assets/WarCore/Presentation/Bridge/SimSession.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheBridgeCarries
+expect = WarCore.Tests.Rc21LedSquadTests.TheBridgeCarriesTheFourLedOrdersAndShowsTheSquadAsTheLeadersBand
+note = the led squad shows no band
+original:
+| ledBy != 0 ? BandKey(ledBy) : banded
+replacement:
+| banded
+
+[rc2-1-session-led-orders-always]
+file = Assets/WarCore/Presentation/Bridge/SimSession.Squads.cs
+filter = FullyQualifiedName~Rc21LedKeysTests
+expect = WarCore.Tests.Rc21LedKeysTests.AStageWithoutTheRulesRefusesTheOrdersAndKeepsItsOldSquadLine
+note = every world takes led orders
+original:
+| internal bool LedOrders => led != null;
+replacement:
+| internal bool LedOrders => true;
+
+[rc2-1-free-tick-now]
+file = Assets/WarCore/Presentation/Bridge/SimSession.Squads.cs
+filter = FullyQualifiedName~Rc21LedKeysTests
+expect = WarCore.Tests.Rc21LedKeysTests.AnOrderWaitsForTheNextTickThatIsFree
+note = the tick the session stands on counts as free
+original:
+| if (from <= Tick) throw
+replacement:
+| if (from < Tick) throw
+
+[rc2-1-free-tick-stops-early]
+file = Assets/WarCore/Presentation/Bridge/SimSession.Squads.cs
+filter = FullyQualifiedName~Rc21LedKeysTests
+expect = WarCore.Tests.Rc21LedKeysTests.AnOrderWaitsForTheNextTickThatIsFree
+note = a command on the asked tick is not seen
+original:
+| pending[i].AtTick <= from; i++)
+replacement:
+| pending[i].AtTick < from; i++)
+
+[rc2-1-free-tick-wrong-match]
+file = Assets/WarCore/Presentation/Bridge/SimSession.Squads.cs
+filter = FullyQualifiedName~Rc21LedKeysTests
+expect = WarCore.Tests.Rc21LedKeysTests.AnOrderWaitsForTheNextTickThatIsFree
+note = a tick counts as taken when another tick is
+original:
+| if (pending[i].AtTick == from) from++;
+replacement:
+| if (pending[i].AtTick != from) from++;
+
+[rc2-1-keys-hold-when-holding]
+file = Assets/WarCore/Presentation/Bridge/ShowcaseActions.cs
+filter = FullyQualifiedName~Rc21LedKeysTests
+expect = WarCore.Tests.Rc21LedKeysTests.TheThreeKeysOrderTheSquadAndTheStatusLineTellsWhatItDoes
+note = T gives Hold to a holding squad and Follow to a following one
+original:
+| session.LedOrder == 1
+replacement:
+| session.LedOrder == 2
+
+[rc2-1-keys-follow-needs-squad]
+file = Assets/WarCore/Presentation/Bridge/ShowcaseActions.cs
+filter = FullyQualifiedName~Rc21LedKeysTests
+expect = WarCore.Tests.Rc21LedKeysTests.TheThreeKeysOrderTheSquadAndTheStatusLineTellsWhatItDoes
+note = T needs a squad already
+original:
+| Led(session, false, session != null
+replacement:
+| Led(session, true, session != null
+
+[rc2-1-keys-goto-needs-squad]
+file = Assets/WarCore/Presentation/Bridge/ShowcaseActions.cs
+filter = FullyQualifiedName~Rc21LedKeysTests
+expect = WarCore.Tests.Rc21LedKeysTests.GoThereIsTheFirstOrderToo
+note = C needs a squad already
+original:
+| Led(session, false, tick => BridgeCommand.MoveTo
+replacement:
+| Led(session, true, tick => BridgeCommand.MoveTo
+
+[rc2-1-keys-dismiss-without-squad]
+file = Assets/WarCore/Presentation/Bridge/ShowcaseActions.cs
+filter = FullyQualifiedName~Rc21LedKeysTests
+expect = WarCore.Tests.Rc21LedKeysTests.TheThreeKeysOrderTheSquadAndTheStatusLineTellsWhatItDoes
+note = X is queued without a squad
+original:
+| Led(session, true, BridgeCommand.Dismiss)
+replacement:
+| Led(session, false, BridgeCommand.Dismiss)
+
+[rc2-1-keys-without-rules]
+file = Assets/WarCore/Presentation/Bridge/ShowcaseActions.cs
+filter = FullyQualifiedName~Rc21LedKeysTests
+expect = WarCore.Tests.Rc21LedKeysTests.AStageWithoutTheRulesRefusesTheOrdersAndKeepsItsOldSquadLine
+note = a world without led rules takes the keys
+original:
+| if (!session.LedOrders || needsSquad && session.LedOrder == 0) return false;
+replacement:
+| if (needsSquad && session.LedOrder == 0) return false;
+
+[rc2-1-keys-fallen-player]
+file = Assets/WarCore/Presentation/Bridge/ShowcaseActions.cs
+filter = FullyQualifiedName~Rc21LedKeysTests
+expect = WarCore.Tests.Rc21LedKeysTests.APlayerWhoIsDownGivesNoOrders
+note = a fallen player gives orders
+original:
+|             if (!session.LedOrders || needsSquad && session.LedOrder == 0) return false;
+|             if (!key.HasValue || !session.Current.TryGet(key.Value, out ViewEntity me) || !me.Alive) return false;
+replacement:
+|             if (!session.LedOrders || needsSquad && session.LedOrder == 0) return false;
+|             if (!key.HasValue || !session.Current.TryGet(key.Value, out ViewEntity me)) return false;
+
+[rc2-1-keys-tick-after-next]
+file = Assets/WarCore/Presentation/Bridge/ShowcaseActions.cs
+filter = FullyQualifiedName~Rc21LedKeysTests
+expect = WarCore.Tests.Rc21LedKeysTests.TheThreeKeysOrderTheSquadAndTheStatusLineTellsWhatItDoes
+note = an order from a key waits a tick longer
+original:
+| session.FreeTick(session.Tick + 1)
+replacement:
+| session.FreeTick(session.Tick + 2)
+
+[rc2-1-keys-goto-ground-floor]
+file = Assets/WarCore/Presentation/Bridge/ShowcaseActions.cs
+filter = FullyQualifiedName~Rc21LedKeysTests
+expect = WarCore.Tests.Rc21LedKeysTests.APointTheSessionRefusesQueuesNothingAndAPointNobodyCanStandOnMakesNoSquad
+note = C sends the squad to the ground floor whatever floor was aimed at
+original:
+| BridgeCommand.MoveTo(tick, BridgeCommand.Led, xMm, zMm, layer)
+replacement:
+| BridgeCommand.MoveTo(tick, BridgeCommand.Led, xMm, zMm)
+
+[rc2-1-hud-no-old-line]
+file = Assets/WarCore/Presentation/Camera/ShowcaseHud.cs
+filter = FullyQualifiedName~Rc21LedKeysTests
+expect = WarCore.Tests.Rc21LedKeysTests.AStageWithoutTheRulesRefusesTheOrdersAndKeepsItsOldSquadLine
+note = a world without led rules gets the led squad line
+original:
+| if (!session.LedOrders) return Squad(session.Current, key);
+replacement:
+|
+
+[rc2-1-hud-fallen-player]
+file = Assets/WarCore/Presentation/Camera/ShowcaseHud.cs
+filter = FullyQualifiedName~Rc21LedKeysTests
+expect = WarCore.Tests.Rc21LedKeysTests.APlayerWhoIsDownGivesNoOrders
+note = a fallen player gets a squad line
+original:
+| if (!key.HasValue || !session.Current.TryGet(key.Value, out ViewEntity me) || !me.Alive) return "";
+replacement:
+| if (!key.HasValue || !session.Current.TryGet(key.Value, out ViewEntity me)) return "";
+
+[rc2-1-hud-none-line]
+file = Assets/WarCore/Presentation/Camera/ShowcaseHud.cs
+filter = FullyQualifiedName~Rc21LedKeysTests
+expect = WarCore.Tests.Rc21LedKeysTests.TheThreeKeysOrderTheSquadAndTheStatusLineTellsWhatItDoes
+note = no squad is told as a squad of none holding
+original:
+| if (session.LedOrder == 0) return
+replacement:
+| if (session.LedOrder == 3) return
+
+[rc2-1-hud-follow-hold-swapped]
+file = Assets/WarCore/Presentation/Camera/ShowcaseHud.cs
+filter = FullyQualifiedName~Rc21LedKeysTests
+expect = WarCore.Tests.Rc21LedKeysTests.TheThreeKeysOrderTheSquadAndTheStatusLineTellsWhatItDoes
+note = following is told as holding and holding as following
+original:
+| (session.LedOrder == 1 ?
+replacement:
+| (session.LedOrder == 2 ?
+
+[rc2-1-hud-shows-size-zero]
+file = Assets/WarCore/Presentation/Camera/ShowcaseHud.cs
+filter = FullyQualifiedName~Rc21LedKeysTests
+expect = WarCore.Tests.Rc21LedKeysTests.AStageWithoutTheRulesRefusesTheOrdersAndKeepsItsOldSquadLine
+note = a stage without led rules tells the squad keys
+original:
+| if (led > 0)
+replacement:
+| if (led >= 0)
+
+[rc2-1-showcase-led-size-default]
+file = Assets/WarCore/Presentation/Bridge/Showcase.cs
+filter = FullyQualifiedName~Rc21LedKeysTests
+expect = WarCore.Tests.Rc21LedKeysTests.AStageWithoutTheRulesRefusesTheOrdersAndKeepsItsOldSquadLine
+note = a layer without led rules gives a squad of one
+original:
+| ?.Led?.Size ?? 0;
+replacement:
+| ?.Led?.Size ?? 1;
+
+# ---- content and input
+
+[rc2-1-content-size-low]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheTwoLedFields
+expect = WarCore.Tests.Rc21LedSquadTests.TheTwoLedFieldsAreWrittenBothOrNoneAndWithinTheirRanges
+note = a led size of 0 passes the field check
+original:
+| r.Int("ledSize", 1, WarCore.Battle.LedRules.MaxSize)
+replacement:
+| r.Int("ledSize", 0, WarCore.Battle.LedRules.MaxSize)
+
+[rc2-1-content-size-high]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheTwoLedFields
+expect = WarCore.Tests.Rc21LedSquadTests.TheTwoLedFieldsAreWrittenBothOrNoneAndWithinTheirRanges
+note = a led size one beyond the largest passes the field check
+original:
+| r.Int("ledSize", 1, WarCore.Battle.LedRules.MaxSize)
+replacement:
+| r.Int("ledSize", 1, WarCore.Battle.LedRules.MaxSize + 1)
+
+[rc2-1-content-radius-low]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheTwoLedFields
+expect = WarCore.Tests.Rc21LedSquadTests.TheTwoLedFieldsAreWrittenBothOrNoneAndWithinTheirRanges
+note = a recruit radius of 0 passes the field check
+original:
+| r.Int("ledRecruitRadiusMm", 1, MaxSquadRadiusMm)
+replacement:
+| r.Int("ledRecruitRadiusMm", 0, MaxSquadRadiusMm)
+
+[rc2-1-content-radius-high]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheTwoLedFields
+expect = WarCore.Tests.Rc21LedSquadTests.TheTwoLedFieldsAreWrittenBothOrNoneAndWithinTheirRanges
+note = a recruit radius one beyond the largest is taken
+original:
+| r.Int("ledRecruitRadiusMm", 1, MaxSquadRadiusMm)
+replacement:
+| r.Int("ledRecruitRadiusMm", 1, MaxSquadRadiusMm + 1)
+
+[rc2-1-content-fields-size-only]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheTwoLedFields
+expect = WarCore.Tests.Rc21LedSquadTests.TheTwoLedFieldsAreWrittenBothOrNoneAndWithinTheirRanges
+note = the radius alone does not ask for the size
+original:
+| LedFields = { "ledSize", "ledRecruitRadiusMm" };
+replacement:
+| LedFields = { "ledSize" };
+
+[rc2-1-content-fields-radius-only]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheTwoLedFields
+expect = WarCore.Tests.Rc21LedSquadTests.TheTwoLedFieldsAreWrittenBothOrNoneAndWithinTheirRanges
+note = the size alone does not ask for the radius
+original:
+| LedFields = { "ledSize", "ledRecruitRadiusMm" };
+replacement:
+| LedFields = { "ledRecruitRadiusMm" };
+
+[rc2-1-content-rules-not-published]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheTwoLedFields
+expect = WarCore.Tests.Rc21LedSquadTests.TheTwoLedFieldsAreWrittenBothOrNoneAndWithinTheirRanges
+note = the led rules are read but not handed on
+original:
+| StandingOrders = standing, Led = led,
+replacement:
+| StandingOrders = standing,
+
+[rc2-1-input-no-dismiss]
+file = Assets/WarCore/Sim/InputFrame.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.ACommandMayBeADismiss
+expect = WarCore.Tests.Rc21LedSquadTests.ACommandMayBeADismissAndNothingBeyondIt
+note = Dismiss is refused as a command kind
+original:
+| kind > SquadCommandKind.Dismiss)
+replacement:
+| kind > SquadCommandKind.Follow)
+
+[rc2-1-input-beyond-dismiss]
+file = Assets/WarCore/Sim/InputFrame.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.ACommandMayBeADismiss
+expect = WarCore.Tests.Rc21LedSquadTests.ACommandMayBeADismissAndNothingBeyondIt
+note = a command kind beyond Dismiss is taken
+original:
+| kind > SquadCommandKind.Dismiss)
+replacement:
+| kind > SquadCommandKind.Dismiss + 1)
+
+[rc2-1-input-led-number]
+file = Assets/WarCore/Sim/InputFrame.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.ACommandMayBeADismiss
+expect = WarCore.Tests.Rc21LedSquadTests.ACommandMayBeADismissAndNothingBeyondIt
+note = the led squad's number is -2
+original:
+| public const int Led = -1;
+replacement:
+| public const int Led = -2;
+
+[rc2-1-bridge-led-number]
+file = Assets/WarCore/Presentation/Bridge/BridgeCommand.cs
+filter = FullyQualifiedName~Rc21LedGuardsTests.ALedCommandMoves
+expect = WarCore.Tests.Rc21LedGuardsTests.ALedCommandMovesNoUnitOfTheOldStandingOrders
+note = the bridge's led squad number is not the simulation's
+original:
+| public const int Led = -1;
+replacement:
+| public const int Led = -2;
+
+[rc2-1-bridge-dismiss-is-hold]
+file = Assets/WarCore/Presentation/Bridge/BridgeCommand.cs
+filter = FullyQualifiedName~Rc21LedKeysTests
+expect = WarCore.Tests.Rc21LedKeysTests.TheThreeKeysOrderTheSquadAndTheStatusLineTellsWhatItDoes
+note = a Dismiss command is a Hold
+original:
+| => new BridgeCommand(atTick, Led, 0, 0, BridgeCommandKind.Dismiss);
+replacement:
+| => new BridgeCommand(atTick, Led, 0, 0, BridgeCommandKind.Hold);
+
+[rc2-1-spawn-squad-minus-one]
+file = Assets/WarCore/Presentation/Bridge/WorldRecipe.cs
+filter = FullyQualifiedName~Rc21LedGuardsTests.ALedCommandMoves
+expect = WarCore.Tests.Rc21LedGuardsTests.ALedCommandMovesNoUnitOfTheOldStandingOrders
+note = a unit may carry the led squad's number
+original:
+| if (squad < 0) throw
+replacement:
+| if (squad < -1) throw
+
+[rc2-1-spawn-squad-zero]
+file = Assets/WarCore/Presentation/Bridge/WorldRecipe.cs
+filter = FullyQualifiedName~Rc21LedGuardsTests.ALedCommandMoves
+expect = WarCore.Tests.Rc21LedGuardsTests.ALedCommandMovesNoUnitOfTheOldStandingOrders
+note = squad 0 is refused
+original:
+| if (squad < 0) throw
+replacement:
+| if (squad <= 0) throw
+
+[rc2-1-default-stand-anywhere]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.WhereAUnitWouldStand
+note = move orders that know no ground let a unit stand anywhere
+original:
+| { grounded = at; return CanStandAt(at, layer); }
+replacement:
+| { grounded = at; return true; }
+
+[rc2-1-default-stand-origin]
+file = Assets/WarCore/Battle/MatchPack.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.WhereAUnitWouldStand
+note = move orders that know no ground put the point at the origin
+original:
+| { grounded = at; return CanStandAt(at, layer); }
+replacement:
+| { grounded = default; return CanStandAt(at, layer); }
+
+# ---- branches and boundaries the plan did not name
+
+[rc2-1-extra-squad-needs-combat]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.ASquadIsMadeOfWholeParts
+note = a squad without a combat system is not refused by name
+original:
+| this.combat = combat ?? throw new ArgumentNullException(nameof(combat));
+replacement:
+| this.combat = combat;
+
+[rc2-1-extra-squad-needs-moves]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.ASquadIsMadeOfWholeParts
+note = a squad without move orders is made
+original:
+| this.moves = moves ?? throw new ArgumentNullException(nameof(moves));
+replacement:
+| this.moves = moves;
+
+[rc2-1-extra-squad-needs-player]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.ASquadIsMadeOfWholeParts
+note = a squad without a controlled unit is made
+original:
+| this.controlled = controlled ?? throw new ArgumentNullException(nameof(controlled));
+replacement:
+| this.controlled = controlled;
+
+[rc2-1-extra-member-at-below]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.TheTeamMatesWithinTheRadiusJoinNearestFirst
+note = a negative member index is not refused by name
+original:
+| index >= 0 && index < count ? members[index]
+replacement:
+| index >= -1 && index < count ? members[index]
+
+[rc2-1-extra-member-at-beyond]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.TheTeamMatesWithinTheRadiusJoinNearestFirst
+note = the index one past the last member answers
+original:
+| index >= 0 && index < count ? members[index]
+replacement:
+| index >= 0 && index <= count ? members[index]
+
+[rc2-1-extra-is-member-first]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.TheTeamMatesWithinTheRadiusJoinNearestFirst
+note = the first member of the list is not a member
+original:
+| public bool IsMember(StableId unit) => IndexOf(unit.Value) >= 0;
+replacement:
+| public bool IsMember(StableId unit) => IndexOf(unit.Value) > 0;
+
+[rc2-1-extra-command-ground-layer]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheSquadFollowsItsLeaderUpTheStair
+expect = WarCore.Tests.Rc21LedSquadTests.TheSquadFollowsItsLeaderUpTheStair
+note = Hold given upstairs fixes the anchor on the ground floor
+original:
+| Command(c.Input.Squad.Value, key, here.Value, LayerOf(player));
+replacement:
+| Command(c.Input.Squad.Value, key, here.Value, 0);
+
+[rc2-1-extra-recruit-spot-from-leader]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.TheTeamMatesWithinTheRadiusJoinNearestFirst
+expect = WarCore.Tests.Rc21LedRulesTests.AMemberTakesTheFreeSpotNearestToItAndTheLowerOfTwoEquallyNear
+note = a newcomer's spot is chosen from where the leader stands, not from where it stands
+original:
+| bestDistance = distance; bestAt = position.Value;
+replacement:
+| bestDistance = distance; bestAt = leaderAt;
+
+[rc2-1-extra-session-order-without-squad]
+file = Assets/WarCore/Presentation/Bridge/SimSession.Squads.cs
+filter = FullyQualifiedName~Rc21LedKeysTests
+expect = WarCore.Tests.Rc21LedKeysTests.AStageWithoutTheRulesRefusesTheOrdersAndKeepsItsOldSquadLine
+note = a world without a led squad tells a following squad
+original:
+| internal int LedOrder => led == null ? 0 :
+replacement:
+| internal int LedOrder => led == null ? 1 :
+
+[rc2-1-extra-session-count-without-squad]
+file = Assets/WarCore/Presentation/Bridge/SimSession.Squads.cs
+filter = FullyQualifiedName~Rc21LedKeysTests
+expect = WarCore.Tests.Rc21LedKeysTests.AStageWithoutTheRulesRefusesTheOrdersAndKeepsItsOldSquadLine
+note = a world without a led squad tells a squad of one
+original:
+| internal int LedCount => led == null ? 0 :
+replacement:
+| internal int LedCount => led == null ? 1 :
+
+[rc2-1-extra-keys-null-session]
+file = Assets/WarCore/Presentation/Bridge/ShowcaseActions.cs
+filter = FullyQualifiedName~Rc21LedKeysTests
+expect = WarCore.Tests.Rc21LedKeysTests.TheThreeKeysOrderTheSquadAndTheStatusLineTellsWhatItDoes
+note = the keys are not refused by name without a session
+original:
+|             if (session == null) throw new ArgumentNullException(nameof(session));
+|             ulong? key = session.ControlledKey;
+replacement:
+|             ulong? key = session.ControlledKey;
+
+[rc2-1-extra-keys-follow-null-session]
+file = Assets/WarCore/Presentation/Bridge/ShowcaseActions.cs
+filter = FullyQualifiedName~Rc21LedKeysTests
+expect = WarCore.Tests.Rc21LedKeysTests.TheThreeKeysOrderTheSquadAndTheStatusLineTellsWhatItDoes
+note = T asks a missing session what its squad does
+original:
+| Led(session, false, session != null && session.LedOrder == 1
+replacement:
+| Led(session, false, session.LedOrder == 1
+
+[rc2-1-extra-hud-null-session]
+file = Assets/WarCore/Presentation/Camera/ShowcaseHud.cs
+filter = FullyQualifiedName~Rc21LedKeysTests
+expect = WarCore.Tests.Rc21LedKeysTests.TheThreeKeysOrderTheSquadAndTheStatusLineTellsWhatItDoes
+note = the squad line is not refused by name without a session
+original:
+|             if (session == null) throw new ArgumentNullException(nameof(session));
+|             ulong? key = session.ControlledKey;
+replacement:
+|             ulong? key = session.ControlledKey;
+
+[rc2-1-extra-bridge-dismiss-squad]
+file = Assets/WarCore/Presentation/Bridge/BridgeCommand.cs
+filter = FullyQualifiedName~Rc21LedKeysTests
+expect = WarCore.Tests.Rc21LedKeysTests.TheThreeKeysOrderTheSquadAndTheStatusLineTellsWhatItDoes
+note = a Dismiss command goes to squad 0
+original:
+| new BridgeCommand(atTick, Led, 0, 0, BridgeCommandKind.Dismiss)
+replacement:
+| new BridgeCommand(atTick, 0, 0, 0, BridgeCommandKind.Dismiss)
+
+[rc2-1-extra-content-led-when-none]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheTwoLedFields
+expect = WarCore.Tests.Rc21LedSquadTests.TheTwoLedFieldsAreWrittenBothOrNoneAndWithinTheirRanges
+note = the led fields are read when neither is written and left when one is
+original:
+| if (FirstWritten(r, LedFields) != null)
+replacement:
+| if (FirstWritten(r, LedFields) == null)
+
+[rc2-1-extra-led-phase]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~Rc21LedRulesTests
+expect = WarCore.Tests.Rc21LedRulesTests.TheTeamMatesWithinTheRadiusJoinNearestFirst
+note = the led squad is registered in the movement phase
+original:
+| sim.RegisterGameplay("battle.led-squad", led, SimSystemPhase.Requests);
+replacement:
+| sim.RegisterGameplay("battle.led-squad", led, SimSystemPhase.Movement);

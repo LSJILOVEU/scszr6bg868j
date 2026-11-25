@@ -554,9 +554,9 @@ filter = FullyQualifiedName~Stance1
 expect = WarCore.Tests.Stance.Stance1CommandTests.S11_TheCommandAsksTheLivingUnitsOfTheSquad
 note = the frame shows no stance
 original:
-|                     banded ? BandKey(squads.SquadOf(stable)) : 0, Stances == null ? 0 : Stances.StanceOf(unit).Level,
+| : banded ? BandKey(squads.SquadOf(stable)) : 0, Stances == null ? 0 : Stances.StanceOf(unit).Level,
 replacement:
-|                     banded ? BandKey(squads.SquadOf(stable)) : 0, 0,
+| : banded ? BandKey(squads.SquadOf(stable)) : 0, 0,
 
 [fv-stance]
 file = Assets/WarCore/Presentation/Bridge/FrameView.cs

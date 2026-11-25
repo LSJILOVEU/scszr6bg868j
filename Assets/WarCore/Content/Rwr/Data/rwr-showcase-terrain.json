@@ -1,4 +1,4 @@
 {
   "id": "rwr-showcase-terrain",
-  "extends": [ "rwr-m6", "rwr-ai-playtest", "parts/unit-speed", "parts/respawn" ]
+  "extends": [ "rwr-m6", "rwr-ai-playtest", "parts/unit-speed", "parts/respawn", "parts/led-squad" ]
 }

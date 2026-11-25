@@ -397,9 +397,9 @@ expect = WarCore.Tests.Ml7bMatchTests.DeploymentOnAPlate
 expect = WarCore.Tests.Ml7bMatchTests.ThePlayerRespawnsOnThePlate
 note = a solid cell that is not walkable takes a deployment
 original:
-| plates.TryFloor(layer, at.X, at.Z, true, out SimFix y)
+| if (!plates.TryFloor(layer, at.X, at.Z, true, out SimFix y)) return false;
 replacement:
-| plates.TryFloor(layer, at.X, at.Z, false, out SimFix y)
+| if (!plates.TryFloor(layer, at.X, at.Z, false, out SimFix y)) return false;
 
 [ml7b-adapter-ground-y]
 file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs

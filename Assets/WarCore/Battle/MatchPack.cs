@@ -210,5 +210,8 @@ namespace WarCore.Battle
             Order(unit, target);
         }
         bool TryGetOrder(StableId unit, out SimVec3 target, out int layer) { layer = 0; return TryGetOrder(unit, out target); }
+        // RC2-1: the point a unit sent to (at.X, at.Z) on that layer would stand on, with the height of the walkable surface
+        // there; false when nobody can stand there. Read only.
+        bool TryStandAt(SimVec3 at, int layer, out SimVec3 grounded) { grounded = at; return CanStandAt(at, layer); }
     }
 }

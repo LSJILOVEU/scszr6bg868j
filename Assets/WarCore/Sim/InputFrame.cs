@@ -6,11 +6,16 @@ namespace WarCore.Sim
     {
         MoveTo,
         Hold,
-        Follow
+        Follow,
+        // RC2-1: the led squad breaks up. Only a command to SquadCommand.Led uses it.
+        Dismiss
     }
 
     public readonly struct SquadCommand : IStateHash
     {
+        // RC2-1: the squad number of "the squad the controlled unit leads". No unit carries it as its static squad.
+        public const int Led = -1;
+
         public SquadCommandKind Kind
         {
             get;
@@ -39,7 +44,7 @@ namespace WarCore.Sim
 
         public SquadCommand(SquadCommandKind kind, int squad, SimVec3 targetPoint, EntityId targetEntity, int targetLayer = 0)
         {
-            if (kind < SquadCommandKind.MoveTo || kind > SquadCommandKind.Follow)
+            if (kind < SquadCommandKind.MoveTo || kind > SquadCommandKind.Dismiss)
                 throw new ArgumentOutOfRangeException(nameof(kind));
             targetPoint.ValidateWorld();
             if (targetLayer < 0 || targetLayer > PlateField.MaxPlates)

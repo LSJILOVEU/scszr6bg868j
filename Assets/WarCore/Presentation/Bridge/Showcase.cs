@@ -70,6 +70,10 @@ namespace WarCore.Presentation
         // stage, not every frame.
         public PickReach Reach() => PickReach.Of(ContentCatalog.Find().Load(Layer));
 
+        // RC2-1: how many soldiers the squad the player leads takes under the stage's layer (ai.ledSize), or 0 where the
+        // layer has no led squad. Read it once per stage, not every frame.
+        public int LedSize() => ContentCatalog.Find().Load(Layer).Section<AiRules>()?.Led?.Size ?? 0;
+
         public byte[] MapBytes() => map();
         public WorldRecipe Recipe() => recipe();
         // A new session at tick 0. Every call builds the same world.

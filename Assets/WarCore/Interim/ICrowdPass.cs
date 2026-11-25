@@ -12,5 +12,7 @@ namespace WarCore.Interim
     {
         ulong Digest { get; }
         bool MayPass(EntityId mover, EntityId idle);
+        // RC2-1: the same question when the other unit is walking. A rule that says nothing keeps the old answer: no.
+        bool MayPassMoving(EntityId mover, EntityId other) => false;
     }
 }
