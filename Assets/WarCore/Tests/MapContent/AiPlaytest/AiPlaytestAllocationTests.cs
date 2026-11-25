@@ -26,7 +26,7 @@ namespace WarCore.Tests
             var match = M6World.Pack(new[] { new ControlPointDef(1, Home, SimFix.Ratio(1, 2), initialOwner: 1) },
                 ticks: 100000, think: 10, bases: new[] { new SpawnAnchor(1, A2.Cell(5, 20)) }, sight: A2.Sight);
             WorldRecipe recipe = M6World.RecipeOf(units, match, A2.Combat(0))
-                .WithTerrainRules(RwrPack.Load("rwr-ai-playtest")).WithStandingOrders().WithRuleSet(MatchMode.TestNeverEndsId);
+                .WithPack(RwrPack.Load("rwr-ai-playtest")).WithStandingOrders().WithRuleSet(MatchMode.TestNeverEndsId);
             return new M6World(recipe, A1.Map(new[] { (20, 5, 1, 30) }));
         }
 

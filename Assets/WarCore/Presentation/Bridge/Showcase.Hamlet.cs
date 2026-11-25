@@ -26,8 +26,8 @@ namespace WarCore.Presentation
             return MapBake.Run(System.Text.Encoding.UTF8.GetBytes(text.Replace(HamletPack, "\"pack\": \"" + HamletLayer + "\"")));
         }
 
-        // The map file's own recipe (soldiers, points, bases, seed, crowd pass) with the layer's unit types; on a terrain map the
-        // layer is also the terrain pack, which is where the world reads its AI rules from. Respawn comes from the layer's match.
+        // The map file's own recipe (soldiers, points, bases, seed, crowd pass) with the layer's unit types; the layer is the
+        // world's one pack (terrain rules, AI rules). Respawn comes from the layer's match.
         private static WorldRecipe HamletRecipe()
         {
             WorldRecipe recipe = MapRecipe.From(Hamlet(), ContentCatalog.Find().Load(HamletLayer), useUnitTypes: true).WithFacing();

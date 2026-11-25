@@ -21,10 +21,10 @@ namespace WarCore.Presentation
             // Order matters (the tests pin it): mover kind, then a missing pack, then the derivation.
             if (!a.Path)
                 throw new NotSupportedException("Terrain maps (height field or surface table) need a path or crowd mover.");
-            if (a.Recipe.TerrainPack == null && a.Map.HasTerrain)
-                throw new ArgumentException("A terrain map needs a content pack with terrain rules (WorldRecipe.WithTerrainRules).", "recipe");
+            if (a.Recipe.Pack == null && a.Map.HasTerrain)
+                throw new ArgumentException("A terrain map needs a content pack with terrain rules (WorldRecipe.WithPack).", "recipe");
             // A map with plates only (no height field, no surface table) and no pack takes the default rules, as its layered graph does.
-            a.Terrain = a.Recipe.TerrainPack != null ? TerrainDerivation.Derive(a.Map, a.Recipe.TerrainPack)
+            a.Terrain = a.Recipe.Pack != null ? TerrainDerivation.Derive(a.Map, a.Recipe.Pack)
                 : TerrainDerivation.Derive(a.Map, null, a.Map.ContentId);
             // The terrain digest names the exact (map, rules) pair, so a snapshot cannot be restored under other heights or rules.
             a.ContentKeys.Add(new StableContentKey("terrain.tables", a.Terrain.Digest));

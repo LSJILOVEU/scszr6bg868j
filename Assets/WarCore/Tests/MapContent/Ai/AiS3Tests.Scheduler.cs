@@ -219,7 +219,7 @@ namespace WarCore.Tests
         [Test]
         public void Battle_HoldWithPressureMovesNobodyElsewhere()
         {
-            M6World on = Battle(41, null, Json(Values)), off = new M6World(FairEFixture.Recipe("control", 41, null), FairEFixture.Map("control"));
+            M6World on = Battle(41, null, Json(Values)), off = new M6World(FairEFixture.Recipe("control", 41), FairEFixture.Map("control"));
             Pressure p = on.System<Pressure>();
             Assert.That(p, Is.Not.Null);
             Assert.That(off.System<Pressure>(), Is.Null);

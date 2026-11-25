@@ -101,7 +101,7 @@ namespace WarCore.Tests
                 ContentPack pack = Layer("slope-stance", Stats(floor: 800), "rwr-stance");
                 var recipe = new WorldRecipe(41, MoverKind.InterimCrowd, new[] { Unit(1, 1500, 1500) },
                         new[] { BridgeCommand.Stance(1, 1, 1), BridgeCommand.MoveTo(20, 1, 16500, 1500) })
-                    .WithCombat(pack.BuildCombat()).WithTerrainRules(pack).WithPack(pack);
+                    .WithCombat(pack.BuildCombat()).WithPack(pack);
                 SimSession s = SimSession.Create(recipe, WcMapWriter.Write(Map(18, 3, (i, j) => 0, "grass")));
                 for (int t = 0; t < 19; t++) s.StepOnce();
                 FirstMove(s);

@@ -10,7 +10,7 @@ using WarCore.Sim;
 
 namespace WarCore.Tests
 {
-    // PF1: the playtest recipe is the MP respawn demo plus the AI rules of content layer rwr-m7-playtest.
+    // PF1: the playtest recipe is the MP respawn demo reading content layer rwr-m7-playtest (its AI rules).
     // AI-N1: its two rifles come from that layer too (more spread, half the lethal chance); nothing else in the combat pack differs.
     public sealed class PF1PlaytestTests
     {
@@ -19,12 +19,12 @@ namespace WarCore.Tests
         private static M6World World(WorldRecipe recipe) => new M6World(recipe, DemoRecipes.M7MapBytes());
 
         [Test]
-        public void PF1Recipe_AiPackCarriesTheTenLayerValues()
+        public void PF1Recipe_ThePackCarriesTheTenLayerValues()
         {
-            Assert.That(DemoRecipes.MpRespawnDemo().AiPack, Is.Null);
+            Assert.That(DemoRecipes.MpRespawnDemo().Pack, Is.Null);
             WorldRecipe recipe = DemoRecipes.MpPlaytest();
-            Assert.That(recipe.AiPack, Is.Not.Null);
-            AiRules r = recipe.AiPack.Section<AiRules>();
+            Assert.That(recipe.Pack?.Id, Is.EqualTo(DemoRecipes.PlaytestLayer));
+            AiRules r = recipe.Pack.Section<AiRules>();
             Assert.That(r.FailedSlotTicks, Is.EqualTo(90));
             Assert.That(r.TargetMemoryTicks, Is.EqualTo(300));
             Assert.That(r.SearchTicks, Is.EqualTo(90));
@@ -45,7 +45,7 @@ namespace WarCore.Tests
                     p.BurstPauseTicks, p.SuppressTicks, p.MeleeChaseRange)));
         }
 
-        // Everything but the AI pack is the respawn demo's.
+        // Everything but the pack is the respawn demo's.
         [Test]
         public void PF1Recipe_RestIsTheRespawnDemo()
         {
@@ -74,7 +74,6 @@ namespace WarCore.Tests
                 Is.EqualTo((demo.Combat.FriendlyFire, demo.Combat.FriendlyFireLocked, demo.Combat.AllyCheckMissRaw, demo.Combat.AllyHoldMilli)));
             Assert.That(play.Combat.Melee.ToArray(), Is.EqualTo(demo.Combat.Melee.ToArray()));
             Assert.That(play.Combat.Block.ToArray(), Is.EqualTo(demo.Combat.Block.ToArray()));
-            Assert.That(play.TerrainPack, Is.Null);
         }
 
         // AI-N1, RC1-K5a: PLACEHOLDER values on the two rifles: half the lethal chance, and a spread that starts near rwr's, grows

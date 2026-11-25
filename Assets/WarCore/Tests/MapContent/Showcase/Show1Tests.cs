@@ -201,6 +201,23 @@ namespace WarCore.Tests
             }
         }
 
+        // RC1-K2: a stage runs on one layer. Its world reads the pack of that layer, and the weapons, bodies and stances it
+        // fights with are built from the same pack. The house as it was before AIM-2 is held to the same rule.
+        [TestCase("battle")]
+        [TestCase("bullets")]
+        [TestCase("house")]
+        [TestCase("terrain")]
+        [TestCase("melee")]
+        [TestCase("hamlet")]
+        [TestCase("legacy house")]
+        public void AStageReadsOneLayer(string id)
+        {
+            ShowcaseStage stage = id == "legacy house" ? Showcase.LegacyHouse : Stage(id);
+            WorldRecipe recipe = stage.Recipe();
+            Assert.That(recipe.Pack?.Id, Is.EqualTo(stage.Layer));
+            Assert.That(recipe.Combat.PolicyDigest, Is.EqualTo(recipe.Pack.BuildCombat().PolicyDigest));
+        }
+
         [Test]
         public void TheBattleFormsSquadsAndPinsAndBreaksSoldiers()
         {

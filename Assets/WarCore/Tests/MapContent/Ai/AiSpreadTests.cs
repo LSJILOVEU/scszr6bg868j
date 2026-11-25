@@ -29,7 +29,7 @@ namespace WarCore.Tests
             for (int i = 0; i < Units; i++)
                 units[i] = column ? M6World.U((ulong)i + 1, 1, 40, 26 + i * 2, speed: speed) : M6World.U((ulong)i + 1, 1, 21 + i % 20 * 2, 30 + i / 20 * 2, speed: speed);
             WorldRecipe recipe = M6World.RecipeOf(units, M6World.Pack(points, ticks: captureTicks, think: 1, bases: bases)).WithRuleSet(MatchMode.TestNeverEndsId);
-            if (ai != null) recipe = recipe.WithAiRules(Pack(ai));
+            if (ai != null) recipe = recipe.WithPack(Pack(ai));
             return new M6World(recipe, WcMapWriter.Write(Wp23.Make(160, column ? 240 : 40, 0, 4 * SimFix.Scale,
                 Array.Empty<(int, int, int, int)>(), 2 * SimFix.Scale, null)));
         }
@@ -191,7 +191,7 @@ namespace WarCore.Tests
         }
 
         private static M6World Battle(ulong seed, bool? fair, string ai) =>
-            new M6World(FairEFixture.Recipe("control", seed, fair).WithAiRules(Pack(ai)), FairEFixture.Map("control"));
+            new M6World(FairEFixture.Recipe("control", seed).WithPack(Pack(FairEFixture.Ai(ai, fair))), FairEFixture.Map("control"));
 
         [TestCase(null, "{ \"attackSpreadPoints\": 3 }")]
         [TestCase(false, "{ \"attackSpreadPoints\": 3 }")]
@@ -222,7 +222,7 @@ namespace WarCore.Tests
         [Test]
         public void Spread_ChangesTheBattle()
         {
-            M6World on = Battle(41, null, "{ \"attackSpreadPoints\": 3 }"), off = new M6World(FairEFixture.Recipe("control", 41, null), FairEFixture.Map("control"));
+            M6World on = Battle(41, null, "{ \"attackSpreadPoints\": 3 }"), off = new M6World(FairEFixture.Recipe("control", 41), FairEFixture.Map("control"));
             on.Step(600); off.Step(600);
             bool differs = false;
             for (ulong key = 1; key <= 300 && !differs; key++)
@@ -233,7 +233,7 @@ namespace WarCore.Tests
         // The digest a battle has without the spread, written out from the match pack, FAIR-E and the hold share.
         private static ulong Unspread(bool fair, int hold)
         {
-            WorldRecipe recipe = FairEFixture.Recipe("control", 41, fair);
+            WorldRecipe recipe = FairEFixture.Recipe("control", 41);
             ulong digest = recipe.Match.PolicyDigest;
             if (fair) { var h = new StateHash(); h.Add("battle.ai.fair-decisions.v1"); h.Add(digest); h.Add(true); h.Add(recipe.Seed); digest = h.Value; }
             if (hold > 0) { var h = new StateHash(); h.Add("battle.ai.hold-share.v1"); h.Add(digest); h.Add(hold); digest = h.Value; }
@@ -273,8 +273,8 @@ namespace WarCore.Tests
         [TestCase("{ \"attackSpreadPoints\": 1 }")]
         public void Spread_DefaultLeavesTheBattle(string ai)
         {
-            WorldRecipe recipe = FairEFixture.Recipe("control", 41, null);
-            M6World with = new M6World(ai == null ? recipe : recipe.WithAiRules(Pack(ai)), FairEFixture.Map("control"));
+            WorldRecipe recipe = FairEFixture.Recipe("control", 41);
+            M6World with = new M6World(ai == null ? recipe : recipe.WithPack(Pack(ai)), FairEFixture.Map("control"));
             M6World plain = new M6World(recipe, FairEFixture.Map("control"));
             Assert.That(with.Hash, Is.EqualTo(plain.Hash));
             for (int tick = 0; tick < 300; tick++)

@@ -34,7 +34,7 @@ namespace WarCore.Tests
         // time, and the full 62 + 120 (4096 slots) is not. The padding keeps the lone team's world the size of the full one.
         internal const int Padding = 20;
 
-        // One team alone, on a match that never ends; same terrain rules, combat, match and crowd pass as the full recipe.
+        // One team alone, on a match that never ends; same pack, combat, match and crowd pass as the full recipe.
         // The other team's soldiers are left out. `padding` extra reserves of the same team (keys from 121) keep the table size.
         internal static WorldRecipe Alone(int team, int padding = Padding)
         {
@@ -45,8 +45,7 @@ namespace WarCore.Tests
                 mine.Add(new UnitSpawn(121UL + (ulong)k, reserve.Archetype, reserve.Squad, reserve.XMm, reserve.ZMm, reserve.SpeedMmPerSec,
                     reserve.Team, reserve.Weapon, true, reserve.Melee, reserve.Block, reserve.Layer));
             WorldRecipe recipe = new WorldRecipe(full.Seed, MoverKind.InterimCrowd, mine.ToArray(), Array.Empty<BridgeCommand>())
-                .WithCombat(full.Combat).WithMatch(full.Match).WithCrowdPass(CrowdPassKind.TeamIdle);
-            if (full.TerrainPack != null) recipe = recipe.WithTerrainRules(full.TerrainPack);
+                .WithCombat(full.Combat).WithMatch(full.Match).WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(full.Pack);
             return M6World.Endless(recipe);
         }
 

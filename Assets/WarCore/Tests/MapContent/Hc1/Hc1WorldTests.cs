@@ -30,7 +30,7 @@ namespace WarCore.Tests
         private static CombatPack Combat(string radius) => Hc1ContentTests.Pack(radius).BuildCombat();
 
         private static SimSession Session(MoverKind mover, string radius, UnitSpawn[] units, BridgeCommand[] script = null, WcMap map = null) =>
-            SimSession.Create(new WorldRecipe(41, mover, units, script ?? Array.Empty<BridgeCommand>()).WithTerrainRules(Wp23.Pack()).WithCombat(Combat(radius)),
+            SimSession.Create(new WorldRecipe(41, mover, units, script ?? Array.Empty<BridgeCommand>()).WithPack(Wp23.Pack()).WithCombat(Combat(radius)),
                 WcMapWriter.Write(map ?? TerrainMap()));
 
         private static long RadiusOf(SimSession s, ulong key = 1) =>

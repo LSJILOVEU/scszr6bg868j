@@ -67,7 +67,7 @@ namespace WarCore.Tests
         {
             var recipe = new WorldRecipe(seed, MoverKind.InterimCrowd, units, Array.Empty<BridgeCommand>())
                 .WithCombat(pack.BuildCombat()).WithMatch(pack.BuildMatch(points, anchors))
-                .WithCrowdPass(CrowdPassKind.TeamIdle).WithTerrainRules(pack).WithFacing().WithBlockAi();
+                .WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(pack).WithFacing().WithBlockAi();
             byte[] map = WcMapWriter.Write(Wp23.Make(96, 64, 0, 4 * SimFix.Scale, Array.Empty<(int, int, int, int)>(),
                 2 * SimFix.Scale, (x, z) => 0, new[] { "ancient.ground" }, (x, z) => 0));
             return new M6World(recipe, map);

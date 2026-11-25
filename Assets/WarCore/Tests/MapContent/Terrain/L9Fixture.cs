@@ -17,7 +17,7 @@ namespace WarCore.Tests
         internal const long S = SimFix.Scale;
         internal static readonly string[] Names = { "dirt", "grass" };
 
-        // Used only through WithTerrainRules (surfaces and slope rule); the combat pack does not come from content.
+        // The world reads its surfaces, slope rule and AI rules; the combat pack does not come from content.
         internal const string PackJson = "{ \"id\": \"l9-test\", "
             + "\"combat\": { \"maxHealth\": 100, \"resolver\": \"rwr.hit\", \"selector\": \"nearest-visible\", \"friendlyFire\": false, \"friendlyFireLocked\": false, \"allyCheckMissRate\": 0.25, \"allyHoldMilli\": 30000 }, "
             + "\"surfaces\": [ { \"id\": \"dirt\", \"passable\": true, \"speedMilli\": 1000, \"cost\": 1, \"concealMilli\": 1000 }, { \"id\": \"grass\", \"passable\": true, \"speedMilli\": 800, \"cost\": 1, \"concealMilli\": 1000 } ], "
@@ -83,7 +83,7 @@ namespace WarCore.Tests
             IHitResolver resolver = null)
         {
             WorldRecipe r = new WorldRecipe(41, MoverKind.InterimCrowd, units, Array.Empty<BridgeCommand>()).WithCombat(Combat(spread, resolver))
-                .WithCrowdPass(CrowdPassKind.TeamIdle).WithTerrainRules(Pack());
+                .WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(Pack());
             if (extra != null) r = r.With(extra);
             return new M6World(r, map, reverse);
         }

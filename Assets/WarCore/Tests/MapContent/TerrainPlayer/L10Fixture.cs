@@ -46,7 +46,7 @@ namespace WarCore.Tests
             // The still enemy: far corner of the demo map, or of the 16 x 16 test maps.
             UnitSpawn enemy = map == null || map.Length == L6.MapBytes().Length ? U(2, 44500, 28500, team: 2) : U(2, 14500, 1500, team: 2);
             var units = new[] { U(1, xMm, zMm, speed: speed, weapon: weapon), enemy }.Concat(extra ?? Array.Empty<UnitSpawn>()).ToArray();
-            WorldRecipe recipe = M6World.RecipeOf(units, QuietMatch(), combat ?? Off()).WithTerrainRules(rules ?? L6.Pack()).WithPlayer(1);
+            WorldRecipe recipe = M6World.RecipeOf(units, QuietMatch(), combat ?? Off()).WithPack(rules ?? L6.Pack()).WithPlayer(1);
             if (facing) recipe = recipe.WithFacing();
             return new M6World(recipe, map ?? L6.MapBytes());
         }

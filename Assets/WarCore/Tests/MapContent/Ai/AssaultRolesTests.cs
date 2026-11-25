@@ -46,7 +46,7 @@ namespace WarCore.Tests
         private static M6World World(UnitSpawn[] units, ControlPointDef[] points, string ai, (int, int, int, int)[] walls = null, SpawnAnchor[] bases = null)
         {
             WorldRecipe recipe = M6World.RecipeOf(units, M6World.Pack(points, ticks: 100000, think: 1, bases: bases)).WithRuleSet(MatchMode.TestNeverEndsId);
-            if (ai != null) recipe = recipe.WithAiRules(Pack(ai));
+            if (ai != null) recipe = recipe.WithPack(Pack(ai));
             return new M6World(recipe, WcMapWriter.Write(Wp23.Make(240, 160, 0, 4 * SimFix.Scale,
                 walls ?? Array.Empty<(int, int, int, int)>(), 2 * SimFix.Scale, null)));
         }
@@ -278,14 +278,13 @@ namespace WarCore.Tests
         }
 
         private static M6World Battle(ulong seed, bool? fair, string ai) =>
-            new M6World(FairEFixture.Recipe("control", seed, fair).WithAiRules(Pack(ai)), FairEFixture.Map("control"));
+            new M6World(FairEFixture.Recipe("control", seed).WithPack(Pack(FairEFixture.Ai(ai, fair))), FairEFixture.Map("control"));
 
         // The line fixture with FAIR-E written on or off (or not at all) next to the part.
         private static M6World LineWorld(bool? fair, string ai)
         {
             WorldRecipe recipe = M6World.RecipeOf(Grid(), M6World.Pack(Line(), ticks: 100000, think: 1)).WithRuleSet(MatchMode.TestNeverEndsId);
-            if (fair.HasValue) recipe = recipe.WithTerrainRules(Pack("{ \"fairDecisions\": " + (fair.Value ? "true" : "false") + " }"));
-            recipe = recipe.WithAiRules(Pack(ai));
+            recipe = recipe.WithPack(Pack(FairEFixture.Ai(ai, fair)));
             return new M6World(recipe, WcMapWriter.Write(Wp23.Make(240, 160, 0, 4 * SimFix.Scale, Array.Empty<(int, int, int, int)>(), 2 * SimFix.Scale, null)));
         }
         // Units whose active order points outside every point circle: on their way to a waypoint.
@@ -342,7 +341,7 @@ namespace WarCore.Tests
         [Test]
         public void Roles_ChangesTheBattle()
         {
-            M6World on = Battle(41, null, Ai()), off = new M6World(FairEFixture.Recipe("control", 41, null), FairEFixture.Map("control"));
+            M6World on = Battle(41, null, Ai()), off = new M6World(FairEFixture.Recipe("control", 41), FairEFixture.Map("control"));
             on.Step(600); off.Step(600);
             bool differs = false;
             for (ulong key = 1; key <= 300 && !differs; key++)

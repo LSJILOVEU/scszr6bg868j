@@ -4,10 +4,10 @@ using WarCore.Sim;
 
 namespace WarCore.Presentation
 {
-    // SLOPE-1: slopes slow the foot step. On only when the pack the world reads (WorldRecipe.Pack, else TerrainPack) has
-    // movement.slope or stats.speed, so every other world keeps its exact systems, snapshots and hashes. Prepare checks the
-    // two packs name the same content and adds the content key "movement.step" (so a snapshot cannot be restored under another
-    // slope table or other clamps); RegisterRules hands the table and the clamps to the locomotion. No component, no system.
+    // SLOPE-1: slopes slow the foot step. On only when the pack the world reads (WorldRecipe.Pack) has movement.slope or
+    // stats.speed, so every other world keeps its exact systems, snapshots and hashes. Prepare adds the content key
+    // "movement.step" (so a snapshot cannot be restored under another slope table or other clamps); RegisterRules hands the
+    // table and the clamps to the locomotion. No component, no system.
     internal sealed class SlopeFeature : WorldStageFeature
     {
         internal static readonly SlopeFeature Instance = new SlopeFeature();
@@ -17,27 +17,20 @@ namespace WarCore.Presentation
 
         public override string OptionId => "world.slope";
 
-        // The pack the world's features read: the recipe's pack, else its terrain pack (a recipe built by hand that only
-        // calls WithTerrainRules still gets its slopes).
-        internal static ContentPack PackOf(WorldRecipe recipe) => recipe.Pack ?? recipe.TerrainPack;
-
         public override bool IsActive(WorldAssembly a)
         {
-            ContentPack pack = PackOf(a.Recipe);
+            ContentPack pack = a.Recipe.Pack;
             return pack != null && (Slope(pack) != null || HasSpeedRow(pack));
         }
 
         public override void Prepare(WorldAssembly a)
         {
-            ContentPack pack = a.Recipe.Pack, terrain = a.Recipe.TerrainPack;
-            if (pack != null && terrain != null && pack.Id != terrain.Id)
-                throw new ArgumentException("The recipe's pack '" + pack.Id + "' and its terrain pack '" + terrain.Id + "' differ.", "recipe");
-            a.ContentKeys.Add(new StableContentKey(ContentKeyName, Digest(PackOf(a.Recipe))));
+            a.ContentKeys.Add(new StableContentKey(ContentKeyName, Digest(a.Recipe.Pack)));
         }
 
         public override void RegisterRules(WorldAssembly a)
         {
-            ContentPack pack = PackOf(a.Recipe);
+            ContentPack pack = a.Recipe.Pack;
             StatClamps stats = pack.SectionOrNull<StatClamps>();
             a.Locomotion.SetStepLine(Slope(pack), stats?.FloorOf(StatClamps.Speed) ?? 0, stats?.CeilOf(StatClamps.Speed) ?? 0);
         }

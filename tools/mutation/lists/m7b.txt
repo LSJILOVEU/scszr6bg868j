@@ -164,18 +164,22 @@ filter = FullyQualifiedName~M7b|FullyQualifiedName~PF1|FullyQualifiedName~F5uKey
 expect = WarCore.Tests.Dash.M7bDashInputTests.M7bRecipes_OnlyThePlaytestPlayerTeamHasADash
 note = the playtest team gets no dash
 original:
-| return WithPlayerTeamDash(MpRespawnDemo(layer).WithAiRules(layer), layer);
+| return WithPlayerTeamDash(MpRespawnDemo(layer).WithPack(layer), layer);
 replacement:
-| return MpRespawnDemo(layer).WithAiRules(layer);
+| return MpRespawnDemo(layer).WithPack(layer);
 
-[m7b-18-recipe-drops-ai]
+[m7b-18-recipe-drops-pack]
 file = Assets/WarCore/Presentation/Bridge/DemoRecipes.cs
 filter = FullyQualifiedName~M7b|FullyQualifiedName~PF1|FullyQualifiedName~F5uKeyTable
-expect = WarCore.Tests.PF1PlaytestTests.PF1Recipe_AiPackCarriesTheTenLayerValues
-note = the dash rebuild drops the AI pack
+expect = WarCore.Tests.PF1PlaytestTests.PF1Recipe_ThePackCarriesTheTenLayerValues
+note = the dash rebuild drops the pack
 original:
-| if (source.AiPack != null) recipe = recipe.WithAiRules(source.AiPack);
+|                 .WithCombat(source.Combat).WithCrowdPass(source.CrowdPass).WithRuleSet(source.RuleSetId).WithPlayer(player);
+|             if (source.Match != null) recipe = recipe.WithMatch(source.Match);
+|             if (source.Pack != null) recipe = recipe.WithPack(source.Pack);
 replacement:
+|                 .WithCombat(source.Combat).WithCrowdPass(source.CrowdPass).WithRuleSet(source.RuleSetId).WithPlayer(player);
+|             if (source.Match != null) recipe = recipe.WithMatch(source.Match);
 
 [m7b-19-builder-no-loco]
 file = Assets/WarCore/Presentation/Bridge/WorldBuilder.cs

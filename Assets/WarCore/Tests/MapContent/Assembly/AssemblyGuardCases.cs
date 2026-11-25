@@ -67,15 +67,15 @@ namespace WarCore.Tests
             ("MatchWithoutCrowd", () => WorldBuilder.Create(R(MoverKind.InterimPath).WithCombat(Combat()).WithMatch(Match()), Flat())),
             ("PlayerWithoutMatch", () => WorldBuilder.Create(R().WithCombat(Combat()).WithPlayer(1), Flat())),
             ("BattleAndPlayerBothWrong", () => WorldBuilder.Create(R().WithMatch(Match()).WithPlayer(1), Flat())),
-            ("TerrainNeedsPathMover", () => WorldBuilder.Create(R(MoverKind.Interim).WithTerrainRules(AssemblyWorlds.TerrainPack()), Terrain())),
-            ("TerrainWithPlayerAndPack", () => WorldBuilder.Create(Battle().WithPlayer(1).WithTerrainRules(AssemblyWorlds.TerrainPack()), Terrain())),
+            ("TerrainNeedsPathMover", () => WorldBuilder.Create(R(MoverKind.Interim).WithPack(AssemblyWorlds.TerrainPack()), Terrain())),
+            ("TerrainWithPlayerAndPack", () => WorldBuilder.Create(Battle().WithPlayer(1).WithPack(AssemblyWorlds.TerrainPack()), Terrain())),
             ("TerrainWithPlayerAndNoPack", () => WorldBuilder.Create(Battle().WithPlayer(1), Terrain())),
             ("TerrainWithoutPack", () => WorldBuilder.Create(R(MoverKind.InterimPath), Terrain())),
-            ("TerrainPackMissingSurface", () => WorldBuilder.Create(R(MoverKind.InterimPath).WithTerrainRules(ThinPack()), SurfacesNotInPack())),
+            ("TerrainPackMissingSurface", () => WorldBuilder.Create(R(MoverKind.InterimPath).WithPack(ThinPack()), SurfacesNotInPack())),
             ("WallLayerIsMoverLayer", () => WorldBuilder.Create(R(MoverKind.Interim), WcMapWriter.Write(LayerZero()))),
             ("WallLayerIsMoverLayerAndNoPack", () => WorldBuilder.Create(R(MoverKind.InterimPath), TerrainOnMoverLayer())),
             ("SpawnNotStandable", () => WorldBuilder.Create(R(MoverKind.InterimPath, new[] { new UnitSpawn(1, 0, 1, 10500, 3500, 1000) })
-                .WithTerrainRules(AssemblyWorlds.TerrainPack()), Terrain())),
+                .WithPack(AssemblyWorlds.TerrainPack()), Terrain())),
             ("PlayerKeyUnknown", () => WorldBuilder.Create(Battle().WithPlayer(99), Flat())),
             ("PlayerIsReserve", () => WorldBuilder.Create(Battle(WithReserve).WithPlayer(2), Flat())),
             ("CrowdPassWithoutCombat", () => WorldBuilder.Create(R().WithCrowdPass(CrowdPassKind.TeamIdle), Flat())),
@@ -85,7 +85,7 @@ namespace WarCore.Tests
             ("BlockAiWithoutBlockSpecs", () => WorldBuilder.Create(R().WithCombat(Combat()).WithFacing().WithBlockAi(), Flat())),
             ("BlockAiWithoutFacing", () => WorldBuilder.Create(R().WithCombat(Blocking()).WithBlockAi(), Flat())),
             ("PlainCrowdWorldBuilds", () => WorldBuilder.Create(R(), Flat())),
-            ("TerrainWorldBuilds", () => WorldBuilder.Create(R(MoverKind.InterimPath).WithTerrainRules(AssemblyWorlds.TerrainPack()), Terrain())),
+            ("TerrainWorldBuilds", () => WorldBuilder.Create(R(MoverKind.InterimPath).WithPack(AssemblyWorlds.TerrainPack()), Terrain())),
         };
 
         // A plain map whose only wall sits on collision layer index 0, which is the movers' own layer.

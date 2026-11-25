@@ -28,7 +28,7 @@ namespace WarCore.Tests
             var spawns = new UnitSpawn[units];
             for (int i = 0; i < units; i++) spawns[i] = M6World.U((ulong)i + 1, team, 21 + i % 20 * 2, 30 + i / 20 * 2, speed: speed);
             WorldRecipe recipe = M6World.RecipeOf(spawns, M6World.Pack(points, ticks: captureTicks, think: 1, bases: bases)).WithRuleSet(MatchMode.TestNeverEndsId);
-            if (ai != null) recipe = recipe.WithAiRules(Pack(ai));
+            if (ai != null) recipe = recipe.WithPack(Pack(ai));
             return new M6World(recipe, WcMapWriter.Write(Wp23.Make(160, 60, 0, 4 * SimFix.Scale, Array.Empty<(int, int, int, int)>(), 2 * SimFix.Scale, null)));
         }
 
@@ -299,9 +299,9 @@ namespace WarCore.Tests
             "{ \"dispatch\": \"nearest\", \"placement\": \"nearest-slot\", \"holdSharePermille\": 300, \"attackSpreadPoints\": 3 }")]
         public void Parts_DefaultIdsLeaveTheBattle(string plainAi, string writtenAi)
         {
-            WorldRecipe recipe = FairEFixture.Recipe("control", 41, null);
-            M6World plain = new M6World(plainAi == null ? recipe : recipe.WithAiRules(Pack(plainAi)), FairEFixture.Map("control"));
-            M6World written = new M6World(recipe.WithAiRules(Pack(writtenAi)), FairEFixture.Map("control"));
+            WorldRecipe recipe = FairEFixture.Recipe("control", 41);
+            M6World plain = new M6World(plainAi == null ? recipe : recipe.WithPack(Pack(plainAi)), FairEFixture.Map("control"));
+            M6World written = new M6World(recipe.WithPack(Pack(writtenAi)), FairEFixture.Map("control"));
             Assert.That(written.Hash, Is.EqualTo(plain.Hash));
             Assert.That(Digest(written.System<SimpleAiSystem>()), Is.EqualTo(Digest(plain.System<SimpleAiSystem>())));
             for (int tick = 0; tick < 300; tick++)

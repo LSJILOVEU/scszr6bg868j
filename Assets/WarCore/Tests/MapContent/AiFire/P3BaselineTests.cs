@@ -118,17 +118,16 @@ namespace WarCore.Tests
             Assert.That(w.System<ReactionFire>(), Is.Null);
         }
 
-        // 1(d): a flat map (no surface table, no height field) with a content layer that sets a burst: not a terrain world,
-        // so nothing is registered.
+        // 1(d): a flat map (no surface table, no height field) with a content layer that sets a burst: the world reads its
+        // pack like any map, so the system is registered.
         [Test]
-        public void FlatMapWithBurst_DoesNotRegister()
+        public void FlatMapWithBurst_Registers()
         {
             byte[] map = WcMapWriter.Write(Wp23.Make(A2.Width, A2.Depth, 0, 4 * A2.S, A2.DWalls, 2 * A2.S));
             M6World flat = null;
             Assert.DoesNotThrow(() => flat = new M6World(P3.Recipe(P2.Cast(), P3.Ai(0, null, 3, 20)), map));
-            Assert.That(P3.Systems(flat), Is.EqualTo(P1BaselineTests.Systems));
-            Assert.That(P3.Systems(flat), Does.Not.Contain("battle.ai-fire"));
-            Assert.That(flat.System<ReactionFire>(), Is.Null);
+            Assert.That(P3.Systems(flat), Is.EqualTo(P2BaselineTests.Systems));
+            Assert.That(flat.System<ReactionFire>(), Is.Not.Null);
         }
     }
 }

@@ -43,12 +43,12 @@ namespace WarCore.Tests
             for (int i = 0; i < Defenders; i++) spawns.Add(M6World.U((ulong)(Attackers + i + 1), 2, i < 5 ? 98 : 102, 16 + i % 5 * 2, weapon: 1, speed: 6000));
             WorldRecipe recipe = M6World.RecipeOf(spawns.ToArray(), M6World.Pack(OnePoint(), ticks: 1000000, think: think), M6World.Guns(new ZeroResolver()))
                 .WithRuleSet(MatchMode.TestNeverEndsId);
-            if (ai != null) recipe = recipe.WithAiRules(Pack(ai));
+            if (ai != null) recipe = recipe.WithPack(Pack(ai));
             return new M6World(recipe, Flat());
         }
 
         private static M6World Battle(ulong seed, bool? fair, string ai) =>
-            new M6World(FairEFixture.Recipe("control", seed, fair).WithAiRules(Pack(ai)), FairEFixture.Map("control"));
+            new M6World(FairEFixture.Recipe("control", seed).WithPack(Pack(FairEFixture.Ai(ai, fair))), FairEFixture.Map("control"));
 
         private const BindingFlags Private = BindingFlags.NonPublic | BindingFlags.Instance;
         private static AiField FieldOf(M6World w) => (AiField)typeof(SimpleAiSystem).GetField("field", Private).GetValue(w.System<SimpleAiSystem>());
@@ -296,7 +296,7 @@ namespace WarCore.Tests
                 new UnitSpawn(2, 0, 2, 40000 + gapMm, 20000, 6000, 2, 1, false),
             };
             WorldRecipe recipe = M6World.RecipeOf(spawns, M6World.Pack(OnePoint(), ticks: 1000000, think: Think), M6World.Guns(new ZeroResolver()))
-                .WithRuleSet(MatchMode.TestNeverEndsId).WithAiRules(Pack(Bound(share: 1000)));
+                .WithRuleSet(MatchMode.TestNeverEndsId).WithPack(Pack(Bound(share: 1000)));
             var w = new M6World(recipe, Flat());
             SimVec3 start = w.Read<Position>(1).Value;
             Assert.That(Horizontal2(start, w.Read<Position>(2).Value), Is.EqualTo(Horizontal2(SimVec3.Metres(0, 0, 0), new SimVec3(SimFix.Ratio(gapMm, 1000), default, default))));
@@ -324,7 +324,7 @@ namespace WarCore.Tests
             M6World Make(string engage)
             {
                 WorldRecipe recipe = M6World.RecipeOf(spawns, M6World.Pack(OnePoint(), ticks: 1000000, think: Think), M6World.Guns(new ZeroResolver()))
-                    .WithRuleSet(MatchMode.TestNeverEndsId).WithAiRules(Pack("{ " + memory + engage + " }"));
+                    .WithRuleSet(MatchMode.TestNeverEndsId).WithPack(Pack("{ " + memory + engage + " }"));
                 return new M6World(recipe, Flat());
             }
             M6World bound = Make(", \"engage\": \"bound\", \"boundMoveTicks\": 60, \"boundFireTicks\": 90, \"boundSharePermille\": 1000, \"boundMinRangeMm\": 12000");
@@ -370,8 +370,8 @@ namespace WarCore.Tests
         [Test]
         public void Battle_HoldWrittenOutLeavesTheBattle()
         {
-            WorldRecipe recipe = FairEFixture.Recipe("control", 41, null);
-            M6World written = new M6World(recipe.WithAiRules(Pack("{ \"engage\": \"hold\" }")), FairEFixture.Map("control"));
+            WorldRecipe recipe = FairEFixture.Recipe("control", 41);
+            M6World written = new M6World(recipe.WithPack(Pack("{ \"engage\": \"hold\" }")), FairEFixture.Map("control"));
             M6World plain = new M6World(recipe, FairEFixture.Map("control"));
             Assert.That(Digest(written.System<SimpleAiSystem>()), Is.EqualTo(Digest(plain.System<SimpleAiSystem>())));
             for (int tick = 0; tick < 600; tick++)
@@ -384,7 +384,7 @@ namespace WarCore.Tests
         [Test]
         public void Battle_BoundChangesTheBattle()
         {
-            M6World on = Battle(41, null, S1), off = new M6World(FairEFixture.Recipe("control", 41, null), FairEFixture.Map("control"));
+            M6World on = Battle(41, null, S1), off = new M6World(FairEFixture.Recipe("control", 41), FairEFixture.Map("control"));
             on.Step(900); off.Step(900);
             bool differs = false;
             for (ulong key = 1; key <= 300 && !differs; key++)

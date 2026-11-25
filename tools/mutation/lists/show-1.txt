@@ -163,25 +163,15 @@ original:
 replacement:
 | useUnitTypes: false)
 
-[show1-battle-ai-rules]
-file = Assets/WarCore/Presentation/Bridge/Showcase.cs
-filter = FullyQualifiedName~Show1Tests
-expect = WarCore.Tests.Show1Tests.TheBattleFormsSquadsAndPinsAndBreaksSoldiers
-note = the battle runs without the layer's AI rules
-original:
-|                 .WithAiRules(ContentCatalog.Find().Load(layer)).WithFacing();
-replacement:
-|                 .WithFacing();
-
 [show1-bullets-layer]
 file = Assets/WarCore/Presentation/Bridge/Showcase.cs
 filter = FullyQualifiedName~Show1Tests
 expect = WarCore.Tests.Show1Tests.TheBulletsStageFliesProjectilesInsteadOfInstantHits
 note = the bullets stage plays the battle layer
 original:
-| () => Lanes(BulletsLayer).WcMapBytes, () => Battle(BulletsLayer), BattleScript, combatLayer: BulletsLayer),
+| () => Lanes(BulletsLayer).WcMapBytes, () => Battle(BulletsLayer), BattleScript),
 replacement:
-| () => Lanes(BattleLayer).WcMapBytes, () => Battle(BattleLayer), BattleScript, combatLayer: BulletsLayer),
+| () => Lanes(BattleLayer).WcMapBytes, () => Battle(BattleLayer), BattleScript),
 
 [show1-script-dash]
 file = Assets/WarCore/Presentation/Bridge/Showcase.cs

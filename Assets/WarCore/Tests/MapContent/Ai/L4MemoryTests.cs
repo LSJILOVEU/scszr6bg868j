@@ -55,14 +55,17 @@ namespace WarCore.Tests
             for (int t = 0; t <= 600; t++) Assert.That(zero[t], Is.EqualTo(L4RecordHashTests.AHashes[t]), "tick " + t);
         }
 
-        // Acceptance 3(b): only a terrain world with N > 0 registers battle.ai-memory, at order 9 in the request phase.
+        // Acceptance 3(b): only a world with N > 0 registers battle.ai-memory, at order 9 in the request phase; a flat world
+        // reads its pack like a terrain world.
         [Test]
-        public void OnlyATerrainWorldWithPositiveTicksRegistersTheMemory()
+        public void OnlyAWorldWithPositiveTicksRegistersTheMemory()
         {
+            const string registered = "battle.reinforce|0|8;battle.ai-memory|0|9;interim.orders|0|10;battle.ai|0|12;";
             Assert.That(L4.Systems(L4.A(10, null)), Does.Not.Contain("battle.ai-memory"));
             Assert.That(L4.Systems(L4.A(10, L4.Ticks(0))), Does.Not.Contain("battle.ai-memory"));
-            Assert.That(L4.Systems(L4.A(10, L4.Ticks(300), terrain: false)), Does.Not.Contain("battle.ai-memory"));
-            Assert.That(L4.Systems(L4.A(10, L4.Ticks(300))), Does.Contain("battle.reinforce|0|8;battle.ai-memory|0|9;interim.orders|0|10;battle.ai|0|12;"));
+            Assert.That(L4.Systems(L4.A(10, L4.Ticks(0), terrain: false)), Does.Not.Contain("battle.ai-memory"));
+            Assert.That(L4.Systems(L4.A(10, L4.Ticks(300), terrain: false)), Does.Contain(registered));
+            Assert.That(L4.Systems(L4.A(10, L4.Ticks(300))), Does.Contain(registered));
         }
 
         // Acceptance 4: N = 5, thinking every tick. Order at 1, fail recorded at 2, skipped while t - 2 < 5, ordered at 7:
@@ -137,7 +140,7 @@ namespace WarCore.Tests
                 .WithMatch(new MatchPack(new[] { north, south }, new[] { new SpawnAnchor(1, L4.Cell(1, 10)), new SpawnAnchor(2, L4.Cell(38, 10)) },
                     2, 1, false, 3, InterruptMode.Reset, 1, 90, 10, 9000, SimFix.FromInt(35), 4, 4, SimFix.Ratio(3, 2)))
                 .WithCombat(WarCore.Content.Rwr.RwrPack.CreateM6()).WithCrowdPass(CrowdPassKind.TeamIdle)
-                .WithRuleSet(MatchMode.TestNeverEndsId).WithTerrainRules(L4.Pack(L4.Ticks(300)));
+                .WithRuleSet(MatchMode.TestNeverEndsId).WithPack(L4.Pack(L4.Ticks(300)));
             byte[] map = WcMapWriter.Write(L4.Map(L4.Join(L4.Ring(20, 15), L4.Ring(20, 4))));
             var straight = new M6World(recipe, map); var expected = new List<ulong>();
             L4.HashRun(straight, 1200, expected);

@@ -121,7 +121,7 @@ namespace WarCore.Tests
             ContentPack pack = Pack();
             return new WorldRecipe(Seed, MoverKind.InterimCrowd, Units(), Array.Empty<BridgeCommand>())
                 .WithCombat(pack.BuildCombat()).WithMatch(pack.BuildMatch(Points(), Bases()))
-                .WithCrowdPass(CrowdPassKind.TeamIdle).WithTerrainRules(pack);
+                .WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(pack);
         }
 
         internal static byte[] MapBytes()

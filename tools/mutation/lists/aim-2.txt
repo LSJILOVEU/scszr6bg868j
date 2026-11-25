@@ -268,19 +268,19 @@ expect = WarCore.Tests.Scale2aSizesTests.S1_PacksWithoutABodyHaveNoSizes
 expect = WarCore.Tests.Aim2ContentTests.S7b_
 note = the old house stage takes the new pack (18)
 original:
-| LegacyHouse { get; } = HouseStage(WarCore.Content.Rwr.RwrPack.M6Layer);
+| LegacyHouse { get; } = HouseStage(LegacyHouseLayer);
 replacement:
 | LegacyHouse { get; } = HouseStage(HouseLayer);
 
-[aim2-reach-from-palette]
+[aim2-reach-from-another-layer]
 file = Assets/WarCore/Presentation/Bridge/Showcase.cs
 filter = FullyQualifiedName~Aim2
 expect = WarCore.Tests.Aim2ContentTests.S7b_
-note = the reach is read from the palette layer (19)
+note = every stage reads the reach of the battle layer (19)
 original:
-| PickReach.Of(ContentCatalog.Find().Load(CombatLayer))
+| PickReach.Of(ContentCatalog.Find().Load(Layer))
 replacement:
-| PickReach.Of(ContentCatalog.Find().Load(paletteLayer))
+| PickReach.Of(ContentCatalog.Find().Load(Showcase.BattleLayer))
 
 [aim2-reach-skips-filter]
 file = Assets/WarCore/Presentation/Camera/AimPick.cs

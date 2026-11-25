@@ -8,7 +8,7 @@ namespace WarCore.Unity.Editor
 {
     // L8b: play the demo terrain match (or the A3a search demo) in a new, unsaved scene driven by TerrainHost.
     // The capture menus need WARCORE_SHOT_DIR (no default); every output is written flat in that directory.
-    // WARCORE_TERRAIN_LAYER names the terrain layer (default rwr-terrain-demo); WARCORE_SHOT_PREFIX the file prefix
+    // WARCORE_TERRAIN_LAYER names the layer the match reads (default rwr-terrain-match); WARCORE_SHOT_PREFIX the file prefix
     // (default L8b, or L8b-A3a for the A3a demo). No scene or material asset is written.
     public static class L8bTerrain
     {

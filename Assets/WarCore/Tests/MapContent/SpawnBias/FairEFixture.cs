@@ -13,7 +13,21 @@ namespace WarCore.Tests
             new Dictionary<string, string> { ["fair-e"] = "{ \"id\": \"fair-e\", \"extends\": \"rwr-m6\""
                 + (ai == null ? "" : ", \"ai\": " + ai) + " }" }, FileContentSource.Rwr()), "fair-e");
 
-        internal static WorldRecipe Recipe(string layout, ulong seed, bool? fairDecisions)
+        // The AI section `ai` (a JSON object, or null for none) with fairDecisions written into it when it is given.
+        internal static string Ai(string ai, bool? fairDecisions)
+        {
+            if (!fairDecisions.HasValue) return ai;
+            string fair = "\"fairDecisions\": " + (fairDecisions.Value ? "true" : "false");
+            string rest = ai == null ? "}" : ai.Substring(ai.IndexOf('{') + 1).TrimStart();
+            return rest.StartsWith("}", StringComparison.Ordinal) ? "{ " + fair + " }" : "{ " + fair + ", " + rest;
+        }
+
+        // The battle with FAIR-E written on or off in its one pack, or with no pack at all.
+        internal static WorldRecipe Recipe(string layout, ulong seed, bool? fairDecisions) =>
+            fairDecisions.HasValue ? Recipe(layout, seed).WithPack(Pack(Ai(null, fairDecisions))) : Recipe(layout, seed);
+
+        // The battle without a pack: a caller with AI rules of its own gives the one pack that holds them.
+        internal static WorldRecipe Recipe(string layout, ulong seed)
         {
             ContentPack content = RwrPack.Load(RwrPack.M6Layer);
             WorldRecipe recipe;
@@ -40,8 +54,7 @@ namespace WarCore.Tests
                     .WithCombat(content.BuildCombat()).WithMatch(content.BuildMatch(RwrMatch.CreateM7(content).Points.ToArray(), bases))
                     .WithCrowdPass(CrowdPassKind.TeamIdle);
             }
-            return fairDecisions.HasValue
-                ? recipe.WithTerrainRules(Pack("{ \"fairDecisions\": " + (fairDecisions.Value ? "true" : "false") + " }")) : recipe;
+            return recipe;
         }
 
         internal static byte[] Map(string layout) => layout == "M6" ? DemoRecipes.M6MapBytes() : WcMapWriter.Write(M3TestWorld.Boxes(160, 100));

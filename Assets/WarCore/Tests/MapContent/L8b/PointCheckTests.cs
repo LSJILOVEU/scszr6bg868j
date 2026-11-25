@@ -197,7 +197,7 @@ namespace WarCore.Tests
         [Test]
         public void PointCheck_ContentLayersTerrainIsTheDemoMatch()
         {
-            SimSession a = SimSession.Create(ContentLayers.Terrain("rwr-terrain-demo"), TerrainDemo.MapBytes());
+            SimSession a = SimSession.Create(ContentLayers.Terrain(DemoRecipes.TerrainMatchLayer), TerrainDemo.MapBytes());
             SimSession b = SimSession.Create(DemoRecipes.TerrainMatch(), TerrainDemo.MapBytes());
             Assert.That(a.StateHash, Is.EqualTo(b.StateHash), "tick 0");
             for (int t = 0; t < 300; t++) { a.StepOnce(); b.StepOnce(); }

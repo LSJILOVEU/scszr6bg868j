@@ -49,7 +49,7 @@ namespace WarCore.Tests.Nerve1
             var bases = new[] { new SpawnAnchor(1, SimVec3.Metres(6, 0, 20)), new SpawnAnchor(2, SimVec3.Metres(150, 0, 20)) };
             WorldRecipe recipe = M6World.RecipeOf(spawns.ToArray(), M6World.Pack(points, ticks: 1000000, think: 30, bases: bases), Guns(status))
                 .WithRuleSet(MatchMode.TestNeverEndsId);
-            if (ai != null) recipe = recipe.WithAiRules(ai);
+            if (ai != null) recipe = recipe.WithPack(ai);
             return new M6World(recipe, WcMapWriter.Write(Wp23.Make(160, 60, 0, 4 * S, Array.Empty<(int, int, int, int)>(), 2 * S, null)));
         }
 
@@ -94,7 +94,7 @@ namespace WarCore.Tests.Nerve1
         {
             var units = new[] { M6World.U(1, 1, 20, 20, weapon: 0), M6World.U(2, 2, 40, 20, weapon: 0) };
             WorldRecipe recipe = M6World.RecipeOf(units, M6World.Pack(), Guns(status, resolver, ceil)).WithRuleSet(MatchMode.TestNeverEndsId);
-            if (ai != null) recipe = recipe.WithAiRules(ai);
+            if (ai != null) recipe = recipe.WithPack(ai);
             return new M6World(recipe);
         }
 

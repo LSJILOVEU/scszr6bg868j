@@ -59,13 +59,13 @@ namespace WarCore.Tests
             Assert.That(L4.Systems(w), Is.EqualTo(expected));
         }
 
-        // 12: neither a surface table nor a height field: not a terrain world, nothing registered.
+        // 12: neither a surface table nor a height field: the world reads its pack like any map, so it is registered.
         [Test]
-        public void Assembly_FlatMap_DoesNotRegister()
+        public void Assembly_FlatMap_Registers()
         {
             M6World w = On(Wp23.Make(A2.Width, A2.Depth, 0, 4 * A2.S, A2.DWalls, 2 * A2.S));
-            Assert.That(L4.Systems(w), Does.Not.Contain("battle.ai-contacts"));
-            Assert.That(w.System<TargetMemory>(), Is.Null);
+            Assert.That(L4.Systems(w), Does.Contain("battle.ai|0|12;battle.ai-contacts|0|13;"));
+            Assert.That(w.System<TargetMemory>(), Is.Not.Null);
         }
 
         // 12: a height field without a surface table is a terrain world (WcMap.HasTerrain): registered.
