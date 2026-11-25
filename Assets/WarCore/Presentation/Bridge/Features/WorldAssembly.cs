@@ -23,6 +23,17 @@ namespace WarCore.Presentation
             foreach (IWorldOption option in recipe.Options)
                 if (option is IWorldFeature feature)
                     Extensions.Add(feature);
+            // RC1-K3: the inertia of the world's pack is the extension a recipe built by hand adds itself; it comes last.
+            InertiaRates inertia = recipe.PackInertia;
+            if (inertia != null)
+            {
+                var fromPack = new InertiaOption(inertia.AccelMmPerS2, inertia.DecelMmPerS2);
+                foreach (IWorldFeature feature in Extensions)
+                    if (feature.OptionId == fromPack.OptionId)
+                        throw new ArgumentException("The recipe adds the inertia option and its content pack '" + recipe.Pack.Id
+                            + "' has movement.inertia. A world takes its inertia from one of them.", nameof(recipe));
+                Extensions.Add(fromPack);
+            }
         }
 
         // The collision layer of every unit's body; walls must stay off it.

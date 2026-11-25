@@ -102,12 +102,17 @@ namespace WarCore.Presentation
         public MatchPack Match { get; private set; }
         public ulong? PlayerKey { get; private set; }
         public CrowdPassKind CrowdPass { get; private set; }
-        // Opens the per-unit facing component. Off by default: a world without it is byte-identical to one built before it existed.
-        public bool Facing => HasOption(WorldOptions.Facing.OptionId);
-        // Opens the per-unit motion-limits component, same rule: off by default, and a world without it is unchanged.
-        public bool Motion => HasOption(WorldOptions.Motion.OptionId);
-        // Opens the per-unit standing-order component (hold, follow, move in progress), same rule: off by default, and a world without it is unchanged.
-        public bool Standing => HasOption(WorldOptions.Standing.OptionId);
+        // RC1-K3: the four switches below are on when the world's pack says so, or when a recipe built by hand turns them on
+        // (WithFacing, WithMotion, WithStandingOrders, WithBlockAi). A stage's own code turns none on: its pack does.
+        // Opens the per-unit facing component ("combat": { "facing": true }). A world without it is byte-identical to one built
+        // before it existed.
+        public bool Facing => HasOption(WorldOptions.Facing.OptionId) || Pack?.SectionOrNull<BodyFacing>() != null;
+        // Opens the per-unit motion-limits component (a pack with "movement": { "inertia" }, which needs it), same rule.
+        public bool Motion => HasOption(WorldOptions.Motion.OptionId) || PackInertia != null;
+        // Opens the per-unit standing-order component: hold, follow, move in progress ("ai": { "standingOrders": true }), same rule.
+        public bool Standing => HasOption(WorldOptions.Standing.OptionId) || Pack?.SectionOrNull<AiRules>()?.StandingOrders == true;
+        // The inertia of the world's pack, or null: the world assembly adds it as the extension a recipe built by hand adds itself.
+        internal InertiaRates PackInertia => Pack?.SectionOrNull<MovementRules>()?.Inertia;
         // Opens maps with floor plates. MapRecipe.From (a map file) and the plate demos add it; a recipe built by hand declares it. Only the builder's own option instance counts.
         internal bool PlatesPreview
         {
@@ -118,8 +123,11 @@ namespace WarCore.Presentation
                 return false;
             }
         }
-        // Adds the block AI (units raise a block against incoming swings, by their block spec's chance). Needs block specs and facing.
-        public bool BlockAi { get; private set; }
+        // Adds the block AI (units raise a block against incoming swings, by their block spec's chance). On when the units face a
+        // direction and a block spec of the combat pack gives the AI a chance above zero: the number is the switch. On as well
+        // when a recipe built by hand asks (WithBlockAi); that world needs block specs and facing, or it is refused.
+        public bool BlockAi => BlockAiAsked || (Facing && AiRaisesABlock());
+        internal bool BlockAiAsked { get; private set; }
         // The one content pack this world reads: AI rules, terrain rules, slopes, plates and stat limits. Null: a world built
         // by hand without content. Not part of the recipe's seed or rule-set id; a feature that reads it adds its own content key.
         public ContentPack Pack { get; private set; }
@@ -151,7 +159,7 @@ namespace WarCore.Presentation
         private WorldRecipe Copy()
         {
             var copy = new WorldRecipe(Seed, Mover, units, script);
-            copy.Combat = Combat; copy.Match = Match; copy.PlayerKey = PlayerKey; copy.RuleSetId = RuleSetId; copy.CrowdPass = CrowdPass; copy.BlockAi = BlockAi; copy.options.AddRange(options);
+            copy.Combat = Combat; copy.Match = Match; copy.PlayerKey = PlayerKey; copy.RuleSetId = RuleSetId; copy.CrowdPass = CrowdPass; copy.BlockAiAsked = BlockAiAsked; copy.options.AddRange(options);
             copy.Pack = Pack;
             return copy;
         }
@@ -218,8 +226,16 @@ namespace WarCore.Presentation
 
         public WorldRecipe WithBlockAi()
         {
-            var copy = Copy(); copy.BlockAi = true;
+            var copy = Copy(); copy.BlockAiAsked = true;
             return copy;
+        }
+
+        private bool AiRaisesABlock()
+        {
+            if (Combat == null) return false;
+            foreach (BlockSpec spec in Combat.Block)
+                if (spec.AiRaisePermille > 0) return true;
+            return false;
         }
 
         public WorldRecipe WithStandingOrders() => With(WorldOptions.Standing);

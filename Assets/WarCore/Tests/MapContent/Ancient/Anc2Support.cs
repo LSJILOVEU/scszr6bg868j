@@ -42,7 +42,7 @@ namespace WarCore.Tests
 
         // PLACEHOLDER fixture values: 96 x 64 m flat ground, three points on the middle line, 60 against 60 in six columns
         // (front to back: shield, shield, spear, spear, sword, sword), seed 41, no reserves.
-        internal static M6World World(ContentPack pack, ulong seed = 41)
+        internal static M6World World(ContentPack pack, ulong seed = 41, bool switches = true)
         {
             var units = new UnitSpawn[120];
             string[] rank = { "ancient.guard", "ancient.guard", "ancient.spearman", "ancient.spearman", "ancient.swordsman", "ancient.swordsman" };
@@ -60,14 +60,17 @@ namespace WarCore.Tests
                 new ControlPointDef(3, SimVec3.Metres(48, 0, 52), SimFix.FromInt(4)),
             };
             var anchors = new[] { new SpawnAnchor(1, SimVec3.Metres(4, 0, 32)), new SpawnAnchor(2, SimVec3.Metres(92, 0, 32)) };
-            return Build(pack, units, points, anchors, seed);
+            return Build(pack, units, points, anchors, seed, switches);
         }
 
-        internal static M6World Build(ContentPack pack, UnitSpawn[] units, ControlPointDef[] points, SpawnAnchor[] anchors, ulong seed = 41)
+        // switches: the recipe turns facing and the block AI on itself, as the ANC-2 tests always did; false leaves both to
+        // the pack (RC1-K3).
+        internal static M6World Build(ContentPack pack, UnitSpawn[] units, ControlPointDef[] points, SpawnAnchor[] anchors, ulong seed = 41, bool switches = true)
         {
             var recipe = new WorldRecipe(seed, MoverKind.InterimCrowd, units, Array.Empty<BridgeCommand>())
                 .WithCombat(pack.BuildCombat()).WithMatch(pack.BuildMatch(points, anchors))
-                .WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(pack).WithFacing().WithBlockAi();
+                .WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(pack);
+            if (switches) recipe = recipe.WithFacing().WithBlockAi();
             byte[] map = WcMapWriter.Write(Wp23.Make(96, 64, 0, 4 * SimFix.Scale, Array.Empty<(int, int, int, int)>(),
                 2 * SimFix.Scale, (x, z) => 0, new[] { "ancient.ground" }, (x, z) => 0));
             return new M6World(recipe, map);

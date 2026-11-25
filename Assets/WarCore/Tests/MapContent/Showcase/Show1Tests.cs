@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using NUnit.Framework;
 using WarCore.Presentation;
 
@@ -216,6 +217,37 @@ namespace WarCore.Tests
             WorldRecipe recipe = stage.Recipe();
             Assert.That(recipe.Pack?.Id, Is.EqualTo(stage.Layer));
             Assert.That(recipe.Combat.PolicyDigest, Is.EqualTo(recipe.Pack.BuildCombat().PolicyDigest));
+        }
+
+        // RC1-K3: the code of a stage switches nothing on. Its recipe carries no switch of its own (the plate preview only
+        // opens maps with floors), does not ask for the block AI, and its match rules are the ones its layer builds. What is
+        // on comes from the layer: facing, the block AI (a shield with a chance for the AI, and facing), respawn. The ruler's
+        // table of played stages names no switch in the code of a stage either.
+        [TestCase("battle", true, false, true)]
+        [TestCase("bullets", true, false, true)]
+        [TestCase("house", false, false, true)]
+        [TestCase("terrain", false, false, true)]
+        [TestCase("melee", true, true, false)]
+        [TestCase("hamlet", true, false, true)]
+        [TestCase("legacy house", false, false, true)]
+        public void AStageSwitchesNothingOnItself(string id, bool facing, bool blockAi, bool respawn)
+        {
+            ShowcaseStage stage = id == "legacy house" ? Showcase.LegacyHouse : Stage(id);
+            WorldRecipe recipe = stage.Recipe();
+            var own = new List<string>();
+            foreach (IWorldOption option in recipe.Options)
+                if (option.OptionId != "world.plates-preview") own.Add(option.OptionId);
+            Assert.That(own, Is.Empty, "switches in the stage's code");
+            Assert.That(recipe.BlockAiAsked, Is.False);
+            Assert.That((recipe.Facing, recipe.BlockAi, recipe.Motion, recipe.Standing), Is.EqualTo((facing, blockAi, false, false)));
+            Assert.That(recipe.Match.PolicyDigest,
+                Is.EqualTo(recipe.Pack.BuildMatch(recipe.Match.Points.ToArray(), recipe.Match.Bases.ToArray()).PolicyDigest));
+            Assert.That((recipe.Match.RespawnTicks > 0, recipe.Match.RespawnGuardTicks > 0), Is.EqualTo((respawn, respawn)));
+            foreach (string line in File.ReadAllLines(Path.Combine(Directory.GetParent(ArchitectureTests.AssetRoot()).FullName, "tools/ruler/played.tsv")))
+            {
+                string[] cells = line.TrimEnd('\r').Split('\t');
+                if (cells[0] == stage.Id) Assert.That(cells.Length, Is.EqualTo(3), "tools/ruler/played.tsv names a switch in the code of stage " + stage.Id);
+            }
         }
 
         [Test]

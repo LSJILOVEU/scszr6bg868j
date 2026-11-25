@@ -79,19 +79,9 @@ filter = FullyQualifiedName~Show1Tests
 expect = WarCore.Tests.Show1Tests.AStageStartsWithItsForcesAndThePlayerInTeamOne
 note = one reserve fewer a side in the house
 original:
-| private const int HouseReserves = 12,
+| private const int HouseReserves = 12;
 replacement:
-| private const int HouseReserves = 11,
-
-[show1-house-respawn]
-file = Assets/WarCore/Presentation/Bridge/Showcase.cs
-filter = FullyQualifiedName~Show1Tests
-expect = WarCore.Tests.Show1Tests.TheHouseHasFloorsAndThePlayerComesBackFromTheReserve
-note = the fallen player waits far longer than the test plays
-original:
-| RespawnTicks = 150,
-replacement:
-| RespawnTicks = 15000,
+| private const int HouseReserves = 11;
 
 [show1-terrain-reserves]
 file = Assets/WarCore/Presentation/Bridge/Showcase.cs

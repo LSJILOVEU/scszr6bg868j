@@ -1,0 +1,4 @@
+{
+  "id": "parts/facing",
+  "combat": { "facing": true }
+}

@@ -1,4 +1,4 @@
 {
   "id": "rwr-showcase-terrain",
-  "extends": [ "rwr-m6", "rwr-ai-playtest" ]
+  "extends": [ "rwr-m6", "rwr-ai-playtest", "parts/respawn" ]
 }

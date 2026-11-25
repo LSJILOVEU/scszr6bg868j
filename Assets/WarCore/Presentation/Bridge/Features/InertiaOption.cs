@@ -6,13 +6,13 @@ using Simulation = WarCore.Sim.Sim;
 
 namespace WarCore.Presentation
 {
-    // Acceleration and braking for AI units, in mm/s^2 (each 0, which leaves that part off, or 100 to 1 000 000). The recipe
-    // must also open WithMotion(). With both rates at zero the world is the same as without the option. Otherwise every unit
-    // carries a motion state, its motion limits take the two rates, and the locomotion asks the inertia model for each step.
+    // Acceleration and braking for AI units, in mm/s^2 (each 0, which leaves that part off, or a rate InertiaRates allows). A
+    // world gets it from its pack ("movement": { "inertia" }); a recipe built by hand adds the option and opens WithMotion().
+    // With both rates at zero the world is the same as without the option. Otherwise every unit carries a motion state, its
+    // motion limits take the two rates, and the locomotion asks the inertia model for each step.
     // The option is an extension of the world assembly: its hooks run after the built-in ones.
     public sealed class InertiaOption : IWorldFeature
     {
-        private const long MinRateMmPerS2 = 100, MaxRateMmPerS2 = 1000000;
         // mm/s^2 to metres per tick squared: 1000 mm per metre, 30 ticks per second.
         private const long PerTickSquared = 1000L * SimClock.TickRate * SimClock.TickRate;
 
@@ -28,8 +28,8 @@ namespace WarCore.Presentation
 
         private static void Check(long value, string name)
         {
-            if (value != 0 && (value < MinRateMmPerS2 || value > MaxRateMmPerS2))
-                throw new ArgumentOutOfRangeException(name, "A rate is 0 or between 100 and 1000000 mm/s^2.");
+            if (!InertiaRates.IsRate(value))
+                throw new ArgumentOutOfRangeException(name, "A rate is 0 or between " + InertiaRates.MinMmPerS2 + " and " + InertiaRates.MaxMmPerS2 + " mm/s^2.");
         }
 
         public string OptionId => "world.inertia";

@@ -3,8 +3,7 @@
 # id <tab> module <tab> proof <tab> name <tab> off (only for a feature that no played stage has)
 #
 # proof: section.field, or section[].field for any entry of a list section; add =value when the value matters.
-# A feature is on in a stage when the stage's packs (played.tsv) hold the proof. Absent, false, 0 and empty are off.
-# proof "-": no pack field switches the feature yet, only a stage's own code can (the last column of played.tsv).
+# A feature is on in a stage when the stage's pack (played.tsv) holds the proof. Absent, false, 0 and empty are off.
 # A feature that is on in no stage is not finished. The ones marked off are the debt of today; a new feature gets its
 # row, without the mark, in the change that adds it, and the mark goes in the change that switches a feature on.
 
@@ -26,8 +25,8 @@ suppress	brain	ai.suppressTicks	A unit keeps firing at where its target was last
 reaction	brain	ai.reactionTicks	A delay before the first shot at a new target
 bursts	brain	ai.burstShots	Fire in bursts
 fair-decisions	brain	ai.fairDecisions	The order of decisions does not favour the units that spawned first
-block-ai	brain	-	Computer units raise their shields
-standing-orders	brain	-	A squad holds or follows on command	off
+block-ai	brain	block[].aiRaisePermille	Computer units raise their shields
+standing-orders	brain	ai.standingOrders	A squad holds or follows on command	off
 projectiles	fight	weapons[].projectileSpeed	Bullets that fly tick by tick
 grenade	fight	combat.blasts	Blasts: grenades
 move-spread	fight	combat.moveSpread	Aim widens while moving
@@ -39,13 +38,13 @@ block	fight	block	Blocking with a shield
 friendly-fire	fight	combat.friendlyFire	A shot that reaches a teammate first hurts them	off
 body	body	combat.body	Body size from the pack: height, eye, muzzle
 stances	body	combat.stances	Stand, crouch and prone
-facing	body	-	A unit faces the way it aims or walks
+facing	body	combat.facing	A unit faces the way it aims or walks
 mouse-reach	hand	pick.heightPermille	The mouse aims by the body's reach
 downed	health	combat.downed	Downed and stunned before death	off
 dash	move	unitTypes[].dashDistance	Dash
 slope-speed	move	movement.slope	Slopes change the step
 surface-speed	move	surfaces[].speedMilli	Road is fast, mud is slow
-inertia	move	-	Units take time to speed up and to stop	off
+inertia	move	movement.inertia	Units take time to speed up and to stop	off
 sight-limit	sight	combat.selector=sight-limited	A unit sees only as far as its sight
 concealment	sight	surfaces[].concealMilli	Ground cover hides units
 respawn	match	match.respawnTicks	The player respawns into a reserve

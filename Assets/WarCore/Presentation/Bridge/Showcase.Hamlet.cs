@@ -30,7 +30,7 @@ namespace WarCore.Presentation
         // world's one pack (terrain rules, AI rules). Respawn comes from the layer's match.
         private static WorldRecipe HamletRecipe()
         {
-            WorldRecipe recipe = MapRecipe.From(Hamlet(), ContentCatalog.Find().Load(HamletLayer), useUnitTypes: true).WithFacing();
+            WorldRecipe recipe = MapRecipe.From(Hamlet(), ContentCatalog.Find().Load(HamletLayer), useUnitTypes: true);
             return recipe.WithPlayer(FirstDeployed(recipe.Units));
         }
 

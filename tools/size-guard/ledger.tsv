@@ -6,7 +6,7 @@
 # A new literal is read from the content pack or from the one named source; it is not added here as debt.
 # Debt notes name the family in the audit: H1 body radius, H2 headroom, H3 speed, H4 grenade, M1 eye, M2 play distances,
 # L3 fixed-point scale.
-debt-max	489
+debt-max	487
 Battle/Ai/AssaultRolesPlacement.cs	SimFix.Scale/1000	1	debt	
 Battle/Ai/CommanderQuota.cs	CoordinateLimitMetres=8192	1	debt	
 Battle/Ai/Cover.cs	SimFix.Ratio(3,2)	1	debt	
@@ -148,8 +148,6 @@ Presentation/Bridge/Showcase.cs	12f	1	debt
 Presentation/Bridge/Showcase.cs	16f	2	debt	
 Presentation/Bridge/Showcase.cs	18f	1	debt	
 Presentation/Bridge/Showcase.cs	22f	2	debt	
-Presentation/Bridge/Showcase.cs	RespawnGuardTicks=90	1	debt	
-Presentation/Bridge/Showcase.cs	RespawnTicks=150	1	debt	
 Presentation/Bridge/Showcase.cs	SoldierSpeedMmPerSec=6000	1	debt	H3 speed in code
 Presentation/Bridge/ShowcaseActions.cs	CooldownTicks=90	1	debt	H4 grenade value in code (NADE-1)
 Presentation/Bridge/ShowcaseActions.cs	FuseTicks=33	1	debt	H4 grenade value in code (NADE-1)

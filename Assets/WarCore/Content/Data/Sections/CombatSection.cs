@@ -6,6 +6,14 @@ using WarCore.Sim;
 
 namespace WarCore.Content
 {
+    // RC1-K3: what "combat": { "facing": true } publishes: the units of this pack face a direction (the facing component, which
+    // the locomotion and the player's aim turn). Not written or false: nothing is published and
+    // ContentPack.SectionOrNull<BodyFacing>() is null.
+    public sealed class BodyFacing
+    {
+        internal BodyFacing() { }
+    }
+
     internal sealed class CombatSection : ObjectSection
     {
         internal const string SectionKey = "combat";
@@ -15,7 +23,7 @@ namespace WarCore.Content
         // VSPREAD-1: combat.verticalSpread is an object (with byStance inside), kept whole across layers; so is NERVE-1
         // combat.status (CombatNerveReader). DOWN-1: combat.downed is one value as well (CombatDownedReader).
         internal const string MoveSpreadField = "moveSpread", ManualReloadField = "manualReload", VerticalSpreadField = "verticalSpread",
-            StatusField = "status";
+            StatusField = "status", FacingField = "facing";
         protected override bool IsNested(string field) =>
             base.IsNested(field) || field == MoveSpreadField || field == VerticalSpreadField || field == StatusField
             || field == CombatDownedReader.Field;
@@ -185,6 +193,7 @@ namespace WarCore.Content
             ContentField moveField = cr.FieldOf(MoveSpreadField);
             if (moveField != null) moveField.Used = true;
             bool manualReload = cr.Has(ManualReloadField) && cr.Bool(ManualReloadField);
+            bool facing = cr.Has(FacingField) && cr.Bool(FacingField);
             BlastRules blasts = Blasts(b.Pack, cr);
             ContentField status = cr.FieldOf(StatusField);
             if (status != null) status.Used = true;
@@ -201,6 +210,7 @@ namespace WarCore.Content
             cr.Done();
             MoveSpread moveSpread = moveField == null ? null : CombatAimReader.MoveSpread(b.Pack, moveField, b.WeaponIds);
             if (moveSpread != null || manualReload) b.Publish(new CombatAim(moveSpread, manualReload));
+            if (facing) b.Publish(new BodyFacing());
             if (status != null) b.Publish(CombatNerveReader.Status(b.Pack, status));
             if (body != null) b.Body = Body(b.Pack, body);
             if (stances != null) b.Stances = Stances(b.Pack, combat, stances, b.Body);
