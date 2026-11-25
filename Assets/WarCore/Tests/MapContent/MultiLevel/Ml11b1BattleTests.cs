@@ -19,9 +19,9 @@ namespace WarCore.Tests
         private const string Search = "{ \"targetMemoryTicks\": 300, \"searchTicks\": 40 }";
         private const string Chase = "{ \"meleeChaseRange\": 12 }";
 
-        // The legacy house stage's map: the assault demo map naming layer rwr-house, the m6 layer's units and match with the
-        // soldier's AI rules. The world reads that one layer.
-        internal static readonly MapBakeResult Baked = Showcase.House(Showcase.LegacyHouseLayer);
+        // The assault demo map baked for layer rwr-house (the layer of the legacy house stage): the m6 layer's units and
+        // match with the soldier's AI rules. The world reads that one layer.
+        internal static readonly MapBakeResult Baked = MapBake.Run(PlateAssaultMap.DescBytes(), Showcase.LegacyHouseLayer);
 
         internal static WorldRecipe Playtest() => MapRecipe.From(Baked, RwrPack.Load(Baked.PackId)).WithPlatesPreview();
 

@@ -27,14 +27,24 @@ namespace WarCore.Content.MapTools
     // Description bytes -> checked model -> .wcmap bytes and match setup. Writer errors become "MAPDESC_WCMAP <WCMAP code>".
     public static class MapBake
     {
-        public static MapBakeResult Run(byte[] descBytes)
+        public static MapBakeResult Run(byte[] descBytes) => Run(MapDescJson.Read(descBytes), null);
+
+        // The same bake for a world that runs under another content layer than the one the description names (a stage that
+        // plays a map under its own layer). Only PackId follows the layer: the hash, the map and the setup are the
+        // description's own.
+        public static MapBakeResult Run(byte[] descBytes, string pack)
         {
-            MapDesc desc = MapDescJson.Read(descBytes);
+            if (string.IsNullOrEmpty(pack)) throw new ArgumentException("A content layer id is needed.", nameof(pack));
+            return Run(MapDescJson.Read(descBytes), pack);
+        }
+
+        private static MapBakeResult Run(MapDesc desc, string pack)
+        {
             byte[] canonical = MapDescJson.Write(desc);
             byte[] mapBytes;
             try { mapBytes = WcMapWriter.Write(BuildMap(desc)); }
             catch (InvalidDataException e) { throw new InvalidDataException("MAPDESC_WCMAP " + e.Message, e); }
-            return new MapBakeResult(Sha256(canonical), desc.Pack, mapBytes, BuildSetup(desc, WcMapReader.Read(mapBytes)));
+            return new MapBakeResult(Sha256(canonical), pack ?? desc.Pack, mapBytes, BuildSetup(desc, WcMapReader.Read(mapBytes)));
         }
 
         private static byte[] Sha256(byte[] bytes)
