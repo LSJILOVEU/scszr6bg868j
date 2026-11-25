@@ -45,7 +45,7 @@ relation from the code or the shipped data. "none" means no test holds the value
 
 | Quantity | Value | Where | Test |
 |---|---|---|---|
-| Storey height | content `scale.storeyMm` (demo maps 3 m; least 2.5 m, headroom + thinnest plate) | `ScaleRules`, `PlateDemoMap`, `PlateAssaultMap`, `WcMapPlate` | W07, `Scale2bBuildTests.SC10_Storeys` |
+| Storey height | content `scale.storeyMm` (demo maps 3 m; least 2.5 m, headroom + thinnest plate) | `ScaleRules`, `PlateDemoMap`, `PlateAssaultMap` (a test fixture), `showcase-house.map.json`, `WcMapPlate` | W07, `Scale2bBuildTests.SC10_Storeys` |
 | Thinnest plate | 0.5 m | `WcMapPlate.MinThickRaw` | W07 |
 | Plate stack gap | at least the headroom | `PlateSpan` | `Ml4RuleTests.StackGapIsTwoMetresInclusive` |
 | Plates per cell | 64 | `PlateSpan` | `Ml4RuleTests.SixtyFourPlatesPerCell` |
@@ -58,7 +58,7 @@ relation from the code or the shipped data. "none" means no test holds the value
 | Height field legal slope | 2/1 | `HeightField.MaxSlopeNumerator`, `MaxSlopeDenominator` | `Ml4RuleTests.PlateSlopeTwoToOne` |
 | Plate slope in the gate | min(layer walkable slope, 5/3) | `MapGate.PlateSlopeNum`, `PlateSlopeDen` | W08 |
 | Layer walkable slope | per layer `slopeRule`; `rwr-terrain-demo` 3/4; layers without one use the height field's 2/1 | `SlopeRuleSection` | W08 |
-| Demo stairs | 3 m over 4 cells (3/4) | `PlateDemoMap`, `PlateAssaultMap` | W08 |
+| Demo stairs | 3 m over 4 cells (3/4) | `PlateDemoMap`, `PlateAssaultMap` (a test fixture), `showcase-house.map.json` | W08 |
 | Slope speed (content `movement.slope`) | probe 0.5 m ahead along the heading, slope = rise * 1000 / 0.5 m, the last band strictly exceeded; `rwr-slope`: up > 100: 900, > 300: 700, > 500: 500; down > 400: 800; the dash takes no slope | `SlopeTable`, `InterimLocomotion.StepLine` | `Slope1TableTests`, `Slope1PlateTests` |
 
 ## Speed

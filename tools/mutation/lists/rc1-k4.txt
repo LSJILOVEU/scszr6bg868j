@@ -1,0 +1,97 @@
+# RC1-K4: a stage of the showcase is a map file and one content layer. One route makes the world of every stage: the map
+# file baked for the stage's layer, the map file's own recipe with the layer's unit types, the player in team 1's first
+# deployed soldier (show-1.txt lists the unit types and the player). The bake can be asked for another layer than the one
+# the description names.
+# Not listed: the lines of the map files (the soldiers, reserves and points of the house, the hills and the melee field)
+# and of the content layers. This tool mutates code only; Show1Tests.AStageStartsWithItsForcesAndThePlayerInTeamOne and
+# the tests of each stage hold those lines.
+
+[rc1-k4-bake-ignores-the-layer]
+file = Assets/WarCore/Content/MapTools/MapBake.cs
+filter = FullyQualifiedName~WarCore.Tests.E1bRecipeTests
+expect = WarCore.Tests.E1bRecipeTests.BakingForAnotherLayerKeepsTheDescriptionAndNamesTheLayer
+note = the bake names the description's layer whatever layer is asked for
+original:
+|             return new MapBakeResult(Sha256(canonical), pack ?? desc.Pack, mapBytes, BuildSetup(desc, WcMapReader.Read(mapBytes)));
+replacement:
+|             return new MapBakeResult(Sha256(canonical), desc.Pack, mapBytes, BuildSetup(desc, WcMapReader.Read(mapBytes)));
+
+[rc1-k4-bake-empty-layer-accepted]
+file = Assets/WarCore/Content/MapTools/MapBake.cs
+filter = FullyQualifiedName~WarCore.Tests.E1bRecipeTests
+expect = WarCore.Tests.E1bRecipeTests.BakingForAnotherLayerKeepsTheDescriptionAndNamesTheLayer
+note = an empty layer id is taken
+original:
+|             if (string.IsNullOrEmpty(pack)) throw new ArgumentException("A content layer id is needed.", nameof(pack));
+replacement:
+|             if (pack == null) throw new ArgumentException("A content layer id is needed.", nameof(pack));
+
+[rc1-k4-bake-no-layer-accepted]
+file = Assets/WarCore/Content/MapTools/MapBake.cs
+filter = FullyQualifiedName~WarCore.Tests.E1bRecipeTests
+expect = WarCore.Tests.E1bRecipeTests.BakingForAnotherLayerKeepsTheDescriptionAndNamesTheLayer
+note = asking for no layer gives the bake for the description's own
+original:
+|             if (string.IsNullOrEmpty(pack)) throw new ArgumentException("A content layer id is needed.", nameof(pack));
+replacement:
+|             if (pack == "") throw new ArgumentException("A content layer id is needed.", nameof(pack));
+
+[rc1-k4-stage-bakes-for-another-layer]
+file = Assets/WarCore/Presentation/Bridge/Showcase.cs
+filter = FullyQualifiedName~WarCore.Tests.Show1Tests.AStageReadsOneLayer
+expect = WarCore.Tests.Show1Tests.AStageReadsOneLayer("bullets")
+expect = WarCore.Tests.Show1Tests.AStageReadsOneLayer("house")
+expect = WarCore.Tests.Show1Tests.AStageReadsOneLayer("terrain")
+note = every stage bakes its map for the battle's layer, so its world reads that layer and not its own
+original:
+|         private MapBakeResult Bake() => MapBake.Run(File.ReadAllBytes(Showcase.ProjectFile(Map)), Layer);
+replacement:
+|         private MapBakeResult Bake() => MapBake.Run(File.ReadAllBytes(Showcase.ProjectFile(Map)), Showcase.BattleLayer);
+
+[rc1-k4-stage-plays-another-map]
+file = Assets/WarCore/Presentation/Bridge/Showcase.cs
+filter = FullyQualifiedName~WarCore.Tests.StageFileTests
+expect = WarCore.Tests.StageFileTests.AStageIsItsMapFileUnderItsLayer("house")
+expect = WarCore.Tests.StageFileTests.AStageIsItsMapFileUnderItsLayer("terrain")
+expect = WarCore.Tests.StageFileTests.AStageIsItsMapFileUnderItsLayer("hamlet")
+note = every stage plays the three-lane map whatever map file it names
+original:
+|         private MapBakeResult Bake() => MapBake.Run(File.ReadAllBytes(Showcase.ProjectFile(Map)), Layer);
+replacement:
+|         private MapBakeResult Bake() => MapBake.Run(File.ReadAllBytes(Showcase.ProjectFile("Assets/WarCore/Maps/lanes-playtest.map.json")), Layer);
+
+[rc1-k4-stage-switches-facing-in-code]
+file = Assets/WarCore/Presentation/Bridge/Showcase.cs
+filter = FullyQualifiedName~WarCore.Tests.Show1Tests.AStageSwitchesNothingOnItself
+expect = WarCore.Tests.Show1Tests.AStageSwitchesNothingOnItself("battle"
+expect = WarCore.Tests.Show1Tests.AStageSwitchesNothingOnItself("house"
+expect = WarCore.Tests.Show1Tests.AStageSwitchesNothingOnItself("hamlet"
+note = the route of the stages turns facing on in code
+original:
+|             WorldRecipe recipe = MapRecipe.From(baked, ContentCatalog.Find().Load(baked.PackId), useUnitTypes: true);
+replacement:
+|             WorldRecipe recipe = MapRecipe.From(baked, ContentCatalog.Find().Load(baked.PackId), useUnitTypes: true).WithFacing();
+
+[rc1-k4-stage-asks-for-block-ai-in-code]
+file = Assets/WarCore/Presentation/Bridge/Showcase.cs
+filter = FullyQualifiedName~WarCore.Tests.Show1Tests.AStageSwitchesNothingOnItself
+expect = WarCore.Tests.Show1Tests.AStageSwitchesNothingOnItself("melee"
+expect = WarCore.Tests.Show1Tests.AStageSwitchesNothingOnItself("battle"
+note = the route of the stages asks for the block AI in code
+original:
+|             WorldRecipe recipe = MapRecipe.From(baked, ContentCatalog.Find().Load(baked.PackId), useUnitTypes: true);
+replacement:
+|             WorldRecipe recipe = MapRecipe.From(baked, ContentCatalog.Find().Load(baked.PackId), useUnitTypes: true).WithBlockAi();
+
+[rc1-k4-stage-respawn-in-code]
+file = Assets/WarCore/Presentation/Bridge/Showcase.cs
+filter = FullyQualifiedName~WarCore.Tests.Show1Tests.AStageSwitchesNothingOnItself|FullyQualifiedName~WarCore.Tests.Show1Tests.TheHouseHasFloorsAndThePlayerComesBackFromTheReserve
+expect = WarCore.Tests.Show1Tests.AStageSwitchesNothingOnItself("house"
+expect = WarCore.Tests.Show1Tests.AStageSwitchesNothingOnItself("terrain"
+expect = WarCore.Tests.Show1Tests.AStageSwitchesNothingOnItself("melee"
+expect = WarCore.Tests.Show1Tests.TheHouseHasFloorsAndThePlayerComesBackFromTheReserve
+note = the route of the stages sets a respawn delay of its own, far longer than any layer's
+original:
+|             return recipe.WithPlayer(Showcase.FirstDeployed(recipe.Units));
+replacement:
+|             return DemoRecipes.WithRespawn(recipe.WithPlayer(Showcase.FirstDeployed(recipe.Units)), 15000);

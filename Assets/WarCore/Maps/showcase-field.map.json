@@ -1,0 +1,1641 @@
+{
+  "format": "warcore.map",
+  "version": 1,
+  "id": "showcase-field",
+  "content": "none",
+  "pack": "ancient-field",
+  "size": [96, 64],
+  "origin": [0, 0],
+  "floorRaw": 0,
+  "ceilingRaw": 262144,
+  "layers": [
+    {
+      "name": "walls",
+      "bit": 1
+    }
+  ],
+  "heights": [
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  ],
+  "surfaces": {
+    "names": ["ancient.ground"],
+    "rows": [
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    ]
+  },
+  "walls": [],
+  "points": [
+    {
+      "id": 1,
+      "at": [48000, 12000],
+      "radiusMm": 4000,
+      "initialOwner": 0
+    },
+    {
+      "id": 2,
+      "at": [48000, 32000],
+      "radiusMm": 4000,
+      "initialOwner": 0
+    },
+    {
+      "id": 3,
+      "at": [48000, 52000],
+      "radiusMm": 4000,
+      "initialOwner": 0
+    }
+  ],
+  "bases": [
+    {
+      "id": 1,
+      "team": 1,
+      "at": [4000, 32000]
+    },
+    {
+      "id": 2,
+      "team": 2,
+      "at": [92000, 32000]
+    }
+  ],
+  "units": [
+    {
+      "key": 1,
+      "type": "ancient.guard",
+      "team": 1,
+      "squad": 1,
+      "at": [30000, 22000],
+      "reserve": false
+    },
+    {
+      "key": 2,
+      "type": "ancient.guard",
+      "team": 1,
+      "squad": 1,
+      "at": [28500, 22000],
+      "reserve": false
+    },
+    {
+      "key": 3,
+      "type": "ancient.spearman",
+      "team": 1,
+      "squad": 1,
+      "at": [27000, 22000],
+      "reserve": false
+    },
+    {
+      "key": 4,
+      "type": "ancient.spearman",
+      "team": 1,
+      "squad": 1,
+      "at": [25500, 22000],
+      "reserve": false
+    },
+    {
+      "key": 5,
+      "type": "ancient.swordsman",
+      "team": 1,
+      "squad": 1,
+      "at": [24000, 22000],
+      "reserve": false
+    },
+    {
+      "key": 6,
+      "type": "ancient.swordsman",
+      "team": 1,
+      "squad": 1,
+      "at": [22500, 22000],
+      "reserve": false
+    },
+    {
+      "key": 7,
+      "type": "ancient.guard",
+      "team": 1,
+      "squad": 1,
+      "at": [30000, 24000],
+      "reserve": false
+    },
+    {
+      "key": 8,
+      "type": "ancient.guard",
+      "team": 1,
+      "squad": 1,
+      "at": [28500, 24000],
+      "reserve": false
+    },
+    {
+      "key": 9,
+      "type": "ancient.spearman",
+      "team": 1,
+      "squad": 1,
+      "at": [27000, 24000],
+      "reserve": false
+    },
+    {
+      "key": 10,
+      "type": "ancient.spearman",
+      "team": 1,
+      "squad": 1,
+      "at": [25500, 24000],
+      "reserve": false
+    },
+    {
+      "key": 11,
+      "type": "ancient.swordsman",
+      "team": 1,
+      "squad": 1,
+      "at": [24000, 24000],
+      "reserve": false
+    },
+    {
+      "key": 12,
+      "type": "ancient.swordsman",
+      "team": 1,
+      "squad": 1,
+      "at": [22500, 24000],
+      "reserve": false
+    },
+    {
+      "key": 13,
+      "type": "ancient.guard",
+      "team": 1,
+      "squad": 1,
+      "at": [30000, 26000],
+      "reserve": false
+    },
+    {
+      "key": 14,
+      "type": "ancient.guard",
+      "team": 1,
+      "squad": 1,
+      "at": [28500, 26000],
+      "reserve": false
+    },
+    {
+      "key": 15,
+      "type": "ancient.spearman",
+      "team": 1,
+      "squad": 1,
+      "at": [27000, 26000],
+      "reserve": false
+    },
+    {
+      "key": 16,
+      "type": "ancient.spearman",
+      "team": 1,
+      "squad": 1,
+      "at": [25500, 26000],
+      "reserve": false
+    },
+    {
+      "key": 17,
+      "type": "ancient.swordsman",
+      "team": 1,
+      "squad": 1,
+      "at": [24000, 26000],
+      "reserve": false
+    },
+    {
+      "key": 18,
+      "type": "ancient.swordsman",
+      "team": 1,
+      "squad": 1,
+      "at": [22500, 26000],
+      "reserve": false
+    },
+    {
+      "key": 19,
+      "type": "ancient.guard",
+      "team": 1,
+      "squad": 1,
+      "at": [30000, 28000],
+      "reserve": false
+    },
+    {
+      "key": 20,
+      "type": "ancient.guard",
+      "team": 1,
+      "squad": 1,
+      "at": [28500, 28000],
+      "reserve": false
+    },
+    {
+      "key": 21,
+      "type": "ancient.spearman",
+      "team": 1,
+      "squad": 1,
+      "at": [27000, 28000],
+      "reserve": false
+    },
+    {
+      "key": 22,
+      "type": "ancient.spearman",
+      "team": 1,
+      "squad": 1,
+      "at": [25500, 28000],
+      "reserve": false
+    },
+    {
+      "key": 23,
+      "type": "ancient.swordsman",
+      "team": 1,
+      "squad": 1,
+      "at": [24000, 28000],
+      "reserve": false
+    },
+    {
+      "key": 24,
+      "type": "ancient.swordsman",
+      "team": 1,
+      "squad": 1,
+      "at": [22500, 28000],
+      "reserve": false
+    },
+    {
+      "key": 25,
+      "type": "ancient.guard",
+      "team": 1,
+      "squad": 1,
+      "at": [30000, 30000],
+      "reserve": false
+    },
+    {
+      "key": 26,
+      "type": "ancient.guard",
+      "team": 1,
+      "squad": 1,
+      "at": [28500, 30000],
+      "reserve": false
+    },
+    {
+      "key": 27,
+      "type": "ancient.spearman",
+      "team": 1,
+      "squad": 1,
+      "at": [27000, 30000],
+      "reserve": false
+    },
+    {
+      "key": 28,
+      "type": "ancient.spearman",
+      "team": 1,
+      "squad": 1,
+      "at": [25500, 30000],
+      "reserve": false
+    },
+    {
+      "key": 29,
+      "type": "ancient.swordsman",
+      "team": 1,
+      "squad": 1,
+      "at": [24000, 30000],
+      "reserve": false
+    },
+    {
+      "key": 30,
+      "type": "ancient.swordsman",
+      "team": 1,
+      "squad": 1,
+      "at": [22500, 30000],
+      "reserve": false
+    },
+    {
+      "key": 31,
+      "type": "ancient.guard",
+      "team": 1,
+      "squad": 1,
+      "at": [30000, 32000],
+      "reserve": false
+    },
+    {
+      "key": 32,
+      "type": "ancient.guard",
+      "team": 1,
+      "squad": 1,
+      "at": [28500, 32000],
+      "reserve": false
+    },
+    {
+      "key": 33,
+      "type": "ancient.spearman",
+      "team": 1,
+      "squad": 1,
+      "at": [27000, 32000],
+      "reserve": false
+    },
+    {
+      "key": 34,
+      "type": "ancient.spearman",
+      "team": 1,
+      "squad": 1,
+      "at": [25500, 32000],
+      "reserve": false
+    },
+    {
+      "key": 35,
+      "type": "ancient.swordsman",
+      "team": 1,
+      "squad": 1,
+      "at": [24000, 32000],
+      "reserve": false
+    },
+    {
+      "key": 36,
+      "type": "ancient.swordsman",
+      "team": 1,
+      "squad": 1,
+      "at": [22500, 32000],
+      "reserve": false
+    },
+    {
+      "key": 37,
+      "type": "ancient.guard",
+      "team": 1,
+      "squad": 1,
+      "at": [30000, 34000],
+      "reserve": false
+    },
+    {
+      "key": 38,
+      "type": "ancient.guard",
+      "team": 1,
+      "squad": 1,
+      "at": [28500, 34000],
+      "reserve": false
+    },
+    {
+      "key": 39,
+      "type": "ancient.spearman",
+      "team": 1,
+      "squad": 1,
+      "at": [27000, 34000],
+      "reserve": false
+    },
+    {
+      "key": 40,
+      "type": "ancient.spearman",
+      "team": 1,
+      "squad": 1,
+      "at": [25500, 34000],
+      "reserve": false
+    },
+    {
+      "key": 41,
+      "type": "ancient.swordsman",
+      "team": 1,
+      "squad": 1,
+      "at": [24000, 34000],
+      "reserve": false
+    },
+    {
+      "key": 42,
+      "type": "ancient.swordsman",
+      "team": 1,
+      "squad": 1,
+      "at": [22500, 34000],
+      "reserve": false
+    },
+    {
+      "key": 43,
+      "type": "ancient.guard",
+      "team": 1,
+      "squad": 1,
+      "at": [30000, 36000],
+      "reserve": false
+    },
+    {
+      "key": 44,
+      "type": "ancient.guard",
+      "team": 1,
+      "squad": 1,
+      "at": [28500, 36000],
+      "reserve": false
+    },
+    {
+      "key": 45,
+      "type": "ancient.spearman",
+      "team": 1,
+      "squad": 1,
+      "at": [27000, 36000],
+      "reserve": false
+    },
+    {
+      "key": 46,
+      "type": "ancient.spearman",
+      "team": 1,
+      "squad": 1,
+      "at": [25500, 36000],
+      "reserve": false
+    },
+    {
+      "key": 47,
+      "type": "ancient.swordsman",
+      "team": 1,
+      "squad": 1,
+      "at": [24000, 36000],
+      "reserve": false
+    },
+    {
+      "key": 48,
+      "type": "ancient.swordsman",
+      "team": 1,
+      "squad": 1,
+      "at": [22500, 36000],
+      "reserve": false
+    },
+    {
+      "key": 49,
+      "type": "ancient.guard",
+      "team": 1,
+      "squad": 1,
+      "at": [30000, 38000],
+      "reserve": false
+    },
+    {
+      "key": 50,
+      "type": "ancient.guard",
+      "team": 1,
+      "squad": 1,
+      "at": [28500, 38000],
+      "reserve": false
+    },
+    {
+      "key": 51,
+      "type": "ancient.spearman",
+      "team": 1,
+      "squad": 1,
+      "at": [27000, 38000],
+      "reserve": false
+    },
+    {
+      "key": 52,
+      "type": "ancient.spearman",
+      "team": 1,
+      "squad": 1,
+      "at": [25500, 38000],
+      "reserve": false
+    },
+    {
+      "key": 53,
+      "type": "ancient.swordsman",
+      "team": 1,
+      "squad": 1,
+      "at": [24000, 38000],
+      "reserve": false
+    },
+    {
+      "key": 54,
+      "type": "ancient.swordsman",
+      "team": 1,
+      "squad": 1,
+      "at": [22500, 38000],
+      "reserve": false
+    },
+    {
+      "key": 55,
+      "type": "ancient.guard",
+      "team": 1,
+      "squad": 1,
+      "at": [30000, 40000],
+      "reserve": false
+    },
+    {
+      "key": 56,
+      "type": "ancient.guard",
+      "team": 1,
+      "squad": 1,
+      "at": [28500, 40000],
+      "reserve": false
+    },
+    {
+      "key": 57,
+      "type": "ancient.spearman",
+      "team": 1,
+      "squad": 1,
+      "at": [27000, 40000],
+      "reserve": false
+    },
+    {
+      "key": 58,
+      "type": "ancient.spearman",
+      "team": 1,
+      "squad": 1,
+      "at": [25500, 40000],
+      "reserve": false
+    },
+    {
+      "key": 59,
+      "type": "ancient.swordsman",
+      "team": 1,
+      "squad": 1,
+      "at": [24000, 40000],
+      "reserve": false
+    },
+    {
+      "key": 60,
+      "type": "ancient.swordsman",
+      "team": 1,
+      "squad": 1,
+      "at": [22500, 40000],
+      "reserve": false
+    },
+    {
+      "key": 61,
+      "type": "ancient.guard",
+      "team": 1,
+      "squad": 1,
+      "at": [30000, 22000],
+      "reserve": true
+    },
+    {
+      "key": 62,
+      "type": "ancient.guard",
+      "team": 1,
+      "squad": 1,
+      "at": [28500, 22000],
+      "reserve": true
+    },
+    {
+      "key": 63,
+      "type": "ancient.spearman",
+      "team": 1,
+      "squad": 1,
+      "at": [27000, 22000],
+      "reserve": true
+    },
+    {
+      "key": 64,
+      "type": "ancient.spearman",
+      "team": 1,
+      "squad": 1,
+      "at": [25500, 22000],
+      "reserve": true
+    },
+    {
+      "key": 65,
+      "type": "ancient.swordsman",
+      "team": 1,
+      "squad": 1,
+      "at": [24000, 22000],
+      "reserve": true
+    },
+    {
+      "key": 66,
+      "type": "ancient.swordsman",
+      "team": 1,
+      "squad": 1,
+      "at": [22500, 22000],
+      "reserve": true
+    },
+    {
+      "key": 67,
+      "type": "ancient.guard",
+      "team": 1,
+      "squad": 1,
+      "at": [30000, 24000],
+      "reserve": true
+    },
+    {
+      "key": 68,
+      "type": "ancient.guard",
+      "team": 1,
+      "squad": 1,
+      "at": [28500, 24000],
+      "reserve": true
+    },
+    {
+      "key": 69,
+      "type": "ancient.spearman",
+      "team": 1,
+      "squad": 1,
+      "at": [27000, 24000],
+      "reserve": true
+    },
+    {
+      "key": 70,
+      "type": "ancient.spearman",
+      "team": 1,
+      "squad": 1,
+      "at": [25500, 24000],
+      "reserve": true
+    },
+    {
+      "key": 71,
+      "type": "ancient.swordsman",
+      "team": 1,
+      "squad": 1,
+      "at": [24000, 24000],
+      "reserve": true
+    },
+    {
+      "key": 72,
+      "type": "ancient.swordsman",
+      "team": 1,
+      "squad": 1,
+      "at": [22500, 24000],
+      "reserve": true
+    },
+    {
+      "key": 73,
+      "type": "ancient.guard",
+      "team": 1,
+      "squad": 1,
+      "at": [30000, 26000],
+      "reserve": true
+    },
+    {
+      "key": 74,
+      "type": "ancient.guard",
+      "team": 1,
+      "squad": 1,
+      "at": [28500, 26000],
+      "reserve": true
+    },
+    {
+      "key": 75,
+      "type": "ancient.spearman",
+      "team": 1,
+      "squad": 1,
+      "at": [27000, 26000],
+      "reserve": true
+    },
+    {
+      "key": 76,
+      "type": "ancient.spearman",
+      "team": 1,
+      "squad": 1,
+      "at": [25500, 26000],
+      "reserve": true
+    },
+    {
+      "key": 77,
+      "type": "ancient.swordsman",
+      "team": 1,
+      "squad": 1,
+      "at": [24000, 26000],
+      "reserve": true
+    },
+    {
+      "key": 78,
+      "type": "ancient.swordsman",
+      "team": 1,
+      "squad": 1,
+      "at": [22500, 26000],
+      "reserve": true
+    },
+    {
+      "key": 79,
+      "type": "ancient.guard",
+      "team": 1,
+      "squad": 1,
+      "at": [30000, 28000],
+      "reserve": true
+    },
+    {
+      "key": 80,
+      "type": "ancient.guard",
+      "team": 1,
+      "squad": 1,
+      "at": [28500, 28000],
+      "reserve": true
+    },
+    {
+      "key": 81,
+      "type": "ancient.spearman",
+      "team": 1,
+      "squad": 1,
+      "at": [27000, 28000],
+      "reserve": true
+    },
+    {
+      "key": 82,
+      "type": "ancient.spearman",
+      "team": 1,
+      "squad": 1,
+      "at": [25500, 28000],
+      "reserve": true
+    },
+    {
+      "key": 83,
+      "type": "ancient.swordsman",
+      "team": 1,
+      "squad": 1,
+      "at": [24000, 28000],
+      "reserve": true
+    },
+    {
+      "key": 84,
+      "type": "ancient.swordsman",
+      "team": 1,
+      "squad": 1,
+      "at": [22500, 28000],
+      "reserve": true
+    },
+    {
+      "key": 85,
+      "type": "ancient.guard",
+      "team": 1,
+      "squad": 1,
+      "at": [30000, 30000],
+      "reserve": true
+    },
+    {
+      "key": 86,
+      "type": "ancient.guard",
+      "team": 1,
+      "squad": 1,
+      "at": [28500, 30000],
+      "reserve": true
+    },
+    {
+      "key": 87,
+      "type": "ancient.spearman",
+      "team": 1,
+      "squad": 1,
+      "at": [27000, 30000],
+      "reserve": true
+    },
+    {
+      "key": 88,
+      "type": "ancient.spearman",
+      "team": 1,
+      "squad": 1,
+      "at": [25500, 30000],
+      "reserve": true
+    },
+    {
+      "key": 89,
+      "type": "ancient.swordsman",
+      "team": 1,
+      "squad": 1,
+      "at": [24000, 30000],
+      "reserve": true
+    },
+    {
+      "key": 90,
+      "type": "ancient.swordsman",
+      "team": 1,
+      "squad": 1,
+      "at": [22500, 30000],
+      "reserve": true
+    },
+    {
+      "key": 91,
+      "type": "ancient.guard",
+      "team": 2,
+      "squad": 2,
+      "at": [66000, 22000],
+      "reserve": false
+    },
+    {
+      "key": 92,
+      "type": "ancient.guard",
+      "team": 2,
+      "squad": 2,
+      "at": [67500, 22000],
+      "reserve": false
+    },
+    {
+      "key": 93,
+      "type": "ancient.spearman",
+      "team": 2,
+      "squad": 2,
+      "at": [69000, 22000],
+      "reserve": false
+    },
+    {
+      "key": 94,
+      "type": "ancient.spearman",
+      "team": 2,
+      "squad": 2,
+      "at": [70500, 22000],
+      "reserve": false
+    },
+    {
+      "key": 95,
+      "type": "ancient.swordsman",
+      "team": 2,
+      "squad": 2,
+      "at": [72000, 22000],
+      "reserve": false
+    },
+    {
+      "key": 96,
+      "type": "ancient.swordsman",
+      "team": 2,
+      "squad": 2,
+      "at": [73500, 22000],
+      "reserve": false
+    },
+    {
+      "key": 97,
+      "type": "ancient.guard",
+      "team": 2,
+      "squad": 2,
+      "at": [66000, 24000],
+      "reserve": false
+    },
+    {
+      "key": 98,
+      "type": "ancient.guard",
+      "team": 2,
+      "squad": 2,
+      "at": [67500, 24000],
+      "reserve": false
+    },
+    {
+      "key": 99,
+      "type": "ancient.spearman",
+      "team": 2,
+      "squad": 2,
+      "at": [69000, 24000],
+      "reserve": false
+    },
+    {
+      "key": 100,
+      "type": "ancient.spearman",
+      "team": 2,
+      "squad": 2,
+      "at": [70500, 24000],
+      "reserve": false
+    },
+    {
+      "key": 101,
+      "type": "ancient.swordsman",
+      "team": 2,
+      "squad": 2,
+      "at": [72000, 24000],
+      "reserve": false
+    },
+    {
+      "key": 102,
+      "type": "ancient.swordsman",
+      "team": 2,
+      "squad": 2,
+      "at": [73500, 24000],
+      "reserve": false
+    },
+    {
+      "key": 103,
+      "type": "ancient.guard",
+      "team": 2,
+      "squad": 2,
+      "at": [66000, 26000],
+      "reserve": false
+    },
+    {
+      "key": 104,
+      "type": "ancient.guard",
+      "team": 2,
+      "squad": 2,
+      "at": [67500, 26000],
+      "reserve": false
+    },
+    {
+      "key": 105,
+      "type": "ancient.spearman",
+      "team": 2,
+      "squad": 2,
+      "at": [69000, 26000],
+      "reserve": false
+    },
+    {
+      "key": 106,
+      "type": "ancient.spearman",
+      "team": 2,
+      "squad": 2,
+      "at": [70500, 26000],
+      "reserve": false
+    },
+    {
+      "key": 107,
+      "type": "ancient.swordsman",
+      "team": 2,
+      "squad": 2,
+      "at": [72000, 26000],
+      "reserve": false
+    },
+    {
+      "key": 108,
+      "type": "ancient.swordsman",
+      "team": 2,
+      "squad": 2,
+      "at": [73500, 26000],
+      "reserve": false
+    },
+    {
+      "key": 109,
+      "type": "ancient.guard",
+      "team": 2,
+      "squad": 2,
+      "at": [66000, 28000],
+      "reserve": false
+    },
+    {
+      "key": 110,
+      "type": "ancient.guard",
+      "team": 2,
+      "squad": 2,
+      "at": [67500, 28000],
+      "reserve": false
+    },
+    {
+      "key": 111,
+      "type": "ancient.spearman",
+      "team": 2,
+      "squad": 2,
+      "at": [69000, 28000],
+      "reserve": false
+    },
+    {
+      "key": 112,
+      "type": "ancient.spearman",
+      "team": 2,
+      "squad": 2,
+      "at": [70500, 28000],
+      "reserve": false
+    },
+    {
+      "key": 113,
+      "type": "ancient.swordsman",
+      "team": 2,
+      "squad": 2,
+      "at": [72000, 28000],
+      "reserve": false
+    },
+    {
+      "key": 114,
+      "type": "ancient.swordsman",
+      "team": 2,
+      "squad": 2,
+      "at": [73500, 28000],
+      "reserve": false
+    },
+    {
+      "key": 115,
+      "type": "ancient.guard",
+      "team": 2,
+      "squad": 2,
+      "at": [66000, 30000],
+      "reserve": false
+    },
+    {
+      "key": 116,
+      "type": "ancient.guard",
+      "team": 2,
+      "squad": 2,
+      "at": [67500, 30000],
+      "reserve": false
+    },
+    {
+      "key": 117,
+      "type": "ancient.spearman",
+      "team": 2,
+      "squad": 2,
+      "at": [69000, 30000],
+      "reserve": false
+    },
+    {
+      "key": 118,
+      "type": "ancient.spearman",
+      "team": 2,
+      "squad": 2,
+      "at": [70500, 30000],
+      "reserve": false
+    },
+    {
+      "key": 119,
+      "type": "ancient.swordsman",
+      "team": 2,
+      "squad": 2,
+      "at": [72000, 30000],
+      "reserve": false
+    },
+    {
+      "key": 120,
+      "type": "ancient.swordsman",
+      "team": 2,
+      "squad": 2,
+      "at": [73500, 30000],
+      "reserve": false
+    },
+    {
+      "key": 121,
+      "type": "ancient.guard",
+      "team": 2,
+      "squad": 2,
+      "at": [66000, 32000],
+      "reserve": false
+    },
+    {
+      "key": 122,
+      "type": "ancient.guard",
+      "team": 2,
+      "squad": 2,
+      "at": [67500, 32000],
+      "reserve": false
+    },
+    {
+      "key": 123,
+      "type": "ancient.spearman",
+      "team": 2,
+      "squad": 2,
+      "at": [69000, 32000],
+      "reserve": false
+    },
+    {
+      "key": 124,
+      "type": "ancient.spearman",
+      "team": 2,
+      "squad": 2,
+      "at": [70500, 32000],
+      "reserve": false
+    },
+    {
+      "key": 125,
+      "type": "ancient.swordsman",
+      "team": 2,
+      "squad": 2,
+      "at": [72000, 32000],
+      "reserve": false
+    },
+    {
+      "key": 126,
+      "type": "ancient.swordsman",
+      "team": 2,
+      "squad": 2,
+      "at": [73500, 32000],
+      "reserve": false
+    },
+    {
+      "key": 127,
+      "type": "ancient.guard",
+      "team": 2,
+      "squad": 2,
+      "at": [66000, 34000],
+      "reserve": false
+    },
+    {
+      "key": 128,
+      "type": "ancient.guard",
+      "team": 2,
+      "squad": 2,
+      "at": [67500, 34000],
+      "reserve": false
+    },
+    {
+      "key": 129,
+      "type": "ancient.spearman",
+      "team": 2,
+      "squad": 2,
+      "at": [69000, 34000],
+      "reserve": false
+    },
+    {
+      "key": 130,
+      "type": "ancient.spearman",
+      "team": 2,
+      "squad": 2,
+      "at": [70500, 34000],
+      "reserve": false
+    },
+    {
+      "key": 131,
+      "type": "ancient.swordsman",
+      "team": 2,
+      "squad": 2,
+      "at": [72000, 34000],
+      "reserve": false
+    },
+    {
+      "key": 132,
+      "type": "ancient.swordsman",
+      "team": 2,
+      "squad": 2,
+      "at": [73500, 34000],
+      "reserve": false
+    },
+    {
+      "key": 133,
+      "type": "ancient.guard",
+      "team": 2,
+      "squad": 2,
+      "at": [66000, 36000],
+      "reserve": false
+    },
+    {
+      "key": 134,
+      "type": "ancient.guard",
+      "team": 2,
+      "squad": 2,
+      "at": [67500, 36000],
+      "reserve": false
+    },
+    {
+      "key": 135,
+      "type": "ancient.spearman",
+      "team": 2,
+      "squad": 2,
+      "at": [69000, 36000],
+      "reserve": false
+    },
+    {
+      "key": 136,
+      "type": "ancient.spearman",
+      "team": 2,
+      "squad": 2,
+      "at": [70500, 36000],
+      "reserve": false
+    },
+    {
+      "key": 137,
+      "type": "ancient.swordsman",
+      "team": 2,
+      "squad": 2,
+      "at": [72000, 36000],
+      "reserve": false
+    },
+    {
+      "key": 138,
+      "type": "ancient.swordsman",
+      "team": 2,
+      "squad": 2,
+      "at": [73500, 36000],
+      "reserve": false
+    },
+    {
+      "key": 139,
+      "type": "ancient.guard",
+      "team": 2,
+      "squad": 2,
+      "at": [66000, 38000],
+      "reserve": false
+    },
+    {
+      "key": 140,
+      "type": "ancient.guard",
+      "team": 2,
+      "squad": 2,
+      "at": [67500, 38000],
+      "reserve": false
+    },
+    {
+      "key": 141,
+      "type": "ancient.spearman",
+      "team": 2,
+      "squad": 2,
+      "at": [69000, 38000],
+      "reserve": false
+    },
+    {
+      "key": 142,
+      "type": "ancient.spearman",
+      "team": 2,
+      "squad": 2,
+      "at": [70500, 38000],
+      "reserve": false
+    },
+    {
+      "key": 143,
+      "type": "ancient.swordsman",
+      "team": 2,
+      "squad": 2,
+      "at": [72000, 38000],
+      "reserve": false
+    },
+    {
+      "key": 144,
+      "type": "ancient.swordsman",
+      "team": 2,
+      "squad": 2,
+      "at": [73500, 38000],
+      "reserve": false
+    },
+    {
+      "key": 145,
+      "type": "ancient.guard",
+      "team": 2,
+      "squad": 2,
+      "at": [66000, 40000],
+      "reserve": false
+    },
+    {
+      "key": 146,
+      "type": "ancient.guard",
+      "team": 2,
+      "squad": 2,
+      "at": [67500, 40000],
+      "reserve": false
+    },
+    {
+      "key": 147,
+      "type": "ancient.spearman",
+      "team": 2,
+      "squad": 2,
+      "at": [69000, 40000],
+      "reserve": false
+    },
+    {
+      "key": 148,
+      "type": "ancient.spearman",
+      "team": 2,
+      "squad": 2,
+      "at": [70500, 40000],
+      "reserve": false
+    },
+    {
+      "key": 149,
+      "type": "ancient.swordsman",
+      "team": 2,
+      "squad": 2,
+      "at": [72000, 40000],
+      "reserve": false
+    },
+    {
+      "key": 150,
+      "type": "ancient.swordsman",
+      "team": 2,
+      "squad": 2,
+      "at": [73500, 40000],
+      "reserve": false
+    },
+    {
+      "key": 151,
+      "type": "ancient.guard",
+      "team": 2,
+      "squad": 2,
+      "at": [66000, 22000],
+      "reserve": true
+    },
+    {
+      "key": 152,
+      "type": "ancient.guard",
+      "team": 2,
+      "squad": 2,
+      "at": [67500, 22000],
+      "reserve": true
+    },
+    {
+      "key": 153,
+      "type": "ancient.spearman",
+      "team": 2,
+      "squad": 2,
+      "at": [69000, 22000],
+      "reserve": true
+    },
+    {
+      "key": 154,
+      "type": "ancient.spearman",
+      "team": 2,
+      "squad": 2,
+      "at": [70500, 22000],
+      "reserve": true
+    },
+    {
+      "key": 155,
+      "type": "ancient.swordsman",
+      "team": 2,
+      "squad": 2,
+      "at": [72000, 22000],
+      "reserve": true
+    },
+    {
+      "key": 156,
+      "type": "ancient.swordsman",
+      "team": 2,
+      "squad": 2,
+      "at": [73500, 22000],
+      "reserve": true
+    },
+    {
+      "key": 157,
+      "type": "ancient.guard",
+      "team": 2,
+      "squad": 2,
+      "at": [66000, 24000],
+      "reserve": true
+    },
+    {
+      "key": 158,
+      "type": "ancient.guard",
+      "team": 2,
+      "squad": 2,
+      "at": [67500, 24000],
+      "reserve": true
+    },
+    {
+      "key": 159,
+      "type": "ancient.spearman",
+      "team": 2,
+      "squad": 2,
+      "at": [69000, 24000],
+      "reserve": true
+    },
+    {
+      "key": 160,
+      "type": "ancient.spearman",
+      "team": 2,
+      "squad": 2,
+      "at": [70500, 24000],
+      "reserve": true
+    },
+    {
+      "key": 161,
+      "type": "ancient.swordsman",
+      "team": 2,
+      "squad": 2,
+      "at": [72000, 24000],
+      "reserve": true
+    },
+    {
+      "key": 162,
+      "type": "ancient.swordsman",
+      "team": 2,
+      "squad": 2,
+      "at": [73500, 24000],
+      "reserve": true
+    },
+    {
+      "key": 163,
+      "type": "ancient.guard",
+      "team": 2,
+      "squad": 2,
+      "at": [66000, 26000],
+      "reserve": true
+    },
+    {
+      "key": 164,
+      "type": "ancient.guard",
+      "team": 2,
+      "squad": 2,
+      "at": [67500, 26000],
+      "reserve": true
+    },
+    {
+      "key": 165,
+      "type": "ancient.spearman",
+      "team": 2,
+      "squad": 2,
+      "at": [69000, 26000],
+      "reserve": true
+    },
+    {
+      "key": 166,
+      "type": "ancient.spearman",
+      "team": 2,
+      "squad": 2,
+      "at": [70500, 26000],
+      "reserve": true
+    },
+    {
+      "key": 167,
+      "type": "ancient.swordsman",
+      "team": 2,
+      "squad": 2,
+      "at": [72000, 26000],
+      "reserve": true
+    },
+    {
+      "key": 168,
+      "type": "ancient.swordsman",
+      "team": 2,
+      "squad": 2,
+      "at": [73500, 26000],
+      "reserve": true
+    },
+    {
+      "key": 169,
+      "type": "ancient.guard",
+      "team": 2,
+      "squad": 2,
+      "at": [66000, 28000],
+      "reserve": true
+    },
+    {
+      "key": 170,
+      "type": "ancient.guard",
+      "team": 2,
+      "squad": 2,
+      "at": [67500, 28000],
+      "reserve": true
+    },
+    {
+      "key": 171,
+      "type": "ancient.spearman",
+      "team": 2,
+      "squad": 2,
+      "at": [69000, 28000],
+      "reserve": true
+    },
+    {
+      "key": 172,
+      "type": "ancient.spearman",
+      "team": 2,
+      "squad": 2,
+      "at": [70500, 28000],
+      "reserve": true
+    },
+    {
+      "key": 173,
+      "type": "ancient.swordsman",
+      "team": 2,
+      "squad": 2,
+      "at": [72000, 28000],
+      "reserve": true
+    },
+    {
+      "key": 174,
+      "type": "ancient.swordsman",
+      "team": 2,
+      "squad": 2,
+      "at": [73500, 28000],
+      "reserve": true
+    },
+    {
+      "key": 175,
+      "type": "ancient.guard",
+      "team": 2,
+      "squad": 2,
+      "at": [66000, 30000],
+      "reserve": true
+    },
+    {
+      "key": 176,
+      "type": "ancient.guard",
+      "team": 2,
+      "squad": 2,
+      "at": [67500, 30000],
+      "reserve": true
+    },
+    {
+      "key": 177,
+      "type": "ancient.spearman",
+      "team": 2,
+      "squad": 2,
+      "at": [69000, 30000],
+      "reserve": true
+    },
+    {
+      "key": 178,
+      "type": "ancient.spearman",
+      "team": 2,
+      "squad": 2,
+      "at": [70500, 30000],
+      "reserve": true
+    },
+    {
+      "key": 179,
+      "type": "ancient.swordsman",
+      "team": 2,
+      "squad": 2,
+      "at": [72000, 30000],
+      "reserve": true
+    },
+    {
+      "key": 180,
+      "type": "ancient.swordsman",
+      "team": 2,
+      "squad": 2,
+      "at": [73500, 30000],
+      "reserve": true
+    }
+  ],
+  "run": {
+    "seed": 41,
+    "crowdPass": "teamIdle"
+  },
+  "owners": ["hand"],
+  "stamps": [],
+  "removed": [],
+  "next": {
+    "wall": 1,
+    "point": 4,
+    "base": 3,
+    "unit": 181
+  }
+}

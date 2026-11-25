@@ -105,6 +105,9 @@ namespace WarCore.Tests
         {
             yield return ("PlateDemoMap", PlateDemoMap.Desc());
             yield return ("PlateAssaultMap", PlateAssaultMap.Desc());
+            // RC1-K4: the house of the showcase is a map file of its own, free to change without the fixture above.
+            string house = System.Linq.Enumerable.Single(Showcase.Stages, s => s.Id == "house").Map;
+            yield return (house, MapDescJson.Read(System.IO.File.ReadAllBytes(Showcase.ProjectFile(house))));
         }
 
         // W1: a map cell, a height point step and the unit of the fixed-point scale are the same metre.
@@ -211,7 +214,8 @@ namespace WarCore.Tests
             Assert.That(withBody, Is.GreaterThan(0), "some shipped layer carries a body");
         }
 
-        // W7: the least storey that stacks is the headroom plus the thinnest plate, and both demo maps are at least that tall.
+        // W7: the least storey that stacks is the headroom plus the thinnest plate, and the demo maps and the showcase's
+        // house are at least that tall.
         [Test]
         public void W07_DemoStoreysAreAtLeastTheLeastStackableHeight()
         {
@@ -233,8 +237,8 @@ namespace WarCore.Tests
             }
         }
 
-        // W8: the stair of each demo map is no steeper than its content layer allows (no slope rule means the height field's
-        // own limit) and no steeper than the gate's plate slope.
+        // W8: the stair of each demo map and of the showcase's house is no steeper than its content layer allows (no slope
+        // rule means the height field's own limit) and no steeper than the gate's plate slope.
         [Test]
         public void W08_DemoStairsAreWithinTheAllowedSlopes()
         {

@@ -1,4 +1,4 @@
 {
   "id": "rwr-house",
-  "extends": [ "rwr-m6", "parts/soldier", "parts/respawn" ]
+  "extends": [ "rwr-m6", "parts/unit-speed", "parts/soldier", "parts/respawn" ]
 }

@@ -526,14 +526,13 @@ namespace WarCore.Tests
             Assert.That(ShowcaseHud.Score(12, 3), Is.EqualTo("SHOTS 12  KILLS 3\n"));
         }
 
+        // RC1-K4: the melee field is a map file: 96 x 64 m of open ground in the ancient cartridge's one surface.
         [Test]
-        public void TheFieldNeedsASurfaceAndAPack()
+        public void TheMeleeFieldIsOpenGroundOfTheAncientCartridge()
         {
-            Assert.That(() => WarCore.Content.ShowcaseField.MapBytes(null), Throws.ArgumentException);
-            Assert.That(() => WarCore.Content.ShowcaseField.MapBytes(""), Throws.ArgumentException);
-            Assert.That(() => WarCore.Content.ShowcaseField.BuildMatch(null), Throws.ArgumentNullException);
-            ViewMap field = ViewMap.Parse(WarCore.Content.ShowcaseField.MapBytes("ancient.ground"));
+            ViewMap field = ViewMap.Parse(Stage("melee").MapBytes());
             Assert.That(new[] { field.Width, field.Depth, field.Walls.Length }, Is.EqualTo(new[] { 96, 64, 0 }));
+            Assert.That(field.SurfaceCount, Is.EqualTo(1));
             Assert.That(field.SurfaceName(0), Is.EqualTo("ancient.ground"));
         }
 

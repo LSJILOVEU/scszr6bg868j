@@ -7,7 +7,8 @@ using WarCore.Content.MapTools;
 
 namespace WarCore.Presentation
 {
-    // One playable setup of the showcase: a map, a recipe with a player, and the lines the HUD shows about it.
+    // One playable setup of the showcase: a map file, the one content layer it is played under, a scripted player for the
+    // pictures and the lines the HUD shows about it.
     public sealed class ShowcaseStage
     {
         private readonly Func<byte[]> map;
@@ -28,13 +29,29 @@ namespace WarCore.Presentation
         // The one content layer the stage runs on: the pack its world reads, the cartridge its colours come from and, with a
         // "pick" section (AIM-2), the mouse's reach.
         public string Layer { get; }
+        // The map file the stage is played on, from the root of the project: the ground, the soldiers and the reserves, the
+        // points, the bases, the seed and the crowd pass. It is read as it is committed. It may name another layer than the
+        // stage's (two stages play the three-lane map); the stage plays it under its own.
+        public string Map { get; }
 
-        internal ShowcaseStage(string id, string title, float zoom, string layer, string[] shows, Func<byte[]> map, Func<WorldRecipe> recipe,
+        // A stage of the showcase (RC1-K4): its world is its map file under its layer and nothing else. No stage has
+        // recipe code of its own.
+        internal ShowcaseStage(string id, string title, float zoom, string layer, string map, string[] shows,
             Func<(long AtTick, PlayerInput Input)[]> script, Func<BridgeCommand[]> commands = null, string grenadeBlast = null, int orderSquad = 0)
         {
-            Id = id; Title = title; Zoom = zoom; Layer = layer; Shows = Array.AsReadOnly(shows); this.map = map; this.recipe = recipe; this.script = script;
+            Id = id; Title = title; Zoom = zoom; Layer = layer; Map = map; Shows = Array.AsReadOnly(shows); this.script = script;
             this.commands = commands ?? (() => Array.Empty<BridgeCommand>());
             GrenadeBlast = grenadeBlast; OrderSquad = orderSquad;
+            this.map = () => Bake().WcMapBytes;
+            recipe = () => World(Bake());
+        }
+
+        // Not a stage of the showcase: a world an old demo builds by hand, for the showcase's scene to draw (the scale
+        // lineup). It has no map file. It goes when the old demos go.
+        internal ShowcaseStage(string id, string title, float zoom, string layer, string[] shows, Func<byte[]> map, Func<WorldRecipe> recipe,
+            Func<(long AtTick, PlayerInput Input)[]> script) : this(id, title, zoom, layer, (string)null, shows, script)
+        {
+            this.map = map; this.recipe = recipe;
         }
 
         // The colours of the cartridge that holds the stage's layer (its palette.json, or the built-in ones), for this map.
@@ -57,6 +74,19 @@ namespace WarCore.Presentation
         public WorldRecipe Recipe() => recipe();
         // A new session at tick 0. Every call builds the same world.
         public SimSession Start() => SimSession.Create(recipe(), map());
+
+        // The stage's map file, baked for the stage's layer.
+        private MapBakeResult Bake() => MapBake.Run(File.ReadAllBytes(Showcase.ProjectFile(Map)), Layer);
+
+        // The one way a stage becomes a world: the map file's own recipe (MapRecipe) with the unit types of the layer
+        // (weapon, melee, speed, dash, block), and the player in team 1's first deployed unit. Everything that is switched
+        // on comes from the layer the world reads: match rules with respawn, AI rules, facing, the block AI.
+        private static WorldRecipe World(MapBakeResult baked)
+        {
+            WorldRecipe recipe = MapRecipe.From(baked, ContentCatalog.Find().Load(baked.PackId), useUnitTypes: true);
+            return recipe.WithPlayer(Showcase.FirstDeployed(recipe.Units));
+        }
+
         // The scripted player for pictures taken without a person at the keys. A new array each call.
         public (long AtTick, PlayerInput Input)[] Script() => script();
         // SHOW-2: the scripted orders (grenades, stance orders) queued with the script for pictures taken without a person. A
@@ -93,24 +123,25 @@ namespace WarCore.Presentation
         }
     }
 
-    // SHOW-1: every finished feature switched on at once, in a few stages a person can play (SHOW-2 added the sixth, Showcase.Hamlet.cs). Nothing here is a rule of the
-    // game: each stage only combines a map, one content layer and recipe switches that already exist. PLACEHOLDER values
-    // throughout (they come from the stages' content layers).
+    // SHOW-1: every finished feature switched on at once, in a few stages a person can play (SHOW-2 added the sixth,
+    // Showcase.Hamlet.cs). Nothing here is a rule of the game, and nothing here builds a world (RC1-K4): a stage names a map
+    // file and one content layer. PLACEHOLDER values throughout (they come from the map files and the content layers).
     public static partial class Showcase
     {
         public const string BattleLayer = "rwr-showcase", BulletsLayer = "rwr-showcase-bullets";
         public const string HouseLayer = "rwr-showcase-house", TerrainLayer = "rwr-showcase-terrain", AncientLayer = "ancient-field";
         // AIM-2: the house stage fights with the body and the mouse reach; the legacy house (LegacyHouse) has neither.
         internal const string LegacyHouseLayer = "rwr-house";
-        private const string HousePack = "\"pack\": \"rwr-m6\"";
+        // The three-lane map (it names rwr-m6; the open battle and the bullets stage play it under their own layers) and the
+        // maps of the house, the hills and the melee field, which name their stage's layer.
         private const string LanesMap = "Assets/WarCore/Maps/lanes-playtest.map.json";
-        private const string LanesPack = "\"pack\": \"rwr-m6\"";
-        // The speed the map-file route gives a soldier whose unit type names none (MapRecipe).
-        private const long SoldierSpeedMmPerSec = 6000;
+        private const string HouseMap = "Assets/WarCore/Maps/showcase-house.map.json";
+        private const string TerrainMap = "Assets/WarCore/Maps/showcase-terrain.map.json";
+        private const string FieldMap = "Assets/WarCore/Maps/showcase-field.map.json";
 
         public static IReadOnlyList<ShowcaseStage> Stages { get; } = Array.AsReadOnly(new[]
         {
-            new ShowcaseStage("battle", "Open battle", 22f, BattleLayer, new[]
+            new ShowcaseStage("battle", "Open battle", 22f, BattleLayer, LanesMap, new[]
             {
                 "Three-lane map, 7 capture points, 100 + 50 reserves a side",
                 "AI: squads, spread attack, bounding, pressure (pinned / broken), cover, bursts, memory",
@@ -119,28 +150,28 @@ namespace WarCore.Presentation
                 "Player: rifle, dash, block, respawn into a reserve",
                 "Rifles hit on the tick they fire (tracer lines)",
                 "A tap is accurate, a held trigger spreads; pinned and broken soldiers shoot wider (you too)",
-            }, () => Lanes(BattleLayer).WcMapBytes, () => Battle(BattleLayer), BattleScript),
-            new ShowcaseStage("bullets", "Flying bullets", 22f, BulletsLayer, new[]
+            }, BattleScript),
+            new ShowcaseStage("bullets", "Flying bullets", 22f, BulletsLayer, LanesMap, new[]
             {
                 "The open battle with rifles that fire projectiles (150 m/s)",
                 "A bullet flies tick by tick and stops on the first body, wall or ground",
                 "Attackers split into a front group, flankers and a rear group (stage 1 scatters them round the point)",
                 "Known gap: the pressure system does not react to projectiles, so nobody gets pinned here",
-            }, () => Lanes(BulletsLayer).WcMapBytes, () => Battle(BulletsLayer), BattleScript),
+            }, BattleScript),
             HouseStage(HouseLayer),
-            new ShowcaseStage("terrain", "Hills and mud", 16f, TerrainLayer, new[]
+            new ShowcaseStage("terrain", "Hills and mud", 16f, TerrainLayer, TerrainMap, new[]
             {
                 "Height-field terrain: ridge, cliff band, plateau; road is fast, mud is slow",
                 "Uphill is slower the steeper it is (down to half speed); a steep way down is a little slower too",
                 "10 a side on the field and 30 in reserve; AI with memory, search and bursts",
-            }, TerrainDemo.MapBytes, TerrainRecipe, () => TerrainPlayerDemo.Script()),
-            new ShowcaseStage("melee", "Ancient melee", 16f, AncientLayer, new[]
+            }, () => TerrainPlayerDemo.Script()),
+            new ShowcaseStage("melee", "Ancient melee", 16f, AncientLayer, FieldMap, new[]
             {
                 "Second cartridge: swords, spears and shields, 60 a side and 30 in reserve, no guns",
                 "Player: a guard (sword and shield); AI raises its shield against swings",
                 "Nerve: blows and deaths nearby pin or break a soldier; pinned he holds, broken he falls back",
-            }, () => ShowcaseField.MapBytes("ancient.ground"), AncientRecipe, AncientScript),
-            new ShowcaseStage("hamlet", "Swiss valley hamlet", 18f, HamletLayer, new[]
+            }, AncientScript),
+            new ShowcaseStage("hamlet", "Swiss valley hamlet", 18f, HamletLayer, HamletMap, new[]
             {
                 "Real terrain: a 160 m crop of the Emmental valley with a hamlet; 62 walls, 5 points, 40 + 20 reserves a side",
                 "AI: squads, spread attack, bounding, pressure (pinned / broken), bursts, memory, search, suppression",
@@ -150,7 +181,7 @@ namespace WarCore.Presentation
                 "G throws a real grenade: it bursts after a short fuse and hurts everyone inside the ring it draws, walls shield",
                 "Y orders your team's soldiers to stand, crouch or go prone (lower is slower, steadier and harder to see)",
                 "Known gap: the AI's cover rule refuses a height-field map, so nobody seeks cover here",
-            }, () => Hamlet().WcMapBytes, HamletRecipe, HamletScript, HamletCommands, HamletBlast, HamletOrderSquad),
+            }, HamletScript, HamletCommands, HamletBlast, HamletOrderSquad),
         });
 
         // Not in the code base yet. The HUD lists these so nobody mistakes a gap for a bug.
@@ -167,14 +198,14 @@ namespace WarCore.Presentation
         });
 
         // The first deployed unit of team 1 in key order: the unit the player starts in.
-        private static ulong FirstDeployed(ReadOnlySpan<UnitSpawn> units)
+        internal static ulong FirstDeployed(ReadOnlySpan<UnitSpawn> units)
         {
             foreach (UnitSpawn unit in units)
                 if (unit.Team == 1 && !unit.Reserve) return unit.Key;
             throw new InvalidOperationException("The showcase needs a deployed team 1 unit.");
         }
 
-        private static string ProjectFile(string relative)
+        internal static string ProjectFile(string relative)
         {
             var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
             for (; dir != null; dir = dir.Parent)
@@ -183,24 +214,6 @@ namespace WarCore.Presentation
                 if (File.Exists(candidate)) return candidate;
             }
             throw new FileNotFoundException("Showcase file " + relative + " not found (searched upwards from " + Directory.GetCurrentDirectory() + ").");
-        }
-
-        // The three-lane map with its pack line swapped in memory (the file is not touched).
-        private static MapBakeResult Lanes(string layer)
-        {
-            string text = File.ReadAllText(ProjectFile(LanesMap));
-            if (text.IndexOf(LanesPack, StringComparison.Ordinal) < 0)
-                throw new InvalidOperationException("The three-lane map no longer says " + LanesPack + ".");
-            return MapBake.Run(System.Text.Encoding.UTF8.GetBytes(text.Replace(LanesPack, "\"pack\": \"" + layer + "\"")));
-        }
-
-        // The three-lane battle under one layer: its unit types (weapon, speed, dash, block), match rules (respawn included),
-        // AI rules and facing. Only team 1's unit type carries a block, and its spec gives the AI no chance to raise it, so
-        // only the player raises one.
-        private static WorldRecipe Battle(string layer)
-        {
-            WorldRecipe recipe = MapRecipe.From(Lanes(layer), ContentCatalog.Find().Load(layer), useUnitTypes: true);
-            return recipe.WithPlayer(FirstDeployed(recipe.Units));
         }
 
         // Forward along the middle lane, fire a burst, dash, hold a block, fire again.
@@ -219,60 +232,12 @@ namespace WarCore.Presentation
         // pick on a stage without a body.
         internal static ShowcaseStage LegacyHouse { get; } = HouseStage(LegacyHouseLayer);
 
-        internal static ShowcaseStage HouseStage(string layer) => new ShowcaseStage("house", "House assault", 12f, layer, new[]
+        internal static ShowcaseStage HouseStage(string layer) => new ShowcaseStage("house", "House assault", 12f, layer, HouseMap, new[]
             {
                 "Two-storey house with a stair; the point upstairs is reached by the stair only; 8 a side and 12 in reserve",
                 "AI climbs, searches, suppresses and chases by floor",
                 "Walls between the camera and the player fade; covered team mates show as silhouettes",
-            }, () => House(layer).WcMapBytes, () => HouseRecipe(layer), HouseScript);
-
-        // The demo house with its pack line swapped in memory (PlateAssaultMap is not touched).
-        internal static MapBakeResult House(string layer)
-        {
-            string text = System.Text.Encoding.UTF8.GetString(PlateAssaultMap.DescBytes());
-            if (text.IndexOf(HousePack, StringComparison.Ordinal) < 0)
-                throw new InvalidOperationException("The house map no longer says " + HousePack + ".");
-            return MapBake.Run(System.Text.Encoding.UTF8.GetBytes(text.Replace(HousePack, "\"pack\": \"" + layer + "\"")));
-        }
-
-        // The assault demo house under one layer (weapons, match rules with respawn and the soldier's AI rules) with
-        // HouseReserves more soldiers a side waiting in reserve and team 1's first soldier as the player. The description's
-        // own units keep their keys; the reserves take the keys after them and wait where their team's first soldier starts.
-        private const int HouseReserves = 12;
-
-        private static WorldRecipe HouseRecipe(string layer)
-        {
-            MapBakeResult baked = House(layer);
-            ContentPack pack = ContentCatalog.Find().Load(baked.PackId);
-            MapSetup setup = baked.Setup;
-            var units = new List<UnitSpawn>();
-            ulong last = 0;
-            long[] homeX = new long[2], homeZ = new long[2];
-            bool[] home = new bool[2];
-            foreach (MapSoldier s in setup.Soldiers)
-            {
-                if ((s.Team == 1 || s.Team == 2) && !s.Reserve && !home[s.Team - 1])
-                {
-                    home[s.Team - 1] = true;
-                    homeX[s.Team - 1] = s.XMm;
-                    homeZ[s.Team - 1] = s.ZMm;
-                }
-                units.Add(new UnitSpawn(s.Key, 0, s.Squad, s.XMm, s.ZMm, SoldierSpeedMmPerSec, s.Team, pack.WeaponOfUnitType(s.Type), s.Reserve,
-                    pack.MeleeOfUnitType(s.Type), layer: s.Layer));
-                if (s.Key > last) last = s.Key;
-            }
-            SpawnAnchor[] bases = setup.Bases;
-            for (int i = 0; i < 2 * HouseReserves; i++)
-            {
-                int team = i % 2 + 1;
-                units.Add(new UnitSpawn(++last, 0, team, homeX[team - 1], homeZ[team - 1], SoldierSpeedMmPerSec, team,
-                    pack.WeaponOfUnitType(team == 1 ? WarCore.Content.Rwr.RwrPack.SoldierTeam1 : WarCore.Content.Rwr.RwrPack.SoldierTeam2), true));
-            }
-            WorldRecipe recipe = new WorldRecipe(setup.Seed, MoverKind.InterimCrowd, units.ToArray(), Array.Empty<BridgeCommand>())
-                .WithCombat(pack.BuildCombat()).WithMatch(pack.BuildMatch(setup.ControlPoints, bases)).WithPlatesPreview()
-                .WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(pack);
-            return recipe.WithPlayer(FirstDeployed(recipe.Units));
-        }
+            }, HouseScript);
 
         // East to the west doorway, in, and fire along the ground floor.
         private static (long AtTick, PlayerInput Input)[] HouseScript() => new[]
@@ -283,53 +248,6 @@ namespace WarCore.Presentation
             (300L, new PlayerInput(0, -1000, 24000, 9000)),
             (330L, new PlayerInput(0, 0, 24000, 7000, primary: true)),
         };
-
-        // The demo terrain match (the layout of DemoRecipes.TerrainMatch: ten a side round the team anchor on the road) with
-        // TerrainReserves more a side in reserve, all under one layer (the M6 weapons and match rules with respawn, the terrain
-        // rules, the soldier's AI rules and the slope speeds) and the player in team 1's first unit.
-        private const int TerrainReserves = 30;
-
-        private static WorldRecipe TerrainRecipe()
-        {
-            ContentPack content = ContentCatalog.Find().Load(TerrainLayer);
-            int perTeam = 10 + TerrainReserves;
-            var units = new UnitSpawn[2 * perTeam];
-            for (int i = 0; i < units.Length; i++)
-            {
-                int team = i < perTeam ? 1 : 2, rank = i % perTeam;
-                var offset = WorldBuilder.FormationOffsetMm(rank % 10, 10);
-                units[i] = new UnitSpawn((ulong)i + 1, 0, team, (team == 1 ? 3500 : 44500) + offset.X, 16500 + offset.Z, SoldierSpeedMmPerSec, team,
-                    content.WeaponOfUnitType(team == 1 ? WarCore.Content.Rwr.RwrPack.SoldierTeam1 : WarCore.Content.Rwr.RwrPack.SoldierTeam2), rank >= 10);
-            }
-            WorldRecipe recipe = new WorldRecipe(41, MoverKind.InterimCrowd, units, Array.Empty<BridgeCommand>())
-                .WithCombat(content.BuildCombat()).WithMatch(TerrainDemoMap.BuildMatch(content))
-                .WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(content);
-            return recipe.WithPlayer(FirstDeployed(recipe.Units));
-        }
-
-        // 60 against 60 in six ranks (guards in front, then spears, then swords) with AncientReserves more a side in reserve
-        // on the showcase field (three points down the middle). The layer gives the facing, and the shield's chance in it the
-        // block AI. The player is team 1's first guard; the cartridge has no respawn, so a dead player's control passes to a
-        // living team mate.
-        private const int AncientReserves = 30;
-
-        private static WorldRecipe AncientRecipe()
-        {
-            ContentPack pack = ContentCatalog.Find().Load(AncientLayer);
-            string[] rank = { "ancient.guard", "ancient.guard", "ancient.spearman", "ancient.spearman", "ancient.swordsman", "ancient.swordsman" };
-            int perTeam = 60 + AncientReserves;
-            var units = new UnitSpawn[2 * perTeam];
-            for (int i = 0; i < perTeam; i++)
-            {
-                int column = i % 6, row = i / 6 % 10;
-                bool reserve = i >= 60;
-                units[i] = UnitSpawn.OfType((ulong)i + 1, pack, rank[column], 1, 1, 30000 - 1500 * column, 22000 + 2000 * row, reserve);
-                units[i + perTeam] = UnitSpawn.OfType((ulong)(i + perTeam) + 1, pack, rank[column], 2, 2, 66000 + 1500 * column, 22000 + 2000 * row, reserve);
-            }
-            return new WorldRecipe(41, MoverKind.InterimCrowd, units, Array.Empty<BridgeCommand>()).WithCombat(pack.BuildCombat())
-                .WithMatch(ShowcaseField.BuildMatch(pack)).WithCrowdPass(CrowdPassKind.TeamIdle).WithPack(pack)
-                .WithPlayer(1);
-        }
 
         // Walk at the enemy line, swing, hold the shield, swing again.
         private static (long AtTick, PlayerInput Input)[] AncientScript() => new[]

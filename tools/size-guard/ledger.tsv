@@ -6,7 +6,7 @@
 # A new literal is read from the content pack or from the one named source; it is not added here as debt.
 # Debt notes name the family in the audit: H1 body radius, H2 headroom, H3 speed, H4 grenade, M1 eye, M2 play distances,
 # L3 fixed-point scale.
-debt-max	487
+debt-max	482
 Battle/Ai/AssaultRolesPlacement.cs	SimFix.Scale/1000	1	debt	
 Battle/Ai/CommanderQuota.cs	CoordinateLimitMetres=8192	1	debt	
 Battle/Ai/Cover.cs	SimFix.Ratio(3,2)	1	debt	
@@ -39,9 +39,6 @@ Content/MapTools/MapPrefabs.cs	2*SimFix.Scale	1	canon	default window top
 Content/MapTools/MapPrefabs.cs	DefaultSillRaw=58982	1	canon	default window sill
 Content/MapTools/MapPrefabs.cs	SimFix.Scale/2	1	debt	
 Content/Rwr/RwrMatch.cs	SimFix.FromInt(6)	2	debt	
-Content/ShowcaseField.cs	Depth=64	1	debt	
-Content/ShowcaseField.cs	SimFix.FromInt(4)	2	debt	
-Content/ShowcaseField.cs	Width=96	1	debt	
 Content/TerrainCheckerMap.cs	SimFix.FromRaw(-16384)	1	debt	
 Content/TerrainDemoMap.cs	Depth=32	1	debt	
 Content/TerrainDemoMap.cs	SimFix.FromInt(3)	3	debt	
@@ -148,7 +145,6 @@ Presentation/Bridge/Showcase.cs	12f	1	debt
 Presentation/Bridge/Showcase.cs	16f	2	debt	
 Presentation/Bridge/Showcase.cs	18f	1	debt	
 Presentation/Bridge/Showcase.cs	22f	2	debt	
-Presentation/Bridge/Showcase.cs	SoldierSpeedMmPerSec=6000	1	debt	H3 speed in code
 Presentation/Bridge/ShowcaseActions.cs	CooldownTicks=90	1	debt	H4 grenade value in code (NADE-1)
 Presentation/Bridge/ShowcaseActions.cs	FuseTicks=33	1	debt	H4 grenade value in code (NADE-1)
 Presentation/Bridge/ShowcaseActions.cs	ReachMm=28000	1	debt	H4 grenade value in code (NADE-1)

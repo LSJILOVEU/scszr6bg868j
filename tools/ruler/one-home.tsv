@@ -24,7 +24,7 @@ C	team-count	Battle/MatchMode.cs	1	debt
 C	team-count	Battle/MatchSystem.cs	1	debt
 C	team-count	Battle/SimpleAiSystem.cs	1	debt
 C	team-count	Presentation/Bridge/DemoRecipes.cs	5	debt
-C	team-count	Presentation/Bridge/Showcase.cs	5	debt
+C	team-count	Presentation/Bridge/Showcase.cs	1	debt
 C	team-count	Presentation/Bridge/SimSession.cs	3	debt
 C	team-count	Presentation/Maps/MapPalette.cs	1	debt
 C	team-count	Unity/P0Host.cs	1	debt
@@ -43,7 +43,6 @@ C	refill	Battle/RespawnSystem.cs	1	debt
 Q	start-match	How a content pack and a map become a match	Presentation/Bridge/MapRecipe.cs	\bnew\s+WorldRecipe\s*\(	Describe the stage as data and let the one route build it; do not assemble a recipe by hand.
 C	start-match	Presentation/Bridge/WorldRecipe.cs	1	other	the recipe copying itself
 C	start-match	Presentation/Bridge/DemoRecipes.cs	10	debt
-C	start-match	Presentation/Bridge/Showcase.cs	3	debt
 C	start-match	Presentation/Bridge/Features/A3aDemo.cs	1	debt
 C	start-match	Presentation/Bridge/Features/BlastDemo.cs	1	debt
 C	start-match	Presentation/Bridge/Features/DownDemo.cs	1	debt
