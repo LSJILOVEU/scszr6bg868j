@@ -281,9 +281,9 @@ filter = FullyQualifiedName~Show1Tests
 expect = WarCore.Tests.Show1Tests.TheSquadLineCountsTheLivingMembersAndNamesTheLeader
 note = a dead unit still gets a squad line
 original:
-| || !me.Alive) return "";
+| !frame.TryGet(key.Value, out ViewEntity me) || !me.Alive) return "";
 replacement:
-| ) return "";
+| !frame.TryGet(key.Value, out ViewEntity me)) return "";
 
 [show1-squad-leader]
 file = Assets/WarCore/Presentation/Camera/ShowcaseHud.cs

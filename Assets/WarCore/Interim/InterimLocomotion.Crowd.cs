@@ -242,7 +242,8 @@ namespace WarCore.Interim
                     // (and nothing between them) can be closer than the sum of the radii, including any Y separation.
                     if (jx - r >= highX || jx + r <= lowX || jz - r >= highZ || jz + r <= lowZ) continue;
                 }
-                if (pass != null && !provisional[j].Active && pass.MayPass(provisional[i].Unit, provisional[j].Unit)) continue;
+                if (pass != null && (provisional[j].Active ? pass.MayPassMoving(provisional[i].Unit, provisional[j].Unit)
+                    : pass.MayPass(provisional[i].Unit, provisional[j].Unit))) continue;
                 // Plate worlds: bodies whose vertical ranges do not overlap pass each other (one above, one below).
                 if (layered && !BodiesOverlap(next.Y.Raw + provisional[i].Lift, provisional[i].Half,
                     provisional[j].Point.Y.Raw + provisional[j].Lift, provisional[j].Half)) continue;

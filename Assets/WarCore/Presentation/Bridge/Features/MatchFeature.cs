@@ -93,6 +93,16 @@ namespace WarCore.Presentation
                 squads = new Squads(combat, adapter, a.Controlled, ai.Squads.Value);
                 sim.RegisterGameplay("battle.ai-squads", squads, SimSystemPhase.Requests);
             }
+            // RC2-1: only with both led fields written and a player: the squad the controlled unit leads. Its members count as
+            // commanded, so the squads above and the scheduler below leave them alone.
+            LedSquad led = null;
+            if (ai?.Led != null && a.Controlled != null)
+            {
+                led = new LedSquad(combat, adapter, a.Controlled, ai.Led.Value, SimFix.Ratio(ai.SlotSpacingMm, 1000).Raw, layers);
+                adapter.Led = led;
+                if (a.CrowdPass is TeamIdleCrowdPass pass) pass.Led = led;
+                sim.RegisterGameplay("battle.led-squad", led, SimSystemPhase.Requests);
+            }
             int meleeChaseRange = ai != null ? ai.MeleeChaseRange : 0;
             bool fair = ai != null && ai.FairDecisions;
             // TRV-7a: the entry table is built from the same cost tables once the walls are in the spatial index (WorldBuilder).
@@ -101,7 +111,7 @@ namespace WarCore.Presentation
                 a.Reach, ai != null && ai.MeleeNerve, ai != null ? ai.MeleeNerveFightMm : 0), SimSystemPhase.Requests);
             sim.RegisterGameplay("battle.capture", capture, SimSystemPhase.Queries);
             sim.RegisterGameplay("battle.match", match, SimSystemPhase.Queries);
-            a.Capture = capture; a.Reinforce = reinforce; a.Match = match; a.Pressure = pressure; a.Squads = squads;
+            a.Capture = capture; a.Reinforce = reinforce; a.Match = match; a.Pressure = pressure; a.Squads = squads; a.Led = led;
         }
     }
 
@@ -126,6 +136,8 @@ namespace WarCore.Presentation
         private readonly SimFix radius;
         private readonly SimFix unitHeight;
         public ulong PolicyKey { get; }
+        // RC2-1: set right after the led squad is made (it needs this adapter first); null in a battle without one.
+        internal LedSquad Led { get; set; }
         internal BattleAdapter(Simulation sim, InterimLocomotion locomotion, WorldRecipe recipe, DeployGround ground, long groundRaw, ComponentType<SquadStanding>? standing = null,
             ComponentType<VerticalState>? verticals = null, PlateWorld plates = null)
         {
@@ -169,7 +181,16 @@ namespace WarCore.Presentation
         }
         public bool HasFailed(StableId unit) => locomotion.HasFailed(Resolve(unit));
         public bool TryRouteCost(SimVec3 from, SimVec3 to, long limitCost, out long cost) => locomotion.TryRouteCost(from, to, limitCost, out cost);
-        public bool IsCommanded(StableId unit) => standing.HasValue && sim.Entities.TryGet(standing.Value, Resolve(unit), out _);
+        public bool IsCommanded(StableId unit) =>
+            Led != null && Led.IsMember(unit) || standing.HasValue && sim.Entities.TryGet(standing.Value, Resolve(unit), out _);
+        public bool TryStandAt(SimVec3 at, int layer, out SimVec3 grounded)
+        {
+            grounded = at;
+            if (layer == 0) return ground.TryGround(at, out grounded) && ground.CanStand(grounded);
+            if (plates == null || !locomotion.CanStandOn(layer, at) || !plates.TryFloor(layer, at.X, at.Z, true, out SimFix y)) return false;
+            grounded = new SimVec3(at.X, y, at.Z);
+            return true;
+        }
         public bool TryDeploy(EntityId unit, SimVec3 at)
         {
             StableId stable = sim.Entities.StableOf(unit); unit = Resolve(stable);

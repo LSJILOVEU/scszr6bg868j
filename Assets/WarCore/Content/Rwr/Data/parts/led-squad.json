@@ -1,0 +1,4 @@
+{
+  "id": "parts/led-squad",
+  "ai": { "ledSize": 8, "ledRecruitRadiusMm": 30000 }
+}

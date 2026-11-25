@@ -9,7 +9,8 @@ namespace WarCore.Unity
     // SHOW-1: the playable showcase. One stage at a time (Showcase.Stages), built at run time by ShowcaseScene in any scene:
     // the host makes a camera and a light when the scene has none. Keys and mouse drive the controlled soldier; Tab goes to
     // the next stage, Backspace restarts it, P pauses, G throws a grenade (real where the stage has one, else the drawn-only
-    // preview), Y orders the team's stance where the stage takes orders (SHOW-2). The HUD lists what is on in
+    // preview), Y orders the team's stance where the stage takes orders (SHOW-2), T, C and X order the squad the player
+    // leads where the stage's layer has one (RC2-1: follow me or hold here, go where the mouse aims, dismiss). The HUD lists what is on in
     // the stage and what is not built yet, and shows a small map with every soldier, the player's squad and the points.
     // With a shot directory (the capture menu item) it plays every stage's script instead and writes pictures at ShotTicks.
     public sealed class ShowcaseHost : MonoBehaviour
@@ -34,6 +35,7 @@ namespace WarCore.Unity
         private string dir = "", problem = "", selfCheck = "", status = "", shows = "";
         private float stubUntil = -1f;
         private Vector3? aimPoint;
+        private AimTarget? aimed; // RC2-1: the last frame's whole pick (the squad's "go there" needs its millimetres and its layer)
         private PickReach reach; // AIM-2: the stage's mouse reach (null: the old 0.5 m pick), read once when the stage starts
         private GUIStyle box, banner, button;
         private RenderTexture target;
@@ -99,6 +101,7 @@ namespace WarCore.Unity
             problem = selfCheck = status = shows = "";
             paused = false;
             aimPoint = null;
+            aimed = null;
             reach = null;
             mapper = new PlayerInputMapper(PlayerKeys.Default);
             liveInput = new LivePlayerInput();
@@ -150,6 +153,12 @@ namespace WarCore.Unity
                 if (Input.GetKeyDown(KeyCode.G)) Throw();
                 if (Input.GetKeyDown(KeyCode.Y) && scene != null && actions != null && !paused && problem == "") actions.NextStance(scene.Session);
                 if (scene != null && Input.GetKeyDown(KeyCode.V)) scene.SquadLines = !scene.SquadLines;
+                if (scene != null && actions != null && !paused && problem == "")
+                {
+                    if (Input.GetKeyDown(KeyCode.T)) actions.FollowOrHold(scene.Session);
+                    if (Input.GetKeyDown(KeyCode.C) && aimed.HasValue) actions.GoTo(scene.Session, aimed.Value.XMm, aimed.Value.ZMm, aimed.Value.Layer);
+                    if (Input.GetKeyDown(KeyCode.X)) actions.Dismiss(scene.Session);
+                }
             }
             if (scene == null)
                 return;
@@ -172,6 +181,7 @@ namespace WarCore.Unity
                 catch (ArgumentOutOfRangeException) { aim = null; } // a pick outside the world bounds
             }
             aimPoint = aim.HasValue ? new Vector3(aim.Value.X, aim.Value.Y, aim.Value.Z) : (Vector3?)null;
+            aimed = aim;
             float ix = focused ? (GetKey(KeyCode.D) ? 1 : 0) - (GetKey(KeyCode.A) ? 1 : 0) : 0;
             float iy = focused ? (GetKey(KeyCode.W) ? 1 : 0) - (GetKey(KeyCode.S) ? 1 : 0) : 0;
             bool fire = focused && !onBar && Input.GetMouseButton(0), click = focused && !onBar && Input.GetMouseButtonDown(0);
@@ -251,7 +261,7 @@ namespace WarCore.Unity
             ulong? key = session.ControlledKey;
             UnitStatus? mine = key.HasValue && session.TryUnitStatus(key.Value, out UnitStatus found) ? found : (UnitStatus?)null;
             status = ShowcaseHud.Status(scene.Stage, index, Showcase.Stages.Count, session.Current, key, mine, scene.LostPlayer,
-                scene.PlayerAlive, scene.InFlight) + (actions == null ? "" : actions.Line(session.Tick)) + ShowcaseHud.Squad(session.Current, key)
+                scene.PlayerAlive, scene.InFlight) + (actions == null ? "" : actions.Line(session.Tick)) + ShowcaseHud.Squad(session)
                 + ShowcaseHud.Score(scene.Shots.PlayerShots, scene.Shots.PlayerKills);
         }
 

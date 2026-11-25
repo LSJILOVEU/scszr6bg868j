@@ -32,8 +32,10 @@ expect = WarCore.Tests.Show2Tests.ThePlayerFallsInTheScriptAndCannotThrowWhileDo
 note = a fallen player still throws
 original:
 | || !me.Alive) return false;
+|             long fromX
 replacement:
 | ) return false;
+|             long fromX
 
 [show2-reach-cut]
 file = Assets/WarCore/Presentation/Bridge/ShowcaseActions.cs
@@ -82,8 +84,10 @@ expect = WarCore.Tests.Show2Tests.AThrowTheSessionRefusesQueuesNothingAndKeepsTh
 note = a refused point still counts as a throw
 original:
 | catch (ArgumentException) { return false; }
+|             readyAt
 replacement:
 | catch (ArgumentException) { }
+|             readyAt
 
 [show2-cooldown-set]
 file = Assets/WarCore/Presentation/Bridge/ShowcaseActions.cs

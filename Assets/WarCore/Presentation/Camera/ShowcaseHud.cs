@@ -14,6 +14,7 @@ namespace WarCore.Presentation
             "BLOCK     Space or right mouse button\n" +
             "GRENADE   G (real in stage 6; preview only elsewhere: it bursts but hurts nobody)\n" +
             "ORDER     Y your team: stand, crouch, prone (stage 6)\n" +
+            "SQUAD     T follow me or hold here, C go where you aim, X dismiss\n" +
             "CAMERA    Q E turn, R F tilt, wheel zoom\n" +
             "STAGE     Tab next, Backspace restart, P pause\n" +
             "SHOW      V squad lines, M missing list, H this help\n" +
@@ -73,15 +74,32 @@ namespace WarCore.Presentation
                 : FormattableString.Invariant($"SQUAD  {alive} soldiers, leader #{me.Band}\n");
         }
 
+        // The squad line of the status text. In a world whose pack has the led squad's rules (RC2-1) it tells the squad the
+        // player leads, what it is doing and the keys that order it; in any other world it is the line above.
+        public static string Squad(SimSession session)
+        {
+            if (session == null) throw new ArgumentNullException(nameof(session));
+            ulong? key = session.ControlledKey;
+            if (!session.LedOrders) return Squad(session.Current, key);
+            if (!key.HasValue || !session.Current.TryGet(key.Value, out ViewEntity me) || !me.Alive) return "";
+            if (session.LedOrder == 0) return "SQUAD  none (T: follow me, C: go where you aim)\n";
+            return FormattableString.Invariant($"SQUAD  {session.LedCount} ")
+                + (session.LedOrder == 1 ? "follow you (T: hold here" : "hold their place (T: follow me") + ", C: go where you aim, X: dismiss)\n";
+        }
+
         // The controlled unit's own shots and kills; kills are counted for shots that land on the tick they are fired only.
         public static string Score(int shots, int kills) => FormattableString.Invariant($"SHOTS {shots}  KILLS {kills}\n");
 
-        // "What is on" for the stage, one line each.
+        // "What is on" for the stage, one line each: the stage's own lines, then what its layer switches on by itself (RC2-1:
+        // the squad the player leads, with the size its layer gives).
         public static string Shows(ShowcaseStage stage)
         {
             if (stage == null) throw new ArgumentNullException(nameof(stage));
             var text = new StringBuilder("ON IN THIS STAGE\n");
             foreach (string line in stage.Shows) text.Append("- ").Append(line).Append('\n');
+            int led = stage.LedSize();
+            if (led > 0)
+                text.Append(FormattableString.Invariant($"- T: up to {led} soldiers near you follow you as a squad (T again: they hold); C sends them where you aim; X dismisses them\n"));
             return text.ToString();
         }
 

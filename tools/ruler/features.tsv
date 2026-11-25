@@ -26,6 +26,7 @@ reaction	brain	ai.reactionTicks	A delay before the first shot at a new target
 bursts	brain	ai.burstShots	Fire in bursts
 fair-decisions	brain	ai.fairDecisions	The order of decisions does not favour the units that spawned first
 block-ai	brain	block[].aiRaisePermille	Computer units raise their shields
+led-squad	brain	ai.ledSize	The player leads a squad: follow, hold, go there, dismiss
 standing-orders	brain	ai.standingOrders	A squad holds or follows on command	off
 projectiles	fight	weapons[].projectileSpeed	Bullets that fly tick by tick
 grenade	fight	combat.blasts	Blasts: grenades

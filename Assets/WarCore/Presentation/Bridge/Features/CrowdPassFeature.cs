@@ -42,6 +42,12 @@ namespace WarCore.Presentation
         private readonly bool hasMelee;
         private readonly IControlTarget controlled;
 
+        // RC2-1: in a battle with a led squad (the match feature hands it over once it is made) the squad's leader passes the
+        // members of its squad as the mover, whether they stand, walk or fight; nobody passes the controlled unit. Everything
+        // else is the rule above, bit for bit, so a battle in which no squad is ever called moves as under the plain rule.
+        internal const ulong LeaderDigest = 0x5445414D49444C32UL;
+        internal WarCore.Battle.LedSquad Led { get; set; }
+
         internal TeamIdleCrowdPass(Simulation sim, CombatSystem combat, CombatPack pack, IControlTarget controlled)
         {
             this.sim = sim; entities = combat.Entities; this.controlled = controlled;
@@ -50,16 +56,21 @@ namespace WarCore.Presentation
             if (hasMelee) melee = entities.Resolve<MeleeState>();
         }
 
-        public ulong Digest => RuleDigest;
+        public ulong Digest => Led != null ? LeaderDigest : RuleDigest;
 
         public bool MayPass(EntityId mover, EntityId idle)
         {
-            if (controlled != null && (mover.Equals(controlled.Current) || idle.Equals(controlled.Current))) return false;
+            if (controlled != null && (mover.Equals(controlled.Current) || idle.Equals(controlled.Current))) return LeaderPasses(mover, idle);
             if (!entities.TryGet(combatants, mover, out Combatant a) || !entities.TryGet(combatants, idle, out Combatant b)) return false;
             if (a.Team < 1 || a.Team != b.Team) return false;
             long tick = sim.Clock.Tick;
             return !Busy(mover, a, tick) && !Busy(idle, b, tick);
         }
+
+        public bool MayPassMoving(EntityId mover, EntityId other) => LeaderPasses(mover, other);
+
+        private bool LeaderPasses(EntityId mover, EntityId other) =>
+            Led != null && entities.StableOf(mover).Value == Led.Leader && Led.IsMember(entities.StableOf(other));
 
         private bool Busy(EntityId unit, Combatant state, long tick)
         {
