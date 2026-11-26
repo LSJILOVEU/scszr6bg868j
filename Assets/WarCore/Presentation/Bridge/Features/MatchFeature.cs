@@ -107,8 +107,8 @@ namespace WarCore.Presentation
             bool fair = ai != null && ai.FairDecisions;
             // TRV-7a: the entry table is built from the same cost tables once the walls are in the spatial index (WorldBuilder).
             a.Reach = PointReach.Of(a, recipe.Match);
-            // RC2-3 (draft): only with the eight commander fields written (dispatch "commander"): who goes to which point,
-            // decided after the capture and read by the AI on the next tick.
+            // RC2-3: only with dispatch "commander" (its five fields written): who goes to which point, decided after the
+            // capture and read by the AI on the next tick.
             Commander commander = null;
             if (ai?.Commander != null)
             {

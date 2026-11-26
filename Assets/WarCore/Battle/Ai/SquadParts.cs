@@ -17,7 +17,8 @@ namespace WarCore.Battle
     // and every unit that sees nobody), and the inner part is always asked for the unit itself, not as its leader.
     //
     // The inner parts must keep nothing per unit (the rule for every part, AiParts.Mix): all members of a squad ask with
-    // the same id, so a part with a memory could only remember by the leader's key.
+    // the same id, so a part with a memory could only remember by the leader's key. The "commander" dispatch keeps no
+    // memory either: it reads the commander's rows, where every unit of a squad has the squad's point.
     public sealed partial class Squads
     {
         private const ulong TightSalt = 0x2ad7d2bb4c1a9e37UL, OffsetSalt = 0xe07c265404be4294UL, SloppySalt = 0x76f988da831153b5UL;

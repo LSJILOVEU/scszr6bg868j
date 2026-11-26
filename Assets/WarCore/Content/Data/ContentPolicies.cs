@@ -15,7 +15,7 @@ namespace WarCore.Content
         public const string SelectorIds = NearestVisible + ", " + SightLimitedNearest;
         // AI parts (ai section): dispatch picks the point a unit goes for, placement where at it the unit wants to stand.
         public const string NearestDispatch = "nearest", NearestSlot = "nearest-slot", Scatter = "scatter", AssaultRoles = "assault-roles";
-        // RC2-3 (draft): "commander" asks the battle's commander system (Commander) for the unit's order.
+        // "commander" asks the battle's commander system (Commander) for the unit's order.
         public const string CommanderDispatch = "commander";
         public const string DispatchIds = NearestDispatch + ", " + CommanderDispatch;
         public const string PlacementIds = NearestSlot + ", " + Scatter + ", " + AssaultRoles;
@@ -81,6 +81,8 @@ namespace WarCore.Content
             if (ai.Engage == BoundEngage) throw Refused(ai, "engage");
             if (ai.Placement == Scatter || ai.Placement == AssaultRoles) throw Refused(ai, "placement");
             if (ai.Squads != null) throw Refused(ai, "squadMinSize");
+            // The commander counts the enemies near a point on the plane (R2).
+            if (ai.Dispatch == CommanderDispatch) throw Refused(ai, "dispatch");
         }
 
         // Rules built in code have no place in a pack to point at.

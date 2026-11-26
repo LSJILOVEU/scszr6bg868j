@@ -15,10 +15,16 @@ namespace WarCore.Battle
         public readonly int DistanceWeightPerMetre;
         public readonly int Stickiness;
 
+        // Upper bounds: at most this many targets; every weight at most MaxWeight (with the coordinate limit below, a score
+        // stays far inside a long).
+        public const int MaxTargets = 8, MaxWeight = 1000000;
+
         public CommanderQuotaRules(int maxAttackTargets, int enemyWeight, int distanceWeightPerMetre, int stickiness)
         {
             if (maxAttackTargets < 1) throw new ArgumentOutOfRangeException(nameof(maxAttackTargets));
             if (enemyWeight < 0 || distanceWeightPerMetre < 0 || stickiness < 0) throw new ArgumentOutOfRangeException(nameof(enemyWeight));
+            if (maxAttackTargets > MaxTargets) throw new ArgumentOutOfRangeException(nameof(maxAttackTargets));
+            if (enemyWeight > MaxWeight || distanceWeightPerMetre > MaxWeight || stickiness > MaxWeight) throw new ArgumentOutOfRangeException(nameof(enemyWeight));
             MaxAttackTargets = maxAttackTargets;
             EnemyWeight = enemyWeight;
             DistanceWeightPerMetre = distanceWeightPerMetre;
@@ -95,7 +101,7 @@ namespace WarCore.Battle
             {
                 desiredOut[i] = 0;
                 attackOut[i] = false;
-                if (owners[i] != team && Touches(i, team, true, count, owners, adjacent)) touching++;
+                if (owners[i] != team && Touches(i, team, count, owners, adjacent)) touching++;
             }
 
             // Candidates: the non-own points that border an own one, and the non-own points a group of this team is on its
@@ -130,14 +136,14 @@ namespace WarCore.Battle
         }
 
         private static bool Candidate(int i, int team, bool fallback, int count, int[] owners, bool[] adjacent, bool[] underWay) =>
-            owners[i] != team && (fallback || Touches(i, team, true, count, owners, adjacent) || underWay[i]);
+            owners[i] != team && (fallback || Touches(i, team, count, owners, adjacent) || underWay[i]);
 
-        // ownNeighbour: does i have a neighbour owned by team; otherwise: does i have a neighbour not owned by team.
-        private static bool Touches(int i, int team, bool ownNeighbour, int count, int[] owners, bool[] adjacent)
+        // Does i have a neighbour owned by team.
+        private static bool Touches(int i, int team, int count, int[] owners, bool[] adjacent)
         {
             int row = i * count;
             for (int j = 0; j < count; j++)
-                if (j != i && adjacent[row + j] && (owners[j] == team) == ownNeighbour) return true;
+                if (j != i && adjacent[row + j] && owners[j] == team) return true;
             return false;
         }
 
@@ -148,7 +154,7 @@ namespace WarCore.Battle
             return (long)enemies * rules.EnemyWeight + metres * rules.DistanceWeightPerMetre - (previous ? rules.Stickiness : 0);
         }
 
-        private static void CheckBounds(SimVec3 at)
+        internal static void CheckBounds(SimVec3 at)
         {
             if (at.X.Raw > CoordinateLimitRaw || at.X.Raw < -CoordinateLimitRaw || at.Z.Raw > CoordinateLimitRaw || at.Z.Raw < -CoordinateLimitRaw)
                 throw new ArgumentOutOfRangeException(nameof(at));

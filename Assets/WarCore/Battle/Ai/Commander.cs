@@ -5,21 +5,23 @@ using WarCore.Sim;
 
 namespace WarCore.Battle
 {
-    // RC2-3 (draft): the commander's numbers, the four of CommanderQuotaRules and the threat radius (a pack writes all five
-    // or none).
+    // The commander's numbers: the four of CommanderQuotaRules and the threat radius (a pack writes all five or none).
     public readonly struct CommanderRules
     {
         public readonly CommanderQuotaRules Quota;
         // Enemies counted near a point: standing units of other teams within this horizontal distance of its centre.
         public readonly int ThreatRadiusMm;
+        // The threat radius is at most the map side limit (HeightField.MaxSide metres; a cell is one metre).
+        public const int MaxThreatRadiusMm = HeightField.MaxSide * 1000;
         public CommanderRules(CommanderQuotaRules quota, int threatRadiusMm)
         {
             if (threatRadiusMm < 1) throw new ArgumentOutOfRangeException(nameof(threatRadiusMm));
+            if (threatRadiusMm > MaxThreatRadiusMm) throw new ArgumentOutOfRangeException(nameof(threatRadiusMm));
             Quota = quota; ThreatRadiusMm = threatRadiusMm;
         }
     }
 
-    /// <summary>RC2-3 (draft): a commander per team that remembers which point it sent each unit to. It dispatches groups: an
+    /// <summary>A commander per team that remembers which point it sent each unit to. It dispatches groups: an
     /// AI squad (key: the leader's key; place: the leader's; size: the leader and its living members) or a unit in no squad
     /// (its own key); after the decision every unit of a group remembers the group's point (one row per unit). Every tick, in
     /// the queries phase after the capture (order 41), for every team: count the enemies near every point, ask
@@ -95,12 +97,14 @@ namespace WarCore.Battle
             teams = pack.TeamCount; points = pack.Points.Length;
             centers = new SimVec3[points];
             for (int i = 0; i < points; i++) centers[i] = pack.Points[i].Center;
-            adjacent = new bool[Math.Max(1, points * points)];
+            adjacent = new bool[points * points];
             CommanderQuota.Adjacency(centers, points, adjacent);
-            int flags = Math.Max(1, teams * points);
+            // A team's anchor may be its spawn anchor (R3): checked against the same coordinate limit before the match starts.
+            foreach (SpawnAnchor anchor in pack.Bases) CommanderQuota.CheckBounds(anchor.Point);
+            int flags = teams * points;
             attack = new bool[flags]; attackNext = new bool[flags]; attackSpare = new bool[flags];
-            enemies = new int[flags]; desired = new int[flags]; near = new int[flags]; owners = new int[Math.Max(1, points)];
-            int p = Math.Max(1, points);
+            enemies = new int[flags]; desired = new int[flags]; near = new int[flags]; owners = new int[points];
+            int p = points;
             planEnemies = new int[p]; planDesired = new int[p];
             deficit = new int[p]; groupsAt = new int[p];
             planPrevious = new bool[p]; planAttack = new bool[p]; blocked = new bool[p]; underWay = new bool[p];
@@ -121,7 +125,7 @@ namespace WarCore.Battle
 
         public int Order => 41;
         public string StateTypeId => "battle.ai-commander";
-        // Draft: version 1 is the layout in SaveState (five numbers, attack flags, a row per unit).
+        // Version 1 is the layout in SaveState (five numbers, attack flags, a row per unit).
         public int StateVersion => 1;
         public CommanderRules Rules => rules;
         // The "commander" dispatch part: the point the unit remembers (a member asks with its leader's key), -1 without one.
@@ -152,6 +156,9 @@ namespace WarCore.Battle
 
         public void Step(SimContext c)
         {
+            // The commander reads only TryBase and TrySpan, neither of which needs Begin; it is called to keep AiField's
+            // contract (once per tick before the first read).
+            field.Begin(c.Clock.Tick);
             Gather(0);
             Decide(nextKeys, nextPoints, out nextCount, attackNext);
             if (checking) Check(c.Clock.Tick);
@@ -165,7 +172,6 @@ namespace WarCore.Battle
         // standing units of every team near every point. shuffle != 0 (self check only) visits the units in another order first.
         private void Gather(ulong shuffle)
         {
-            EntityStore store = combat.Entities;
             Array.Clear(near, 0, near.Length);
             for (int i = 0; i < points; i++) owners[i] = capture.Points[i].Owner;
             found = 0;
@@ -173,7 +179,7 @@ namespace WarCore.Battle
             {
                 // R2: a standing unit counts at the one point whose centre is nearest (ties to the lower index), and only
                 // when that centre is within the threat radius.
-                if (presence.Stands(entity, out int standing, out SimVec3 where) && points > 0)
+                if (presence.Stands(entity, out int standing, out SimVec3 where))
                 {
                     int nearest = 0; SimWide best = CombatSystem.Horizontal(where - centers[0]).LengthSquared;
                     for (int i = 1; i < points; i++)
@@ -183,13 +189,9 @@ namespace WarCore.Battle
                     }
                     if (best <= threatSquared) near[(standing - 1) * points + nearest]++;
                 }
-                // R0, the same test as Squads.Gather (draft: a copy, not one shared source yet).
-                if (controlled != null && entity.Equals(controlled.Current)) continue;
-                if (!store.TryGet(combatants, entity, out Combatant unit) || unit.Team < 1
-                    || !store.TryGet(positions, entity, out Position position) || combat.IsDead(entity)) continue;
-                StableId id = store.StableOf(entity);
-                if (moves.IsCommanded(id)) continue;
-                ulong group = id.Value; SimVec3 groupHere = position.Value;
+                // R0: the units the computer steers (AiUnits.Steered), less the squads that regroup.
+                if (!AiUnits.Steered(combat, combatants, positions, moves, controlled, entity, out StableId id, out int team, out SimVec3 here)) continue;
+                ulong group = id.Value; SimVec3 groupHere = here;
                 if (squads != null)
                 {
                     // A squad on its way back (Squads.RegroupOf Active, and its members still follow a living leader) is not
@@ -198,7 +200,7 @@ namespace WarCore.Battle
                     if (squads.TryLeader(id, out StableId leader, out SimVec3 leaderHere)) { group = leader.Value; groupHere = leaderHere; body = true; }
                     if (body && squads.RegroupOf(id) == SquadRally.Active) continue;
                 }
-                foundKeys[found] = id.Value; foundGroups[found] = group; foundTeams[found] = unit.Team;
+                foundKeys[found] = id.Value; foundGroups[found] = group; foundTeams[found] = team;
                 foundGroupAt[found] = groupHere; foundLayers[found] = layers != null ? layers.LayerOf(entity) : 0; found++;
             }
             for (int t = 1; t <= teams; t++)
@@ -225,7 +227,9 @@ namespace WarCore.Battle
                 unitKeys[i] = foundKeys[k]; unitGroups[i] = foundGroups[k]; unitTeams[i] = foundTeams[k];
                 unitGroupAt[i] = foundGroupAt[k]; unitLayers[i] = foundLayers[k];
             }
-            // Groups in group-key order. Team, place and layer are read from the unit with the smallest key in the group.
+            // Groups in group-key order. Team, place and layer are read from the unit with the smallest key in the group. The
+            // layer is that unit's own while the place is its leader's; the two could differ only on a map with floor plates,
+            // and squads and the commander are both refused there (ContentPolicies).
             for (int i = 0; i < units; i++) { sortKeys[i] = unitGroups[i]; sortIndex[i] = i; }
             Array.Sort(sortKeys, sortIndex, 0, units);
             groups = 0;
@@ -282,19 +286,16 @@ namespace WarCore.Battle
         {
             int row = (team - 1) * points;
             // R3: soldiers, anchor.
-            int soldiers = 0, first = -1;
+            int soldiers = 0;
             for (int g = 0; g < groups; g++)
-            {
-                if (groupTeams[g] != team) continue;
-                soldiers += groupCounts[g];
-                if (first < 0) first = g;
-            }
+                if (groupTeams[g] == team) soldiers += groupCounts[g];
             SimVec3 anchor = default;
             if (!field.TryBase(team, out anchor))
             {
                 int own = -1;
                 for (int i = 0; i < points && own < 0; i++) if (owners[i] == team) own = i;
-                anchor = own >= 0 ? centers[own] : first >= 0 ? groupAt[first] : default;
+                // A match has at least one point (MatchPack).
+                anchor = own >= 0 ? centers[own] : centers[0];
             }
             for (int i = 0; i < points; i++) { planEnemies[i] = enemies[row + i]; planPrevious[i] = attack[row + i]; underWay[i] = false; }
             // The points this team's groups are on their way to (their old orders, before R4): Plan keeps them candidates.

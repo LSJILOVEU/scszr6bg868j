@@ -79,7 +79,7 @@ namespace WarCore.Content
         // RC2-1 (ledSize and ledRecruitRadiusMm, both or none): the controlled unit may lead a squad of that many soldiers,
         // who join from within that distance; null leaves the led squad out of the battle.
         public WarCore.Battle.LedRules? Led { get; internal set; }
-        // RC2-3 (draft, dispatch "commander"): the commander's five numbers, written all or none; null with any other dispatch.
+        // RC2-3 (dispatch "commander"): the commander's five numbers, all required; null with any other dispatch.
         public WarCore.Battle.CommanderRules? Commander { get; internal set; }
         // Builds the load error for a written field (pack, layer, entry, field); null when the section is not written.
         internal System.Func<string, string, ContentException> FieldError { get; set; }
@@ -169,8 +169,6 @@ namespace WarCore.Content
             ("commanderStickiness", PartKind.Dispatch, ContentPolicies.CommanderDispatch),
             ("commanderThreatRadiusMm", PartKind.Dispatch, ContentPolicies.CommanderDispatch),
         };
-        // RC2-3 (draft): the commander's fields, all required when dispatch "commander" is chosen. PLACEHOLDER bounds.
-        internal const int MaxCommanderTargets = 8, MaxCommanderWeight = 1000000;
         // assault-roles parameters in AssaultRolesPlacement's constructor order, with their ranges (PLACEHOLDER bounds).
         // The squad fields: written all seven or none. PLACEHOLDER bounds.
         internal static readonly string[] SquadFields =
@@ -275,13 +273,14 @@ namespace WarCore.Content
                     string kind = partKind == PartKind.Dispatch ? "dispatch" : partKind == PartKind.Placement ? "placement" : "engage";
                     throw r.Bad(r.FieldOf(field), "belongs to " + kind + " '" + part + "', but " + kind + " is '" + Selected(partKind, dispatch, placement, engage) + "'");
                 }
-                // Required when the commander is selected, all five, like scatterMm below.
+                // Required when the commander is selected, all five, like scatterMm below; the bounds are the rules' own.
                 if (dispatch == ContentPolicies.CommanderDispatch)
                 {
-                    var quota = new WarCore.Battle.CommanderQuotaRules(r.Int("commanderMaxAttackTargets", 1, MaxCommanderTargets),
-                        r.Int("commanderEnemyWeight", 0, MaxCommanderWeight), r.Int("commanderDistanceWeightPerMetre", 0, MaxCommanderWeight),
-                        r.Int("commanderStickiness", 0, MaxCommanderWeight));
-                    commander = new WarCore.Battle.CommanderRules(quota, r.Int("commanderThreatRadiusMm", 1, WcMapValidation.MaxSideMm));
+                    const int maxWeight = WarCore.Battle.CommanderQuotaRules.MaxWeight;
+                    var quota = new WarCore.Battle.CommanderQuotaRules(r.Int("commanderMaxAttackTargets", 1, WarCore.Battle.CommanderQuotaRules.MaxTargets),
+                        r.Int("commanderEnemyWeight", 0, maxWeight), r.Int("commanderDistanceWeightPerMetre", 0, maxWeight),
+                        r.Int("commanderStickiness", 0, maxWeight));
+                    commander = new WarCore.Battle.CommanderRules(quota, r.Int("commanderThreatRadiusMm", 1, WarCore.Battle.CommanderRules.MaxThreatRadiusMm));
                 }
                 // Required when scatter is selected: a missing field throws "is missing field 'scatterMm'".
                 if (placement == ContentPolicies.Scatter) scatter = r.Int("scatterMm", 1, MaxScatterMm);

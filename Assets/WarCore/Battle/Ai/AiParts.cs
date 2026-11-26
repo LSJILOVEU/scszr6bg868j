@@ -181,8 +181,9 @@ namespace WarCore.Battle
             CoverRadiusRaw = coverRadiusRaw; CoverStepRaw = coverStepRaw; CoverDepthRaw = coverDepthRaw;
         }
 
-        // The only source of variation a part may use: Mix(unit key ^ a constant of the part). Stateless, so the same
-        // unit decides the same way on every tick and after a restore.
+        // The only source of variation a part may use: Mix(unit key ^ a constant of the part). A part keeps nothing itself,
+        // so the same unit decides the same way on every tick and after a restore; the "commander" dispatch reads the
+        // commander's orders, which are saved and hashed with the world.
         public static ulong Mix(ulong x)
         {
             unchecked
