@@ -79,6 +79,8 @@ namespace WarCore.Content
         // RC2-1 (ledSize and ledRecruitRadiusMm, both or none): the controlled unit may lead a squad of that many soldiers,
         // who join from within that distance; null leaves the led squad out of the battle.
         public WarCore.Battle.LedRules? Led { get; internal set; }
+        // RC2-3 (draft, dispatch "commander"): the commander's five numbers, written all or none; null with any other dispatch.
+        public WarCore.Battle.CommanderRules? Commander { get; internal set; }
         // Builds the load error for a written field (pack, layer, entry, field); null when the section is not written.
         internal System.Func<string, string, ContentException> FieldError { get; set; }
         internal AiRules(int failedSlotTicks, int targetMemoryTicks = 0, int searchTicks = 0, int reactionTicks = 0, int senseTicks = 1,
@@ -161,7 +163,14 @@ namespace WarCore.Content
             ("arriveMm", PartKind.Placement, ContentPolicies.AssaultRoles),
             ("coverRadiusMm", PartKind.Engage, ContentPolicies.BoundEngage), ("coverStepMm", PartKind.Engage, ContentPolicies.BoundEngage),
             ("coverDepthMm", PartKind.Engage, ContentPolicies.BoundEngage),
+            ("commanderMaxAttackTargets", PartKind.Dispatch, ContentPolicies.CommanderDispatch),
+            ("commanderEnemyWeight", PartKind.Dispatch, ContentPolicies.CommanderDispatch),
+            ("commanderDistanceWeightPerMetre", PartKind.Dispatch, ContentPolicies.CommanderDispatch),
+            ("commanderStickiness", PartKind.Dispatch, ContentPolicies.CommanderDispatch),
+            ("commanderThreatRadiusMm", PartKind.Dispatch, ContentPolicies.CommanderDispatch),
         };
+        // RC2-3 (draft): the commander's fields, all required when dispatch "commander" is chosen. PLACEHOLDER bounds.
+        internal const int MaxCommanderTargets = 8, MaxCommanderWeight = 1000000;
         // assault-roles parameters in AssaultRolesPlacement's constructor order, with their ranges (PLACEHOLDER bounds).
         // The squad fields: written all seven or none. PLACEHOLDER bounds.
         internal static readonly string[] SquadFields =
@@ -213,6 +222,7 @@ namespace WarCore.Content
             int coverRadius = 0, coverStep = 0, coverDepth = 0;
             WarCore.Battle.SquadRules? squads = null;
             WarCore.Battle.LedRules? led = null;
+            WarCore.Battle.CommanderRules? commander = null;
             if (entry != null)
             {
                 var r = new EntryReader(b.Pack, entry);
@@ -264,6 +274,14 @@ namespace WarCore.Content
                     var (field, partKind, part) = Owners[misplaced];
                     string kind = partKind == PartKind.Dispatch ? "dispatch" : partKind == PartKind.Placement ? "placement" : "engage";
                     throw r.Bad(r.FieldOf(field), "belongs to " + kind + " '" + part + "', but " + kind + " is '" + Selected(partKind, dispatch, placement, engage) + "'");
+                }
+                // Required when the commander is selected, all five, like scatterMm below.
+                if (dispatch == ContentPolicies.CommanderDispatch)
+                {
+                    var quota = new WarCore.Battle.CommanderQuotaRules(r.Int("commanderMaxAttackTargets", 1, MaxCommanderTargets),
+                        r.Int("commanderEnemyWeight", 0, MaxCommanderWeight), r.Int("commanderDistanceWeightPerMetre", 0, MaxCommanderWeight),
+                        r.Int("commanderStickiness", 0, MaxCommanderWeight));
+                    commander = new WarCore.Battle.CommanderRules(quota, r.Int("commanderThreatRadiusMm", 1, WcMapValidation.MaxSideMm));
                 }
                 // Required when scatter is selected: a missing field throws "is missing field 'scatterMm'".
                 if (placement == ContentPolicies.Scatter) scatter = r.Int("scatterMm", 1, MaxScatterMm);
@@ -367,7 +385,7 @@ namespace WarCore.Content
                 r.Done();
             }
             b.Publish(new AiRules(failed, memory, search, reaction, sense, burst, pause, suppress, chase, fair, follows, hold, spread, dispatch, placement, spacing, scatter, ring,
-                engage, boundMove, boundFire, boundShare, boundMinRange, assault, traits) { StandingOrders = standing, Led = led, SlotRingError = ringError, FieldError = fieldError, Pressure = pressure, MeleeNerve = meleeNerve, MeleeNerveFightMm = meleeFight, CoverRadiusMm = coverRadius, CoverStepMm = coverStep, CoverDepthMm = coverDepth, Squads = squads });
+                engage, boundMove, boundFire, boundShare, boundMinRange, assault, traits) { StandingOrders = standing, Led = led, Commander = commander, SlotRingError = ringError, FieldError = fieldError, Pressure = pressure, MeleeNerve = meleeNerve, MeleeNerveFightMm = meleeFight, CoverRadiusMm = coverRadius, CoverStepMm = coverStep, CoverDepthMm = coverDepth, Squads = squads });
         }
     }
 }

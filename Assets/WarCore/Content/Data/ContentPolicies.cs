@@ -15,7 +15,9 @@ namespace WarCore.Content
         public const string SelectorIds = NearestVisible + ", " + SightLimitedNearest;
         // AI parts (ai section): dispatch picks the point a unit goes for, placement where at it the unit wants to stand.
         public const string NearestDispatch = "nearest", NearestSlot = "nearest-slot", Scatter = "scatter", AssaultRoles = "assault-roles";
-        public const string DispatchIds = NearestDispatch;
+        // RC2-3 (draft): "commander" asks the battle's commander system (Commander) for the unit's order.
+        public const string CommanderDispatch = "commander";
+        public const string DispatchIds = NearestDispatch + ", " + CommanderDispatch;
         public const string PlacementIds = NearestSlot + ", " + Scatter + ", " + AssaultRoles;
         // Engage: what a unit that sees an enemy does (stand and fire, or go on).
         public const string HoldEngage = "hold", BoundEngage = "bound";
@@ -23,7 +25,7 @@ namespace WarCore.Content
 
         public static bool IsResolver(string id) => id == Damage || id == RwrHit;
         public static bool IsSelector(string id) => id == NearestVisible || id == SightLimitedNearest;
-        public static bool IsDispatch(string id) => id == NearestDispatch;
+        public static bool IsDispatch(string id) => id == NearestDispatch || id == CommanderDispatch;
         public static bool IsPlacement(string id) => id == NearestSlot || id == Scatter || id == AssaultRoles;
         public static bool IsEngage(string id) => id == HoldEngage || id == BoundEngage;
         public static IHitResolver Resolver(string id) => id == null ? null : id == Damage ? new DamageResolver() : (IHitResolver)new RwrHitResolver();
@@ -40,7 +42,9 @@ namespace WarCore.Content
         // plates: the map has floor plates (ML-11a). The parts that still measure on the plane are refused there.
         // squads: the battle's squad system, or null. With it the dispatch and the placement are wrapped (Squads.Wrap),
         // and the engage part too when its rules have tempers or regrouping.
-        public static AiParts Parts(AiRules ai, ReadOnlySpan<ControlPointDef> points = default, int thinkInterval = 1, bool flat = true, bool plates = false, Squads squads = null)
+        // commander: the battle's commander system; required when the dispatch is "commander".
+        public static AiParts Parts(AiRules ai, ReadOnlySpan<ControlPointDef> points = default, int thinkInterval = 1, bool flat = true, bool plates = false, Squads squads = null,
+            Commander commander = null)
         {
             if (!flat && ai != null && ai.CoverRadiusMm > 0) throw ai.FieldError("coverRadiusMm", "is not supported on a terrain map");
             if (plates && ai != null) CheckPlates(ai);
@@ -54,7 +58,9 @@ namespace WarCore.Content
                 CheckThinks(ai, "boundFireTicks", ai.BoundFireTicks, thinkInterval);
                 engage = new BoundEngage(ai.BoundMoveTicks, ai.BoundFireTicks, ai.BoundSharePermille, ai.BoundMinRangeMm);
             }
-            IAiDispatch dispatch = new NearestDispatch(ai?.HoldSharePermille ?? 0, ai?.AttackSpreadPoints ?? 1);
+            IAiDispatch dispatch = ai?.Dispatch == CommanderDispatch
+                ? (commander ?? throw new ArgumentException("Dispatch \"commander\" needs the commander system.", nameof(commander))).Dispatch
+                : new NearestDispatch(ai?.HoldSharePermille ?? 0, ai?.AttackSpreadPoints ?? 1);
             IAiPlacement placement = Placement(ai);
             // Squads wrap the battle's own dispatch and placement: a member asks them as its leader. With tempers or
             // regrouping they wrap the engage part as well; without either it stays the battle's own.

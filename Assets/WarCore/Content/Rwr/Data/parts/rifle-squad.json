@@ -1,7 +1,7 @@
 {
   "id": "parts/rifle-squad",
   "extends": [
-    "rwr-m7-playtest", "parts/unit-speed", "parts/block", "parts/body", "parts/respawn", "parts/spread-attack", "parts/traits",
+    "rwr-m7-playtest", "parts/unit-speed", "parts/block", "parts/body", "parts/respawn", "parts/traits",
     "parts/bounding", "parts/pressure", "parts/squads", "parts/squad-temper", "parts/squad-regroup", "parts/state-spread",
     "parts/reserves", "parts/reinforce-skip", "parts/mouse-reach", "parts/facing"
   ]

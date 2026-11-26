@@ -3,16 +3,10 @@ using WarCore.Sim;
 
 namespace WarCore.Battle
 {
-    // Commander tuning. All ratios are permille, all score weights are integers in one score unit.
+    // Commander tuning (attack only). All score weights are integers in one score unit.
     // PLACEHOLDER: Default holds starting values, not tuned yet.
     public readonly struct CommanderQuotaRules
     {
-        // Garrison of an own point with E enemies near it: ceil(E * DefenseRatioPermille / 1000) + 1.
-        public readonly int DefenseRatioPermille;
-        // Garrison of an own point with no enemies near but a non-own neighbour.
-        public readonly int FrontierGarrison;
-        // All garrisons together are capped at floor(soldiers * MaxDefenseSharePermille / 1000).
-        public readonly int MaxDefenseSharePermille;
         // At most this many points are attacked at once (values below 1 act as 1).
         public readonly int MaxAttackTargets;
         // Attack score, lower is better: enemies * EnemyWeight + whole metres to the anchor * DistanceWeightPerMetre,
@@ -21,30 +15,23 @@ namespace WarCore.Battle
         public readonly int DistanceWeightPerMetre;
         public readonly int Stickiness;
 
-        public CommanderQuotaRules(int defenseRatioPermille, int frontierGarrison, int maxDefenseSharePermille,
-            int maxAttackTargets, int enemyWeight, int distanceWeightPerMetre, int stickiness)
+        public CommanderQuotaRules(int maxAttackTargets, int enemyWeight, int distanceWeightPerMetre, int stickiness)
         {
-            if (defenseRatioPermille < 0 || defenseRatioPermille > 100000) throw new ArgumentOutOfRangeException(nameof(defenseRatioPermille));
-            if (frontierGarrison < 0) throw new ArgumentOutOfRangeException(nameof(frontierGarrison));
-            if (maxDefenseSharePermille < 0 || maxDefenseSharePermille > 1000) throw new ArgumentOutOfRangeException(nameof(maxDefenseSharePermille));
             if (maxAttackTargets < 1) throw new ArgumentOutOfRangeException(nameof(maxAttackTargets));
             if (enemyWeight < 0 || distanceWeightPerMetre < 0 || stickiness < 0) throw new ArgumentOutOfRangeException(nameof(enemyWeight));
-            DefenseRatioPermille = defenseRatioPermille;
-            FrontierGarrison = frontierGarrison;
-            MaxDefenseSharePermille = maxDefenseSharePermille;
             MaxAttackTargets = maxAttackTargets;
             EnemyWeight = enemyWeight;
             DistanceWeightPerMetre = distanceWeightPerMetre;
             Stickiness = stickiness;
         }
 
-        public static CommanderQuotaRules Default => new CommanderQuotaRules(1300, 2, 400, 3, 200, 1, 600);
+        public static CommanderQuotaRules Default => new CommanderQuotaRules(3, 200, 1, 600);
     }
 
-    // Team-level commander as pure functions: how many soldiers each control point wants and which points to attack.
+    // Team-level commander as pure functions: which points to attack and how many soldiers each of them wants.
     // No state, no allocation, integers only; the caller owns every buffer. Any number of teams: owner 0 is neutral,
     // "enemy" is every owner other than the planning team. Ties always go to the lower point index.
-    // Not called by any system yet (wiring and saved assignment belong to the dispatch component).
+    // Called by the commander system (Commander), which keeps the saved assignment.
     public static class CommanderQuota
     {
         // Positions are compared on the ground plane (X, Z). Within this bound every product below fits a long.
@@ -81,16 +68,20 @@ namespace WarCore.Battle
         // owners[i]: team number of point i (0 = neutral). enemiesNear[i]: living soldiers of other teams the caller
         // counted near point i. adjacent: count x count table, e.g. from Adjacency. soldiers: this team's available
         // soldiers. anchor: this team's reference point for attack distance. previousAttack: last result's attack
-        // flags (read only, must not be attackOut). Writes desiredOut[i] (soldiers wanted at i) and attackOut[i].
+        // flags (read only, must not be attackOut). underWay[i] (read only): a group of this team has an order to point i
+        // (its order before this plan). Writes desiredOut[i] (soldiers wanted at i) and attackOut[i]: an own point wants
+        // nobody; all the soldiers are split over the attack targets (at least one each).
         public static void Plan(int team, int count, int[] owners, SimVec3[] centers, int[] enemiesNear, bool[] adjacent,
-            int soldiers, SimVec3 anchor, bool[] previousAttack, in CommanderQuotaRules rules, int[] desiredOut, bool[] attackOut)
+            int soldiers, SimVec3 anchor, bool[] previousAttack, in CommanderQuotaRules rules, int[] desiredOut, bool[] attackOut,
+            bool[] underWay)
         {
             if (team <= 0) throw new ArgumentOutOfRangeException(nameof(team));
             if (owners == null || centers == null || enemiesNear == null || adjacent == null || previousAttack == null
-                || desiredOut == null || attackOut == null) throw new ArgumentNullException(nameof(owners));
+                || desiredOut == null || attackOut == null || underWay == null) throw new ArgumentNullException(nameof(owners));
             if (ReferenceEquals(previousAttack, attackOut)) throw new ArgumentException("previousAttack must not be attackOut.", nameof(attackOut));
             if (count < 0 || count > owners.Length || count > centers.Length || count > enemiesNear.Length || count > previousAttack.Length
-                || count > desiredOut.Length || count > attackOut.Length || (long)count * count > adjacent.Length) throw new ArgumentOutOfRangeException(nameof(count));
+                || count > desiredOut.Length || count > attackOut.Length || count > underWay.Length || (long)count * count > adjacent.Length)
+                throw new ArgumentOutOfRangeException(nameof(count));
             if (soldiers < 0) throw new ArgumentOutOfRangeException(nameof(soldiers));
             CheckBounds(anchor);
             for (int i = 0; i < count; i++)
@@ -99,49 +90,33 @@ namespace WarCore.Battle
                 CheckBounds(centers[i]);
             }
 
-            int defense = 0, candidates = 0;
+            int touching = 0;
             for (int i = 0; i < count; i++)
             {
                 desiredOut[i] = 0;
                 attackOut[i] = false;
-                if (owners[i] == team)
-                {
-                    if (enemiesNear[i] > 0) desiredOut[i] = checked((int)(((long)enemiesNear[i] * rules.DefenseRatioPermille + 999) / 1000 + 1));
-                    else if (Touches(i, team, false, count, owners, adjacent)) desiredOut[i] = rules.FrontierGarrison;
-                    defense = checked(defense + desiredOut[i]);
-                }
-                else if (Touches(i, team, true, count, owners, adjacent)) candidates++;
+                if (owners[i] != team && Touches(i, team, true, count, owners, adjacent)) touching++;
             }
 
-            // No non-own point borders an own one (e.g. the team holds nothing): every non-own point is a candidate.
-            bool fallback = candidates == 0;
-            if (fallback)
-                for (int i = 0; i < count; i++)
-                    if (owners[i] != team) candidates++;
+            // Candidates: the non-own points that border an own one, and the non-own points a group of this team is on its
+            // way to (so a point under attack stays one when the front falls back). No non-own point borders an own one (e.g.
+            // the team holds nothing): every non-own point is a candidate.
+            bool fallback = touching == 0;
+            int candidates = 0;
+            for (int i = 0; i < count; i++)
+                if (Candidate(i, team, fallback, count, owners, adjacent, underWay)) candidates++;
 
-            int maxDefense = (int)((long)soldiers * rules.MaxDefenseSharePermille / 1000);
-            if (defense > maxDefense)
-            {
-                int wanted = defense;
-                defense = 0;
-                for (int i = 0; i < count; i++)
-                {
-                    if (owners[i] != team || desiredOut[i] == 0) continue;
-                    desiredOut[i] = Math.Max(1, (int)((long)desiredOut[i] * maxDefense / wanted));
-                    defense += desiredOut[i];
-                }
-            }
             if (candidates == 0) return;
 
             int targets = Math.Min(candidates, Math.Max(1, rules.MaxAttackTargets));
-            int pool = Math.Max(targets, soldiers - defense);
+            int pool = Math.Max(targets, soldiers);
             for (int k = 0; k < targets; k++)
             {
                 int best = -1;
                 long bestScore = 0;
                 for (int i = 0; i < count; i++)
                 {
-                    if (attackOut[i] || owners[i] == team || !(fallback || Touches(i, team, true, count, owners, adjacent))) continue;
+                    if (attackOut[i] || !Candidate(i, team, fallback, count, owners, adjacent, underWay)) continue;
                     long score = Score(enemiesNear[i], centers[i], anchor, previousAttack[i], rules);
                     if (best < 0 || score < bestScore)
                     {
@@ -153,6 +128,9 @@ namespace WarCore.Battle
                 desiredOut[best] = pool / targets + (k < pool % targets ? 1 : 0);
             }
         }
+
+        private static bool Candidate(int i, int team, bool fallback, int count, int[] owners, bool[] adjacent, bool[] underWay) =>
+            owners[i] != team && (fallback || Touches(i, team, true, count, owners, adjacent) || underWay[i]);
 
         // ownNeighbour: does i have a neighbour owned by team; otherwise: does i have a neighbour not owned by team.
         private static bool Touches(int i, int team, bool ownNeighbour, int count, int[] owners, bool[] adjacent)
