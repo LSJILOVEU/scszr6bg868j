@@ -8,8 +8,8 @@ using WarCore.Sim;
 namespace WarCore.Tests
 {
     // RC2-3 card appendix 7: ding (a leader falls), ren (underWay per team, appendix 7b), the three anchors of R3, a point
-    // nobody can walk to, the edges of R2 and the ties of R5, the spawn anchors' coordinate limit, and the saved state
-    // (appendix 5).
+    // nobody can walk to, the edges of R2, the ties and the order of the two steps of R5, R3's stickiness, the spawn anchors'
+    // coordinate limit, and the saved state (appendix 5).
     public sealed class CommanderRuleTests
     {
         private const string Squads = "\"squadMinSize\": 4, \"squadMaxSize\": 9, \"squadSkirmisherPermille\": 300, \"squadRecruitRadiusMm\": 30000, "
@@ -207,6 +207,47 @@ namespace WarCore.Tests
             Assert.That(b.Commander.Desired(1, 1), Is.EqualTo(2));
             Assert.That(b.Commander.Desired(1, 2), Is.EqualTo(2));
             Assert.That(b.Rows(1, 2, 3, 4), Is.EqualTo(new[] { 1, 2, 1, 2 }));
+            Assert.That(b.Checker.Clean, Is.True, b.Checker.First);
+        }
+
+        // R5's first step comes before the deficits. Unit 1 keeps B; 3 and 4 have no order. Three soldiers over B and C (tied
+        // on score, B first): B wants 2 and C 1, so both deficits are 1. C has no group, so it is served first, by the unit
+        // nearest to it, 3 (60 m; also the nearest to B); then B takes 4. Deficits first would send 3 to B and 4 to C.
+        [Test]
+        public void ATargetWithoutAGroupIsServedBeforeTheDeficits()
+        {
+            var b = new CommanderBoard(Abc(), new[] { CommanderBoard.Man(1, 1, 70), CommanderBoard.Man(3, 1, 80), CommanderBoard.Man(4, 1, 80, 38),
+                CommanderBoard.Man(100, 2, 50, 4) }, Bases(), 160);
+            b.Give((1, 1));
+            b.Step();
+            Assert.That(b.Commander.Desired(1, 1), Is.EqualTo(2));
+            Assert.That(b.Commander.Desired(1, 2), Is.EqualTo(1));
+            Assert.That(b.Rows(1, 3, 4), Is.EqualTo(new[] { 1, 2, 1 }));
+            Assert.That(b.Checker.Clean, Is.True, b.Checker.First);
+        }
+
+        // R3's stickiness reaches the plan through the saved attack flags. One target allowed; B and C tie on score (62 m from
+        // the base each), so B is the target from the first tick. Two enemies held at B from tick 10: B scores
+        // 2 x 200 + 62 - 600 = -138 against C's 62 and stays the target, and the soldiers keep their rows. Two more from tick
+        // 40: 862 - 600 = 262 > 62, so C becomes the target and the soldiers go there.
+        [Test]
+        public void StickinessKeepsLastTicksTargetUpToItsWorth()
+        {
+            var b = new CommanderBoard(Abc(), new[] { CommanderBoard.Man(1, 1, 78), CommanderBoard.Man(2, 1, 82), CommanderBoard.Man(100, 2, 50, 4),
+                CommanderBoard.Man(101, 2, 50, 2), CommanderBoard.Man(102, 2, 110, 4), CommanderBoard.Man(103, 2, 110, 2) }, Bases(), 160,
+                CommanderBoard.Ai(targets: 1), standingOrders: true);
+            foreach (ulong key in new ulong[] { 100, 101, 102, 103 }) b.Hold(key);
+            b.Move(10, 100, 20, 4); b.Move(10, 101, 22, 4);
+            b.Move(40, 102, 24, 4); b.Move(40, 103, 26, 4);
+            for (int t = 1; t <= 45; t++)
+            {
+                b.Step();
+                bool more = t >= 40;
+                Assert.That(b.Commander.EnemiesNear(1, 1), Is.EqualTo(more ? 4 : t >= 10 ? 2 : 0), "tick " + t + ": enemies at B");
+                Assert.That(b.Commander.Attacks(1, 1), Is.EqualTo(!more), "tick " + t + ": B");
+                Assert.That(b.Commander.Attacks(1, 2), Is.EqualTo(more), "tick " + t + ": C");
+                Assert.That(b.Rows(1, 2), Is.EqualTo(more ? new[] { 2, 2 } : new[] { 1, 1 }), "tick " + t);
+            }
             Assert.That(b.Checker.Clean, Is.True, b.Checker.First);
         }
 
