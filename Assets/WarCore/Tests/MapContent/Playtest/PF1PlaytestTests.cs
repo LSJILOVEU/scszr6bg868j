@@ -34,10 +34,16 @@ namespace WarCore.Tests
             Assert.That(r.BurstPauseTicks, Is.EqualTo(30));
             Assert.That(r.SuppressTicks, Is.EqualTo(90));
             Assert.That(r.MeleeChaseRange, Is.EqualTo(12));
-            Assert.That(r.HoldSharePermille, Is.EqualTo(300));
+            Assert.That(r.Dispatch, Is.EqualTo("commander"));
+            CommanderRules c = r.Commander.Value;
+            Assert.That(c.Quota.MaxAttackTargets, Is.EqualTo(3));
+            Assert.That(c.Quota.EnemyWeight, Is.EqualTo(200));
+            Assert.That(c.Quota.DistanceWeightPerMetre, Is.EqualTo(1));
+            Assert.That(c.Quota.Stickiness, Is.EqualTo(600));
+            Assert.That(c.ThreatRadiusMm, Is.EqualTo(30000));
             Assert.That(r.FairDecisions, Is.False);
             Assert.That(r.BurstPauseFollowsShooter, Is.False);
-            // The nine values other than the split are the ones of rwr-ai-playtest.
+            // The nine values other than the commander's are the ones of rwr-ai-playtest.
             AiRules p = RwrPack.Load("rwr-ai-playtest").Section<AiRules>();
             Assert.That((r.FailedSlotTicks, r.TargetMemoryTicks, r.SearchTicks, r.ReactionTicks, r.SenseTicks, r.BurstShots,
                     r.BurstPauseTicks, r.SuppressTicks, r.MeleeChaseRange),
@@ -103,7 +109,13 @@ namespace WarCore.Tests
         {
             M6World w = World(DemoRecipes.MpPlaytest());
             SimpleAiSystem ai = w.System<SimpleAiSystem>();
-            Assert.That(AiPlaytest.Field(AiPlaytest.Field(ai, "dispatch"), "holdSharePermille"), Is.EqualTo(300));
+            Commander commander = w.System<Commander>();
+            Assert.That(AiPlaytest.Field(ai, "dispatch"), Is.SameAs(commander.Dispatch));
+            Assert.That(commander.Rules.Quota.MaxAttackTargets, Is.EqualTo(3));
+            Assert.That(commander.Rules.Quota.EnemyWeight, Is.EqualTo(200));
+            Assert.That(commander.Rules.Quota.DistanceWeightPerMetre, Is.EqualTo(1));
+            Assert.That(commander.Rules.Quota.Stickiness, Is.EqualTo(600));
+            Assert.That(commander.Rules.ThreatRadiusMm, Is.EqualTo(30000));
             Assert.That(AiPlaytest.Field(ai, "fairDecisions"), Is.EqualTo(false));
             Assert.That(AiPlaytest.Field(w.System<FailedSlotMemory>(), "ticks"), Is.EqualTo(90));
             Assert.That(AiPlaytest.Field(w.System<TargetMemory>(), "ticks"), Is.EqualTo(300));
@@ -180,19 +192,39 @@ namespace WarCore.Tests
             return new[] { 0, seen[1].Count, seen[2].Count };
         }
 
-        // Acceptance 4: with the split each team sends AI units to at least two points; the respawn demo's number is recorded.
-        // Counted at tick 600, not 300: the first flips land on tick 300 itself (points 0 and 4), so on that tick no unit has
-        // thought again and both recipes still show one point per team; from tick 330 on the split is visible.
+        // RC2-3: at tick 600 every row of the playtest's commander names a point its unit's team attacks on that tick, never a
+        // point of that team, and every point a team attacks has at least one row. (On this map the five points lie in a line,
+        // so a team attacks one point at a time.) The respawn demo's distinct points are only printed, as before.
         [Test]
-        public void PF1Split_EachTeamTargetsAtLeastTwoPoints()
+        public void PF1Commander_EveryRowIsATargetAndEveryTargetHasARow()
         {
             M6World play = World(DemoRecipes.MpPlaytest()), demo = World(DemoRecipes.MpRespawnDemo());
             play.Step(Ticks); demo.Step(Ticks);
-            int[] p = DistinctTargets(play, out string pd), d = DistinctTargets(demo, out string dd);
-            TestContext.Progress.WriteLine("PF1 tick 600 distinct target points: MpPlaytest team1=" + p[1] + " team2=" + p[2] + " (" + pd.Trim()
-                + "); MpRespawnDemo team1=" + d[1] + " team2=" + d[2] + " (" + dd.Trim() + ")");
-            Assert.That(p[1], Is.GreaterThanOrEqualTo(2), pd);
-            Assert.That(p[2], Is.GreaterThanOrEqualTo(2), pd);
+            int[] d = DistinctTargets(demo, out string dd);
+            TestContext.Progress.WriteLine("PF1 tick 600 distinct target points: MpRespawnDemo team1=" + d[1] + " team2=" + d[2] + " (" + dd.Trim() + ")");
+            Commander commander = play.System<Commander>();
+            var teams = new Dictionary<ulong, int>();
+            foreach (UnitSpawn spawn in play.Recipe.Units) teams[play.Sim.Entities.StableOf(play.Unit(spawn.Key)).Value] = spawn.Team;
+            var rows = new int[3, commander.PointCount];
+            for (int i = 0; i < commander.OrderCount; i++)
+            {
+                int team = teams[commander.OrderKeyAt(i)], point = commander.OrderPointAt(i);
+                Assert.That(commander.Attacks(team, point), Is.True, "row " + i + ": team " + team + " point " + point + " is a target");
+                Assert.That(play.Capture.Points[point].Owner, Is.Not.EqualTo(team), "row " + i + ": not the team's own point");
+                rows[team, point]++;
+            }
+            for (int team = 1; team <= 2; team++)
+            {
+                int targets = 0;
+                for (int point = 0; point < commander.PointCount; point++)
+                {
+                    if (!commander.Attacks(team, point)) continue;
+                    targets++;
+                    Assert.That(rows[team, point], Is.GreaterThan(0), "team " + team + " point " + point + " has a row");
+                }
+                Assert.That(targets, Is.GreaterThan(0), "team " + team + " attacks a point");
+                TestContext.Progress.WriteLine("PF1 tick 600 team " + team + ": " + targets + " target(s)");
+            }
         }
     }
 }

@@ -1,0 +1,11 @@
+{
+  "id": "parts/commander",
+  "ai": {
+    "dispatch": "commander",
+    "commanderMaxAttackTargets": 3,
+    "commanderEnemyWeight": 200,
+    "commanderDistanceWeightPerMetre": 1,
+    "commanderStickiness": 600,
+    "commanderThreatRadiusMm": 30000
+  }
+}

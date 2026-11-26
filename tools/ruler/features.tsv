@@ -10,8 +10,9 @@
 squads	brain	ai.squadMaxSize	Squads that form and move together
 squad-temper	brain	ai.squadRashPermille	Squads differ in temper: rash, steady, shaken
 squad-regroup	brain	ai.squadRegroupBelowPermille	A squad that has lost too many falls back to regroup
-spread-attack	brain	ai.attackSpreadPoints	A side attacks several points at once
-hold-share	brain	ai.holdSharePermille	Part of a side stays to hold its front point
+spread-attack	brain	ai.attackSpreadPoints	A side attacks several points at once	off
+hold-share	brain	ai.holdSharePermille	Part of a side stays to hold its front point	off
+commander	brain	ai.dispatch=commander	A commander splits each side between the points it attacks
 scatter	brain	ai.placement=scatter	Units spread around a point instead of filling a grid
 assault-roles	brain	ai.placement=assault-roles	Front, flank and rear roles around a point
 bounding	brain	ai.engage=bound	Bounding advance: some move while the others fire

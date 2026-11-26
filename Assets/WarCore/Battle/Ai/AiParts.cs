@@ -95,7 +95,8 @@ namespace WarCore.Battle
     }
 
     // Dispatch: which control point a unit goes for. The answer may depend only on the unit, the field and the part's
-    // own parameters, so the same unit gets the same answer on every tick and after a restore.
+    // own parameters, or on state that is saved and hashed (the commander's orders), so the same unit gets the same
+    // answer on every tick and after a restore.
     public interface IAiDispatch
     {
         // Folds the part's tag and parameters into the battle policy digest. A part whose parameters leave the battle
@@ -180,8 +181,9 @@ namespace WarCore.Battle
             CoverRadiusRaw = coverRadiusRaw; CoverStepRaw = coverStepRaw; CoverDepthRaw = coverDepthRaw;
         }
 
-        // The only source of variation a part may use: Mix(unit key ^ a constant of the part). Stateless, so the same
-        // unit decides the same way on every tick and after a restore.
+        // The only source of variation a part may use: Mix(unit key ^ a constant of the part). A part keeps nothing itself,
+        // so the same unit decides the same way on every tick and after a restore; the "commander" dispatch reads the
+        // commander's orders, which are saved and hashed with the world.
         public static ulong Mix(ulong x)
         {
             unchecked

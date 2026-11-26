@@ -6,7 +6,6 @@
 # A new unused file fails the check, and so does a listed file that grew. When a file is connected, deleted or
 # shortened, change its row in the same commit.
 
-Battle/Ai/CommanderQuota.cs	179
 Content/MapTools/MapBrush.cs	413
 Content/MapTools/MapBuildSpec.cs	224
 Content/MapTools/MapBuildings.cs	191

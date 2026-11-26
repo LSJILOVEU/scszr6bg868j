@@ -107,7 +107,15 @@ namespace WarCore.Presentation
             bool fair = ai != null && ai.FairDecisions;
             // TRV-7a: the entry table is built from the same cost tables once the walls are in the spatial index (WorldBuilder).
             a.Reach = PointReach.Of(a, recipe.Match);
-            sim.RegisterGameplay("battle.ai", new SimpleAiSystem(combat, recipe.Combat, recipe.Match, capture, adapter, a.Controlled, memory, contacts, search, suppress, meleeChaseRange, fair, recipe.Seed, ContentPolicies.Parts(ai, recipe.Match.Points, recipe.Match.ThinkInterval, terrain == null, layers != null, squads), pressure, layers, layers,
+            // RC2-3: only with dispatch "commander" (its five fields written): who goes to which point, decided after the
+            // capture and read by the AI on the next tick.
+            Commander commander = null;
+            if (ai?.Commander != null)
+            {
+                commander = new Commander(combat, recipe.Match, capture, adapter, a.Controlled, squads, ai.Commander.Value, a.Reach, layers);
+                sim.RegisterGameplay("battle.ai-commander", commander, SimSystemPhase.Queries);
+            }
+            sim.RegisterGameplay("battle.ai", new SimpleAiSystem(combat, recipe.Combat, recipe.Match, capture, adapter, a.Controlled, memory, contacts, search, suppress, meleeChaseRange, fair, recipe.Seed, ContentPolicies.Parts(ai, recipe.Match.Points, recipe.Match.ThinkInterval, terrain == null, layers != null, squads, commander), pressure, layers, layers,
                 a.Reach, ai != null && ai.MeleeNerve, ai != null ? ai.MeleeNerveFightMm : 0), SimSystemPhase.Requests);
             sim.RegisterGameplay("battle.capture", capture, SimSystemPhase.Queries);
             sim.RegisterGameplay("battle.match", match, SimSystemPhase.Queries);

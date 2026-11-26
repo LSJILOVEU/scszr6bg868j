@@ -1212,9 +1212,9 @@ filter = FullyQualifiedName~AiP5aTests&FullyQualifiedName!~Battle_RepeatAndResto
 expect = WarCore.Tests.AiP5aTests.World_EachOfTheSevenNumbersIsInThePolicy
 note = the battle's parts are built without the squads
 original:
-| terrain == null, layers != null, squads)
+| terrain == null, layers != null, squads, commander)
 replacement:
-| terrain == null, layers != null)
+| terrain == null, layers != null, null, commander)
 
 [ai-p5a-wire-system-id]
 file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
