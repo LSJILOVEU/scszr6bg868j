@@ -34,7 +34,9 @@ namespace WarCore.Interim
             internal EntityId Unit;
             internal SimVec3 Point;
             internal SimFix Radius;
-            // Snapshot of MoveIntent.Active taken when the table is built, so the answer does not change within one step.
+            // Whether the unit walks this step, as the pass rule is asked. MoveIntent.Active when the table is built; the
+            // controlled unit, which walks by its input and has no walk order, is marked before anybody else steps. After
+            // that the answer does not change within one step.
             internal bool Active;
             // Plate worlds only: the body's half height and the lift from the foot to the body centre (raw), as ML-3 builds them.
             internal long Half, Lift;
@@ -63,6 +65,9 @@ namespace WarCore.Interim
                         // A dashing unit takes its dash step below instead; a held unit is skipped there.
                         if (DashesNow(i) || Held(controlled)) break;
                         controlledIndex = i;
+                        // RC2-6a: the input is the controlled unit's walk order. A step it asks for counts as walking, whether
+                        // or not it can be taken (a unit with a walk order that is blocked counts as walking too).
+                        if (displacement.LengthSquared.Sign != 0) provisional[i].Active = true;
                         StepControlled(context, i, FlatControlled(i, displacement));
                         break;
                     }

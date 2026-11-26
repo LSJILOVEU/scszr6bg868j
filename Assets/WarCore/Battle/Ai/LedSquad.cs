@@ -27,12 +27,16 @@ namespace WarCore.Battle
     /// walking them to their places. Follow moves the anchor with the leader, Hold fixes it where the leader stands, MoveTo
     /// fixes it at the commanded point, Dismiss breaks the squad up. A member counts as commanded (IMoveOrders.IsCommanded
     /// through the bridge), so the AI squads and the AI scheduler leave it alone; it still fires and swings on its own.
+    /// RC2-6a: a member whose place the leader stands on stands a step aside of it for as long as the leader's body is on
+    /// that place; a leader that walks past sends nobody aside.
     /// Deterministic and allocation-free after construction. Saved: leader, mode, anchor, and per member its key, its
     /// spot (fixed when it joins) and whether its last walk order was refused. The places are derived.</summary>
     public sealed class LedSquad : IRetainedGameplaySystem
     {
         // Places kept per member: its own and three spares for when a place cannot be used.
         internal const int PlacesPerMember = 4;
+        // The first ring of the lattice: its six steps are the sides a member can stand aside to.
+        internal const int Sides = 6;
         private const ulong RecruitSalt = 0x6c65642d73717561UL;
 
         private readonly CombatSystem combat;
@@ -44,9 +48,12 @@ namespace WarCore.Battle
         private readonly EntityStage stage;
         private readonly ComponentType<Position> positions;
         private readonly ComponentType<Combatant> combatants;
+        private readonly ComponentType<Collider> colliders;
         private readonly SimWide recruitSquared, shiftSquared;
         // The formation: lattice offsets from the anchor, ring by ring. A member's spot is an index below rules.Size.
         private readonly SimVec3[] offsets;
+        // Half of each of the first ring's steps.
+        private readonly SimVec3[] halves = new SimVec3[Sides];
         // Saved. Members are in key order.
         private ulong leader;
         private LedMode mode;
@@ -59,6 +66,12 @@ namespace WarCore.Battle
         private readonly bool[] placed, taken;
         private readonly SimVec3[] places;
         private bool dirty, restored;
+        // Derived at every step: where the leader stands, its body's radius and half height (0 without a body), and whether
+        // it walks: its input asks for a step, whether or not the step can be taken (as the movers have it).
+        private SimVec3 leaderAt;
+        private SimFix leaderRadius;
+        private long leaderHalf;
+        private bool leaderWalks;
 
         public LedSquad(CombatSystem combat, IMoveOrders moves, IControlTarget controlled, LedRules rules, long spacingRaw, IUnitLayers layers = null)
         {
@@ -70,6 +83,9 @@ namespace WarCore.Battle
             offsets = Formation(rules.Size, spacingRaw);
             stage = new EntityStage(combat.Entities);
             positions = combat.Entities.Resolve<Position>(); combatants = combat.Entities.Resolve<Combatant>();
+            colliders = combat.Entities.Resolve<Collider>();
+            for (int side = 0; side < Sides; side++)
+                halves[side] = new SimVec3(SimFix.FromRaw(offsets[side].X.Raw / 2), default, SimFix.FromRaw(offsets[side].Z.Raw / 2));
             recruitSquared = new SimVec3(SimFix.Ratio(rules.RecruitRadiusMm, 1000), default, default).LengthSquared;
             shiftSquared = new SimVec3(SimFix.FromRaw(spacingRaw / 2), default, default).LengthSquared;
             members = new ulong[rules.Size]; spots = new int[rules.Size]; refused = new bool[rules.Size];
@@ -107,13 +123,19 @@ namespace WarCore.Battle
         // The spot a member got when it joined; -1 for a unit that is not a member.
         public int SpotOf(StableId unit) { int i = IndexOf(unit.Value); return i < 0 ? -1 : spots[i]; }
 
-        // Where a member stands in the formation now; false for a unit that is not a member and for a member without a place.
+        // Where a member is to stand now: its place in the formation, or a step aside of it while the leader's body is on that
+        // place (Stand); false, with no point, for a unit that is not a member and for a member with nowhere to stand. The
+        // leader is where it stood at the last step; whether it walks is not asked here (Upkeep leaves a member it walks past).
         public bool TryPlace(StableId unit, out SimVec3 place)
         {
+            place = default;
             int i = IndexOf(unit.Value);
-            if (i < 0 || !placed[i] || restored) { place = default; return false; }
-            place = places[i];
-            return true;
+            if (i < 0 || !placed[i] || restored) return false;
+            // A member that is not on the field any more is asked as if it stood on its place without a walk order.
+            bool alive = Alive(members[i], out _, out SimVec3 here);
+            SimVec3 target = default; int layer = 0;
+            bool walking = alive && moves.TryGetOrder(unit, out target, out layer) && layer == anchorLayer;
+            return Stand(i, Radius(unit), Half(unit), alive ? here : places[i], walking, target, 0, out place, out _);
         }
 
         private int IndexOf(ulong key) => Array.BinarySearch(members, 0, count, key);
@@ -136,6 +158,8 @@ namespace WarCore.Battle
                 if (mode == LedMode.Follow) Trail(here.Value, LayerOf(player));
                 // A restored squad gets its places back without forgetting which walk orders were refused: they are saved.
                 if (dirty) Place(true); else if (restored) Place(false);
+                leaderAt = here.Value; leaderRadius = Radius(player); leaderHalf = Half(player);
+                leaderWalks = c.Input.Move.X.Raw != 0 || c.Input.Move.Z.Raw != 0;
                 Upkeep();
             }
             dirty = false; restored = false;
@@ -255,7 +279,7 @@ namespace WarCore.Battle
             for (int i = 0; i < count; i++)
             {
                 if (forget) refused[i] = false;
-                placed[i] = Usable(spots[i], out places[i]);
+                placed[i] = Usable(anchor + offsets[spots[i]], out places[i]);
                 if (placed[i]) taken[spots[i]] = true;
             }
             for (int i = 0; i < count; i++)
@@ -263,32 +287,118 @@ namespace WarCore.Battle
                 if (placed[i]) continue;
                 for (int o = 0; o < offsets.Length; o++)
                 {
-                    if (taken[o] || !Usable(o, out places[i])) continue;
+                    if (taken[o] || !Usable(anchor + offsets[o], out places[i])) continue;
                     placed[i] = true; taken[o] = true;
                     break;
                 }
             }
         }
 
-        private bool Usable(int offset, out SimVec3 grounded) =>
-            moves.TryStandAt(anchor + offsets[offset], anchorLayer, out grounded) && combat.Sees(anchor, grounded);
+        private bool Usable(SimVec3 point, out SimVec3 grounded) =>
+            moves.TryStandAt(point, anchorLayer, out grounded) && combat.Sees(anchor, grounded);
 
-        // Every tick: a member without a place stands; a member on its place stands; any other member is walked to its
-        // place. A walk order that was refused is not given again until the places change.
+        private SimFix Radius(EntityId unit) => combat.Entities.TryGet(colliders, unit, out Collider body) ? body.Radius : default;
+        private SimFix Radius(StableId unit) => combat.Entities.TryResolve(unit, out EntityRef found) ? Radius((EntityId)found) : default;
+        // Half a body's height, as the movers take it.
+        private long Half(EntityId unit) => combat.Entities.TryGet(colliders, unit, out Collider body) ? body.Height.Raw / 2 : 0;
+        private long Half(StableId unit) => combat.Entities.TryResolve(unit, out EntityRef found) ? Half((EntityId)found) : 0;
+
+        private static bool Same(SimVec3 a, SimVec3 b) => a.X.Raw == b.X.Raw && a.Z.Raw == b.Z.Raw;
+
+        // RC2-6a: a body of that radius and half height standing at the point does not overlap the leader's body: the two are
+        // apart by their radii, or, on a map with floors, one stands above the other's head (bodies stand on their feet; the
+        // movers judge two bodies the same way, so the layers themselves are not asked).
+        private bool Clear(SimFix radius, long half, SimVec3 point)
+        {
+            if (CombatSystem.Horizontal(point - leaderAt).LengthSquared >= new SimVec3(leaderRadius + radius, default, default).LengthSquared) return true;
+            long rise = point.Y.Raw - leaderAt.Y.Raw;
+            return layers != null && (rise >= 2 * leaderHalf || -rise >= 2 * half);
+        }
+
+        // RC2-6a: the step from a place to its side: half a lattice step, or, when that is shorter than the two radii, the
+        // shortest step along the same line that is not. A step's parts are whole raw units, so its length is asked, not
+        // assumed. A side of the lattice is never a point, so the search ends: only at a spacing of one raw unit would the
+        // rounding put a place on the origin, and there the lattice is not made of complete rings, which Formation refuses.
+        private SimVec3 Aside(int side, SimFix radius)
+        {
+            SimFix apart = leaderRadius + radius;
+            SimWide clear = new SimVec3(apart, default, default).LengthSquared;
+            if (halves[side].LengthSquared >= clear) return halves[side];
+            for (long reach = apart.Raw; ; reach++)
+            {
+                var step = new SimVec3(SimFix.FromRaw(offsets[side].X.Raw * reach / spacingRaw), default, SimFix.FromRaw(offsets[side].Z.Raw * reach / spacingRaw));
+                if (step.LengthSquared >= clear) return step;
+            }
+        }
+
+        // RC2-6a: where member i (with a place) is to stand now: its place, or, while the leader's body is on that place, a step
+        // aside of it. Of the sides that are usable and clear of the leader (and not in skip): the one the member already
+        // stands at or walks to, so that it does not change sides while the leader shifts about; else the one that points
+        // most away from the leader (the lower side when two point away alike), so that it does not cross the leader's body
+        // to get there. False, with no point, while there is none. A function of the places, of where the leader and the
+        // member stand and of the member's walk order, so nothing more is saved.
+        private bool Stand(int i, SimFix radius, long half, SimVec3 from, bool walking, SimVec3 target, int skip, out SimVec3 at, out int side)
+        {
+            at = places[i]; side = -1;
+            if (Clear(radius, half, at)) return true;
+            SimVec3 toLeader = CombatSystem.Horizontal(leaderAt - places[i]);
+            long least = 0;
+            for (int s = 0; s < Sides; s++)
+            {
+                if ((skip & 1 << s) != 0) continue;
+                SimVec3 step = Aside(s, radius);
+                if (!Usable(places[i] + step, out SimVec3 point) || !Clear(radius, half, point)) continue;
+                if (walking ? Same(target, point) : SimpleAiSystem.Arrived(from, point)) { at = point; side = s; return true; }
+                long toward = step.X.Raw * toLeader.X.Raw + step.Z.Raw * toLeader.Z.Raw;
+                if (side >= 0 && toward >= least) continue;
+                at = point; side = s; least = toward;
+            }
+            if (side < 0) at = default;
+            return side >= 0;
+        }
+
+        // RC2-6a: a walking leader sends nobody aside. A member it walks past keeps standing where it stands: on its place, or,
+        // with the leader's body still on that place, a step aside of it.
+        private bool Passed(int i, SimFix radius, long half, SimVec3 at)
+        {
+            if (SimpleAiSystem.Arrived(at, places[i])) return true;
+            if (Clear(radius, half, places[i])) return false;
+            for (int s = 0; s < Sides; s++)
+                if (Usable(places[i] + Aside(s, radius), out SimVec3 point) && SimpleAiSystem.Arrived(at, point)) return true;
+            return false;
+        }
+
+        // Every tick: a member with nowhere to stand stands; a member the walking leader passes stands (Passed); a member where
+        // it is to stand (its place, or aside of it, Stand) and clear of the leader's body stands; any other member is walked
+        // there. A walk order to its place that was refused is not given again until the places change, and such a member is
+        // not sent aside either. A refused order to stand aside goes to the next side at once; when every side was refused
+        // the member is left alone in the same way.
         private void Upkeep()
         {
-            EntityStore store = combat.Entities;
             for (int i = 0; i < count; i++)
             {
                 var id = new StableId(members[i]);
                 bool walking = moves.TryGetOrder(id, out SimVec3 target, out int targetLayer);
                 if (!placed[i]) { if (walking) moves.Stop(id); continue; }
                 if (!Alive(members[i], out EntityId entity, out SimVec3 at)) continue;
-                if (LayerOf(entity) == anchorLayer && SimpleAiSystem.Arrived(at, places[i])) { if (walking) moves.Stop(id); continue; }
-                if (refused[i]) continue;
-                if (walking && targetLayer == anchorLayer && target.X.Raw == places[i].X.Raw && target.Z.Raw == places[i].Z.Raw) continue;
-                moves.Order(id, places[i], anchorLayer);
-                if (!moves.TryGetOrder(id, out _, out _)) refused[i] = true;
+                SimFix body = Radius(entity); long half = Half(entity);
+                if (leaderWalks && !walking && LayerOf(entity) == anchorLayer && Passed(i, body, half, at)) continue;
+                for (int skip = 0; ;)
+                {
+                    bool headed = walking && targetLayer == anchorLayer;
+                    if (!Stand(i, body, half, at, headed, target, skip, out SimVec3 stand, out int side))
+                    {
+                        if (skip != 0) refused[i] = true; else if (walking) moves.Stop(id);
+                        break;
+                    }
+                    if (LayerOf(entity) == anchorLayer && SimpleAiSystem.Arrived(at, stand) && Clear(body, half, at)) { if (walking) moves.Stop(id); break; }
+                    if (refused[i] || headed && Same(target, stand)) break;
+                    moves.Order(id, stand, anchorLayer);
+                    walking = moves.TryGetOrder(id, out target, out targetLayer);
+                    if (walking) break;
+                    if (side < 0) { refused[i] = true; break; }
+                    skip |= 1 << side;
+                }
             }
         }
 

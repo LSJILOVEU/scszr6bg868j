@@ -346,17 +346,31 @@ namespace WarCore.Tests
             Assert.That(g.Led.AnchorLayer, Is.EqualTo(2));
             Assert.That(g.Led.Anchor.X.Raw, Is.EqualTo(stop.X.Raw));
             Assert.That(g.Led.Anchor.Z.Raw, Is.EqualTo(stop.Z.Raw));
-            int best = 0;
-            for (int t = 1; t <= 300 && best * 2 < g.Led.MemberCount; t++)
+            // RC2-6a: the members the leader stopped with. One of them can fall and another soldier join from afar while
+            // they climb, so "the whole squad" is asked of these: at one tick, every one of them who is still on the field
+            // and still in the squad stands on its place upstairs, and they are four or more.
+            ulong[] first = g.Members();
+            int best = 0, allUpAt = 0;
+            for (int t = 1; t <= 300; t++)
             {
                 g.Wait(1);
                 int up = 0;
                 foreach (ulong key in g.Members())
                     if (layers.LayerOf(g.W.Unit(key)) == 2 && g.Led.TryPlace(g.Id(key), out SimVec3 place) && Metres(g.At(key), place) <= 0.5) up++;
                 if (up > best) best = up;
+                var now = new HashSet<ulong>(g.Members());
+                int here = 0, hereUp = 0;
+                foreach (ulong key in first)
+                {
+                    if (!g.OnField(key) || !now.Contains(key)) continue;
+                    here++;
+                    if (layers.LayerOf(g.W.Unit(key)) == 2 && g.Led.TryPlace(g.Id(key), out SimVec3 place) && Metres(g.At(key), place) <= 0.5) hereUp++;
+                }
+                if (allUpAt == 0 && here >= 4 && hereUp == here) allUpAt = t;
             }
             Assert.That(g.Led.MemberCount, Is.GreaterThanOrEqualTo(4));
             Assert.That(best * 2, Is.GreaterThanOrEqualTo(g.Led.MemberCount), "at least half of the squad stands on its places upstairs");
+            Assert.That(allUpAt, Is.GreaterThan(0), "everybody the leader stopped with who is still in the squad stands on its place upstairs at one tick");
             // Told to hold up there, the squad holds on the leader's floor.
             g.Order(SquadCommandKind.Hold);
             Assert.That((g.Led.Mode, g.Led.AnchorLayer), Is.EqualTo((LedMode.Hold, 2)));
@@ -372,8 +386,9 @@ namespace WarCore.Tests
             (bool)typeof(ICrowdPass).GetMethod(method).Invoke(rule, new object[] { mover, other });
 
         // Every question the crowd code can ask about the units of the field: the rule of this world against the plain rule
-        // of the same world. calledFor: the leader's own questions about these units must be answered yes.
-        private static void SameAsPlainExceptForTheLeader(LedGame g, object rule, object plain, HashSet<ulong> calledFor, string when)
+        // of the same world. calledFor: the leader's own questions about these units must be answered yes. free: the rule of
+        // the same world with nobody controlled, which is how two team mates pass each other.
+        private static void SameAsPlainExceptForTheLeader(LedGame g, object rule, object plain, object free, HashSet<ulong> calledFor, string when)
         {
             EntityId me = g.W.Unit(g.Player);
             var field = new List<ulong>();
@@ -384,8 +399,11 @@ namespace WarCore.Tests
                 bool member = calledFor.Contains(key);
                 Assert.That(Ask(rule, "MayPass", me, other), Is.EqualTo(member), when + ": the leader passes a standing member only, unit " + key);
                 Assert.That(Ask(rule, "MayPassMoving", me, other), Is.EqualTo(member), when + ": and a walking member only, unit " + key);
-                Assert.That(Ask(rule, "MayPass", other, me) || Ask(rule, "MayPassMoving", other, me), Is.False, when + ": nobody passes the leader");
+                Assert.That(Ask(rule, "MayPassMoving", other, me), Is.False, when + ": nobody passes the walking leader, unit " + key);
+                Assert.That(Ask(rule, "MayPass", other, me), Is.EqualTo(member && Ask(free, "MayPass", other, me)),
+                    when + ": only a member passes the standing leader, and as two team mates pass, unit " + key);
                 Assert.That(Ask(plain, "MayPass", me, other) || Ask(plain, "MayPassMoving", me, other), Is.False, "the plain rule never lets the player pass");
+                Assert.That(Ask(plain, "MayPass", other, me) || Ask(plain, "MayPassMoving", other, me), Is.False, "nor anybody pass the player");
                 foreach (ulong third in field)
                 {
                     if (third == key) continue;
@@ -401,25 +419,49 @@ namespace WarCore.Tests
         {
             var g = new LedGame("battle");
             object rule = PassRule(g.W);
-            Assert.That(((ICrowdPass)rule).Digest, Is.EqualTo(0x5445414D49444C32UL));
-            // The rule the same world would have without a led squad.
+            Assert.That(((ICrowdPass)rule).Digest, Is.EqualTo(0x5445414D49444C33UL));
+            // The rule the same world would have without a led squad, and the one it would have with nobody controlled.
             object plain = Activator.CreateInstance(rule.GetType(), BindingFlags.NonPublic | BindingFlags.Instance, null,
                 new object[] { g.W.Sim, g.W.Combat, g.W.Recipe.Combat, g.W.Session.GetType().GetField("controlled", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(g.W.Session) }, null);
+            object free = Activator.CreateInstance(rule.GetType(), BindingFlags.NonPublic | BindingFlags.Instance, null,
+                new object[] { g.W.Sim, g.W.Combat, g.W.Recipe.Combat, null }, null);
             Assert.That(((ICrowdPass)plain).Digest, Is.EqualTo(0x5445414D49444C31UL));
             ulong other = 0;
             foreach (ulong key in g.Keys) if (other == 0 && key != g.Player && g.OnField(key)) other = key;
             Assert.That(() => ((ICrowdPass)plain).MayPassMoving(g.W.Unit(g.Player), g.W.Unit(other)), Throws.Nothing, "a rule without a squad answers too");
             var nobody = new HashSet<ulong>();
-            SameAsPlainExceptForTheLeader(g, rule, plain, nobody, "before any order");
+            SameAsPlainExceptForTheLeader(g, rule, plain, free, nobody, "before any order");
             g.Wait(120);
-            SameAsPlainExceptForTheLeader(g, rule, plain, nobody, "after two seconds without an order");
+            SameAsPlainExceptForTheLeader(g, rule, plain, free, nobody, "after two seconds without an order");
             g.Order(SquadCommandKind.Follow);
-            SameAsPlainExceptForTheLeader(g, rule, plain, new HashSet<ulong>(g.Members()), "following");
+            SameAsPlainExceptForTheLeader(g, rule, plain, free, new HashSet<ulong>(g.Members()), "following");
+            AMemberPassesTheStandingLeaderOnlyWhileNeitherIsEngaged(g, rule);
             g.Order(SquadCommandKind.Hold);
             g.Wait(60);
-            SameAsPlainExceptForTheLeader(g, rule, plain, new HashSet<ulong>(g.Members()), "holding");
+            SameAsPlainExceptForTheLeader(g, rule, plain, free, new HashSet<ulong>(g.Members()), "holding");
             g.Order(SquadCommandKind.Dismiss);
-            SameAsPlainExceptForTheLeader(g, rule, plain, nobody, "dismissed");
+            SameAsPlainExceptForTheLeader(g, rule, plain, free, nobody, "dismissed");
+        }
+
+        // RC2-6a: the three cases of "as two team mates pass", each made by hand so that every one of them is seen: neither
+        // fired, the member fired this tick, the leader fired this tick. The units get their own state back afterwards.
+        private static void AMemberPassesTheStandingLeaderOnlyWhileNeitherIsEngaged(LedGame g, object rule)
+        {
+            ulong member = g.Members()[0];
+            EntityId me = g.W.Unit(g.Player), it = g.W.Unit(member);
+            Combatant mine = g.W.Read<Combatant>(g.Player), its = g.W.Read<Combatant>(member);
+            long now = g.W.Sim.Clock.Tick * 1000;
+            g.W.Set(g.Player, new Combatant(mine.Team, mine.Weapon, mine.Ammo, 0));
+            g.W.Set(member, new Combatant(its.Team, its.Weapon, its.Ammo, 0));
+            Assert.That(Ask(rule, "MayPass", it, me), Is.True, "neither is engaged: the member passes the standing leader");
+            g.W.Set(member, new Combatant(its.Team, its.Weapon, its.Ammo, now));
+            Assert.That(Ask(rule, "MayPass", it, me), Is.False, "the member fired this tick");
+            g.W.Set(member, new Combatant(its.Team, its.Weapon, its.Ammo, 0));
+            g.W.Set(g.Player, new Combatant(mine.Team, mine.Weapon, mine.Ammo, now));
+            Assert.That(Ask(rule, "MayPass", it, me), Is.False, "the leader fired this tick");
+            Assert.That(Ask(rule, "MayPassMoving", it, me), Is.False, "and a walking leader is not passed either way");
+            g.W.Set(g.Player, mine);
+            g.W.Set(member, its);
         }
 
         [Test]

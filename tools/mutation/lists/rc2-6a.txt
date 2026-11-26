@@ -1,0 +1,665 @@
+# RC2-6a: squad members squeeze past their standing leader. Two places: the walking code marks the controlled unit as
+# walking on a tick in which its input gives it a step (InterimLocomotion.Crowd.cs), and the rule with a led squad lets a
+# member pass the standing leader as two team mates pass each other (CrowdPassFeature.cs, TeamIdleCrowdPass).
+# Filters: Rc26aWalkingLeaderTests for the walking code; for the rule the two tests of Rc21LedSquadTests that pin it
+# (TheLeaderPasses..., TheSquadFollowsItsLeaderUpTheStair) and Wp21PassTests.
+# The rule's digest value is the entry rc2-1-pass-digest-value of rc2-1.txt, quoted anew.
+# Not listed: the two checks that the rule has a controlled unit at all (a rule made without one only throws there, no
+# assertion fails first); asking the step after the drags instead of the input's own (no test world has a drag that makes
+# a step zero); a squad whose leader is not the controlled unit (the led squad steps before the two systems that change the
+# body and disbands as soon as its leader is dead, so the walking step never sees one).
+
+# ---- the walking code
+
+[rc2-6a-walk-never]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~Rc26aWalkingLeaderTests
+expect = WarCore.Tests.Rc26aWalkingLeaderTests.SteppingTheControlledUnitWalks
+expect = WarCore.Tests.Rc26aWalkingLeaderTests.PushingAgainstAWallTheControlledUnitWalks
+note = the controlled unit never counts as walking (the code before RC2-6a)
+original:
+| if (displacement.LengthSquared.Sign != 0) provisional[i].Active = true;
+replacement:
+| ;
+
+[rc2-6a-walk-without-input]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~Rc26aWalkingLeaderTests
+expect = WarCore.Tests.Rc26aWalkingLeaderTests.WithoutInputTheControlledUnitStands
+expect = WarCore.Tests.Rc26aWalkingLeaderTests.SteppingTheControlledUnitWalks
+note = it counts as walking exactly when the input gives no step
+original:
+| if (displacement.LengthSquared.Sign != 0) provisional[i].Active = true;
+replacement:
+| if (displacement.LengthSquared.Sign == 0) provisional[i].Active = true;
+
+[rc2-6a-walk-always]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~Rc26aWalkingLeaderTests
+expect = WarCore.Tests.Rc26aWalkingLeaderTests.WithoutInputTheControlledUnitStands
+expect = WarCore.Tests.Rc26aWalkingLeaderTests.SteppingTheControlledUnitWalks
+note = it counts as walking on every tick, with or without input
+original:
+| if (displacement.LengthSquared.Sign != 0) provisional[i].Active = true;
+replacement:
+| provisional[i].Active = true;
+
+[rc2-6a-walk-only-when-moved]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~Rc26aWalkingLeaderTests
+expect = WarCore.Tests.Rc26aWalkingLeaderTests.PushingAgainstAWallTheControlledUnitWalks
+note = it counts as walking only when the step was taken, so pushing against a wall is standing
+original:
+|                         if (displacement.LengthSquared.Sign != 0) provisional[i].Active = true;
+|                         StepControlled(context, i, FlatControlled(i, displacement));
+replacement:
+|                         SimVec3 was = provisional[i].Point;
+|                         StepControlled(context, i, FlatControlled(i, displacement));
+|                         if (!provisional[i].Point.Equals(was)) provisional[i].Active = true;
+
+[rc2-6a-walk-on-a-dash-tick]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~Rc26aWalkingLeaderTests
+expect = WarCore.Tests.Rc26aWalkingLeaderTests.OnATickOfItsDashTheControlledUnitStands
+note = a tick of the controlled unit's dash counts as walking
+original:
+| if (DashesNow(i) || Held(controlled)) break;
+replacement:
+| if (DashesNow(i)) provisional[i].Active = true; if (DashesNow(i) || Held(controlled)) break;
+
+[rc2-6a-walk-when-held]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~Rc26aWalkingLeaderTests
+expect = WarCore.Tests.Rc26aWalkingLeaderTests.HeldTheControlledUnitStands
+note = a held controlled unit counts as walking
+original:
+| if (DashesNow(i) || Held(controlled)) break;
+replacement:
+| if (Held(controlled)) provisional[i].Active = true; if (DashesNow(i) || Held(controlled)) break;
+
+# ---- the rule
+
+[rc2-6a-standing-leader-never-passed]
+file = Assets/WarCore/Presentation/Bridge/Features/CrowdPassFeature.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheLeaderPasses|FullyQualifiedName~Rc21LedSquadTests.TheSquadFollowsItsLeaderUpTheStair|FullyQualifiedName~Wp21PassTests
+expect = WarCore.Tests.Rc21LedSquadTests.TheSquadFollowsItsLeaderUpTheStair
+expect = WarCore.Tests.Rc21LedSquadTests.TheLeaderPassesTheMembersOfItsSquadAndNothingElseChanges
+note = nobody passes the controlled unit (the rule before RC2-6a)
+original:
+| if (controlled != null && idle.Equals(controlled.Current) && !LeaderPasses(idle, mover)) return false;
+replacement:
+| if (controlled != null && idle.Equals(controlled.Current)) return false;
+
+[rc2-6a-anybody-passes-the-standing-player]
+file = Assets/WarCore/Presentation/Bridge/Features/CrowdPassFeature.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheLeaderPasses|FullyQualifiedName~Rc21LedSquadTests.TheSquadFollowsItsLeaderUpTheStair|FullyQualifiedName~Wp21PassTests
+expect = WarCore.Tests.Wp21PassTests.TheControlledPlayerIsNeverPassedAndBusyUnitsKeepBlocking
+expect = WarCore.Tests.Rc21LedSquadTests.TheLeaderPassesTheMembersOfItsSquadAndNothingElseChanges
+note = the standing controlled unit is passed like any team mate, squad or no squad
+original:
+| if (controlled != null && idle.Equals(controlled.Current) && !LeaderPasses(idle, mover)) return false;
+replacement:
+| ;
+
+[rc2-6a-standing-not-negated]
+file = Assets/WarCore/Presentation/Bridge/Features/CrowdPassFeature.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheLeaderPasses|FullyQualifiedName~Rc21LedSquadTests.TheSquadFollowsItsLeaderUpTheStair|FullyQualifiedName~Wp21PassTests
+expect = WarCore.Tests.Rc21LedSquadTests.TheLeaderPassesTheMembersOfItsSquadAndNothingElseChanges
+expect = WarCore.Tests.Wp21PassTests.TheControlledPlayerIsNeverPassedAndBusyUnitsKeepBlocking
+note = the members are the ones kept out and everybody else goes on to the rule of two team mates
+original:
+| && !LeaderPasses(idle, mover)) return false;
+replacement:
+| && LeaderPasses(idle, mover)) return false;
+
+[rc2-6a-standing-asked-the-wrong-way]
+file = Assets/WarCore/Presentation/Bridge/Features/CrowdPassFeature.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheLeaderPasses|FullyQualifiedName~Rc21LedSquadTests.TheSquadFollowsItsLeaderUpTheStair|FullyQualifiedName~Wp21PassTests
+expect = WarCore.Tests.Rc21LedSquadTests.TheLeaderPassesTheMembersOfItsSquadAndNothingElseChanges
+expect = WarCore.Tests.Rc21LedSquadTests.TheSquadFollowsItsLeaderUpTheStair
+note = the member is asked for as the leader and the leader as the member
+original:
+| && !LeaderPasses(idle, mover)) return false;
+replacement:
+| && !LeaderPasses(mover, idle)) return false;
+
+[rc2-6a-member-passes-whoever-is-engaged]
+file = Assets/WarCore/Presentation/Bridge/Features/CrowdPassFeature.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheLeaderPasses|FullyQualifiedName~Rc21LedSquadTests.TheSquadFollowsItsLeaderUpTheStair|FullyQualifiedName~Wp21PassTests
+expect = WarCore.Tests.Rc21LedSquadTests.TheLeaderPassesTheMembersOfItsSquadAndNothingElseChanges
+note = a member passes the standing leader even while one of the two is engaged
+original:
+| if (controlled != null && idle.Equals(controlled.Current) && !LeaderPasses(idle, mover)) return false;
+replacement:
+| if (controlled != null && idle.Equals(controlled.Current)) return LeaderPasses(idle, mover);
+
+[rc2-6a-walking-leader-passed]
+file = Assets/WarCore/Presentation/Bridge/Features/CrowdPassFeature.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheLeaderPasses|FullyQualifiedName~Rc21LedSquadTests.TheSquadFollowsItsLeaderUpTheStair|FullyQualifiedName~Wp21PassTests
+expect = WarCore.Tests.Rc21LedSquadTests.TheLeaderPassesTheMembersOfItsSquadAndNothingElseChanges
+note = a member passes the leader while the leader walks
+original:
+| public bool MayPassMoving(EntityId mover, EntityId other) => LeaderPasses(mover, other);
+replacement:
+| public bool MayPassMoving(EntityId mover, EntityId other) => LeaderPasses(mover, other) || LeaderPasses(other, mover);
+
+[rc2-6a-leader-by-the-rule-of-team-mates]
+file = Assets/WarCore/Presentation/Bridge/Features/CrowdPassFeature.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheLeaderPasses|FullyQualifiedName~Rc21LedSquadTests.TheSquadFollowsItsLeaderUpTheStair|FullyQualifiedName~Wp21PassTests
+expect = WarCore.Tests.Rc21LedSquadTests.TheLeaderPassesTheMembersOfItsSquadAndNothingElseChanges
+note = the controlled unit as the mover goes by the rule of two team mates
+original:
+| if (controlled != null && mover.Equals(controlled.Current)) return LeaderPasses(mover, idle);
+replacement:
+| ;
+
+[rc2-6a-digest-of-the-old-rule]
+file = Assets/WarCore/Presentation/Bridge/Features/CrowdPassFeature.cs
+filter = FullyQualifiedName~Rc21LedSquadTests.TheLeaderPasses|FullyQualifiedName~Rc21LedSquadTests.TheSquadFollowsItsLeaderUpTheStair|FullyQualifiedName~Wp21PassTests
+expect = WarCore.Tests.Rc21LedSquadTests.TheLeaderPassesTheMembersOfItsSquadAndNothingElseChanges
+note = the rule changed and kept RC2-1's digest, so a save of the old rule would load
+original:
+| internal const ulong LeaderDigest = 0x5445414D49444C33UL;
+replacement:
+| internal const ulong LeaderDigest = 0x5445414D49444C32UL;
+
+
+# ---- the walking code, the mark set late (review finding 2)
+
+[rc2-6a-walk-marked-late]
+file = Assets/WarCore/Interim/InterimLocomotion.Crowd.cs
+filter = FullyQualifiedName~Rc26aWalkingLeaderTests
+expect = WarCore.Tests.Rc26aWalkingLeaderTests.SteppingTheControlledUnitWalks
+expect = WarCore.Tests.Rc26aWalkingLeaderTests.PushingAgainstAWallTheControlledUnitWalks
+expect = WarCore.Tests.Rc26aWalkingLeaderTests.SavedWhileTheControlledUnitWalksAndLoadedTheWorldPlaysOnTheSame
+note = the controlled unit is marked as walking only when the main loop reaches it: a unit before it in the table still sees it standing
+original:
+| if (displacement.LengthSquared.Sign != 0) provisional[i].Active = true;
+|                         StepControlled(context, i, FlatControlled(i, displacement));
+|                         break;
+|                     }
+|             for (int i = 0; i < memberCount; i++)
+|             {
+|                 if (i == controlledIndex) continue;
+replacement:
+| StepControlled(context, i, FlatControlled(i, displacement));
+|                         break;
+|                     }
+|             for (int i = 0; i < memberCount; i++)
+|             {
+|                 if (i == controlledIndex) { provisional[i].Active = controlledStep.TryGetStep(context, out _, out SimVec3 late) && late.LengthSquared.Sign != 0; continue; }
+
+# ---- R4: a member whose place the leader's body is on stands a step aside of it (LedSquad.cs: Clear, Aside, Stand, Upkeep,
+# TryPlace). rc2-6a-r4-*: each must be killed by Rc26aStandClearTests. rc2-6a-r4x-*: harder to reach, tried and reported.
+# Not listed: anything that makes Stand give a refused side again (the walk loop of Upkeep would not end: a timeout, not a
+# failed assertion); the heights counting on a map without floors (no two points a body's width apart that can both be
+# stood on differ by a body's height there); the two heights swapped (every body in the test packs is as tall as the next);
+# half a step only when it is longer than the two radii (>= to >: where it is just as long, E and W on a 1 m lattice, the
+# search from the two radii up finds the same step).
+
+[rc2-6a-r4-touching-overlaps]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests
+expect = WarCore.Tests.Rc26aStandClearTests.
+note = bodies that only touch count as overlapping (the boundary of Clear)
+original:
+| if (CombatSystem.Horizontal(point - leaderAt).LengthSquared >= new SimVec3(leaderRadius + radius, default, default).LengthSquared) return true;
+replacement:
+| if (CombatSystem.Horizontal(point - leaderAt).LengthSquared > new SimVec3(leaderRadius + radius, default, default).LengthSquared) return true;
+
+[rc2-6a-r4-member-radius-ignored]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests
+expect = WarCore.Tests.Rc26aStandClearTests.
+note = the member's own body radius is left out
+original:
+| if (CombatSystem.Horizontal(point - leaderAt).LengthSquared >= new SimVec3(leaderRadius + radius, default, default).LengthSquared) return true;
+replacement:
+| if (CombatSystem.Horizontal(point - leaderAt).LengthSquared >= new SimVec3(leaderRadius, default, default).LengthSquared) return true;
+
+[rc2-6a-r4-leader-radius-ignored]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests
+expect = WarCore.Tests.Rc26aStandClearTests.
+note = the leader's body radius is left out
+original:
+| leaderRadius = Radius(player);
+replacement:
+| leaderRadius = default;
+
+[rc2-6a-r4-heights-never-clear]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests
+expect = WarCore.Tests.Rc26aStandClearTests.
+note = a leader a floor above or below a place counts as on it
+original:
+| return layers != null && (rise >= 2 * leaderHalf || -rise >= 2 * half);
+replacement:
+| return false;
+
+[rc2-6a-r4-floors-always-clear]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests
+expect = WarCore.Tests.Rc26aStandClearTests.
+note = on a map with floors nobody ever counts as on a place
+original:
+| return layers != null && (rise >= 2 * leaderHalf || -rise >= 2 * half);
+replacement:
+| return layers != null;
+
+[rc2-6a-r4-leader-height-zero]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests
+expect = WarCore.Tests.Rc26aStandClearTests.
+note = the leader's body has no height: a place level with its feet is clear of it
+original:
+| leaderHalf = Half(player);
+replacement:
+| leaderHalf = 0;
+
+[rc2-6a-r4-member-height-ignored]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests
+expect = WarCore.Tests.Rc26aStandClearTests.
+note = the member's body has no height: a place level with the leader's feet is clear of it
+original:
+| return layers != null && (rise >= 2 * leaderHalf || -rise >= 2 * half);
+replacement:
+| return layers != null && (rise >= 2 * leaderHalf || -rise >= 0);
+
+[rc2-6a-r4x-floors-by-layer]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests
+expect = WarCore.Tests.Rc26aStandClearTests.
+note = floors are told apart by the layer, not by the bodies' heights (the first version of the rule): a leader on the first cell of a stair is not on the place at its foot
+original:
+| return layers != null && (rise >= 2 * leaderHalf || -rise >= 2 * half);
+replacement:
+| return layers != null && LayerOf(controlled.Current) != anchorLayer;
+
+[rc2-6a-r4-full-step]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests
+expect = WarCore.Tests.Rc26aStandClearTests.
+note = the member stands a whole lattice step aside
+original:
+| halves[side] = new SimVec3(SimFix.FromRaw(offsets[side].X.Raw / 2), default, SimFix.FromRaw(offsets[side].Z.Raw / 2));
+replacement:
+| halves[side] = new SimVec3(SimFix.FromRaw(offsets[side].X.Raw / 1), default, SimFix.FromRaw(offsets[side].Z.Raw / 1));
+
+[rc2-6a-r4-always-half-a-step]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests
+expect = WarCore.Tests.Rc26aStandClearTests.
+note = half a lattice step even when it is shorter than the two radii (the first version of the rule)
+original:
+| if (halves[side].LengthSquared >= clear) return halves[side];
+replacement:
+| if (true) return halves[side];
+
+[rc2-6a-r4-never-half-a-step]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests
+expect = WarCore.Tests.Rc26aStandClearTests.
+note = the shortest step from the two radii up even when half a lattice step is longer
+original:
+| if (halves[side].LengthSquared >= clear) return halves[side];
+replacement:
+| if (false) return halves[side];
+
+[rc2-6a-r4-never-aside]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests
+expect = WarCore.Tests.Rc26aStandClearTests.
+note = a member never stands aside (Stand as before the rule)
+original:
+| if (Clear(radius, half, at)) return true;
+replacement:
+| if (Clear(radius, half, at) || side < 0) return true;
+
+[rc2-6a-r4-side-on-the-leader]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests
+expect = WarCore.Tests.Rc26aStandClearTests.
+note = a side is taken, and kept, although the leader's body is on it too
+original:
+| if (!Usable(places[i] + step, out SimVec3 point) || !Clear(radius, half, point)) continue;
+replacement:
+| if (!Usable(places[i] + step, out SimVec3 point)) continue;
+
+[rc2-6a-r4-side-not-usable]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests
+expect = WarCore.Tests.Rc26aStandClearTests.
+note = a side is taken although nobody can stand there
+original:
+| if (!Usable(places[i] + step, out SimVec3 point) || !Clear(radius, half, point)) continue;
+replacement:
+| SimVec3 point = places[i] + step; if (!Clear(radius, half, point)) continue;
+
+[rc2-6a-r4-not-kept]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests
+expect = WarCore.Tests.Rc26aStandClearTests.
+note = the side the member already stands at or walks to is not kept
+original:
+| if (walking ? Same(target, point) : SimpleAiSystem.Arrived(from, point)) { at = point; side = s; return true; }
+replacement:
+| if (walking && !walking) { at = point; side = s; return true; }
+
+[rc2-6a-r4-kept-only-standing]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests
+expect = WarCore.Tests.Rc26aStandClearTests.
+note = the side a member walks to is not kept: it changes sides on its way as the leader shifts
+original:
+| if (walking ? Same(target, point) : SimpleAiSystem.Arrived(from, point)) { at = point; side = s; return true; }
+replacement:
+| if (!walking && SimpleAiSystem.Arrived(from, point)) { at = point; side = s; return true; }
+
+[rc2-6a-r4-kept-only-walking]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests
+expect = WarCore.Tests.Rc26aStandClearTests.
+note = the side a member stands at is not kept: once there it is sent to another
+original:
+| if (walking ? Same(target, point) : SimpleAiSystem.Arrived(from, point)) { at = point; side = s; return true; }
+replacement:
+| if (walking && Same(target, point)) { at = point; side = s; return true; }
+
+[rc2-6a-r4-toward-leader]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests
+expect = WarCore.Tests.Rc26aStandClearTests.
+note = the side that points most towards the leader is taken
+original:
+| if (side >= 0 && toward >= least) continue;
+replacement:
+| if (side >= 0 && toward <= least) continue;
+
+[rc2-6a-r4-first-side]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests
+expect = WarCore.Tests.Rc26aStandClearTests.
+note = the first side that is free is taken, wherever the leader stands (the first version of the rule): the member crosses the leader
+original:
+| if (side >= 0 && toward >= least) continue;
+replacement:
+| if (side >= 0) continue;
+
+[rc2-6a-r4-ties-to-the-higher-side]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests
+expect = WarCore.Tests.Rc26aStandClearTests.
+note = of two sides that point away alike the higher one is taken
+original:
+| if (side >= 0 && toward >= least) continue;
+replacement:
+| if (side >= 0 && toward > least) continue;
+
+[rc2-6a-r4-answer-keeps-a-point-on-false]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests
+expect = WarCore.Tests.Rc26aStandClearTests.
+note = with nowhere to stand the answer still carries a point
+original:
+| if (side < 0) at = default;
+replacement:
+| ;
+
+[rc2-6a-r4-arrived-on-the-leader]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests
+expect = WarCore.Tests.Rc26aStandClearTests.
+note = a member within reach of where it is to stand stops although its body is still on the leader
+original:
+| SimpleAiSystem.Arrived(at, stand) && Clear(body, half, at))
+replacement:
+| SimpleAiSystem.Arrived(at, stand))
+
+[rc2-6a-r4-arrived-at-its-place]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests
+expect = WarCore.Tests.Rc26aStandClearTests.
+note = a member near its own place and clear of the leader stays there although it is to stand aside
+original:
+| SimpleAiSystem.Arrived(at, stand) && Clear(body, half, at))
+replacement:
+| SimpleAiSystem.Arrived(at, places[i]) && Clear(body, half, at))
+
+[rc2-6a-r4-walks-to-its-place]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests
+expect = WarCore.Tests.Rc26aStandClearTests.
+note = the walk order goes to the place, not to where the member is to stand
+original:
+| moves.Order(id, stand, anchorLayer);
+replacement:
+| moves.Order(id, places[i], anchorLayer);
+
+[rc2-6a-r4-ordered-every-tick]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests
+expect = WarCore.Tests.Rc26aStandClearTests.
+note = a member walking aside is given its order again every tick
+original:
+| if (refused[i] || headed && Same(target, stand)) break;
+replacement:
+| if (refused[i] || headed && Same(target, places[i])) break;
+
+[rc2-6a-r4-refused-member-sent-aside]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests
+expect = WarCore.Tests.Rc26aStandClearTests.
+note = a member whose walk to its place was refused is still sent aside (the first version of the rule)
+original:
+| if (refused[i] || headed && Same(target, stand)) break;
+replacement:
+| if (refused[i] && side < 0 || headed && Same(target, stand)) break;
+
+[rc2-6a-r4-nowhere-keeps-walking]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests
+expect = WarCore.Tests.Rc26aStandClearTests.
+note = a member with nowhere to stand keeps its old walk order
+original:
+| if (skip != 0) refused[i] = true; else if (walking) moves.Stop(id);
+replacement:
+| if (skip != 0) refused[i] = true;
+
+[rc2-6a-r4-all-refused-not-remembered]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests
+expect = WarCore.Tests.Rc26aStandClearTests.
+note = a member all of whose sides were refused is asked again on every tick
+original:
+| if (skip != 0) refused[i] = true; else if (walking) moves.Stop(id);
+replacement:
+| if (skip == 0 && walking) moves.Stop(id);
+
+[rc2-6a-r4-refused-aside-not-moved-on]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests
+expect = WarCore.Tests.Rc26aStandClearTests.
+note = a refused order to stand aside does not go on to the next side (the first version of the rule: the same order again on the next tick)
+original:
+| skip |= 1 << side;
+replacement:
+| break;
+
+[rc2-6a-r4-refused-aside-marks-at-once]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests
+expect = WarCore.Tests.Rc26aStandClearTests.
+note = one refused side is enough to leave the member alone
+original:
+| if (side < 0) { refused[i] = true; break; }
+replacement:
+| { refused[i] = true; break; }
+
+[rc2-6a-r4-answer-without-radius]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests
+expect = WarCore.Tests.Rc26aStandClearTests.
+note = TryPlace answers without the member's body radius
+original:
+| return Stand(i, Radius(unit), Half(unit), alive ? here : places[i], walking, target, 0, out place, out _);
+replacement:
+| return Stand(i, default, Half(unit), alive ? here : places[i], walking, target, 0, out place, out _);
+
+[rc2-6a-r4-answer-forgets-the-walk]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests
+expect = WarCore.Tests.Rc26aStandClearTests.
+note = TryPlace answers without the walk order: not the side the member is on its way to
+original:
+| bool walking = alive && moves.TryGetOrder(unit, out target, out layer) && layer == anchorLayer;
+replacement:
+| bool walking = alive && moves.TryGetOrder(unit, out target, out layer) && layer != anchorLayer;
+
+[rc2-6a-r4-answer-from-its-place]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests
+expect = WarCore.Tests.Rc26aStandClearTests.
+note = TryPlace answers as if the member stood on its place: not the side it stands at
+original:
+| alive ? here : places[i], walking
+replacement:
+| places[i], walking
+
+# ---- R4 while the leader walks: a walking leader sends nobody aside; a member it walks past stands as it stands (LedSquad.cs:
+# leaderWalks in Step, the line before the walk loop of Upkeep, Passed), and TryPlace for a member whose unit is gone. Each
+# must be killed by Rc26aPassedMemberTests (or Rc26aStandClearTests where it is named).
+
+[rc2-6a-r4-pass-removed]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests|FullyQualifiedName~Rc26aPassedMemberTests
+expect = WarCore.Tests.Rc26aPassedMemberTests.TheLeaderWalkingOverAMemberOnItsPlaceLeavesItStanding
+note = a walking leader sends a member aside like a standing one (the second version of the rule)
+original:
+| if (leaderWalks && !walking && LayerOf(entity) == anchorLayer && Passed(i, body, half, at)) continue;
+replacement:
+|
+
+[rc2-6a-r4-pass-when-standing]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests|FullyQualifiedName~Rc26aPassedMemberTests
+expect = WarCore.Tests.Rc26aPassedMemberTests.TheLeaderWalkingOverAMemberOnItsPlaceLeavesItStanding
+expect = WarCore.Tests.Rc26aStandClearTests.AMemberWithinReachOfItsPlaceIsWalkedAsideWhileTheLeaderIsOnThePlace
+note = the members are passed while the leader stands, not while it walks
+original:
+| if (leaderWalks && !walking && LayerOf(entity) == anchorLayer && Passed(i, body, half, at)) continue;
+replacement:
+| if (!leaderWalks && !walking && LayerOf(entity) == anchorLayer && Passed(i, body, half, at)) continue;
+
+[rc2-6a-r4-pass-walking]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests|FullyQualifiedName~Rc26aPassedMemberTests
+expect = WarCore.Tests.Rc26aPassedMemberTests.AMemberWalkingToItsPlaceStopsThereTheSameWhetherTheLeaderWalksOrStands
+note = a member with a walk order is passed too: within reach of its place it is not stopped while the leader walks
+original:
+| if (leaderWalks && !walking && LayerOf(entity) == anchorLayer && Passed(i, body, half, at)) continue;
+replacement:
+| if (leaderWalks && LayerOf(entity) == anchorLayer && Passed(i, body, half, at)) continue;
+
+[rc2-6a-r4-pass-on-another-layer]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests|FullyQualifiedName~Rc26aPassedMemberTests
+expect = WarCore.Tests.Rc26aPassedMemberTests.AMemberUnderItsPlaceOnAnotherLayerIsSentThereWhileTheLeaderWalks
+note = a member on another layer than the anchor's is passed: right under its place it is not sent there
+original:
+| if (leaderWalks && !walking && LayerOf(entity) == anchorLayer && Passed(i, body, half, at)) continue;
+replacement:
+| if (leaderWalks && !walking && Passed(i, body, half, at)) continue;
+
+[rc2-6a-r4-pass-not-on-its-place]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests|FullyQualifiedName~Rc26aPassedMemberTests
+expect = WarCore.Tests.Rc26aPassedMemberTests.TheLeaderWalkingOverAMemberOnItsPlaceLeavesItStanding
+note = a member on its own place is not passed
+original:
+| if (SimpleAiSystem.Arrived(at, places[i])) return true;
+replacement:
+| if (false) return true;
+
+[rc2-6a-r4-pass-while-aside]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests|FullyQualifiedName~Rc26aPassedMemberTests
+expect = WarCore.Tests.Rc26aPassedMemberTests.AMemberAsideGoesBackOnceThePlaceIsFreeAlthoughTheLeaderWalks
+note = a member aside is passed although the leader is off its place: it goes back only once the leader stands
+original:
+| if (Clear(radius, half, places[i])) return false;
+replacement:
+|
+
+[rc2-6a-r4-pass-without-sides]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests|FullyQualifiedName~Rc26aPassedMemberTests
+expect = WarCore.Tests.Rc26aPassedMemberTests.AMemberAsideStaysWhileTheWalkingLeaderIsOnItsPlaceAndItsSide
+note = a member aside is not passed: it changes sides while the walking leader is on its place and its side
+original:
+| if (Usable(places[i] + Aside(s, radius), out SimVec3 point) && SimpleAiSystem.Arrived(at, point)) return true;
+replacement:
+| continue;
+
+[rc2-6a-r4-pass-clear-of-the-member]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests|FullyQualifiedName~Rc26aPassedMemberTests
+expect = WarCore.Tests.Rc26aPassedMemberTests.AMemberAsideGoesBackOnceThePlaceIsFreeAlthoughTheLeaderWalks
+note = the place is asked about the member's own point: a leader on the member's body keeps it aside although the place is free
+original:
+| if (Clear(radius, half, places[i])) return false;
+replacement:
+| if (Clear(radius, half, at)) return false;
+
+[rc2-6a-r4-walks-on-both-axes]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests|FullyQualifiedName~Rc26aPassedMemberTests
+expect = WarCore.Tests.Rc26aPassedMemberTests.TheLeaderWalkingOverAMemberOnItsPlaceLeavesItStanding
+note = the leader walks only when its input moves it on both axes
+original:
+| leaderWalks = c.Input.Move.X.Raw != 0 || c.Input.Move.Z.Raw != 0;
+replacement:
+| leaderWalks = c.Input.Move.X.Raw != 0 && c.Input.Move.Z.Raw != 0;
+
+[rc2-6a-r4-walks-on-x-only]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests|FullyQualifiedName~Rc26aPassedMemberTests
+expect = WarCore.Tests.Rc26aPassedMemberTests.TheLeaderWalkingOverAMemberOnItsPlaceLeavesItStanding
+note = the leader walks only when its input moves it along x
+original:
+| leaderWalks = c.Input.Move.X.Raw != 0 || c.Input.Move.Z.Raw != 0;
+replacement:
+| leaderWalks = c.Input.Move.X.Raw != 0;
+
+[rc2-6a-r4-walks-on-z-only]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests|FullyQualifiedName~Rc26aPassedMemberTests
+expect = WarCore.Tests.Rc26aPassedMemberTests.TheLeaderWalkingOverAMemberOnItsPlaceLeavesItStanding
+note = the leader walks only when its input moves it along z
+original:
+| leaderWalks = c.Input.Move.X.Raw != 0 || c.Input.Move.Z.Raw != 0;
+replacement:
+| leaderWalks = c.Input.Move.Z.Raw != 0;
+
+[rc2-6a-r4-walks-a-tick-late]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests|FullyQualifiedName~Rc26aPassedMemberTests
+expect = WarCore.Tests.Rc26aPassedMemberTests.AMemberIsSentAsideOnTheTickTheLeaderStandsOnItsPlace
+note = the squad takes the leader's input of the tick before
+original:
+| leaderWalks = c.Input.Move.X.Raw != 0 || c.Input.Move.Z.Raw != 0;
+|                 Upkeep();
+replacement:
+| Upkeep();
+|                 leaderWalks = c.Input.Move.X.Raw != 0 || c.Input.Move.Z.Raw != 0;
+
+[rc2-6a-r4-answer-asks-a-gone-member]
+file = Assets/WarCore/Battle/Ai/LedSquad.cs
+filter = FullyQualifiedName~Rc26aStandClearTests|FullyQualifiedName~Rc26aPassedMemberTests
+expect = WarCore.Tests.Rc26aPassedMemberTests.AMemberWhoseUnitIsGoneIsAnsweredWithItsPlace
+note = TryPlace asks the move orders about a member whose unit is gone (they throw)
+original:
+| bool walking = alive && moves.TryGetOrder(unit, out target, out layer) && layer == anchorLayer;
+replacement:
+| bool walking = moves.TryGetOrder(unit, out target, out layer) && layer == anchorLayer;

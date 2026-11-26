@@ -767,9 +767,10 @@ filter = FullyQualifiedName~Rc21LedRulesTests
 expect = WarCore.Tests.Rc21LedRulesTests.APlaceInAWallOrBehindItIsLeftOutAndItsMemberTakesTheNextFreeOne
 note = a member without its own place takes every free place, ending on the last
 original:
-| break;
+| placed[i] = true; taken[o] = true;
+|                     break;
 replacement:
-|
+| placed[i] = true; taken[o] = true;
 
 [rc2-1-place-spare-ignores-taken]
 file = Assets/WarCore/Battle/Ai/LedSquad.cs
@@ -777,9 +778,9 @@ filter = FullyQualifiedName~Rc21LedRulesTests
 expect = WarCore.Tests.Rc21LedRulesTests.APlaceInAWallOrBehindItIsLeftOutAndItsMemberTakesTheNextFreeOne
 note = a spare place may be one another member has
 original:
-| if (taken[o] || !Usable(o, out places[i])) continue;
+| if (taken[o] || !Usable(anchor + offsets[o], out places[i])) continue;
 replacement:
-| if (!Usable(o, out places[i])) continue;
+| if (!Usable(anchor + offsets[o], out places[i])) continue;
 
 [rc2-1-place-keeps-refusals]
 file = Assets/WarCore/Battle/Ai/LedSquad.cs
@@ -817,9 +818,9 @@ filter = FullyQualifiedName~Rc21LedSquadTests.SentOneFloorUp
 expect = WarCore.Tests.Rc21LedSquadTests.SentOneFloorUpFromWhereItWalksOrStandsTheSquadClimbs
 note = the places are looked for on the ground floor whatever the anchor's floor
 original:
-| moves.TryStandAt(anchor + offsets[offset], anchorLayer, out grounded)
+| moves.TryStandAt(point, anchorLayer, out grounded)
 replacement:
-| moves.TryStandAt(anchor + offsets[offset], 0, out grounded)
+| moves.TryStandAt(point, 0, out grounded)
 
 # ---- Upkeep
 
@@ -839,9 +840,9 @@ filter = FullyQualifiedName~Rc21LedRulesTests
 expect = WarCore.Tests.Rc21LedRulesTests.AMemberStopsAsSoonAsItHasArrived
 note = a member that has arrived is not stopped
 original:
-| SimpleAiSystem.Arrived(at, places[i])) { if (walking) moves.Stop(id); continue; }
+| SimpleAiSystem.Arrived(at, stand) && Clear(body, half, at)) { if (walking) moves.Stop(id); break; }
 replacement:
-| SimpleAiSystem.Arrived(at, places[i])) { continue; }
+| SimpleAiSystem.Arrived(at, stand) && Clear(body, half, at)) { break; }
 
 [rc2-1-upkeep-arrived-any-floor]
 file = Assets/WarCore/Battle/Ai/LedSquad.cs
@@ -859,9 +860,9 @@ filter = FullyQualifiedName~Rc21LedGuardsTests.AWalkOrder|FullyQualifiedName~Rc2
 expect = WarCore.Tests.Rc21LedGuardsTests.AWalkOrderThatWasRefusedIsNotGivenAgainUntilThePlacesChange
 note = a refused walk order is given again on every tick
 original:
-| if (refused[i]) continue;
+| if (refused[i] || headed && Same(target, stand)) break;
 replacement:
-|
+| if (headed && Same(target, stand)) break;
 
 [rc2-1-upkeep-reorders-every-tick]
 file = Assets/WarCore/Battle/Ai/LedSquad.cs
@@ -869,9 +870,9 @@ filter = FullyQualifiedName~Rc21LedGuardsTests.AWalkOrder|FullyQualifiedName~Rc2
 expect = WarCore.Tests.Rc21LedGuardsTests.AMemberIsToldOnceWhereToGo
 note = a member on its way is told again on every tick
 original:
-| if (walking && targetLayer == anchorLayer && target.X.Raw == places[i].X.Raw && target.Z.Raw == places[i].Z.Raw) continue;
+| if (refused[i] || headed && Same(target, stand)) break;
 replacement:
-|
+| if (refused[i]) break;
 
 [rc2-1-upkeep-same-order-any-floor]
 file = Assets/WarCore/Battle/Ai/LedSquad.cs
@@ -879,9 +880,9 @@ filter = FullyQualifiedName~Rc21LedSquadTests.SentOneFloorUp
 expect = WarCore.Tests.Rc21LedSquadTests.SentOneFloorUpFromWhereItWalksOrStandsTheSquadClimbs
 note = a member walking to the point under its new place is not told the new floor
 original:
-| if (walking && targetLayer == anchorLayer && target.X.Raw
+| bool headed = walking && targetLayer == anchorLayer;
 replacement:
-| if (walking && target.X.Raw
+| bool headed = walking;
 
 [rc2-1-upkeep-same-order-any-x]
 file = Assets/WarCore/Battle/Ai/LedSquad.cs
@@ -889,9 +890,9 @@ filter = FullyQualifiedName~Rc21LedGuardsTests.AWalkOrder|FullyQualifiedName~Rc2
 expect = WarCore.Tests.Rc21LedGuardsTests.AMemberIsToldOnceWhereToGo
 note = a new place due east or west is not told
 original:
-|  && target.X.Raw == places[i].X.Raw && target.Z.Raw
+| Same(SimVec3 a, SimVec3 b) => a.X.Raw == b.X.Raw && a.Z.Raw == b.Z.Raw;
 replacement:
-|  && target.Z.Raw
+| Same(SimVec3 a, SimVec3 b) => a.Z.Raw == b.Z.Raw;
 
 [rc2-1-upkeep-same-order-any-z]
 file = Assets/WarCore/Battle/Ai/LedSquad.cs
@@ -899,9 +900,9 @@ filter = FullyQualifiedName~Rc21LedGuardsTests.AWalkOrder|FullyQualifiedName~Rc2
 expect = WarCore.Tests.Rc21LedGuardsTests.AMemberIsToldOnceWhereToGo
 note = a new place due north or south is not told
 original:
-|  && target.Z.Raw == places[i].Z.Raw) continue;
+| Same(SimVec3 a, SimVec3 b) => a.X.Raw == b.X.Raw && a.Z.Raw == b.Z.Raw;
 replacement:
-| ) continue;
+| Same(SimVec3 a, SimVec3 b) => a.X.Raw == b.X.Raw;
 
 [rc2-1-upkeep-order-ground-floor]
 file = Assets/WarCore/Battle/Ai/LedSquad.cs
@@ -909,9 +910,9 @@ filter = FullyQualifiedName~Rc21LedSquadTests.SentOneFloorUp
 expect = WarCore.Tests.Rc21LedSquadTests.SentOneFloorUpFromWhereItWalksOrStandsTheSquadClimbs
 note = members are walked to the ground floor whatever the anchor's floor
 original:
-| moves.Order(id, places[i], anchorLayer);
+| moves.Order(id, stand, anchorLayer);
 replacement:
-| moves.Order(id, places[i], 0);
+| moves.Order(id, stand, 0);
 
 [rc2-1-upkeep-refusal-not-kept]
 file = Assets/WarCore/Battle/Ai/LedSquad.cs
@@ -919,9 +920,9 @@ filter = FullyQualifiedName~Rc21LedGuardsTests.AWalkOrder|FullyQualifiedName~Rc2
 expect = WarCore.Tests.Rc21LedGuardsTests.AWalkOrderThatWasRefusedIsNotGivenAgainUntilThePlacesChange
 note = a refused walk order is not marked
 original:
-| if (!moves.TryGetOrder(id, out _, out _)) refused[i] = true;
+| if (side < 0) { refused[i] = true; break; }
 replacement:
-|
+| if (side < 0) { break; }
 
 # ---- SaveState, LoadState, WriteState
 
@@ -1308,9 +1309,9 @@ filter = FullyQualifiedName~Rc21LedSquadTests.TheLeaderPasses|FullyQualifiedName
 expect = WarCore.Tests.Rc21LedSquadTests.TheLeaderPassesTheMembersOfItsSquadAndNothingElseChanges
 note = another digest for the rule with a led squad
 original:
-| internal const ulong LeaderDigest = 0x5445414D49444C32UL;
-replacement:
 | internal const ulong LeaderDigest = 0x5445414D49444C33UL;
+replacement:
+| internal const ulong LeaderDigest = 0x5445414D49444C34UL;
 
 [rc2-1-pass-leader-blocked-by-idle]
 file = Assets/WarCore/Presentation/Bridge/Features/CrowdPassFeature.cs
