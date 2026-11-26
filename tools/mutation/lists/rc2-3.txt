@@ -1,6 +1,7 @@
-# RC2-3 commander: who it dispatches (R0), enemies near a point (R2), the plan and its anchor (R3, underWay), which orders stay (R4),
-# who goes where (R5), orders that still serve (R6), the rows (R8), the saved state, the content fields, the registration, and
-# the test checker's own rules. The commander tests without the whole-match ones; R0 by its own test.
+# RC2-3 commander: who it dispatches (R0), enemies near a point (R2), the plan and its anchor (R3, underWay), which orders
+# stay (R4), who goes where (R5), orders that still serve (R6), the rows (R8), the saved state, the bounds of the rules, the
+# content fields, the registration and the test checker's own rules. The commander tests without the whole-match ones; R0
+# by its own test.
 # Not listed, because the change cannot alter what happens: asking Squads.RegroupOf of every unit, not only of a leader
 # and the members of a living leader (Squads.Clean dissolves a squad whose leader cannot be dispatched in the requests
 # phase, before the commander runs, and units fall only when the damage settles after the queries phase); and dropping
@@ -329,6 +330,58 @@ original:
 replacement:
 | if (g < 0) break;
 
+[rc2-3-r5-nearest-tie-higher]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.CommanderGroupTests.OfTwoGroupsAsNearTheSmallerKeyGoes
+note = two groups as near: the one with the higher key is sent
+original:
+| if (best < 0 || span < bestSpan) { best = g; bestSpan = span; }
+replacement:
+| if (best < 0 || span <= bestSpan) { best = g; bestSpan = span; }
+
+[rc2-3-r4-member-row-last]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.CommanderGroupTests.WithoutTheLeadersRowTheSmallestKeysRowIsTheGroupsOrder
+note = a group whose leader has no row takes the last member row, not the lowest key's
+original:
+| else if (!leaderRow[g] && groupOrders[g] < 0) groupOrders[g] = r;
+replacement:
+| else if (!leaderRow[g]) groupOrders[g] = r;
+
+[rc2-3-r3-soldiers-groups]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.CommanderGroupTests.ThePoolCountsEveryHeadOfASquad
+note = soldiers are counted as groups, not heads
+original:
+| if (groupTeams[g] == team) soldiers += groupCounts[g];
+replacement:
+| if (groupTeams[g] == team) soldiers += 1;
+
+[rc2-3-r5-kept-deficit-groups]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.CommanderGroupTests.AKeptSquadFillsItsTargetByItsHeads
+note = a group that keeps its order counts as one soldier against the deficit
+original:
+| if (p < 0) { idle++; continue; }
+|                 deficit[p] -= groupCounts[g]; groupsAt[p]++;
+replacement:
+| if (p < 0) { idle++; continue; }
+|                 deficit[p] -= 1; groupsAt[p]++;
+
+[rc2-3-r5-sent-deficit-groups]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.CommanderGroupTests.ASentSquadFillsItsTargetByItsHeads
+note = a group sent this tick counts as one soldier against the deficit
+original:
+| groupOrders[g] = p; deficit[p] -= groupCounts[g]; groupsAt[p]++; idle--;
+replacement:
+| groupOrders[g] = p; deficit[p] -= 1; groupsAt[p]++; idle--;
+
 [rc2-3-r6-no-old-orders]
 file = Assets/WarCore/Battle/Ai/Commander.cs
 filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
@@ -441,6 +494,36 @@ original:
 | attack[i] = reader.Bool();
 replacement:
 | reader.Bool();
+
+[rc2-3-rules-targets-unbounded]
+file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.CommanderQuotaTests.Rules_BoundsAreTheNamedConstants
+note = more targets than MaxTargets are taken
+original:
+| if (maxAttackTargets > MaxTargets) throw new ArgumentOutOfRangeException(nameof(maxAttackTargets));
+replacement:
+|
+
+[rc2-3-rules-stickiness-unbounded]
+file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.CommanderQuotaTests.Rules_BoundsAreTheNamedConstants
+note = a stickiness above MaxWeight is taken
+original:
+| distanceWeightPerMetre > MaxWeight || stickiness > MaxWeight) throw
+replacement:
+| distanceWeightPerMetre > MaxWeight) throw
+
+[rc2-3-rules-threat-unbounded]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.CommanderContentTests.Rules_TheThreatRadiusIsBoundByTheMapSide
+note = a threat radius beyond the map side is taken
+original:
+| if (threatRadiusMm > MaxThreatRadiusMm) throw new ArgumentOutOfRangeException(nameof(threatRadiusMm));
+replacement:
+|
 
 [rc2-3-content-targets-low]
 file = Assets/WarCore/Content/Data/Sections/AiSection.cs

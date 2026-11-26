@@ -13,7 +13,7 @@ namespace WarCore.Tests
     // RC2-3 card appendix 7a: the three boards of the standard answers (early, idle, lose), built as the draft's scene probe
     // built them, numbers unchanged. Flat ground without walls, nobody has a weapon, the match never ends.
     //   early: 120 x 40 m. A (team 1, x 20, z 20, radius 6 m), B (team 2, x 100); bases (4, 20) and (116, 20). Team 1: 40
-    //          units (keys 1..40) at x 8..22, z 12..18; team 2: 12 (keys 100..111) at x 106..112, z 16..20. Speed 4 m/s,
+    //          units (keys 1..40) at x 8..22, z 12..20; team 2: 12 (keys 100..111) at x 106..112, z 16..20. Speed 4 m/s,
     //          capture 300 ticks, think every 30. Once 8 team-2 units stand within 30 m of A (or 600 ticks after the first
     //          did), every team-2 unit falls 300 ticks later.
     //   idle:  early plus 12 team-1 units (keys 41..52) at z 36, x 30..52, held from the start (R0: commanded). A team-2 unit
