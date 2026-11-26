@@ -1,0 +1,663 @@
+# RC2-3 commander: who it dispatches (R0), enemies near a point (R2), the plan and its anchor (R3, underWay), which orders stay (R4),
+# who goes where (R5), orders that still serve (R6), the rows (R8), the saved state, the content fields, the registration, and
+# the test checker's own rules. One filter: the commander tests without the whole-match ones.
+
+[rc2-3-r0-controlled]
+file = Assets/WarCore/Battle/Ai/AiUnits.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = the unit the player controls is dispatched
+original:
+| if (controlled != null && entity.Equals(controlled.Current)) return false;
+replacement:
+|
+
+[rc2-3-r0-no-team]
+file = Assets/WarCore/Battle/Ai/AiUnits.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = a unit without a team is dispatched
+original:
+|  || unit.Team < 1
+|
+replacement:
+|
+|
+
+[rc2-3-r0-no-position]
+file = Assets/WarCore/Battle/Ai/AiUnits.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = a unit without a position is dispatched
+original:
+| !store.TryGet(positions, entity, out Position position)
+replacement:
+| !store.TryGet(positions, entity, out Position position) && false
+
+[rc2-3-r0-dead]
+file = Assets/WarCore/Battle/Ai/AiUnits.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = a dead unit is dispatched
+original:
+|  || combat.IsDead(entity)) return false;
+replacement:
+| ) return false;
+
+[rc2-3-r0-commanded]
+file = Assets/WarCore/Battle/Ai/AiUnits.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = a unit the player commands is dispatched
+original:
+| if (moves.IsCommanded(key)) return false;
+replacement:
+|
+
+[rc2-3-r0-regroup-any]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = RegroupOf is asked for every unit, not only a leader and the members of a living leader
+original:
+| if (body && squads.RegroupOf(id) == SquadRally.Active) continue;
+replacement:
+| if (squads.RegroupOf(id) == SquadRally.Active) continue;
+
+[rc2-3-r0-regroup-dispatched]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = a regrouping squad is dispatched
+original:
+| if (body && squads.RegroupOf(id) == SquadRally.Active) continue;
+replacement:
+|
+
+[rc2-3-r2-tie-higher]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = a unit midway between two points counts at the higher index
+original:
+| if (span < best) { nearest = i; best = span; }
+replacement:
+| if (span <= best) { nearest = i; best = span; }
+
+[rc2-3-r2-strictly-inside]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = a unit exactly on the threat radius is not counted
+original:
+| if (best <= threatSquared) near[
+replacement:
+| if (best < threatSquared) near[
+
+[rc2-3-r2-every-point]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = a unit counts at every point within the radius, not only the nearest
+original:
+| if (span < best) { nearest = i; best = span; }
+replacement:
+| if (span <= threatSquared) near[(standing - 1) * points + i]++; if (span < best) { nearest = i; best = span; }
+
+[rc2-3-r2-own-team]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = the team counts its own units as enemies
+original:
+| if (o != t) count += near[
+replacement:
+| count += near[
+
+[rc2-3-r3-anchor-no-base]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = the spawn anchor is never the anchor
+original:
+| if (!field.TryBase(team, out anchor))
+replacement:
+| if (true)
+
+[rc2-3-r3-anchor-no-own]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = without a base the anchor skips the own points
+original:
+| if (owners[i] == team) own = i;
+replacement:
+| if (false) own = i;
+
+[rc2-3-r3-anchor-last]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = the last fallback anchor is the last point
+original:
+| anchor = own >= 0 ? centers[own] : centers[0];
+replacement:
+| anchor = own >= 0 ? centers[own] : centers[points - 1];
+
+[rc2-3-r3-previous-dropped]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = the saved attack flags never reach the plan (no stickiness)
+original:
+| planPrevious[i] = attack[row + i];
+replacement:
+| planPrevious[i] = false;
+
+[rc2-3-r3-own-wants]
+file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = an own point wants a soldier
+original:
+| desiredOut[i] = 0;
+replacement:
+| desiredOut[i] = owners[i] == team ? 1 : 0;
+
+[rc2-3-r3-pool-soldiers]
+file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = the soldiers are split as they are, a target can get none
+original:
+| int pool = Math.Max(targets, soldiers);
+replacement:
+| int pool = soldiers;
+
+[rc2-3-p-candidate-no-underway]
+file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = a point under way is no candidate
+original:
+|  || underWay[i]);
+replacement:
+| );
+
+[rc2-3-p-fallback-underway]
+file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = the fallback counts the points under way
+original:
+| if (owners[i] != team && Touches(i, team, count, owners, adjacent)) touching++;
+replacement:
+| if (owners[i] != team && (Touches(i, team, count, owners, adjacent) || underWay[i])) touching++;
+
+[rc2-3-p-own-underway]
+file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = an own point under way is a candidate
+original:
+| owners[i] != team && (fallback || Touches(i, team, count, owners, adjacent) || underWay[i]);
+replacement:
+| (owners[i] != team && (fallback || Touches(i, team, count, owners, adjacent))) || underWay[i];
+
+[rc2-3-p-underway-not-cleared]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = underWay is not cleared between teams
+original:
+| planPrevious[i] = attack[row + i]; underWay[i] = false; }
+replacement:
+| planPrevious[i] = attack[row + i]; }
+
+[rc2-3-p-underway-other-teams]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = other teams' orders are under way too
+original:
+| if (groupTeams[g] == team && groupOrders[g] >= 0) underWay[groupOrders[g]] = true;
+replacement:
+| if (groupOrders[g] >= 0) underWay[groupOrders[g]] = true;
+
+[rc2-3-r4-unreachable-kept]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = an order the group cannot walk to is kept
+original:
+| if (!planAttack[p] || !field.TrySpan(groupAt[g], groupLayers[g], p, out _)) groupOrders[g] = -1;
+replacement:
+| if (!planAttack[p]) groupOrders[g] = -1;
+
+[rc2-3-r4-target-dropped]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = every order is let go, also one that still serves
+original:
+| if (!planAttack[p] || !field.TrySpan(groupAt[g], groupLayers[g], p, out _)) groupOrders[g] = -1;
+replacement:
+| groupOrders[g] = -1;
+
+[rc2-3-r4-non-target-kept]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = an order to a point that is no target is kept
+original:
+| if (!planAttack[p] || !field.TrySpan(groupAt[g], groupLayers[g], p, out _)) groupOrders[g] = -1;
+replacement:
+| if (!field.TrySpan(groupAt[g], groupLayers[g], p, out _)) groupOrders[g] = -1;
+
+[rc2-3-r4-leader-without-row]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = a group whose leader has no row does not take a member's row
+original:
+| else if (!leaderRow[g] && groupOrders[g] < 0) groupOrders[g] = r;
+replacement:
+| else if (false) groupOrders[g] = r;
+
+[rc2-3-r5-steps-swapped]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = the largest deficit is picked before a target nobody goes to
+original:
+|             for (int i = 0; i < points; i++)
+|                 if (planAttack[i] && groupsAt[i] == 0 && !blocked[i] && (pick < 0 || planDesired[i] > planDesired[pick])) pick = i;
+|             if (pick >= 0) return pick;
+|             for (int i = 0; i < points; i++)
+|                 if (planAttack[i] && !blocked[i] && (pick < 0 || deficit[i] > deficit[pick])) pick = i;
+|             return pick;
+replacement:
+|             for (int i = 0; i < points; i++)
+|                 if (planAttack[i] && !blocked[i] && (pick < 0 || deficit[i] > deficit[pick])) pick = i;
+|             if (pick >= 0) return pick;
+|             for (int i = 0; i < points; i++)
+|                 if (planAttack[i] && groupsAt[i] == 0 && !blocked[i] && (pick < 0 || planDesired[i] > planDesired[pick])) pick = i;
+|             return pick;
+
+[rc2-3-r5-tie-higher-first]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = among targets nobody goes to, a tie goes to the higher index
+original:
+| (pick < 0 || planDesired[i] > planDesired[pick])
+replacement:
+| (pick < 0 || planDesired[i] >= planDesired[pick])
+
+[rc2-3-r5-tie-higher-deficit]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = among deficits, a tie goes to the higher index
+original:
+| (pick < 0 || deficit[i] > deficit[pick])
+replacement:
+| (pick < 0 || deficit[i] >= deficit[pick])
+
+[rc2-3-r5-farthest]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = the farthest group without an order is sent
+original:
+| if (best < 0 || span < bestSpan) { best = g; bestSpan = span; }
+replacement:
+| if (best < 0 || span > bestSpan) { best = g; bestSpan = span; }
+
+[rc2-3-r5-blocked-not-kept]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = a target no group reaches stops the dispatch instead of being passed over
+original:
+| if (g < 0) { blocked[p] = true; continue; }
+replacement:
+| if (g < 0) break;
+
+[rc2-3-r6-no-old-orders]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = no order is kept: every group is sent again each tick
+original:
+| if (r < 0) continue;
+|                 int g = unitGroupIndex[i];
+replacement:
+| continue;
+|                 int g = unitGroupIndex[i];
+
+[rc2-3-r6-own-point-kept]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = an order to a point that became the team's own is kept
+original:
+| if (!planAttack[p] || !field.TrySpan(groupAt[g], groupLayers[g], p, out _)) groupOrders[g] = -1;
+replacement:
+| if (owners[p] != team && (!planAttack[p] || !field.TrySpan(groupAt[g], groupLayers[g], p, out _))) groupOrders[g] = -1;
+
+[rc2-3-r8-rows-unsorted]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = the units are not sorted by key, so the rows are not either
+original:
+|             // Keys are all different, so the order after the sort does not depend on the order the units were found in.
+|             Array.Sort(sortKeys, sortIndex, 0, units);
+replacement:
+|             // Keys are all different, so the order after the sort does not depend on the order the units were found in.
+
+[rc2-3-r8-member-own-row]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = a member keeps its own row instead of its group's order
+original:
+| int p = groupOrders[unitGroupIndex[i]];
+replacement:
+| int own = CommandIn(orderKeys, orderPoints, orderCount, unitKeys[i]); int p = own >= 0 && unitKeys[i] != groupKeys[unitGroupIndex[i]] && groupOrders[unitGroupIndex[i]] >= 0 ? own : groupOrders[unitGroupIndex[i]];
+
+[rc2-3-r8-unsteered-keeps-row]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = a unit the commander no longer dispatches keeps its row
+original:
+|             outCount = 0;
+|             for (int i = 0; i < units; i++)
+|             {
+|                 int p = groupOrders[unitGroupIndex[i]];
+|                 if (p < 0) continue;
+|                 outKeys[outCount] = unitKeys[i]; outPoints[outCount] = p; outCount++;
+|             }
+replacement:
+|             outCount = 0;
+|             for (int i = 0, j = 0; i < units || j < orderCount;)
+|             {
+|                 if (j < orderCount && (i >= units || orderKeys[j] < unitKeys[i])) { outKeys[outCount] = orderKeys[j]; outPoints[outCount] = orderPoints[j]; outCount++; j++; continue; }
+|                 if (j < orderCount && orderKeys[j] == unitKeys[i]) j++;
+|                 int p = groupOrders[unitGroupIndex[i]]; i++;
+|                 if (p < 0) continue;
+|                 outKeys[outCount] = unitKeys[i - 1]; outPoints[outCount] = p; outCount++;
+|             }
+
+[rc2-3-load-rules]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = a state with other rules is loaded
+original:
+| SimStateReader.Require(same, "Commander rules differ.");
+replacement:
+|
+
+[rc2-3-load-shape]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = a state of another number of teams or points is loaded
+original:
+| SimStateReader.Require(reader.Int32() == attack.Length, "Commander teams or points differ.");
+replacement:
+| reader.Int32();
+
+[rc2-3-load-order]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = rows out of key order are loaded
+original:
+| SimStateReader.Require(i == 0 || key > orderKeys[i - 1], "Commander rows are not in strictly increasing key order.");
+replacement:
+|
+
+[rc2-3-load-point]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = a row naming a point out of range is loaded
+original:
+| SimStateReader.Require(point >= 0 && point < points, "Commander row point is out of range.");
+replacement:
+|
+
+[rc2-3-load-flags-dropped]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = the saved attack flags are read and thrown away
+original:
+| attack[i] = reader.Bool();
+replacement:
+| reader.Bool();
+
+[rc2-3-content-targets-low]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = commanderMaxAttackTargets 0 is accepted by the reader
+original:
+| r.Int("commanderMaxAttackTargets", 1, WarCore.Battle.CommanderQuotaRules.MaxTargets)
+replacement:
+| r.Int("commanderMaxAttackTargets", 0, WarCore.Battle.CommanderQuotaRules.MaxTargets)
+
+[rc2-3-content-targets-high]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = one target more than the bound is accepted by the reader
+original:
+| r.Int("commanderMaxAttackTargets", 1, WarCore.Battle.CommanderQuotaRules.MaxTargets)
+replacement:
+| r.Int("commanderMaxAttackTargets", 1, WarCore.Battle.CommanderQuotaRules.MaxTargets + 1)
+
+[rc2-3-content-enemy-high]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = an enemy weight above the bound is accepted by the reader
+original:
+| r.Int("commanderEnemyWeight", 0, maxWeight)
+replacement:
+| r.Int("commanderEnemyWeight", 0, maxWeight + 1)
+
+[rc2-3-content-distance-low]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = a negative distance weight is accepted by the reader
+original:
+| r.Int("commanderDistanceWeightPerMetre", 0, maxWeight)
+replacement:
+| r.Int("commanderDistanceWeightPerMetre", -1, maxWeight)
+
+[rc2-3-content-stickiness-high]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = a stickiness above the bound is accepted by the reader
+original:
+| r.Int("commanderStickiness", 0, maxWeight)
+replacement:
+| r.Int("commanderStickiness", 0, maxWeight + 1)
+
+[rc2-3-content-threat-low]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = a threat radius of 0 is accepted by the reader
+original:
+| r.Int("commanderThreatRadiusMm", 1, WarCore.Battle.CommanderRules.MaxThreatRadiusMm)
+replacement:
+| r.Int("commanderThreatRadiusMm", 0, WarCore.Battle.CommanderRules.MaxThreatRadiusMm)
+
+[rc2-3-content-may-miss]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = a missing commander field takes a value instead of being refused
+original:
+| r.Int("commanderStickiness", 0, maxWeight)
+replacement:
+| (r.Has("commanderStickiness") ? r.Int("commanderStickiness", 0, maxWeight) : 600)
+
+[rc2-3-content-field-unowned]
+file = Assets/WarCore/Content/Data/Sections/AiSection.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = a commander field is accepted without the commander
+original:
+| ("commanderStickiness", PartKind.Dispatch, ContentPolicies.CommanderDispatch),
+|
+replacement:
+|
+
+[rc2-3-content-plates]
+file = Assets/WarCore/Content/Data/ContentPolicies.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = the commander is accepted on a map with floor plates
+original:
+| if (ai.Dispatch == CommanderDispatch) throw Refused(ai, "dispatch");
+replacement:
+|
+
+[rc2-3-reg-id]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = the commander is registered under another id
+original:
+| sim.RegisterGameplay("battle.ai-commander", commander, SimSystemPhase.Queries);
+replacement:
+| sim.RegisterGameplay("battle.ai-commander2", commander, SimSystemPhase.Queries);
+
+[rc2-3-reg-phase]
+file = Assets/WarCore/Presentation/Bridge/Features/MatchFeature.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = the commander runs in the requests phase
+original:
+| sim.RegisterGameplay("battle.ai-commander", commander, SimSystemPhase.Queries);
+replacement:
+| sim.RegisterGameplay("battle.ai-commander", commander, SimSystemPhase.Requests);
+
+[rc2-3-reg-before-capture]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = the commander runs before the capture
+original:
+| public int Order => 41;
+replacement:
+| public int Order => 39;
+
+[rc2-3-check-i1-order]
+file = Assets/WarCore/Tests/MapContent/Ai/Commander/CommanderChecker.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = the checker misses rows out of key order
+original:
+| Fail("I1", tick, "keys not strictly increasing at row " + i);
+replacement:
+| { }
+
+[rc2-3-check-i1-undispatched]
+file = Assets/WarCore/Tests/MapContent/Ai/Commander/CommanderChecker.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = the checker misses a row of a unit the commander does not dispatch
+original:
+| Fail("I1", tick, "row for unit " + key + " that the commander does not dispatch");
+replacement:
+| { }
+
+[rc2-3-check-i1-range]
+file = Assets/WarCore/Tests/MapContent/Ai/Commander/CommanderChecker.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = the checker misses a row naming a point out of range
+original:
+| Fail("I1", tick, "row for unit " + key + " names point " + point);
+replacement:
+|
+
+[rc2-3-check-i1-group]
+file = Assets/WarCore/Tests/MapContent/Ai/Commander/CommanderChecker.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = the checker misses a group with two points
+original:
+| Fail("I1", tick, "group " + g.Key + " has units with rows " + g.New + " and " + row);
+replacement:
+| { }
+
+[rc2-3-check-i2]
+file = Assets/WarCore/Tests/MapContent/Ai/Commander/CommanderChecker.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = the checker misses a row that is no target
+original:
+| Fail("I2", tick, "unit " + u.Key + " remembers point " + row + " that is not a target");
+replacement:
+| { }
+
+[rc2-3-check-own]
+file = Assets/WarCore/Tests/MapContent/Ai/Commander/CommanderChecker.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = the checker misses a row naming an own point
+original:
+| Fail("own", tick, "unit " + u.Key + " remembers point " + row + " of its own team");
+replacement:
+|
+
+[rc2-3-check-i7]
+file = Assets/WarCore/Tests/MapContent/Ai/Commander/CommanderChecker.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = the checker misses an order changed while it still serves
+original:
+| Fail("I7", tick, "unit " + old.Key + " left point " + p + " that is still a target its group can walk to");
+replacement:
+|
+
+[rc2-3-check-i8]
+file = Assets/WarCore/Tests/MapContent/Ai/Commander/CommanderChecker.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = the checker misses an order let go while the team attacks fewer points than it may
+original:
+| Fail("I8", tick, "group " + g.Key + " let go of point " + p + " while its team attacks " + targets + " of " + cap + " points");
+replacement:
+| { }
+
+[rc2-3-check-l2]
+file = Assets/WarCore/Tests/MapContent/Ai/Commander/CommanderChecker.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = the checker misses a team that attacks nothing
+original:
+| Fail("L2", tick, "team " + t + " has points to attack and groups that reach them, but nobody attacks");
+replacement:
+| { }
+
+[rc2-3-check-l3]
+file = Assets/WarCore/Tests/MapContent/Ai/Commander/CommanderChecker.cs
+filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
+expect = WarCore.Tests.Commander
+note = the checker misses a target nobody goes to beside a group without an order
+original:
+| Fail("L3", tick, "team " + t + " point " + p + " is attacked by nobody, group " + g.Key + " has no order and reaches it");
+replacement:
+|

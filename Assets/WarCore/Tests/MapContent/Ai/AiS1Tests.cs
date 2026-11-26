@@ -482,7 +482,7 @@ namespace WarCore.Tests
             {
                 ["s1-layer"] = "{ \"id\": \"s1-layer\", \"extends\": \"" + DemoRecipes.PlaytestLayer + "\", \"ai\": " + S1 + " }"
             }, FileContentSource.Rwr()), "s1-layer").Section<AiRules>();
-            Assert.That((layered.HoldSharePermille, layered.Engage), Is.EqualTo((300, "bound")));
+            Assert.That((layered.HoldSharePermille, layered.Engage), Is.EqualTo((0, "bound")));
         }
 
         [TestCase("{ \"engage\": \"charge\" }", "engage", "unknown policy 'charge', allowed: hold, bound")]

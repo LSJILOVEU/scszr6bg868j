@@ -7,8 +7,9 @@ using WarCore.Sim;
 
 namespace WarCore.Tests
 {
-    // RC2-3 card appendix 7: ding (a leader falls), ren (underWay per team, appendix 7b), the three anchors of R3, the spawn
-    // anchors' coordinate limit, and the saved state (appendix 5).
+    // RC2-3 card appendix 7: ding (a leader falls), ren (underWay per team, appendix 7b), the three anchors of R3, a point
+    // nobody can walk to, the edges of R2 and the ties of R5, the spawn anchors' coordinate limit, and the saved state
+    // (appendix 5).
     public sealed class CommanderRuleTests
     {
         private const string Squads = "\"squadMinSize\": 4, \"squadMaxSize\": 9, \"squadSkirmisherPermille\": 300, \"squadRecruitRadiusMm\": 30000, "
@@ -119,6 +120,94 @@ namespace WarCore.Tests
         {
             CommanderBoard b = Anchored(new[] { 2, 2, 2, 0, 2 }, new[] { CommanderBoard.Base(2, 5, 36) });
             Assert.That(Targets(b), Is.EqualTo(new[] { true, false, false, false, false }));
+        }
+
+        // R4 and R5 with a point nobody can walk to: the commander gets an IPointReach under which nobody reaches C from tick
+        // 40 on (the world's own AI keeps the "nearest" dispatch). The soldier whose order is C lets it go on that tick and,
+        // C passed over for want of a group that reaches it, is sent to B; C stays a target. The checker, with the same
+        // reach, finds nothing (I7 and L3 allow it). Board: A (team 1) between B and C (team 2's); one soldier to each target.
+        private sealed class Wall : IPointReach
+        {
+            internal const long From = 40;
+            private readonly ControlPointDef[] points;
+            internal CommanderBoard Board;
+            internal Wall(ControlPointDef[] points) { this.points = points; }
+            public bool TryCost(int point, SimVec3 from, int fromLayer, out long cost)
+            {
+                SimVec3 d = points[point].Center - from;
+                cost = Math.Abs(d.X.Raw) + Math.Abs(d.Z.Raw);
+                return point != 2 || Board == null || Board.Tick < From;
+            }
+            public bool TryBaseCost(int team, SimVec3 from, int fromLayer, out long cost) { cost = 0; return true; }
+            public bool Connected(SimVec3 from, int fromLayer, SimVec3 to, int toLayer) => true;
+        }
+
+        [Test]
+        public void AGroupThatCannotWalkToItsTargetLetsGoAndIsSentToOneItCanReach()
+        {
+            var points = new[] { CommanderBoard.Point(1, 80, 1), CommanderBoard.Point(2, 20, 2), CommanderBoard.Point(3, 140, 2) };
+            var wall = new Wall(points);
+            var b = new CommanderBoard(points, new[] { CommanderBoard.Man(1, 1, 78), CommanderBoard.Man(2, 1, 82), CommanderBoard.Man(100, 2, 150, 34) },
+                new[] { CommanderBoard.Base(1, 80, 36), CommanderBoard.Base(2, 156, 36) }, 160, "", reach: wall,
+                own: new CommanderRules(CommanderQuotaRules.Default, 30000));
+            wall.Board = b;
+            b.To(Wall.From - 1);
+            Assert.That(b.Rows(1, 2), Is.EquivalentTo(new[] { 1, 2 }), "one soldier to each target");
+            for (long t = Wall.From; t < Wall.From + 30; t++)
+            {
+                b.Step();
+                Assert.That(b.Commander.Attacks(1, 2), Is.True, "tick " + b.Tick + ": C is still a target");
+                Assert.That(b.Rows(1, 2), Is.EqualTo(new[] { 1, 1 }), "tick " + b.Tick + ": both go for B");
+            }
+            Assert.That(b.Checker.Checks, Is.EqualTo(Wall.From + 29));
+            Assert.That(b.Checker.Clean, Is.True, b.Checker.First);
+        }
+
+        private static ControlPointDef[] Abc() => new[] { CommanderBoard.Point(1, 80, 1), CommanderBoard.Point(2, 20, 2), CommanderBoard.Point(3, 140, 2) };
+        private static SpawnAnchor[] Bases() => new[] { CommanderBoard.Base(1, 80, 36), CommanderBoard.Base(2, 156, 36) };
+
+        // R2 on its edges: an enemy held still exactly 30 m (the threat radius) from A and from C counts once, at A: at the
+        // nearest centre only, ties to the lower index, the radius itself inside.
+        [Test]
+        public void AnEnemyOnTheRadiusMidwayBetweenTwoPointsCountsOnceAtTheLowerIndex()
+        {
+            var b = new CommanderBoard(Abc(), new[] { CommanderBoard.Man(1, 1, 80, 36), CommanderBoard.Man(100, 2, 110) }, Bases(), 160, standingOrders: true);
+            b.Hold(100);
+            for (int t = 1; t <= 30; t++)
+            {
+                b.Step();
+                Assert.That(b.Commander.EnemiesNear(1, 0), Is.EqualTo(1), "tick " + t + ": at A");
+                Assert.That(b.Commander.EnemiesNear(1, 1), Is.EqualTo(0), "tick " + t + ": not at B");
+                Assert.That(b.Commander.EnemiesNear(1, 2), Is.EqualTo(0), "tick " + t + ": not at C as well");
+            }
+        }
+
+        // R5's ties, on the first tick. One soldier and two targets that want one each (pool max(2, 1) = 2; B and C tie on score,
+        // so B is chosen first): it goes to B, the lower index.
+        [Test]
+        public void OneSoldierForTwoTargetsThatWantAsManyGoesToTheLowerIndex()
+        {
+            var b = new CommanderBoard(Abc(), new[] { CommanderBoard.Man(1, 1, 80, 30), CommanderBoard.Man(100, 2, 50, 4) }, Bases(), 160);
+            b.Step();
+            Assert.That(b.Commander.Desired(1, 1), Is.EqualTo(1));
+            Assert.That(b.Commander.Desired(1, 2), Is.EqualTo(1));
+            Assert.That(b.Row(1), Is.EqualTo(1));
+        }
+
+        // Units 1 and 2 keep B and C; 3 and 4 have no order. Both targets want two, so after the first step the deficits tie
+        // (1 and 1): the first group goes to B, the lower index, and is the one nearest to B, unit 3 (60 m; it is also the one
+        // nearest to C); then C takes unit 4. Ties the other way would send 3 to C and 4 to B.
+        [Test]
+        public void TiedDeficitsGoToTheLowerIndexFirst()
+        {
+            var b = new CommanderBoard(Abc(), new[] { CommanderBoard.Man(1, 1, 70), CommanderBoard.Man(2, 1, 90), CommanderBoard.Man(3, 1, 80),
+                CommanderBoard.Man(4, 1, 80, 38), CommanderBoard.Man(100, 2, 50, 4) }, Bases(), 160);
+            b.Give((1, 1), (2, 2));
+            b.Step();
+            Assert.That(b.Commander.Desired(1, 1), Is.EqualTo(2));
+            Assert.That(b.Commander.Desired(1, 2), Is.EqualTo(2));
+            Assert.That(b.Rows(1, 2, 3, 4), Is.EqualTo(new[] { 1, 2, 1, 2 }));
+            Assert.That(b.Checker.Clean, Is.True, b.Checker.First);
         }
 
         // Card appendix 10, 9: a spawn anchor beyond the coordinate limit (8192 m) throws when the commander is built, as a

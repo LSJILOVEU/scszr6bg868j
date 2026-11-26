@@ -148,7 +148,7 @@ namespace WarCore.Presentation
             new ShowcaseStage("battle", "Open battle", 22f, BattleLayer, LanesMap, new[]
             {
                 "Three-lane map, 7 capture points, 100 + 50 reserves a side",
-                "AI: squads, spread attack, bounding, pressure (pinned / broken), cover, bursts, memory",
+                "AI: squads, a commander that splits them between the points to attack, bounding, pressure (pinned / broken), cover, bursts, memory",
                 "Squads differ in temper (rash, normal or steady) and fall back to regroup when under half strength",
                 "A reserve steps in 3 s after each loss, but not at a point the enemy contests",
                 "Player: rifle, dash, block, respawn into a reserve",
@@ -178,7 +178,7 @@ namespace WarCore.Presentation
             new ShowcaseStage("hamlet", "Swiss valley hamlet", 18f, HamletLayer, HamletMap, new[]
             {
                 "Real terrain: a 160 m crop of the Emmental valley with a hamlet; 62 walls, 5 points, 40 + 20 reserves a side",
-                "AI: squads, spread attack, bounding, pressure (pinned / broken), bursts, memory, search, suppression",
+                "AI: squads, a commander that splits them between the points to attack, bounding, pressure (pinned / broken), bursts, memory, search, suppression",
                 "Squads differ in temper and regroup; a reserve steps in 3 s after each loss; AI choices favour neither side",
                 "Player: rifle, dash, block, respawn; aim spreads while moving",
                 "Shots also go high or low (less from a crouch or prone); uphill is slower; pinned and broken soldiers shoot wider",
@@ -195,7 +195,6 @@ namespace WarCore.Presentation
             "Your own crouch and prone (stances work in stage 6, but only as orders to your team); AI that picks its own stance",
             "Cover seeking on height-field maps (the AI's cover rule refuses them)",
             "Climbing over walls and through windows",
-            "An AI commander that splits forces",
             "Vehicles, water, day and night",
             "Melee swings and hits have no view data (only the deaths show)",
             "Health bars, sound, real art",

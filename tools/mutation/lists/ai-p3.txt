@@ -1,4 +1,4 @@
-# AI-P3 commander quota: adjacency circle rule, garrison rounding and cap, frontier, targets, stickiness, score, pool split.
+# AI-P3 commander quota: adjacency circle rule, candidates and the fallback, targets, stickiness, score, pool split.
 
 [ai-p3-01-strict-circle]
 file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
@@ -51,96 +51,15 @@ original:
 replacement:
 |
 
-[ai-p3-06-floor-garrison]
-file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
-filter = FullyQualifiedName~CommanderQuotaTests
-expect = WarCore.Tests.CommanderQuotaTests.Own2_GarrisonRoundsUp
-note = the garrison rounds down
-original:
-| + 999) / 1000 + 1
-replacement:
-| + 0) / 1000 + 1
-
-[ai-p3-07-no-plus-one]
-file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
-filter = FullyQualifiedName~CommanderQuotaTests
-expect = WarCore.Tests.CommanderQuotaTests.Own2_GarrisonRoundsUp
-expect = WarCore.Tests.CommanderQuotaTests.Own3_GarrisonsAreCappedAtFortyPercent
-note = the garrison drops the extra soldier
-original:
-| / 1000 + 1));
-replacement:
-| / 1000));
-
-[ai-p3-08-no-frontier]
-file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
-filter = FullyQualifiedName~CommanderQuotaTests
-expect = WarCore.Tests.CommanderQuotaTests.Scenario1_FirstTargetIsTheSofterOne
-note = frontier points keep no garrison
-original:
-| desiredOut[i] = rules.FrontierGarrison;
-replacement:
-| desiredOut[i] = 0;
-
-[ai-p3-09-frontier-inverted]
-file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
-filter = FullyQualifiedName~CommanderQuotaTests
-expect = WarCore.Tests.CommanderQuotaTests.Scenario1_FirstTargetIsTheSofterOne
-note = a point with an own neighbour counts as frontier
-original:
-| Touches(i, team, false, count
-replacement:
-| Touches(i, team, true, count
-
 [ai-p3-10-no-fallback]
 file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
 filter = FullyQualifiedName~CommanderQuotaTests
 expect = WarCore.Tests.CommanderQuotaTests.Own5_NoOwnPointsAttacksTheThreeBestByScore
 note = a team with no points attacks nothing
 original:
-| bool fallback = candidates == 0;
+| bool fallback = touching == 0;
 replacement:
 | bool fallback = false;
-
-[ai-p3-11-no-cap]
-file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
-filter = FullyQualifiedName~CommanderQuotaTests
-expect = WarCore.Tests.CommanderQuotaTests.Own3_GarrisonsAreCappedAtFortyPercent
-note = garrisons are not capped
-original:
-| if (defense > maxDefense)
-replacement:
-| if (false)
-
-[ai-p3-12-cap-share]
-file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
-filter = FullyQualifiedName~CommanderQuotaTests
-expect = WarCore.Tests.CommanderQuotaTests.Own3_GarrisonsAreCappedAtFortyPercent
-note = the cap reads the share in percent
-original:
-| rules.MaxDefenseSharePermille / 1000
-replacement:
-| rules.MaxDefenseSharePermille / 100
-
-[ai-p3-13-cap-no-min]
-file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
-filter = FullyQualifiedName~CommanderQuotaTests
-expect = WarCore.Tests.CommanderQuotaTests.Own4_CapNeverLeavesAThreatenedPointEmpty
-note = the cap can empty a garrison
-original:
-| Math.Max(1, (int)((long)desiredOut[i] * maxDefense / wanted))
-replacement:
-| (int)((long)desiredOut[i] * maxDefense / wanted)
-
-[ai-p3-14-cap-no-recount]
-file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
-filter = FullyQualifiedName~CommanderQuotaTests
-expect = WarCore.Tests.CommanderQuotaTests.Own3_GarrisonsAreCappedAtFortyPercent
-note = the attack pool ignores capped garrisons
-original:
-| defense += desiredOut[i];
-replacement:
-|
 
 [ai-p3-15-targets-fixed]
 file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
@@ -155,12 +74,12 @@ replacement:
 [ai-p3-16-pool-no-floor]
 file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
 filter = FullyQualifiedName~CommanderQuotaTests
-expect = WarCore.Tests.CommanderQuotaTests.Own4_CapNeverLeavesAThreatenedPointEmpty
+expect = WarCore.Tests.CommanderQuotaTests.Own9_FewerSoldiersThanTargetsStillSendsOneEach
 note = a target can get zero soldiers
 original:
-| Math.Max(targets, soldiers - defense)
+| Math.Max(targets, soldiers)
 replacement:
-| soldiers - defense
+| soldiers
 
 [ai-p3-17-remainder-last]
 file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
@@ -218,6 +137,6 @@ filter = FullyQualifiedName~CommanderQuotaTests
 expect = WarCore.Tests.CommanderQuotaTests.Own8_AnyOtherTeamIsTheEnemy
 note = points without an own neighbour can be picked
 original:
-| !(fallback || Touches(i, team, true, count, owners, adjacent))
+| (fallback || Touches(i, team, count, owners, adjacent) || underWay[i])
 replacement:
-| false
+| true

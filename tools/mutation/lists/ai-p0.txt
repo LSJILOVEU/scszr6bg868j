@@ -523,7 +523,7 @@ filter = FullyQualifiedName~AiPartsTests
 expect = WarCore.Tests.AiPartsTests.Parts_UnknownIdNamesPackEntryAndField("dispatch"
 note = every dispatch id is accepted
 original:
-| public static bool IsDispatch(string id) => id == NearestDispatch;
+| public static bool IsDispatch(string id) => id == NearestDispatch || id == CommanderDispatch;
 replacement:
 | public static bool IsDispatch(string id) => true;
 

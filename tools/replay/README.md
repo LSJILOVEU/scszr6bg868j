@@ -93,6 +93,10 @@ second after it comes onto the field.
 
 ## Reference values (main, 63f6110 for the first four; AI-P1 setups on its branch)
 
+The rows of the setups that read the playtest layer rwr-m7-playtest (every `playtest*` setup and `mp-playtest`), in this
+table and in all the tables below, were recorded before that layer selected the commander dispatch (RC2-3). They are not
+recorded again; a run now gives other values.
+
 | Setup | End | Hash | share 1/2 | nn 1/2 | spread 1/2 | close 1/2 | idle 1/2 | closeNear 1/2 |
 |---|---|---|---|---|---|---|---|---|
 | base | team 2 wins at tick 2050 | 349ABBEB3EBBED0D | 0.754 / 0.685 | 0.311 / 0.328 | 0.606 / 0.343 | 0.936 / 0.889 | 0.015 / 0.028 | 0.943 / 0.896 |

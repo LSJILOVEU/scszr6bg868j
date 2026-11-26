@@ -477,7 +477,7 @@ namespace WarCore.Tests
             Assert.That(missing, Does.Not.Contain("nothing consumes it"), "SHOW-2: blasts are built, the throw is no longer unused in stage 6");
             Assert.That(missing, Does.Not.Contain("Stances: crouch and prone"), "SHOW-2: stances are built");
             Assert.That(missing.Split('\n').Length, Is.EqualTo(Showcase.Missing.Count + 2), "a title, one line each, a final line end");
-            foreach (string gap in new[] { "AI grenades", "Your own crouch and prone", "Cover seeking on height-field maps", "Climbing", "commander", "water", "Health bars" })
+            foreach (string gap in new[] { "AI grenades", "Your own crouch and prone", "Cover seeking on height-field maps", "Climbing", "water", "Health bars" })
                 Assert.That(missing, Does.Contain(gap));
 
             string shows = ShowcaseHud.Shows(Stage("bullets"));

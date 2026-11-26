@@ -166,9 +166,9 @@ filter = FullyQualifiedName~WarCore.Tests.PackSwitchTests
 expect = WarCore.Tests.PackSwitchTests.TheLoaderPublishesTheThreeFields
 note = standingOrders is read and thrown away
 original:
-| { StandingOrders = standing, Led = led, SlotRingError = ringError,
+| { StandingOrders = standing, Led = led, Commander = commander,
 replacement:
-| { Led = led, SlotRingError = ringError,
+| { Led = led, Commander = commander,
 
 [rc1-k3-inertia-both-zero-accepted]
 file = Assets/WarCore/Content/Data/Sections/MovementSection.cs

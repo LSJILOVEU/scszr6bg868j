@@ -55,6 +55,10 @@ C	start-match	Presentation/Bridge/Features/StreetDemo.cs	1	debt
 C	start-match	Presentation/Bridge/Features/VspreadDemo.cs	1	debt
 C	start-match	Unity/SimHost.cs	1	debt
 
+Q	ai-steered	Which units the computer steers	Battle/Ai/AiUnits.cs	\bentity\.Equals\(controlled\.Current\)	Call AiUnits.Steered; do not write its conditions again.
+C	ai-steered	Battle/Ai/Squads.cs	1	debt
+C	ai-steered	Battle/SimpleAiSystem.cs	1	debt	also keeps teams 1 and 2 only (team-count)
+
 S	0x1f83d9abfb41bd6b	2
 S	0x3c6ef372fe94f82b	2
 S	0x510e527fade682d1	2
