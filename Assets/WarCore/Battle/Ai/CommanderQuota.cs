@@ -76,17 +76,19 @@ namespace WarCore.Battle
         // soldiers. anchor: this team's reference point for attack distance. previousAttack: last result's attack
         // flags (read only, must not be attackOut). underWay[i] (read only): a group of this team has an order to point i
         // (its order before this plan). Writes desiredOut[i] (soldiers wanted at i) and attackOut[i]: an own point wants
-        // nobody; all the soldiers are split over the attack targets (at least one each).
+        // nobody; all the soldiers are split over the attack targets (at least one each). rankOut (optional): rankOut[i] is
+        // the order in which target i was picked (0 first), -1 for a point that is no target.
         public static void Plan(int team, int count, int[] owners, SimVec3[] centers, int[] enemiesNear, bool[] adjacent,
             int soldiers, SimVec3 anchor, bool[] previousAttack, in CommanderQuotaRules rules, int[] desiredOut, bool[] attackOut,
-            bool[] underWay)
+            bool[] underWay, int[] rankOut = null)
         {
             if (team <= 0) throw new ArgumentOutOfRangeException(nameof(team));
             if (owners == null || centers == null || enemiesNear == null || adjacent == null || previousAttack == null
                 || desiredOut == null || attackOut == null || underWay == null) throw new ArgumentNullException(nameof(owners));
             if (ReferenceEquals(previousAttack, attackOut)) throw new ArgumentException("previousAttack must not be attackOut.", nameof(attackOut));
             if (count < 0 || count > owners.Length || count > centers.Length || count > enemiesNear.Length || count > previousAttack.Length
-                || count > desiredOut.Length || count > attackOut.Length || count > underWay.Length || (long)count * count > adjacent.Length)
+                || count > desiredOut.Length || count > attackOut.Length || count > underWay.Length || (long)count * count > adjacent.Length
+                || (rankOut != null && count > rankOut.Length))
                 throw new ArgumentOutOfRangeException(nameof(count));
             if (soldiers < 0) throw new ArgumentOutOfRangeException(nameof(soldiers));
             CheckBounds(anchor);
@@ -101,6 +103,7 @@ namespace WarCore.Battle
             {
                 desiredOut[i] = 0;
                 attackOut[i] = false;
+                if (rankOut != null) rankOut[i] = -1;
                 if (owners[i] != team && Touches(i, team, count, owners, adjacent)) touching++;
             }
 
@@ -132,6 +135,7 @@ namespace WarCore.Battle
                 }
                 attackOut[best] = true;
                 desiredOut[best] = pool / targets + (k < pool % targets ? 1 : 0);
+                if (rankOut != null) rankOut[best] = k;
             }
         }
 

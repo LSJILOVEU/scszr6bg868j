@@ -10,11 +10,12 @@ namespace WarCore.Tests
     // and the reinforcement state version 1.
     // RC1-K5a: the playtest values were recorded again when the playtest layer's rifle spread changed (content only, no
     // code); the capture world, which reads no playtest layer, keeps the first values. RC2-3: recorded again when the
-    // playtest layer took the commander (dispatch "commander"); the capture world keeps its values.
+    // playtest layer took the commander (dispatch "commander"); the capture world keeps its values. RC2-3c: recorded
+    // again when the commander's R5 ties went to the target picked first; the capture world keeps its values.
     public sealed class Nt1TwoTeamLockTests
     {
-        private const ulong PlaytestT150 = 0x8F71E1E20FEB2D51UL, PlaytestT300 = 0x250758C61064833BUL, PlaytestT600 = 0xAACA4ECBDA79C508UL;
-        private const string PlaytestSnapshotT300 = "024910688b0be098e9a86d26c1e2356ac092a4ac49df09d9bf3f3d05f9ea6803";
+        private const ulong PlaytestT150 = 0x0C870BC5784DC33BUL, PlaytestT300 = 0xB799A57324935B49UL, PlaytestT600 = 0x0C44A847C612353CUL;
+        private const string PlaytestSnapshotT300 = "13b211d71e751f5d4d5eb09e405221d4f489d93e24dd8ca5fbfa3975e83ffc63";
         private const ulong CaptureT150 = 0xBDAEFF0FA8F64974UL, CaptureT300 = 0x91AC4582DEF52DD1UL, CaptureT600 = 0xE770C2B73EB0A92DUL;
         private const string CaptureSnapshotT300 = "2bee54d4111a8c1ddb0554913243dbda0d95ab4acfe116f1063a896f67fc9dde";
 

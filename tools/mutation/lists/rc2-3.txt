@@ -275,38 +275,42 @@ expect = WarCore.Tests.CommanderRuleTests.ATargetWithoutAGroupIsServedBeforeTheD
 note = the largest deficit is picked before a target nobody goes to
 original:
 |             for (int i = 0; i < points; i++)
-|                 if (planAttack[i] && groupsAt[i] == 0 && !blocked[i] && (pick < 0 || planDesired[i] > planDesired[pick])) pick = i;
+|                 if (planAttack[i] && groupsAt[i] == 0 && !blocked[i] && (pick < 0 || planDesired[i] > planDesired[pick]
+|                     || (planDesired[i] == planDesired[pick] && planRank[i] < planRank[pick]))) pick = i;
 |             if (pick >= 0) return pick;
 |             for (int i = 0; i < points; i++)
-|                 if (planAttack[i] && !blocked[i] && (pick < 0 || deficit[i] > deficit[pick])) pick = i;
+|                 if (planAttack[i] && !blocked[i] && (pick < 0 || deficit[i] > deficit[pick]
+|                     || (deficit[i] == deficit[pick] && planRank[i] < planRank[pick]))) pick = i;
 |             return pick;
 replacement:
 |             for (int i = 0; i < points; i++)
-|                 if (planAttack[i] && !blocked[i] && (pick < 0 || deficit[i] > deficit[pick])) pick = i;
+|                 if (planAttack[i] && !blocked[i] && (pick < 0 || deficit[i] > deficit[pick]
+|                     || (deficit[i] == deficit[pick] && planRank[i] < planRank[pick]))) pick = i;
 |             if (pick >= 0) return pick;
 |             for (int i = 0; i < points; i++)
-|                 if (planAttack[i] && groupsAt[i] == 0 && !blocked[i] && (pick < 0 || planDesired[i] > planDesired[pick])) pick = i;
+|                 if (planAttack[i] && groupsAt[i] == 0 && !blocked[i] && (pick < 0 || planDesired[i] > planDesired[pick]
+|                     || (planDesired[i] == planDesired[pick] && planRank[i] < planRank[pick]))) pick = i;
 |             return pick;
 
 [rc2-3-r5-tie-higher-first]
 file = Assets/WarCore/Battle/Ai/Commander.cs
 filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
-expect = WarCore.Tests.CommanderRuleTests.OneSoldierForTwoTargetsThatWantAsManyGoesToTheLowerIndex
+expect = WarCore.Tests.CommanderRuleTests.OneSoldierForTwoTargetsThatWantAsManyGoesToTheOnePickedFirst
 note = among targets nobody goes to, a tie goes to the higher index
 original:
-| (pick < 0 || planDesired[i] > planDesired[pick])
+| (pick < 0 || planDesired[i] > planDesired[pick]
 replacement:
-| (pick < 0 || planDesired[i] >= planDesired[pick])
+| (pick < 0 || planDesired[i] >= planDesired[pick]
 
 [rc2-3-r5-tie-higher-deficit]
 file = Assets/WarCore/Battle/Ai/Commander.cs
 filter = FullyQualifiedName~WarCore.Tests.Commander&FullyQualifiedName!~CommanderStageTests&FullyQualifiedName!~CommanderAllocationTests
-expect = WarCore.Tests.CommanderRuleTests.TiedDeficitsGoToTheLowerIndexFirst
+expect = WarCore.Tests.CommanderRuleTests.TiedDeficitsGoToTheOnePickedFirst
 note = among deficits, a tie goes to the higher index
 original:
-| (pick < 0 || deficit[i] > deficit[pick])
+| (pick < 0 || deficit[i] > deficit[pick]
 replacement:
-| (pick < 0 || deficit[i] >= deficit[pick])
+| (pick < 0 || deficit[i] >= deficit[pick]
 
 [rc2-3-r5-farthest]
 file = Assets/WarCore/Battle/Ai/Commander.cs
