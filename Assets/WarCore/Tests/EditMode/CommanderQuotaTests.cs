@@ -36,11 +36,12 @@ namespace WarCore.Tests
         private static int[] Owners(int left = Neutral) => new[] { Blue, Blue, left, Neutral, Red };
 
         private static (int[] desired, bool[] attack) Plan(int team, int[] owners, int[] enemies, int soldiers, SimVec3 anchor,
-            bool[] previous, CommanderQuotaRules rules)
+            bool[] previous, CommanderQuotaRules rules, bool[] underWay = null)
         {
             var desired = new int[N];
             var attack = new bool[N];
-            CommanderQuota.Plan(team, N, owners, Centers, enemies, Table(), soldiers, anchor, previous ?? new bool[N], rules, desired, attack, new bool[N]);
+            CommanderQuota.Plan(team, N, owners, Centers, enemies, Table(), soldiers, anchor, previous ?? new bool[N], rules, desired, attack,
+                underWay ?? new bool[N]);
             return (desired, attack);
         }
 
@@ -204,6 +205,115 @@ namespace WarCore.Tests
             Assert.That(desired, Is.EqualTo(new[] { 0, 0, 0, 40, 0 }));
         }
 
+        // Fewer soldiers than targets: 2 and 3 border blue, no enemies, both 126, two targets; pool max(2, 1) = 2, one each.
+        // (With the pool written as the soldiers alone, 2 would get the one soldier and 3 none.)
+        [Test]
+        public void Own9_FewerSoldiersThanTargetsStillSendsOneEach()
+        {
+            var (desired, attack) = Plan(Blue, Owners(), new int[N], 1, BlueHome, null, CommanderQuotaRules.Default);
+            Assert.That(attack, Is.EqualTo(Only(2, 3)));
+            Assert.That(desired, Is.EqualTo(new[] { 0, 0, 1, 1, 0 }));
+        }
+
+        // RC2-3, p: a point a group of the team is on its way to (underWay) stays a candidate. Blue has just lost point 1
+        // (owners blue, red, neutral, neutral, red), enemies {0, 2, 0, 0, 6}, previous {2}. Only 1 borders a blue point.
+
+        // Xin 1: underWay {2}, one target. Candidates 1, 2; 1: 2*200+60 = 460, 2: 0+126-600 = -474 -> 2. Pool 40.
+        [Test]
+        public void Xin1_PointUnderWayStaysACandidateWhenTheFrontFallsBack()
+        {
+            var (desired, attack) = Plan(Blue, Lost(), new[] { 0, 2, 0, 0, 6 }, 40, BlueHome, Only(2), OneTarget, Only(2));
+            Assert.That(attack, Is.EqualTo(Only(2)));
+            Assert.That(desired, Is.EqualTo(new[] { 0, 0, 40, 0, 0 }));
+        }
+
+        // Xin 2: nobody is on the way to 2 any more: attacked last time alone does not keep a point that borders nothing -> 1.
+        [Test]
+        public void Xin2_PreviousAloneDoesNotKeepAPointThatBordersNothing()
+        {
+            var (desired, attack) = Plan(Blue, Lost(), new[] { 0, 2, 0, 0, 6 }, 40, BlueHome, Only(2), OneTarget, new bool[N]);
+            Assert.That(attack, Is.EqualTo(Only(1)));
+            Assert.That(desired, Is.EqualTo(new[] { 0, 40, 0, 0, 0 }));
+        }
+
+        // Xin 3: as xin 1 with three targets allowed and 41 soldiers: both candidates are targets, 2 first (-474 < 460):
+        // 41 / 2 = 20 and one over, to 2.
+        [Test]
+        public void Xin3_PointUnderWayAndTheBorderPointAreBothTargets()
+        {
+            var (desired, attack) = Plan(Blue, Lost(), new[] { 0, 2, 0, 0, 6 }, 41, BlueHome, Only(2), CommanderQuotaRules.Default, Only(2));
+            Assert.That(attack, Is.EqualTo(Only(1, 2)));
+            Assert.That(desired, Is.EqualTo(new[] { 0, 20, 21, 0, 0 }));
+        }
+
+        // Xin 4: an own point under way (1 was just taken, an old order still names it) is no candidate: as scenario 1.
+        [Test]
+        public void Xin4_OwnPointUnderWayIsNoCandidate()
+        {
+            var (desired, attack) = Plan(Blue, Owners(), new[] { 0, 0, 1, 2, 6 }, 40, BlueHome, null, OneTarget, Only(1));
+            Assert.That(attack, Is.EqualTo(Only(2)));
+            Assert.That(desired, Is.EqualTo(new[] { 0, 0, 40, 0, 0 }));
+        }
+
+        // Xin 5: blue holds nothing (every non-blue point is a candidate anyway), underWay {3}: as Own5; 3 (526) is not among
+        // the best three, under way or not.
+        [Test]
+        public void Xin5_PointUnderWayDoesNotChangeTheFallback()
+        {
+            var (desired, attack) = Plan(Blue, new[] { Neutral, Neutral, Neutral, Neutral, Red }, new[] { 0, 0, 1, 2, 6 }, 40, RedHome, null,
+                CommanderQuotaRules.Default, Only(3));
+            Assert.That(attack, Is.EqualTo(Only(0, 1, 2)));
+            Assert.That(desired, Is.EqualTo(new[] { 13, 14, 13, 0, 0 }));
+        }
+
+        // Xin 6: as xin 1 with 6 enemies at 2: 1200+126-600 = 726 > 460 -> 1. A point under way can still lose on score.
+        [Test]
+        public void Xin6_PointUnderWayCanLoseOnScore()
+        {
+            var (desired, attack) = Plan(Blue, Lost(), new[] { 0, 2, 6, 0, 6 }, 40, BlueHome, Only(2), OneTarget, Only(2));
+            Assert.That(attack, Is.EqualTo(Only(1)));
+            Assert.That(desired, Is.EqualTo(new[] { 0, 40, 0, 0, 0 }));
+        }
+
+        private static int[] Lost() => new[] { Blue, Red, Neutral, Neutral, Red };
+
+        // The bounds of the four numbers: 1..MaxTargets targets, every weight 0..MaxWeight.
+        [Test]
+        public void Rules_BoundsAreTheNamedConstants()
+        {
+            Assert.That(CommanderQuotaRules.MaxTargets, Is.EqualTo(8));
+            Assert.That(CommanderQuotaRules.MaxWeight, Is.EqualTo(1000000));
+            int w = CommanderQuotaRules.MaxWeight;
+            Assert.DoesNotThrow(() => new CommanderQuotaRules(1, 0, 0, 0));
+            Assert.DoesNotThrow(() => new CommanderQuotaRules(CommanderQuotaRules.MaxTargets, w, w, w));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new CommanderQuotaRules(0, 0, 0, 0));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new CommanderQuotaRules(CommanderQuotaRules.MaxTargets + 1, 0, 0, 0));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new CommanderQuotaRules(1, w + 1, 0, 0));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new CommanderQuotaRules(1, 0, w + 1, 0));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new CommanderQuotaRules(1, 0, 0, w + 1));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new CommanderQuotaRules(1, -1, 0, 0));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new CommanderQuotaRules(1, 0, -1, 0));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new CommanderQuotaRules(1, 0, 0, -1));
+        }
+
+        // The largest score: enemies below 2^31 times a weight of at most 10^6, plus at most 23171 metres (two corners of the
+        // coordinate limit) times 10^6, minus at most 10^6: far inside a long.
+        [Test]
+        public void Rules_LargestScoreFitsALong()
+        {
+            // Two points differ by at most twice the limit on each axis: 16384 * sqrt(2) = 23170.48 metres.
+            Assert.That(Math.Sqrt(2.0) * 2 * CommanderQuota.CoordinateLimitMetres, Is.LessThan(23171.0));
+            decimal largest = (decimal)int.MaxValue * CommanderQuotaRules.MaxWeight + 23171m * CommanderQuotaRules.MaxWeight;
+            Assert.That(largest, Is.LessThan(2.2e15m));
+            var c = new[] { SimVec3.Metres(-8192, 0, -8192), SimVec3.Metres(8192, 0, 8192) };
+            var desired = new int[2]; var attack = new bool[2]; var adjacent = new bool[4];
+            CommanderQuota.Adjacency(c, 2, adjacent);
+            int w = CommanderQuotaRules.MaxWeight;
+            Assert.DoesNotThrow(() => CommanderQuota.Plan(1, 2, new[] { 1, 0 }, c, new[] { 0, int.MaxValue }, adjacent, 1, c[0], new bool[2],
+                new CommanderQuotaRules(1, w, w, w), desired, attack, new bool[2]));
+            Assert.That(attack, Is.EqualTo(new[] { false, true }));
+        }
+
         [Test]
         public void Plan_RejectsPreviousAliasingTheOutput()
         {
@@ -238,7 +348,7 @@ namespace WarCore.Tests
             bool[] adjacent = new bool[N * N], previous = Only(2), attack = new bool[N], underWay = new bool[N];
             CommanderQuotaRules rules = CommanderQuotaRules.Default;
             CommanderQuota.Adjacency(Centers, N, adjacent);
-            CommanderQuota.Plan(Blue, N, owners, Centers, enemies, adjacent, 40, BlueHome, previous, rules, desired, attack, underWay);
+            CommanderQuota.Plan(Blue, N, owners, Centers, enemies, adjacent, 41, BlueHome, previous, rules, desired, attack, underWay);
             // Unity's Mono has no direct per-thread byte counter: there the test is inconclusive (pattern of
             // CachedManifestRegressionTests); CoreCLR headless runs the strict direct check.
             var meter = new AllocationMeter();
@@ -249,14 +359,14 @@ namespace WarCore.Tests
             for (int i = 0; i < 100; i++)
             {
                 CommanderQuota.Adjacency(Centers, N, adjacent);
-                CommanderQuota.Plan(Blue, N, owners, Centers, enemies, adjacent, 40, BlueHome, previous, rules, desired, attack, underWay);
+                CommanderQuota.Plan(Blue, N, owners, Centers, enemies, adjacent, 41, BlueHome, previous, rules, desired, attack, underWay);
             }
             AllocationSample sample = meter.Difference(before);
             TestContext.WriteLine("AI-P3 commander quota: control_bytes={0}; {1}", meter.DirectControlDelta.Bytes, sample.Describe());
             AllocationAssertions.Zero(sample);
-            // Own points want 0, pool 40; 3 targets allowed, 2 and 3 are candidates, previous {2}:
-            // 2: 326-600 = -274, 3: 526 -> order 2, 3 -> 20, 20.
-            Assert.That(desired, Is.EqualTo(new[] { 0, 0, 20, 20, 0 }));
+            // Own points want 0, pool 41; 3 targets allowed, 2 and 3 are candidates, previous {2}:
+            // 2: 326-600 = -274, 3: 526 -> order 2, 3 -> 20 and the one over to 2 (picked first): 21, 20.
+            Assert.That(desired, Is.EqualTo(new[] { 0, 0, 21, 20, 0 }));
         }
     }
 }

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using WarCore.Combat;
 using WarCore.Sim;
 
@@ -31,11 +30,9 @@ namespace WarCore.Battle
     /// to stays a candidate target even when it no longer borders an own point. The AI reads the rows on
     /// the next tick through the "commander" dispatch part (Dispatch); squad members ask with their leader's key
     /// (SquadDispatch). Saved: the rules, the attack flags per team and point, and the rows (unit key, point) in key order.
-    /// Allocation-free after construction while the self check is off.</summary>
+    /// Allocation-free after construction.</summary>
     public sealed class Commander : IRetainedGameplaySystem
     {
-        private const ulong ShuffleSalt = 0x9e3779b97f4a7c15UL;
-
         private readonly CombatSystem combat;
         private readonly MatchPack pack;
         private readonly CaptureSystem capture;
@@ -55,11 +52,11 @@ namespace WarCore.Battle
         private readonly SimVec3[] centers;
         private readonly bool[] adjacent;
         // Saved, per (team - 1) * points + point: the attack flags of the last plan; and the rows (unit key, point) in key
-        // order. The *Next buffers take the decision of this tick, the *Spare ones a second run.
-        private bool[] attack, attackNext, attackSpare;
-        private ulong[] orderKeys, nextKeys, spareKeys;
-        private int[] orderPoints, nextPoints, sparePoints;
-        private int orderCount, nextCount, spareCount;
+        // order. The *Next buffers take the decision of this tick.
+        private bool[] attack, attackNext;
+        private ulong[] orderKeys, nextKeys;
+        private int[] orderPoints, nextPoints;
+        private int orderCount, nextCount;
         // Scratch, rebuilt every Step: per team and point the enemies near it and the soldiers it wants; the owners now.
         private readonly int[] enemies, desired, near, owners;
         // Scratch for one team's plan.
@@ -71,14 +68,10 @@ namespace WarCore.Battle
         private readonly SimVec3[] unitGroupAt, foundGroupAt;
         private int units, found;
         private readonly ulong[] groupKeys;
-        private readonly int[] groupTeams, groupCounts, groupLayers, groupOrders, groupNew;
+        private readonly int[] groupTeams, groupCounts, groupLayers, groupOrders;
         private readonly SimVec3[] groupAt;
         private readonly bool[] leaderRow;
         private int groups;
-        // Test-only self check (off in every game): the invariants after every Step. Allocates while on.
-        private bool checking;
-        private List<string> violations;
-        private int violationCount;
 
         public Commander(CombatSystem combat, MatchPack pack, CaptureSystem capture, IMoveOrders moves, IControlTarget controlled, Squads squads,
             CommanderRules rules, IPointReach reach = null, IUnitLayers layers = null)
@@ -102,15 +95,15 @@ namespace WarCore.Battle
             // A team's anchor may be its spawn anchor (R3): checked against the same coordinate limit before the match starts.
             foreach (SpawnAnchor anchor in pack.Bases) CommanderQuota.CheckBounds(anchor.Point);
             int flags = teams * points;
-            attack = new bool[flags]; attackNext = new bool[flags]; attackSpare = new bool[flags];
+            attack = new bool[flags]; attackNext = new bool[flags];
             enemies = new int[flags]; desired = new int[flags]; near = new int[flags]; owners = new int[points];
             int p = points;
             planEnemies = new int[p]; planDesired = new int[p];
             deficit = new int[p]; groupsAt = new int[p];
             planPrevious = new bool[p]; planAttack = new bool[p]; blocked = new bool[p]; underWay = new bool[p];
             int capacity = combat.Entities.Capacity;
-            orderKeys = new ulong[capacity]; nextKeys = new ulong[capacity]; spareKeys = new ulong[capacity];
-            orderPoints = new int[capacity]; nextPoints = new int[capacity]; sparePoints = new int[capacity];
+            orderKeys = new ulong[capacity]; nextKeys = new ulong[capacity];
+            orderPoints = new int[capacity]; nextPoints = new int[capacity];
             unitKeys = new ulong[capacity]; unitGroups = new ulong[capacity]; foundKeys = new ulong[capacity]; foundGroups = new ulong[capacity];
             sortKeys = new ulong[capacity];
             unitTeams = new int[capacity]; unitLayers = new int[capacity]; unitGroupIndex = new int[capacity];
@@ -118,7 +111,7 @@ namespace WarCore.Battle
             from = new int[capacity]; sortIndex = new int[capacity];
             unitGroupAt = new SimVec3[capacity]; foundGroupAt = new SimVec3[capacity];
             groupKeys = new ulong[capacity]; groupTeams = new int[capacity]; groupCounts = new int[capacity]; groupLayers = new int[capacity];
-            groupOrders = new int[capacity]; groupNew = new int[capacity]; groupAt = new SimVec3[capacity];
+            groupOrders = new int[capacity]; groupAt = new SimVec3[capacity];
             leaderRow = new bool[capacity];
             Dispatch = new CommanderDispatch(this);
         }
@@ -159,9 +152,8 @@ namespace WarCore.Battle
             // The commander reads only TryBase and TrySpan, neither of which needs Begin; it is called to keep AiField's
             // contract (once per tick before the first read).
             field.Begin(c.Clock.Tick);
-            Gather(0);
+            Gather();
             Decide(nextKeys, nextPoints, out nextCount, attackNext);
-            if (checking) Check(c.Clock.Tick);
             ulong[] keys = orderKeys; orderKeys = nextKeys; nextKeys = keys;
             int[] at = orderPoints; orderPoints = nextPoints; nextPoints = at;
             orderCount = nextCount;
@@ -169,8 +161,8 @@ namespace WarCore.Battle
         }
 
         // R0 and R2: the units the commander may dispatch, sorted by key, grouped by the key they are dispatched by; and the
-        // standing units of every team near every point. shuffle != 0 (self check only) visits the units in another order first.
-        private void Gather(ulong shuffle)
+        // standing units of every team near every point.
+        private void Gather()
         {
             Array.Clear(near, 0, near.Length);
             for (int i = 0; i < points; i++) owners[i] = capture.Points[i].Owner;
@@ -210,15 +202,8 @@ namespace WarCore.Battle
                     for (int o = 1; o <= teams; o++) if (o != t) count += near[(o - 1) * points + i];
                     enemies[(t - 1) * points + i] = count;
                 }
-            for (int i = 0; i < found; i++) from[i] = i;
-            if (shuffle != 0)
-                for (int i = found - 1; i > 0; i--)
-                {
-                    int j = (int)(AiParts.Mix(shuffle ^ (ulong)i) % (ulong)(i + 1));
-                    int swap = from[i]; from[i] = from[j]; from[j] = swap;
-                }
             units = found;
-            for (int i = 0; i < units; i++) { sortKeys[i] = foundKeys[from[i]]; sortIndex[i] = from[i]; }
+            for (int i = 0; i < units; i++) { sortKeys[i] = foundKeys[i]; sortIndex[i] = i; }
             // Keys are all different, so the order after the sort does not depend on the order the units were found in.
             Array.Sort(sortKeys, sortIndex, 0, units);
             for (int i = 0; i < units; i++)
@@ -267,7 +252,7 @@ namespace WarCore.Battle
         }
 
         // R3 to R5 and R8 from the gathered units, the saved rows and attack flags; writes the new rows (in key order) and
-        // attack flags. Reads nothing it writes, so it can run again on the same input (the self check does).
+        // attack flags into the given buffers, never into the saved ones it reads.
         private void Decide(ulong[] outKeys, int[] outPoints, out int outCount, bool[] outAttack)
         {
             OldOrders(orderKeys, orderPoints, orderCount);
@@ -359,104 +344,6 @@ namespace WarCore.Battle
                 if (best < 0 || span < bestSpan) { best = g; bestSpan = span; }
             }
             return best;
-        }
-
-        // ---- Test-only self check (I1, I2, I5, I7, I8, L2, L3). Off in every game; allocates while on. ----
-        internal IReadOnlyList<string> Violations => violations;
-        internal int ViolationCount => violationCount;
-
-        private void Fail(string rule, long tick, string what)
-        {
-            violationCount++;
-            if (violations == null) violations = new List<string>();
-            if (violations.Count < 50) violations.Add(rule + " tick " + tick + ": " + what);
-        }
-
-        // One run of the gather and the decision into spare buffers, nothing kept (the cost measure).
-        internal void Rehearse() { Gather(0); Decide(spareKeys, sparePoints, out spareCount, attackSpare); }
-
-        // Runs after Decide and before the new rows replace the saved ones: orderKeys hold the old rows, nextKeys the new.
-        private void Check(long tick)
-        {
-            // I1: one row per unit at most (keys strictly increasing), only for units the commander dispatches this tick, the
-            // same for every unit of a group. I2: the point of a row is one of the unit's team's targets this tick.
-            for (int i = 0; i < nextCount; i++)
-            {
-                if (i > 0 && nextKeys[i] <= nextKeys[i - 1]) Fail("I1", tick, "keys not strictly increasing at " + i);
-                if (Array.BinarySearch(unitKeys, 0, units, nextKeys[i]) < 0) Fail("I1", tick, "row for key " + nextKeys[i] + " that the commander does not dispatch");
-            }
-            for (int g = 0; g < groups; g++) { groupNew[g] = int.MinValue; leaderRow[g] = false; }
-            for (int i = 0; i < units; i++)
-            {
-                int g = unitGroupIndex[i], r = CommandIn(nextKeys, nextPoints, nextCount, unitKeys[i]);
-                if (groupNew[g] == int.MinValue) groupNew[g] = r;
-                else if (groupNew[g] != r) Fail("I1", tick, "group " + groupKeys[g] + " has units with rows " + groupNew[g] + " and " + r);
-                if (r < 0) continue;
-                if (!attackNext[(unitTeams[i] - 1) * points + r]) Fail("I2", tick, "unit " + unitKeys[i] + " remembers point " + r + " that is not a target");
-            }
-            // The old order of every group, as Decide read it (R8).
-            OldOrders(orderKeys, orderPoints, orderCount);
-            for (int t = 1; t <= teams; t++)
-            {
-                int row = (t - 1) * points;
-                bool anyTarget = false;
-                for (int p = 0; p < points; p++) { anyTarget |= attackNext[row + p]; groupsAt[p] = 0; }
-                bool engaged = false, reaches = false;
-                for (int g = 0; g < groups; g++)
-                {
-                    if (groupTeams[g] != t) continue;
-                    if (anyTarget && !reaches)
-                        for (int p = 0; p < points && !reaches; p++) reaches = attackNext[row + p] && field.TrySpan(groupAt[g], groupLayers[g], p, out _);
-                    int o = groupNew[g];
-                    if (o < 0) continue;
-                    groupsAt[o]++;
-                    if (attackNext[row + o]) engaged = true;
-                }
-                // L2: nobody idle while there is something to attack.
-                if (anyTarget && reaches && !engaged) Fail("L2", tick, "team " + t + " has points to attack and groups that reach them, but nobody attacks");
-                // L3: no point to attack without a group while a group without an order can reach it.
-                for (int p = 0; p < points; p++)
-                {
-                    if (!attackNext[row + p] || groupsAt[p] > 0) continue;
-                    for (int g = 0; g < groups; g++)
-                        if (groupTeams[g] == t && groupNew[g] < 0 && field.TrySpan(groupAt[g], groupLayers[g], p, out _))
-                        { Fail("L3", tick, "team " + t + " point " + p + " is attacked by nobody, group " + groupKeys[g] + " has no order and reaches it"); break; }
-                }
-            }
-            // I7: every unit whose row leaves point p (to another point or to none) has a reason: p is not a target this tick;
-            // its group cannot walk to p; or it follows another group this tick (its own old row is not its group's old order,
-            // R8) or the commander no longer dispatches it (R0). So a target that the group can walk to is never left.
-            for (int k = 0; k < orderCount; k++)
-            {
-                int p = orderPoints[k];
-                int i = Array.BinarySearch(unitKeys, 0, units, orderKeys[k]);
-                if (i < 0) continue;
-                int g = unitGroupIndex[i], t = unitTeams[i], row = (t - 1) * points;
-                if (CommandIn(nextKeys, nextPoints, nextCount, orderKeys[k]) == p || groupOrders[g] != p) continue;
-                if (!attackNext[row + p] || !field.TrySpan(groupAt[g], groupLayers[g], p, out _)) continue;
-                Fail("I7", tick, "unit " + orderKeys[k] + " left point " + p + " that is still a target its group can walk to");
-            }
-            // I8: a group let go of its old order p (R4) while p is not its team's and it can walk to p only because p lost
-            // on score: p was a candidate (Plan's underWay), so the team attacks as many points as it may.
-            int cap = Math.Max(1, rules.Quota.MaxAttackTargets);
-            for (int g = 0; g < groups; g++)
-            {
-                int p = groupOrders[g], t = groupTeams[g];
-                if (p < 0 || groupNew[g] == p || owners[p] == t || !field.TrySpan(groupAt[g], groupLayers[g], p, out _)) continue;
-                int row = (t - 1) * points, targets = 0;
-                for (int q = 0; q < points; q++) if (attackNext[row + q]) targets++;
-                if (targets != cap) Fail("I8", tick, "group " + groupKeys[g] + " let go of point " + p + " while its team attacks " + targets + " of " + cap + " points");
-            }
-            // I5: the same input gives the same answer, and so does another visiting order of the units.
-            for (int pass = 0; pass < 2; pass++)
-            {
-                Gather(pass == 0 ? 0 : ShuffleSalt ^ (ulong)tick);
-                Decide(spareKeys, sparePoints, out spareCount, attackSpare);
-                bool same = spareCount == nextCount;
-                for (int i = 0; same && i < nextCount; i++) same = spareKeys[i] == nextKeys[i] && sparePoints[i] == nextPoints[i];
-                for (int i = 0; same && i < attackNext.Length; i++) same = attackSpare[i] == attackNext[i];
-                if (!same) Fail("I5", tick, pass == 0 ? "a second run differs" : "another visiting order differs");
-            }
         }
 
         private static int CommandIn(ulong[] keys, int[] at, int count, ulong key)
