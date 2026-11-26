@@ -43,9 +43,11 @@ namespace WarCore.Presentation
         private readonly IControlTarget controlled;
 
         // RC2-1: in a battle with a led squad (the match feature hands it over once it is made) the squad's leader passes the
-        // members of its squad as the mover, whether they stand, walk or fight; nobody passes the controlled unit. Everything
-        // else is the rule above, bit for bit, so a battle in which no squad is ever called moves as under the plain rule.
-        internal const ulong LeaderDigest = 0x5445414D49444C32UL;
+        // members of its squad as the mover, whether they stand, walk or fight. RC2-6a: a member passes its leader while the
+        // leader stands, as two team mates pass each other (neither of them engaged); nobody else passes the controlled unit,
+        // and nobody passes it while it walks. Everything else is the rule above, bit for bit, so a battle in which no squad
+        // is ever called moves as under the plain rule. ("TEAMIDL3"; RC2-1's rule was "TEAMIDL2".)
+        internal const ulong LeaderDigest = 0x5445414D49444C33UL;
         internal WarCore.Battle.LedSquad Led { get; set; }
 
         internal TeamIdleCrowdPass(Simulation sim, CombatSystem combat, CombatPack pack, IControlTarget controlled)
@@ -60,7 +62,9 @@ namespace WarCore.Presentation
 
         public bool MayPass(EntityId mover, EntityId idle)
         {
-            if (controlled != null && (mover.Equals(controlled.Current) || idle.Equals(controlled.Current))) return LeaderPasses(mover, idle);
+            if (controlled != null && mover.Equals(controlled.Current)) return LeaderPasses(mover, idle);
+            // The standing controlled unit: only a member of the squad it leads goes on to the rule of two team mates.
+            if (controlled != null && idle.Equals(controlled.Current) && !LeaderPasses(idle, mover)) return false;
             if (!entities.TryGet(combatants, mover, out Combatant a) || !entities.TryGet(combatants, idle, out Combatant b)) return false;
             if (a.Team < 1 || a.Team != b.Team) return false;
             long tick = sim.Clock.Tick;
