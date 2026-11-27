@@ -1,0 +1,158 @@
+# RC2-3c commander: R5's two ties go to the target CommanderQuota.Plan picked earlier (rankOut), not to the lower point
+# index. Each tie back to the lower index, each rank comparison the other way, and the rank source (rank as the index,
+# no -1 for a point that is no target, no length check). Around the two rewritten lines: the deficit against the order
+# of picking (an earlier target with a smaller deficit; the order alone), the first step's direction (wanting less;
+# wanting a different number) and point 0 (not kept as the pick in either step; not returned between the steps). The R5
+# entries of rc2-3.txt (steps swapped, each tie to the higher index) stay in that list, on the new text.
+#
+# Not listed, because the pick is the same: groupsAt[i] == 0 as <= 0 (a count is never negative); in either step the
+# tie's == as >= (a larger value is taken by the comparison before it) and the rank's < as <= (two targets never share
+# a rank); in the first step the tie's == as <= (CommanderQuota.Plan never gives a target picked earlier a smaller
+# wanted count). Not listed either: !blocked[i] dropped from either step, because the tests then never end
+# (rc2-3.txt's rc2-3-r5-blocked-not-kept is the entry for that rule).
+
+[rc2-3c-r5-first-tie-index]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.CommanderTieOrderTests|FullyQualifiedName~WarCore.Tests.CommanderRuleTests
+expect = WarCore.Tests.CommanderTieOrderTests.TiedTargetsNobodyGoesToGoToTheOnePickedFirst
+note = among targets nobody goes to, a tie goes to the lower index again
+original:
+| || (planDesired[i] == planDesired[pick] && planRank[i] < planRank[pick])
+replacement:
+|
+
+[rc2-3c-r5-deficit-tie-index]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.CommanderTieOrderTests|FullyQualifiedName~WarCore.Tests.CommanderRuleTests
+expect = WarCore.Tests.CommanderTieOrderTests.TiedDeficitsGoToTheTargetPickedFirst
+note = among deficits, a tie goes to the lower index again
+original:
+| || (deficit[i] == deficit[pick] && planRank[i] < planRank[pick])
+replacement:
+|
+
+[rc2-3c-r5-first-tie-later]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.CommanderTieOrderTests|FullyQualifiedName~WarCore.Tests.CommanderRuleTests
+expect = WarCore.Tests.CommanderTieOrderTests.TiedTargetsNobodyGoesToGoToTheOnePickedFirst
+note = among targets nobody goes to, a tie goes to the target picked later
+original:
+| planDesired[i] == planDesired[pick] && planRank[i] < planRank[pick]
+replacement:
+| planDesired[i] == planDesired[pick] && planRank[i] > planRank[pick]
+
+[rc2-3c-r5-deficit-tie-later]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.CommanderTieOrderTests|FullyQualifiedName~WarCore.Tests.CommanderRuleTests
+expect = WarCore.Tests.CommanderTieOrderTests.TiedDeficitsGoToTheTargetPickedFirst
+note = among deficits, a tie goes to the target picked later
+original:
+| deficit[i] == deficit[pick] && planRank[i] < planRank[pick]
+replacement:
+| deficit[i] == deficit[pick] && planRank[i] > planRank[pick]
+
+[rc2-3c-r5-deficit-earlier-wins]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.CommanderTieOrderTests|FullyQualifiedName~WarCore.Tests.CommanderRuleTests
+expect = WarCore.Tests.CommanderTieOrderTests.ALargerDeficitComesBeforeTheOrderOfPicking
+note = a target picked earlier wins against a larger deficit too
+original:
+| deficit[i] == deficit[pick] && planRank[i] < planRank[pick]
+replacement:
+| deficit[i] <= deficit[pick] && planRank[i] < planRank[pick]
+
+[rc2-3c-r5-deficit-rank-only]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.CommanderTieOrderTests|FullyQualifiedName~WarCore.Tests.CommanderRuleTests
+expect = WarCore.Tests.CommanderTieOrderTests.ALargerDeficitComesBeforeTheOrderOfPicking
+expect = WarCore.Tests.CommanderRuleTests.TiedDeficitsGoToTheOnePickedFirst
+note = the second step looks at the order of picking only
+original:
+| deficit[i] > deficit[pick]
+|                     || (deficit[i] == deficit[pick] && planRank[i] < planRank[pick])
+replacement:
+| planRank[i] < planRank[pick]
+
+[rc2-3c-r5-first-wanting-less]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.CommanderTieOrderTests|FullyQualifiedName~WarCore.Tests.CommanderRuleTests
+expect = WarCore.Tests.CommanderTieOrderTests.OfTheTargetsNobodyGoesToTheOneWantingMoreComesFirst
+note = of the targets nobody goes to, the one wanting less comes first
+original:
+| planDesired[i] > planDesired[pick]
+replacement:
+| planDesired[i] < planDesired[pick]
+
+[rc2-3c-r5-first-wanting-other]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.CommanderTieOrderTests|FullyQualifiedName~WarCore.Tests.CommanderRuleTests
+expect = WarCore.Tests.CommanderTieOrderTests.OfTheTargetsNobodyGoesToTheOneWantingMoreComesFirst
+note = of the targets nobody goes to, one wanting a different number replaces the pick
+original:
+| planDesired[i] > planDesired[pick]
+replacement:
+| planDesired[i] != planDesired[pick]
+
+[rc2-3c-r5-first-point0-replaced]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.CommanderTieOrderTests|FullyQualifiedName~WarCore.Tests.CommanderRuleTests
+expect = WarCore.Tests.CommanderTieOrderTests.TiedTargetsNobodyGoesToGoToTheOnePickedFirst
+expect = WarCore.Tests.CommanderTieOrderTests.OfTheTargetsNobodyGoesToTheOneWantingMoreComesFirst
+note = first step: point 0 as the pick is replaced by the next candidate
+original:
+| (pick < 0 || planDesired[i] > planDesired[pick]
+replacement:
+| (pick <= 0 || planDesired[i] > planDesired[pick]
+
+[rc2-3c-r5-point0-not-returned]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.CommanderTieOrderTests|FullyQualifiedName~WarCore.Tests.CommanderRuleTests
+expect = WarCore.Tests.CommanderTieOrderTests.ATargetNobodyGoesToComesFirstAlsoWhenItIsPointZero
+note = point 0 picked by the first step is not returned and goes through the deficits
+original:
+| if (pick >= 0) return pick;
+replacement:
+| if (pick > 0) return pick;
+
+[rc2-3c-r5-deficit-point0-replaced]
+file = Assets/WarCore/Battle/Ai/Commander.cs
+filter = FullyQualifiedName~WarCore.Tests.CommanderTieOrderTests|FullyQualifiedName~WarCore.Tests.CommanderRuleTests
+expect = WarCore.Tests.CommanderTieOrderTests.TiedDeficitsGoToTheTargetPickedFirst
+note = second step: point 0 as the pick is replaced by the next candidate
+original:
+| (pick < 0 || deficit[i] > deficit[pick]
+replacement:
+| (pick <= 0 || deficit[i] > deficit[pick]
+
+[rc2-3c-rank-is-index]
+file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
+filter = FullyQualifiedName~WarCore.Tests.CommanderTieOrderTests|FullyQualifiedName~WarCore.Tests.CommanderRuleTests
+expect = WarCore.Tests.CommanderTieOrderTests.TiedTargetsNobodyGoesToGoToTheOnePickedFirst
+expect = WarCore.Tests.CommanderTieOrderTests.TiedDeficitsGoToTheTargetPickedFirst
+expect = WarCore.Tests.CommanderTieOrderTests.ThePlanReportsTheOrderItPickedTheTargetsIn
+note = the rank of a target is its point index
+original:
+| if (rankOut != null) rankOut[best] = k;
+replacement:
+| if (rankOut != null) rankOut[best] = best;
+
+[rc2-3c-rank-not-cleared]
+file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
+filter = FullyQualifiedName~WarCore.Tests.CommanderTieOrderTests|FullyQualifiedName~WarCore.Tests.CommanderRuleTests
+expect = WarCore.Tests.CommanderTieOrderTests.ThePlanReportsTheOrderItPickedTheTargetsIn
+note = a point that is no target keeps whatever rank the buffer held
+original:
+| if (rankOut != null) rankOut[i] = -1;
+replacement:
+|
+
+[rc2-3c-rank-length]
+file = Assets/WarCore/Battle/Ai/CommanderQuota.cs
+filter = FullyQualifiedName~WarCore.Tests.CommanderTieOrderTests|FullyQualifiedName~WarCore.Tests.CommanderRuleTests
+expect = WarCore.Tests.CommanderTieOrderTests.ThePlanReportsTheOrderItPickedTheTargetsIn
+note = a rankOut shorter than the points is not refused up front
+original:
+|
+|                 || (rankOut != null && count > rankOut.Length))
+replacement:
+| )

@@ -59,8 +59,8 @@ namespace WarCore.Battle
         private int orderCount, nextCount;
         // Scratch, rebuilt every Step: per team and point the enemies near it and the soldiers it wants; the owners now.
         private readonly int[] enemies, desired, near, owners;
-        // Scratch for one team's plan.
-        private readonly int[] planEnemies, planDesired, deficit, groupsAt;
+        // Scratch for one team's plan (planRank: the order CommanderQuota.Plan picked the targets in).
+        private readonly int[] planEnemies, planDesired, planRank, deficit, groupsAt;
         private readonly bool[] planPrevious, planAttack, blocked, underWay;
         // Scratch: the units the commander may dispatch (in key order after the sort), their group, and the groups.
         private readonly ulong[] unitKeys, unitGroups, foundKeys, foundGroups, sortKeys;
@@ -98,7 +98,7 @@ namespace WarCore.Battle
             attack = new bool[flags]; attackNext = new bool[flags];
             enemies = new int[flags]; desired = new int[flags]; near = new int[flags]; owners = new int[points];
             int p = points;
-            planEnemies = new int[p]; planDesired = new int[p];
+            planEnemies = new int[p]; planDesired = new int[p]; planRank = new int[p];
             deficit = new int[p]; groupsAt = new int[p];
             planPrevious = new bool[p]; planAttack = new bool[p]; blocked = new bool[p]; underWay = new bool[p];
             int capacity = combat.Entities.Capacity;
@@ -288,7 +288,7 @@ namespace WarCore.Battle
             for (int g = 0; g < groups; g++)
                 if (groupTeams[g] == team && groupOrders[g] >= 0) underWay[groupOrders[g]] = true;
             CommanderQuota.Plan(team, points, owners, centers, planEnemies, adjacent, soldiers, anchor, planPrevious, rules.Quota, planDesired, planAttack,
-                underWay);
+                underWay, planRank);
             for (int i = 0; i < points; i++) { desired[row + i] = planDesired[i]; outAttack[row + i] = planAttack[i]; }
 
             // R4: which old orders stay. A point that is not a target this tick, or that the group cannot walk to, lets it
@@ -320,16 +320,19 @@ namespace WarCore.Battle
             }
         }
 
-        // R5's choice of point among this tick's targets (ties to the lower index; points no group could reach are passed
-        // over): 1. a target nobody goes to, largest wanted; 2. the target with the largest deficit, even below zero.
+        // R5's choice of point among this tick's targets (ties to the target picked earlier, planRank; points no group could
+        // reach are passed over): 1. a target nobody goes to, largest wanted; 2. the target with the largest deficit, even
+        // below zero.
         private int Next()
         {
             int pick = -1;
             for (int i = 0; i < points; i++)
-                if (planAttack[i] && groupsAt[i] == 0 && !blocked[i] && (pick < 0 || planDesired[i] > planDesired[pick])) pick = i;
+                if (planAttack[i] && groupsAt[i] == 0 && !blocked[i] && (pick < 0 || planDesired[i] > planDesired[pick]
+                    || (planDesired[i] == planDesired[pick] && planRank[i] < planRank[pick]))) pick = i;
             if (pick >= 0) return pick;
             for (int i = 0; i < points; i++)
-                if (planAttack[i] && !blocked[i] && (pick < 0 || deficit[i] > deficit[pick])) pick = i;
+                if (planAttack[i] && !blocked[i] && (pick < 0 || deficit[i] > deficit[pick]
+                    || (deficit[i] == deficit[pick] && planRank[i] < planRank[pick]))) pick = i;
             return pick;
         }
 

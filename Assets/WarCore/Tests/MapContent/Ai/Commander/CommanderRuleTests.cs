@@ -183,9 +183,10 @@ namespace WarCore.Tests
         }
 
         // R5's ties, on the first tick. One soldier and two targets that want one each (pool max(2, 1) = 2; B and C tie on score,
-        // so B is chosen first): it goes to B, the lower index.
+        // so B, the lower index, is picked first): it goes to B, the one picked first.
+        // (Here and in the next test that is also the lower index; CommanderTieOrderTests has boards where the two differ.)
         [Test]
-        public void OneSoldierForTwoTargetsThatWantAsManyGoesToTheLowerIndex()
+        public void OneSoldierForTwoTargetsThatWantAsManyGoesToTheOnePickedFirst()
         {
             var b = new CommanderBoard(Abc(), new[] { CommanderBoard.Man(1, 1, 80, 30), CommanderBoard.Man(100, 2, 50, 4) }, Bases(), 160);
             b.Step();
@@ -195,10 +196,11 @@ namespace WarCore.Tests
         }
 
         // Units 1 and 2 keep B and C; 3 and 4 have no order. Both targets want two, so after the first step the deficits tie
-        // (1 and 1): the first group goes to B, the lower index, and is the one nearest to B, unit 3 (60 m; it is also the one
-        // nearest to C); then C takes unit 4. Ties the other way would send 3 to C and 4 to B.
+        // (1 and 1): the first group goes to B, the one picked first (B and C tie on score, B is the lower index), and is the
+        // one nearest to B, unit 3 (60 m; it is also the one nearest to C); then C takes unit 4. Ties the other way would send
+        // 3 to C and 4 to B.
         [Test]
-        public void TiedDeficitsGoToTheLowerIndexFirst()
+        public void TiedDeficitsGoToTheOnePickedFirst()
         {
             var b = new CommanderBoard(Abc(), new[] { CommanderBoard.Man(1, 1, 70), CommanderBoard.Man(2, 1, 90), CommanderBoard.Man(3, 1, 80),
                 CommanderBoard.Man(4, 1, 80, 38), CommanderBoard.Man(100, 2, 50, 4) }, Bases(), 160);

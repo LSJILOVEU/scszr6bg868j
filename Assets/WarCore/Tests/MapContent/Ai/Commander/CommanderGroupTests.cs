@@ -57,7 +57,7 @@ namespace WarCore.Tests
 
         // R5: a group that keeps its order fills its target by its heads. The squad (6) keeps B and unit 21 keeps C; both
         // want 4, so B is 2 over and C 3 short: unit 22, the one group without an order, goes to C. (Counted as groups, B
-        // and C would both be 3 short and B, the lower index, would get it.)
+        // and C would both be 3 short and B, the one picked first, would get it.)
         [Test]
         public void AKeptSquadFillsItsTargetByItsHeads()
         {
@@ -72,9 +72,9 @@ namespace WarCore.Tests
         }
 
         // R5: a group that is sent fills its target by its heads. Nobody has an order. B is served first (no group yet,
-        // lower index) by the nearest group, the squad of six, and is then 2 over; C (no group yet) takes its nearest, unit
+        // picked first) by the nearest group, the squad of six, and is then 2 over; C (no group yet) takes its nearest, unit
         // 21, and is 3 short, so unit 22 goes to C as well. (Counted as groups, both would be 3 short and unit 22 would go
-        // to B, the lower index.)
+        // to B, the one picked first.)
         [Test]
         public void ASentSquadFillsItsTargetByItsHeads()
         {
